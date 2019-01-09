@@ -1,2 +1,5 @@
 .idea/
 __pycache__/
+*.exe
+/data/images/*
+/data/userdata/*
