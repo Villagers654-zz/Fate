@@ -1,36 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="PublishConfigData" autoUpload="Always" serverName="Keagan" deleteMissingItems="true" autoUploadExternalChanges="true" compareModeInSync="TIMESTAMP">
-    <serverData>
-      <paths name="Keagan">
-        <serverdata>
-          <mappings>
-            <mapping deploy="/FateZero" local="$PROJECT_DIR$" web="/" />
-          </mappings>
-          <excludedPaths>
-            <excludedPath local="true" path="$PROJECT_DIR$/data/xp.json" />
-            <excludedPath local="true" path="$PROJECT_DIR$/data/notes.json" />
-            <excludedPath local="true" path="$PROJECT_DIR$/data/config/toggles.json" />
-            <excludedPath local="true" path="$PROJECT_DIR$/data/config/welcome.json" />
-            <excludedPath local="true" path="$PROJECT_DIR$/data/profiles.json" />
-            <excludedPath local="true" path="$PROJECT_DIR$/data/config/farewell.json" />
-            <excludedPath local="true" path="$PROJECT_DIR$/git" />
-          </excludedPaths>
-        </serverdata>
-      </paths>
-      <paths name="Luck">
-        <serverdata>
-          <mappings>
-            <mapping deploy="/FateZero" local="$PROJECT_DIR$" web="/" />
-          </mappings>
-          <excludedPaths>
-            <excludedPath local="true" path="$PROJECT_DIR$/data/leaderboards.json" />
-            <excludedPath local="true" path="$PROJECT_DIR$/data/notes.json" />
-            <excludedPath local="true" path="$PROJECT_DIR$/data/config/responses.json" />
-          </excludedPaths>
-        </serverdata>
-      </paths>
-    </serverData>
     <option name="myAutoUpload" value="ALWAYS" />
   </component>
 </project>
