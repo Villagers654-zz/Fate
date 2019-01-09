@@ -46,7 +46,7 @@ class ErrorHandler:
 			await ctx.message.add_reaction('⚠')
 		elif isinstance(error, discord.errors.Forbidden):
 			await ctx.send("I'm missing permissions")
-		if str() == "NoneType: None":
+		if "NoneType: None" in traceback.format_exc():
 			await ctx.send(error)
 		else:
 			await ctx.send(traceback.format_exc())

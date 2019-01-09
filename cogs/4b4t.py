@@ -113,7 +113,11 @@ class mainclass:
 				await ctx.send('too big ;-;')
 			else:
 				if len(motd) > 3:
-					if motd in self.motds:
+					check = 0
+					for i in self.motds:
+						if motd.lower() in i.lower():
+							check += 1
+					if check >= 1:
 						await ctx.send('That MOTD already exists')
 					else:
 						self.motds.append(motd)

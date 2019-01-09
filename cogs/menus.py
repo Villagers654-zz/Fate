@@ -27,7 +27,7 @@ class Menus:
 		if ctx.invoked_subcommand is None:
 			e = discord.Embed(title="~~~====🥂🍸🍷Help🍷🍸🥂====~~~", color=0x80b0ff)
 			e.add_field(name="◈ Information ◈", value="**Dev:** Luck#1574\n**Version:** 1.0.0\n**Prefix:** `.`", inline=False)
-			e.add_field(name="◈ Commands ◈", value="• core ~ `main bot usage`\n• react ~ `reaction gifs / images`\n• mod ~ `moderation commands`\n• fun ~ `entertaining stuff`\n• art ~ `subpar textart ヽ(ﾟｰﾟ)ﾉ`\n• m ~ `miscellaneous (empty)`\n• e ~ `embed usage help`", inline=False)
+			e.add_field(name="◈ Commands ◈", value="• core ~ `main bot usage`\n• react ~ `reaction gifs / images`\n• mod ~ `moderation commands`\n• fun ~ `entertaining stuff`\n• art ~ `subpar textart ヽ(ﾟｰﾟ)ﾉ`\n• e ~ `embed usage help`", inline=False)
 			await ctx.send(embed=e)
 
 	@_help.command(name='core')
@@ -301,4 +301,4 @@ class Menus:
 		await ctx.send(embed=embed)
 
 def setup(bot):
-    bot.add_cog(Menus(bot))
+	bot.add_cog(Menus(bot))

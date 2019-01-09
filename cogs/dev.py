@@ -1,12 +1,10 @@
+from PIL import Image, ImageDraw
 from discord.ext import commands
 import discord
 import asyncio
 import random
 import psutil
-from datetime import datetime
 import os
-import aiohttp
-from PIL import Image, ImageDraw
 
 class Dev:
 	def __init__(self, bot):
@@ -34,8 +32,16 @@ class Dev:
 # ~== Main ==~)
 
 	@commands.command()
+	async def ltr(self, ctx):
+		await ctx.send(u"\u200E")
+
+	@commands.command()
+	async def rtl(self, ctx):
+		await ctx.send(u"\u200F")
+
+	@commands.command()
 	@commands.check(luck)
-	async def testsend(self, ctx, *, message):
+	async def testsend(self, *, message):
 		await self.bot.get_user(264838866480005122).send(message)
 
 	async def on_member_join(self,m:discord.Member):
@@ -44,43 +50,6 @@ class Dev:
 				await m.guild.ban(m, reason="faggotry")
 				c = self.bot.get_channel(502236124308307968)
 				await c.send("the faggot has been banned.")
-
-	async def on_message(self, m: discord.Message):
-		e = 0
-		if e == 1:
-			if m.channel.id == 531350870445785091:
-				def pred(m):
-					return msg.author.id in [] and m.channel == 531350870445785091 and m.content in msg.content
-				try:
-					msg = await self.bot.wait_for('message', check=pred, timeout=10.0)
-				except asyncio.TimeoutError:
-					legit = self.bot.get_user(261451679239634944)
-					luck = self.bot.get_user(264838866480005122)
-					list = [legit, luck]
-					for i in list:
-						await i.send("Livechat is down")
-				else:
-					if m.author.id not in [531350870445785091]:
-						await m.delete()
-
-	@commands.command()
-	@commands.check(luck)
-	async def f(self, ctx, arg, *, content=None):
-		if arg == "write":
-			f = open("/home/luck/FateZero/data/test.txt", "w")
-			f.write(content)
-			f.close()
-			await ctx.send('done')
-		if arg == "read":
-			f = open("/home/luck/FateZero/data/test.txt", "r")
-			await ctx.send(f.read())
-			f.close()
-
-	@commands.command()
-	@commands.check(luck)
-	async def sendfile(self, ctx, directory):
-		path = os.getcwd() + f"{directory}"
-		await ctx.send(file=discord.File(path))
 
 	@commands.command()
 	async def messagecount(self, ctx, times):
@@ -139,36 +108,6 @@ class Dev:
 		"""
 		user = user.name
 		await ctx.send("https://robohash.org/{}.png".format(user.replace(" ", "%20")))
-
-	@commands.command()
-	async def test(self, ctx, *, member: discord.Member=None):
-		try:
-			if member is None:
-				member = ctx.author
-				fmt = "%m-%d-%Y"
-				created = datetime.date(member.created_at)
-				await ctx.send(created.strftime(fmt) + " (UTC)")
-		except Exception as e:
-			await ctx.send(f'**```ERROR: {type(e).__name__} - {e}```**')
-
-	@commands.command()
-	async def tinyurl(self, ctx, *, link: str):
-		try:
-			await ctx.message.delete()
-			url = 'http://tinyurl.com/api-create.php?url=' + link
-			async with aiohttp.ClientSession() as sess:
-				async with sess.get(url) as resp:
-					r = await resp.read()
-					r = str(r)
-					r = r.replace("b'", "")
-					r = r.replace("'", "")
-			emb = discord.Embed(color=0x80b0ff)
-			emb.add_field(name="Original Link", value=link, inline=False)
-			emb.add_field(name="Shortened Link", value=r, inline=False)
-			emb.set_footer(text='Powered by tinyurl.com', icon_url='http://cr-api.com/static/img/branding/cr-api-logo.png')
-			await ctx.send(embed=emb)
-		except Exception as e:
-			await ctx.send(f'**```ERROR: {type(e).__name__} - {e}```**')
 
 	@commands.command()
 	async def battery(self, ctx):
@@ -247,18 +186,6 @@ class Dev:
 			ramtotal = psutil.virtual_memory().total
 			await ctx.send(f'[{bytes2human(ramused)}, {bytes2human(ramtotal)}]')
 		except Exception as e:
-				await ctx.send(f'**```ERROR: {type(e).__name__} - {e}```**')
-
-	@commands.command(name="changepresence", aliases=["cp"])
-	@commands.check(luck)
-	async def changepresence(self, ctx, *, arg):
-		async with ctx.typing():
-			try:
-				await self.bot.change_presence(activity=discord.Game(name=arg))
-				await ctx.send('done', delete_after=5)
-				await asyncio.sleep(5)
-				await ctx.message.delete()
-			except Exception as e:
 				await ctx.send(f'**```ERROR: {type(e).__name__} - {e}```**')
 
 	@commands.command()

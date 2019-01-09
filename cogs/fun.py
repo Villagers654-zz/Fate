@@ -1,8 +1,9 @@
 from discord.ext import commands
+from random import random as rd
 import discord
 import asyncio
-import base64
 import random
+import base64
 import os
 
 class funclass:
@@ -219,6 +220,30 @@ class funclass:
 		e = discord.Embed()
 		e.set_image(url="attachment://" + os.path.basename(path))
 		await ctx.send(file=discord.File(path, filename=os.path.basename(path)), embed=e)
+
+	@commands.command(pass_context=True)
+	async def mock(self, ctx, *, message):
+		msgbuf = ""
+		uppercount = 0
+		lowercount = 0
+		for c in message:
+			if c.isalpha():
+				if uppercount == 2:
+					uppercount = 0
+					upper = False
+					lowercount += 1
+				elif lowercount == 2:
+					lowercount = 0
+					upper = True
+					uppercount += 1
+				else:
+					upper = rd() > 0.5
+					uppercount = uppercount + 1 if upper else 0
+					lowercount = lowercount + 1 if not upper else 0
+				msgbuf += c.upper() if upper else c.lower()
+			else:
+				msgbuf += c
+		await ctx.send(msgbuf)
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)

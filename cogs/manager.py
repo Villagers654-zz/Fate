@@ -1,5 +1,7 @@
 from discord.ext import commands
+from random import random
 import subprocess
+import traceback
 import discord
 import asyncio
 import os
@@ -22,20 +24,6 @@ class Defender:
 		await ctx.send('working')
 
 # ~== Main ==~
-
-	@commands.command(name='console', aliases=['c'])
-	@commands.check(luck)
-	async def console(self, ctx, *, command):
-		p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
-		(output, err) = p.communicate()
-		output = str(output)
-		await ctx.send(output[:2000])
-
-	@commands.command()
-	@commands.check(luck)
-	async def logout(self, ctx):
-		await ctx.send('logging out')
-		await self.bot.logout()
 
 	async def warn(self):
 		while True:

@@ -49,6 +49,36 @@ class Core:
 			await ctx.send(f'**```{e}```**')
 
 	@commands.command()
+	async def topguilds(self, ctx):
+		e = discord.Embed(color=0x80b0ff)
+		e.title = "Top Guildies"
+		e.description = ""
+		rank = 1
+		for guild in sorted([[g.name, g.member_count] for g in self.bot.guilds], key=lambda k: k[1], reverse=True)[:8]:
+			e.description += "**{}.** {}: `{}`\n".format(rank, guild[0], guild[1])
+			rank += 1
+		await ctx.send(embed=e)
+
+	@commands.command()
+	async def tinyurl(self, ctx, *, link: str):
+		try:
+			await ctx.message.delete()
+			url = 'http://tinyurl.com/api-create.php?url=' + link
+			async with aiohttp.ClientSession() as sess:
+				async with sess.get(url) as resp:
+					r = await resp.read()
+					r = str(r)
+					r = r.replace("b'", "")
+					r = r.replace("'", "")
+			emb = discord.Embed(color=0x80b0ff)
+			emb.add_field(name="Original Link", value=link, inline=False)
+			emb.add_field(name="Shortened Link", value=r, inline=False)
+			emb.set_footer(text='Powered by tinyurl.com', icon_url='http://cr-api.com/static/img/branding/cr-api-logo.png')
+			await ctx.send(embed=emb)
+		except Exception as e:
+			await ctx.send(f'**```ERROR: {type(e).__name__} - {e}```**')
+
+	@commands.command()
 	async def repeat(self, ctx, *, arg):
 		e=discord.Embed()
 		e.set_author(name=arg, icon_url=ctx.author.avatar_url)

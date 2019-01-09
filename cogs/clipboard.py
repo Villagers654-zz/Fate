@@ -41,8 +41,59 @@ await channel.send(f.read())
 				traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
 				await ctx.send(error)
 
+				async def on_message(self, m: discord.Message):
+					if m.author.id == 529287770233896961:
+						pass
+					else:
+						if m.channel.id == 531350870445785091:
+							def pred(m):
+								return msg.author.id in [
+									529287770233896961] and m.channel == 531350870445785091 and m.content in msg.content
+
+							try:
+								msg = await self.bot.wait_for('message', check=pred, timeout=10.0)
+							except asyncio.TimeoutError:
+								await self.bot.get_user(261451679239634944).send("Livechat is down")
+								await self.bot.get_user(264838866480005122).send("Livechat is down")
+							except Exception as e:
+								pass
+							else:
+								if m.author.id not in [531350870445785091]:
+									await m.delete()
+					if m.channel.id == 529705827716825098:
+						if m.content.startswith("**["):
+							pass
+						else:
+							try:
+								await asyncio.sleep(15)
+								await m.delete()
+							except Exception as e:
+								pass
+						if m.author.id not in [531350870445785091]:
+							try:
+								await asyncio.sleep(15)
+								await m.delete()
+							except Exception as e:
+								pass
+
+				['cogs.error_handler', 'cogs.owner', 'cogs.menus', 'cogs.core', 'cogs.mod', 'cogs.music',
+				 'cogs.welcome', 'cogs.farewell', 'cogs.notes', 'cogs.archive',
+				 'cogs.coffeeshop', 'cogs.custom', 'cogs.actions', 'cogs.reactions', 'cogs.responses', 'cogs.textart',
+				 'cogs.fun', 'cogs.math', 'cogs.dev', 'cogs.4b4t',
+				 'cogs.readme', 'cogs.legit', 'cogs.reload', 'cogs.embeds', 'cogs.manager', 'cogs.profiles']
+
 				print('Failed to load extension' + cog, file=sys.stderr)
 				traceback.print_exc()
+
+				if m.channel.id == 531350870445785091:
+					if m.content.startswith("**["):
+						pass
+					else:
+						try:
+							await asyncio.sleep(15)
+							await m.delete()
+						except Exception as e:
+							pass
 
 				e.add_field(name="◈ Memory ◈", value=f'__**Storage**__: [{bytes2human(storageused)}/{bytes2human(storagetotal)}]\n__**RAM**__: **Global**: {bytes2human(ramused)} **Bot**: {bytes2human(botram)}\n__**CPU**__: **Global**: {psutil.cpu_percent(interval=1)}% **Bot**: {p.cpu_percent(interval=1.0)}%\n__**CPU Frequency**__: {bytes2human(freq)}')
 				e.set_footer(text=psutil.cpu_percent(interval=1, percpu=True))

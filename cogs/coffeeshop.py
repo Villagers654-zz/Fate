@@ -83,18 +83,19 @@ class coffeeshopclass:
 	async def mocha(self, ctx):
 		try:
 			fate = self.bot.get_user(506735111543193601)
-			e=discord.Embed(color=0x80b0ff)
-			e.set_author(name=f"◈ {ctx.author.name} starts crying ◈", icon_url=ctx.author.avatar_url)
+			cry=discord.Embed(color=0x80b0ff)
+			cry.set_author(name=f"◈ {ctx.author.name} starts crying ◈", icon_url=ctx.author.avatar_url)
+			cry.set_image(url="null")
 			e=discord.Embed(color=0xE5CB90)
 			e.description = "Here's your Mocha"
 			e.set_footer(text=random.choice(["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready", "Powered by slaves", "Powered by Beddys ego", "Powered by Samsung", "Powered by the supreme", "Powered by doritos", "Cooldown: 10 seconds"]))
 			e.set_image(url=random.choice(["https://cdn.discordapp.com/attachments/501871950260469790/511752344229380126/homemade-mocha-e1452548176858.jpg",
 			                                    "https://cdn.discordapp.com/attachments/501871950260469790/511752349828513799/white-russian-mocha-cocktail-11.jpg",
 			                                    "https://cdn.discordapp.com/attachments/501871950260469790/511752359156776960/20181112_225859.jpg"]))
+			await ctx.send(embed=cry)
 			await ctx.send(embed=e)
-			await ctx.send(embed=coffee)
 		except Exception as e:
 			await ctx.send(f'**```ERROR: {type(e).__name__} - {e}```**')
 
 def setup(bot):
-    bot.add_cog(coffeeshopclass(bot))
+	bot.add_cog(coffeeshopclass(bot))

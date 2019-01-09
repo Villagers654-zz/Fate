@@ -54,14 +54,11 @@ class Toggles:
 				"*powered by tothers ego*"]))
 		if "please, stop harrasing my bot" in m.content:
 			await m.channel.send('then please stop noticing me every time im pinged reeee')
-		try:
+		if isinstance(m.guild, discord.Guild):
 			if str(m.guild.id) not in self.responses:
 				self.responses[str(m.guild.id)] = 'enabled'
 				with open("./data/config/toggles.json", "w") as outfile:
 					json.dump({"responses": self.responses}, outfile, ensure_ascii=False)
-		except Exception as e:
-			await self.bot.get_channel(514213558549217330).send(f"```{traceback.format_exc()}```")
-		try:
 			if self.responses[str(m.guild.id)] == 'enabled':
 				if r >= 7:
 					if m.content.startswith("hello"):
@@ -90,8 +87,6 @@ class Toggles:
 							"Shut your skin tone chicken bone google chrome no home flip phone disowned ice cream cone garden gnome extra chromosome metronome dimmadome genome full blown monochrome student loan indiana jones overgrown flintstone x and y hormone friend zoned sylvester stallone sierra leone autozone professionally seen silver patrone head ass tf up.",
 							"Well aren't you just a fun filled little lollipop tripple dipped in psycho",
 							"Woah, calm down satan"]))
-		except Exception as e:
-			await self.bot.get_channel(514213558549217330).send(f"```{traceback.format_exc()}```")
 
 def setup(bot):
 	bot.add_cog(Toggles(bot))

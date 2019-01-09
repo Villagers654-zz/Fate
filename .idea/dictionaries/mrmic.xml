@@ -30,6 +30,7 @@
       <w>dota</w>
       <w>doxxing</w>
       <w>dramaticslap</w>
+      <w>eafe</w>
       <w>earrape</w>
       <w>enemys</w>
       <w>errorcount</w>
@@ -40,9 +41,12 @@
       <w>fixstats</w>
       <w>fuckit</w>
       <w>gamemode</w>
+      <w>gettime</w>
+      <w>gglb</w>
       <w>ggleaderboard</w>
       <w>gifs</w>
       <w>gleaderboard</w>
+      <w>globaltop</w>
       <w>greenid</w>
       <w>guilded</w>
       <w>guildies</w>
@@ -56,6 +60,7 @@
       <w>livechat</w>
       <w>lmgtfy</w>
       <w>logintest</w>
+      <w>lowercount</w>
       <w>luckyban</w>
       <w>luckydelete</w>
       <w>luckykick</w>
@@ -66,12 +71,14 @@
       <w>motd</w>
       <w>motds</w>
       <w>motdshuffle</w>
+      <w>msgbuf</w>
       <w>needa</w>
       <w>nighty</w>
       <w>nigward</w>
       <w>pids</w>
       <w>playercount</w>
       <w>powerup</w>
+      <w>pycache</w>
       <w>rampercent</w>
       <w>ramtotal</w>
       <w>ramused</w>
@@ -99,6 +106,7 @@
       <w>testembed</w>
       <w>testmotd</w>
       <w>testread</w>
+      <w>testsend</w>
       <w>teststats</w>
       <w>textart</w>
       <w>texturepack</w>
@@ -112,6 +120,7 @@
       <w>tshrug</w>
       <w>unapprove</w>
       <w>unmuted</w>
+      <w>uppercount</w>
       <w>useimages</w>
       <w>usepings</w>
       <w>usercount</w>

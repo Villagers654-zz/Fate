@@ -5,19 +5,17 @@ import discord
 import asyncio
 import random
 import time
-import sys
-import os
 
 # ~== Core ==~
 
 description = '''Fate[Zero]: Personal Bot'''
 bot = commands.Bot(command_prefix='.', case_insensitive=True)
-initial_extensions = ['cogs.error_handler', 'cogs.menus', 'cogs.core', 'cogs.mod', 'cogs.music', 'cogs.leaderboards', 'cogs.welcome', 'cogs.farewell', 'cogs.notes', 'cogs.archive',  'cogs.coffeeshop', 'cogs.custom', 'cogs.actions', 'cogs.reactions', 'cogs.responses', 'cogs.textart', 'cogs.fun', 'cogs.math', 'cogs.dev', 'cogs.4b4t', 'cogs.readme', 'cogs.legit', 'cogs.reload', 'cogs.embeds', 'cogs.manager']
+files = ['error_handler', 'owner', 'menus', 'core', 'mod', 'music', 'welcome', 'farewell', 'notes', 'archive', 'coffeeshop', 'custom', 'actions', 'reactions',
+         'responses', 'textart', 'fun', 'math', 'dev', '4b4t', 'readme', 'legit', 'reload', 'embeds', 'manager', 'profiles']
 bot.START_TIME = time.time()
 bot.remove_command('help')
 errorcount = 0
 error = False
-file = False
 
 async def status_task():
 	while True:
@@ -36,7 +34,7 @@ async def on_ready():
 	print('Logged in as')
 	print(bot.user.name)
 	print(bot.user.id)
-	print(f'Modules: {len(bot.extensions)}')
+	print(f'Extensions: {len(bot.extensions)}')
 	print(f'Errors: {errorcount}')
 	print('--------------------------')
 	print(' ζξ Welcome back Mikey :)\n'
@@ -44,11 +42,11 @@ async def on_ready():
 	      '│  ├┘ your day is with the\n'
 	      '└──┘ blood of your enemys')
 	print('--------------------------')
-	fmt = "%m-%d-%Y %H:%M%p"
+	fmt = "%m-%d-%Y %I:%M%p"
 	created = datetime.datetime.now()
 	print(created.strftime(fmt))
-	if file is not False:
-		await bot.get_channel(514213558549217330).send(f"```{file}```")
+	if error is not False:
+		await bot.get_channel(514213558549217330).send(f"```{error}```")
 	bot.loop.create_task(status_task())
 
 # ~== Startup ==~
@@ -58,19 +56,16 @@ if __name__ == '__main__':
 	cogs = 0
 	rank = 0
 	f = None
-	for cog in initial_extensions:
+	for cog in files:
 		cogs += 1
 		try:
-			bot.load_extension(cog)
+			bot.load_extension("cogs." + cog)
 			rank += 1
-			c = cog.replace("cogs.", "")
-			print(f"{cogs}. Cogs: {c} - operational")
+			print(f"{cogs}. Cogs: {cog} - operational")
 		except Exception as e:
 			errorcount += 1
-			error = True
-			c = cog.replace("cogs.", "")
-			print(f"{cogs}. Cogs: {c} - error")
-			file = traceback.format_exc()
+			print(f"{cogs}. Cogs: {cog} - error")
+			error = traceback.format_exc()
 	if rank == cogs:
 		print(f"Loaded {rank}/{cogs} cogs :)")
 	else:
