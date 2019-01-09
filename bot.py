@@ -71,4 +71,6 @@ if __name__ == '__main__':
 	else:
 		print(f"Loaded {rank}/{cogs} cogs :(")
 	print(f"Logging into discord..")
-bot.run('NTA2NzM1MTExNTQzMTkzNjAx.DttN1Q.NKRp6wgtqSYurVAKjA1ip133xZ4')
+f = open("./data/config/tokens/FateZero.txt", "r")
+bot.run(f.read())
+f.close()
