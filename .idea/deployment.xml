@@ -8,10 +8,13 @@
             <mapping deploy="/FateZero" local="$PROJECT_DIR$" web="/" />
           </mappings>
           <excludedPaths>
-            <excludedPath local="true" path="$PROJECT_DIR$/data/leaderboards.json" />
+            <excludedPath local="true" path="$PROJECT_DIR$/data/xp.json" />
             <excludedPath local="true" path="$PROJECT_DIR$/data/notes.json" />
             <excludedPath local="true" path="$PROJECT_DIR$/data/config/toggles.json" />
             <excludedPath local="true" path="$PROJECT_DIR$/data/config/welcome.json" />
+            <excludedPath local="true" path="$PROJECT_DIR$/data/profiles.json" />
+            <excludedPath local="true" path="$PROJECT_DIR$/data/config/farewell.json" />
+            <excludedPath local="true" path="$PROJECT_DIR$/git" />
           </excludedPaths>
         </serverdata>
       </paths>

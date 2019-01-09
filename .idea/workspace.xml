@@ -2,27 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="1d4a948f-8625-411f-8bfa-3da09cdc63c4" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/FateZero.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/FateZero.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dictionaries/mrmic.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dictionaries/mrmic.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/deployment.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/deployment.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bot.py" beforeDir="false" afterPath="$PROJECT_DIR$/bot.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cogs/4b4t.py" beforeDir="false" afterPath="$PROJECT_DIR$/cogs/4b4t.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cogs/clipboard.py" beforeDir="false" afterPath="$PROJECT_DIR$/cogs/clipboard.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cogs/coffeeshop.py" beforeDir="false" afterPath="$PROJECT_DIR$/cogs/coffeeshop.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cogs/core.py" beforeDir="false" afterPath="$PROJECT_DIR$/cogs/core.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cogs/dev.py" beforeDir="false" afterPath="$PROJECT_DIR$/cogs/dev.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cogs/error_handler.py" beforeDir="false" afterPath="$PROJECT_DIR$/cogs/error_handler.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cogs/fun.py" beforeDir="false" afterPath="$PROJECT_DIR$/cogs/fun.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cogs/leaderboards.py" beforeDir="false" afterPath="$PROJECT_DIR$/cogs/leaderboards.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cogs/manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/cogs/manager.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cogs/menus.py" beforeDir="false" afterPath="$PROJECT_DIR$/cogs/menus.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cogs/owner.py" beforeDir="false" afterPath="$PROJECT_DIR$/cogs/owner.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cogs/profiles.py" beforeDir="false" afterPath="$PROJECT_DIR$/cogs/profiles.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cogs/ranks.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cogs/responses.py" beforeDir="false" afterPath="$PROJECT_DIR$/cogs/responses.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cogs/security.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/example.py" beforeDir="false" afterPath="$PROJECT_DIR$/example.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -54,12 +35,12 @@
     <favorites_list name="FateZero" />
   </component>
   <component name="FileEditorManager">
-    <leaf>
+    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/cogs/profiles.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="692">
-              <caret line="196" column="25" lean-forward="true" selection-start-line="196" selection-start-column="25" selection-end-line="196" selection-end-column="25" />
+            <state relative-caret-position="220">
+              <caret line="196" column="25" selection-start-line="196" selection-start-column="25" selection-end-line="196" selection-end-column="25" />
               <folding>
                 <element signature="e#0#32#0" expanded="true" />
               </folding>
@@ -143,6 +124,7 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -159,7 +141,6 @@
           <select />
         </subPane>
       </pane>
-      <pane id="Scope" />
       <pane id="Course" />
     </panes>
   </component>
@@ -603,12 +584,14 @@
       <workItem from="1547016789422" duration="46000" />
       <workItem from="1547021051483" duration="425000" />
       <workItem from="1547021512343" duration="599000" />
-      <workItem from="1547055785645" duration="4438000" />
+      <workItem from="1547055785645" duration="5308000" />
+      <workItem from="1547062992340" duration="38000" />
+      <workItem from="1547065308648" duration="1125000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="512392000" />
+    <option name="totallyTimeSpent" value="514425000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -621,9 +604,8 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-6" y="-6" width="1633" height="1053" extended-state="6" />
-    <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.49672347" visible="true" weight="0.25015873" />
+      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.49672347" visible="true" weight="0.25650793" />
       <window_info id="Favorites" order="1" sideWeight="0.5032765" side_tool="true" weight="0.2431746" />
       <window_info id="Structure" order="2" sideWeight="0.5017626" weight="0.2704762" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -638,7 +620,7 @@
       <window_info anchor="bottom" id="Database Changes" order="9" show_stripe_button="false" />
       <window_info anchor="bottom" id="Event Log" order="10" sideWeight="0.50031745" side_tool="true" weight="0.32912722" />
       <window_info anchor="bottom" id="Python Console" order="11" weight="0.32912722" />
-      <window_info anchor="bottom" id="File Transfer" order="12" weight="0.25341746" />
+      <window_info active="true" anchor="bottom" id="File Transfer" order="12" visible="true" weight="0.25341746" />
       <window_info anchor="bottom" id="Terminal" order="13" sideWeight="0.49968255" weight="0.3280757" />
       <window_info anchor="bottom" id="Concurrent Activities Diagram" order="14" weight="0.32912722" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
@@ -879,16 +861,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/Downloads/traceback.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1952">
-          <caret line="160" column="39" lean-forward="true" selection-start-line="160" selection-start-column="39" selection-end-line="160" selection-end-column="39" />
-          <folding>
-            <element signature="e#72#90#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$USER_HOME$/Downloads/traceback.py" />
     <entry file="file://$PROJECT_DIR$/cogs/toggles.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1186">
@@ -1092,8 +1065,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/cogs/profiles.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="692">
-          <caret line="196" column="25" lean-forward="true" selection-start-line="196" selection-start-column="25" selection-end-line="196" selection-end-column="25" />
+        <state relative-caret-position="220">
+          <caret line="196" column="25" selection-start-line="196" selection-start-column="25" selection-end-line="196" selection-end-column="25" />
           <folding>
             <element signature="e#0#32#0" expanded="true" />
           </folding>
