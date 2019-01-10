@@ -1,6 +1,7 @@
 from discord.ext import commands
 import traceback
 import discord
+import sys
 
 class ErrorHandler:
 	def __init__(self, bot):
@@ -50,6 +51,9 @@ class ErrorHandler:
 			await ctx.send(error)
 		else:
 			await ctx.send(traceback.format_exc())
+		print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
+		traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
+		await ctx.send(error)
 
 def setup(bot):
 	bot.add_cog(ErrorHandler(bot))

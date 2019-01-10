@@ -1,4 +1,5 @@
 from discord.ext import commands
+from termcolor import colored, cprint
 import traceback
 import datetime
 import discord
@@ -11,7 +12,7 @@ import time
 description = '''Fate[Zero]: Personal Bot'''
 bot = commands.Bot(command_prefix='.', case_insensitive=True)
 files = ['error_handler', 'owner', 'menus', 'core', 'mod', 'music', 'welcome', 'farewell', 'notes', 'archive', 'coffeeshop', 'custom', 'actions', 'reactions',
-         'responses', 'textart', 'fun', 'math', 'dev', '4b4t', 'readme', 'legit', 'reload', 'embeds', 'manager', 'profiles']
+         'responses', 'textart', 'fun', 'math', 'dev', '4b4t', 'readme', 'legit', 'reload', 'embeds', 'manager', 'profiles', 'save']
 bot.START_TIME = time.time()
 bot.remove_command('help')
 errorcount = 0
@@ -30,21 +31,21 @@ async def status_task():
 
 @bot.event
 async def on_ready():
-	print('--------------------------')
+	cprint('--------------------------', 'cyan')
 	print('Logged in as')
 	print(bot.user.name)
 	print(bot.user.id)
 	print(f'Extensions: {len(bot.extensions)}')
 	print(f'Errors: {errorcount}')
-	print('--------------------------')
+	cprint('--------------------------', 'cyan')
 	print(' ζξ Welcome back Mikey :)\n'
 	      '┌──┬┐ The best way to start\n'
 	      '│  ├┘ your day is with the\n'
 	      '└──┘ blood of your enemys')
-	print('--------------------------')
+	cprint('--------------------------', 'cyan')
 	fmt = "%m-%d-%Y %I:%M%p"
 	created = datetime.datetime.now()
-	print(created.strftime(fmt))
+	cprint(created.strftime(fmt), 'yellow')
 	if error is not False:
 		await bot.get_channel(514213558549217330).send(f"```{error}```")
 	bot.loop.create_task(status_task())
@@ -61,16 +62,16 @@ if __name__ == '__main__':
 		try:
 			bot.load_extension("cogs." + cog)
 			rank += 1
-			print(f"{cogs}. Cogs: {cog} - operational")
+			cprint(f"{cogs}. Cogs: {cog} - operational", "green")
 		except Exception as e:
 			errorcount += 1
-			print(f"{cogs}. Cogs: {cog} - error")
+			cprint(f"{cogs}. Cogs: {cog} - error", "red")
 			error = traceback.format_exc()
 	if rank == cogs:
-		print(f"Loaded {rank}/{cogs} cogs :)")
+		cprint(f"Loaded {rank}/{cogs} cogs :)", "magenta")
 	else:
-		print(f"Loaded {rank}/{cogs} cogs :(")
-	print(f"Logging into discord..")
+		cprint(f"Loaded {rank}/{cogs} cogs :(", "magenta")
+	cprint(f"Logging into discord..", "blue")
 f = open("./data/config/tokens/FateZero.txt", "r")
 bot.run(f.read())
 f.close()
