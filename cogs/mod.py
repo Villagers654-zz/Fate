@@ -209,8 +209,14 @@ class Mod:
 	@commands.command()
 	@commands.has_permissions(manage_guild=True)
 	async def warn(self, ctx, m:discord.Member=None, *, reason):
-		await m.send(f"You have been warned in **{ctx.guild.name}** for `{reason}`")
+		try:
+			await m.send(f"You have been warned in **{ctx.guild.name}** for `{reason}`")
+		except:
+			pass
 		await ctx.send(f"**{m.name} has been warned.**")
+
+#clear warns
+
 
 def setup(bot):
 	bot.add_cog(Mod(bot))

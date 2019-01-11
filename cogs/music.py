@@ -419,17 +419,16 @@ class Music:
         await ctx.state.stop()
         # Clear the VoiceState object from the cache.
         del self.voice_states[str(ctx.guild.id)]
+        await ctx.send("Disconnected", delete_after=20)
+        await asyncio.sleep(20)
+        await ctx.message.delete()
 
     @commands.command(name='luckydisconnect')
     @commands.check(luck)
     async def _luckydisconnect(self, ctx):
-        """Clears the queue and leaves the voice channel."""
-
         if ctx.state.voice is None:
             raise MusicError('Not connected to any voice channel.')
-
         await ctx.state.stop()
-        # Clear the VoiceState object from the cache.
         del self.voice_states[str(ctx.guild.id)]
 
     @_join.before_invoke
@@ -437,11 +436,9 @@ class Music:
     async def ensure_voice(self, ctx):
         if not ctx.author.voice or not ctx.author.voice.channel:
             raise commands.CommandError('You are not connected to any voice channel.')
-        
         if ctx.voice_client is not None:
             if ctx.voice_client.channel != ctx.author.voice.channel:
                 raise MusicError('Bot already in a voice channel.')
-
 
 bot = commands.Bot(command_prefix='music.', description='A shitty, fucked up music bot. You can skid it.')
 bot.add_cog(Music(bot))

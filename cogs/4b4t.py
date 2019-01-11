@@ -9,17 +9,11 @@ class mainclass:
 	def __init__(self, bot):
 		self.bot = bot
 		self.motds = []
-		if isfile("./data/motds.json"):
-			with open("./data/motds.json", "r") as infile:
+		if isfile("./data/4b4t/motds.json"):
+			with open("./data/4b4t/motds.json", "r") as infile:
 				dat = json.load(infile)
 				if "motds" in dat:
 					self.motds = dat["motds"]
-		self.count = {}
-		if isfile("./data/playercount.json"):
-			with open("./data/playercount.json", "r") as infile:
-				dat = json.load(infile)
-				if "count" in dat:
-					self.responses = dat["count"]
 
 	def fourbeefourtee(ctx):
 		return ctx.author.id in [264838866480005122, 264838866480005122]
@@ -49,22 +43,6 @@ class mainclass:
 	async def on_ready(self):
 		await asyncio.sleep(0.5)
 		self.bot.loop.create_task(self.motdshuffle())
-
-	async def on_message(self, m: discord.Message):
-		livechat = self.bot.get_channel(529705827716825098)
-		if m.author.id == 529287770233896961:
-			if m.channel.id == 529295214691614720:
-				if m.content.startswith("<"):
-					m.content = m.content.replace("<", "**")
-					m.content = m.content.replace(">", ":**")
-					await livechat.send(m.content)
-				if m.content.startswith("userlist"):
-					m.content = m.content.replace("userlist updated: [", "")
-					m.content = m.content.replace("]", "")
-					self.count = m.content
-					await m.channel.send('saved player count')
-					with open("./data/playercount.json", "w") as outfile:
-						json.dump({"count": self.count}, outfile, ensure_ascii=False)
 
 	async def motdshuffle(self):
 		while True:
@@ -126,7 +104,7 @@ class mainclass:
 						e.set_thumbnail(url=ctx.author.avatar_url)
 						await ctx.send(embed=e, delete_after=10)
 						await ctx.message.delete()
-						with open("./data/motds.json", "w") as outfile:
+						with open("./data/4b4t/motds.json", "w") as outfile:
 							json.dump({"motds": self.motds}, outfile, ensure_ascii=False)
 				else:
 					await ctx.send('too small ;-;')

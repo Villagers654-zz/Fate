@@ -11,8 +11,8 @@ class Notepad:
         self.bot = bot
         self.notes = {}
         self.timestamp = {}
-        if isfile("./data/notes.json"):
-            with open("./data/notes.json", "r") as infile:
+        if isfile("./data/userdata/notes.json"):
+            with open("./data/userdata/notes.json", "r") as infile:
                 dat = json.load(infile)
                 if "notes" in dat and "timestamp" in dat:
                     self.notes = dat["notes"]
@@ -33,7 +33,7 @@ class Notepad:
                 await ctx.send(file=discord.File(path, filename=os.path.basename(path)), embed=e, delete_after=10)
                 await asyncio.sleep(10)
                 await ctx.message.delete()
-                with open("./data/notes.json", "w") as outfile:
+                with open("./data/userdata/notes.json", "w") as outfile:
                     json.dump({"notes": self.notes, "timestamp": self.timestamp}, outfile, ensure_ascii=False)
             else:
                 if str(ctx.author.id) in self.notes:

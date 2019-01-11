@@ -1,5 +1,5 @@
 from discord.ext import commands
-from termcolor import colored, cprint
+from termcolor import cprint
 import traceback
 import datetime
 import discord
@@ -7,14 +7,18 @@ import asyncio
 import random
 import time
 
+files = ['error_handler', 'owner', 'menus', 'core', 'mod', 'music', 'welcome', 'farewell', 'notes', 'archive', 'coffeeshop', 'custom', 'actions',
+         'reactions', 'responses', 'textart', 'fun', 'math', 'dev', '4b4t', 'readme', 'legit', 'reload', 'embeds', 'manager', 'profiles', 'save',
+         'clean_rythm']
+
 # ~== Core ==~
 
 description = '''Fate[Zero]: Personal Bot'''
-bot = commands.Bot(command_prefix='.', case_insensitive=True)
-files = ['error_handler', 'owner', 'menus', 'core', 'mod', 'music', 'welcome', 'farewell', 'notes', 'archive', 'coffeeshop', 'custom', 'actions', 'reactions',
-         'responses', 'textart', 'fun', 'math', 'dev', '4b4t', 'readme', 'legit', 'reload', 'embeds', 'manager', 'profiles', 'save']
+bot = commands.Bot(command_prefix=['.', '<@506735111543193601>'], case_insensitive=True)
 bot.START_TIME = time.time()
 bot.remove_command('help')
+bot.LOAD_TIME = None
+bot.LOGIN_TIME = None
 errorcount = 0
 error = False
 
@@ -35,6 +39,7 @@ async def on_ready():
 	print('Logged in as')
 	print(bot.user.name)
 	print(bot.user.id)
+	print(f'Version: {discord.__version__}')
 	print(f'Extensions: {len(bot.extensions)}')
 	print(f'Errors: {errorcount}')
 	cprint('--------------------------', 'cyan')
@@ -49,6 +54,9 @@ async def on_ready():
 	if error is not False:
 		await bot.get_channel(514213558549217330).send(f"```{error}```")
 	bot.loop.create_task(status_task())
+	o, k = divmod(time.time() - bot.START_TIME, 60)
+	h, m = divmod(k, 60)
+	bot.LOGIN_TIME = k
 
 # ~== Startup ==~
 
@@ -72,6 +80,9 @@ if __name__ == '__main__':
 	else:
 		cprint(f"Loaded {rank}/{cogs} cogs :(", "magenta")
 	cprint(f"Logging into discord..", "blue")
+m, s = divmod(time.time() - bot.START_TIME, 60)
+h, m = divmod(m, 60)
+bot.LOAD_TIME = s
 f = open("./data/config/tokens/FateZero.txt", "r")
 bot.run(f.read())
 f.close()

@@ -76,6 +76,19 @@ await channel.send(f.read())
 							except Exception as e:
 								pass
 
+				stuff = (f'--------------------------\n'
+				         f'Logged in as\n'
+				         f'bot.user.name\n'
+				         f'bot.user.id\n'
+				         f'Extensions: {len(bot.extensions)}\n'
+				         f'Errors: {errorcount}\n'
+				         f'--------------------------\n'
+				         f' ζξ Welcome back Mikey :)\n'
+				         f'┌──┬┐ The best way to start\n'
+				         f'│  ├┘ your day is with the\n'
+				         f'└──┘ blood of your enemys\n'
+				         f'--------------------------')
+
 				['cogs.error_handler', 'cogs.owner', 'cogs.menus', 'cogs.core', 'cogs.mod', 'cogs.music',
 				 'cogs.welcome', 'cogs.farewell', 'cogs.notes', 'cogs.archive',
 				 'cogs.coffeeshop', 'cogs.custom', 'cogs.actions', 'cogs.reactions', 'cogs.responses', 'cogs.textart',

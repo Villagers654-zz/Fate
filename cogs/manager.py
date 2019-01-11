@@ -1,7 +1,6 @@
 from discord.ext import commands
-from random import random
 import subprocess
-import traceback
+import decimal
 import discord
 import asyncio
 import os
@@ -106,17 +105,21 @@ class Defender:
 		t = os.popen('date')
 		timestamp = t.read()
 		h = '75.107.232.117'
-		s = '166.182.244'
+		c = '166.182.244'
 		if h in output:
 			color = 0x39FF14
 		else:
-			if s in output:
+			if c in output:
 				color = 0x39FF14
 			else:
 				color = 0xff0000
+		load = str(self.bot.LOAD_TIME)[:3]
+		login = str(self.bot.LOGIN_TIME - self.bot.LOAD_TIME)[:3]
+		total = decimal.Decimal(load)+decimal.Decimal(login)
 		e = discord.Embed(color=color)
 		e.set_author(name='Login Notice', icon_url=self.bot.user.avatar_url)
 		e.description = f'{timestamp}'
+		e.add_field(name="Startup Info", value=f"Time to load files: {load} seconds\nTime to login: {login} seconds\nTotal time taken: {total} seconds", inline=False)
 		e.add_field(name='Security Check', value=f'`{output}`')
 		await channel.send(embed=e)
 		h = ['75.107.232.117', '166.182.244']

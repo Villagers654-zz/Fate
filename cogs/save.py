@@ -189,7 +189,7 @@ class ServerSave:
 			for role in ctx.guild.roles[:]:
 				try:
 					if role.name not in [x["name"] for x in g["roles"]]:
-						if role.name == "Loader":
+						if role.name == "Fate [Zero]":
 							pass
 						else:
 							await role.delete(reason="Loading saved server")

@@ -67,8 +67,6 @@ class Toggles:
 						await m.channel.send(random.choice(["Gm", "Gm :3", "Morning", "Morning :3", "Welcome to heaven"]))
 					if m.content.startswith("gn"):
 						await m.channel.send(random.choice(["Gn", "Gn :3", "Night", "Nighty"]))
-					if "dead" in m.content:
-						await m.channel.send("Dead like ur social status")
 					if m.content.startswith("ree"):
 						await m.channel.send(random.choice([
 							"*depression strikes again*", "*pole-man strikes again*",

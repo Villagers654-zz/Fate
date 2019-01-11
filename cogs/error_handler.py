@@ -45,15 +45,12 @@ class ErrorHandler:
 			return await ctx.send(error)
 		elif isinstance(error, commands.CheckFailure):
 			await ctx.message.add_reaction('⚠')
-		elif isinstance(error, discord.errors.Forbidden):
+		if isinstance(error, discord.errors.Forbidden):
 			await ctx.send("I'm missing permissions")
-		if "NoneType: None" in traceback.format_exc():
-			await ctx.send(error)
 		else:
-			await ctx.send(traceback.format_exc())
-		print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
-		traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
-		await ctx.send(error)
+			print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
+			traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
+			await ctx.send(error)
 
 def setup(bot):
 	bot.add_cog(ErrorHandler(bot))

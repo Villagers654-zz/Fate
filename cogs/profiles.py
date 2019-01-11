@@ -18,8 +18,8 @@ class Profiles:
 		self.created = {}
 		self.channel = {}
 		self.discord = {}
-		if isfile("./data/profiles.json"):
-			with open("./data/profiles.json", "r") as infile:
+		if isfile("./data/userdata/profiles.json"):
+			with open("./data/userdata/profiles.json", "r") as infile:
 				dat = json.load(infile)
 				if "name" in dat and "info" in dat and "color" in dat and "created" in dat and "channel" in dat and "discord" in dat:
 					self.name = dat["name"]
@@ -31,8 +31,8 @@ class Profiles:
 		self.cd = {}
 		self.global_data = {}
 		self.guilds_data = {}
-		if isfile("./data/xp.json"):
-			with open("./data/xp.json", "r") as infile:
+		if isfile("./data/userdata/xp.json"):
+			with open("./data/userdata/xp.json", "r") as infile:
 				dat = json.load(infile)
 				if "global" in dat and "guilded" in dat:
 					self.global_data = dat["global"]
@@ -67,7 +67,7 @@ class Profiles:
 		else:
 			self.name[str(ctx.author.id)] = name
 			await ctx.send('success')
-		with open("./data/profiles.json", "w") as outfile:
+		with open("./data/userdata/profiles.json", "w") as outfile:
 			json.dump({"info": self.info, "name": self.name, "color": self.color, "created": self.created,
 			           "channel": self.channel, "discord": self.discord}, outfile, ensure_ascii=False)
 
@@ -75,7 +75,7 @@ class Profiles:
 	async def _bio(self, ctx, *, info):
 		self.info[str(ctx.author.id)] = info
 		await ctx.send('success')
-		with open("./data/profiles.json", "w") as outfile:
+		with open("./data/userdata/profiles.json", "w") as outfile:
 			json.dump({"info": self.info, "name": self.name, "color": self.color, "created": self.created,
 			           "channel": self.channel, "discord": self.discord}, outfile, ensure_ascii=False)
 
@@ -85,13 +85,25 @@ class Profiles:
 			self.color[str(ctx.author.id)] = "9eafe3"
 			await ctx.send("Your color has been reset")
 		else:
+			if hex == "red":
+				hex = "ff0000"
+			if hex == "orange":
+				hex = "ff560d"
+			if hex == "yellow":
+				hex = "ffff00"
+			if hex == "green":
+				hex = "33CC33"
+			if hex == "blue":
+				hex = "0000FF"
+			if hex == "purple":
+				hex = "800080"
 			hex = hex.replace("#", "")
 			if len(list(hex)) == 6:
 				self.color[str(ctx.author.id)] = f"{hex}"
 				await ctx.send("success")
 			else:
 				await ctx.send("that is not a hex")
-		with open("./data/profiles.json", "w") as outfile:
+		with open("./data/userdata/profiles.json", "w") as outfile:
 			json.dump({"info": self.info, "name": self.name, "color": self.color, "created": self.created,
 			           "channel": self.channel, "discord": self.discord}, outfile, ensure_ascii=False)
 
@@ -101,9 +113,16 @@ class Profiles:
 			self.channel[str(ctx.author.id)] = "None"
 			await ctx.send("reset your channel url")
 		else:
-			self.channel[str(ctx.author.id)] = url
-			await ctx.send('success')
-		with open("./data/profiles.json", "w") as outfile:
+			listed = ["youtube.com", "youtu.be"]
+			for i in listed:
+				if i in url:
+					listed = True
+			if listed == True:
+				self.channel[str(ctx.author.id)] = url
+				await ctx.send('success')
+			else:
+				await ctx.send("That's not a youtube channel")
+		with open("./data/userdata/profiles.json", "w") as outfile:
 			json.dump({"info": self.info, "name": self.name, "color": self.color, "created": self.created,
 			           "channel": self.channel, "discord": self.discord}, outfile, ensure_ascii=False)
 
@@ -113,9 +132,12 @@ class Profiles:
 			self.discord[str(ctx.author.id)] = "None"
 			await ctx.send("reset your discord servers url")
 		else:
-			self.discord[str(ctx.author.id)] = url
-			await ctx.send('success')
-		with open("./data/profiles.json", "w") as outfile:
+			if "discord.gg" in url:
+				self.discord[str(ctx.author.id)] = url
+				await ctx.send('success')
+			else:
+				await ctx.send("That's not a discord link")
+		with open("./data/userdata/profiles.json", "w") as outfile:
 			json.dump({"info": self.info, "name": self.name, "color": self.color, "created": self.created,
 			           "channel": self.channel, "discord": self.discord}, outfile, ensure_ascii=False)
 
@@ -141,6 +163,7 @@ class Profiles:
 			if user.bot == True:
 				await ctx.send("bots cant have profiles")
 			else:
+				links = ""
 				fmt = "%m-%d-%Y %I:%M%p"
 				created = datetime.datetime.now()
 				xp = self.global_data[str(user.id)]
@@ -165,29 +188,20 @@ class Profiles:
 					e.add_field(name=f"◈ Bio ◈", value=f"{self.info[str(user.id)]}")
 					if str(user.id) not in self.created:
 						self.created[str(user.id)] = created.strftime(fmt)
-					links = False
-					channel_link = False
-					discord_link = False
 					if str(user.id) in self.channel:
 						if self.channel[str(user.id)] == "None":
 							pass
 						else:
-							links = True
-							channel_link = True
+							links += f"[Channel]({self.channel[str(user.id)]})\n"
 					if str(user.id) in self.discord:
 						if self.discord[str(user.id)] == "None":
 							pass
 						else:
-							links = True
-							discord_link = True
-					if links is True:
-						if channel_link and discord_link is True:
-							e.add_field(name="◈ Links ◈", value=f"[Channel]({self.channel[str(user.id)]})\n[Discord]({self.discord[str(user.id)]})", inline=False)
-						else:
-							if channel_link is True:
-								e.add_field(name="◈ Links ◈", value=f"[Channel]({self.channel[str(user.id)]})", inline=False)
-							if discord_link is True:
-								e.add_field(name="◈ Links ◈", value=f"[Discord]({self.discord[str(user.id)]})", inline=False)
+							links += f"[Discord]({self.discord[str(user.id)]})\n"
+					if links == "":
+						pass
+					else:
+						e.add_field(name="◈ Links ◈", value=links, inline=False)
 					e.set_footer(text=f'Profile Created: {self.created[str(user.id)]}')
 					await ctx.send(embed=e)
 				except Exception as e:
@@ -196,10 +210,9 @@ class Profiles:
 						await ctx.send("there was an error with your color, therefore its been reset")
 					else:
 						await ctx.send(e)
-			with open("./data/profiles.json", "w") as outfile:
+			with open("./data/userdata/profiles.json", "w") as outfile:
 				json.dump({"info": self.info, "name": self.name, "color": self.color, "created": self.created,
 				           "channel": self.channel, "discord": self.discord}, outfile, ensure_ascii=False)
-
 
 	@commands.command(name="leaderboard", aliases=["lb"])
 	@commands.cooldown(1, 10, commands.BucketType.user)
@@ -353,11 +366,11 @@ class Profiles:
 		if not m.author.bot:
 			r = random.randint(5, 10)
 			author_id = str(m.author.id)
+			guild_id = str(m.guild.id)
 			if isinstance(m.guild, discord.Guild):
 				if author_id not in self.cd:
 					self.cd[author_id] = 0
 				if self.cd[author_id] < time.time():
-					guild_id = str(m.guild.id)
 					if guild_id not in self.guilds_data:
 						self.guilds_data[guild_id] = {}
 					if author_id not in self.guilds_data[guild_id]:
@@ -365,12 +378,12 @@ class Profiles:
 					if author_id not in self.global_data:
 						self.global_data[author_id] = 0
 
-					self.global_data[author_id] += r
-					self.guilds_data[guild_id][author_id] += r
-					self.cd[author_id] = time.time() + 25
+				self.global_data[author_id] += r
+				self.guilds_data[guild_id][author_id] += r
+				self.cd[author_id] = time.time() + 25
 
-			with open("./data/xp.json", "w") as outfile:
-				json.dump({"global": self.global_data, "guilded": self.guilds_data}, outfile, ensure_ascii=False)
+				with open("./data/userdata/xp.json", "w") as outfile:
+					json.dump({"global": self.global_data, "guilded": self.guilds_data}, outfile, ensure_ascii=False)
 
 def setup(bot):
 	bot.add_cog(Profiles(bot))
