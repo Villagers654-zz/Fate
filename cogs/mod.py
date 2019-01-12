@@ -9,6 +9,12 @@ import os
 class Mod:
 	def __init__(self, bot):
 		self.bot = bot
+		self.warns = {}
+		if isfile("./data/userdata/mod.json"):
+			with open("./data/userdata/mod.json", "r") as infile:
+				dat = json.load(infile)
+				if "warns" in dat:
+					self.warns = dat["warns"]
 
 	@commands.command(name="delete", aliases=["d"])
 	@commands.has_permissions(manage_messages=True)
@@ -207,16 +213,88 @@ class Mod:
 					await ctx.send(f"**Unmuted:** {member.name}")
 
 	@commands.command()
+	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.has_permissions(manage_guild=True)
-	async def warn(self, ctx, m:discord.Member=None, *, reason):
+	async def warn(self, ctx, m:discord.Member, *, reason):
+		guild_id = str(ctx.guild.id)
+		user_id = str(m.id)
+		punishment = ""
+		next_punishment = ""
+		mute = False
+		role = None
 		try:
 			await m.send(f"You have been warned in **{ctx.guild.name}** for `{reason}`")
 		except:
 			pass
-		await ctx.send(f"**{m.name} has been warned.**")
+		if guild_id not in self.warns:
+			self.warns[guild_id] = {}
+			self.warns[guild_id][user_id] = 0
+		if user_id not in self.warns[guild_id]:
+			self.warns[guild_id][user_id] = 0
+		self.warns[guild_id][user_id] += 1
+		if self.warns[guild_id][user_id] == 1:
+			punishment = "none"
+			next_punishment = "none"
+		if self.warns[guild_id][user_id] == 2:
+			punishment = "none"
+			next_punishment = "2 hour mute"
+		if self.warns[guild_id][user_id] == 3:
+			punishment = "2 hour mute"
+			next_punishment = "kick"
+			mute = True
+		if self.warns[guild_id][user_id] == 4:
+			try:
+				await ctx.guild.kick(m, reason=reason)
+			except:
+				await ctx.send("I couldn't kick this user, BUT HOWEVER")
+			punishment = "kick"
+			next_punishment = "ban"
+		if self.warns[guild_id][user_id] >= 5:
+			try:
+				await ctx.guild.ban(m, reason=reason, delete_message_days=0)
+			except:
+				await ctx.send("I couldn't ban this user, BUT HOWEVER")
+			punishment = "ban"
+			next_punishment = "ban"
+		await ctx.send(f"**{m.display_name} has been warned.**\n"
+		               f"Reason: {reason}\n"
+		               f"Warn count: [{self.warns[guild_id][user_id]}]\n"
+		               f"Punishment: {punishment}\n"
+		               f"Next Punishment: {next_punishment}")
+		with open("./data/userdata/mod.json", "w") as outfile:
+			json.dump({"warns": self.warns}, outfile, ensure_ascii=False)
+		if mute is True:
+			for i in ctx.guild.roles:
+				if i.name.lower() == "muted":
+					role = i
+			if role is None:
+				await ctx.send("this server does not have a muted role")
+			else:
+				if role in m.roles:
+					await ctx.send(f"{m.display_name} is already muted")
+				else:
+					await m.add_roles(role)
+				await asyncio.sleep(7200)
+				if role not in m.roles:
+					pass
+				else:
+					await m.remove_roles(role)
+					await ctx.send(f"**Unmuted:** {m.name}")
 
-#clear warns
-
+	@commands.command()
+	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.has_permissions(manage_guild=True)
+	async def clearwarns(self, ctx, m:discord.Member):
+		guild_id = str(ctx.guild.id)
+		user_id = str(m.id)
+		if guild_id not in self.warns:
+			self.warns[guild_id] = {}
+		if user_id not in self.warns[guild_id]:
+			self.warns[guild_id][user_id] = 0
+		self.warns[guild_id][user_id] = 0
+		with open("./data/userdata/mod.json", "w") as outfile:
+			json.dump({"warns": self.warns}, outfile, ensure_ascii=False)
+		await ctx.send(f"Cleared {m.name}'s warn count")
 
 def setup(bot):
 	bot.add_cog(Mod(bot))

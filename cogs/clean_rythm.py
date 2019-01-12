@@ -41,24 +41,25 @@ class Owner:
 		await ctx.message.delete()
 
 	async def on_message(self, m:discord.Message):
-		listed = ["!play", "!skip", "!np", "!lyrics", "!queue", "!q", "!clear", "!remove", "!repeat", "!dc"]
-		if str(m.guild.id) not in self.identifier:
-			pass
-		else:
-			if self.identifier[str(m.guild.id)] == "Enabled":
-				if m.author.id == 235088799074484224:
-					await asyncio.sleep(9)
-					await m.delete()
-				for i in listed:
-					if m.content.startswith(i):
-						if i == "!lyrics":
-							await asyncio.sleep(60)
-							await m.delete()
-							break
-						else:
-							await asyncio.sleep(10)
-							await m.delete()
-							break
+		if isinstance(m.guild, discord.Guild):
+			listed = ["!play", "!skip", "!np", "!lyrics", "!queue", "!q", "!clear", "!remove", "!repeat", "!dc"]
+			if str(m.guild.id) not in self.identifier:
+				pass
+			else:
+				if self.identifier[str(m.guild.id)] == "Enabled":
+					if m.author.id == 235088799074484224:
+						await asyncio.sleep(9)
+						await m.delete()
+					for i in listed:
+						if m.content.startswith(i):
+							if i == "!lyrics":
+								await asyncio.sleep(60)
+								await m.delete()
+								break
+							else:
+								await asyncio.sleep(10)
+								await m.delete()
+								break
 
 def setup(bot):
 	bot.add_cog(Owner(bot))
