@@ -159,6 +159,7 @@ class Profiles:
 						user_id = member.id
 						user = self.bot.get_user(user_id)
 						check += 1
+						break
 		if check is not 0:
 			if user.bot == True:
 				await ctx.send("bots cant have profiles")
