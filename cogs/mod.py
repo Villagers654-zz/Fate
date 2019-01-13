@@ -218,8 +218,6 @@ class Mod:
 	async def warn(self, ctx, m:discord.Member, *, reason):
 		guild_id = str(ctx.guild.id)
 		user_id = str(m.id)
-		punishment = ""
-		next_punishment = ""
 		mute = False
 		role = None
 		try:
