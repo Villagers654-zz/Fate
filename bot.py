@@ -7,11 +7,11 @@ import asyncio
 import random
 import time
 
+# ~== Core ==~
+
 files = ['error_handler', 'owner', 'menus', 'core', 'mod', 'music', 'welcome', 'farewell', 'notes', 'archive', 'coffeeshop', 'custom', 'actions',
          'reactions', 'responses', 'textart', 'fun', 'math', 'dev', '4b4t', 'readme', 'legit', 'reload', 'embeds', 'manager', 'profiles', 'save',
-         'clean_rythm']
-
-# ~== Core ==~
+         'clean_rythm', 'anti_magik']
 
 description = '''Fate[Zero]: Personal Bot'''
 bot = commands.Bot(command_prefix=['.', '<@506735111543193601>'], case_insensitive=True)
@@ -70,10 +70,10 @@ if __name__ == '__main__':
 		try:
 			bot.load_extension("cogs." + cog)
 			rank += 1
-			cprint(f"{cogs}. Cogs: {cog} - operational", "green")
+			cprint(f"{cogs}. Cog: {cog} - operational", "green")
 		except Exception as e:
 			errorcount += 1
-			cprint(f"{cogs}. Cogs: {cog} - error", "red")
+			cprint(f"{cogs}. Cog: {cog} - error", "red")
 			error = traceback.format_exc()
 	if rank == cogs:
 		cprint(f"Loaded {rank}/{cogs} cogs :)", "magenta")
