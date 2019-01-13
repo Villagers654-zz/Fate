@@ -143,6 +143,7 @@ class Profiles:
 
 	@commands.command()
 	async def profile(self, ctx, user=None):
+		# get deh user
 		check = 0
 		if user is None:
 			user = ctx.author
@@ -175,6 +176,7 @@ class Profiles:
 				else:
 					color = "0x9eafe3"
 				try:
+					#piecing the embed together
 					color = eval(color)
 					e = discord.Embed(color=color)
 					e.set_thumbnail(url=user.avatar_url)
