@@ -244,6 +244,8 @@ class funclass:
 			else:
 				msgbuf += c
 		await ctx.send(msgbuf)
+		await asyncio.sleep(0.5)
+		await ctx.message.delete()
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
