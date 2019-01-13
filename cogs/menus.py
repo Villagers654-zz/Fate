@@ -50,7 +50,7 @@ class Menus:
 	@_help.command(name='mod')
 	async def _mod(self, ctx):
 		e = discord.Embed(title="~~~====🥂🍸🍷Mod🍷🍸🥂====~~~", color=0x80b0ff)
-		e.add_field(name="• Commands", value="`mute` `unmute` `vcmute` `vcunmute` `delete` `purge` `nick` `massnick` `kick` `mute` `ban` `pin`", inline=False)
+		e.add_field(name="• Commands", value="`mute` `unmute` `vcmute` `vcunmute` `warn` `clearwarns` `delete` `purge` `nick` `massnick` `kick` `mute` `ban` `pin`", inline=False)
 		await ctx.send(embed=e)
 
 	@_help.command(name='fun')
@@ -103,7 +103,7 @@ class Menus:
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def mod(self, ctx):
 		e=discord.Embed(title="~~~====🥂🍸🍷Mod🍷🍸🥂====~~~", color=0x80b0ff)
-		e.add_field(name="• Commands", value="`mute` `unmute` `vcmute` `vcunmute` `delete` `purge` `nick` `massnick` `kick` `mute` `ban` `pin`", inline=False)
+		e.add_field(name="• Commands", value="`mute` `unmute` `vcmute` `vcunmute` `warn` `clearwarns` `delete` `purge` `nick` `massnick` `kick` `mute` `ban` `pin`", inline=False)
 		await ctx.send(embed=e)
 
 	@commands.command()
