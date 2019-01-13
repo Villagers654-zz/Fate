@@ -1,5 +1,6 @@
 from discord.ext import commands
 from os.path import isfile
+import datetime
 import discord
 import asyncio
 import random
@@ -23,9 +24,9 @@ class Notepad:
         async with ctx.typing():
             if len(arg) > 0:
                 self.notes[str(ctx.author.id)] = arg
-                date = os.popen('date')
-                timestamp = date.read()
-                self.timestamp[str(ctx.author.id)] = timestamp
+                fmt = "%m-%d-%Y %I:%M%p"
+                created = datetime.datetime.now()
+                self.timestamp[str(ctx.author.id)] = created.strftime(fmt)
                 path = os.getcwd() + "/data/images/reactions/notes/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/notes/"))
                 e = discord.Embed(color=0xFFC923)
                 e.set_author(name='Noted..', icon_url=ctx.author.avatar_url)
