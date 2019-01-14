@@ -58,14 +58,6 @@ class Dev:
 				await self.bot.get_channel(502236124308307968).send("the faggot has been banned.")
 
 	@commands.command()
-	async def messagecount(self, ctx, times):
-		for i in range(times):
-			count = 1
-			async for msg in ctx.channel.history(limit=100000):
-				count += 1
-		await ctx.send(count)
-
-	@commands.command()
 	async def modules(self, ctx):
 		e = discord.Embed()
 		modules = ""
