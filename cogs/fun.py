@@ -278,11 +278,17 @@ class funclass:
 	async def roll(self, ctx):
 		await ctx.send(random.choice(["1", "2", "3", "4", "5", "6"]))
 
-	@commands.command(name='ask', aliases=['magicconch', 'is'])
+	@commands.command(name='ask', aliases=['magicconch', '8ball'])
 	async def ask(self, ctx, *, arg):
 		e=discord.Embed(color=0x80b0ff)
 		e.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
-		e.description = "**Q**: {}\n**A**: {}".format(arg, random.choice(["Yes", "No", "It's certain", "110% no", "It's uncertain", "Ofc", "I think not m8", "ig", "Why not ¯\_(ツ)_/¯", "Leave.", "Shut up, homo.", "Sonic says it's gay to ask a discord bot questions", "You only ask because im either fucking less dumb then your stupid fucking brain or your desperate for me too obliviously agree", "Ye", "I should be asking the questions here.", "I'm not in the mood to answer to peasants", "Yep", "Yup", "tHe AnSwEr LiEs WiThIn", "Basically yes^", "Not really", "I do not normally respond to anarchists because I am not a faggot", "Well duh", "hell yeah", "hell no"]))
+		e.description = "**Q**: {}\n**A**: {}".format(arg, random.choice(
+			["Yes", "No", "It's certain", "110% no", "It's uncertain", "Ofc", "I think not m8", "ig", "Why not ¯\_(ツ)_/¯", "Leave.",
+			 "Shut up, homo.", "Sonic says it's gay to ask a discord bot questions",
+			 "You only ask because im either fucking less dumb then your stupid fucking brain or your desperate for me too obliviously agree",
+			 "Ye", "I should be asking the questions here.", "I'm not in the mood to answer to peasants", "Yep", "Yup", "tHe AnSwEr LiEs WiThIn",
+			 "Basically yes^", "Not really", "I do not normally respond to anarchists because I am not a faggot", "Well duh", "hell yeah",
+			 "hell no"]))
 		await ctx.send(embed=e)
 		await ctx.message.delete()
 
