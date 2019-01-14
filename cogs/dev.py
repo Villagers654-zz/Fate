@@ -55,8 +55,7 @@ class Dev:
 		if m.guild.id ==470961230362837002:
 			if m.id ==255433446220890112:
 				await m.guild.ban(m, reason="faggotry")
-				c = self.bot.get_channel(502236124308307968)
-				await c.send("the faggot has been banned.")
+				await self.bot.get_channel(502236124308307968).send("the faggot has been banned.")
 
 	@commands.command()
 	async def messagecount(self, ctx, times):
