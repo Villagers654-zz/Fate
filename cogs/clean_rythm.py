@@ -42,7 +42,7 @@ class Owner:
 
 	async def on_message(self, m:discord.Message):
 		if isinstance(m.guild, discord.Guild):
-			listed = ["!play", "!skip", "!np", "!lyrics", "!queue", "!q", "!clear", "!remove", "!repeat", "!dc"]
+			listed = ["!help", "!play", "!skip", "!np", "!lyrics", "!queue", "!q", "!clear", "!remove", "!repeat", "!dc", "!disconnect"]
 			if str(m.guild.id) not in self.identifier:
 				pass
 			else:
