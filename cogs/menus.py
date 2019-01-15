@@ -261,16 +261,11 @@ class Menus:
 
 	@commands.command(name='links', aliases=['invite', 'support'])
 	async def links(self, ctx):
-		try:
-			fate = self.bot.get_user(506735111543193601)
-			luck = self.bot.get_user(264838866480005122)
-			e=discord.Embed(color=0x80b0ff)
-			e.set_author(name=f'| Links | 📚', icon_url=luck.avatar_url)
-			e.set_thumbnail(url=random.choice(["https://cdn.discordapp.com/attachments/501871950260469790/513636718835007488/kisspng-computer-icons-message-icon-design-download-invite-5abf1e6f0905a2.045504771522474607037.png", "https://cdn.discordapp.com/attachments/501871950260469790/513636728733433857/mail-open-outline.png", "https://cdn.discordapp.com/attachments/501871950260469790/513636736492896271/mail-open-solid.png"]))
-			e.description = f'[Invite](https://discordapp.com/oauth2/authorize?client_id=506735111543193601&permissions=485878886&scope=bot) 📥\n[Support](https://discord.gg/HkeCzSw) 📧\n[Discord](https://discord.gg/BQ23Z2E) <:discord:513634338487795732>'
-			await ctx.send(embed=e)
-		except Exception as e:
-			await ctx.send(f'**```ERROR: {type(e).__name__} - {e}```**')
+		e=discord.Embed(color=0x80b0ff)
+		e.set_author(name=f'| Links | 📚', icon_url=self.bot.get_user(264838866480005122).avatar_url)
+		e.set_thumbnail(url=random.choice(["https://cdn.discordapp.com/attachments/501871950260469790/513636718835007488/kisspng-computer-icons-message-icon-design-download-invite-5abf1e6f0905a2.045504771522474607037.png", "https://cdn.discordapp.com/attachments/501871950260469790/513636728733433857/mail-open-outline.png", "https://cdn.discordapp.com/attachments/501871950260469790/513636736492896271/mail-open-solid.png"]))
+		e.description = f'[Invite](https://discordapp.com/oauth2/authorize?client_id=506735111543193601&permissions=485878886&scope=bot) 📥\n[Support](https://discord.gg/HkeCzSw) 📧\n[Discord](https://discord.gg/BQ23Z2E) <:discord:513634338487795732>'
+		await ctx.send(embed=e)
 
 	@commands.command()
 	async def partners(self, ctx):
