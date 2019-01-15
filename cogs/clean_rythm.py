@@ -52,14 +52,18 @@ class Owner:
 						await m.delete()
 					for i in listed:
 						if m.content.startswith(i):
-							if i == "!lyrics":
-								await asyncio.sleep(60)
+							if m.content.startswith("!play"):
+								await asyncio.sleep(1)
 								await m.delete()
-								break
 							else:
-								await asyncio.sleep(10)
-								await m.delete()
-								break
+								if i == "!lyrics":
+									await asyncio.sleep(60)
+									await m.delete()
+									break
+								else:
+									await asyncio.sleep(10)
+									await m.delete()
+									break
 
 def setup(bot):
 	bot.add_cog(Owner(bot))
