@@ -101,7 +101,6 @@ class Defender:
 		await asyncio.sleep(0.5)
 		self.bot.loop.create_task(self.warn())
 		channel = self.bot.get_channel(514214974868946964)
-		warning = self.bot.get_channel(502236124308307968)
 		p = subprocess.Popen("last | head -1", stdout=subprocess.PIPE, shell=True)
 		(output, err) = p.communicate()
 		output = str(output)
