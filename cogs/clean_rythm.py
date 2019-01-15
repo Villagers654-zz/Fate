@@ -42,7 +42,8 @@ class Owner:
 
 	async def on_message(self, m:discord.Message):
 		if isinstance(m.guild, discord.Guild):
-			listed = ["!help", "!play", "!skip", "!np", "!lyrics", "!queue", "!q", "!clear", "!remove", "!repeat", "!dc", "!disconnect"]
+			listed = ["!help", "!play", "!skip", "!np", "!lyrics", "!queue", "!q", "!clear", "!remove", "!repeat", "!dc", "!disconnect",
+			          "!pause", "!resume"]
 			if str(m.guild.id) not in self.identifier:
 				pass
 			else:
@@ -59,11 +60,9 @@ class Owner:
 								if i == "!lyrics":
 									await asyncio.sleep(60)
 									await m.delete()
-									break
 								else:
 									await asyncio.sleep(10)
 									await m.delete()
-									break
 
 def setup(bot):
 	bot.add_cog(Owner(bot))
