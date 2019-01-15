@@ -310,8 +310,14 @@ class Profiles:
 			ramused = psutil.virtual_memory().used
 			storageused = psutil.disk_usage('/').used
 			storagetotal = psutil.disk_usage('/').total
-			cpufreqcurrent = psutil.cpu_freq().current
-			cpufreqmax = psutil.cpu_freq().max
+			try:
+				cpufreqcurrent = bytes2human(psutil.cpu_freq().current)
+			except:
+				cpufreqcurrent = "unavailable"
+			try:
+				cpufreqmax = bytes2human(psutil.cpu_freq().max)
+			except:
+				cpufreqmax = "unavailable"
 			channel = self.bot.get_channel(self.statschannel)
 			e = discord.Embed(title="", color=0x4A0E50)
 			e.description = "💎 Official 4B4T Server 💎"
@@ -336,7 +342,7 @@ class Profiles:
 				f"__**RAM**__: **Global**: {bytes2human(ramused)} **Bot**: {bytes2human(botram)}\n"
 				f"__**CPU**__: **Global**: {psutil.cpu_percent(interval=1)}% **Bot**: {p.cpu_percent(interval=1.0)}%\n"
 				f"__**CPU Per Core**__: {[round(i) for i in psutil.cpu_percent(interval=1, percpu=True)]}\n"
-				f"__**CPU Frequency**__: [{bytes2human(cpufreqcurrent)}/null]")
+				f"__**CPU Frequency**__: [{cpufreqcurrent}/null]")
 			fmt = "%m-%d-%Y %I:%M%p"
 			time = datetime.datetime.now()
 			time = time.strftime(fmt)
