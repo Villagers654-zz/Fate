@@ -29,7 +29,11 @@ class Defender:
 			ips = ['75.107.232.117', '166.182.244', '90.240.5.35', '83.137.2']
 			luck = self.bot.get_user(264838866480005122)
 			legit = self.bot.get_user(261451679239634944)
-			f = open('/home/luck/FateZero/data/warn.txt', 'r')
+			try:
+				f = open('/home/luck/FateZero/data/warn.txt', 'r')
+			except:
+				await self.bot.get_channel(534608853300412416).send("Unable to find warns.txt")
+				break
 			users = [luck, legit]
 			if f.read() == "empty":
 				f.close()
