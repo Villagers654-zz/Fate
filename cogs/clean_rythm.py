@@ -4,7 +4,7 @@ import discord
 import asyncio
 import json
 
-class Owner:
+class Utility:
 	def __init__(self, bot):
 		self.bot = bot
 		self.identifier = {}
@@ -20,7 +20,12 @@ class Owner:
 	@commands.group(name="clean_rythm")
 	async def _clean_rythm(self, ctx):
 		if ctx.invoked_subcommand is None:
-			await ctx.send(self.identifier[str(ctx.guild.id)])
+			if str(ctx.guild.id) not in self.identifier:
+				self.identifier[str(ctx.guild.id)] = "Disabled"
+			await ctx.send(f'**Clean Rythm Instructions:**\n'
+			               f'.clean_rythm enable ~ `enables clean_rythm`\n'
+			               f'.clean_rythm disable ~ `disables clean_rythm`\n'
+			               f'**Current Status:** {self.identifier[str(ctx.guild.id)]}')
 
 	@_clean_rythm.command(name="enable")
 	async def enable(self, ctx):
@@ -65,4 +70,4 @@ class Owner:
 									await m.delete()
 
 def setup(bot):
-	bot.add_cog(Owner(bot))
+	bot.add_cog(Utility(bot))
