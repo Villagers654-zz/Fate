@@ -290,23 +290,21 @@ class funclass:
 			 "Basically yes^", "Not really", "I do not normally respond to anarchists because I am not a faggot", "Well duh", "hell yeah",
 			 "hell no"]))
 		await ctx.send(embed=e)
+		await asyncio.sleep(0.5)
 		await ctx.message.delete()
 
 	@commands.command(name='gay', aliases=['straight', 'lesbian'])
 	@commands.cooldown(1, 60, commands.BucketType.user)
 	async def gay(self, ctx, *, member: discord.Member=None):
-		try:
-			if member is None:
-				member = ctx.author
-			for x in range(1):
-				r = random.randint(50,100)
-				e=discord.Embed(description=f'Requested by {ctx.author.name}', color=0xFC0FC0)
-				e.set_author(name=f'| You are {r}% {random.choice(["gay", "straight", "lesbian"])}', icon_url=member.avatar_url)
-				e.set_thumbnail(url=member.avatar_url)
-				await ctx.send (embed=e)
-				await ctx.message.delete()
-		except Exception as e:
-				await ctx.send(f'**```ERROR: {type(e).__name__} - {e}```**')
+		if member is None:
+			member = ctx.author
+		for x in range(1):
+			r = random.randint(50,100)
+			e=discord.Embed(description=f'Requested by {ctx.author.name}', color=0xFC0FC0)
+			e.set_author(name=f'| You are {r}% {random.choice(["gay", "straight", "lesbian"])}', icon_url=member.avatar_url)
+			e.set_thumbnail(url=member.avatar_url)
+			await ctx.send (embed=e)
+			await ctx.message.delete()
 
 	@commands.command()
 	async def rps(self, ctx):
@@ -329,7 +327,7 @@ class funclass:
 			if r == 'scissors':
 				img = 'https://cdn.discordapp.com/attachments/501871950260469790/511284246506110997/Scissor-PNG.png'
 			result.set_thumbnail(url=img)
-			result.description = f'**Fate [Zero] chose: **{r}\n**{ctx.author.name} chose:** {msg.content}'.format(r)
+			result.description = f'**Fate [Zero] chose: **{r}\n**{ctx.author.name} chose:** {msg.content}'
 			embed = await ctx.send(embed=result)
 			await choose.delete()
 			await ctx.message.delete()
