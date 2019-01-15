@@ -24,7 +24,7 @@ error = False
 
 async def status_task():
 	while True:
-		await bot.change_presence(activity=discord.Game(name="4b4t.net | {}".format(random.choice(["FBI OPEN UP", "YEET to DELETE", "Pole-Man", "♡Juice wrld♡", "ANIMOO", "Mad cuz Bad", "Quest for Cake", "Gone Sexual"]))))
+		await bot.change_presence(activity=discord.Game(name=f"4b4t.net | {random.choice(['FBI OPEN UP', 'YEET to DELETE', 'Pole-Man', '♡Juice wrld♡', 'ANIMOO', 'Mad cuz Bad', 'Quest for Cake', 'Gone Sexual'])}"))
 		await asyncio.sleep(15)
 		await bot.change_presence(activity=discord.Game(name='4b4t.net | use .help'))
 		await asyncio.sleep(15)
