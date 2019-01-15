@@ -147,7 +147,6 @@ class Core:
 		message = await ctx.send("Measuring ping:")
 		ping = (time.monotonic() - before) * 1000
 		await message.edit(content=f"My ping: `{int(ping)}ms`")
-		print(f'Ping {int(ping)}ms')
 
 	@commands.command(pass_context=True)
 	async def wiki(self,ctx,*,query:str):
