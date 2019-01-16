@@ -47,26 +47,27 @@ class Events:
 	@_welcome.command(name='toggle')
 	async def _toggle(self, ctx):
 		"""Not in use, but still works"""
+		guild_id = str(ctx.guild.id)
 		report = ""
 		if str(ctx.guild.id) not in self.identifier:
 			self.identifier[str(ctx.guild.id)] = 'True'
 			report += 'Enabled welcome messages'
 		else:
-			if self.identifier[str(ctx.guild.id)] == 'True':
+			if self.identifier[guild_id] == 'True':
 				self.identifier[str(ctx.guild.id)] = 'False'
 				report += 'Disabled welcome messages'
 			else:
-				if self.identifier[str(ctx.guild.id)] == 'False':
+				if self.identifier[guild_id] == 'False':
 					self.identifier[str(ctx.guild.id)] = 'True'
 					report += 'Enabled welcome messages'
 		if str(ctx.guild.id) not in self.channel:
-			self.channel[str(ctx.guild.id)] = ctx.channel.id
+			self.channel[guild_id] = ctx.channel.id
 			report += f'\nWelcome channel not set, therefore it has been automatically set to {ctx.channel.name}'
 		if str(ctx.guild.id) not in self.useimages:
-			self.useimages[str(ctx.guild.id)] = 'False'
+			self.useimages[guild_id] = 'False'
 			report += '\nUseimages not set, therefore it has been automatically set to false'
 		if str(ctx.guild.id) not in self.usepings:
-			self.usepings[str(ctx.guild.id)] = 'False'
+			self.usepings[guild_id] = 'False'
 			report += '\nUsepings not set, therefore it has been automatically set to false'
 		with open("./data/config/welcome.json", "w") as outfile:
 			json.dump({"identifier": self.identifier, "channel": self.channel, "usepings": self.usepings,
