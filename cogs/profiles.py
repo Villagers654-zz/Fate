@@ -346,8 +346,6 @@ class Profiles:
 			fmt = "%m-%d-%Y %I:%M%p"
 			time = datetime.datetime.now()
 			time = time.strftime(fmt)
-			date = os.popen('date')
-			timestamp = date.read()
 			e.set_footer(text=f'Updated: {time}')
 			statschannel = self.bot.get_channel(self.statschannel)
 			try:
