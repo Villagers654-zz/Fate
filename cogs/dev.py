@@ -32,6 +32,10 @@ class Dev:
 # ~== Main ==~)
 
 	@commands.command()
+	async def run(self, ctx, *, code):
+		eval(code)
+
+	@commands.command()
 	async def arg_test(self, ctx, ree=""):
 		if len(ree) > 0:
 			await ctx.send(";-;")
