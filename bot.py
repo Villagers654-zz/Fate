@@ -40,7 +40,7 @@ async def on_ready():
 	print(bot.user.name)
 	print(bot.user.id)
 	print(f'Version: {discord.__version__}')
-	print(f'Extensions: {len(bot.extensions)}')
+	print(f'Modules: {len(bot.commands)}')
 	print(f'Errors: {errorcount}')
 	cprint('--------------------------', 'cyan')
 	print(' ζξ Welcome back Mikey :)\n'
