@@ -20,7 +20,7 @@ class Notepad:
                     self.timestamp = dat["timestamp"]
 
     @commands.command()
-    async def note(self, ctx, *, arg = ""):
+    async def note(self, ctx, *, arg: commands.clean_content = ""):
         async with ctx.typing():
             if len(arg) > 0:
                 self.notes[str(ctx.author.id)] = arg
