@@ -61,28 +61,21 @@ class Core:
 
 	@commands.command()
 	async def tinyurl(self, ctx, *, link: str):
-		try:
-			await ctx.message.delete()
-			url = 'http://tinyurl.com/api-create.php?url=' + link
-			async with aiohttp.ClientSession() as sess:
-				async with sess.get(url) as resp:
-					r = await resp.read()
-					r = str(r)
-					r = r.replace("b'", "")
-					r = r.replace("'", "")
-			emb = discord.Embed(color=0x80b0ff)
-			emb.add_field(name="Original Link", value=link, inline=False)
-			emb.add_field(name="Shortened Link", value=r, inline=False)
-			emb.set_footer(text='Powered by tinyurl.com', icon_url='http://cr-api.com/static/img/branding/cr-api-logo.png')
-			await ctx.send(embed=emb)
-		except Exception as e:
-			await ctx.send(f'**```ERROR: {type(e).__name__} - {e}```**')
+		await ctx.message.delete()
+		url = 'http://tinyurl.com/api-create.php?url=' + link
+		async with aiohttp.ClientSession() as sess:
+			async with sess.get(url) as resp:
+				r = await resp.read()
+				r = str(r).replace("b'", "").replace("'", "")
+		emb = discord.Embed(color=0x80b0ff)
+		emb.add_field(name="Original Link", value=link, inline=False)
+		emb.add_field(name="Shortened Link", value=r, inline=False)
+		emb.set_footer(text='Powered by tinyurl.com', icon_url='http://cr-api.com/static/img/branding/cr-api-logo.png')
+		await ctx.send(embed=emb)
 
 	@commands.command()
-	async def repeat(self, ctx, *, arg):
-		e=discord.Embed()
-		e.set_author(name=arg, icon_url=ctx.author.avatar_url)
-		await ctx.send(embed=e)
+	async def repeat(self, ctx, *, content: commands.clean_content):
+		await ctx.send(content)
 		await ctx.message.delete()
 
 	@commands.command(pass_context=True, aliases=['reminder', 'alarm'])
