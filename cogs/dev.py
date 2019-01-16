@@ -33,7 +33,7 @@ class Dev:
 
 	@commands.command()
 	async def run(self, ctx, *, code):
-		eval(code)
+		await ctx.send(eval(code))
 
 	@commands.command()
 	async def arg_test(self, ctx, ree=""):
