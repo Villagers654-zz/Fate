@@ -342,7 +342,7 @@ class Profiles:
 				f"__**RAM**__: **Global**: {bytes2human(ramused)} **Bot**: {bytes2human(botram)}\n"
 				f"__**CPU**__: **Global**: {psutil.cpu_percent(interval=1)}% **Bot**: {p.cpu_percent(interval=1.0)}%\n"
 				f"__**CPU Per Core**__: {[round(i) for i in psutil.cpu_percent(interval=1, percpu=True)]}\n"
-				f"__**CPU Frequency**__: [{cpufreqcurrent}/null]")
+				f"__**CPU Frequency**__: [{cpufreqcurrent}/{cpufreqmax}]")
 			fmt = "%m-%d-%Y %I:%M%p"
 			time = datetime.datetime.now()
 			time = time.strftime(fmt)
