@@ -387,12 +387,12 @@ class Profiles:
 					if author_id not in self.global_data:
 						self.global_data[author_id] = 0
 
-				self.global_data[author_id] += r
-				self.guilds_data[guild_id][author_id] += r
-				self.cd[author_id] = time.time() + 25
+					self.global_data[author_id] += r
+					self.guilds_data[guild_id][author_id] += r
+					self.cd[author_id] = time.time() + 25
 
-				with open("./data/userdata/xp.json", "w") as outfile:
-					json.dump({"global": self.global_data, "guilded": self.guilds_data}, outfile, ensure_ascii=False)
+					with open("./data/userdata/xp.json", "w") as outfile:
+						json.dump({"global": self.global_data, "guilded": self.guilds_data}, outfile, ensure_ascii=False)
 
 def setup(bot):
 	bot.add_cog(Profiles(bot))
