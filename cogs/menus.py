@@ -1,4 +1,6 @@
+from data.utils import converter as c
 from discord.ext import commands
+from data.utils import menus
 import discord
 import random
 import psutil
@@ -8,8 +10,6 @@ import os
 class Menus:
 	def __init__(self, bot):
 		self.bot = bot
-
-# ~== Help Menus ==~
 
 	@commands.group(name='help')
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -30,40 +30,23 @@ class Menus:
 
 	@_help.command(name='core')
 	async def _core(self, ctx):
-		e = discord.Embed(title="~~~====🥂🍸🍷Core🍷🍸🥂====~~~", color=0x80b0ff)
-		e.add_field(name="◈ Main ◈", value="`ggleaderboard` `gleaderboard` `leaderboard` `repeat` `stalk` `links` `ping` `info`", inline=False)
-		e.add_field(name="◈ Utility ◈", value="`channelinfo` `servericon` `serverinfo` `userinfo` `makepoll` `welcome` `owner` `avatar` `topic` `timer` `note` `wiki` `ud` `id`", inline=False)
-		e.add_field(name="◈ Responses ◈", value="`hello` `ree` `gm` `gn`", inline=False)
-		e.add_field(name="◈ Music ◈", value="`join` `summon` `play` `stop` `skip` `pause` `resume` `volume` `queue` `remove` `shuffle` `dc` `np`", inline=False)
-		e.add_field(name="◈ Ads ◈", value="`discords` `servers` `realms`", inline=False)
-		await ctx.send(embed=e)
+		await ctx.send(embed=menus.core)
 
 	@_help.command(name='react')
 	async def _react(self, ctx):
-		e = discord.Embed(title="~~~====🥂🍸🍷Reactions🍷🍸🥂====~~~", color=0x80b0ff)
-		e.add_field(name="• FAQ", value="• Some commands may require you to add\ncontent after. For example: `.hug @person`", inline=False)
-		e.add_field(name="• Commands", value="`intimidate` `powerup` `observe` `disgust` `admire` `angery` `cuddle` `teasip` `psycho` `thonk` `shrug` `yawn` `hide` `wine` `sigh` `kiss` `kill` `slap` `hug` `pat` `cry`", inline=False)
-		await ctx.send(embed=e)
+		await ctx.send(embed=menus.react)
 
 	@_help.command(name='mod')
 	async def _mod(self, ctx):
-		e = discord.Embed(title="~~~====🥂🍸🍷Mod🍷🍸🥂====~~~", color=0x80b0ff)
-		e.add_field(name="• Commands", value="`mute` `unmute` `vcmute` `vcunmute` `warn` `clearwarns` `delete` `purge` `nick` `massnick` `kick` `mute` `ban` `pin`", inline=False)
-		await ctx.send(embed=e)
+		await ctx.send(embed=menus.mod)
 
 	@_help.command(name='fun')
 	async def _fun(self, ctx):
-		e = discord.Embed(title="~~~====🥂🍸🍷Fun🍷🍸🥂====~~~", color=0x80b0ff)
-		e.add_field(name="• Core", value="`fancify` `coffee` `encode` `decode` `choose` `notice` `meme` `quote` `rate` `roll` `gay` `sue` `fap` `ask` `rps` `rr`", inline=False)
-		e.add_field(name="• Actions", value="`crucify` `cookie` `shoot` `inject` `slice` `boop` `stab` `kill`", inline=False)
-		e.add_field(name="• Responses", value="`@Fate` `Kys`", inline=False)
-		await ctx.send(embed=e)
+		await ctx.send(embed=menus.fun)
 
 	@_help.command(name='art')
 	async def _art(self, ctx):
-		e = discord.Embed(title="~~~====🥂🍸🍷TextArt🍷🍸🥂====~~~", color=0x80b0ff)
-		e.add_field(name="• Commands", value="• chill ~ `wavey (~˘▾˘)~`\n• fuckit ~ `fuck itヽ(ﾟｰﾟ)ﾉ`\n• cross ~ `yield (╬ Ò ‸ Ó)`\n• angry ~ `(ノಠ益ಠ)ノ彡┻━┻`\n• yes ~ `thumbs up 👍`", inline=True)
-		await ctx.send(embed=e)
+		await ctx.send(embed=menus.art)
 
 	@_help.command(name='m')
 	async def _m(self, ctx):
@@ -81,43 +64,26 @@ class Menus:
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def core(self, ctx):
-		e=discord.Embed(title="~~~====🥂🍸🍷Core🍷🍸🥂====~~~", color=0x80b0ff)
-		e.add_field(name="◈ Main ◈", value="`ggleaderboard` `gleaderboard` `leaderboard` `repeat` `stalk` `links` `ping` `info`", inline=False)
-		e.add_field(name="◈ Utility ◈", value="`channelinfo` `servericon` `serverinfo` `userinfo` `makepoll` `welcome` `owner` `avatar` `topic` `timer` `note` `wiki` `ud` `id`", inline=False)
-		e.add_field(name="◈ Responses ◈", value="`hello` `ree` `gm` `gn`", inline=False)
-		e.add_field(name="◈ Music ◈", value="`join` `summon` `play` `stop` `skip` `pause` `resume` `volume` `queue` `remove` `shuffle` `dc` `np`", inline=False)
-		e.add_field(name="◈ Ads ◈", value="`discords` `servers` `realms`", inline=False)
-		await ctx.send(embed=e)
+		await ctx.send(embed=menus.core)
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def react(self, ctx):
-		e = discord.Embed(title="~~~====🥂🍸🍷Reactions🍷🍸🥂====~~~", color=0x80b0ff)
-		e.add_field(name="• FAQ", value="• Some commands may require you to add\ncontent after. For example: `.hug @person`", inline=False)
-		e.add_field(name="• Commands", value="`intimidate` `powerup` `observe` `disgust` `admire` `angery` `cuddle` `teasip` `psycho` `thonk` `shrug` `yawn` `hide` `wine` `sigh` `kiss` `kill` `slap` `hug` `pat` `cry`", inline=False)
-		await ctx.send(embed=e)
+		await ctx.send(embed=menus.react)
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def mod(self, ctx):
-		e=discord.Embed(title="~~~====🥂🍸🍷Mod🍷🍸🥂====~~~", color=0x80b0ff)
-		e.add_field(name="• Commands", value="`mute` `unmute` `vcmute` `vcunmute` `warn` `clearwarns` `delete` `purge` `nick` `massnick` `kick` `mute` `ban` `pin`", inline=False)
-		await ctx.send(embed=e)
+		await ctx.send(embed=menus.mod)
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def fun(self, ctx):
-		e=discord.Embed(title="~~~====🥂🍸🍷Fun🍷🍸🥂====~~~", color=0x80b0ff)
-		e.add_field(name="• Core", value="`fancify` `coffee` `encode` `decode` `choose` `notice` `meme` `quote` `rate` `roll` `gay` `sue` `fap` `ask` `rps` `rr`", inline=False)
-		e.add_field(name="• Actions", value="`crucify` `cookie` `shoot` `inject` `slice` `boop` `stab` `kill`", inline=False)
-		e.add_field(name="• Responses", value="`@Fate` `Kys`", inline=False)
-		await ctx.send(embed=e)
+		await ctx.send(embed=menus.fun)
 
 	@commands.command()
 	async def art(self, ctx):
-		embed=discord.Embed(title="~~~====🥂🍸🍷TextArt🍷🍸🥂====~~~", color=0x80b0ff)
-		embed.add_field(name="• Commands", value="• chill ~ `wavey (~˘▾˘)~`\n• fuckit ~ `fuck itヽ(ﾟｰﾟ)ﾉ`\n• cross ~ `yield (╬ Ò ‸ Ó)`\n• angry ~ `(ノಠ益ಠ)ノ彡┻━┻`\n• yes ~ `thumbs up 👍`", inline=True)
-		await ctx.send(embed=embed)
+		await ctx.send(embed=menus.art)
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -134,23 +100,11 @@ class Menus:
 		e.add_field(name="• Usage", value="• embeda ~ `simple content embed {content}`\n• embedb ~ `{title} {name} {value}`\n• embedc ~ `{title} {url} {name} {value}`\n• embedu `{title} {url} {color} + 2 fields`\n• embedx ~ `{title} {url} {color} {name}\n{value} {name} {value} {name} {value}`", inline=True)
 		await ctx.send(embed=e)
 
-# ~== Bot ==~
-
 	@commands.command(name='info')
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def info(self, ctx):
 		m, s = divmod(time.time() - self.bot.START_TIME, 60)
 		h, m = divmod(m, 60)
-		def bytes2human(n):
-			symbols = ('K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y')
-			prefix = {}
-			for i, s in enumerate(symbols):
-				prefix[s] = 1 << (i + 1) * 10
-			for s in reversed(symbols):
-				if n >= prefix[s]:
-					value = float(n) / prefix[s]
-					return '%.1f%s' % (value, s)
-			return "%sB" % n
 		p = psutil.Process(os.getpid())
 		guilds = len(list(self.bot.guilds))
 		users = len(list(self.bot.users))
@@ -171,8 +125,8 @@ class Menus:
 		e.add_field(name="◈ Credits ◈", value="• Tothy ~ `inspiration & rival`\n• Cortex ~ `teacher & reee`", inline=False)
 		e.add_field(name="◈ Statistics ◈", value=f'Servers: [{guilds}]\nUsers: [{users}]', inline=False)
 		e.add_field(name="◈ Memory ◈", value=
-		f'__**Storage**__: [{bytes2human(storageused)}/{bytes2human(storagetotal)}]\n'
-		f'__**RAM**__: **Global**: {bytes2human(ramused)} **Bot**: {bytes2human(botram)} ({rampercent}%)\n'
+		f'__**Storage**__: [{c.bytes2human(storageused)}/{c.bytes2human(storagetotal)}]\n'
+		f'__**RAM**__: **Global**: {c.bytes2human(ramused)} **Bot**: {c.bytes2human(botram)} ({rampercent}%)\n'
 		f'__**CPU**__: **Global**: {psutil.cpu_percent(interval=1)}% **Bot**: {p.cpu_percent(interval=1.0)}%')
 		e.set_footer(text="Uptime: {} Hours {} Minutes {} seconds".format(int(h), int(m), int(s)))
 		await ctx.send(file=discord.File(path, filename=os.path.basename(path)), embed=e)
