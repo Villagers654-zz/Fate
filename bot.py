@@ -1,4 +1,5 @@
 from discord.ext import commands
+from data.config import token
 from termcolor import cprint
 import traceback
 import datetime
@@ -83,6 +84,4 @@ if __name__ == '__main__':
 m, s = divmod(time.time() - bot.START_TIME, 60)
 h, m = divmod(m, 60)
 bot.LOAD_TIME = s
-f = open("./data/config/tokens/FateZero.txt", "r")
-bot.run(f.read())
-f.close()
+bot.run(token.fatezero)
