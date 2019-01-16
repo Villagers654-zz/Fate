@@ -21,6 +21,7 @@ class Tothy:
 	async def _tother(self, ctx):
 		if ctx.invoked_subcommand is None:
 			await ctx.send(random.choice(self.tothy))
+			await ctx.message.delete()
 
 	@_tother.command(name="add")
 	@commands.check(tother)
@@ -29,6 +30,7 @@ class Tothy:
 			await ctx.message.delete()
 		else:
 			self.tothy.append(content)
+			await ctx.send("added.")
 
 def setup(bot):
 	bot.add_cog(Tothy(bot))
