@@ -49,7 +49,7 @@ class Events:
 		"""Not in use, but still works"""
 		guild_id = str(ctx.guild.id)
 		report = ""
-		if str(ctx.guild.id) not in self.identifier:
+		if guild_id not in self.identifier:
 			self.identifier[str(ctx.guild.id)] = 'True'
 			report += 'Enabled welcome messages'
 		else:
@@ -60,13 +60,13 @@ class Events:
 				if self.identifier[guild_id] == 'False':
 					self.identifier[str(ctx.guild.id)] = 'True'
 					report += 'Enabled welcome messages'
-		if str(ctx.guild.id) not in self.channel:
+		if guild_id not in self.channel:
 			self.channel[guild_id] = ctx.channel.id
 			report += f'\nWelcome channel not set, therefore it has been automatically set to {ctx.channel.name}'
-		if str(ctx.guild.id) not in self.useimages:
+		if guild_id not in self.useimages:
 			self.useimages[guild_id] = 'False'
 			report += '\nUseimages not set, therefore it has been automatically set to false'
-		if str(ctx.guild.id) not in self.usepings:
+		if guild_id not in self.usepings:
 			self.usepings[guild_id] = 'False'
 			report += '\nUsepings not set, therefore it has been automatically set to false'
 		with open("./data/config/welcome.json", "w") as outfile:
