@@ -9,7 +9,10 @@ class Owner:
 		if m.channel.id == 533817312634208257:
 			if m.id is not 534039043483369482:
 				await asyncio.sleep(3600)
-				await m.delete()
+				try:
+					await m.delete()
+				except:
+					pass
 
 def setup(bot):
 	bot.add_cog(Owner(bot))
