@@ -281,10 +281,20 @@ class Mod:
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
-	@commands.has_permissions(manage_guild=True)
-	async def clearwarns(self, ctx, m:discord.Member):
+	@commands.has_permissions(administrator=True)
+	async def clearwarns(self, ctx, *, user=None):
+		if user.startswith("<@"):
+			user = user.replace("<@", "")
+			user = user.replace(">", "")
+			user = self.bot.get_user(eval(user))
+		else:
+			for member in ctx.guild.members:
+				if str(user).lower() in str(member.name).lower():
+					user_id = member.id
+					user = self.bot.get_user(user_id)
+					break
 		guild_id = str(ctx.guild.id)
-		user_id = str(m.id)
+		user_id = str(user.id)
 		if guild_id not in self.warns:
 			self.warns[guild_id] = {}
 		if user_id not in self.warns[guild_id]:
@@ -292,7 +302,32 @@ class Mod:
 		self.warns[guild_id][user_id] = 0
 		with open("./data/userdata/mod.json", "w") as outfile:
 			json.dump({"warns": self.warns}, outfile, ensure_ascii=False)
-		await ctx.send(f"Cleared {m.name}'s warn count")
+		await ctx.send(f"Cleared {user.name}'s warn count")
+
+	@commands.command()
+	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.has_permissions(administrator=True)
+	async def setwarns(self, ctx, user, count):
+		if user.startswith("<@"):
+			user = user.replace("<@", "")
+			user = user.replace(">", "")
+			user = self.bot.get_user(eval(user))
+		else:
+			for member in ctx.guild.members:
+				if str(user).lower() in str(member.name).lower():
+					user_id = member.id
+					user = self.bot.get_user(user_id)
+					break
+		guild_id = str(ctx.guild.id)
+		user_id = str(user.id)
+		if guild_id not in self.warns:
+			self.warns[guild_id] = {}
+		if user_id not in self.warns[guild_id]:
+			self.warns[guild_id][user_id] = 0
+		self.warns[guild_id][user_id] = count
+		with open("./data/userdata/mod.json", "w") as outfile:
+			json.dump({"warns": self.warns}, outfile, ensure_ascii=False)
+		await ctx.send(f"Set {user.name}'s warn count to {count}")
 
 def setup(bot):
 	bot.add_cog(Mod(bot))
