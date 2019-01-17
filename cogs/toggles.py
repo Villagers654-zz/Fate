@@ -8,8 +8,8 @@ class Toggles:
 		self.bot = bot
 		self.responses = {}
 		self.mod = {}
-		if isfile("./data/config/toggles.json"):
-			with open("./data/config/toggles.json", "r") as infile:
+		if isfile("./data/userdata/config/toggles.json"):
+			with open("./data/userdata/config/toggles.json", "r") as infile:
 				dat = json.load(infile)
 				if "responses" in dat and "mod" in dat:
 					self.responses = dat["responses"]
@@ -40,48 +40,42 @@ class Toggles:
 		if self.responses[str(ctx.guild.id)] == 'enabled':
 			self.responses[str(ctx.guild.id)] = 'disabled'
 			await ctx.send('Disabled `responses` 👍')
-			with open("./data/config/toggles.json", "w") as outfile:
-				json.dump({"responses": self.responses, "mod": self.mod}, outfile, ensure_ascii=False)
 			self.bot.unload_extension('cogs.responses')
 			self.bot.load_extension('cogs.responses')
 		else:
 			self.responses[str(ctx.guild.id)] = 'enabled'
 			await ctx.send('Enabled `responses` 👍')
-			with open("./data/config/toggles.json", "w") as outfile:
-				json.dump({"responses": self.responses, "mod": self.mod}, outfile, ensure_ascii=False)
 			self.bot.unload_extension('cogs.responses')
 			self.bot.load_extension('cogs.responses')
+		with open("./data/userdata/config/toggles.json", "w") as outfile:
+			json.dump({"responses": self.responses, "mod": self.mod}, outfile, ensure_ascii=False)
 
 	@_toggle.command(name='mod')
 	async def _mod(self, ctx):
 		if self.mod[str(ctx.guild.id)] == 'enabled':
 			self.mod[str(ctx.guild.id)] = 'disabled'
 			await ctx.send('Disabled `mod` 👍')
-			with open("./data/config/toggles.json", "w") as outfile:
-				json.dump({"responses": self.responses, "mod": self.mod}, outfile, ensure_ascii=False)
 			self.bot.unload_extension('cogs.mod')
 			self.bot.load_extension('cogs.mod')
 		else:
 			self.mod[str(ctx.guild.id)] = 'enabled'
 			await ctx.send('Enabled `mod` 👍')
-			with open("./data/config/toggles.json", "w") as outfile:
-				json.dump({"responses": self.responses, "mod": self.mod}, outfile, ensure_ascii=False)
 			self.bot.unload_extension('cogs.mod')
 			self.bot.load_extension('cogs.mod')
+		with open("./data/userdata/config/toggles.json", "w") as outfile:
+			json.dump({"responses": self.responses, "mod": self.mod}, outfile, ensure_ascii=False)
 
 	async def on_message(self, message: discord.Message):
 		if str(message.guild.id) not in self.responses:
 			self.responses[str(message.guild.id)] = 'enabled'
-			with open("./data/config/toggles.json", "w") as outfile:
-				json.dump({"responses": self.responses, "mod": self.mod}, outfile, ensure_ascii=False)
 			self.bot.unload_extension('cogs.responses')
 			self.bot.load_extension('cogs.responses')
 		if str(message.guild.id) not in self.mod:
 			self.mod[str(message.guild.id)] = 'enabled'
-			with open("./data/config/toggles.json", "w") as outfile:
-				json.dump({"responses": self.responses, "mod": self.mod}, outfile, ensure_ascii=False)
 			self.bot.unload_extension('cogs.mod')
 			self.bot.load_extension('cogs.mod')
+		with open("./data/userdata/config/toggles.json", "w") as outfile:
+			json.dump({"responses": self.responses, "mod": self.mod}, outfile, ensure_ascii=False)
 
 # ~== Pings ==~
 
