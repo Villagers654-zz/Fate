@@ -4,3 +4,4 @@ __pycache__/
 /data/config/*
 /data/images/*
 /data/userdata/*
+/data/misc/*
