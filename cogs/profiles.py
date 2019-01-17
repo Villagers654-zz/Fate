@@ -39,8 +39,8 @@ class Profiles:
 					self.guilds_data = dat["guilded"]
 		self.statschannel = {}
 		self.statsmessage = {}
-		if isfile("./data/config/stats.json"):
-			with open("./data/config/stats.json", "r") as infile:
+		if isfile("./data/userdata/config/stats.json"):
+			with open("./data/userdata/config/stats.json", "r") as infile:
 				dat = json.load(infile)
 				if "statschannel" in dat and "statsmessage" in dat:
 					self.statschannel = dat["statschannel"]
@@ -356,7 +356,7 @@ class Profiles:
 				preparing.description = 'preparing stats..'
 				msg = await statschannel.send(embed=preparing)
 				self.statsmessage = msg.id
-				with open("./data/config/stats.json", "w") as outfile:
+				with open("./data/userdata/config/stats.json", "w") as outfile:
 					json.dump({"statschannel": self.statschannel, "statsmessage": self.statsmessage}, outfile, ensure_ascii=False)
 			async for msg in statschannel.history(limit=5):
 				greenid = "{}".format(self.statsmessage)
