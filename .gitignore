@@ -1,7 +1,6 @@
 .idea/
 __pycache__/
 *.exe
-#tmp rule till luck cleans the mess
 /data/config/*
 /data/images/*
 /data/userdata/*
