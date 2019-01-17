@@ -2,6 +2,6 @@
 __pycache__/
 *.exe
 #tmp rule till luck cleans the mess
-/data/*
+/data/config/*
 /data/images/*
 /data/userdata/*
