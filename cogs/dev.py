@@ -50,13 +50,6 @@ class Dev:
 		await ctx.send(eval(code))
 
 	@commands.command()
-	async def arg_test(self, ctx, ree=""):
-		if len(ree) > 0:
-			await ctx.send(";-;")
-		else:
-			await ctx.send(".-.")
-
-	@commands.command()
 	async def ltr(self, ctx):
 		await ctx.send(u"\u200E")
 
