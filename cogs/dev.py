@@ -32,6 +32,10 @@ class Dev:
 # ~== Main ==~)
 
 	@commands.command()
+	async def reverse(self, ctx, *, content):
+		await ctx.send(content[::-1])
+
+	@commands.command()
 	async def chars(self, ctx, *, content):
 		await ctx.send(len(content))
 
