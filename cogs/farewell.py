@@ -12,8 +12,8 @@ class Farewell:
 		self.channel = {}
 		self.useimages = {}
 		self.toxicity = {}
-		if isfile("./data/config/farewell.json"):
-			with open("./data/config/farewell.json", "r") as infile:
+		if isfile("./data/userdata/config/farewell.json"):
+			with open("./data/userdata/config/farewell.json", "r") as infile:
 				dat = json.load(infile)
 				if "identifier" in dat and "channel" in dat and "useimages" in dat and "toxicity" in dat:
 					self.identifier = dat["identifier"]
@@ -65,7 +65,7 @@ class Farewell:
 		if str(ctx.guild.id) not in self.toxicity:
 			self.toxicity[str(ctx.guild.id)] = 'False'
 			report += '\nToxicity not set, therefore it has been automatically set to `false`'
-		with open("./data/config/farewell.json", "w") as outfile:
+		with open("./data/userdata/config/farewell.json", "w") as outfile:
 			json.dump({"identifier": self.identifier, "channel": self.channel, "useimages": self.useimages,
 			           "toxicity": self.toxicity}, outfile, ensure_ascii=False)
 		await ctx.send(report)
@@ -88,7 +88,7 @@ class Farewell:
 		if str(ctx.guild.id) not in self.toxicity:
 			self.toxicity[str(ctx.guild.id)] = 'False'
 			report += '\nToxicity not set, therefore it has been automatically set to `false`'
-		with open("./data/config/farewell.json", "w") as outfile:
+		with open("./data/userdata/config/farewell.json", "w") as outfile:
 			json.dump({"identifier": self.identifier, "channel": self.channel, "useimages": self.useimages,
 			           "toxicity": self.toxicity}, outfile, ensure_ascii=False)
 		await ctx.send(report)
@@ -102,7 +102,7 @@ class Farewell:
 		else:
 			self.identifier[str(ctx.guild.id)] = 'False'
 			report += 'Disabled farewell messages'
-		with open("./data/config/farewell.json", "w") as outfile:
+		with open("./data/userdata/config/farewell.json", "w") as outfile:
 			json.dump({"identifier": self.identifier, "channel": self.channel, "useimages": self.useimages,
 			           "toxicity": self.toxicity}, outfile, ensure_ascii=False)
 		await ctx.send(report)
@@ -112,7 +112,7 @@ class Farewell:
 		if channel is None:
 			channel = ctx.channel
 		self.channel[str(ctx.guild.id)] = channel.id
-		with open("./data/config/farewell.json", "w") as outfile:
+		with open("./data/userdata/config/farewell.json", "w") as outfile:
 			json.dump({"identifier": self.identifier, "channel": self.channel, "useimages": self.useimages,
 			           "toxicity": self.toxicity}, outfile, ensure_ascii=False)
 		await ctx.send(f'Set the farewell channel to `{channel.name}`')
@@ -139,7 +139,7 @@ class Farewell:
 				if toggle == 'false':
 					self.useimages[str(ctx.guild.id)] = 'False'
 					await ctx.send('Disabled `useimages`')
-		with open("./data/config/farewell.json", "w") as outfile:
+		with open("./data/userdata/config/farewell.json", "w") as outfile:
 			json.dump({"identifier": self.identifier, "channel": self.channel, "useimages": self.useimages,
 			           "toxicity": self.toxicity}, outfile, ensure_ascii=False)
 
@@ -165,7 +165,7 @@ class Farewell:
 				if toggle == 'false':
 					self.useimages[str(ctx.guild.id)] = 'False'
 					await ctx.send('Disabled `toxicity`')
-		with open("./data/config/farewell.json", "w") as outfile:
+		with open("./data/userdata/config/farewell.json", "w") as outfile:
 			json.dump({"identifier": self.identifier, "channel": self.channel, "useimages": self.useimages,
 			           "toxicity": self.toxicity}, outfile, ensure_ascii=False)
 
