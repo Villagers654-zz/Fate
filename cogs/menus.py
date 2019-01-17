@@ -1,6 +1,6 @@
 from data.utils import converter as c
+from data.misc import menus as m
 from discord.ext import commands
-from data.utils import menus
 import discord
 import random
 import psutil
@@ -30,75 +30,64 @@ class Menus:
 
 	@_help.command(name='core')
 	async def _core(self, ctx):
-		await ctx.send(embed=menus.core)
+		await ctx.send(embed=m.core)
 
 	@_help.command(name='react')
 	async def _react(self, ctx):
-		await ctx.send(embed=menus.react)
+		await ctx.send(embed=m.react)
 
 	@_help.command(name='mod')
 	async def _mod(self, ctx):
-		await ctx.send(embed=menus.mod)
+		await ctx.send(embed=m.mod)
 
 	@_help.command(name='fun')
 	async def _fun(self, ctx):
-		await ctx.send(embed=menus.fun)
+		await ctx.send(embed=m.fun)
 
 	@_help.command(name='art')
 	async def _art(self, ctx):
-		await ctx.send(embed=menus.art)
+		await ctx.send(embed=m.art)
 
 	@_help.command(name='m')
 	async def _m(self, ctx):
-		e = discord.Embed(title="~~~====🥂🍸🍷Misc🍷🍸🥂====~~~", color=0x80b0ff)
-		e.add_field(name="• Math", value="`add` `subtract` `multiply` `divide`", inline=False)
-		await ctx.send(embed=e)
+		await ctx.send(embed=m.m)
 
 	@_help.command(name='e')
 	async def _e(self, ctx):
-		e=discord.Embed(title="~~~====🥂🍸🍷Embeds🍷🍸🥂====~~~", color=0x80b0ff)
-		e.add_field(name="FAQ", value="• Field = {name} {value}\n• Color = {hex}", inline=False)
-		e.add_field(name="• Usage", value="• embeda ~ `simple content embed {content}`\n• embedb ~ `{title} {name} {value}`\n• embedc ~ `{title} {url} {name} {value}`\n• embedu `{title} {url} {color} + 2 fields`\n• embedx ~ `{title} {url} {color} {name}\n{value} {name} {value} {name} {value}`", inline=True)
-		await ctx.send(embed=e)
+		await ctx.send(embed=m.e)
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def core(self, ctx):
-		await ctx.send(embed=menus.core)
+		await ctx.send(embed=m.core)
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def react(self, ctx):
-		await ctx.send(embed=menus.react)
+		await ctx.send(embed=m.react)
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def mod(self, ctx):
-		await ctx.send(embed=menus.mod)
+		await ctx.send(embed=m.mod)
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def fun(self, ctx):
-		await ctx.send(embed=menus.fun)
+		await ctx.send(embed=m.fun)
 
 	@commands.command()
 	async def art(self, ctx):
-		await ctx.send(embed=menus.art)
+		await ctx.send(embed=m.art)
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def m(self, ctx):
-		e = discord.Embed()
-		embed=discord.Embed(title="~~~====🥂🍸🍷Misc🍷🍸🥂====~~~", color=0x80b0ff)
-		embed.add_field(name="• Math", value="`add` `subtract` `multiply` `divide`", inline=False)
-		await ctx.send(embed=embed)
+		await ctx.send(embed=m.m)
 
 	@commands.command()
 	async def e(self, ctx):
-		e=discord.Embed(title="~~~====🥂🍸🍷Embeds🍷🍸🥂====~~~", color=0x80b0ff)
-		e.add_field(name="FAQ", value="• Field = {name} {value}\n• Color = {hex}", inline=False)
-		e.add_field(name="• Usage", value="• embeda ~ `simple content embed {content}`\n• embedb ~ `{title} {name} {value}`\n• embedc ~ `{title} {url} {name} {value}`\n• embedu `{title} {url} {color} + 2 fields`\n• embedx ~ `{title} {url} {color} {name}\n{value} {name} {value} {name} {value}`", inline=True)
-		await ctx.send(embed=e)
+		await ctx.send(embed=m.e)
 
 	@commands.command(name='info')
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -136,20 +125,18 @@ class Menus:
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def discords(self, ctx):
-		e = discord.Embed()
-		embed=discord.Embed(title="~~~====🥂🍸🍷Discords🍷🍸🥂====~~~", color=0x80b0ff)
-		embed.add_field(name="• Anarchy Community", value="[Bridge of Anarchism](https://discord.gg/WN9F82d)\n[2p2e - 2pocket2edition](https://discord.gg/y4V4T84)\n[4B4T (Official)](https://discord.gg/BQ23Z2E)\n[4b4t §pawn Patrol](https://discord.gg/5hn4K8E)", inline=False)
-		embed.add_field(name="• Games", value="[PUBG Mobile](https://discord.gg/gVe27r4)", inline=False)
-		embed.add_field(name="• Misc", value="[Memes (Tothers Hotel)](https://discord.gg/TzGNyRg)\n[Threadys Alpha server](https://discord.gg/6tcqMUt)", inline=False)
-		await ctx.send(embed=embed)
+		e=discord.Embed(title="~~~====🥂🍸🍷Discords🍷🍸🥂====~~~", color=0x80b0ff)
+		e.add_field(name="• Anarchy Community", value="[Bridge of Anarchism](https://discord.gg/WN9F82d)\n[2p2e - 2pocket2edition](https://discord.gg/y4V4T84)\n[4B4T (Official)](https://discord.gg/BQ23Z2E)\n[4b4t §pawn Patrol](https://discord.gg/5hn4K8E)", inline=False)
+		e.add_field(name="• Games", value="[PUBG Mobile](https://discord.gg/gVe27r4)", inline=False)
+		e.add_field(name="• Misc", value="[Memes (Tothers Hotel)](https://discord.gg/TzGNyRg)\n[Threadys Alpha server](https://discord.gg/6tcqMUt)", inline=False)
+		await ctx.send(embed=e)
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def servers(self, ctx):
-		e = discord.Embed()
-		embed=discord.Embed(title="~~~====🥂🍸🍷Servers🍷🍸🥂====~~~", color=0x80b0ff)
-		embed.add_field(name="• Anarchy", value="• 4b4t.net : 19132", inline=False)
-		await ctx.send(embed=embed)
+		e=discord.Embed(title="~~~====🥂🍸🍷Servers🍷🍸🥂====~~~", color=0x80b0ff)
+		e.add_field(name="• Anarchy", value="• 4b4t.net : 19132", inline=False)
+		await ctx.send(embed=e)
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -204,14 +191,6 @@ class Menus:
 		await ctx.send(f'Storage [{bytes2human(storagetotal)}]\nRAM: [{bytes2human(ramtotal)}]\nCPU Count [{cpucount}]')
 
 # ~== Misc ==~
-
-	@commands.command(name='links', aliases=['invite', 'support'])
-	async def links(self, ctx):
-		e=discord.Embed(color=0x80b0ff)
-		e.set_author(name=f'| Links | 📚', icon_url=self.bot.get_user(264838866480005122).avatar_url)
-		e.set_thumbnail(url=random.choice(["https://cdn.discordapp.com/attachments/501871950260469790/513636718835007488/kisspng-computer-icons-message-icon-design-download-invite-5abf1e6f0905a2.045504771522474607037.png", "https://cdn.discordapp.com/attachments/501871950260469790/513636728733433857/mail-open-outline.png", "https://cdn.discordapp.com/attachments/501871950260469790/513636736492896271/mail-open-solid.png"]))
-		e.description = f'[Invite](https://discordapp.com/oauth2/authorize?client_id=506735111543193601&permissions=485878886&scope=bot) 📥\n[Support](https://discord.gg/HkeCzSw) 📧\n[Discord](https://discord.gg/BQ23Z2E) <:discord:513634338487795732>'
-		await ctx.send(embed=e)
 
 	@commands.command()
 	async def partners(self, ctx):
