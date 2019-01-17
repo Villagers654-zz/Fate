@@ -119,9 +119,9 @@ class Menus:
 		e.description = f'https://discord.gg/BQ23Z2E'
 		e.set_thumbnail(url=fate.avatar_url)
 		e.set_image(url="attachment://" + os.path.basename(path))
-		e.add_field(name="◈ Summary ◈", value="Fate is a ~~multipurpose~~ hybrid bot created for fun", inline=False)
+		e.add_field(name="◈ Summary ◈", value="Fate is a ~~multipurpose~~ hybrid bot created for ~~sexual assault~~ fun", inline=False)
 		e.add_field(name="◈ Credits ◈", value="• Tothy ~ `inspiration & rival`\n• Cortex ~ `teacher & reee`", inline=False)
-		e.add_field(name="◈ Statistics ◈", value=f'Servers: [{guilds}]\nUsers: [{users}]', inline=False)
+		e.add_field(name="◈ Statistics ◈", value=f'Modules: [{len(self.bot.commands)}]\nServers: [{guilds}]\nUsers: [{users}]', inline=False)
 		e.add_field(name="◈ Memory ◈", value=
 		f'__**Storage**__: [{c.bytes2human(storageused)}/{c.bytes2human(storagetotal)}]\n'
 		f'__**RAM**__: **Global**: {c.bytes2human(ramused)} **Bot**: {c.bytes2human(botram)} ({rampercent}%)\n'
