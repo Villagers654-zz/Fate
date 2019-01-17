@@ -1,6 +1,5 @@
 from discord.ext import commands
 from os.path import isfile
-import traceback
 import discord
 import random
 import json
@@ -9,8 +8,8 @@ class Toggles:
 	def __init__(self, bot):
 		self.bot = bot
 		self.responses = {}
-		if isfile("./data/config/toggles.json"):
-			with open("./data/config/toggles.json", "r") as infile:
+		if isfile("./data/userdata/config/toggles.json"):
+			with open("./data/userdata/config/toggles.json", "r") as infile:
 				dat = json.load(infile)
 				if "responses" in dat:
 					self.responses = dat["responses"]
@@ -20,8 +19,19 @@ class Toggles:
 
 	@commands.command()
 	@commands.check(luck)
-	async def cogs_responses(self, ctx):
-		await ctx.send('working')
+	async def disableresponses(self, ctx):
+		self.responses[str(ctx.guild.id)] = "disabled"
+		await ctx.send("Disabled responses")
+		with open("./data/userdata/config/toggles.json", "w") as outfile:
+			json.dump({"responses": self.responses}, outfile, ensure_ascii=False)
+
+	@commands.command()
+	@commands.check(luck)
+	async def enableresponses(self, ctx):
+		self.responses[str(ctx.guild.id)] = "enabled"
+		await ctx.send("Enabled responses")
+		with open("./data/userdata/config/toggles.json", "w") as outfile:
+			json.dump({"responses": self.responses}, outfile, ensure_ascii=False)
 
 # ~== Main ==~
 
@@ -57,7 +67,7 @@ class Toggles:
 		if isinstance(m.guild, discord.Guild):
 			if str(m.guild.id) not in self.responses:
 				self.responses[str(m.guild.id)] = 'enabled'
-				with open("./data/config/toggles.json", "w") as outfile:
+				with open("./data/userdata/config/toggles.json", "w") as outfile:
 					json.dump({"responses": self.responses}, outfile, ensure_ascii=False)
 			if self.responses[str(m.guild.id)] == 'enabled':
 				if r >= 7:
