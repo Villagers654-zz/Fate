@@ -22,6 +22,7 @@ class Menus:
 			"**Prefix:** `.`", inline=False)
 			e.add_field(name="◈ Commands ◈", value=
 			"• core ~ `main bot usage`\n"
+			"• utility ~ `helpful commands`\n"
 			"• react ~ `reaction gifs / images`\n"
 			"• mod ~ `moderation commands`\n"
 			"• fun ~ `entertaining stuff`\n"
@@ -31,6 +32,10 @@ class Menus:
 	@_help.command(name='core')
 	async def _core(self, ctx):
 		await ctx.send(embed=m.core)
+
+	@_help.command(name='utility')
+	async def _utility(self, ctx):
+		await ctx.send(embed=m.utility)
 
 	@_help.command(name='react')
 	async def _react(self, ctx):
@@ -60,6 +65,10 @@ class Menus:
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def core(self, ctx):
 		await ctx.send(embed=m.core)
+
+	@commands.command()
+	async def utility(self, ctx):
+		await ctx.send(embed=m.utility)
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
