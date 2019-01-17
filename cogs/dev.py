@@ -32,6 +32,12 @@ class Dev:
 # ~== Main ==~)
 
 	@commands.command()
+	@commands.check(luck)
+	async def chs(self, ctx, channel: discord.TextChannel, *, content):
+		await channel.send(content)
+		await ctx.message.delete()
+
+	@commands.command()
 	async def reverse(self, ctx, *, content):
 		await ctx.send(content[::-1])
 
