@@ -32,6 +32,10 @@ class Dev:
 # ~== Main ==~)
 
 	@commands.command()
+	async def chars(self, ctx, *, content):
+		await ctx.send(len(content))
+
+	@commands.command()
 	async def run(self, ctx, *, code):
 		await ctx.send(eval(code))
 
