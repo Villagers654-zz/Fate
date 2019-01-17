@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup as bs
+from data.misc import menus as m
 from discord.ext import commands
 from datetime import datetime
 import wikipedia.exceptions
@@ -72,6 +73,10 @@ class Core:
 		emb.add_field(name="Shortened Link", value=r, inline=False)
 		emb.set_footer(text='Powered by tinyurl.com', icon_url='http://cr-api.com/static/img/branding/cr-api-logo.png')
 		await ctx.send(embed=emb)
+
+	@commands.command()
+	async def invite(self, ctx):
+		await ctx.send(embed=m.links)
 
 	@commands.command()
 	async def repeat(self, ctx, *, content: commands.clean_content):
