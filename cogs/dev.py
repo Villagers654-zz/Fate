@@ -161,43 +161,6 @@ class Dev:
 			await ctx.send('hmmm {0.content}'.format(msg))
 
 	@commands.command()
-	async def freq(self, ctx):
-		await ctx.send(psutil.cpu_freq())
-
-	@commands.command()
-	async def pids(self, ctx):
-		await ctx.send(psutil.pids())
-
-	@commands.command()
-	async def temp(self, ctx):
-		await ctx.send(psutil.sensors_temperatures())
-
-	@commands.command()
-	async def net(self, ctx):
-		await ctx.send(psutil.net_if_stats())
-
-	@commands.command(name='ram', aliases=['wam'])
-	async def ram(self, ctx):
-		try:
-			def bytes2human(n):
-				symbols = ('K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y')
-				prefix = {}
-				for i, s in enumerate(symbols):
-					prefix[s] = 1 << (i + 1) * 10
-				for s in reversed(symbols):
-					if n >= prefix[s]:
-						value = float(n) / prefix[s]
-						return '%.1f%s' % (value, s)
-				return "%sB" % n
-			p = psutil.Process(os.getpid())
-			botram = p.memory_full_info().rss
-			ramused = psutil.virtual_memory().used
-			ramtotal = psutil.virtual_memory().total
-			await ctx.send(f'[{bytes2human(ramused)}, {bytes2human(ramtotal)}]')
-		except Exception as e:
-				await ctx.send(f'**```ERROR: {type(e).__name__} - {e}```**')
-
-	@commands.command()
 	@commands.check(luck)
 	async def print(self, ctx, *, arg):
 		async with ctx.typing():
