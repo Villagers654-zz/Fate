@@ -36,11 +36,26 @@ class Toggles:
 # ~== Main ==~
 
 	async def on_message(self, m: discord.Message):
-		if isinstance(m.guild, discord.Guild):
-			m.content = m.content.lower()
-			r = random.randint(1, 8)
-			if m.content.startswith("<@506735111543193601>"):
-				await m.channel.send(random.choice([
+		if m.content.startswith("<@506735111543193601>"):
+			check = 0
+			m.content = m.content.replace("<@506735111543193601>  ", "")
+			m.content = m.content.replace("<@506735111543193601> ", "")
+			m.content = m.content.replace("<@506735111543193601>", "")
+			if len(m.content) > 2:
+				f = open("./data/misc/responses.txt", "r")
+				for i in f.readlines():
+					if m.content in i:
+						f.close()
+						check += 1
+				if check == 0:
+					f = open("./data/misc/responses.txt", "a")
+					f.write("\n" + m.content)
+					f.close()
+			r = random.randint(1, 4)
+			if r >= 3:
+				msg = random.choice(open("./data/misc/responses.txt", "r").readlines())
+			else:
+				msg = random.choice([
 					"Once apon a time in a land far away, there lived a little boy who pinged a bot, first came rape, then came aids",
 					"Don't ping me m8, it hurts you more than it hurts me",
 					"Oh look, another homosexual",
@@ -52,7 +67,11 @@ class Toggles:
 					"Fuck off hitler",
 					"alright you pathetic lost child, use .help",
 					"and what might **you** want",
-					"No sir"]))
+					"No sir"])
+			await m.channel.send(msg)
+		if isinstance(m.guild, discord.Guild):
+			m.content = m.content.lower()
+			r = random.randint(1, 8)
 			if m.content.startswith("sponsered by totherbot"):
 				await m.channel.send(random.choice([
 					"Sponsored by faggatron",
