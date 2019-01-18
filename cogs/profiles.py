@@ -370,11 +370,11 @@ class Profiles:
 		self.bot.loop.create_task(self.stats())
 
 	async def on_message(self, m:discord.Message):
-		if not m.author.bot:
-			r = random.randint(5, 10)
-			author_id = str(m.author.id)
-			guild_id = str(m.guild.id)
-			if isinstance(m.guild, discord.Guild):
+		if isinstance(m.guild, discord.Guild):
+			if not m.author.bot:
+				r = random.randint(5, 10)
+				author_id = str(m.author.id)
+				guild_id = str(m.guild.id)
 				if author_id not in self.cd:
 					self.cd[author_id] = 0
 				if self.cd[author_id] < time.time():
