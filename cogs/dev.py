@@ -48,7 +48,10 @@ class Dev:
 
 	@commands.command()
 	async def run(self, ctx, *, code):
-		await ctx.send(eval(code))
+		try:
+			await ctx.send(eval(code))
+		except Exception as e:
+			await ctx.send(e)
 
 	@commands.command()
 	async def ltr(self, ctx):
