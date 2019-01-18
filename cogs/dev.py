@@ -1,5 +1,6 @@
 from PIL import Image, ImageDraw
 from discord.ext import commands
+import traceback
 import discord
 import asyncio
 import random
