@@ -53,48 +53,6 @@ class Core:
 		await ctx.send(content)
 		await ctx.message.delete()
 
-	@commands.command()
-	@commands.cooldown(1, 5, commands.BucketType.user)
-	async def devstats(self, ctx):
-		try:
-			def bytes2human(n):
-				symbols = ('GHz', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y')
-				prefix = {}
-				for i, s in enumerate(symbols):
-					prefix[s] = 1 << (i + 1) * 10
-				for s in reversed(symbols):
-					if n >= prefix[s]:
-						value = float(n) / prefix[s]
-						return '%.1f%s' % (value, s)
-				return "%sB" % n
-			p = psutil.Process(os.getpid())
-			luck = self.bot.get_user(264838866480005122)
-			botram = p.memory_full_info().rss
-			ramused = psutil.virtual_memory().used
-			ramtotal = psutil.virtual_memory().total
-			rampercent = psutil.virtual_memory().percent
-			cpupercent = psutil.cpu_percent(interval=1)
-			cpufreqcurrent = psutil.cpu_freq().current
-			cpufreqmax = psutil.cpu_freq().max
-			storageused = psutil.disk_usage('/').used
-			storagetotal = psutil.disk_usage('/').total
-			batterypercent = psutil.sensors_battery().percent
-			ischarging = " "
-			if psutil.sensors_battery().power_plugged:
-				ischarging= "charging"
-			e = discord.Embed()
-			e.set_author(name='| Memory | ', icon_url=luck.avatar_url)
-			e.set_thumbnail(url="https://cdn.discordapp.com/attachments/514213558549217330/514345278669848597/8yx98C.gif")
-			e.description = f'__**Storage**__: [{bytes2human(storageused)}/{bytes2human(storagetotal)}]\n' \
-				f'__**RAM**__: [{bytes2human(ramused)}/{bytes2human(ramtotal)}] ({rampercent}%)\n' \
-				f'__**CPU**__: **Global**: {psutil.cpu_percent(interval=1)}% **Bot**: {p.cpu_percent(interval=1.0)}%\n' \
-				f'__**CPU Frequency**__: [{bytes2human(cpufreqcurrent)}/{bytes2human(cpufreqmax)}]\n' \
-				f'__**battery**__: {batterypercent}% {ischarging}'
-			e.set_footer(text=f'{psutil.cpu_percent(interval=1, percpu=True)}')
-			await ctx.send(embed=e)
-		except Exception as e:
-			await ctx.send(e)
-
 	@commands.command(pass_context=True)
 	async def ping(self, ctx):
 		before = time.monotonic()
