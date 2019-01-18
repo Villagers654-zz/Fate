@@ -96,21 +96,5 @@ class Core:
 		except Exception as e:
 			await ctx.send(f'**```ERROR: {type(e).__name__} - {e}```**')
 
-# ~== Info ==~
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def setup(bot):
 	bot.add_cog(Core(bot))
