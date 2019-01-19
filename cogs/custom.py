@@ -12,15 +12,12 @@ class customclass:
 	def tm(ctx):
 		return ctx.author.id in [264838866480005122, 355026215137968129]
 
-# ~== Test ==~
-
-	@commands.command()
-	@commands.check(luck)
-	async def cogs_custom(self, ctx):
-		await ctx.send('working')
-
-# ~== Fun ==~
-
+	async def on_message(self, m: discord.Message):
+		if m.author.id == 452289354296197120:
+			if m.content.startswith("<:thonk"):
+				r = random.randint(1, 4)
+				if r >= 3:
+					await m.delete()
 	@commands.command()
 	async def tostitos(self, ctx):
 		await ctx.send("reeeeee")
@@ -35,8 +32,6 @@ class customclass:
 	async def agent(self, ctx):
 		await ctx.send(random.choice(["big gay", "kys", "get off me property", "now that's alotta damage"]))
 		await ctx.message.delete()
-
-# ~== Pings ==~
 
 def setup(bot):
 	bot.add_cog(customclass(bot))
