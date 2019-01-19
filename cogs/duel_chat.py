@@ -17,13 +17,9 @@ class Owner:
 					ar = self.bot.get_guild(530973099886379008)
 					for channel in ar.channels:
 						if channel.name == msg.channel.name:
-							async for m in channel.history(limit=1):
-								if msg.content.lower() in m.content.lower():
-									pass
-								else:
-									await channel.send(f"{msg.content}")
-									await asyncio.sleep(0.5)
-									await msg.delete()
+							await channel.send(f"{msg.content}")
+							await asyncio.sleep(0.5)
+							await msg.delete()
 			if msg.guild.name == "[Avapzian Regime]":
 				polis = self.bot.get_guild(534949405824909323)
 				for channel in polis.channels:
