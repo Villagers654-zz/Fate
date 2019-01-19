@@ -1,37 +1,15 @@
 from bs4 import BeautifulSoup as bs
 from data.misc import menus as m
 from discord.ext import commands
-from datetime import datetime
 import wikipedia.exceptions
 import wikipedia
 import discord
 import aiohttp
-import asyncio
-import psutil
 import time
-import os
 
 class Core:
 	def __init__(self, bot):
 		self.bot = bot
-
-	def luck(ctx):
-		return ctx.message.author.id == 264838866480005122
-
-	def tothy(ctx):
-		return ctx.message.author.id == 355026215137968129
-
-	def fourbeefourtee(ctx):
-		return ctx.author.id in [264838866480005122, 264838866480005122]
-
-# ~== Test ==~
-
-	@commands.command()
-	@commands.check(luck)
-	async def cogs_core(self, ctx):
-		await ctx.send('working')
-
-# ~== Main Commands ==~
 
 	@commands.command()
 	async def topguilds(self, ctx):
