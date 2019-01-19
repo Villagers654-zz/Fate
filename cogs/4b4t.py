@@ -40,10 +40,6 @@ class mainclass:
 
 # ~== Main ==~
 
-	async def on_ready(self):
-		await asyncio.sleep(0.5)
-		self.bot.loop.create_task(self.motdshuffle())
-
 	async def motdshuffle(self):
 		while True:
 			try:
