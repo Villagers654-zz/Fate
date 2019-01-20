@@ -14,9 +14,15 @@ class Owner:
 			def pred(m):
 				return m.author.id == 270904126974590976 and m.channel == m.channel
 			try:
-				msg = await self.bot.wait_for('message', check=pred, timeout=120.0)
+				msg = await self.bot.wait_for('message', check=pred, timeout=10.0)
 			except asyncio.TimeoutError:
-				async for i in m.channel.history(limit=5):
+				async for i in m.channel.history(limit=10):
+					await i.delete()
+				await asyncio.sleep(10)
+				async for i in m.channel.history(limit=10):
+					await i.delete()
+				await asyncio.sleep(10)
+				async for i in m.channel.history(limit=10):
 					await i.delete()
 			else:
 				await asyncio.sleep(0.5)
@@ -28,9 +34,15 @@ class Owner:
 			def pred(m):
 				return m.author.id in bots and m.channel == m.channel
 			try:
-				msg = await self.bot.wait_for('message', check=pred, timeout=60.0)
+				msg = await self.bot.wait_for('message', check=pred, timeout=10.0)
 			except asyncio.TimeoutError:
-				async for i in m.channel.history(limit=5):
+				async for i in m.channel.history(limit=10):
+					await i.delete()
+				await asyncio.sleep(10)
+				async for i in m.channel.history(limit=10):
+					await i.delete()
+				await asyncio.sleep(10)
+				async for i in m.channel.history(limit=10):
 					await i.delete()
 			else:
 				await asyncio.sleep(0.5)
