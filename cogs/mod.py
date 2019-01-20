@@ -9,6 +9,7 @@ import os
 class Mod:
 	def __init__(self, bot):
 		self.bot = bot
+		self.purge = {}
 		self.warns = {}
 		if isfile("./data/userdata/mod.json"):
 			with open("./data/userdata/mod.json", "r") as infile:
@@ -31,13 +32,27 @@ class Mod:
 		except Exception as e:
 			await ctx.send(f'**```ERROR: {type(e).__name__} - {e}```**')
 
-	@commands.command()
+	@commands.command(name="purge")
 	@commands.has_permissions(manage_messages=True)
-	@commands.cooldown(1, 10, commands.BucketType.user)
-	async def purge(self, ctx, amount: int):
-		await ctx.message.channel.purge(before=ctx.message, limit=amount)
-		await ctx.message.delete()
-		await ctx.send("{}, successfully purged {} messages".format(ctx.author.name, amount), delete_after=5)
+	async def _purge(self, ctx, amount: int):
+		channel_id = str(ctx.channel.id)
+		if channel_id not in self.purge:
+			await ctx.message.channel.purge(before=ctx.message, limit=amount)
+			await ctx.message.delete()
+			await ctx.send("{}, successfully purged {} messages".format(ctx.author.name, amount), delete_after=5)
+			self.purge[channel_id] = False
+		else:
+			if self.purge[channel_id] == True:
+				await ctx.send("I'm already purging..")
+			else:
+				if self.purge[channel_id] == False:
+					self.purge[channel_id] = True
+					await ctx.message.channel.purge(before=ctx.message, limit=amount)
+					await ctx.message.delete()
+					await ctx.send("{}, successfully purged {} messages".format(ctx.author.name, amount), delete_after=5)
+					self.purge[channel_id] = False
+				else:
+					await ctx.send("your codes shit")
 
 	@commands.command(name="kick", aliases=["k"])
 	@commands.has_permissions(kick_members=True)
