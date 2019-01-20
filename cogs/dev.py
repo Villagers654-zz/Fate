@@ -1,6 +1,4 @@
-from PIL import Image, ImageDraw
 from discord.ext import commands
-import traceback
 import discord
 import asyncio
 import random
@@ -13,24 +11,6 @@ class Dev:
 
 	def luck(ctx):
 		return ctx.message.author.id == 264838866480005122
-
-	def tothy(ctx):
-		return ctx.message.author.id == 355026215137968129
-
-	def zerotwo(ctx):
-		return ctx.message.author.id == 261569654646898688
-
-	def puffy(ctx):
-		return ctx.message.author.id == 257560165488918529
-
-# ~== Core ==~
-
-	@commands.command()
-	@commands.check(luck)
-	async def cogs_dev(self, ctx):
-		await ctx.send('working')
-
-# ~== Main ==~)
 
 	@commands.command()
 	@commands.check(luck)
