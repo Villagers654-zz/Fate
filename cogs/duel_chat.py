@@ -26,5 +26,16 @@ class Owner:
 					if channel.name == msg.channel.name:
 						await channel.send(f"**{msg.author.name}:** {msg.content}")
 
+	async def on_typing(self, c, m, when):
+		if isinstance(c.guild, discord.Guild):
+			if c.guild.name == "Polis":
+				if m.id == self.bot.user.id:
+					pass
+				else:
+					ar = self.bot.get_guild(530973099886379008)
+					for channel in ar.channels:
+						if channel.name == c.name:
+							await channel.trigger_typing()
+
 def setup(bot):
 	bot.add_cog(Owner(bot))
