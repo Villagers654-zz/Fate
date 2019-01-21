@@ -75,20 +75,6 @@ class Dev:
 		await ctx.send(ctx.guild.members)
 
 	@commands.command()
-	async def draw(self, ctx):
-		try:
-			img = Image.new('RGB', (100, 30), color=(73, 109, 137))
-			d = ImageDraw.Draw(img)
-			d.text((10, 10), "Hello World", fill=(255, 255, 0))
-			img.save('text.png')
-			e = discord.Embed()
-			path = os.getcwd()
-			e.set_image(url="attachment:///" + path)
-			await ctx.send(embed=e)
-		except Exception as e:
-			await ctx.send(e)
-
-	@commands.command()
 	async def lmgtfy(self, ctx, *, query: str):
 		msg = query.replace(" ", "+")
 		msg = "http://lmgtfy.com/?q={}".format(msg)
