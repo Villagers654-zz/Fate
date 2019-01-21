@@ -12,7 +12,7 @@ import time
 
 files = ['error_handler', 'owner', 'menus', 'core', 'mod', 'music', 'welcome', 'farewell', 'notes', 'archive', 'coffeeshop', 'custom',
          'actions', 'reactions', 'responses', 'textart', 'fun', 'math', 'dev', '4b4t', 'readme', 'legit', 'reload', 'embeds', 'manager',
-         'profiles', 'save', 'clean_rythm', 'anti_magik', 'tother', 'utility', 'anarchy_reborn', 'psutil']
+         'profiles', 'save', 'clean_rythm', 'anti_magik', 'tother', 'utility', 'psutil', 'rules', 'duel_chat']
 
 description = '''Fate[Zero]: Personal Bot'''
 bot = commands.Bot(command_prefix=['.', '<@506735111543193601>'], case_insensitive=True)
@@ -20,8 +20,9 @@ bot.START_TIME = time.time()
 bot.remove_command('help')
 bot.LOAD_TIME = None
 bot.LOGIN_TIME = None
-errorcount = 0
+bot.errorcount = 0
 error = False
+bot.info = ""
 
 async def status_task():
 	while True:
@@ -42,7 +43,7 @@ async def on_ready():
 	print(bot.user.id)
 	print(f'Version: {discord.__version__}')
 	print(f'Modules: {len(bot.commands)}')
-	print(f'Errors: {errorcount}')
+	print(f'Errors: {bot.errorcount}')
 	cprint('--------------------------', 'cyan')
 	print(' ζξ Welcome back Mikey :)\n'
 	      '┌──┬┐ The best way to start\n'
@@ -55,14 +56,14 @@ async def on_ready():
 	if error is not False:
 		await bot.get_channel(534608853300412416).send(f"```{error}```")
 	bot.loop.create_task(status_task())
-	o, k = divmod(time.time() - bot.START_TIME, 60)
-	h, m = divmod(k, 60)
-	bot.LOGIN_TIME = k
+	m, s = divmod(time.time() - bot.START_TIME, 60)
+	h, m = divmod(m, 60)
+	bot.LOGIN_TIME = s
 
 # ~== Startup ==~
 
 if __name__ == '__main__':
-	print("Loading cogs..")
+	cprint("Loading cogs..", "blue")
 	cogs = 0
 	rank = 0
 	f = None
@@ -71,10 +72,16 @@ if __name__ == '__main__':
 		try:
 			bot.load_extension("cogs." + cog)
 			rank += 1
-			cprint(f"{cogs}. Cog: {cog} - operational", "green")
+			m, s = divmod(time.time() - bot.START_TIME, 60)
+			h, m = divmod(m, 60)
+			cprint(f"{cogs}. Cog: {cog} - operational - [{str(s)[:3]}]", "green")
+			bot.info += f"{cogs}. Cog: {cog} - operational - [{str(s)[:3]}]\n"
 		except Exception as e:
-			errorcount += 1
-			cprint(f"{cogs}. Cog: {cog} - error", "red")
+			bot.errorcount += 1
+			m, s = divmod(time.time() - bot.START_TIME, 60)
+			h, m = divmod(m, 60)
+			cprint(f"{cogs}. Cog: {cog} - error - [{str(s)[:3]}]", "red")
+			bot.info += f"{cogs}. Cog: {cog} - error - [{str(s)[:3]}]\n"
 			error = traceback.format_exc()
 	if rank == cogs:
 		cprint(f"Loaded {rank}/{cogs} cogs :)", "magenta")
