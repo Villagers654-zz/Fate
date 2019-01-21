@@ -1,9 +1,8 @@
-from data.utils import converter as c
+from cogs.utils import psutil as p
 from data.misc import menus as m
 from discord.ext import commands
 import discord
 import random
-import psutil
 import time
 import os
 
@@ -103,16 +102,10 @@ class Menus:
 	async def info(self, ctx):
 		m, s = divmod(time.time() - self.bot.START_TIME, 60)
 		h, m = divmod(m, 60)
-		p = psutil.Process(os.getpid())
 		guilds = len(list(self.bot.guilds))
 		users = len(list(self.bot.users))
 		fate = self.bot.get_user(506735111543193601)
 		luck = self.bot.get_user(264838866480005122)
-		botram = p.memory_full_info().rss
-		ramused = psutil.virtual_memory().used
-		rampercent = psutil.virtual_memory().percent
-		storageused = psutil.disk_usage('/').used
-		storagetotal = psutil.disk_usage('/').total
 		path = os.getcwd() + "/data/images/banners/" + random.choice(os.listdir(os.getcwd() + "/data/images/banners/"))
 		e=discord.Embed(color=0x80b0ff)
 		e.set_author(name="Fate [Zerø]: Core Info", icon_url=luck.avatar_url)
@@ -123,9 +116,9 @@ class Menus:
 		e.add_field(name="◈ Credits ◈", value="• Tothy ~ `rival`\n• Cortex ~ `teacher`", inline=False)
 		e.add_field(name="◈ Statistics ◈", value=f'Modules: [{len(self.bot.commands)}]\nServers: [{guilds}]\nUsers: [{users}]', inline=False)
 		e.add_field(name="◈ Memory ◈", value=
-		f'__**Storage**__: [{c.bytes2human(storageused)}/{c.bytes2human(storagetotal)}]\n'
-		f'__**RAM**__: **Global**: {c.bytes2human(ramused)} **Bot**: {c.bytes2human(botram)} ({rampercent}%)\n'
-		f'__**CPU**__: **Global**: {psutil.cpu_percent(interval=1)}% **Bot**: {p.cpu_percent(interval=1.0)}%')
+		f'__**Storage**__: [{p.bytes2human(p.storageused)}/{p.bytes2human(p.storagetotal)}]\n'
+		f'__**RAM**__: **Global**: {p.bytes2human(p.ramused)} **Bot**: {p.bytes2human(p.botram)} ({p.rampercent}%)\n'
+		f'__**CPU**__: **Global**: {p.cpu}% **Bot**: {p.botcpu}%')
 		e.set_footer(text="Uptime: {} Hours {} Minutes {} seconds".format(int(h), int(m), int(s)))
 		await ctx.send(file=discord.File(path, filename=os.path.basename(path)), embed=e)
 
@@ -168,36 +161,6 @@ class Menus:
 				e.add_field(name="◈ Server Info ◈", value="**ip:** 4b4t.net : 19132\n**Version:** 1.7.0", inline=False)
 				e.add_field(name="◈ Commands ◈", value="• submitmotd ~ `submits a MOTD`\n• reportbug ~ `report a bug`\n• rules ~ `4b4t's discord rules`\n• vote ~ `vote for 4b4t`", inline=False)
 				await message.channel.send(embed=e)
-
-	@commands.command()
-	async def specs(self, ctx):
-		m, s = divmod(time.time() - self.bot.START_TIME, 60)
-		h, m = divmod(m, 60)
-		def bytes2human(n):
-			symbols = ('K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y')
-			prefix = {}
-			for i, s in enumerate(symbols):
-				prefix[s] = 1 << (i + 1) * 10
-			for s in reversed(symbols):
-				if n >= prefix[s]:
-					value = float(n) / prefix[s]
-					return '%.1f%s' % (value, s)
-			return "%sB" % n
-		p = psutil.Process(os.getpid())
-		guilds = len(list(self.bot.guilds))
-		users = len(list(self.bot.users))
-		guild = self.bot.get_guild(470961230362837002)
-		fate = self.bot.get_user(506735111543193601)
-		luck = self.bot.get_user(264838866480005122)
-		botram = p.memory_full_info().rss
-		ramused = psutil.virtual_memory().used
-		ramtotal = psutil.virtual_memory().total
-		rampercent = psutil.virtual_memory().percent
-		cpupercent = psutil.cpu_percent(interval=1)
-		cpucount = psutil.cpu_count()
-		storageused = psutil.disk_usage('/').used
-		storagetotal = psutil.disk_usage('/').total
-		await ctx.send(f'Storage [{bytes2human(storagetotal)}]\nRAM: [{bytes2human(ramtotal)}]\nCPU Count [{cpucount}]')
 
 # ~== Misc ==~
 
