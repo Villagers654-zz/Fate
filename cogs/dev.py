@@ -41,11 +41,6 @@ class Dev:
 	async def rtl(self, ctx):
 		await ctx.send(u"\u200F")
 
-	@commands.command()
-	@commands.check(luck)
-	async def testsend(self, *, message):
-		await self.bot.get_user(264838866480005122).send(message)
-
 	async def on_member_join(self,m:discord.Member):
 		if m.guild.id ==470961230362837002:
 			if m.id ==255433446220890112:
