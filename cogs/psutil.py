@@ -1,4 +1,4 @@
-from data.utils import psutil as p
+from cogs.utils import psutil as p
 from discord.ext import commands
 import discord
 
