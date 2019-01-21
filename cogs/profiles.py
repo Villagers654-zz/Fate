@@ -1,4 +1,4 @@
-from data.utils import converter as c
+from cogs.utils import psutil as p
 from discord.ext import commands
 from os.path import isfile
 import traceback
@@ -9,7 +9,6 @@ import random
 import psutil
 import json
 import time
-import os
 
 class Profiles:
 	def __init__(self, bot):
@@ -298,19 +297,6 @@ class Profiles:
 	async def stats(self):
 		while True:
 			try:
-				p = psutil.Process(os.getpid())
-				botram = p.memory_full_info().rss
-				ramused = psutil.virtual_memory().used
-				storageused = psutil.disk_usage('/').used
-				storagetotal = psutil.disk_usage('/').total
-				try:
-					cpufreqcurrent = c.bytes2human(psutil.cpu_freq().current)
-				except:
-					cpufreqcurrent = "unavailable"
-				try:
-					cpufreqmax = c.bytes2human(psutil.cpu_freq().max)
-				except:
-					cpufreqmax = "unavailable"
 				channel = self.bot.get_channel(self.statschannel)
 				e = discord.Embed(title="", color=0x4A0E50)
 				e.description = "💎 Official 4B4T Server 💎"
@@ -331,11 +317,11 @@ class Profiles:
 				e.add_field(name="Leaderboard", value=leaderboard, inline=False)
 				e.add_field(
 					name="◈ Memory ◈",
-					value=f"__**Storage**__: [{c.bytes2human(storageused)}/{c.bytes2human(storagetotal)}]\n"
-					f"__**RAM**__: **Global**: {c.bytes2human(ramused)} **Bot**: {c.bytes2human(botram)}\n"
-					f"__**CPU**__: **Global**: {psutil.cpu_percent(interval=1)}% **Bot**: {p.cpu_percent(interval=1.0)}%\n"
+					value=f"__**Storage**__: [{p.bytes2human(p.storageused)}/{p.bytes2human(p.storagetotal)}]\n"
+					f"__**RAM**__: **Global**: {p.bytes2human(p.ramused)} **Bot**: {p.bytes2human(p.botram)}\n"
+					f"__**CPU**__: **Global**: {p.cpu}% **Bot**: {p.botcpu}%\n"
 					f"__**CPU Per Core**__: {[round(i) for i in psutil.cpu_percent(interval=1, percpu=True)]}\n"
-					f"__**CPU Frequency**__: [{cpufreqcurrent}/{cpufreqmax}]")
+					f"__**CPU Frequency**__: [{p.freq}/{p.freqmax}]")
 				fmt = "%m-%d-%Y %I:%M%p"
 				time = datetime.datetime.now()
 				time = time.strftime(fmt)
