@@ -104,8 +104,6 @@ class Defender:
 		(output, err) = p.communicate()
 		output = str(output)
 		output = output.replace("b'", "'")
-		t = os.popen('date')
-		timestamp = t.read()
 		h = '75.107.232.117'
 		c = '166.182.244'
 		if h in output:
@@ -115,14 +113,31 @@ class Defender:
 				color = 0x39FF14
 			else:
 				color = 0xff0000
+		color = 0x39FF14
 		load = str(self.bot.LOAD_TIME)[:3]
 		login = str(self.bot.LOGIN_TIME - self.bot.LOAD_TIME)[:3]
 		total = decimal.Decimal(load)+decimal.Decimal(login)
+		info = "```\n"
+		info += '--------------------------\n'
+		info += 'Logged in as\n'
+		info += f"{self.bot.user.name}\n"
+		info += f"{self.bot.user.id}\n"
+		info += f'Version: {discord.__version__}\n'
+		info += f'Modules: {len(self.bot.commands)}\n'
+		info += f'Errors: {self.bot.errorcount}\n'
+		info += '--------------------------\n'
+		info += (' ζξ Welcome back Mikey :)\n'
+		        '┌──┬┐ The best way to start\n'
+		        '│  ├┘ your day is with the\n'
+		        '└──┘ blood of your enemys\n')
+		info += '--------------------------```'
+		self.bot.info = self.bot.info.replace("Cog: ", "")
 		e = discord.Embed(color=color)
 		e.set_author(name='Login Notice', icon_url=self.bot.user.avatar_url)
-		e.description = f'{timestamp}'
-		e.add_field(name="Startup Info", value=f"Time to load files: {load} seconds\nTime to login: {login} seconds\nTotal time taken: {total} seconds", inline=False)
-		e.add_field(name='Security Check', value=f'`{output}`')
+		e.description = f'```{self.bot.info}```'
+		e.add_field(name="Loading Info", value=f"```Time to load files: {load} seconds\nTime to login: {login} seconds\nTotal time taken: {total} seconds```", inline=False)
+		e.add_field(name='Security Check', value=f'```{output}```')
+		e.add_field(name="Welcome", value=info, inline=False)
 		await channel.send(embed=e)
 		h = ['75.107.232.117', '166.182.244']
 		check = 0
