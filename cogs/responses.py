@@ -72,36 +72,37 @@ class Responses:
 			await m.channel.send(msg)
 		m.content = m.content.lower()
 		#toggleable responses
-		if str(m.guild.id) not in self.responses:
-			self.responses[str(m.guild.id)] = 'enabled'
-			with open("./data/userdata/config/toggles.json", "w") as outfile:
-				json.dump({"responses": self.responses}, outfile, ensure_ascii=False)
-		if self.responses[str(m.guild.id)] == 'enabled':
-			if r > 2:
-				if m.content.startswith("hello"):
-					await m.channel.send(random.choice(["Hello", "Hello :3", "Suh", "Suh :3", "Wazzuh", "Despacito :]"]))
-				if m.content.startswith("gm"):
-					await m.channel.send(random.choice(["Gm", "Gm :3", "Morning", "Morning :3", "Welcome to heaven"]))
-				if m.content.startswith("gn"):
-					await m.channel.send(random.choice(["Gn", "Gn :3", "Night", "Nighty"]))
-				if m.content.startswith("ree"):
-					await m.channel.send(random.choice([
-						"*depression strikes again*", "*pole-man strikes again*",
-						"Would you like an espresso for your depresso",
-						"You're not you when you're hungry",
-						"*crippling depression*",
-						"Breakdown sponsored by Samsung",
-						"No espresso for you",
-						"Sucks to be you m8",
-						"Ripperoni"]))
-				if m.content.startswith("kys"):
-					await m.channel.send(random.choice([
-						"*nazi vegan feminism rally starts*",
-						"Sorry hitler, Germany's not here", "NoT iN mY cHriSTiAn sErVeR..\nDo it in threadys",
-						"tfw you see faggots that should kill themselves telling other people to kill themselves",
-						"Shut your skin tone chicken bone google chrome no home flip phone disowned ice cream cone garden gnome extra chromosome metronome dimmadome genome full blown monochrome student loan indiana jones overgrown flintstone x and y hormone friend zoned sylvester stallone sierra leone autozone professionally seen silver patrone head ass tf up.",
-						"Well aren't you just a fun filled little lollipop tripple dipped in psycho",
-						"Woah, calm down satan"]))
+		if isinstance(m.guild, discord.Guild):
+			if str(m.guild.id) not in self.responses:
+				self.responses[str(m.guild.id)] = 'enabled'
+				with open("./data/userdata/config/toggles.json", "w") as outfile:
+					json.dump({"responses": self.responses}, outfile, ensure_ascii=False)
+			if self.responses[str(m.guild.id)] == 'enabled':
+				if r > 2:
+					if m.content.startswith("hello"):
+						await m.channel.send(random.choice(["Hello", "Hello :3", "Suh", "Suh :3", "Wazzuh", "Despacito :]"]))
+					if m.content.startswith("gm"):
+						await m.channel.send(random.choice(["Gm", "Gm :3", "Morning", "Morning :3", "Welcome to heaven"]))
+					if m.content.startswith("gn"):
+						await m.channel.send(random.choice(["Gn", "Gn :3", "Night", "Nighty"]))
+					if m.content.startswith("ree"):
+						await m.channel.send(random.choice([
+							"*depression strikes again*", "*pole-man strikes again*",
+							"Would you like an espresso for your depresso",
+							"You're not you when you're hungry",
+							"*crippling depression*",
+							"Breakdown sponsored by Samsung",
+							"No espresso for you",
+							"Sucks to be you m8",
+							"Ripperoni"]))
+					if m.content.startswith("kys"):
+						await m.channel.send(random.choice([
+							"*nazi vegan feminism rally starts*",
+							"Sorry hitler, Germany's not here", "NoT iN mY cHriSTiAn sErVeR..\nDo it in threadys",
+							"tfw you see faggots that should kill themselves telling other people to kill themselves",
+							"Shut your skin tone chicken bone google chrome no home flip phone disowned ice cream cone garden gnome extra chromosome metronome dimmadome genome full blown monochrome student loan indiana jones overgrown flintstone x and y hormone friend zoned sylvester stallone sierra leone autozone professionally seen silver patrone head ass tf up.",
+							"Well aren't you just a fun filled little lollipop tripple dipped in psycho",
+							"Woah, calm down satan"]))
 
 def setup(bot):
 	bot.add_cog(Responses(bot))
