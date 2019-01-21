@@ -15,15 +15,6 @@ class Defender:
 	def ips(ctx):
 		return ctx.author.id in [264838866480005122, 355026215137968129]
 
-# ~== Test ==~
-
-	@commands.command()
-	@commands.check(luck)
-	async def cogs_manager(self, ctx):
-		await ctx.send('working')
-
-# ~== Main ==~
-
 	async def warn(self):
 		while True:
 			ips = ['75.107.232.117', '166.182.244', '90.240.5.35', '83.137.2']
