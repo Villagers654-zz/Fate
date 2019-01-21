@@ -358,7 +358,7 @@ class Profiles:
 						await msg.delete()
 				await asyncio.sleep(25)
 			except Exception as e:
-				await self.bot.get_channel().send(f"```{traceback.format_exc()}```{e}")
+				await self.bot.get_channel(534608853300412416).send(f"```{traceback.format_exc()}```{e}")
 
 	async def on_ready(self):
 		await asyncio.sleep(0.5)
