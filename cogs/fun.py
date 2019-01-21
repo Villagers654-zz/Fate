@@ -61,7 +61,7 @@ class Fun:
 				decode = base64.b64decode(message.encode())
 			await ctx.send(decode.decode())
 
-	@commands.command()
+	@commands.command(disabled=True)
 	async def smash(self, ctx):
 		diary = self.bot.get_channel(505618142563926027)
 		e=discord.Embed(description=random.choice(["Whats up bitche, its time to get laid", "No, ew, go fuck a garbage bag or something", "No, ew, go fuck a garbage bag full of used syringes", "i'm ready when you are", "OOGA BOOGA", "*ochinchin falls out*", "Everyday can be a saturday :)"]), color=0x800080)
