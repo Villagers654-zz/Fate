@@ -68,29 +68,29 @@ class Utility:
 		e.add_field(name="◈ Created ◈", value=created.strftime(fmt), inline=False)
 		await ctx.send(embed=e)
 
-	@commands.command(name="addemote", aliases=["emote", "addemoji"])
+	@commands.command(name="addemoji", aliases=["emote", "addemote"])
 	@commands.has_permissions(manage_emojis=True)
-	async def _addemote(self, ctx, *, name=None):
+	async def _addemoji(self, ctx, *, name=None):
 		if len(ctx.message.attachments) > 1:
 			for attachment in ctx.message.attachments:
-				name = str(attachment.filename).lower().replace(" ", "").replace(".png", "").replace(".jpg", "")[:32]
+				name = attachment[:str(attachment.filename).lower().find(".")].replace(" ", "")[:32]
 				await ctx.guild.create_custom_emoji(name=name, image=requests.get(attachment.url).content, reason=ctx.author.name)
-				await ctx.send(f"successfully added {name} to emotes")
+				await ctx.send(f"successfully added `{name}` to emotes")
 		else:
 			if name is None:
 				for attachment in ctx.message.attachments:
-					name = str(attachment.filename)[:32].replace(" ", "-")
+					name = attachment[:str(attachment.filename).lower().find(".")].replace(" ", "")[:32]
 					await ctx.guild.create_custom_emoji(name=name, image=requests.get(attachment.url).content, reason=ctx.author.name)
-					await ctx.send(f"Successfully added {name} to emotes")
+					await ctx.send(f"Successfully added `{name}` to emotes")
 			else:
 				for attachment in ctx.message.attachments:
 					name = name[:32].replace(" ", "")
 					await ctx.guild.create_custom_emoji(name=name, image=requests.get(attachment.url).content, reason=ctx.author.name)
-					await ctx.send(f"Successfully added {name} to emotes")
+					await ctx.send(f"Successfully added `{name}` to emotes")
 
-	@commands.command(name="delemote", aliases=["delemoji"])
+	@commands.command(name="delemoji", aliases=["delemote"])
 	@commands.has_permissions(manage_emojis=True)
-	async def _delemote(self, ctx, *, name):
+	async def _delemoji(self, ctx, *, name):
 		check = 0
 		for emote in ctx.guild.emojis:
 			if name.lower() == emote.name.lower():
