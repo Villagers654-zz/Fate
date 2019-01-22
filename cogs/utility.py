@@ -4,6 +4,7 @@ from discord.ext import commands
 from datetime import datetime
 import wikipedia.exceptions
 import wikipedia
+import requests
 import discord
 import aiohttp
 import asyncio
@@ -66,6 +67,46 @@ class Utility:
 		e.add_field(name="◈ Perms ◈", value="```{}```".format(perms), inline=False)
 		e.add_field(name="◈ Created ◈", value=created.strftime(fmt), inline=False)
 		await ctx.send(embed=e)
+
+	@commands.command(name="addemote", aliases=["emote", "addemoji"])
+	@commands.has_permissions(manage_emojis=True)
+	async def _addemote(self, ctx, *, name=None):
+		if len(ctx.message.attachments) > 1:
+			for attachment in ctx.message.attachments:
+				name = str(attachment.filename).lower().replace(" ", "").replace(".png", "").replace(".jpg", "")[:32]
+				await ctx.guild.create_custom_emoji(name=name, image=requests.get(attachment.url).content, reason=ctx.author.name)
+				await ctx.send(f"successfully added {name} to emotes")
+		else:
+			if name is None:
+				for attachment in ctx.message.attachments:
+					name = str(attachment.filename)[:32].replace(" ", "-")
+					await ctx.guild.create_custom_emoji(name=name, image=requests.get(attachment.url).content, reason=ctx.author.name)
+					await ctx.send(f"Successfully added {name} to emotes")
+			else:
+				for attachment in ctx.message.attachments:
+					name = name[:32].replace(" ", "")
+					await ctx.guild.create_custom_emoji(name=name, image=requests.get(attachment.url).content, reason=ctx.author.name)
+					await ctx.send(f"Successfully added {name} to emotes")
+
+	@commands.command(name="delemote", aliases=["delemoji"])
+	@commands.has_permissions(manage_emojis=True)
+	async def _delemote(self, ctx, *, name):
+		check = 0
+		for emote in ctx.guild.emojis:
+			if name.lower() == emote.name.lower():
+				await emote.delete(reason=ctx.author.name)
+				await ctx.send(f"Deleted emote `{emote.name}`")
+				check = 1
+				break
+		if check == 0:
+			for emote in ctx.guild.emojis:
+				if name.lower() in emote.name.lower():
+					await emote.delete(reason=ctx.author.name)
+					await ctx.send(f"Deleted emote `{emote.name}`")
+					check = 1
+					break
+		if check == 0:
+			await ctx.send("I couldnt find that emote")
 
 	@commands.command(name='makepoll', aliases=['mp'])
 	@commands.cooldown(1, 5, commands.BucketType.channel)
