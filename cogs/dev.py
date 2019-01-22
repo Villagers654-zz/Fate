@@ -104,13 +104,10 @@ class Dev:
 
 	@commands.command()
 	async def guilds(self, ctx):
-		try:
-			s = [f"{guild[0]}: - {guild[2]} members, Owner: {guild[1]}" for guild in sorted([[g.name, g.owner.name, len(g.members)] for g in self.bot.guilds], key=lambda k: k[2], reverse=True)[:100]]
-			e=discord.Embed(color=0x80b0ff)
-			e.description = f'```{s}```'
-			await ctx.send(embed=e)
-		except Exception as e:
-			await ctx.send(f'**```ERROR: {type(e).__name__} - {e}```**')
+		s = [f"{guild[0]}: - {guild[2]} members, Owner: {guild[1]}" for guild in sorted([[g.name, g.owner.name, len(g.members)] for g in self.bot.guilds], key=lambda k: k[2], reverse=True)[:100]]
+		e=discord.Embed(color=0x80b0ff)
+		e.description = f'```{s}```'
+		await ctx.send(embed=e)
 
 	@commands.command()
 	async def mh(self, ctx):
