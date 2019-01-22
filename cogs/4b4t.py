@@ -68,6 +68,10 @@ class mainclass:
 			f.close()
 			await asyncio.sleep(1800)
 
+	async def on_ready(self):
+		await asyncio.sleep(0.5)
+		self.bot.loop.create_task(self.motdshuffle())
+
 	@commands.command()
 	@commands.check(luck)
 	async def cleanup(self, ctx):
