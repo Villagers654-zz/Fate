@@ -5,7 +5,7 @@ import asyncio
 import random
 import json
 
-class mainclass:
+class Minecraft:
 	def __init__(self, bot):
 		self.bot = bot
 		self.motds = []
@@ -113,4 +113,4 @@ class mainclass:
 		self.bot.loop.create_task(self.motdshuffle())
 
 def setup(bot):
-	bot.add_cog(mainclass(bot))
+	bot.add_cog(Minecraft(bot))
