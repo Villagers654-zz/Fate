@@ -2,21 +2,12 @@ from discord.ext import commands
 import discord
 import random
 
-class mainclass:
+class Actions:
 	def __init__(self, bot):
 		self.bot = bot
 
 	def luck(ctx):
 		return ctx.message.author.id == 264838866480005122
-
-# ~== Test ==~
-
-	@commands.command()
-	@commands.check(luck)
-	async def cogs_actions(self, ctx):
-		await ctx.send('working')
-
-# ~== Main ==~
 
 	@commands.command()
 	async def crucify(self, ctx, arg):
@@ -97,4 +88,4 @@ class mainclass:
 ┻┻┻┻┻┻""")
 
 def setup(bot):
-    bot.add_cog(mainclass(bot))
+	bot.add_cog(Actions(bot))
