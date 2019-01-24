@@ -11,7 +11,7 @@ import time
 # ~== Core ==~
 
 files = ['error_handler', 'owner', 'menus', 'core', 'mod', 'music', 'welcome', 'farewell', 'notes', 'archive', 'coffeeshop', 'custom',
-         'actions', 'reactions', 'responses', 'textart', 'fun', 'math', 'dev', '4b4t', 'readme', 'legit', 'reload', 'embeds', 'manager',
+         'actions', 'reactions', 'responses', 'textart', 'fun', 'math', 'dev', '4b4t', 'readme', 'legit', 'reload', 'embeds', 'warning',
          'profiles', 'save', 'clean_rythm', 'anti_magik', 'tother', 'utility', 'psutil', 'rules', 'duel_chat']
 
 description = '''Fate[Zero]: Personal Bot'''
