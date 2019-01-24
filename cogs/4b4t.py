@@ -60,7 +60,7 @@ class mainclass:
 				f"gamemode=0\n"
 				f"edu-mode=false\n"
 				f"experiment-mode=false\n"
-				f"texturepack-required=true")
+				f"texturepack-required=false\n")
 			f.close()
 			await asyncio.sleep(1800)
 
