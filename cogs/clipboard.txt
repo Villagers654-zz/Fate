@@ -76,6 +76,11 @@ await channel.send(f.read())
 							except Exception as e:
 								pass
 
+							async for m in channel.history(limit=1):
+								if msg.content.lower() in m.content.lower():
+									pass
+								else:
+
 				stuff = (f'--------------------------\n'
 				         f'Logged in as\n'
 				         f'bot.user.name\n'
