@@ -19,16 +19,22 @@ class Profiles:
 		self.created = {}
 		self.channel = {}
 		self.discord = {}
+		self.website = {}
+		self.thumbnail = {}
+		self.icon = {}
 		if isfile("./data/userdata/profiles.json"):
 			with open("./data/userdata/profiles.json", "r") as infile:
 				dat = json.load(infile)
-				if "name" in dat and "info" in dat and "color" in dat and "created" in dat and "channel" in dat and "discord" in dat:
+				if "name" in dat and "info" in dat and "color" in dat and "created" in dat and "channel" in dat and "discord" in dat and "website" in dat and "thumbnail" in dat and "icon" in dat:
 					self.name = dat["name"]
 					self.info = dat["info"]
 					self.color = dat["color"]
 					self.created = dat["created"]
 					self.channel = dat["channel"]
 					self.discord = dat["discord"]
+					self.website = dat["website"]
+					self.thumbnail = dat["thumbnail"]
+					self.icon = dat["icon"]
 		self.cd = {}
 		self.global_data = {}
 		self.guilds_data = {}
@@ -58,7 +64,9 @@ class Profiles:
 			               ".set bio {bio}\n"
 			               ".set color {hex}\n"
 			               ".set discord {url}\n"
-			               ".set channel {url}")
+			               ".set channel {url}\n"
+			               ".set icon {img}\n"
+			               ".set thumbnail {img}\n")
 
 	@_set.command(name="name")
 	async def _name(self, ctx, *, name=None):
@@ -70,7 +78,8 @@ class Profiles:
 			await ctx.send('success')
 		with open("./data/userdata/profiles.json", "w") as outfile:
 			json.dump({"info": self.info, "name": self.name, "color": self.color, "created": self.created,
-			           "channel": self.channel, "discord": self.discord}, outfile, ensure_ascii=False)
+			           "channel": self.channel, "discord": self.discord, "website": self.website,
+			           "thumbnail": self.thumbnail, "icon": self.icon}, outfile, ensure_ascii=False)
 
 	@_set.command(name="bio", aliases=["info"])
 	async def _bio(self, ctx, *, info):
@@ -78,7 +87,8 @@ class Profiles:
 		await ctx.send('success')
 		with open("./data/userdata/profiles.json", "w") as outfile:
 			json.dump({"info": self.info, "name": self.name, "color": self.color, "created": self.created,
-			           "channel": self.channel, "discord": self.discord}, outfile, ensure_ascii=False)
+			           "channel": self.channel, "discord": self.discord, "website": self.website,
+			           "thumbnail": self.thumbnail, "icon": self.icon}, outfile, ensure_ascii=False)
 
 	@_set.command(name="color")
 	async def _color(self, ctx, hex=None):
@@ -101,18 +111,19 @@ class Profiles:
 			hex = hex.replace("#", "")
 			if len(list(hex)) == 6:
 				self.color[str(ctx.author.id)] = f"{hex}"
-				await ctx.send("success")
+				await ctx.send("Success")
 			else:
 				await ctx.send("that is not a hex")
 		with open("./data/userdata/profiles.json", "w") as outfile:
 			json.dump({"info": self.info, "name": self.name, "color": self.color, "created": self.created,
-			           "channel": self.channel, "discord": self.discord}, outfile, ensure_ascii=False)
+			           "channel": self.channel, "discord": self.discord, "website": self.website,
+			           "thumbnail": self.thumbnail, "icon": self.icon}, outfile, ensure_ascii=False)
 
 	@_set.command(name="channel")
 	async def _channel(self, ctx, url=None):
 		if url is None:
 			self.channel[str(ctx.author.id)] = "None"
-			await ctx.send("reset your channel url")
+			await ctx.send("Reset your channel url")
 		else:
 			listed = ["youtube.com", "youtu.be"]
 			for i in listed:
@@ -120,27 +131,76 @@ class Profiles:
 					listed = True
 			if listed == True:
 				self.channel[str(ctx.author.id)] = url
-				await ctx.send('success')
+				await ctx.send('Success')
 			else:
 				await ctx.send("That's not a youtube channel")
 		with open("./data/userdata/profiles.json", "w") as outfile:
 			json.dump({"info": self.info, "name": self.name, "color": self.color, "created": self.created,
-			           "channel": self.channel, "discord": self.discord}, outfile, ensure_ascii=False)
+			           "channel": self.channel, "discord": self.discord, "website": self.website,
+			           "thumbnail": self.thumbnail, "icon": self.icon}, outfile, ensure_ascii=False)
 
 	@_set.command(name="discord")
 	async def _discord(self, ctx, url=None):
 		if url is None:
 			self.discord[str(ctx.author.id)] = "None"
-			await ctx.send("reset your discord servers url")
+			await ctx.send("Reset your discord servers url")
 		else:
 			if "discord.gg" in url:
 				self.discord[str(ctx.author.id)] = url
-				await ctx.send('success')
+				await ctx.send('Success')
 			else:
 				await ctx.send("That's not a discord link")
 		with open("./data/userdata/profiles.json", "w") as outfile:
 			json.dump({"info": self.info, "name": self.name, "color": self.color, "created": self.created,
-			           "channel": self.channel, "discord": self.discord}, outfile, ensure_ascii=False)
+			           "channel": self.channel, "discord": self.discord, "website": self.website,
+			           "thumbnail": self.thumbnail, "icon": self.icon}, outfile, ensure_ascii=False)
+
+	@_set.command(name="website")
+	async def _website(self, ctx, url=None):
+		if url is None:
+			self.website[str(ctx.author.id)] = "None"
+			await ctx.send("Reset your website url")
+		else:
+			self.website[str(ctx.author.id)] = url
+			await ctx.send("Success")
+		with open("./data/userdata/profiles.json", "w") as outfile:
+			json.dump({"info": self.info, "name": self.name, "color": self.color, "created": self.created,
+			           "channel": self.channel, "discord": self.discord, "website": self.website,
+			           "thumbnail": self.thumbnail, "icon": self.icon}, outfile, ensure_ascii=False)
+
+	@_set.command(name="thumbnail")
+	async def _thumbnail(self, ctx):
+		if len(ctx.message.attachments) > 0:
+			if len(ctx.message.attachments) > 1:
+				await ctx.send("You've provided too many attachments")
+			else:
+				for attachment in ctx.message.attachments:
+					self.thumbnail[str(ctx.author.id)] = attachment.url
+					await ctx.send("Success")
+		else:
+			self.thumbnail[str(ctx.author.id)] = "None"
+			await ctx.send("Reset your thumbnail")
+		with open("./data/userdata/profiles.json", "w") as outfile:
+			json.dump({"info": self.info, "name": self.name, "color": self.color, "created": self.created,
+			           "channel": self.channel, "discord": self.discord, "website": self.website,
+			           "thumbnail": self.thumbnail, "icon": self.icon}, outfile, ensure_ascii=False)
+
+	@_set.command(name="icon")
+	async def _icon(self, ctx):
+		if len(ctx.message.attachments) > 0:
+			if len(ctx.message.attachments) > 1:
+				await ctx.send("You've provided too many attachments")
+			else:
+				for attachment in ctx.message.attachments:
+					self.icon[str(ctx.author.id)] = attachment.url
+					await ctx.send("Success")
+		else:
+			self.icon[str(ctx.author.id)] = "None"
+			await ctx.send("Reset your icon")
+		with open("./data/userdata/profiles.json", "w") as outfile:
+			json.dump({"info": self.info, "name": self.name, "color": self.color, "created": self.created,
+			           "channel": self.channel, "discord": self.discord, "website": self.website,
+			           "thumbnail": self.thumbnail, "icon": self.icon}, outfile, ensure_ascii=False)
 
 	@commands.command()
 	async def profile(self, ctx, user=None):
@@ -176,47 +236,63 @@ class Profiles:
 					color = f"0x{self.color[str(user.id)]}"
 				else:
 					color = "0x9eafe3"
-				try:
-					#piecing the embed together
-					color = eval(color)
-					e = discord.Embed(color=color)
-					e.set_thumbnail(url=user.avatar_url)
-					if str(user.id) not in self.name:
-						name = user.name
-					else:
-						name = self.name[str(user.id)]
-					e.set_author(name=name, icon_url=user.avatar_url)
-					if str(user.id) not in self.info:
-						self.info[str(user.id)] = 'nothing to see here, try using .set'
-					e.description = f"**Level:** {level} **XP:** {xp}"
-					e.add_field(name=f"◈ Bio ◈", value=f"{self.info[str(user.id)]}")
-					if str(user.id) not in self.created:
-						self.created[str(user.id)] = created.strftime(fmt)
-					if str(user.id) in self.channel:
-						if self.channel[str(user.id)] == "None":
-							pass
-						else:
-							links += f"[Channel]({self.channel[str(user.id)]})\n"
-					if str(user.id) in self.discord:
-						if self.discord[str(user.id)] == "None":
-							pass
-						else:
-							links += f"[Discord]({self.discord[str(user.id)]})\n"
-					if links == "":
+				#piecing the embed together
+				color = eval(color)
+				thumbnail = user.avatar_url
+				if str(user.id) in self.thumbnail:
+					if self.thumbnail[str(user.id)] == "None":
 						pass
 					else:
-						e.add_field(name="◈ Links ◈", value=links, inline=False)
-					e.set_footer(text=f'Profile Created: {self.created[str(user.id)]}')
-					await ctx.send(embed=e)
-				except Exception as e:
-					if str(e) == "invalid token (<string>, line 1)":
-						self.color[str(ctx.author.id)] = "0x9eafe3"
-						await ctx.send("there was an error with your color, therefore its been reset")
+						thumbnail = self.thumbnail[str(user.id)]
+				e = discord.Embed(color=color)
+				e.set_thumbnail(url=thumbnail)
+				if str(user.id) not in self.name:
+					name = user.name
+				else:
+					name = f"{self.name[str(user.id)]}"
+				icon = user.avatar_url
+				if str(user.id) in self.icon:
+					if self.icon[str(user.id)] == "None":
+						pass
 					else:
-						await ctx.send(e)
+						icon = self.icon[str(user.id)]
+				e.set_author(name=name, icon_url=icon)
+				if str(user.id) not in self.info:
+					self.info[str(user.id)] = 'nothing to see here, try using .set'
+				e.description = f"**Level:** {level} **XP:** {xp}"
+				e.add_field(name=f"◈ Bio ◈", value=f"{self.info[str(user.id)]}")
+				if str(user.id) not in self.created:
+					self.created[str(user.id)] = created.strftime(fmt)
+				if str(user.id) in self.channel:
+					if self.channel[str(user.id)] == "None":
+						pass
+					else:
+						links += f"[Channel]({self.channel[str(user.id)]})\n"
+				if str(user.id) in self.discord:
+					if self.discord[str(user.id)] == "None":
+						pass
+					else:
+						links += f"[Discord]({self.discord[str(user.id)]})\n"
+				if str(user.id) in self.website:
+					if self.website[str(user.id)] == "None":
+						pass
+					else:
+						links += f"[Website]({self.website[str(user.id)]})\n"
+				if links == "":
+					pass
+				else:
+					e.add_field(name="◈ Links ◈", value=links, inline=False)
+				e.set_footer(text=f'Profile Created: {self.created[str(user.id)]}')
+				await ctx.send(embed=e)
+				if str(e) == "invalid token (<string>, line 1)":
+					self.color[str(ctx.author.id)] = "0x9eafe3"
+					await ctx.send("there was an error with your color, therefore its been reset")
+				else:
+					await ctx.send(e)
 			with open("./data/userdata/profiles.json", "w") as outfile:
 				json.dump({"info": self.info, "name": self.name, "color": self.color, "created": self.created,
-				           "channel": self.channel, "discord": self.discord}, outfile, ensure_ascii=False)
+				           "channel": self.channel, "discord": self.discord, "website": self.website,
+				           "thumbnail": self.thumbnail, "icon": self.icon}, outfile, ensure_ascii=False)
 
 	@commands.command(name="leaderboard", aliases=["lb"])
 	@commands.cooldown(1, 10, commands.BucketType.user)
