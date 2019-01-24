@@ -2,7 +2,6 @@ from discord.ext import commands
 import subprocess
 import discord
 import asyncio
-import os
 
 class Owner:
 	def __init__(self, bot):
@@ -23,16 +22,20 @@ class Owner:
 	@commands.command()
 	@commands.check(luck)
 	async def sendfile(self, ctx, directory):
-		path = os.getcwd() + f"{directory}"
-		await ctx.send(file=discord.File(path))
+		if "fate/" in directory:
+			directory = directory.replace("fate/", "/home/luck/FateZero/")
+		await ctx.send(file=discord.File(directory))
 
 	@commands.command(name='console', aliases=['c'])
 	@commands.check(luck)
 	async def console(self, ctx, *, command):
 		p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
 		(output, err) = p.communicate()
-		output = str(output)
-		await ctx.send(output[:2000])
+		output = str(output).replace("\\t", "    ").replace("b'", "").split("\\n")
+		msg = ""
+		for i in output[:len(output) - 1]:
+			msg += f"{i}\n"
+		await ctx.send(f"```{msg[:1994]}```")
 
 	@commands.command()
 	@commands.check(luck)
