@@ -161,6 +161,10 @@ class Profiles:
 			self.website[str(ctx.author.id)] = "None"
 			await ctx.send("Reset your website url")
 		else:
+			if url.startswith("https://"):
+				pass
+			else:
+				url = "https://" + url
 			self.website[str(ctx.author.id)] = url
 			await ctx.send("Success")
 		with open("./data/userdata/profiles.json", "w") as outfile:
@@ -204,7 +208,7 @@ class Profiles:
 
 	@commands.command()
 	async def profile(self, ctx, user=None):
-		# get deh user
+		# get the user
 		check = 0
 		if user is None:
 			user = ctx.author
@@ -244,8 +248,16 @@ class Profiles:
 						pass
 					else:
 						thumbnail = self.thumbnail[str(user.id)]
-				e = discord.Embed(color=color)
-				e.set_thumbnail(url=thumbnail)
+				try:
+					e = discord.Embed(color=color)
+				except:
+					await ctx.send("There was an error with your hex")
+					e = discord.Embed(color=0x9eafe3)
+				try:
+					e.set_thumbnail(url=thumbnail)
+				except:
+					await ctx.send("there was an error with your thumbnail")
+					e.set_thumbnail(url=user.avatar_url)
 				if str(user.id) not in self.name:
 					name = user.name
 				else:
@@ -256,7 +268,11 @@ class Profiles:
 						pass
 					else:
 						icon = self.icon[str(user.id)]
-				e.set_author(name=name, icon_url=icon)
+				try:
+					e.set_author(name=name, icon_url=icon)
+				except:
+					await ctx.send("There was an error with your icon")
+					e.set_author(name=name, icon_url=user.avatar_url)
 				if str(user.id) not in self.info:
 					self.info[str(user.id)] = 'nothing to see here, try using .set'
 				e.description = f"**Level:** {level} **XP:** {xp}"
