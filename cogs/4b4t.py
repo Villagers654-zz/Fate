@@ -42,11 +42,7 @@ class mainclass:
 
 	async def motdshuffle(self):
 		while True:
-			try:
-				f = open('/home/legit/4b4t/data/server.properties', 'w')
-			except:
-				await self.bot.get_channel(534608853300412416).send("Unable to find server.properties")
-				break
+			f = open('/home/legit/4b4t/data/server.properties', 'w')
 			f.write(
 				f"player-idle-timeout=0.000000\n"
 				f"online-mode=true\n"
