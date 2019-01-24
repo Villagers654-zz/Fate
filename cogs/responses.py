@@ -80,7 +80,7 @@ class Responses:
 			if self.responses[str(m.guild.id)] == 'enabled':
 				if r > 2:
 					if m.content.startswith("hello"):
-						await m.channel.send(random.choice(["Hello", "Hello :3", "Suh", "Suh :3", "Wazzuh", "Despacito :]"]))
+						await m.channel.send(random.choice(["Hello", "Hello :3", "Suh", "Suh :3", "Wazzuh"]))
 					if m.content.startswith("gm"):
 						await m.channel.send(random.choice(["Gm", "Gm :3", "Morning", "Morning :3", "Welcome to heaven"]))
 					if m.content.startswith("gn"):
