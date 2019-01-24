@@ -9,6 +9,7 @@ import random
 import psutil
 import json
 import time
+import os
 
 class Profiles:
 	def __init__(self, bot):
@@ -403,17 +404,26 @@ class Profiles:
 					level = level[:level.find(".")]
 					leaderboard += "‎**‎#{}.** ‎`‎{}`: ‎{} | {}\n".format(rank, name, level, xp)
 					rank += 1
+				f = psutil.Process(os.getpid())
+				try:
+					cpufreqcurrent = p.bytes2human(psutil.cpu_freq().current)
+				except:
+					cpufreqcurrent = "unavailable"
+				try:
+					cpufreqmax = p.bytes2human(psutil.cpu_freq().max)
+				except:
+					cpufreqmax = "unavailable"
 				e.set_thumbnail(url=channel.guild.icon_url)
 				e.set_author(name=f'~~~====🥂🍸🍷Stats🍷🍸🥂====~~~')
 				e.add_field(name="◈ Discord ◈", value=f'__**Founder**__: FrequencyX4\n__**Members**__: {channel.guild.member_count}', inline=False)
 				e.add_field(name="Leaderboard", value=leaderboard, inline=False)
 				e.add_field(
 					name="◈ Memory ◈",
-					value=f"__**Storage**__: [{p.bytes2human(p.storageused)}/{p.bytes2human(p.storagetotal)}]\n"
-					f"__**RAM**__: **Global**: {p.bytes2human(p.ramused)} **Bot**: {p.bytes2human(p.botram)}\n"
-					f"__**CPU**__: **Global**: {p.cpu}% **Bot**: {p.botcpu}%\n"
+					value=f"__**Storage**__: [{p.bytes2human(psutil.disk_usage('/').used)}/{p.bytes2human(psutil.disk_usage('/').total)}]\n"
+					f"__**RAM**__: **Global**: {p.bytes2human(psutil.virtual_memory().used)} **Bot**: {p.bytes2human(f.memory_full_info().rss)}\n"
+					f"__**CPU**__: **Global**: {psutil.cpu_percent(interval=1)}% **Bot**: {f.cpu_percent(interval=1)}%\n"
 					f"__**CPU Per Core**__: {[round(i) for i in psutil.cpu_percent(interval=1, percpu=True)]}\n"
-					f"__**CPU Frequency**__: [{p.freq}/{p.freqmax}]")
+					f"__**CPU Frequency**__: [{cpufreqcurrent}/{cpufreqmax}]")
 				fmt = "%m-%d-%Y %I:%M%p"
 				time = datetime.datetime.now()
 				time = time.strftime(fmt)
