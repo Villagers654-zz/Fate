@@ -27,46 +27,9 @@ class mainclass:
 	def puffy(ctx):
 		return ctx.message.author.id == 257560165488918529
 
-# ~== Test ==~
-
-	@commands.command()
-	@commands.check(luck)
-	async def cogs_4b4t(self, ctx):
-		await ctx.send('working')
-
 	@commands.command()
 	async def motdcount(self, ctx):
 		await ctx.send(len(self.motds))
-
-# ~== Main ==~
-
-	async def motdshuffle(self):
-		while True:
-			f = open('/home/legit/4b4t/data/server.properties', 'w')
-			f.write(
-				f"player-idle-timeout=0.000000\n"
-				f"online-mode=true\n"
-				f"server-port=19132\n"
-				f"difficulty=2\n"
-				f"view-distance=22\n"
-				f"server-port-v6=19133\n"
-				f"force-gamemode=true\n"
-				f"level-name=world\n"
-				f"level-dir=world\n"
-				f"max-players=999\n"
-				f"level-generator=1\n"
-				f"motd=4B4t - {random.choice(self.motds)}\n"
-				f"level-seed=4b4t\n"
-				f"gamemode=0\n"
-				f"edu-mode=false\n"
-				f"experiment-mode=false\n"
-				f"texturepack-required=false\n")
-			f.close()
-			await asyncio.sleep(1800)
-
-	async def on_ready(self):
-		await asyncio.sleep(0.5)
-		self.bot.loop.create_task(self.motdshuffle())
 
 	@commands.command()
 	@commands.check(luck)
@@ -120,6 +83,34 @@ class mainclass:
 		e.description = f"New: {motd}"
 		await ctx.send(embed=e, delete_after=10)
 		await ctx.message.delete()
+
+	async def motdshuffle(self):
+		while True:
+			f = open('/home/legit/4b4t/data/server.properties', 'w')
+			f.write(
+				f"player-idle-timeout=0.000000\n"
+				f"online-mode=true\n"
+				f"server-port=19132\n"
+				f"difficulty=2\n"
+				f"view-distance=22\n"
+				f"server-port-v6=19133\n"
+				f"force-gamemode=true\n"
+				f"level-name=world\n"
+				f"level-dir=world\n"
+				f"max-players=999\n"
+				f"level-generator=1\n"
+				f"motd=4B4t - {random.choice(self.motds)}\n"
+				f"level-seed=4b4t\n"
+				f"gamemode=0\n"
+				f"edu-mode=false\n"
+				f"experiment-mode=false\n"
+				f"texturepack-required=false\n")
+			f.close()
+			await asyncio.sleep(1800)
+
+	async def on_ready(self):
+		await asyncio.sleep(0.5)
+		self.bot.loop.create_task(self.motdshuffle())
 
 def setup(bot):
 	bot.add_cog(mainclass(bot))
