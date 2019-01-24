@@ -3,6 +3,7 @@ from data.misc import menus as m
 from discord.ext import commands
 import discord
 import random
+import psutil
 import time
 import os
 
@@ -107,6 +108,7 @@ class Menus:
 		fate = self.bot.get_user(506735111543193601)
 		luck = self.bot.get_user(264838866480005122)
 		path = os.getcwd() + "/data/images/banners/" + random.choice(os.listdir(os.getcwd() + "/data/images/banners/"))
+		f = psutil.Process(os.getpid())
 		e=discord.Embed(color=0x80b0ff)
 		e.set_author(name="Fate [Zerø]: Core Info", icon_url=luck.avatar_url)
 		e.description = f'https://discord.gg/BQ23Z2E'
@@ -116,9 +118,9 @@ class Menus:
 		e.add_field(name="◈ Credits ◈", value="• Tothy ~ `rival`\n• Cortex ~ `teacher`", inline=False)
 		e.add_field(name="◈ Statistics ◈", value=f'Modules: [{len(self.bot.commands)}]\nServers: [{guilds}]\nUsers: [{users}]', inline=False)
 		e.add_field(name="◈ Memory ◈", value=
-		f'__**Storage**__: [{p.bytes2human(p.storageused)}/{p.bytes2human(p.storagetotal)}]\n'
-		f'__**RAM**__: **Global**: {p.bytes2human(p.ramused)} **Bot**: {p.bytes2human(p.botram)} ({p.rampercent}%)\n'
-		f'__**CPU**__: **Global**: {p.cpu}% **Bot**: {p.botcpu}%')
+		f"__**Storage**__: [{p.bytes2human(psutil.disk_usage('/').used)}/{p.bytes2human(psutil.disk_usage('/').total)}]\n"
+		f"__**RAM**__: **Global**: {p.bytes2human(psutil.virtual_memory().used)} **Bot**: {p.bytes2human(f.memory_full_info().rss)}\n"
+		f"__**CPU**__: **Global**: {psutil.cpu_percent(interval=1)}% **Bot**: {f.cpu_percent(interval=1)}%\n")
 		e.set_footer(text="Uptime: {} Hours {} Minutes {} seconds".format(int(h), int(m), int(s)))
 		await ctx.send(file=discord.File(path, filename=os.path.basename(path)), embed=e)
 
