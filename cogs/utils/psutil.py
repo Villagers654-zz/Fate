@@ -12,6 +12,7 @@ def bytes2human(n):
 			return '%.1f%s' % (value, s)
 	return "%sB" % n
 
+# only shows results from startup or first use
 p = psutil.Process(os.getpid())
 pids = psutil.pids()
 botram = p.memory_full_info().rss
@@ -19,7 +20,7 @@ ramused = psutil.virtual_memory().used
 ramtotal = psutil.virtual_memory().total
 rampercent = psutil.virtual_memory().percent
 botcpu = p.cpu_percent(interval=1.0)
-cpu = psutil.cpu_percent(interval=1)
+cpu = psutil.cpu_percent(interval=1.0)
 percpu = psutil.cpu_percent(interval=1, percpu=True)
 storageused = psutil.disk_usage('/').used
 storagetotal = psutil.disk_usage('/').total
