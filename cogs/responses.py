@@ -39,37 +39,38 @@ class Responses:
 		# core responses
 		r = random.randint(1, 4)
 		if m.content.startswith("<@506735111543193601>"):
-			check = 0
-			m.content = m.content.replace("<@506735111543193601>  ", "")
-			m.content = m.content.replace("<@506735111543193601> ", "")
-			m.content = m.content.replace("<@506735111543193601>", "")
-			if len(m.content) > 2:
-				f = open("./data/misc/responses.txt", "r")
-				for i in f.readlines():
-					if m.content in i:
+			if not m.author.bot:
+				check = 0
+				m.content = m.content.replace("<@506735111543193601>  ", "")
+				m.content = m.content.replace("<@506735111543193601> ", "")
+				m.content = m.content.replace("<@506735111543193601>", "")
+				if len(m.content) > 2:
+					f = open("./data/misc/responses.txt", "r")
+					for i in f.readlines():
+						if m.content in i:
+							f.close()
+							check += 1
+					if check == 0:
+						f = open("./data/misc/responses.txt", "a")
+						f.write("\n" + m.content)
 						f.close()
-						check += 1
-				if check == 0:
-					f = open("./data/misc/responses.txt", "a")
-					f.write("\n" + m.content)
-					f.close()
-			if r > 2:
-				msg = random.choice(open("./data/misc/responses.txt", "r").readlines())
-			else:
-				msg = random.choice([
-					"Once apon a time in a land far away, there lived a little boy who pinged a bot, first came rape, then came aids",
-					"Don't ping me m8, it hurts you more than it hurts me",
-					"Oh look, another homosexual",
-					"FBI OPEN UP",
-					"pUrE wHiTe pRiVelIdgEd mALe^",
-					"Once apon a time in a land far away, there lived a little boy who pinged a bot, first came rape, then came aids",
-					"Do you need virtual daycare or something?",
-					"Shut your skin tone chicken bone google chrome no home flip phone disowned ice cream cone garden gnome extra chromosome metronome dimmadome genome full blown monochrome student loan indiana jones overgrown flintstone x and y hormone friend zoned sylvester stallone sierra leone autozone professionally seen silver patrone head ass tf up.",
-					"Fuck off hitler",
-					"alright you pathetic lost child, use .help",
-					"and what might **you** want",
-					"No sir"])
-			await m.channel.send(msg)
+				if r > 2:
+					msg = random.choice(open("./data/misc/responses.txt", "r").readlines())
+				else:
+					msg = random.choice([
+						"Once apon a time in a land far away, there lived a little boy who pinged a bot, first came rape, then came aids",
+						"Don't ping me m8, it hurts you more than it hurts me",
+						"Oh look, another homosexual",
+						"FBI OPEN UP",
+						"pUrE wHiTe pRiVelIdgEd mALe^",
+						"Once apon a time in a land far away, there lived a little boy who pinged a bot, first came rape, then came aids",
+						"Do you need virtual daycare or something?",
+						"Shut your skin tone chicken bone google chrome no home flip phone disowned ice cream cone garden gnome extra chromosome metronome dimmadome genome full blown monochrome student loan indiana jones overgrown flintstone x and y hormone friend zoned sylvester stallone sierra leone autozone professionally seen silver patrone head ass tf up.",
+						"Fuck off hitler",
+						"alright you pathetic lost child, use .help",
+						"and what might **you** want",
+						"No sir"])
+				await m.channel.send(msg)
 		m.content = m.content.lower()
 		#toggleable responses
 		if isinstance(m.guild, discord.Guild):
