@@ -26,7 +26,7 @@ class SelfRoles:
 			# iteration 1
 			e = discord.Embed(color=0x80b0ff)
 			e.set_author(name=ctx.author.name, icon_url=ctx.guild.icon_url)
-			e.description = "Please send the first role name\n Type confirm when all are added\nType cancel to cancel"
+			e.description = "Please send the first role name\nType cancel to cancel"
 			e.add_field(name="◈ Roles ◈", value="reaction : role")
 			embed = await ctx.send(embed=e)
 			await asyncio.sleep(0.5)
