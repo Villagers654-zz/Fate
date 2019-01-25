@@ -301,11 +301,6 @@ class Profiles:
 					e.add_field(name="◈ Links ◈", value=links, inline=False)
 				e.set_footer(text=f'Profile Created: {self.created[str(user.id)]}')
 				await ctx.send(embed=e)
-				if str(e) == "invalid token (<string>, line 1)":
-					self.color[str(ctx.author.id)] = "0x9eafe3"
-					await ctx.send("there was an error with your color, therefore its been reset")
-				else:
-					await ctx.send(e)
 			with open("./data/userdata/profiles.json", "w") as outfile:
 				json.dump({"info": self.info, "name": self.name, "color": self.color, "created": self.created,
 				           "channel": self.channel, "discord": self.discord, "website": self.website,
