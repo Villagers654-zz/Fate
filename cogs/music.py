@@ -412,10 +412,8 @@ class Music:
     @commands.has_permissions(manage_guild=True)
     async def _disconnect(self, ctx):
         """Clears the queue and leaves the voice channel."""
-
         if ctx.state.voice is None:
             raise MusicError('Not connected to any voice channel.')
-
         await ctx.state.stop()
         # Clear the VoiceState object from the cache.
         del self.voice_states[str(ctx.guild.id)]
