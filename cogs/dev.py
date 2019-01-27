@@ -27,6 +27,7 @@ class Dev:
 		await ctx.send(len(content))
 
 	@commands.command()
+	@commands.check(luck)
 	async def run(self, ctx, *, code):
 		try:
 			await ctx.send(eval(code))
