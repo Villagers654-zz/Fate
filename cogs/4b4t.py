@@ -40,9 +40,9 @@ class Minecraft:
 			else:
 				await msg.delete()
 
-	@commands.command()
+	@commands.command(aliases=["pc"])
 	async def playercount(self, ctx):
-		await ctx.send(self.count)
+		await ctx.send(self.bot.get_guild(470961230362837002).get_member(529287770233896961).game)
 
 	@commands.command(name='submitmotd', aliases=['motd'])
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -86,26 +86,14 @@ class Minecraft:
 
 	async def motdshuffle(self):
 		while True:
-			f = open('/home/legit/4b4t/data/server.properties', 'w')
-			f.write(
-				f"player-idle-timeout=0.000000\n"
-				f"online-mode=true\n"
-				f"server-port=19132\n"
-				f"difficulty=2\n"
-				f"view-distance=22\n"
-				f"server-port-v6=19133\n"
-				f"force-gamemode=true\n"
-				f"level-name=world\n"
-				f"level-dir=world\n"
-				f"max-players=999\n"
-				f"level-generator=1\n"
-				f"motd=4B4t - {random.choice(self.motds)}\n"
-				f"level-seed=4b4t\n"
-				f"gamemode=0\n"
-				f"edu-mode=false\n"
-				f"experiment-mode=false\n"
-				f"texturepack-required=false\n")
-			f.close()
+			with open("/home/legit/4b4t/data/server.properties", 'r') as f:
+				get_all = f.readlines()
+			with open("your_file.txt", 'w') as f:
+				for i, line in enumerate(get_all, 1):
+					if i == 12:
+						f.writelines(f"motd=4B4T - {random.choice(self.motds)}")
+					else:
+						f.writelines(line)
 			await asyncio.sleep(1800)
 
 	async def on_ready(self):
