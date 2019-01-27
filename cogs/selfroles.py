@@ -104,7 +104,7 @@ class SelfRoles:
 												break
 										if check == 0:
 											for channel in ctx.guild.channels:
-												if msg.content.lower() == channel.name.lower():
+												if msg.content.lower() in channel.name.lower():
 													e = discord.Embed(color=0x80b0ff)
 													e.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
 													e.add_field(name="◈ Roles ◈",  value=f"1 : {role_one}")
@@ -176,7 +176,7 @@ class SelfRoles:
 																break
 														if check == 0:
 															for channel in ctx.guild.channels:
-																if msg.content.lower() == channel.name.lower():
+																if msg.content.lower() in channel.name.lower():
 																	e = discord.Embed(color=0x80b0ff)
 																	e.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
 																	e.add_field(name="◈ Roles ◈", value=f"1 : {role_one}\n2 : {role_two}")
@@ -250,7 +250,7 @@ class SelfRoles:
 																				break
 																		if check == 0:
 																			for channel in ctx.guild.channels:
-																				if msg.content.lower() == channel.name.lower():
+																				if msg.content.lower() in channel.name.lower():
 																					e = discord.Embed(color=0x80b0ff)
 																					e.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
 																					e.add_field(name="◈ Roles ◈", value=f"1 : {role_one}\n2 : {role_two}\n3 : {role_three}")
@@ -327,7 +327,7 @@ class SelfRoles:
 																								break
 																						if check == 0:
 																							for channel in ctx.guild.channels:
-																								if msg.content.lower() == channel.name.lower():
+																								if msg.content.lower() in channel.name.lower():
 																									e = discord.Embed(color=0x80b0ff)
 																									e.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
 																									e.add_field(name="◈ Roles ◈",
@@ -344,6 +344,85 @@ class SelfRoles:
 																						if check == 0:
 																							await ctx.send("Channel not found, please restart", delete_after=10)
 																							await embed.delete()
+																				else:
+																					# iteration five
+																					if msg.content.lower() == "cancel":
+																						await embed.delete()
+																					else:
+																						role_five = None
+																						msg.content = msg.content.replace("@", "")
+																						for role in ctx.guild.roles:
+																							if msg.content.lower() == role.name:
+																								role_five = role.name
+																								save = f"{role_one},{role_two},{role_three},{role_four},{role_five}"
+																								self.roles[str(ctx.guild.id)] = save
+																								break
+																						if role_five is None:
+																							for role in ctx.guild.roles:
+																								if msg.content.lower() in role.name.lower():
+																									role_four = role.name
+																									save = f"{role_one},{role_two},{role_three},{role_four},{role_five}"
+																									self.roles[str(ctx.guild.id)] = save
+																									break
+																						if role_five is None:
+																							await ctx.send("Role not found. please restart")
+																							await embed.delete()
+																						else:
+																							e = discord.Embed(color=0x80b0ff)
+																							e.set_author(name=ctx.author.name, icon_url=ctx.guild.icon_url)
+																							e.add_field(name="◈ Roles ◈", value=f"1 : {role_one}\n2 : {role_two}\n3 : {role_three}\n4 : {role_four}\n5 : {role_five}")
+																							e.description = "Please send the third role name\n Type confirm when all are added\nType cancel to cancel"
+																							await embed.edit(embed=e)
+																							try:
+																								msg = await self.bot.wait_for('message', check=pred, timeout=60)
+																							except asyncio.TimeoutError:
+																								await ctx.send("Timeout error")
+																							else:
+																								await msg.delete()
+																								if msg.content.lower() == "confirm":
+																									e.description = "Please type a channel name\nType cancel to cancel"
+																									await embed.edit(embed=e)
+																									try:
+																										msg = await self.bot.wait_for('message', check=pred, timeout=60)
+																									except asyncio.TimeoutError:
+																										await ctx.send("Timeout error")
+																									else:
+																										await msg.delete()
+																										check = 0
+																										for channel in ctx.guild.channels:
+																											if msg.content.lower() == channel.name.lower():
+																												e = discord.Embed(color=0x80b0ff)
+																												e.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
+																												e.add_field(name="◈ Roles ◈", value=f"1 : {role_one}\n2 : {role_two}\n3 : {role_three}\n4 : {role_four}\n5 : {role_five}")
+																												message = await channel.send(embed=e)
+																												self.message[str(ctx.guild.id)] = str(message.id)
+																												await embed.delete()
+																												await message.add_reaction(reactions[0])
+																												await message.add_reaction(reactions[1])
+																												await message.add_reaction(reactions[2])
+																												await message.add_reaction(reactions[3])
+																												await message.add_reaction(reactions[4])
+																												check = 1
+																												break
+																										if check == 0:
+																											for channel in ctx.guild.channels:
+																												if msg.content.lower() in channel.name.lower():
+																													e = discord.Embed(color=0x80b0ff)
+																													e.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
+																													e.add_field(name="◈ Roles ◈", value=f"1 : {role_one}\n2 : {role_two}\n3 : {role_three}\n4 : {role_four}\n5 : {role_five}")
+																													message = await channel.send(embed=e)
+																													self.message[str(ctx.guild.id)] = str(message.id)
+																													await embed.delete()
+																													await message.add_reaction(reactions[0])
+																													await message.add_reaction(reactions[1])
+																													await message.add_reaction(reactions[2])
+																													await message.add_reaction(reactions[3])
+																													await message.add_reaction(reactions[4])
+																													check = 1
+																													break
+																										if check == 0:
+																											await ctx.send("Channel not found, please restart", delete_after=10)
+																											await embed.delete()
 		with open("./data/userdata/selfroles.json", "w") as outfile:
 			json.dump({"toggle": self.toggle, "message": self.message, "roles": self.roles}, outfile, ensure_ascii=False)
 
@@ -353,9 +432,9 @@ class SelfRoles:
 		if not user.bot:
 			guild_id = str(payload.guild_id)
 			reaction_id = str(payload.message_id)
-			roles = self.roles[guild_id].split(",")
 			reactions = ['1⃣', '2⃣', '3⃣', '4⃣', '5⃣', '6⃣', '7⃣', '8⃣', '9⃣']
 			if guild_id in self.message:
+				roles = self.roles[guild_id].split(",")
 				if reaction_id == self.message[guild_id]:
 					if str(payload.emoji) == reactions[0]:
 						for role in server.roles:
@@ -381,6 +460,12 @@ class SelfRoles:
 								role = role
 								await user.add_roles(role)
 								break
+					if str(payload.emoji) == reactions[4]:
+						for role in server.roles:
+							if role.name == roles[4]:
+								role = role
+								await user.add_roles(role)
+								break
 
 	async def on_raw_reaction_remove(self, payload):
 		server = self.bot.get_guild(payload.guild_id)
@@ -388,9 +473,9 @@ class SelfRoles:
 		if not user.bot:
 			guild_id = str(payload.guild_id)
 			reaction_id = str(payload.message_id)
-			roles = self.roles[guild_id].split(",")
 			reactions = ['1⃣', '2⃣', '3⃣', '4⃣', '5⃣', '6⃣', '7⃣', '8⃣', '9⃣']
 			if guild_id in self.message:
+				roles = self.roles[guild_id].split(",")
 				if self.message[guild_id] == reaction_id:
 					if reaction_id == self.message[guild_id]:
 						if str(payload.emoji) == reactions[0]:
@@ -414,6 +499,12 @@ class SelfRoles:
 						if str(payload.emoji) == reactions[3]:
 							for role in server.roles:
 								if role.name == roles[3]:
+									role = role
+									await user.remove_roles(role)
+									break
+						if str(payload.emoji) == reactions[4]:
+							for role in server.roles:
+								if role.name == roles[4]:
 									role = role
 									await user.remove_roles(role)
 									break
