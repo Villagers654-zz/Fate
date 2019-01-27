@@ -79,7 +79,7 @@ class Responses:
 				with open("./data/userdata/config/toggles.json", "w") as outfile:
 					json.dump({"responses": self.responses}, outfile, ensure_ascii=False)
 			if self.responses[str(m.guild.id)] == 'enabled':
-				if r > 2:
+				if r == 4:
 					if m.content.startswith("hello"):
 						await m.channel.send(random.choice(["Hello", "Hello :3", "Suh", "Suh :3", "Wazzuh"]))
 					if m.content.startswith("gm"):
