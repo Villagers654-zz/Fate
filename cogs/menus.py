@@ -2,6 +2,7 @@ from cogs.utils import psutil as p
 from data.misc import menus as m
 from discord.ext import commands
 import discord
+import asyncio
 import random
 import psutil
 import time
@@ -28,75 +29,245 @@ class Menus:
 			"• fun ~ `entertaining stuff`\n"
 			"• art ~ `subpar textart ヽ(ﾟｰﾟ)ﾉ`", inline=False)
 			await ctx.send(embed=e)
+			def pred(m):
+				return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+			try:
+				msg = await self.bot.wait_for('message', check=pred, timeout=25)
+			except asyncio.TimeoutError:
+				pass
+			else:
+				await ctx.message.delete()
+				await asyncio.sleep(0.5)
+				await msg.delete()
 
 	@_help.command(name='core')
 	async def _core(self, ctx):
 		await ctx.send(embed=m.core)
+		def pred(m):
+			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+		try:
+			msg = await self.bot.wait_for('message', check=pred, timeout=25)
+		except asyncio.TimeoutError:
+			pass
+		else:
+			await ctx.message.delete()
+			await asyncio.sleep(0.5)
+			await msg.delete()
 
 	@_help.command(name='utility')
 	async def _utility(self, ctx):
 		await ctx.send(embed=m.utility)
+		def pred(m):
+			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+		try:
+			msg = await self.bot.wait_for('message', check=pred, timeout=25)
+		except asyncio.TimeoutError:
+			pass
+		else:
+			await ctx.message.delete()
+			await asyncio.sleep(0.5)
+			await msg.delete()
 
 	@_help.command(name='react')
 	async def _react(self, ctx):
 		await ctx.send(embed=m.react)
+		def pred(m):
+			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+		try:
+			msg = await self.bot.wait_for('message', check=pred, timeout=25)
+		except asyncio.TimeoutError:
+			pass
+		else:
+			await ctx.message.delete()
+			await asyncio.sleep(0.5)
+			await msg.delete()
 
 	@_help.command(name='mod')
 	async def _mod(self, ctx):
 		await ctx.send(embed=m.mod)
+		def pred(m):
+			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+		try:
+			msg = await self.bot.wait_for('message', check=pred, timeout=25)
+		except asyncio.TimeoutError:
+			pass
+		else:
+			await ctx.message.delete()
+			await asyncio.sleep(0.5)
+			await msg.delete()
 
 	@_help.command(name='fun')
 	async def _fun(self, ctx):
 		await ctx.send(embed=m.fun)
+		def pred(m):
+			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+		try:
+			msg = await self.bot.wait_for('message', check=pred, timeout=25)
+		except asyncio.TimeoutError:
+			pass
+		else:
+			await ctx.message.delete()
+			await asyncio.sleep(0.5)
+			await msg.delete()
 
 	@_help.command(name='art')
 	async def _art(self, ctx):
 		await ctx.send(embed=m.art)
+		def pred(m):
+			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+		try:
+			msg = await self.bot.wait_for('message', check=pred, timeout=25)
+		except asyncio.TimeoutError:
+			pass
+		else:
+			await ctx.message.delete()
+			await asyncio.sleep(0.5)
+			await msg.delete()
 
 	@_help.command(name='m')
 	async def _m(self, ctx):
 		await ctx.send(embed=m.m)
+		def pred(m):
+			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+		try:
+			msg = await self.bot.wait_for('message', check=pred, timeout=25)
+		except asyncio.TimeoutError:
+			pass
+		else:
+			await ctx.message.delete()
+			await asyncio.sleep(0.5)
+			await msg.delete()
 
 	@_help.command(name='e')
 	async def _e(self, ctx):
 		await ctx.send(embed=m.e)
+		def pred(m):
+			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+		try:
+			msg = await self.bot.wait_for('message', check=pred, timeout=25)
+		except asyncio.TimeoutError:
+			pass
+		else:
+			await ctx.message.delete()
+			await asyncio.sleep(0.5)
+			await msg.delete()
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def core(self, ctx):
 		await ctx.send(embed=m.core)
+		def pred(m):
+			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+		try:
+			msg = await self.bot.wait_for('message', check=pred, timeout=25)
+		except asyncio.TimeoutError:
+			pass
+		else:
+			await ctx.message.delete()
+			await asyncio.sleep(0.5)
+			await msg.delete()
 
 	@commands.command()
 	async def utility(self, ctx):
 		await ctx.send(embed=m.utility)
+		def pred(m):
+			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+		try:
+			msg = await self.bot.wait_for('message', check=pred, timeout=25)
+		except asyncio.TimeoutError:
+			pass
+		else:
+			await ctx.message.delete()
+			await asyncio.sleep(0.5)
+			await msg.delete()
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def react(self, ctx):
 		await ctx.send(embed=m.react)
+		def pred(m):
+			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+		try:
+			msg = await self.bot.wait_for('message', check=pred, timeout=25)
+		except asyncio.TimeoutError:
+			pass
+		else:
+			await ctx.message.delete()
+			await asyncio.sleep(0.5)
+			await msg.delete()
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def mod(self, ctx):
 		await ctx.send(embed=m.mod)
+		def pred(m):
+			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+		try:
+			msg = await self.bot.wait_for('message', check=pred, timeout=25)
+		except asyncio.TimeoutError:
+			pass
+		else:
+			await ctx.message.delete()
+			await asyncio.sleep(0.5)
+			await msg.delete()
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def fun(self, ctx):
 		await ctx.send(embed=m.fun)
+		def pred(m):
+			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+		try:
+			msg = await self.bot.wait_for('message', check=pred, timeout=25)
+		except asyncio.TimeoutError:
+			pass
+		else:
+			await ctx.message.delete()
+			await asyncio.sleep(0.5)
+			await msg.delete()
 
 	@commands.command()
 	async def art(self, ctx):
 		await ctx.send(embed=m.art)
+		def pred(m):
+			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+		try:
+			msg = await self.bot.wait_for('message', check=pred, timeout=25)
+		except asyncio.TimeoutError:
+			pass
+		else:
+			await ctx.message.delete()
+			await asyncio.sleep(0.5)
+			await msg.delete()
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def m(self, ctx):
 		await ctx.send(embed=m.m)
+		def pred(m):
+			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+		try:
+			msg = await self.bot.wait_for('message', check=pred, timeout=25)
+		except asyncio.TimeoutError:
+			pass
+		else:
+			await ctx.message.delete()
+			await asyncio.sleep(0.5)
+			await msg.delete()
 
 	@commands.command()
 	async def e(self, ctx):
 		await ctx.send(embed=m.e)
+		def pred(m):
+			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+		try:
+			msg = await self.bot.wait_for('message', check=pred, timeout=25)
+		except asyncio.TimeoutError:
+			pass
+		else:
+			await ctx.message.delete()
+			await asyncio.sleep(0.5)
+			await msg.delete()
 
 	@commands.command(name='info')
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -123,6 +294,16 @@ class Menus:
 		f"__**CPU**__: **Global**: {psutil.cpu_percent(interval=1)}% **Bot**: {f.cpu_percent(interval=1)}%\n")
 		e.set_footer(text="Uptime: {} Hours {} Minutes {} seconds".format(int(h), int(m), int(s)))
 		await ctx.send(file=discord.File(path, filename=os.path.basename(path)), embed=e)
+		def pred(m):
+			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+		try:
+			msg = await self.bot.wait_for('message', check=pred, timeout=25)
+		except asyncio.TimeoutError:
+			pass
+		else:
+			await ctx.message.delete()
+			await asyncio.sleep(0.5)
+			await msg.delete()
 
 # ~== Ads ==~
 
@@ -134,6 +315,16 @@ class Menus:
 		e.add_field(name="• Games", value="[PUBG Mobile](https://discord.gg/gVe27r4)", inline=False)
 		e.add_field(name="• Misc", value="[Memes (Tothers Hotel)](https://discord.gg/TzGNyRg)\n[Threadys Alpha server](https://discord.gg/6tcqMUt)", inline=False)
 		await ctx.send(embed=e)
+		def pred(m):
+			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+		try:
+			msg = await self.bot.wait_for('message', check=pred, timeout=25)
+		except asyncio.TimeoutError:
+			pass
+		else:
+			await ctx.message.delete()
+			await asyncio.sleep(0.5)
+			await msg.delete()
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -141,15 +332,34 @@ class Menus:
 		e=discord.Embed(title="~~~====🥂🍸🍷Servers🍷🍸🥂====~~~", color=0x80b0ff)
 		e.add_field(name="• Anarchy", value="• 4b4t.net : 19132", inline=False)
 		await ctx.send(embed=e)
+		def pred(m):
+			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+		try:
+			msg = await self.bot.wait_for('message', check=pred, timeout=25)
+		except asyncio.TimeoutError:
+			pass
+		else:
+			await ctx.message.delete()
+			await asyncio.sleep(0.5)
+			await msg.delete()
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def realms(self, ctx):
-		e = discord.Embed()
 		embed=discord.Embed(title="~~~====🥂🍸🍷Realms🍷🍸🥂====~~~", color=0x80b0ff)
 		embed.add_field(name="• Anarchy Realms", value="Jappie Anarchy\n• https://realms.gg/pmElWWx5xMk\nAnarchy Realm\n• https://realms.gg/GyxzF5xWnPc\n2c2b Anarchy\n• https://realms.gg/TwbBfe0jGDc\nFraughtian Anarchy\n• https://realms.gg/rdK57KvnA8o\nChaotic Realm\n• https://realms.gg/nzDX1drovu4", inline=False)
 		embed.add_field(name="• Misc", value=".", inline=False)
 		await ctx.send(embed=embed)
+		def pred(m):
+			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+		try:
+			msg = await self.bot.wait_for('message', check=pred, timeout=25)
+		except asyncio.TimeoutError:
+			pass
+		else:
+			await ctx.message.delete()
+			await asyncio.sleep(0.5)
+			await msg.delete()
 
 # ~== 4B4T ==~
 
@@ -181,6 +391,16 @@ class Menus:
 		e.add_field(name="◈ Servers ◈", value=f'• [Threadys Server]({threadysserver})\n• [Spookie Hotel]({spookiehotel})\n• [4b4t]({fourbfourt})', inline=False)
 		e.add_field(name="◈ Bots ◈", value=f'• [TotherBot]({totherbot})', inline=False)
 		await ctx.send(embed=e)
+		def pred(m):
+			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+		try:
+			msg = await self.bot.wait_for('message', check=pred, timeout=25)
+		except asyncio.TimeoutError:
+			pass
+		else:
+			await ctx.message.delete()
+			await asyncio.sleep(0.5)
+			await msg.delete()
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -190,6 +410,15 @@ class Menus:
 		embed.add_field(name="CortexPE#8680", value="• Tought me litterally 99.9% of fates code (and dealt with my storms of questions)", inline=False)
 		embed.add_field(name="Tothy", value="• existed", inline=False)
 		await ctx.send(embed=embed)
-
+		def pred(m):
+			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+		try:
+			msg = await self.bot.wait_for('message', check=pred, timeout=25)
+		except asyncio.TimeoutError:
+			pass
+		else:
+			await ctx.message.delete()
+			await asyncio.sleep(0.5)
+			await msg.delete()
 def setup(bot):
 	bot.add_cog(Menus(bot))
