@@ -4,7 +4,7 @@ import discord
 import asyncio
 import json
 
-class Mod:
+class SelfRoles:
 	def __init__(self, bot):
 		self.bot = bot
 		self.toggle = {}
@@ -419,4 +419,4 @@ class Mod:
 									break
 
 def setup(bot):
-	bot.add_cog(Mod(bot))
+	bot.add_cog(SelfRoles(bot))
