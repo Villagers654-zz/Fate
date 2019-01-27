@@ -43,11 +43,13 @@ class Mod:
 			else:
 				await msg.delete()
 				if msg.content.lower() == "confirm":
-					await ctx.send("you cannot confirm yet")
+					await ctx.send("you cannot confirm yet", delete_after=5)
 					await embed.delete()
+					await msg.delete()
 				else:
 					if msg.content.lower() == "cancel":
 						await embed.delete()
+						await msg.delete()
 					else:
 						role_one = None
 						msg.content = msg.content.replace("@", "")
@@ -80,24 +82,6 @@ class Mod:
 							else:
 								await msg.delete()
 								if msg.content.lower() == "confirm":
-									e.description = "Do you wish to allow multiple reactions per-user?"
-									await embed.edit(embed=e)
-									try:
-										msg = await self.bot.wait_for('message', check=pred, timeout=60)
-									except asyncio.TimeoutError:
-										await ctx.send("Timeout error")
-									else:
-										if msg.content == "yes":
-											self.toggle[str(ctx.guild.id)] = "multiple"
-											await msg.delete()
-										else:
-											if msg.content == "no":
-												self.toggle[str(ctx.guild.id)] = "single"
-												await msg.delete()
-											else:
-												await ctx.send("Invalid response, please restart")
-												await embed.delete()
-												await msg.delete()
 									e.description = "Please type a channel name\nType cancel to cancel"
 									await embed.edit(embed=e)
 									try:
@@ -169,24 +153,6 @@ class Mod:
 											else:
 												await msg.delete()
 												if msg.content.lower() == "confirm":
-													e.description = "Do you wish to allow multiple reactions per-user?"
-													await embed.edit(embed=e)
-													try:
-														msg = await self.bot.wait_for('message', check=pred, timeout=60)
-													except asyncio.TimeoutError:
-														await ctx.send("Timeout error")
-													else:
-														if msg.content == "yes":
-															self.toggle[str(ctx.guild.id)] = "multiple"
-															await msg.delete()
-														else:
-															if msg.content == "no":
-																self.toggle[str(ctx.guild.id)] = "single"
-																await msg.delete()
-															else:
-																await ctx.send("Invalid response, please restart")
-																await embed.delete()
-																await msg.delete()
 													e.description = "Please type a channel name\nType cancel to cancel"
 													await embed.edit(embed=e)
 													try:
@@ -260,25 +226,6 @@ class Mod:
 															else:
 																await msg.delete()
 																if msg.content.lower() == "confirm":
-																	e.description = "Do you wish to allow multiple reactions per-user?"
-																	await embed.edit(embed=e)
-																	try:
-																		msg = await self.bot.wait_for('message', check=pred, timeout=60)
-																	except asyncio.TimeoutError:
-																		await ctx.send("Timeout error")
-																	else:
-																		if msg.content == "yes":
-																			self.toggle[str(ctx.guild.id)] = "multiple"
-																			await msg.delete()
-																		else:
-																			if msg.content == "no":
-																				self.toggle[str(ctx.guild.id)] = "single"
-																				await msg.delete()
-																			else:
-																				await ctx.send(
-																					"Invalid response, please restart")
-																				await embed.delete()
-																				await msg.delete()
 																	e.description = "Please type a channel name\nType cancel to cancel"
 																	await embed.edit(embed=e)
 																	try:
@@ -354,24 +301,6 @@ class Mod:
 																			else:
 																				await msg.delete()
 																				if msg.content.lower() == "confirm":
-																					e.description = "Do you wish to allow multiple reactions per-user?"
-																					await embed.edit(embed=e)
-																					try:
-																						msg = await self.bot.wait_for('message', check=pred, timeout=60)
-																					except asyncio.TimeoutError:
-																						await ctx.send("Timeout error")
-																					else:
-																						if msg.content == "yes":
-																							self.toggle[str(ctx.guild.id)] = "multiple"
-																							await msg.delete()
-																						else:
-																							if msg.content == "no":
-																								self.toggle[str(ctx.guild.id)] = "single"
-																								await msg.delete()
-																							else:
-																								await ctx.send("Invalid response, please restart")
-																								await embed.delete()
-																								await msg.delete()
 																					e.description = "Please type a channel name\nType cancel to cancel"
 																					await embed.edit(embed=e)
 																					try:
@@ -418,166 +347,72 @@ class Mod:
 		with open("./data/userdata/selfroles.json", "w") as outfile:
 			json.dump({"toggle": self.toggle, "message": self.message, "roles": self.roles}, outfile, ensure_ascii=False)
 
-	async def on_reaction_add(self, reaction, user):
-		if isinstance(reaction.message.guild, discord.Guild):
-			if not user.bot:
-				guild_id = str(reaction.message.guild.id)
-				reaction_id = str(reaction.message.id)
-				roles = self.roles[guild_id].split(",")
-				reactions = ['1⃣', '2⃣', '3⃣', '4⃣', '5⃣', '6⃣', '7⃣', '8⃣', '9⃣']
-				if guild_id in self.message:
-					if self.message[guild_id] == reaction_id:
-						if self.toggle[guild_id] == "single":
-							if reaction_id == self.message[guild_id]:
-								if reaction.emoji == reactions[0]:
-									for role in reaction.message.guild.roles:
-										if role.name == roles[0]:
-											role = role
-											await user.add_roles(role)
-											break
-									async for m in reaction.message.reactions.users():
-										if m.id == user.id:
-											if "{0.emoji}".format(reaction) == reactions[0]:
-												pass
-											else:
-												await reaction.message.remove_reaction("{0.emoji}".format(reaction), user)
-												for i in reactions:
-													if "{0.emoji}".format(reaction) == i:
-														if "{0.emoji}".format(reaction) == reactions[0]:
-															pass
-														else:
-															for role in reaction.message.guild.roles:
-																if role.name == roles[i.index("{0.emoji}".format(reaction))]:
-																	role = role
-																	await user.remove_roles(role)
-																	break
-								if reaction.emoji == reactions[1]:
-									for role in reaction.message.guild.roles:
-										if role.name == roles[1]:
-											role = role
-											await user.add_roles(role)
-											break
-									async for m in reaction.users():
-										if m.id == user.id:
-											if "{0.emoji}".format(reaction) == reactions[1]:
-												pass
-											else:
-												await reaction.message.remove_reaction("{0.emoji}".format(reaction), user)
-												for i in reactions:
-													if "{0.emoji}".format(reaction) == i:
-														if "{0.emoji}".format(reaction) == reactions[1]:
-															pass
-														else:
-															for role in reaction.message.guild.roles:
-																if role.name == roles[i.index("{0.emoji}".format(reaction))]:
-																	role = role
-																	await user.remove_roles(role)
-																	break
-								if reaction.emoji == reactions[2]:
-									for role in reaction.message.guild.roles:
-										if role.name == roles[2]:
-											role = role
-											await user.add_roles(role)
-											break
-									async for m in reaction.users():
-										if m.id == user.id:
-											if "{0.emoji}".format(reaction) == reactions[2]:
-												pass
-											else:
-												await reaction.message.remove_reaction("{0.emoji}".format(reaction), user)
-												for i in reactions:
-													if "{0.emoji}".format(reaction) == i:
-														if "{0.emoji}".format(reaction) == reactions[2]:
-															pass
-														else:
-															for role in reaction.message.guild.roles:
-																if role.name == roles[i.index("{0.emoji}".format(reaction))]:
-																	role = role
-																	await user.remove_roles(role)
-																	break
-								if reaction.emoji == reactions[3]:
-									for role in reaction.message.guild.roles:
-										if role.name == roles[3]:
-											role = role
-											await user.add_roles(role)
-											break
-									async for m in reaction.users():
-										if m.id == user.id:
-											if "{0.emoji}".format(reaction) == reactions[1]:
-												pass
-											else:
-												await reaction.message.remove_reaction(m.reaction.emoji, user)
-												for i in reactions:
-													if m.reaction.emoji == i:
-														if m.reaction.emoji == reactions[3]:
-															pass
-														else:
-															for role in reaction.message.guild.roles:
-																if role.name == roles[i.index(m.reaction.emoji)]:
-																	role = role
-																	await user.remove_roles(role)
-																	break
-						else:
-							if self.toggle[guild_id] == "multiple":
-								if reaction_id == self.message[guild_id]:
-									if reaction.emoji == reactions[0]:
-										for role in reaction.message.guild.roles:
-											if role.name == roles[0]:
-												role = role
-												await user.add_roles(role)
-												break
-									if reaction.emoji == reactions[1]:
-										for role in reaction.message.guild.roles:
-											if role.name == roles[1]:
-												role = role
-												await user.add_roles(role)
-												break
-									if reaction.emoji == reactions[2]:
-										for role in reaction.message.guild.roles:
-											if role.name == roles[2]:
-												role = role
-												await user.add_roles(role)
-												break
-									if reaction.emoji == reactions[3]:
-										for role in reaction.message.guild.roles:
-											if role.name == roles[3]:
-												role = role
-												await user.add_roles(role)
-												break
-							else:
-								await reaction.message.channel.send("there's been a fuckup with json")
-
-	async def on_reaction_remove(self, reaction, user):
-		if isinstance(reaction.message.guild, discord.Guild):
-			guild_id = str(reaction.message.guild.id)
-			reaction_id = str(reaction.message.id)
+	async def on_raw_reaction_add(self, payload):
+		server = self.bot.get_guild(payload.guild_id)
+		user = server.get_member(payload.user_id)
+		if not user.bot:
+			guild_id = str(payload.guild_id)
+			reaction_id = str(payload.message_id)
 			roles = self.roles[guild_id].split(",")
 			reactions = ['1⃣', '2⃣', '3⃣', '4⃣', '5⃣', '6⃣', '7⃣', '8⃣', '9⃣']
 			if guild_id in self.message:
-				if self.message[guild_id] == "deleted":
-					pass
-				else:
+				if reaction_id == self.message[guild_id]:
+					if str(payload.emoji) == reactions[0]:
+						for role in server.roles:
+							if role.name == roles[0]:
+								role = role
+								await user.add_roles(role)
+								break
+					if str(payload.emoji) == reactions[1]:
+						for role in server.roles:
+							if role.name == roles[1]:
+								role = role
+								await user.add_roles(role)
+								break
+					if str(payload.emoji) == reactions[2]:
+						for role in server.roles:
+							if role.name == roles[2]:
+								role = role
+								await user.add_roles(role)
+								break
+					if str(payload.emoji) == reactions[3]:
+						for role in server.roles:
+							if role.name == roles[3]:
+								role = role
+								await user.add_roles(role)
+								break
+
+	async def on_raw_reaction_remove(self, payload):
+		server = self.bot.get_guild(payload.guild_id)
+		user = server.get_member(payload.user_id)
+		if not user.bot:
+			guild_id = str(payload.guild_id)
+			reaction_id = str(payload.message_id)
+			roles = self.roles[guild_id].split(",")
+			reactions = ['1⃣', '2⃣', '3⃣', '4⃣', '5⃣', '6⃣', '7⃣', '8⃣', '9⃣']
+			if guild_id in self.message:
+				if self.message[guild_id] == reaction_id:
 					if reaction_id == self.message[guild_id]:
-						if reaction.emoji == reactions[0]:
-							for role in reaction.message.guild.roles:
+						if str(payload.emoji) == reactions[0]:
+							for role in server.roles:
 								if role.name == roles[0]:
 									role = role
 									await user.remove_roles(role)
 									break
-						if reaction.emoji == reactions[1]:
-							for role in reaction.message.guild.roles:
+						if str(payload.emoji) == reactions[1]:
+							for role in server.roles:
 								if role.name == roles[1]:
 									role = role
 									await user.remove_roles(role)
 									break
-						if reaction.emoji == reactions[2]:
-							for role in reaction.message.guild.roles:
+						if str(payload.emoji) == reactions[2]:
+							for role in server.roles:
 								if role.name == roles[2]:
 									role = role
 									await user.remove_roles(role)
 									break
-						if reaction.emoji == reactions[3]:
-							for role in reaction.message.guild.roles:
+						if str(payload.emoji) == reactions[3]:
+							for role in server.roles:
 								if role.name == roles[3]:
 									role = role
 									await user.remove_roles(role)
