@@ -50,11 +50,7 @@ class ErrorHandler:
 		else:
 			print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
 			traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
-			try:
-				await ctx.send(traceback.format_exc())
-				await ctx.send(error)
-			except:
-				pass
+			await ctx.send(error)
 
 def setup(bot):
 	bot.add_cog(ErrorHandler(bot))
