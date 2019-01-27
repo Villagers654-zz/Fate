@@ -36,9 +36,15 @@ class Menus:
 			except asyncio.TimeoutError:
 				pass
 			else:
-				await ctx.message.delete()
-				await asyncio.sleep(0.5)
-				await msg.delete()
+				if msg.content.lower() == "k":
+					await ctx.message.delete()
+					await asyncio.sleep(0.5)
+					await msg.delete()
+					async for msg in ctx.channel.history(limit=10):
+						if msg.author.id == self.bot.user.id:
+							if len(msg.embeds) > 0:
+								await msg.delete()
+								break
 
 	@_help.command(name='core')
 	async def _core(self, ctx):
@@ -50,9 +56,15 @@ class Menus:
 		except asyncio.TimeoutError:
 			pass
 		else:
-			await ctx.message.delete()
-			await asyncio.sleep(0.5)
-			await msg.delete()
+			if msg.content.lower() == "k":
+				await ctx.message.delete()
+				await asyncio.sleep(0.5)
+				await msg.delete()
+				async for msg in ctx.channel.history(limit=10):
+					if msg.author.id == self.bot.user.id:
+						if len(msg.embeds) > 0:
+							await msg.delete()
+							break
 
 	@_help.command(name='utility')
 	async def _utility(self, ctx):
@@ -64,9 +76,15 @@ class Menus:
 		except asyncio.TimeoutError:
 			pass
 		else:
-			await ctx.message.delete()
-			await asyncio.sleep(0.5)
-			await msg.delete()
+			if msg.content.lower() == "k":
+				await ctx.message.delete()
+				await asyncio.sleep(0.5)
+				await msg.delete()
+				async for msg in ctx.channel.history(limit=10):
+					if msg.author.id == self.bot.user.id:
+						if len(msg.embeds) > 0:
+							await msg.delete()
+							break
 
 	@_help.command(name='react')
 	async def _react(self, ctx):
@@ -78,9 +96,15 @@ class Menus:
 		except asyncio.TimeoutError:
 			pass
 		else:
-			await ctx.message.delete()
-			await asyncio.sleep(0.5)
-			await msg.delete()
+			if msg.content.lower() == "k":
+				await ctx.message.delete()
+				await asyncio.sleep(0.5)
+				await msg.delete()
+				async for msg in ctx.channel.history(limit=10):
+					if msg.author.id == self.bot.user.id:
+						if len(msg.embeds) > 0:
+							await msg.delete()
+							break
 
 	@_help.command(name='mod')
 	async def _mod(self, ctx):
@@ -92,9 +116,15 @@ class Menus:
 		except asyncio.TimeoutError:
 			pass
 		else:
-			await ctx.message.delete()
-			await asyncio.sleep(0.5)
-			await msg.delete()
+			if msg.content.lower() == "k":
+				await ctx.message.delete()
+				await asyncio.sleep(0.5)
+				await msg.delete()
+				async for msg in ctx.channel.history(limit=10):
+					if msg.author.id == self.bot.user.id:
+						if len(msg.embeds) > 0:
+							await msg.delete()
+							break
 
 	@_help.command(name='fun')
 	async def _fun(self, ctx):
@@ -106,9 +136,15 @@ class Menus:
 		except asyncio.TimeoutError:
 			pass
 		else:
-			await ctx.message.delete()
-			await asyncio.sleep(0.5)
-			await msg.delete()
+			if msg.content.lower() == "k":
+				await ctx.message.delete()
+				await asyncio.sleep(0.5)
+				await msg.delete()
+				async for msg in ctx.channel.history(limit=10):
+					if msg.author.id == self.bot.user.id:
+						if len(msg.embeds) > 0:
+							await msg.delete()
+							break
 
 	@_help.command(name='art')
 	async def _art(self, ctx):
@@ -120,9 +156,15 @@ class Menus:
 		except asyncio.TimeoutError:
 			pass
 		else:
-			await ctx.message.delete()
-			await asyncio.sleep(0.5)
-			await msg.delete()
+			if msg.content.lower() == "k":
+				await ctx.message.delete()
+				await asyncio.sleep(0.5)
+				await msg.delete()
+				async for msg in ctx.channel.history(limit=10):
+					if msg.author.id == self.bot.user.id:
+						if len(msg.embeds) > 0:
+							await msg.delete()
+							break
 
 	@_help.command(name='m')
 	async def _m(self, ctx):
@@ -134,9 +176,15 @@ class Menus:
 		except asyncio.TimeoutError:
 			pass
 		else:
-			await ctx.message.delete()
-			await asyncio.sleep(0.5)
-			await msg.delete()
+			if msg.content.lower() == "k":
+				await ctx.message.delete()
+				await asyncio.sleep(0.5)
+				await msg.delete()
+				async for msg in ctx.channel.history(limit=10):
+					if msg.author.id == self.bot.user.id:
+						if len(msg.embeds) > 0:
+							await msg.delete()
+							break
 
 	@_help.command(name='e')
 	async def _e(self, ctx):
@@ -148,9 +196,15 @@ class Menus:
 		except asyncio.TimeoutError:
 			pass
 		else:
-			await ctx.message.delete()
-			await asyncio.sleep(0.5)
-			await msg.delete()
+			if msg.content.lower() == "k":
+				await ctx.message.delete()
+				await asyncio.sleep(0.5)
+				await msg.delete()
+				async for msg in ctx.channel.history(limit=10):
+					if msg.author.id == self.bot.user.id:
+						if len(msg.embeds) > 0:
+							await msg.delete()
+							break
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -163,9 +217,15 @@ class Menus:
 		except asyncio.TimeoutError:
 			pass
 		else:
-			await ctx.message.delete()
-			await asyncio.sleep(0.5)
-			await msg.delete()
+			if msg.content.lower() == "k":
+				await ctx.message.delete()
+				await asyncio.sleep(0.5)
+				await msg.delete()
+				async for msg in ctx.channel.history(limit=10):
+					if msg.author.id == self.bot.user.id:
+						if len(msg.embeds) > 0:
+							await msg.delete()
+							break
 
 	@commands.command()
 	async def utility(self, ctx):
@@ -177,9 +237,15 @@ class Menus:
 		except asyncio.TimeoutError:
 			pass
 		else:
-			await ctx.message.delete()
-			await asyncio.sleep(0.5)
-			await msg.delete()
+			if msg.content.lower() == "k":
+				await ctx.message.delete()
+				await asyncio.sleep(0.5)
+				await msg.delete()
+				async for msg in ctx.channel.history(limit=10):
+					if msg.author.id == self.bot.user.id:
+						if len(msg.embeds) > 0:
+							await msg.delete()
+							break
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -192,9 +258,15 @@ class Menus:
 		except asyncio.TimeoutError:
 			pass
 		else:
-			await ctx.message.delete()
-			await asyncio.sleep(0.5)
-			await msg.delete()
+			if msg.content.lower() == "k":
+				await ctx.message.delete()
+				await asyncio.sleep(0.5)
+				await msg.delete()
+				async for msg in ctx.channel.history(limit=10):
+					if msg.author.id == self.bot.user.id:
+						if len(msg.embeds) > 0:
+							await msg.delete()
+							break
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -207,9 +279,15 @@ class Menus:
 		except asyncio.TimeoutError:
 			pass
 		else:
-			await ctx.message.delete()
-			await asyncio.sleep(0.5)
-			await msg.delete()
+			if msg.content.lower() == "k":
+				await ctx.message.delete()
+				await asyncio.sleep(0.5)
+				await msg.delete()
+				async for msg in ctx.channel.history(limit=10):
+					if msg.author.id == self.bot.user.id:
+						if len(msg.embeds) > 0:
+							await msg.delete()
+							break
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -222,9 +300,15 @@ class Menus:
 		except asyncio.TimeoutError:
 			pass
 		else:
-			await ctx.message.delete()
-			await asyncio.sleep(0.5)
-			await msg.delete()
+			if msg.content.lower() == "k":
+				await ctx.message.delete()
+				await asyncio.sleep(0.5)
+				await msg.delete()
+				async for msg in ctx.channel.history(limit=10):
+					if msg.author.id == self.bot.user.id:
+						if len(msg.embeds) > 0:
+							await msg.delete()
+							break
 
 	@commands.command()
 	async def art(self, ctx):
@@ -236,9 +320,15 @@ class Menus:
 		except asyncio.TimeoutError:
 			pass
 		else:
-			await ctx.message.delete()
-			await asyncio.sleep(0.5)
-			await msg.delete()
+			if msg.content.lower() == "k":
+				await ctx.message.delete()
+				await asyncio.sleep(0.5)
+				await msg.delete()
+				async for msg in ctx.channel.history(limit=10):
+					if msg.author.id == self.bot.user.id:
+						if len(msg.embeds) > 0:
+							await msg.delete()
+							break
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -251,9 +341,15 @@ class Menus:
 		except asyncio.TimeoutError:
 			pass
 		else:
-			await ctx.message.delete()
-			await asyncio.sleep(0.5)
-			await msg.delete()
+			if msg.content.lower() == "k":
+				await ctx.message.delete()
+				await asyncio.sleep(0.5)
+				await msg.delete()
+				async for msg in ctx.channel.history(limit=10):
+					if msg.author.id == self.bot.user.id:
+						if len(msg.embeds) > 0:
+							await msg.delete()
+							break
 
 	@commands.command()
 	async def e(self, ctx):
@@ -265,9 +361,15 @@ class Menus:
 		except asyncio.TimeoutError:
 			pass
 		else:
-			await ctx.message.delete()
-			await asyncio.sleep(0.5)
-			await msg.delete()
+			if msg.content.lower() == "k":
+				await ctx.message.delete()
+				await asyncio.sleep(0.5)
+				await msg.delete()
+				async for msg in ctx.channel.history(limit=10):
+					if msg.author.id == self.bot.user.id:
+						if len(msg.embeds) > 0:
+							await msg.delete()
+							break
 
 	@commands.command(name='info')
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -301,9 +403,15 @@ class Menus:
 		except asyncio.TimeoutError:
 			pass
 		else:
-			await ctx.message.delete()
-			await asyncio.sleep(0.5)
-			await msg.delete()
+			if msg.content.lower() == "k":
+				await ctx.message.delete()
+				await asyncio.sleep(0.5)
+				await msg.delete()
+				async for msg in ctx.channel.history(limit=10):
+					if msg.author.id == self.bot.user.id:
+						if len(msg.embeds) > 0:
+							await msg.delete()
+							break
 
 # ~== Ads ==~
 
@@ -322,9 +430,15 @@ class Menus:
 		except asyncio.TimeoutError:
 			pass
 		else:
-			await ctx.message.delete()
-			await asyncio.sleep(0.5)
-			await msg.delete()
+			if msg.content.lower() == "k":
+				await ctx.message.delete()
+				await asyncio.sleep(0.5)
+				await msg.delete()
+				async for msg in ctx.channel.history(limit=10):
+					if msg.author.id == self.bot.user.id:
+						if len(msg.embeds) > 0:
+							await msg.delete()
+							break
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -339,9 +453,15 @@ class Menus:
 		except asyncio.TimeoutError:
 			pass
 		else:
-			await ctx.message.delete()
-			await asyncio.sleep(0.5)
-			await msg.delete()
+			if msg.content.lower() == "k":
+				await ctx.message.delete()
+				await asyncio.sleep(0.5)
+				await msg.delete()
+				async for msg in ctx.channel.history(limit=10):
+					if msg.author.id == self.bot.user.id:
+						if len(msg.embeds) > 0:
+							await msg.delete()
+							break
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -357,9 +477,15 @@ class Menus:
 		except asyncio.TimeoutError:
 			pass
 		else:
-			await ctx.message.delete()
-			await asyncio.sleep(0.5)
-			await msg.delete()
+			if msg.content.lower() == "k":
+				await ctx.message.delete()
+				await asyncio.sleep(0.5)
+				await msg.delete()
+				async for msg in ctx.channel.history(limit=10):
+					if msg.author.id == self.bot.user.id:
+						if len(msg.embeds) > 0:
+							await msg.delete()
+							break
 
 # ~== 4B4T ==~
 
@@ -398,9 +524,15 @@ class Menus:
 		except asyncio.TimeoutError:
 			pass
 		else:
-			await ctx.message.delete()
-			await asyncio.sleep(0.5)
-			await msg.delete()
+			if msg.content.lower() == "k":
+				await ctx.message.delete()
+				await asyncio.sleep(0.5)
+				await msg.delete()
+				async for msg in ctx.channel.history(limit=10):
+					if msg.author.id == self.bot.user.id:
+						if len(msg.embeds) > 0:
+							await msg.delete()
+							break
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -417,8 +549,15 @@ class Menus:
 		except asyncio.TimeoutError:
 			pass
 		else:
-			await ctx.message.delete()
-			await asyncio.sleep(0.5)
-			await msg.delete()
+			if msg.content.lower() == "k":
+				await ctx.message.delete()
+				await asyncio.sleep(0.5)
+				await msg.delete()
+				async for msg in ctx.channel.history(limit=10):
+					if msg.author.id == self.bot.user.id:
+						if len(msg.embeds) > 0:
+							await msg.delete()
+							break
+
 def setup(bot):
 	bot.add_cog(Menus(bot))
