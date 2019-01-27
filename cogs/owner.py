@@ -43,5 +43,17 @@ class Owner:
 		await ctx.send('logging out')
 		await self.bot.logout()
 
+	@commands.command()
+	async def error(self, ctx):
+		p = subprocess.Popen("cat  /root/.pm2/logs/bot-error.log", stdout=subprocess.PIPE, shell=True)
+		(output, err) = p.communicate()
+		output = str(output).replace("\\t", "    ").replace("b'", "").replace("`", "").split("\\n")
+		msg = ""
+		for i in output[:len(output) - 1]:
+			msg += f"{i}\n"
+		msg = msg[::-1]
+		msg = msg[:msg.find("Ignoring"[::-1])]
+		await ctx.send(f"```Ignoring{msg[::-1]}```")
+
 def setup(bot):
 	bot.add_cog(Owner(bot))
