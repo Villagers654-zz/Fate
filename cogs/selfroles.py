@@ -45,11 +45,9 @@ class SelfRoles:
 				if msg.content.lower() == "confirm":
 					await ctx.send("you cannot confirm yet", delete_after=5)
 					await embed.delete()
-					await msg.delete()
 				else:
 					if msg.content.lower() == "cancel":
 						await embed.delete()
-						await msg.delete()
 					else:
 						role_one = None
 						msg.content = msg.content.replace("@", "")
