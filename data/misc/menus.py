@@ -15,7 +15,7 @@ react.add_field(name="• FAQ", value="• Some commands may require you to add\
 react.add_field(name="• Commands", value="`intimidate` `powerup` `observe` `disgust` `admire` `angery` `cuddle` `teasip` `psycho` `thonk` `shrug` `yawn` `hide` `wine` `sigh` `kiss` `kill` `slap` `hug` `pat` `cry`", inline=False)
 
 mod = discord.Embed(title="~~~====🥂🍸🍷Mod🍷🍸🥂====~~~", color=0x80b0ff)
-mod.add_field(name="• Commands", value="`mute` `unmute` `vcmute` `vcunmute` `warn` `clearwarns` `delete` `purge` `nick` `massnick` `kick` `mute` `ban` `pin`", inline=False)
+mod.add_field(name="• Commands", value="`mute` `unmute` `vcmute` `vcunmute` `warn` `clearwarns` `selfroles` `delete` `purge` `nick` `massnick` `kick` `mute` `ban` `pin`", inline=False)
 
 fun = discord.Embed(title="~~~====🥂🍸🍷Fun🍷🍸🥂====~~~", color=0x80b0ff)
 fun.add_field(name="• Core", value="`fancify` `coffee` `encode` `decode` `choose` `notice` `meme` `quote` `rate` `roll` `gay` `sue` `fap` `ask` `rps` `rr`", inline=False)
