@@ -238,7 +238,7 @@ class Mod:
 			user = self.bot.get_user(eval(user))
 		else:
 			for member in ctx.guild.members:
-				if str(user).lower() in str(member.name).lower():
+				if str(user).lower() in str(member.display_name).lower():
 					user_id = member.id
 					user = self.bot.get_user(user_id)
 					break
@@ -316,7 +316,7 @@ class Mod:
 			user = self.bot.get_user(eval(user))
 		else:
 			for member in ctx.guild.members:
-				if str(user).lower() in str(member.name).lower():
+				if str(user).lower() in str(member.display_name).lower():
 					user_id = member.id
 					user = self.bot.get_user(user_id)
 					break
@@ -342,7 +342,7 @@ class Mod:
 			user = self.bot.get_user(eval(user))
 		else:
 			for member in ctx.guild.members:
-				if str(user).lower() in str(member.name).lower():
+				if str(user).lower() in str(member.display_name).lower():
 					user_id = member.id
 					user = self.bot.get_user(user_id)
 					break
