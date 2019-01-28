@@ -95,7 +95,7 @@ class SelfRoles:
 											if msg.content.lower() == channel.name.lower():
 												e = discord.Embed(color=0x80b0ff)
 												e.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
-												e.add_field(name="◈ Roles ◈", value=f"1 : {role_one}")
+												e.add_field(name="◈ Self-Roles ◈", value=f"1 : {role_one}")
 												message = await channel.send(embed=e)
 												self.message[str(ctx.guild.id)] = str(message.id)
 												await embed.delete()
@@ -107,7 +107,7 @@ class SelfRoles:
 												if msg.content.lower() in channel.name.lower():
 													e = discord.Embed(color=0x80b0ff)
 													e.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
-													e.add_field(name="◈ Roles ◈",  value=f"1 : {role_one}")
+													e.add_field(name="◈ Self-Roles ◈",  value=f"1 : {role_one}")
 													message = await channel.send(embed=e)
 													self.message[str(ctx.guild.id)] = str(message.id)
 													await embed.delete()
@@ -166,7 +166,7 @@ class SelfRoles:
 															if msg.content.lower() == channel.name.lower():
 																e = discord.Embed(color=0x80b0ff)
 																e.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
-																e.add_field(name="◈ Roles ◈", value=f"1 : {role_one}\n2 : {role_two}")
+																e.add_field(name="◈ Self-Roles ◈", value=f"1 : {role_one}\n2 : {role_two}")
 																message = await channel.send(embed=e)
 																self.message[str(ctx.guild.id)] = str(message.id)
 																await embed.delete()
@@ -179,7 +179,7 @@ class SelfRoles:
 																if msg.content.lower() in channel.name.lower():
 																	e = discord.Embed(color=0x80b0ff)
 																	e.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
-																	e.add_field(name="◈ Roles ◈", value=f"1 : {role_one}\n2 : {role_two}")
+																	e.add_field(name="◈ Self-Roles ◈", value=f"1 : {role_one}\n2 : {role_two}")
 																	message = await channel.send(embed=e)
 																	self.message[str(ctx.guild.id)] = str(message.id)
 																	await embed.delete()
@@ -239,7 +239,7 @@ class SelfRoles:
 																			if msg.content.lower() == channel.name.lower():
 																				e = discord.Embed(color=0x80b0ff)
 																				e.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
-																				e.add_field(name="◈ Roles ◈", value=f"1 : {role_one}\n2 : {role_two}\n3 : {role_three}")
+																				e.add_field(name="◈ Self-Roles ◈", value=f"1 : {role_one}\n2 : {role_two}\n3 : {role_three}")
 																				message = await channel.send(embed=e)
 																				self.message[str(ctx.guild.id)] = str(message.id)
 																				await embed.delete()
@@ -253,7 +253,7 @@ class SelfRoles:
 																				if msg.content.lower() in channel.name.lower():
 																					e = discord.Embed(color=0x80b0ff)
 																					e.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
-																					e.add_field(name="◈ Roles ◈", value=f"1 : {role_one}\n2 : {role_two}\n3 : {role_three}")
+																					e.add_field(name="◈ Self-Roles ◈", value=f"1 : {role_one}\n2 : {role_two}\n3 : {role_three}")
 																					message = await channel.send(embed=e)
 																					self.message[str(ctx.guild.id)] = str(message.id)
 																					await embed.delete()
@@ -314,7 +314,7 @@ class SelfRoles:
 																							if msg.content.lower() == channel.name.lower():
 																								e = discord.Embed(color=0x80b0ff)
 																								e.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
-																								e.add_field(name="◈ Roles ◈",
+																								e.add_field(name="◈ Self-Roles ◈",
 																									value=f"1 : {role_one}\n2 : {role_two}\n3 : {role_three}\n4 : {role_four}")
 																								message = await channel.send(embed=e)
 																								self.message[str(ctx.guild.id)] = str(message.id)
@@ -330,7 +330,7 @@ class SelfRoles:
 																								if msg.content.lower() in channel.name.lower():
 																									e = discord.Embed(color=0x80b0ff)
 																									e.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
-																									e.add_field(name="◈ Roles ◈",
+																									e.add_field(name="◈ Self-Roles ◈",
 																										value=f"1 : {role_one}\n2 : {role_two}\n3 : {role_three}\n4 : {role_four}")
 																									message = await channel.send(embed=e)
 																									self.message[str(ctx.guild.id)] = str(message.id)
@@ -393,7 +393,7 @@ class SelfRoles:
 																											if msg.content.lower() == channel.name.lower():
 																												e = discord.Embed(color=0x80b0ff)
 																												e.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
-																												e.add_field(name="◈ Roles ◈", value=f"1 : {role_one}\n2 : {role_two}\n3 : {role_three}\n4 : {role_four}\n5 : {role_five}")
+																												e.add_field(name="◈ Self-Roles ◈", value=f"1 : {role_one}\n2 : {role_two}\n3 : {role_three}\n4 : {role_four}\n5 : {role_five}")
 																												message = await channel.send(embed=e)
 																												self.message[str(ctx.guild.id)] = str(message.id)
 																												await embed.delete()
@@ -409,7 +409,7 @@ class SelfRoles:
 																												if msg.content.lower() in channel.name.lower():
 																													e = discord.Embed(color=0x80b0ff)
 																													e.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
-																													e.add_field(name="◈ Roles ◈", value=f"1 : {role_one}\n2 : {role_two}\n3 : {role_three}\n4 : {role_four}\n5 : {role_five}")
+																													e.add_field(name="◈ Self-Roles ◈", value=f"1 : {role_one}\n2 : {role_two}\n3 : {role_three}\n4 : {role_four}\n5 : {role_five}")
 																													message = await channel.send(embed=e)
 																													self.message[str(ctx.guild.id)] = str(message.id)
 																													await embed.delete()
