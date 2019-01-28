@@ -41,6 +41,7 @@ class customclass:
 ■ No gifs / videos / emotes with flashing lights that may trigger epilepsy
 ■ Be respectful with handling the music bots, (no earrape, no skipping to annoy people, and no skipping inconsideratly)
 ■ No pestering staff repetitively
+■ No useless / annoying pings
 ■ No spamming""", inline=False)
 			e.add_field(name="-~===🌹🥂🍸🍷Misc🍷🍸🥂🌹===~-", value="Minecraft Version: 1.8", inline=False)
 			e.set_thumbnail(url=channel.guild.icon_url)
