@@ -100,5 +100,11 @@ class Minecraft:
 		await asyncio.sleep(0.5)
 		self.bot.loop.create_task(self.motdshuffle())
 
+	async def on_member_join(self, member: discord.Member):
+		if member.guild.id == 470961230362837002:
+			guild = self.bot.get_guild(470961230362837002)
+			motd = f"{random.choice(self.motds)}"
+			await guild.edit(name=f"4B4T - {motd}")
+
 def setup(bot):
 	bot.add_cog(Minecraft(bot))
