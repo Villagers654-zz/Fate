@@ -439,7 +439,7 @@ class Profiles:
 					redid = "{}".format(msg.id)
 					if redid not in greenid:
 						await msg.delete()
-				await asyncio.sleep(25)
+				await asyncio.sleep(30)
 			except Exception as e:
 				await self.bot.get_channel(534608853300412416).send(f"```{traceback.format_exc()}```{e}")
 
