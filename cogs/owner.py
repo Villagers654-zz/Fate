@@ -44,6 +44,7 @@ class Owner:
 		await self.bot.logout()
 
 	@commands.command()
+	@commands.check(luck)
 	async def error(self, ctx):
 		p = subprocess.Popen("cat  /root/.pm2/logs/bot-error.log", stdout=subprocess.PIPE, shell=True)
 		(output, err) = p.communicate()
