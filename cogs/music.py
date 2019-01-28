@@ -16,14 +16,11 @@ if not discord.opus.is_loaded():
     """
     discord.opus.load_opus('opus')
 
-
 class YTDLError(Exception):
     pass
 
-
 class MusicError(Exception):
     pass
-
 
 class YTDLSource(discord.PCMVolumeTransformer):
     ytdl_opts = {
@@ -283,11 +280,18 @@ class Music:
     @commands.has_permissions(manage_guild=True)
     async def _summon(self, ctx, *, channel: discord.VoiceChannel=None):
         if channel is None and not ctx.author.voice:
-            raise MusicError('You are not connected to a voice channel nor specified a channel to join.')
-        destination = channel or ctx.author.voice.channel
-        if ctx.state.voice is not None:
-            return await ctx.state.voice.move_to(destination)
-        ctx.state.voice = await destination.connect()
+            await ctx.send('You are not connected to a voice channel nor specified a channel to join.', delete_after=20)
+            await ctx.message.add_reaction("⚠")
+            await asyncio.sleep(20)
+            return await ctx.message.delete()
+        else:
+            destination = channel or ctx.author.voice.channel
+            if ctx.state.voice is not None:
+                return await ctx.state.voice.move_to(destination)
+            ctx.state.voice = await destination.connect()
+            await ctx.message.add_reaction("👍")
+            await asyncio.sleep(20)
+            await ctx.messagge.delete()
 
     @commands.command(name='play')
     @commands.cooldown(1, 3, commands.BucketType.user)
@@ -299,22 +303,27 @@ class Music:
                 source = await YTDLSource.create_source(ctx.message, search, loop=self.bot.loop)
             except Exception as e:
                 await ctx.send(f'An error occurred while processing this request: {e}', delete_after=20)
+                await ctx.message.add_reaction("⚠")
                 await asyncio.sleep(20)
-                await ctx.message.delete()
-            else:
-                song = Song(ctx.state.voice, source)
-                await ctx.state.songs.put(song)
-                e=discord.Embed(description=f'{str(source)}', color=0x39ff14)
-                e.set_author(name="{} added to the queue".format(ctx.author.name), icon_url=ctx.author.avatar_url)
-                await ctx.send(embed=e, delete_after=20)
-                await ctx.message.delete()
+                return await ctx.message.delete()
+            song = Song(ctx.state.voice, source)
+            await ctx.state.songs.put(song)
+            e = discord.Embed(description=f'{str(source)}', color=0x39ff14)
+            e.set_author(name="{} added to the queue".format(ctx.author.name), icon_url=ctx.author.avatar_url)
+            await ctx.send(embed=e, delete_after=20)
+            await ctx.message.delete()
 
     @commands.command(name='volume', aliases=['vol', 'v'])
     async def _volume(self, ctx, *, volume: int):
         if ctx.state.is_done():
-            return await ctx.send('Nothing playing at the moment')
+            await ctx.message.add_reaction("⚠")
+            await asyncio.sleep(20)
+            return await ctx.message.delete()
         if 0 > volume > 100:
-            return await ctx.send('Volume must be between 0 and 100')
+            await ctx.send('Volume must be between 0 and 100', delete_after=20)
+            await ctx.message.add_reaction("⚠")
+            await asyncio.sleep(20)
+            return await ctx.message.delete()
         ctx.state.volume = volume / 100
         e=discord.Embed(color=0x39ff14)
         e.set_author(name=f'set the volume to {volume}%', icon_url=ctx.author.avatar_url)
@@ -324,6 +333,7 @@ class Music:
     @commands.command(name='now', aliases=['playing', 'current', 'nowplaying', 'np'])
     async def _now(self, ctx):
         await ctx.send(embed=ctx.state.current.create_embed(), delete_after=20)
+        await ctx.message.add_reaction("⚠")
         await asyncio.sleep(20)
         await ctx.message.delete()
 
@@ -352,7 +362,10 @@ class Music:
     @commands.command(name='skip')
     async def _skip(self, ctx):
         if ctx.state.is_done():
-            raise MusicError("I'm not playing any music right now")
+            await ctx.send("I'm not playing any music right now", delete_after=20)
+            await ctx.message.add_reaction("⚠")
+            await asyncio.sleep(20)
+            return await ctx.message.delete()
         voter = ctx.message.author
         if voter == ctx.state.current.requester:
             await ctx.message.add_reaction('⏭')
@@ -368,21 +381,29 @@ class Music:
                 await asyncio.sleep(20)
                 await ctx.message.delete()
             else:
-                await ctx.send(f'Vote added, currently at **{total_votes}/3**')
+                await ctx.send(f'Vote added, currently at **{total_votes}/3**', delete_after=20)
+                await asyncio.sleep(20)
+                await ctx.message.delete()
         else:
-            await ctx.send('You have already voted to skip')
+            await ctx.send('You have already voted to skip', delete_after=20)
+            await ctx.message.add_reaction("⚠")
+            await asyncio.sleep(20)
+            await ctx.message.delete()
 
     @commands.command(name='queue')
     async def _queue(self, ctx, *, page: int=1):
         if len(ctx.state.songs) == 0:
-            raise MusicError('Nothing in the queue')
-        items_per_page = 10
-        pages = math.ceil(len(ctx.state.songs) / items_per_page)
-        start = (page - 1) * items_per_page
-        end = start + items_per_page
-        queue = ''
-        for index, song in enumerate(ctx.state.songs[start:end], start=start):
-            queue += f'**#{index + 1}.** [{song.source.title}]({song.source.url})\n'
+            queue = 'Theres nothing in the queue'
+            page = 0
+            pages = 0
+        else:
+            items_per_page = 9
+            pages = math.ceil(len(ctx.state.songs) / items_per_page)
+            start = (page - 1) * items_per_page
+            end = start + items_per_page
+            queue = ''
+            for index, song in enumerate(ctx.state.songs[start:end], start=start):
+                queue += f'**#{index + 1}.** [{song.source.title}]({song.source.url})\n'
         e = discord.Embed(description=f'Tracks: [{len(ctx.state.songs) + 1}]', color=0x39ff14)
         e.set_author(name="{} Queue".format(ctx.guild.name), icon_url="https://cdn.discordapp.com/attachments/498333830395199488/507136609897021455/Z23N.gif")
         e.set_thumbnail(url="https://cdn.discordapp.com/attachments/498333830395199488/507170864614342676/75c21df998c0d0c97631853ea5619ea1.gif")
@@ -395,14 +416,20 @@ class Music:
     @commands.command(name='shuffle')
     async def _shuffle(self, ctx):
         if len(ctx.state.songs) == 0:
-            raise MusicError('There is nothing in the queue')
+            await ctx.send('There is nothing in the queue', delete_after=20)
+            await ctx.message.add_reaction("⚠")
+            await asyncio.sleep(20)
+            return await ctx.message.delete()
         ctx.state.songs.shuffle()
         await ctx.message.add_reaction('✅')
 
     @commands.command(name='remove')
     async def _remove(self, ctx, index: int):
         if len(ctx.state.songs) == 0:
-            raise MusicError('Nothing in the queue.')
+            await ctx.send('Nothing in the queue.', delete_after=20)
+            await ctx.message.add_reaction("⚠")
+            await asyncio.sleep(20)
+            return await ctx.message.delete()
         ctx.state.songs.remove(index)
         await ctx.message.add_reaction('✅')
         await asyncio.sleep(20)
@@ -411,11 +438,12 @@ class Music:
     @commands.command(name='disconnect', aliases=['dc'])
     @commands.has_permissions(manage_guild=True)
     async def _disconnect(self, ctx):
-        """Clears the queue and leaves the voice channel."""
         if ctx.state.voice is None:
-            raise MusicError('Not connected to any voice channel.')
+            await ctx.send('Not connected to any voice channel.', delete_after=20)
+            await ctx.message.add_reaction("⚠")
+            await asyncio.sleep(20)
+            return await ctx.message.delete()
         await ctx.state.stop()
-        # Clear the VoiceState object from the cache.
         del self.voice_states[str(ctx.guild.id)]
         await ctx.send("Disconnected", delete_after=20)
         await asyncio.sleep(20)
@@ -425,7 +453,10 @@ class Music:
     @commands.check(luck)
     async def _luckydisconnect(self, ctx):
         if ctx.state.voice is None:
-            raise MusicError('Not connected to any voice channel.')
+            await ctx.send('Not connected to any voice channel.', delete_after=20)
+            await ctx.message.add_reaction("⚠")
+            await asyncio.sleep(20)
+            return await ctx.message.delete()
         await ctx.state.stop()
         del self.voice_states[str(ctx.guild.id)]
 
@@ -433,13 +464,16 @@ class Music:
     @_play.before_invoke
     async def ensure_voice(self, ctx):
         if not ctx.author.voice or not ctx.author.voice.channel:
-            raise commands.CommandError('You are not connected to any voice channel.')
+            await ctx.send('You are not connected to any voice channel.', delete_after=20)
+            await ctx.message.add_reaction("⚠")
+            await asyncio.sleep(20)
+            return await ctx.message.delete()
         if ctx.voice_client is not None:
             if ctx.voice_client.channel != ctx.author.voice.channel:
-                raise MusicError('Bot already in a voice channel.')
-
-bot = commands.Bot(command_prefix='music.', description='A shitty, fucked up music bot. You can skid it.')
-bot.add_cog(Music(bot))
+                await ctx.send('Bot already in a voice channel.', delete_after=20)
+                await ctx.message.add_reaction("⚠")
+                await asyncio.sleep(20)
+                return await ctx.message.delete()
 
 def setup(bot):
     bot.add_cog(Music(bot))
