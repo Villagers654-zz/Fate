@@ -25,7 +25,8 @@ class Mod:
 
 	@_rules.command(name="help")
 	async def _help(self, ctx):
-		await ctx.send(";-;")
+		await ctx.send("**Rules Usage:**\n"
+		               ".rules set {rules}")
 
 	@_rules.command(name="set")
 	@commands.has_permissions(manage_guild=True)
