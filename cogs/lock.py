@@ -40,7 +40,7 @@ class Utility:
 		if guild_id in self.lock:
 			if self.lock[guild_id] == "lock-kick":
 				await m.guild.kick(m, reason="Server locked")
-			if self.lock[guild_id] == "lock=ban":
+			if self.lock[guild_id] == "lock-ban":
 				return await m.guild.ban(m, reason="Server locked", delete_message_days=0)
 
 def setup(bot):
