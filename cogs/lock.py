@@ -14,6 +14,7 @@ class Utility:
 					self.lock = dat["lock"]
 
 	@commands.command(name="lock")
+	@commands.has_permissions(administrator=True)
 	async def _lock(self, ctx):
 		guild_id = str(ctx.guild.id)
 		if guild_id not in self.lock:
@@ -25,6 +26,7 @@ class Utility:
 		await ctx.message.add_reaction("👍")
 
 	@commands.command(name="lockb")
+	@commands.has_permissions(administrator=True)
 	async def _lockb(self, ctx):
 		guild_id = str(ctx.guild.id)
 		if guild_id not in self.lock:
