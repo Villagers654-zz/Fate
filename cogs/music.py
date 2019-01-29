@@ -147,7 +147,6 @@ class Song:
 
         return embed
 
-
 class SongQueue(asyncio.Queue):
     def __iter__(self):
         return self._queue.__iter__()
