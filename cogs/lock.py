@@ -19,13 +19,19 @@ class Utility:
 		guild_id = str(ctx.guild.id)
 		if guild_id not in self.lock:
 			self.lock[guild_id] = "lock-kick"
+			with open("./data/userdata/lock.json", "w") as outfile:
+				json.dump({"lock": self.lock}, outfile, ensure_ascii=False)
 			await ctx.send("Locked the server")
 			return await ctx.message.add_reaction("👍")
 		if self.lock[guild_id] == "lock-ban":
 			self.lock[guild_id] = "lock-kick"
+			with open("./data/userdata/lock.json", "w") as outfile:
+				json.dump({"lock": self.lock}, outfile, ensure_ascii=False)
 			await ctx.send("Changed the server lock type to kick")
 			return await ctx.message.add_reaction("👍")
 		del self.lock[guild_id]
+		with open("./data/userdata/lock.json", "w") as outfile:
+			json.dump({"lock": self.lock}, outfile, ensure_ascii=False)
 		await ctx.send("Unlocked the server")
 		await ctx.message.add_reaction("👍")
 
@@ -35,13 +41,19 @@ class Utility:
 		guild_id = str(ctx.guild.id)
 		if guild_id not in self.lock:
 			self.lock[guild_id] = "lock-ban"
+			with open("./data/userdata/lock.json", "w") as outfile:
+				json.dump({"lock": self.lock}, outfile, ensure_ascii=False)
 			await ctx.send("Locked the server")
 			return await ctx.message.add_reaction("👍")
 		if self.lock[guild_id] == "lock-kick":
 			self.lock[guild_id] = "lock-ban"
+			with open("./data/userdata/lock.json", "w") as outfile:
+				json.dump({"lock": self.lock}, outfile, ensure_ascii=False)
 			await ctx.send("Changed the server lock type to ban")
 			return await ctx.message.add_reaction("👍")
 		del self.lock[guild_id]
+		with open("./data/userdata/lock.json", "w") as outfile:
+			json.dump({"lock": self.lock}, outfile, ensure_ascii=False)
 		await ctx.send("Unlocked the server")
 		await ctx.message.add_reaction("👍")
 
