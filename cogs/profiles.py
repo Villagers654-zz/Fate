@@ -427,6 +427,8 @@ class Profiles:
 				try:
 					message = await statschannel.get_message(self.statsmessage)
 					await message.edit(embed=e)
+				except discord.errors.HTTPException:
+					pass
 				except Exception as e:
 					preparing = discord.Embed()
 					preparing.description = 'preparing stats..'
@@ -434,12 +436,12 @@ class Profiles:
 					self.statsmessage = msg.id
 					with open("./data/userdata/config/stats.json", "w") as outfile:
 						json.dump({"statschannel": self.statschannel, "statsmessage": self.statsmessage}, outfile, ensure_ascii=False)
-				async for msg in statschannel.history(limit=5):
-					greenid = "{}".format(self.statsmessage)
-					redid = "{}".format(msg.id)
-					if redid not in greenid:
+				async for msg in statschannel.history(limit=3):
+					stats_id = "{}".format(self.statsmessage)
+					msg_id = "{}".format(msg.id)
+					if stats_id not in msg_id:
 						await msg.delete()
-				await asyncio.sleep(30)
+				await asyncio.sleep(60)
 			except Exception as e:
 				await self.bot.get_channel(534608853300412416).send(f"```{traceback.format_exc()}```{e}")
 
