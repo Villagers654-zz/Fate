@@ -331,8 +331,12 @@ class Music:
 
     @commands.command(name='now', aliases=['playing', 'current', 'nowplaying', 'np'])
     async def _now(self, ctx):
+        if ctx.state.is_done():
+            await ctx.message.add_reaction("⚠")
+            await ctx.send("Theres nothing playing right now", delete_after=20)
+            await asyncio.sleep(20)
+            return await ctx.message.delete()
         await ctx.send(embed=ctx.state.current.create_embed(), delete_after=20)
-        await ctx.message.add_reaction("⚠")
         await asyncio.sleep(20)
         await ctx.message.delete()
 
