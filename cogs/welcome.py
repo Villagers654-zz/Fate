@@ -21,17 +21,10 @@ class Events:
 					self.usepings = dat["usepings"]
 					self.useimages = dat["useimages"]
 
-	def luck(ctx):
-		return ctx.message.author.id == 264838866480005122
-
-# ~== Core ==~
-
-	@commands.command()
-	@commands.check(luck)
-	async def cogs_welcome(self, ctx):
-		await ctx.send('working')
-
-# ~== Main ==~
+	def save(self):
+		with open("./data/userdata/config/welcome.json", "w") as outfile:
+			json.dump({"identifier": self.identifier, "channel": self.channel, "usepings": self.usepings,
+			           "useimages": self.useimages}, outfile, ensure_ascii=False)
 
 	@commands.group(name='welcome')
 	@commands.has_permissions(manage_guild=True)
@@ -69,9 +62,7 @@ class Events:
 		if guild_id not in self.usepings:
 			self.usepings[guild_id] = 'False'
 			report += '\nUsepings not set, therefore it has been automatically set to false'
-		with open("./data/userdata/config/welcome.json", "w") as outfile:
-			json.dump({"identifier": self.identifier, "channel": self.channel, "usepings": self.usepings,
-			           "useimages": self.useimages}, outfile, ensure_ascii=False)
+		self.save()
 		await ctx.send(report)
 
 	@_welcome.command(name='enable')
@@ -92,9 +83,7 @@ class Events:
 		if str(ctx.guild.id) not in self.usepings:
 			self.usepings[str(ctx.guild.id)] = 'False'
 			report += '\nUsepings not set, therefore it has been automatically set to `false`'
-		with open("./data/userdata/config/welcome.json", "w") as outfile:
-			json.dump({"identifier": self.identifier, "channel": self.channel, "usepings": self.usepings,
-			           "useimages": self.useimages}, outfile, ensure_ascii=False)
+		self.save()
 		await ctx.send(report)
 
 	@_welcome.command(name='disable')
@@ -106,9 +95,7 @@ class Events:
 		else:
 			self.identifier[str(ctx.guild.id)] = 'False'
 			report += 'Disabled welcome messages'
-		with open("./data/userdata/config/welcome.json", "w") as outfile:
-			json.dump({"identifier": self.identifier, "channel": self.channel, "usepings": self.usepings,
-			           "useimages": self.useimages}, outfile, ensure_ascii=False)
+		self.save()
 		await ctx.send(report)
 
 	@_welcome.command(name='setchannel')
@@ -116,9 +103,7 @@ class Events:
 		if channel is None:
 			channel = ctx.channel
 		self.channel[str(ctx.guild.id)] = channel.id
-		with open("./data/userdata/config/welcome.json", "w") as outfile:
-			json.dump({"identifier": self.identifier, "channel": self.channel, "usepings": self.usepings,
-			           "useimages": self.useimages}, outfile, ensure_ascii=False)
+		self.save()
 		await ctx.send(f'Set the welcome channel to `{channel.name}`')
 
 	@_welcome.command(name='usepings')
@@ -143,9 +128,7 @@ class Events:
 				if toggle == 'false':
 					self.usepings[str(ctx.guild.id)] = 'False'
 					await ctx.send('Disabled `usepings`')
-		with open("./data/userdata/config/welcome.json", "w") as outfile:
-			json.dump({"identifier": self.identifier, "channel": self.channel, "usepings": self.usepings,
-			           "useimages": self.useimages}, outfile, ensure_ascii=False)
+		self.save()
 
 	@_welcome.command(name='useimages')
 	async def _useimages(self, ctx, toggle=None):
@@ -169,9 +152,7 @@ class Events:
 				if toggle == 'false':
 					self.useimages[str(ctx.guild.id)] = 'False'
 					await ctx.send('Disabled `useimages`')
-		with open("./data/userdata/config/welcome.json", "w") as outfile:
-			json.dump({"identifier": self.identifier, "channel": self.channel, "usepings": self.usepings,
-			           "useimages": self.useimages}, outfile, ensure_ascii=False)
+		self.save()
 
 	async def on_member_join(self, member: discord.Member):
 		if str(member.guild.id) in self.identifier:
