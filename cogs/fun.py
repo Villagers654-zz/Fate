@@ -13,15 +13,6 @@ class Fun:
 	def luck(ctx):
 		return ctx.message.author.id == 264838866480005122
 
-# ~== Test ==~
-
-	@commands.command()
-	@commands.check(luck)
-	async def cogs_fun(self, ctx):
-		await ctx.send('working')
-
-# ~== Main ==~
-
 	@commands.command()
 	async def fancify(self, ctx, *, text: str):
 		output = ""
@@ -61,16 +52,6 @@ class Fun:
 				decode = base64.b64decode(message.encode())
 			await ctx.send(decode.decode())
 
-	@commands.command(disabled=True)
-	async def smash(self, ctx):
-		diary = self.bot.get_channel(505618142563926027)
-		e=discord.Embed(description=random.choice(["Whats up bitche, its time to get laid", "No, ew, go fuck a garbage bag or something", "No, ew, go fuck a garbage bag full of used syringes", "i'm ready when you are", "OOGA BOOGA", "*ochinchin falls out*", "Everyday can be a saturday :)"]), color=0x800080)
-		e.set_author(name=random.choice(["SEX TIME!", "Horny Hour", "#beastmode"]), icon_url=ctx.author.avatar_url)
-		e.set_thumbnail(url="https://cdn.discordapp.com/attachments/471031451001815070/505615018276945920/IMG_20181026_033329.png")
-		em=discord.Embed(description="{} {}, {}".format(random.choice(["Today I had sex with", "Just had sex with", "Just got done *doing it*  with"]), ctx.author.name, random.choice(["I kinda want seconds", "I want seconds", "worst sex i've ever had", "best sex i've ever had"])), color=0x800080)
-		await ctx.send(embed=e)
-		await diary.send(embed=em)
-
 	@commands.command(name="liedetector", aliases=["ld"])
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def liedetector(self, ctx, *, member: discord.Member=None):
@@ -103,23 +84,19 @@ class Fun:
 		e=discord.Embed(description="{}".format(random.choice([
 			"Keep your friends close and your cookies closer",
 			"It's an emotion so don't waste time trying to put it into words",
-			"You think you need to be strong in order to live? If so you're wrong, life itself gives us strength",
 			"If you have love you have to live",
 			"The solution to all your problems is anime",
 			"Even if you regret yesterday the damage is done",
-			"Not everything in this world is plain to the human eye",
+			"Not everything in is plain to the human eye",
 			"You shouldn't define people by their maddest edges, He/she's a grey area in a world that doesn't like grey areas, but grey areas are where you find the complexity. It's where you find the humanity, the truth.",
-			"To ensure that I'll never lose anything again I'll forget myself and restart",
 			"A genius can understand the difference without bias",
-			"All the detriment in this world stems from the lack of individuality",
 			"Your words are still mine\nEven if the voice isn't",
-			"No one can swim in the same riverwater twice",
-			"Wherever you go, however you change, you'll still be you",
+			"No one can swim in the same river water twice",
 			"The shape of happiness might resemble glass. Even though you dont usually notice it, it's definitely there. You merely have to change your view slightly and that glass will sparkle when it reflects the light.",
 			"Love without limit is love without meaning",
 			"Situations evolve. Our desires have no bearing on that. Time blows on unaffected by our struggles",
 			"Like clockwork, what a circus this is, and I'm as corrupt as any of them.",
-			"Everything falls eventually, including what we say",
+			"Everything falls eventually, even what we say",
 			"I dont wanna change the world, I just wanna change your mind.",
 			"Wine helps you drink",
 			"To free the victim in your heart you fight to build a better world, a world that victim can forgive",
@@ -393,7 +370,7 @@ class Fun:
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def vid(self, ctx):
-		path = os.getcwd() + "/images/vids/" + random.choice(os.listdir(os.getcwd() + "/images/vids/"))
+		path = os.getcwd() + "/data/vids/" + random.choice(os.listdir(os.getcwd() + "/data/vids/"))
 		e = discord.Embed()
 		e.set_image(url="attachment://" + os.path.basename(path))
 		await ctx.send(file=discord.File(path, filename=os.path.basename(path)), embed=e)
