@@ -60,8 +60,16 @@ class Utility:
 		if guild_id in self.lock:
 			if self.lock[guild_id] == "lock-kick":
 				await m.guild.kick(m, reason="Server locked")
+				try:
+					await m.send(f"**{m.guild.name}** is currently locked. Contact an admin or try again later")
+				except:
+					pass
 			if self.lock[guild_id] == "lock-ban":
-				return await m.guild.ban(m, reason="Server locked", delete_message_days=0)
+				await m.guild.ban(m, reason="Server locked", delete_message_days=0)
+				try:
+					await m.send(f"**{m.guild.name}** is currently locked. Contact an admin or try again later")
+				except:
+					pass
 
 def setup(bot):
 	bot.add_cog(Utility(bot))
