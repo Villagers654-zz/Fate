@@ -55,6 +55,18 @@ class Utility:
 		await ctx.send("Unlocked the server")
 		await ctx.message.add_reaction("👍")
 
+	@commands.command(name="unlock")
+	@commands.has_permissions(administrator=True)
+	async def _unlock(self, ctx):
+		guild_id = str(ctx.guild.id)
+		if guild_id not in self.lock:
+			await ctx.send("there is currently no active lock")
+			return await ctx.message.add_reaction("⚠")
+		del self.lock[guild_id]
+		self.save()
+		await ctx.send("Unlocked the server")
+		await ctx.message.add_reaction("👍")
+
 	async def on_member_join(self, m:discord.Member):
 		guild_id = str(m.guild.id)
 		if guild_id in self.lock:
