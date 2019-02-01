@@ -86,9 +86,9 @@ class Utility:
 				if self.cd[member_id] < time.time():
 					try:
 						await m.send(f"**{m.guild.name}** is currently locked. Contact an admin or try again later")
-						self.cd[member_id] = time.time() + 25
 					except:
 						pass
+					self.cd[member_id] = time.time() + 25
 
 def setup(bot):
 	bot.add_cog(Utility(bot))
