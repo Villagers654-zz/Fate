@@ -17,17 +17,12 @@ class Minecraft:
 					self.motds = dat["motds"]
 					self.old_motds = dat["old_motds"]
 
-	def fourbeefourtee(ctx):
-		return ctx.author.id in [264838866480005122, 264838866480005122]
+	def save(self):
+		with open("./data/4b4t/motds.json", "w") as outfile:
+			json.dump({"motds": self.motds, "old_motds": self.old_motds}, outfile, ensure_ascii=False)
 
 	def luck(ctx):
 		return ctx.message.author.id == 264838866480005122
-
-	def tothy(ctx):
-		return ctx.message.author.id == 355026215137968129
-
-	def puffy(ctx):
-		return ctx.message.author.id == 257560165488918529
 
 	@commands.command()
 	async def motdcount(self, ctx):
@@ -82,8 +77,7 @@ class Minecraft:
 		if len(self.motds) > 100:
 			self.old_motds.append(self.motds[0])
 			del self.motds[0]
-		with open("./data/4b4t/motds.json", "w") as outfile:
-			json.dump({"motds": self.motds, "old_motds": self.old_motds}, outfile, ensure_ascii=False)
+		self.save()
 
 	@commands.command(name="shufflemotd", aliases=["motdshuffle"])
 	@commands.cooldown(1, 3, commands.BucketType.user)
@@ -96,6 +90,10 @@ class Minecraft:
 		e.description = f"New: {motd}"
 		await ctx.send(embed=e, delete_after=10)
 		await ctx.message.delete()
+		if len(self.motds) > 100:
+			self.old_motds.append(self.motds[0])
+			del self.motds[0]
+			self.save()
 
 	async def motdshuffle(self):
 		while True:
