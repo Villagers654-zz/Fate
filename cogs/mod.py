@@ -10,6 +10,7 @@ class Mod:
 	def __init__(self, bot):
 		self.bot = bot
 		self.purge = {}
+		self.massnick = {}
 		self.warns = {}
 		if isfile("./data/userdata/mod.json"):
 			with open("./data/userdata/mod.json", "r") as infile:
@@ -35,24 +36,23 @@ class Mod:
 	@commands.command(name="purge")
 	@commands.has_permissions(manage_messages=True)
 	async def _purge(self, ctx, amount: int):
+		if amount > 1000:
+			return await ctx.send("You cannot purge more than 1000 messages at a time")
 		channel_id = str(ctx.channel.id)
 		if channel_id not in self.purge:
+			self.purge[channel_id] = True
+			await ctx.message.channel.purge(before=ctx.message, limit=amount)
+			await ctx.message.delete()
+			self.purge[channel_id] = False
+			return await ctx.send("{}, successfully purged {} messages".format(ctx.author.name, amount), delete_after=5)
+		if self.purge[channel_id] is True:
+			return await ctx.send("I'm already purging..")
+		if self.purge[channel_id] is False:
+			self.purge[channel_id] = True
 			await ctx.message.channel.purge(before=ctx.message, limit=amount)
 			await ctx.message.delete()
 			await ctx.send("{}, successfully purged {} messages".format(ctx.author.name, amount), delete_after=5)
 			self.purge[channel_id] = False
-		else:
-			if self.purge[channel_id] == True:
-				await ctx.send("I'm already purging..")
-			else:
-				if self.purge[channel_id] == False:
-					self.purge[channel_id] = True
-					await ctx.message.channel.purge(before=ctx.message, limit=amount)
-					await ctx.message.delete()
-					await ctx.send("{}, successfully purged {} messages".format(ctx.author.name, amount), delete_after=5)
-					self.purge[channel_id] = False
-				else:
-					await ctx.send("your codes shit")
 
 	@commands.command(name="kick", aliases=["k"])
 	@commands.has_permissions(kick_members=True)
@@ -119,27 +119,203 @@ class Mod:
 		await member.edit(nick=nick)
 		await ctx.message.add_reaction('👍')
 
-	@commands.command()
+	@commands.command(name="massnick")
 	@commands.has_permissions(administrator=True)
-	@commands.cooldown(1, 60, commands.BucketType.guild)
-	async def massnick(self, ctx, *, nick=None):
+	async def _massnick(self, ctx, *, nick=None):
+		guild_id = str(ctx.guild.id)
+		if guild_id in self.massnick:
+			if self.massnick[guild_id] is True:
+				return await ctx.send("Please wait until the previous mass-nick is done")
 		failed = ""
 		if nick is None:
 			nick = ""
+		self.massnick[guild_id] = True
 		await ctx.message.add_reaction('🖍')
 		for member in ctx.guild.members:
 			try:
 				await member.edit(nick=nick)
+				await asyncio.sleep(0.25)
 			except Exception as e:
 				if failed == "":
 					failed = f"**Failed to change the nicks of:**\n{member.name}"
 				else:
 					failed += f", {member.name}"
+		self.massnick[guild_id] = False
 		await ctx.message.add_reaction('🏁')
 		if failed == "":
 			pass
 		else:
 			await ctx.send(failed)
+
+	@commands.command(name="addrole")
+	@commands.has_permissions(manage_roles=True)
+	async def _addrole(self, ctx, arg1: commands.clean_content=None, arg2: commands.clean_content=None):
+		if arg2 is not None:
+			arg1 = arg1.replace("@", "")
+			arg2 = arg2.replace("@", "")
+		# giving the author a role
+		if arg2 is None:
+			for i in ctx.guild.roles:
+				if i.name.lower() == arg1.lower():
+					for r in ctx.author.roles:
+						if i.name == r.name:
+							return await ctx.send("You already have this role")
+					if i.position >= ctx.author.top_role.position:
+						return await ctx.send("This role is above your paygrade, take a seat")
+					await ctx.author.add_roles(i)
+					return await ctx.send(f"Gave the role **{i.name}** to **{ctx.author.display_name}**")
+		# giving a non author the role
+		for member in ctx.guild.members:
+			if arg1.lower() == member.name.lower():
+				for i in ctx.guild.roles:
+					if i.name.lower() == arg2.lower():
+						if i.name.lower == arg2.lower():
+							for role in member.roles:
+								if arg2 == role.name.lower():
+									return await ctx.send("User already has the role")
+							for role in member.roles:
+								if arg2 in role.name.lower():
+									return await ctx.send("User already has the role")
+						if arg2.lower() in i.name.lower():
+							for role in member.roles:
+								if arg2 == role.name.lower():
+									return await ctx.send("User already has the role")
+							for role in member.roles:
+								if arg2 in role.name.lower():
+									return await ctx.send("User already has the role")
+						if i.position >= ctx.author.top_role.position:
+							return await ctx.send("This role is above your paygrade, take a seat")
+						await member.add_roles(i)
+						return await ctx.send(f"Gave the role **{i.name}** to **{member.display_name}**")
+				for i in ctx.guild.roles:
+					if arg2.lower() in i.name.lower():
+						if i.name.lower == arg2.lower():
+							for role in member.roles:
+								if arg2 == role.name.lower():
+									return await ctx.send("User already has the role")
+							for role in member.roles:
+								if arg2 in role.name.lower():
+									return await ctx.send("User already has the role")
+						if arg2.lower() in i.name.lower():
+							for role in member.roles:
+								if arg2 == role.name.lower():
+									return await ctx.send("User already has the role")
+							for role in member.roles:
+								if arg2 in role.name.lower():
+									return await ctx.send("User already has the role")
+						if i.position >= ctx.author.top_role.position:
+							return await ctx.send("This role is above your paygrade, take a seat")
+						await member.add_roles(i)
+						return await ctx.send(f"Gave the role **{i.name}** to **{member.display_name}**")
+			if arg1.lower() in member.name.lower():
+				for i in ctx.guild.roles:
+					if i.name.lower() == arg2.lower():
+						if i.name.lower == arg2.lower():
+							for role in member.roles:
+								if arg2 == role.name.lower():
+									return await ctx.send("User already has the role")
+							for role in member.roles:
+								if arg2 in role.name.lower():
+									return await ctx.send("User already has the role")
+						if arg2.lower() in i.name.lower():
+							for role in member.roles:
+								if arg2 == role.name.lower():
+									return await ctx.send("User already has the role")
+							for role in member.roles:
+								if arg2 in role.name.lower():
+									return await ctx.send("User already has the role")
+						if i.position >= ctx.author.top_role.position:
+							return await ctx.send("This role is above your paygrade, take a seat")
+						await member.add_roles(i)
+						return await ctx.send(f"Gave the role **{i.name}** to **{member.display_name}**")
+				for i in ctx.guild.roles:
+					if arg2.lower() in i.name.lower():
+						if i.name.lower == arg2.lower():
+							for role in member.roles:
+								if arg2 == role.name.lower():
+									return await ctx.send("User already has the role")
+							for role in member.roles:
+								if arg2 in role.name.lower():
+									return await ctx.send("User already has the role")
+						if arg2.lower() in i.name.lower():
+							for role in member.roles:
+								if arg2 == role.name.lower():
+									return await ctx.send("User already has the role")
+							for role in member.roles:
+								if arg2 in role.name.lower():
+									return await ctx.send("User already has the role")
+						if i.position >= ctx.author.top_role.position:
+							return await ctx.send("This role is above your paygrade, take a seat")
+						await member.add_roles(i)
+						return await ctx.send(f"Gave the role **{i.name}** to **{member.display_name}**")
+		# error
+		await ctx.send("Either the member or role was not found")
+
+	@commands.command(name="removerole")
+	@commands.has_permissions(manage_roles=True)
+	async def _removerole(self, ctx, arg1=None, arg2=None):
+		# removing the role from the author
+		if arg2 is None:
+			for i in ctx.guild.roles:
+				if i.name.lower() == arg1.lower():
+					for r in ctx.author.roles:
+						if i.name == r.name:
+							await ctx.author.remove_roles(i)
+							return await ctx.send(f"Removed the role **{i.name}** from **{ctx.author.display_name}**")
+					for r in ctx.author.roles:
+						if i.name in r.name:
+							await ctx.author.remove_roles(i)
+							return await ctx.send(f"Removed the role **{i.name}** from **{ctx.author.display_name}**")
+		# removing the role from a different user
+		for member in ctx.guild.members:
+			if arg1.lower() == member.name.lower():
+				for i in ctx.guid.roles:
+					if arg2.lower() == i.name.lower():
+						await member.remove_roles(i)
+						return await ctx.send(f"Removed the role **{i.name}** from **{member.display_name}**")
+				for i in ctx.guild.roles:
+					if arg2.lower() in i.name.lower():
+						await member.remove_roles(i)
+						return await ctx.send(f"Removed the role **{i.name}** from **{member.display_name}**")
+			if arg1.lower() in member.name.lower():
+				for i in ctx.guid.roles:
+					if arg2.lower() == i.name.lower():
+						await member.remove_roles(i)
+						return await ctx.send(f"Removed the role **{i.name}** from **{member.display_name}**")
+				for i in ctx.guild.roles:
+					if arg2.lower() in i.name.lower():
+						await member.remove_roles(i)
+						return await ctx.send(f"Removed the role **{i.name}** from **{member.display_name}**")
+
+	@commands.command()
+	@commands.has_permissions(manage_roles=True)
+	async def massrole(self, ctx, role: str):
+		role = role.replace("<@&", "").replace(">", "").replace("<@", "").replace("@", "")
+		check = False
+		for r in ctx.guild.roles:
+			if role.lower() == r.name.lower():
+				role = r
+				check = True
+				break
+		if check is False:
+			for r in ctx.guild.roles:
+				if role.lower() in r.name.lower():
+					role = r
+					check = True
+					break
+		if check is False:
+			await ctx.send("Role not found")
+		failed = "**Failed to edit the roles of:**"
+		await ctx.message.add_reaction("🖍")
+		for member in ctx.guild.members:
+			try:
+				await member.add_roles(role)
+				await asyncio.sleep(0.25)
+			except:
+				failed += f"\n{member.name}"
+		if failed.endswith("**"):
+			await ctx.send(failed)
+		await ctx.message.add_reaction("🏁")
 
 	@commands.command()
 	@commands.has_permissions(manage_roles=True)
