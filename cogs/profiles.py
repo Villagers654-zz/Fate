@@ -454,7 +454,12 @@ class Profiles:
 					for c in server.channels:
 						channels += 1
 				e = discord.Embed(title="", color=0x4A0E50)
-				e.description = "💎 Arkadia 💎"
+				e.description = f"💎 {self.bot.user.name} 💎\n" \
+				f"**Commands:** {len(self.bot.commands)}\n" \
+				f"**Modules:** {len(self.bot.extensions)}\n" \
+				f"**Servers:** {len(list(self.bot.guilds))}\n" \
+				f"**Channels:** {channels}\n" \
+				f"**Users:** {len(list(self.bot.users))}\n"
 				leaderboard = ""
 				rank = 1
 				for user_id, xp in (sorted(self.guilds_data[str(channel.guild.id)].items(), key=lambda kv: kv[1], reverse=True))[:8]:
@@ -478,27 +483,13 @@ class Profiles:
 				e.set_thumbnail(url=channel.guild.icon_url)
 				e.set_author(name=f'~~~====🥂🍸🍷Stats🍷🍸🥂====~~~')
 				e.add_field(name="◈ Discord ◈", value=f'__**Owner**__: Luck\n__**Members**__: {channel.guild.member_count}', inline=False)
-				e.add_field(name="Leaderboard", value=leaderboard, inline=False)
-				e.add_field(
-					name="◈ Memory ◈",
-					value=f"__**Storage**__: [{p.bytes2human(psutil.disk_usage('/').used)}/{p.bytes2human(psutil.disk_usage('/').total)}]\n"
-					f"__**RAM**__: **Global**: {p.bytes2human(psutil.virtual_memory().used)} **Bot**: {p.bytes2human(f.memory_full_info().rss)}\n"
-					f"__**CPU**__: **Global**: {psutil.cpu_percent(interval=1)}% **Bot**: {f.cpu_percent(interval=1)}%\n"
-					f"__**CPU Per Core**__: {[round(i) for i in psutil.cpu_percent(interval=1, percpu=True)]}\n"
-					f"__**CPU Frequency**__: [{cpufreqcurrent}/{cpufreqmax}]")
-				e.add_field(name=f"◈ {self.bot.user.name} ◈", value=
-				f"**Commands:** {len(self.bot.commands)}\n"
-				f"**Modules:** {len(self.bot.extensions)}\n"
-				f"**Servers:** {len(list(self.bot.guilds))}\n"
-				f"**Channels:** {channels}\n"
-				f"**Users:** {len(list(self.bot.users))}\n")
 				fmt = "%m-%d-%Y %I:%M%p"
 				time = datetime.datetime.now()
 				time = time.strftime(fmt)
 				e.set_footer(text=f'Updated: {time}')
 				message = await channel.get_message(540096913995726848)
 				await message.edit(embed=e)
-				await asyncio.sleep(600)
+				await asyncio.sleep(1500)
 			except Exception as e:
 				await self.bot.get_channel(534608853300412416).send(f"```{traceback.format_exc()}```{e}")
 
