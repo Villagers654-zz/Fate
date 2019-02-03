@@ -14,7 +14,7 @@ class Core:
 	@commands.command()
 	async def topguilds(self, ctx):
 		e = discord.Embed(color=0x80b0ff)
-		e.title = "Top Guildies"
+		e.title = "Top Guilds"
 		e.description = ""
 		rank = 1
 		for guild in sorted([[g.name, g.member_count] for g in self.bot.guilds], key=lambda k: k[1], reverse=True)[:8]:
@@ -33,10 +33,15 @@ class Core:
 
 	@commands.command(pass_context=True)
 	async def ping(self, ctx):
+		e = discord.Embed(color=0x80b0ff)
+		e.description = "**Measuring ping:**"
 		before = time.monotonic()
-		message = await ctx.send("Measuring ping:")
+		message = await ctx.send(embed=e)
 		ping = (time.monotonic() - before) * 1000
-		await message.edit(content=f"My ping: `{int(ping)}ms`")
+		api = str(self.bot.latency * 1000)
+		api = api[:api.find(".")]
+		e.description = f"**Message Trip:** `{int(ping)}ms`\n**Discord API:** `{api}ms`"
+		await message.edit(embed=e)
 
 	@commands.command(pass_context=True)
 	async def wiki(self,ctx,*,query:str):
