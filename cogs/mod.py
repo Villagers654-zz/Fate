@@ -58,6 +58,8 @@ class Mod:
 	@commands.has_permissions(kick_members=True)
 	@commands.cooldown(1, 25, commands.BucketType.user)
 	async def kick(self, ctx, user:discord.Member, *, reason:str=None):
+		if user.top_role.position >= ctx.author.top_role.position:
+			return await ctx.send("That user is above your paygrade, take a seat")
 		await ctx.guild.kick(user, reason=reason)
 		path = os.getcwd() + "/data/images/reactions/beaned/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/beaned/"))
 		e = discord.Embed(color=0x80b0ff)
@@ -76,6 +78,8 @@ class Mod:
 	@commands.has_permissions(ban_members=True)
 	@commands.cooldown(1, 25, commands.BucketType.user)
 	async def ban(self, ctx, user:discord.Member, *, reason=None):
+		if user.top_role.position >= ctx.author.top_role.position:
+			return await ctx.send("That user is above your paygrade, take a seat")
 		await ctx.guild.ban(user, reason=reason, delete_message_days=0)
 		path = os.getcwd() + "/data/images/reactions/beaned/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/beaned/"))
 		e = discord.Embed(color=0x80b0ff)
@@ -89,15 +93,6 @@ class Mod:
 				await user.send(f"You have been banned from **{ctx.guild.name}** by **{ctx.author.name}** for `{reason}`")
 			except Exception as e:
 				pass
-
-	@commands.command(pass_context=True)
-	async def listbans(self, ctx):
-		server = ctx.guild
-		bans = await server.bans()
-		if len(bans) == 0:
-			await ctx.send("There are no active bans currently on the server.")
-		else:
-			await ctx.send("The currently active bans for this server are: " + ", ".join(map(str, bans)))
 
 	@commands.command(name="pin", aliases=["p"])
 	@commands.has_permissions(manage_messages=True)
@@ -114,6 +109,8 @@ class Mod:
 	@commands.command()
 	@commands.has_permissions(manage_nicknames=True)
 	async def nick(self, ctx, member: discord.Member, *, nick=None):
+		if member.top_role.position >= ctx.author.top_role.position:
+			return await ctx.send("That user is above your paygrade, take a seat")
 		if nick is None:
 			nick = ""
 		await member.edit(nick=nick)
@@ -248,44 +245,66 @@ class Mod:
 							return await ctx.send("This role is above your paygrade, take a seat")
 						await member.add_roles(i)
 						return await ctx.send(f"Gave the role **{i.name}** to **{member.display_name}**")
-		# error
 		await ctx.send("Either the member or role was not found")
 
 	@commands.command(name="removerole")
 	@commands.has_permissions(manage_roles=True)
-	async def _removerole(self, ctx, arg1=None, arg2=None):
+	async def _removerole(self, ctx, arg1: commands.clean_content=None, arg2: commands.clean_content=None):
+		if arg2 is not None:
+			arg1 = arg1.replace("@", "")
+			arg2 = arg2.replace("@", "")
 		# removing the role from the author
 		if arg2 is None:
 			for i in ctx.guild.roles:
-				if i.name.lower() == arg1.lower():
-					for r in ctx.author.roles:
-						if i.name == r.name:
-							await ctx.author.remove_roles(i)
-							return await ctx.send(f"Removed the role **{i.name}** from **{ctx.author.display_name}**")
-					for r in ctx.author.roles:
-						if i.name in r.name:
-							await ctx.author.remove_roles(i)
-							return await ctx.send(f"Removed the role **{i.name}** from **{ctx.author.display_name}**")
+				if arg1.lower() == i.name.lower():
+					if i.position >= ctx.author.top_role.position:
+						return await ctx.send("This role is above your paygrade, take a seat")
+					if i not in ctx.author.roles:
+						return await ctx.send(f"You don't have the role **{i.name}**")
+					await ctx.author.remove_roles(i)
+					return await ctx.send(f"Removed the role **{i.name}** from **{ctx.author.display_name}**")
+				if arg1.lower() in i.name.lower():
+					if i.position >= ctx.author.top_role.position:
+						return await ctx.send("This role is above your paygrade, take a seat")
+					if i not in ctx.author.roles:
+						return await ctx.send(f"You don't have the role **{i.name}**")
+					await ctx.author.remove_roles(i)
+					return await ctx.send(f"Removed the role **{i.name}** from **{ctx.author.display_name}**")
 		# removing the role from a different user
 		for member in ctx.guild.members:
 			if arg1.lower() == member.name.lower():
-				for i in ctx.guid.roles:
-					if arg2.lower() == i.name.lower():
-						await member.remove_roles(i)
-						return await ctx.send(f"Removed the role **{i.name}** from **{member.display_name}**")
-				for i in ctx.guild.roles:
-					if arg2.lower() in i.name.lower():
-						await member.remove_roles(i)
-						return await ctx.send(f"Removed the role **{i.name}** from **{member.display_name}**")
+				for r in ctx.guild.roles:
+					if arg2.lower() == r.name.lower():
+						if r.position >= ctx.author.top_role.position:
+							return await ctx.send("This role is above your paygrade, take a seat")
+						if r not in member.roles:
+							return await ctx.send(f"**{member.name}** does'nt have the role **{r.name}**")
+						await member.remove_roles(r)
+						return await ctx.send(f"Removed the role **{r.name}** from **{member.display_name}**")
+					if arg2.lower() in r.name.lower():
+						if r.position >= ctx.author.top_role.position:
+							return await ctx.send("This role is above your paygrade, take a seat")
+						if r not in member.roles:
+							return await ctx.send(f"**{member.name}** does'nt have the role **{r.name}**")
+						await member.remove_roles(r)
+						return await ctx.send(f"Removed the role **{r.name}** from **{member.display_name}**")
 			if arg1.lower() in member.name.lower():
-				for i in ctx.guid.roles:
-					if arg2.lower() == i.name.lower():
-						await member.remove_roles(i)
-						return await ctx.send(f"Removed the role **{i.name}** from **{member.display_name}**")
-				for i in ctx.guild.roles:
-					if arg2.lower() in i.name.lower():
-						await member.remove_roles(i)
-						return await ctx.send(f"Removed the role **{i.name}** from **{member.display_name}**")
+				for r in ctx.guild.roles:
+					if arg2.lower() == r.name.lower():
+						if r.position >= ctx.author.top_role.position:
+							return await ctx.send("This role is above your paygrade, take a seat")
+						if r not in member.roles:
+							return await ctx.send(f"**{member.name}** does'nt have the role **{r.name}**")
+						await member.remove_roles(r)
+						return await ctx.send(f"Removed the role **{r.name}** from **{member.display_name}**")
+					if arg2.lower() in r.name.lower():
+						if r.position >= ctx.author.top_role.position:
+							return await ctx.send("This role is above your paygrade, take a seat")
+						if r not in member.roles:
+							return await ctx.send(f"**{member.name}** does'nt have the role **{r.name}**")
+						await member.remove_roles(r)
+						return await ctx.send(f"Removed the role **{r.name}** from **{member.display_name}**")
+		await ctx.send("There was an error finding the user or the role")
 
 	@commands.command()
 	@commands.has_permissions(manage_roles=True)
@@ -320,18 +339,24 @@ class Mod:
 	@commands.command()
 	@commands.has_permissions(manage_roles=True)
 	async def vcmute(self, ctx, member: discord.Member):
+		if member.top_role.position >= ctx.author.top_role.position:
+			return await ctx.send("That user is above your paygrade, take a seat")
 		await member.edit(mute=True)
 		await ctx.send(f'Muted {member.display_name} 👍')
 
 	@commands.command()
 	@commands.has_permissions(manage_roles=True)
 	async def vcunmute(self, ctx, member: discord.Member):
+		if member.top_role.position >= ctx.author.top_role.position:
+			return await ctx.send("That user is above your paygrade, take a seat")
 		await member.edit(mute=False)
 		await ctx.send(f'Unmuted {member.display_name} 👍')
 
 	@commands.command()
 	@commands.has_permissions(manage_roles=True)
 	async def mute(self, ctx, member: discord.Member=None, timer=None):
+		if member.top_role.position >= ctx.author.top_role.position:
+			return await ctx.send("That user is above your paygrade, take a seat")
 		if member is None and timer is None:
 			await ctx.send(
 				"**Mute Usage:**\n"
@@ -385,6 +410,8 @@ class Mod:
 	@commands.command()
 	@commands.has_permissions(manage_roles=True)
 	async def unmute(self, ctx, member: discord.Member=None):
+		if member.top_role.position >= ctx.author.top_role.position:
+			return await ctx.send("That user is above your paygrade, take a seat")
 		if member is None:
 			await ctx.send(
 				"**Unmute Usage:**\n"
@@ -411,13 +438,15 @@ class Mod:
 			user = user.replace("<@", "")
 			user = user.replace(">", "")
 			user = user.replace("!", "")
-			user = self.bot.get_user(eval(user))
+			user = ctx.guild.get_member(eval(user))
 		else:
 			for member in ctx.guild.members:
 				if str(user).lower() in str(member.display_name).lower():
 					user_id = member.id
-					user = self.bot.get_user(user_id)
+					user = ctx.guild.get_member(user_id)
 					break
+		if user.top_role.position >= ctx.author.top_role.position:
+			return await ctx.send("That user is above your paygrade, take a seat")
 		guild_id = str(ctx.guild.id)
 		user_id = str(user.id)
 		mute = False
@@ -489,13 +518,15 @@ class Mod:
 			user = user.replace("<@", "")
 			user = user.replace(">", "")
 			user = user.replace("!", "")
-			user = self.bot.get_user(eval(user))
+			user = ctx.guild.get_member(eval(user))
 		else:
 			for member in ctx.guild.members:
 				if str(user).lower() in str(member.display_name).lower():
 					user_id = member.id
-					user = self.bot.get_user(user_id)
+					user = ctx.guild.get_member(user_id)
 					break
+		if user.top_role.position >= ctx.author.top_role.position:
+			return await ctx.send("That user is above your paygrade, take a seat")
 		guild_id = str(ctx.guild.id)
 		user_id = str(user.id)
 		if guild_id not in self.warns:
@@ -515,13 +546,15 @@ class Mod:
 			user = user.replace("<@", "")
 			user = user.replace(">", "")
 			user = user.replace("!", "")
-			user = self.bot.get_user(eval(user))
+			user = ctx.guild.get_member(eval(user))
 		else:
 			for member in ctx.guild.members:
 				if str(user).lower() in str(member.display_name).lower():
 					user_id = member.id
-					user = self.bot.get_user(user_id)
+					user = ctx.guild.get_member(user_id)
 					break
+		if user.top_role.position >= ctx.author.top_role.position:
+			return await ctx.send("That user is above your paygrade, take a seat")
 		guild_id = str(ctx.guild.id)
 		user_id = str(user.id)
 		if guild_id not in self.warns:
