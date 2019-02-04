@@ -566,5 +566,29 @@ class Mod:
 			json.dump({"warns": self.warns}, outfile, ensure_ascii=False)
 		await ctx.send(f"Set {user.name}'s warn count to {count}")
 
+	@commands.command(name="warns")
+	async def _warns(self, ctx, user=None):
+		if user is None:
+			user = ctx.author
+		else:
+			if user.startswith("<@"):
+				user = user.replace("<@", "")
+				user = user.replace(">", "")
+				user = user.replace("!", "")
+				user = ctx.guild.get_member(eval(user))
+			else:
+				for member in ctx.guild.members:
+					if str(user).lower() in str(member.display_name).lower():
+						user_id = member.id
+						user = ctx.guild.get_member(user_id)
+						break
+		guild_id = str(ctx.guild.id)
+		user_id = str(user.id)
+		if guild_id not in self.warns:
+			self.warns[guild_id] = {}
+		if user_id not in self.warns[guild_id]:
+			self.warns[guild_id][user_id] = 0
+		await ctx.send(f"**{user.display_name}:** `{self.warns[guild_id][user_id]}`")
+
 def setup(bot):
 	bot.add_cog(Mod(bot))
