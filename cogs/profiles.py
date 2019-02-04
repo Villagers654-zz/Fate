@@ -458,7 +458,6 @@ class Profiles:
 				f"**Commands:** {len(self.bot.commands)}\n" \
 				f"**Modules:** {len(self.bot.extensions)}\n" \
 				f"**Servers:** {len(list(self.bot.guilds))}\n" \
-				f"**Channels:** {channels}\n" \
 				f"**Users:** {len(list(self.bot.users))}\n"
 				leaderboard = ""
 				rank = 1
