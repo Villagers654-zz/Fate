@@ -69,6 +69,10 @@ class Minecraft:
 		for i in ["discord.gg", "discord,gg", ".gg", ",gg"]:
 			if i in motd:
 				return await ctx.send("No advertising, peasant")
+		with open("./data/misc/filter.txt", "r") as f:
+			for x in f.read().split(", "):
+				if x.lower() in motd.lower():
+					return await ctx.send("Nothing that can get me banned please")
 		for i in self.motds:
 			if str(i).lower() in motd.lower():
 				return await ctx.send('That MOTD already exists')
