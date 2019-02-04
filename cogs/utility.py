@@ -1,23 +1,14 @@
-from bs4 import BeautifulSoup as bs
-from data.misc import menus as m
 from discord.ext import commands
 from datetime import datetime
-import wikipedia.exceptions
-import wikipedia
+from cogs.utils import utils
 import requests
 import discord
 import aiohttp
 import asyncio
-import psutil
-import time
-import os
 
 class Utility:
 	def __init__(self, bot):
 		self.bot = bot
-
-	async def __error(self, ctx, _error):
-		await ctx.send(_error)
 
 	@commands.command()
 	async def channelinfo(self, ctx, channel=None):
@@ -71,22 +62,34 @@ class Utility:
 	@commands.command(name="addemoji", aliases=["emote", "addemote"])
 	@commands.has_permissions(manage_emojis=True)
 	async def _addemoji(self, ctx, *, name=None):
-		if len(ctx.message.attachments) > 1:
-			for attachment in ctx.message.attachments:
-				name = attachment[:str(attachment.filename).lower().find(".")].replace(" ", "")[:32]
-				await ctx.guild.create_custom_emoji(name=name, image=requests.get(attachment.url).content, reason=ctx.author.name)
-				await ctx.send(f"successfully added `{name}` to emotes")
-		else:
-			if name is None:
+		try:
+			if len(ctx.message.attachments) > 1:
 				for attachment in ctx.message.attachments:
 					name = attachment[:str(attachment.filename).lower().find(".")].replace(" ", "")[:32]
-					await ctx.guild.create_custom_emoji(name=name, image=requests.get(attachment.url).content, reason=ctx.author.name)
-					await ctx.send(f"Successfully added `{name}` to emotes")
+					await ctx.guild.create_custom_emoji(name=name, image=requests.get(attachment.url).content,
+					                                    reason=ctx.author.name)
+					await ctx.send(f"successfully added `{name}` to emotes")
 			else:
-				for attachment in ctx.message.attachments:
-					name = name[:32].replace(" ", "")
-					await ctx.guild.create_custom_emoji(name=name, image=requests.get(attachment.url).content, reason=ctx.author.name)
-					await ctx.send(f"Successfully added `{name}` to emotes")
+				if name is None:
+					for attachment in ctx.message.attachments:
+						name = attachment[:str(attachment.filename).lower().find(".")].replace(" ", "")[:32]
+						await ctx.guild.create_custom_emoji(name=name, image=requests.get(attachment.url).content,
+						                                    reason=ctx.author.name)
+						await ctx.send(f"Successfully added `{name}` to emotes")
+				else:
+					for attachment in ctx.message.attachments:
+						name = name[:32].replace(" ", "")
+						await ctx.guild.create_custom_emoji(name=name, image=requests.get(attachment.url).content,
+						                                    reason=ctx.author.name)
+						await ctx.send(f"Successfully added `{name}` to emotes")
+		except Exception as HTTPException:
+			for attachment in ctx.message.attachments:
+				attachment = attachment
+			e = discord.Embed(color=utils.color)
+			e.set_author(name=f"File cannot be larger than 256 kb", icon_url=attachment.proxy_url)
+			e.set_thumbnail(url=ctx.author.avatar_url)
+			e.description = f"Try using [TinyPNG](https://tinypng.com/) to reduce the size"
+			await ctx.send(embed=e)
 
 	@commands.command(name="delemoji", aliases=["delemote"])
 	@commands.has_permissions(manage_emojis=True)
