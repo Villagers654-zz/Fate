@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup as bs
-from data.misc import menus as m
+from cogs.utils import menus as m
 from discord.ext import commands
 import wikipedia.exceptions
 import wikipedia
