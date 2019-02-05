@@ -22,6 +22,7 @@ bot.remove_command('help')
 bot.LOAD_TIME = None
 bot.LOGIN_TIME = None
 bot.errorcount = 0
+previous = 0
 error = False
 bot.info = ""
 
@@ -75,8 +76,9 @@ if __name__ == '__main__':
 			rank += 1
 			m, s = divmod(time.time() - bot.START_TIME, 60)
 			h, m = divmod(m, 60)
-			cprint(f"{cogs}. Cog: {cog} - operational - [{str(s)[:3]}]", "green")
-			bot.info += f"{cogs}. Cog: {cog} - operational - [{str(s)[:3]}]\n"
+			cprint(f"{cogs}. Cog: {cog} - operational - [{float(str(s)[:3]) - previous}]", "green")
+			bot.info += f"{cogs}. Cog: {cog} - operational - [{float(str(s)[:3]) - previous}]\n"
+			previous = float(str(s)[:3])
 		except Exception as e:
 			bot.errorcount += 1
 			m, s = divmod(time.time() - bot.START_TIME, 60)
