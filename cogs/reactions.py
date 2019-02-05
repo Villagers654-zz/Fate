@@ -1,4 +1,5 @@
 from discord.ext import commands
+from cogs.utils import colors
 import discord
 import random
 import os
@@ -66,7 +67,7 @@ class Reactions:
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def fatehug(self, ctx, *, content):
 		path = os.getcwd() + "/data/images/reactions/hug/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/hug/"))
-		e = discord.Embed(color=0x80b0ff)
+		e = discord.Embed(color=colors.fate())
 		e.set_image(url="attachment://" + os.path.basename(path))
 		await ctx.send(f'◈ <@506735111543193601> hugs {content} ◈', file=discord.File(path, filename=os.path.basename(path)), embed=e)
 		await ctx.message.delete()
@@ -137,7 +138,7 @@ class Reactions:
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def waste(self, ctx, *, content):
 		path = os.getcwd() + "/data/images/reactions/waste/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/waste/"))
-		e = discord.Embed(color=0x80b0ff)
+		e = discord.Embed(color=colors.fate())
 		e.set_image(url="attachment://" + os.path.basename(path))
 		await ctx.message.delete()
 		await ctx.send('◈ <@{}> to {}: ◈'.format(ctx.message.author.id, content), file=discord.File(path, filename=os.path.basename(path)), embed=e)
@@ -224,7 +225,7 @@ class Reactions:
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def slap(self, ctx, *, content):
 		path = os.getcwd() + "/data/images/reactions/slap/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/slap/"))
-		e = discord.Embed(color=0x80b0ff)
+		e = discord.Embed(color=colors.fate())
 		e.set_image(url="attachment://" + os.path.basename(path))
 		await ctx.send('◈ <@{}> slaps {} ◈'.format(ctx.message.author.id, content), file=discord.File(path, filename=os.path.basename(path)), embed=e)
 		await ctx.message.delete()
@@ -233,7 +234,7 @@ class Reactions:
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def kiss(self, ctx, *, content):
 		path = os.getcwd() + "/data/images/reactions/kiss/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/kiss/"))
-		e = discord.Embed(color=0x80b0ff)
+		e = discord.Embed(color=colors.fate())
 		e.set_image(url="attachment://" + os.path.basename(path))
 		await ctx.send('◈ <@{}> kisses {} ◈'.format(ctx.message.author.id, content), file=discord.File(path, filename=os.path.basename(path)), embed=e)
 		await ctx.message.delete()
@@ -242,7 +243,7 @@ class Reactions:
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def kill(self, ctx, *, user):
 		path = os.getcwd() + "/data/images/reactions/kill/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/kill/"))
-		e = discord.Embed(color=0x80b0ff)
+		e = discord.Embed(color=colors.fate())
 		e.set_image(url="attachment://" + os.path.basename(path))
 		await ctx.message.delete()
 		await ctx.send('◈ <@{}> to {}: ◈'.format(ctx.message.author.id, user), file=discord.File(path, filename=os.path.basename(path)), embed=e)
@@ -251,7 +252,7 @@ class Reactions:
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def hug(self, ctx, *, user):
 		path = os.getcwd() + "/data/images/reactions/hug/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/hug/"))
-		e = discord.Embed(color=0x80b0ff)
+		e = discord.Embed(color=colors.fate())
 		e.set_image(url="attachment://" + os.path.basename(path))
 		await ctx.send('◈ <@{}> hugs {} ◈'.format(ctx.message.author.id, user), file=discord.File(path, filename=os.path.basename(path)), embed=e)
 		await ctx.message.delete()
@@ -286,7 +287,7 @@ class Reactions:
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def pat(self, ctx, *, arg):
 		path = os.getcwd() + "/data/images/reactions/pat/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/pat/"))
-		e = discord.Embed(color=0x80b0ff)
+		e = discord.Embed(color=colors.fate())
 		e.set_image(url="attachment://" + os.path.basename(path))
 		await ctx.message.delete()
 		await ctx.send('◈ <@{}> pats {} ◈'.format(ctx.message.author.id, arg), file=discord.File(path, filename=os.path.basename(path)), embed=e)
