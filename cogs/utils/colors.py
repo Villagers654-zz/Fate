@@ -1,6 +1,6 @@
 import random as r
 
-def theme():
+def fate():
 	return 0x80b0ff
 
 def random():
