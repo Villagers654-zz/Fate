@@ -11,7 +11,86 @@ f.close()
 f = open(path + "error.txt", "r")
 await channel.send(f.read())
 
+			f = open('/home/legit/4b4t/data/server.properties', 'w')
+			f.write(
+				f"player-idle-timeout=0.000000\n"
+				f"online-mode=true\n"
+				f"server-port=19132\n"
+				f"difficulty=2\n"
+				f"view-distance=22\n"
+				f"server-port-v6=19133\n"
+				f"force-gamemode=true\n"
+				f"level-name=world\n"
+				f"level-dir=world\n"
+				f"max-players=999\n"
+				f"level-generator=1\n"
+				f"motd=4B4t - {random.choice(self.motds)}\n"
+				f"level-seed=4b4t\n"
+				f"gamemode=0\n"
+				f"edu-mode=false\n"
+				f"experiment-mode=false\n"
+				f"cheats-enabled=true\n"
+				f"texturepack-required=true\n")
+			f.close()
 
+        self.requester = message.author
+        self.channel = message.channel
+        self.data = data
+
+        self.uploader = data.get('uploader')
+        self.uploader_url = data.get('uploader_url')
+        self.upload_date = f'{data.get("upload_date")[6:8]}.{data.get("upload_date")[4:6]}.{data.get("upload_date")[0:4]}'
+        self.title = data.get('title')
+        self.thumbnail = data.get('thumbnail')
+        self.description = data.get('description')
+        self.duration = self.parse_duration(int(data.get('duration')))
+        self.tags = data.get('tags')
+        self.url = data.get('webpage_url')
+        self.views = data.get('view_count')
+        self.likes = data.get('like_count')
+        self.dislikes = data.get('dislike_count')
+        self.stream_url = data.get('url')
+
+	@commands.command()
+	@commands.has_permissions(manage_roles=True)
+	async def role(self, ctx, member: str, *, role: str):
+		# get the member
+		if member.startswith("<@"):
+			member = self.bot.get_user(eval(member.replace("<@", "").replace(">", "").replace("!", "")))
+		else:
+			check = False
+			for m in ctx.guild.members:
+				if member.lower() == m.display_name.lower():
+					member = m
+					check = True
+					break
+			if check is False:
+				for m in ctx.guild.members:
+					if str(member).lower() in m.display_name.lower():
+						member = m
+						check = True
+						break
+			if check is False:
+				return await ctx.send("Member not found")
+		# get the role
+		role = role.replace("<@&", "").replace(">", "").replace("<@", "").replace("@", "")
+		for r in ctx.author.roles:
+			if role.lower() == r.name.lower():
+				await member.remove_roles(r)
+				return await ctx.send(f"Removed **{r.name}** from **{member.display_name}**")
+		for r in ctx.author.roles:
+			if role.lower() in r.name.lower():
+				await member.remove_roles(r)
+				return await ctx.send(f"Removed **{r.name}** from **{member.display_name}**")
+		for r in ctx.guild.roles:
+			if role.lower() == r.name.lower():
+				await member.add_roles(r)
+				return await ctx.send(f"Gave **{r.name}** to **{member.display_name}**")
+		for r in ctx.guild.roles:
+			if role.lower() in r.name.lower():
+				await member.add_roles(r)
+				return await ctx.send(f"Gave **{r.name}** to **{member.display_name}**")
+		await ctx.send("Role not found")
 
 		async def on_message(self, msg: discord.Message):
 			if msg.content.startswith("<@361178730564943873>"):

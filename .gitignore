@@ -1,7 +1,7 @@
 .idea/
 __pycache__/
 *.exe
-/data/clipboard.txt
+/data/clipboard.txt/
 /data/config/*
 /data/images/*
 /data/userdata/*

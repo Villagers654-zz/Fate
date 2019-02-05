@@ -12,7 +12,7 @@ import time
 
 files = ['error_handler', 'owner', 'menus', 'core', 'mod', 'music', 'welcome', 'farewell', 'notes', 'archive', 'coffeeshop', 'custom',
          'actions', 'reactions', 'responses', 'textart', 'fun', 'math', 'dev', '4b4t', 'readme', 'legit', 'reload', 'embeds', 'warning',
-         'profiles', 'save', 'clean_rythm', 'anti_magik', 'tother', 'utility', 'psutil', 'rules', 'duel_chat', 'selfroles', 'limiter']
+         'profiles', 'save', 'clean_rythm', 'tother', 'utility', 'psutil', 'rules', 'duel_chat', 'selfroles', 'limiter', 'lock']
 
 description = '''Fate[Zero]: Personal Bot'''
 bot = commands.Bot(command_prefix=['.', '<@506735111543193601>'], case_insensitive=True)
@@ -42,7 +42,7 @@ async def on_ready():
 	print(bot.user.name)
 	print(bot.user.id)
 	print(f'Version: {discord.__version__}')
-	print(f'Modules: {len(bot.commands)}')
+	print(f'Commands: {len(bot.commands)}')
 	print(f'Errors: {bot.errorcount}')
 	cprint('--------------------------', 'cyan')
 	print(' ζξ Welcome back Mikey :)\n'
