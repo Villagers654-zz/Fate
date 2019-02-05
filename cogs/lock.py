@@ -28,7 +28,7 @@ class Utility:
 			self.save()
 			await ctx.send("Locked the server")
 			return await ctx.message.add_reaction("👍")
-		if self.lock[guild_id] == "lock-ban":
+		if self.lock[guild_id] is not "lock-kick":
 			self.lock[guild_id] = "lock-kick"
 			self.save()
 			await ctx.send("Changed the server lock type to kick")
@@ -47,10 +47,38 @@ class Utility:
 			self.save()
 			await ctx.send("Locked the server")
 			return await ctx.message.add_reaction("👍")
-		if self.lock[guild_id] == "lock-kick":
+		if self.lock[guild_id] is not "lock-ban":
 			self.lock[guild_id] = "lock-ban"
 			self.save()
 			await ctx.send("Changed the server lock type to ban")
+			return await ctx.message.add_reaction("👍")
+		del self.lock[guild_id]
+		self.save()
+		await ctx.send("Unlocked the server")
+		await ctx.message.add_reaction("👍")
+
+	@commands.command(name="lockm")
+	@commands.bot_has_permissions(manage_messages=True)
+	async def _lockm(self, ctx):
+		def check_roles():
+			for i in ctx.guild.roles:
+				if i.name.lower() == "muted":
+					return True
+			return False
+		guild_id = str(ctx.guild.id)
+		if guild_id not in self.lock:
+			if check_roles() is False:
+				return await ctx.send("Failed to find a muted role")
+			self.lock[guild_id] = "lock-mute"
+			self.save()
+			await ctx.send("Locked the server")
+			return await ctx.message.add_reaction("👍")
+		if self.lock[guild_id] is not "lock-mute":
+			if check_roles() is False:
+				return await ctx.send("Failed to find a muted role")
+			self.lock[guild_id] = "lock-mute"
+			self.save()
+			await ctx.send("Changed the server lock type to mute")
 			return await ctx.message.add_reaction("👍")
 		del self.lock[guild_id]
 		self.save()
@@ -89,6 +117,17 @@ class Utility:
 					except:
 						pass
 					self.cd[member_id] = time.time() + 25
+			if self.lock[guild_id] == "lock-mute":
+				for i in m.guild.roles:
+					if i.name.lower() == "muted":
+						role = i
+				if role is None:
+					await m.channel.send("this server does not have a muted role")
+				else:
+					if role in m.roles:
+						pass
+					else:
+						await m.add_roles(role)
 
 def setup(bot):
 	bot.add_cog(Utility(bot))
