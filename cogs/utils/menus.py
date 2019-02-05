@@ -2,23 +2,23 @@ import discord
 import random
 
 core = discord.Embed(title="~~~====🥂🍸🍷Core🍷🍸🥂====~~~", color=0x80b0ff)
-core.add_field(name="◈ Main ◈", value="`ggleaderboard` `gleaderboard` `leaderboard` `repeat` `stalk` `links` `ping` `info`", inline=False)
+core.add_field(name="◈ Main ◈", value="`disableresponses` `enableresponses` `ggleaderboard` `gleaderboard` `leaderboard` `repeat` `stalk` `links` `ping` `info`", inline=False)
 core.add_field(name="◈ Responses ◈", value="`hello` `ree` `gm` `gn`", inline=False)
 core.add_field(name="◈ Music ◈", value="`join` `summon` `play` `stop` `skip` `pause` `resume` `volume` `queue` `remove` `shuffle` `dc` `np`", inline=False)
 core.add_field(name="◈ Ads ◈", value="`discords` `servers` `realms`", inline=False)
 
 utility = discord.Embed(title="~~~====🥂🍸🍷Utility🍷🍸🥂====~~~", color=0x80b0ff)
-utility.add_field(name="◈ Main ◈", value="`channelinfo` `servericon` `serverinfo` `userinfo` `addemoji` `delemoji` `makepoll` `welcome` `owner` `avatar` `topic` `timer` `note` `wiki` `ud` `id`", inline=False)
+utility.add_field(name="◈ Main ◈", value="`channelinfo` `servericon` `serverinfo` `userinfo` `addemoji` `delemoji` `makepoll` `welcome` `farewell` `owner` `avatar` `topic` `timer` `limit` `lock` `lockb` `note` `wiki` `ud` `id`", inline=False)
 
 react = discord.Embed(title="~~~====🥂🍸🍷Reactions🍷🍸🥂====~~~", color=0x80b0ff)
 react.add_field(name="• FAQ", value="• Some commands may require you to add\ncontent after. For example: `.hug @person`", inline=False)
 react.add_field(name="• Commands", value="`intimidate` `powerup` `observe` `disgust` `admire` `angery` `cuddle` `teasip` `psycho` `thonk` `shrug` `yawn` `hide` `wine` `sigh` `kiss` `kill` `slap` `hug` `pat` `cry`", inline=False)
 
 mod = discord.Embed(title="~~~====🥂🍸🍷Mod🍷🍸🥂====~~~", color=0x80b0ff)
-mod.add_field(name="• Commands", value="`mute` `unmute` `vcmute` `vcunmute` `warn` `clearwarns` `selfroles` `delete` `purge` `nick` `massnick` `kick` `mute` `ban` `pin`", inline=False)
+mod.add_field(name="• Commands", value="`mute` `unmute` `vcmute` `vcunmute` `warn` `clearwarns` `addrole` `removerole` `selfroles` `delete` `purge` `nick` `massnick` `kick` `mute` `ban` `pin`", inline=False)
 
 fun = discord.Embed(title="~~~====🥂🍸🍷Fun🍷🍸🥂====~~~", color=0x80b0ff)
-fun.add_field(name="• Core", value="`fancify` `coffee` `encode` `decode` `choose` `notice` `meme` `quote` `rate` `roll` `gay` `sue` `fap` `ask` `rps` `rr`", inline=False)
+fun.add_field(name="• Core", value="`personality` `liedetector` `fancify` `coffee` `encode` `decode` `choose` `notice` `quote` `mock` `meme` `rate` `roll` `soul` `gay` `sue` `fap` `ask` `rps` `rr`", inline=False)
 fun.add_field(name="• Actions", value="`crucify` `cookie` `shoot` `inject` `slice` `boop` `stab` `kill`", inline=False)
 fun.add_field(name="• Responses", value="`@Fate` `Kys`", inline=False)
 

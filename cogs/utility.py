@@ -1,6 +1,6 @@
 from discord.ext import commands
 from datetime import datetime
-from cogs.utils import utils
+from cogs.utils import colors
 import requests
 import discord
 import aiohttp
@@ -85,7 +85,7 @@ class Utility:
 		except Exception as HTTPException:
 			for attachment in ctx.message.attachments:
 				attachment = attachment
-			e = discord.Embed(color=utils.color)
+			e = discord.Embed(color=colors.theme())
 			e.set_author(name=f"File cannot be larger than 256 kb", icon_url=attachment.proxy_url)
 			e.set_thumbnail(url=ctx.author.avatar_url)
 			e.description = f"Try using [TinyPNG](https://tinypng.com/) to reduce the size"

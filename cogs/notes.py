@@ -24,8 +24,11 @@ class Notepad:
             return json.dump({"notes": self.notes, "timestamp": self.timestamp}, outfile, ensure_ascii=False)
 
     @commands.command()
+    @commands.cooldown(1, 1, commands.BucketType.user)
     async def note(self, ctx, *, arg: commands.clean_content = ""):
         author_id = str(ctx.author.id)
+        if len(arg) > 400:
+            return await ctx.send("Each note cannot be larger than 400 characters")
         if len(arg) > 0:
             async with ctx.typing():
                 if author_id not in self.notes:
@@ -59,21 +62,21 @@ class Notepad:
                 await ctx.send("no data")
 
     @commands.command(name="notes")
+    @commands.cooldown(1, 1, commands.BucketType.user)
     async def _notes(self, ctx):
         author_id = str(ctx.author.id)
         if author_id in self.notes:
-            async with ctx.typing():
-                e = discord.Embed(color=0xFFC923)
-                e.title = "~~===🥂🍸🍷Notes🍷🍸🥂===~~"
-                e.set_thumbnail(url=ctx.author.avatar_url)
-                e.description = f"**You're last {len(self.notes[author_id])} note(s):**"
-                note = len(self.notes[author_id]) - 1
-                position = 1
-                for i in self.notes[author_id]:
-                    e.description += f"\n{position}. {self.notes[author_id][note].replace('`', '')}\n`{self.timestamp[author_id][note]}`\n"
-                    note -= 1
-                    position += 1
-                await ctx.send(embed=e)
+            e = discord.Embed(color=0xFFC923)
+            e.title = "~~===🥂🍸🍷Notes🍷🍸🥂===~~"
+            e.set_thumbnail(url=ctx.author.avatar_url)
+            e.description = f"**You're last {len(self.notes[author_id])} note(s):**"
+            note = len(self.notes[author_id]) - 1
+            position = 1
+            for i in self.notes[author_id]:
+                e.description += f"\n{position}. {self.notes[author_id][note].replace('`', '')}\n`{self.timestamp[author_id][note]}`\n"
+                note -= 1
+                position += 1
+            await ctx.send(embed=e)
         else:
           await ctx.send("no data")
 
