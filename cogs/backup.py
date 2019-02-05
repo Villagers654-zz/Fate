@@ -28,7 +28,7 @@ class Backup:
 			os.system("rm /home/luck/Backup.zip")
 			e.description = "**Progress:** `50%`\nRemoving previous backup"
 			await msg.edit(embed=e)
-		e.description = "**Progress:** `75%`\nZipping files"
+		e.description = "**Progress:** `75%`\nCompressing files"
 		await msg.edit(embed=e)
 		os.system("zip -r /home/luck/Backup.zip /home/luck/FateZero")
 		e.description = "**Progress:** `100%`\n Backup complete."
