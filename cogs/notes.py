@@ -73,7 +73,7 @@ class Notepad:
             note = len(self.notes[author_id]) - 1
             position = 1
             for i in self.notes[author_id]:
-                e.description += f"\n{position}. {self.notes[author_id][note].replace('`', '')}\n`{self.timestamp[author_id][note]}`\n"
+                e.description += f"\n**{position}.** {self.notes[author_id][note].replace('`', '')}\n`{self.timestamp[author_id][note]}`\n"
                 note -= 1
                 position += 1
             await ctx.send(embed=e)
