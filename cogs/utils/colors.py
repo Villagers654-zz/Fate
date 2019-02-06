@@ -3,6 +3,9 @@ import random as r
 def fate():
 	return 0x80b0ff
 
+def luck():
+	return 0x9eafe3
+
 def random():
 	return r.randint(0, 0xFFFFFF)
 
