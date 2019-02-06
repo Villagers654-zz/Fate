@@ -2,7 +2,7 @@ from discord.ext import commands
 import discord
 import random
 
-class customclass:
+class Custom:
 	def __init__(self, bot):
 		self.bot = bot
 
@@ -18,9 +18,6 @@ class customclass:
 				r = random.randint(1, 4)
 				if r >= 3:
 					await m.delete()
-	@commands.command()
-	async def tostitos(self, ctx):
-		await ctx.send("reeeeee")
 
 	@commands.command()
 	async def nigward(self, ctx):
@@ -34,4 +31,4 @@ class customclass:
 		await ctx.message.delete()
 
 def setup(bot):
-	bot.add_cog(customclass(bot))
+	bot.add_cog(Custom(bot))
