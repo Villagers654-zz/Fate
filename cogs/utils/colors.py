@@ -24,5 +24,8 @@ def lime_green():
 def blue():
 	return 0x0000FF
 
+def cyan():
+	return 0x00ffff
+
 def purple():
 	return 0x9400D3
