@@ -13,7 +13,7 @@ import time
 files = ['error_handler', 'owner', 'menus', 'core', 'mod', 'music', 'welcome', 'farewell', 'notes', 'archive', 'coffeeshop', 'custom',
          'actions', 'reactions', 'responses', 'textart', 'fun', 'math', 'dev', '4b4t', 'readme', 'legit', 'reload', 'embeds', 'warning',
          'profiles', 'save', 'clean_rythm', 'tother', 'utility', 'psutil', 'rules', 'duel_chat', 'selfroles', 'limiter', 'lock', 'backup',
-         ]
+         'cookies', 'avapxian_regime', 'anti_purge']
 
 description = '''Fate[Zero]: Personal Bot'''
 bot = commands.Bot(command_prefix=['.', '<@506735111543193601>'], case_insensitive=True)
