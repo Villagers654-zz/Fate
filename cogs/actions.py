@@ -18,11 +18,6 @@ class Actions:
 		await ctx.message.delete()
 
 	@commands.command()
-	async def cookie(self, ctx, *, arg):
-		await ctx.send("🍪 | <@{}> gives {} a cookie".format(ctx.author.id, arg))
-		await ctx.message.delete()
-
-	@commands.command()
 	async def shoot(self, ctx, *, arg):
 		await ctx.send("🔫 | pew pew, {} {}, {}".format(arg, random.choice(["has been shot in the head and died instantly", "has been shot in the heart and died quickly and painfully", "has been shot in the arm and is rolling around in agonizing pain", "has been shot in the leg and is now hopping around on one leg like an autist", "has been shot in the dick"]), random.choice(["you really shouldn't let a bot carry a gun :p", "you should let me shoot people more often", "you should let me shoot faggots more often", "this is fun", "poor faggot didn't stand a chance", "he/she definitely deserved it", "poor autist dropped like a fly"])))
 
