@@ -12,6 +12,9 @@ def random():
 def red():
 	return 0xff0000
 
+def pink():
+	return 0xfc88ff
+
 def orange():
 	return 0xff6800
 
