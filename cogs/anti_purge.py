@@ -12,7 +12,7 @@ class AntiPurge:
 		if isfile("./data/userdata/anti_purge.json"):
 			with open ("./data/userdata/anti_purge.json", "r") as infile:
 				dat = json.load(infile)
-				if self.toggle in dat:
+				if "toggle" in dat:
 					self.toggle = dat["toggle"]
 
 	def save(self):
@@ -60,11 +60,11 @@ class AntiPurge:
 			self.cd[guild_id] = 0
 		self.cd[guild_id] = time.time() + 10
 		if self.cd[guild_id] > time.time() + 21:
-			perms = discord.Permissions
+			perms = discord.PermissionOverwrite
 			perms.kick_members = False
 			perms.ban_members = False
 			for role in m.guild.roles:
-				if role.position < self.bot.get_guild(m.guild.id).get_member(self.bot.user.id).top_role.position:
+				if role.position > self.bot.get_guild(m.guild.id).get_member(self.bot.user.id).top_role.position:
 					pass
 				else:
 					await role.edit(permissions=perms)
