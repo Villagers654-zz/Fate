@@ -41,17 +41,18 @@ class Utility:
 			json.dump({"images": self.images}, outfile, ensure_ascii=False)
 
 	async def on_message(self, m: discord.Message):
-		guild_id = str(m.guild.id)
-		channel_id = str(m.channel.id)
-		# image limiter
-		for i in ['.limit', 'limited **', 'disabled channel']:
-			if m.content.lower().startswith(i):
-				return
-		await asyncio.sleep(0.5)
-		if guild_id in self.images:
-			if channel_id in self.images[guild_id]:
-				if len(m.attachments) < 1:
-					await m.delete()
+		if isinstance(m.guild, discord.Guild):
+			guild_id = str(m.guild.id)
+			channel_id = str(m.channel.id)
+			# image limiter
+			for i in ['.limit', 'limited **', 'disabled channel']:
+				if m.content.lower().startswith(i):
+					return
+			await asyncio.sleep(0.5)
+			if guild_id in self.images:
+				if channel_id in self.images[guild_id]:
+					if len(m.attachments) < 1:
+						await m.delete()
 
 def setup(bot):
 	bot.add_cog(Utility(bot))
