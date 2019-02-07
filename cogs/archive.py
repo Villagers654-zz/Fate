@@ -1,22 +1,11 @@
 from discord.ext import commands
+from cogs.utils import checks
 import discord
 import os
 
 class customclass:
 	def __init__(self, bot):
 		self.bot = bot
-
-	def luck(ctx):
-		return ctx.message.author.id == 264838866480005122
-
-# ~== Test ==~
-
-	@commands.command()
-	@commands.check(luck)
-	async def cogs_log(self, ctx):
-		await ctx.send('working')
-
-# ~== Main ==~
 
 	@commands.command(name='archive')
 	@commands.has_permissions(manage_messages=True)
@@ -38,7 +27,7 @@ class customclass:
 				os.system(f'rm data/{ctx.channel.name}.txt')
 
 	@commands.command()
-	@commands.check(luck)
+	@commands.check(checks.luck)
 	@commands.cooldown(1, 120, commands.BucketType.channel)
 	async def sss(self, ctx, amount:int):
 		c = 0
