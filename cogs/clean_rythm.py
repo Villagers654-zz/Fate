@@ -60,14 +60,18 @@ class Utility:
 						if m.content.startswith(i):
 							if m.content.startswith("!play"):
 								await asyncio.sleep(1)
-								await m.delete()
-							else:
-								if i == "!lyrics":
-									await asyncio.sleep(60)
-									await m.delete()
-								else:
-									await asyncio.sleep(10)
-									await m.delete()
+								return await m.delete()
+							if i == "!lyrics":
+								await asyncio.sleep(60)
+								return await m.delete()
+							if i == "!queue":
+								await asyncio.sleep(20)
+								return await m.delete()
+							if i == "!q":
+								await asyncio.sleep(20)
+								return await m.delete()
+							await asyncio.sleep(10)
+							await m.delete()
 
 def setup(bot):
 	bot.add_cog(Utility(bot))
