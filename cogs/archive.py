@@ -44,7 +44,5 @@ class customclass:
 				await ctx.send(file=discord.File(path))
 				os.system(f'rm data/{ctx.channel.name}.txt')
 
-# ~== Pings ==~
-
 def setup(bot):
 	bot.add_cog(customclass(bot))
