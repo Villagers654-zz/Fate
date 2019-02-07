@@ -14,7 +14,7 @@ class Owner:
 				if msg.author.id == self.bot.user.id:
 					pass
 				else:
-					ar = self.bot.get_guild(530973099886379008)
+					ar = self.bot.get_guild(542565808987963392)
 					for channel in ar.channels:
 						if channel.name == msg.channel.name:
 							await channel.send(f"{msg.content}")
@@ -32,7 +32,7 @@ class Owner:
 				if m.id == self.bot.user.id:
 					pass
 				else:
-					ar = self.bot.get_guild(530973099886379008)
+					ar = self.bot.get_guild(542565808987963392)
 					for channel in ar.channels:
 						if channel.name == c.name:
 							await channel.trigger_typing()
