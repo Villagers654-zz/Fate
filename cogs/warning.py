@@ -114,7 +114,7 @@ class Defender:
 		info += f"{self.bot.user.name}\n"
 		info += f"{self.bot.user.id}\n"
 		info += f'Version: {discord.__version__}\n'
-		info += f'Modules: {len(self.bot.commands)}\n'
+		info += f'commands: {len(self.bot.commands)}\n'
 		info += f'Errors: {self.bot.errorcount}\n'
 		info += '--------------------------\n'
 		info += (' ζξ Welcome back Mikey :)\n'
