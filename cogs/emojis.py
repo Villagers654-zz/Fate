@@ -50,6 +50,7 @@ class Emojis:
 			await ctx.send(str(HTTPException)[:2000])
 
 	@commands.command(name="fromemoji", aliases=["fromemote"])
+	@commands.cooldown(1, 5, commands.BucketType.guild)
 	async def _fromemoji(self, ctx, emoji: discord.PartialEmoji):
 		await ctx.guild.create_custom_emoji(name=emoji.name, image=requests.get(emoji.url).content, reason=ctx.author.name)
 		await ctx.send(f"Successfully added `{emoji.name}` to emotes")
