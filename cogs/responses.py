@@ -55,7 +55,7 @@ class Responses:
 							f = open("./data/misc/responses.txt", "a")
 							f.write("\n" + m.content)
 							f.close()
-					if r > 2:
+					if r > 1:
 						msg = random.choice(open("./data/misc/responses.txt", "r").readlines())
 					else:
 						msg = random.choice([
@@ -66,7 +66,6 @@ class Responses:
 							"pUrE wHiTe pRiVelIdgEd mALe^",
 							"Once apon a time in a land far away, there lived a little boy who pinged a bot, first came rape, then came aids",
 							"Do you need virtual daycare or something?",
-							"Shut your skin tone chicken bone google chrome no home flip phone disowned ice cream cone garden gnome extra chromosome metronome dimmadome genome full blown monochrome student loan indiana jones overgrown flintstone x and y hormone friend zoned sylvester stallone sierra leone autozone professionally seen silver patrone head ass tf up.",
 							"Fuck off hitler",
 							"alright you pathetic lost child, use .help",
 							"and what might **you** want",
