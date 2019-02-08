@@ -166,7 +166,6 @@ class Utility:
 	@commands.command(pass_context=True)
 	async def poll(self, ctx, *, arg):
 		try:
-			e = discord.Embed()
 			e=discord.Embed(description=arg, color=0x80b0ff)
 			e.set_author(name="| {} |".format(ctx.author.name), icon_url=ctx.author.avatar_url)
 			message = await ctx.send(embed=e)
