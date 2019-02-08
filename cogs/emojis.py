@@ -1,5 +1,5 @@
 from discord.ext import commands
-from cogs.utils import colors
+from utils import colors
 import requests
 import discord
 

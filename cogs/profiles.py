@@ -1,4 +1,4 @@
-from cogs.utils import bytes2human as p
+from utils import bytes2human as p
 from discord.ext import commands
 from os.path import isfile
 import traceback

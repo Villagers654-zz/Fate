@@ -1,4 +1,4 @@
-from cogs.utils import colors, checks
+from utils import checks, colors
 from discord.ext import commands
 import subprocess
 import discord

@@ -1,6 +1,6 @@
 from discord.ext import commands
-from cogs.utils import colors
 from datetime import datetime
+from utils import colors
 import discord
 import aiohttp
 import asyncio

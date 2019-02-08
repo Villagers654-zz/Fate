@@ -1,6 +1,6 @@
 from bs4 import BeautifulSoup as bs
-from cogs.utils import menus as m
 from discord.ext import commands
+from utils import menus as m
 import wikipedia.exceptions
 import wikipedia
 import discord

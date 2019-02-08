@@ -1,4 +1,4 @@
-from cogs.utils import bytes2human as p, menus as m
+from utils import bytes2human as p, menus as m
 from discord.ext import commands
 import discord
 import asyncio
