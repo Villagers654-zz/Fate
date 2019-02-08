@@ -1,10 +1,11 @@
 from discord.ext import commands
-from cogs.utils import colors
 from os.path import isfile
+from utils import colors
 import discord
 import random
 import json
 import time
+import os
 
 class Cookies:
 	def __init__(self, bot):
@@ -73,6 +74,8 @@ class Cookies:
 		e.set_author(name=f"Cookies: {self.cookies[author_id]} | Sent: {self.sent[author_id]} | Received: {self.received[author_id]} | Eaten: {self.eaten[author_id]}", icon_url=ctx.author.avatar_url)
 		actions = ["chews on one of his/her cookies", "nibbles on one of his/her cookies", "eats a cookie whole"]
 		e.description = f"{ctx.author.name} {random.choice(actions)}"
+		path = os.getcwd() + "/data/images/reactions/cookie/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/cookie/"))
+		e.set_image(url="attachment://" + os.path.basename(path))
 		await ctx.send(embed=e)
 
 	@commands.command(name="cookies")
@@ -88,7 +91,6 @@ class Cookies:
 			self.cd[user_id] = 0
 			self.save()
 		e = discord.Embed(color=colors.fate())
-		e.set_thumbnail(url="https://cdn.discordapp.com/attachments/507914723858186261/542465014099869697/580b57fbd9996e24bc43c103.png")
 		e.set_author(name=f"Cookies: {self.cookies[user_id]} | Sent: {self.sent[user_id]} | Received: {self.received[user_id]} | Eaten: {self.eaten[user_id]}", icon_url=user.avatar_url)
 		await ctx.send(embed=e)
 
