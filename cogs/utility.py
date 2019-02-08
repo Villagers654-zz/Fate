@@ -59,8 +59,33 @@ class Utility:
 		await ctx.send(embed=e)
 
 	@commands.command(name="roleinfo")
-	async def _roleinfo(self, ctx, *, role):
-		await ctx.send(".")
+	async def _roleinfo(self, ctx, role_name: commands.clean_content):
+		role_name = role_name.replace("@", "").lower()
+		role = None
+		for r in ctx.guild.roles:
+			if r.name.lower() == role_name:
+				role = r
+		if role is None:
+			for r in ctx.guild.roles:
+				if role_name in r.name.lower():
+					role = r
+		if role is None:
+			return await ctx.send("Role not found")
+		fmt = "%m/%d/%Y"
+		created = datetime.date(role.created_at)
+		perms = ', '.join(perm for perm, value in role.permissions if value)
+		e = discord.Embed(color=role.color)
+		e.set_author(name=f"{role.name}:", icon_url=ctx.guild.icon_url)
+		e.set_thumbnail(url=ctx.guild.icon_url)
+		e.description = f"ID: {role.id}"
+		e.add_field(name="◈ Main ◈", value=f"**Members:** [{len(list(role.members))}]\n"
+		f"**Color:** [{role.color}]\n"
+		f"**Mentionable:** [{role.mentionable}]\n"
+		f"**Integrated:** [{role.managed}]\n"
+		f"**Position:** [{role.position}]\n", inline=False)
+		e.add_field(name="◈ Perms ◈", value=f"```{perms}```", inline=False)
+		e.add_field(name="◈ Created ◈", value=created.strftime(fmt), inline=False)
+		await ctx.send(embed=e)
 
 	@commands.command(name='makepoll', aliases=['mp'])
 	@commands.cooldown(1, 5, commands.BucketType.channel)
