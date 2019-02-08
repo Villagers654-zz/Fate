@@ -141,7 +141,7 @@ class Utility:
 		await ctx.send(embed=e)
 
 	@commands.command(name="timer", pass_context=True, aliases=['reminder', 'alarm'])
-	async def _timer(self, ctx, time, *, remember: str = ""):
+	async def _timer(self, ctx, time, *, remember: commands.clean_content = ""):
 		if "d" in time:
 			t = int(time.replace("d", "")) * 60 * 60 * 24
 		if "h" in time:
@@ -152,15 +152,13 @@ class Utility:
 		r = r.replace("h", " hours").replace("1 hours", "1 hour")
 		r = r.replace("d", " days").replace("1 days", "1 day")
 		if not remember:
-			end_timer = ctx.send(f"{ctx.author.name}, your timer for {r} has expired!")
 			await ctx.send(f"{ctx.author.name}, you have set a timer for {r}")
 			await asyncio.sleep(float(t))
-			await end_timer
+			await ctx.send(f"{ctx.author.name}, your timer for {r} has expired!")
 		else:
-			end_timer = ctx.send(f"{ctx.message.author.mention}, your timer for {r} has expired! I was instructed to remind you about `{remember}`!")
 			await ctx.send(f"{ctx.message.author.mention}, I will remind you about `{remember}` in {r}")
 			await asyncio.sleep(float(t))
-			await end_timer
+			await ctx.send(f"{ctx.message.author.mention}, your timer for {r} has expired! I was instructed to remind you about `{remember}`!")
 
 	@commands.command(pass_context=True)
 	async def poll(self, ctx, *, arg):
