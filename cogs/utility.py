@@ -140,8 +140,8 @@ class Utility:
 		e.set_author(name=color, icon_url=ctx.author.avatar_url)
 		await ctx.send(embed=e)
 
-	@commands.command(pass_context=True, aliases=['reminder', 'alarm'])
-	async def timer(self, ctx, time, *, remember: str = ""):
+	@commands.command(name="timer", pass_context=True, aliases=['reminder', 'alarm'])
+	async def _timer(self, ctx, time, *, remember: str = ""):
 		if "d" in time:
 			t = int(time.replace("d", "")) * 60 * 60 * 24
 		if "h" in time:
@@ -152,14 +152,13 @@ class Utility:
 		r = r.replace("h", " hours").replace("1 hours", "1 hour")
 		r = r.replace("d", " days").replace("1 days", "1 day")
 		if not remember:
-			end_timer = ctx.send("{}, your timer for {} has expired!".format(ctx.message.author.name, r))
-			await ctx.send("{}, you have set a timer for {}".format(ctx.message.author.name, r))
+			end_timer = ctx.send(f"{ctx.author.name}, your timer for {r} has expired!")
+			await ctx.send(f"{ctx.author.name}, you have set a timer for {r}")
 			await asyncio.sleep(float(t))
 			await end_timer
 		else:
-			end_timer = ctx.send("{}, your timer for {} has expired! I was instructed to remind you about "
-			                     "`{}`!".format(ctx.message.author.mention, r, remember))
-			await ctx.send("{}, I will remind you about `{}` in {}".format(ctx.message.author.mention, remember, r))
+			end_timer = ctx.send(f"{ctx.message.author.mention}, your timer for {r} has expired! I was instructed to remind you about `{remember}`!")
+			await ctx.send(f"{ctx.message.author.mention}, I will remind you about `{remember}` in {r}")
 			await asyncio.sleep(float(t))
 			await end_timer
 
