@@ -141,17 +141,35 @@ class Utility:
 		await ctx.send(embed=e)
 
 	@commands.command(pass_context=True, aliases=['reminder', 'alarm'])
-	async def timer(self, ctx, seconds: int, *, remember: str = ""):
+	async def timer(self, ctx, timer, *, remember: str = ""):
+		if "d" in timer:
+			t = timer.replace("d", "")
+			t = int(t) * 60 * 60 * 24
+		if "h" in timer:
+			t = timer.replace("h", "")
+			t = int(t) * 60 * 60
+		if "m" in timer:
+			t = timer.replace("m", "")
+			t = int(t) * 60
+		r = timer.replace("m", " minutes")
+		if r == "1 minutes":
+			r = "1 minute"
+		r = r.replace("h", " hours")
+		if r == "1 hours":
+			r = "1 hour"
+		r = r.replace("d", " days")
+		if r == "1 days":
+			r = "1 day"
 		if not remember:
-			end_timer = ctx.send("{}, your timer for {} seconds has expired!".format(ctx.message.author.name, seconds))
-			await ctx.send("{}, you have set a timer for {} seconds!".format(ctx.message.author.name, seconds))
-			await asyncio.sleep(float(seconds))
+			end_timer = ctx.send("{}, your timer for {} seconds has expired!".format(ctx.message.author.name, r))
+			await ctx.send("{}, you have set a timer for {} seconds!".format(ctx.message.author.name, r))
+			await asyncio.sleep(float(t))
 			await end_timer
 		else:
 			end_timer = ctx.send("{}, your timer for {} seconds has expired! I was instructed to remind you about "
-			                     "`{}`!".format(ctx.message.author.mention, seconds, remember))
-			await ctx.send("{}, I will remind you about `{}` in {} seconds!".format(ctx.message.author.mention, remember, seconds))
-			await asyncio.sleep(float(seconds))
+			                     "`{}`!".format(ctx.message.author.mention, r, remember))
+			await ctx.send("{}, I will remind you about `{}` in {} seconds!".format(ctx.message.author.mention, remember, r))
+			await asyncio.sleep(float(t))
 			await end_timer
 
 	@commands.command(pass_context=True)
