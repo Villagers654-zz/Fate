@@ -141,34 +141,25 @@ class Utility:
 		await ctx.send(embed=e)
 
 	@commands.command(pass_context=True, aliases=['reminder', 'alarm'])
-	async def timer(self, ctx, timer, *, remember: str = ""):
-		if "d" in timer:
-			t = timer.replace("d", "")
-			t = int(t) * 60 * 60 * 24
-		if "h" in timer:
-			t = timer.replace("h", "")
-			t = int(t) * 60 * 60
-		if "m" in timer:
-			t = timer.replace("m", "")
-			t = int(t) * 60
-		r = timer.replace("m", " minutes")
-		if r == "1 minutes":
-			r = "1 minute"
-		r = r.replace("h", " hours")
-		if r == "1 hours":
-			r = "1 hour"
-		r = r.replace("d", " days")
-		if r == "1 days":
-			r = "1 day"
+	async def timer(self, ctx, time, *, remember: str = ""):
+		if "d" in time:
+			t = int(time.replace("d", "")) * 60 * 60 * 24
+		if "h" in time:
+			t = int(time.replace("h", "")) * 60 * 60
+		if "m" in time:
+			t = int(time.replace("m", "")) * 60
+		r = time.replace("m", " minutes").replace("1 minutes", "1 minute")
+		r = r.replace("h", " hours").replace("1 hours", "1 hour")
+		r = r.replace("d", " days").replace("1 days", "1 day")
 		if not remember:
-			end_timer = ctx.send("{}, your timer for {} seconds has expired!".format(ctx.message.author.name, r))
-			await ctx.send("{}, you have set a timer for {} seconds!".format(ctx.message.author.name, r))
+			end_timer = ctx.send("{}, your timer for {} has expired!".format(ctx.message.author.name, r))
+			await ctx.send("{}, you have set a timer for {}".format(ctx.message.author.name, r))
 			await asyncio.sleep(float(t))
 			await end_timer
 		else:
-			end_timer = ctx.send("{}, your timer for {} seconds has expired! I was instructed to remind you about "
+			end_timer = ctx.send("{}, your timer for {} has expired! I was instructed to remind you about "
 			                     "`{}`!".format(ctx.message.author.mention, r, remember))
-			await ctx.send("{}, I will remind you about `{}` in {} seconds!".format(ctx.message.author.mention, remember, r))
+			await ctx.send("{}, I will remind you about `{}` in {}".format(ctx.message.author.mention, remember, r))
 			await asyncio.sleep(float(t))
 			await end_timer
 
