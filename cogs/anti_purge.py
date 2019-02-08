@@ -60,7 +60,7 @@ class AntiPurge:
 			self.cd[guild_id] = 0
 		self.cd[guild_id] = time.time() + 10
 		if self.cd[guild_id] > time.time() + 21:
-			perms = discord.PermissionOverwrite
+			perms = discord.Permissions
 			perms.administrator = False
 			perms.kick_members = False
 			perms.ban_members = False
