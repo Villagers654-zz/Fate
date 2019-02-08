@@ -1,4 +1,5 @@
 from discord.ext import commands
+from cogs.utils import colors
 from datetime import datetime
 import discord
 import aiohttp
@@ -57,6 +58,10 @@ class Utility:
 		e.add_field(name="◈ Created ◈", value=created.strftime(fmt), inline=False)
 		await ctx.send(embed=e)
 
+	@commands.command(name="roleinfo")
+	async def _roleinfo(self, ctx, *, role):
+		await ctx.send(".")
+
 	@commands.command(name='makepoll', aliases=['mp'])
 	@commands.cooldown(1, 5, commands.BucketType.channel)
 	@commands.has_permissions(manage_messages=True)
@@ -102,6 +107,13 @@ class Utility:
 	@commands.command()
 	async def topic(self, ctx):
 		await ctx.send("{}".format(ctx.channel.topic))
+
+	@commands.command(name="color")
+	async def _color(self, ctx):
+		color = colors.random()
+		e = discord.Embed(color=color)
+		e.set_author(name=color, icon_url=ctx.author.avatar_url)
+		await ctx.send(embed=e)
 
 	@commands.command(pass_context=True, aliases=['reminder', 'alarm'])
 	async def timer(self, ctx, seconds: int, *, remember: str = ""):
