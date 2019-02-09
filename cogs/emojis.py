@@ -21,7 +21,7 @@ class Emojis:
 						if i.lower() in chars:
 							clean += i
 					await ctx.guild.create_custom_emoji(name=clean, image=requests.get(attachment.url).content, reason=ctx.author.name)
-					await ctx.send(f"successfully added `{clean}` to emotes")
+					await ctx.send(f"Added `{clean}` to emotes")
 			else:
 				if name is None:
 					for attachment in ctx.message.attachments:
@@ -32,12 +32,12 @@ class Emojis:
 							if i.lower() in chars:
 								clean += i
 						await ctx.guild.create_custom_emoji(name=clean, image=requests.get(attachment.url).content, reason=ctx.author.name)
-						await ctx.send(f"Successfully added `{clean}` to emotes")
+						await ctx.send(f"Added `{clean}` to emotes")
 				else:
 					for attachment in ctx.message.attachments:
 						name = name[:32].replace(" ", "")
 						await ctx.guild.create_custom_emoji(name=name, image=requests.get(attachment.url).content, reason=ctx.author.name)
-						await ctx.send(f"Successfully added `{name}` to emotes")
+						await ctx.send(f"Added `{name}` to emotes")
 		except Exception as HTTPException:
 			if "256kb" in str(HTTPException):
 				for attachment in ctx.message.attachments:
@@ -53,27 +53,13 @@ class Emojis:
 	@commands.cooldown(1, 5, commands.BucketType.guild)
 	async def _fromemoji(self, ctx, emoji: discord.PartialEmoji):
 		await ctx.guild.create_custom_emoji(name=emoji.name, image=requests.get(emoji.url).content, reason=ctx.author.name)
-		await ctx.send(f"Successfully added `{emoji.name}` to emotes")
+		await ctx.send(f"Added `{emoji.name}` to emotes")
 
 	@commands.command(name="delemoji", aliases=["delemote"])
 	@commands.has_permissions(manage_emojis=True)
-	async def _delemoji(self, ctx, *, name):
-		check = 0
-		for emote in ctx.guild.emojis:
-			if name.lower() == emote.name.lower():
-				await emote.delete(reason=ctx.author.name)
-				await ctx.send(f"Deleted emote `{emote.name}`")
-				check = 1
-				break
-		if check == 0:
-			for emote in ctx.guild.emojis:
-				if name.lower() in emote.name.lower():
-					await emote.delete(reason=ctx.author.name)
-					await ctx.send(f"Deleted emote `{emote.name}`")
-					check = 1
-					break
-		if check == 0:
-			await ctx.send("I couldnt find that emote")
+	async def _delemoji(self, ctx, emoji: discord.Emoji):
+		await emoji.delete(reason=ctx.author.name)
+		await ctx.send(f"Deleted emote `{emoji.name}`")
 
 def setup(bot):
 	bot.add_cog(Emojis(bot))
