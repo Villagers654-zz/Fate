@@ -58,7 +58,7 @@ class Utility:
 		await ctx.message.add_reaction("👍")
 
 	@commands.command(name="lockm")
-	@commands.bot_has_permissions(manage_messages=True)
+	@commands.has_permissions(administrator=True)
 	async def _lockm(self, ctx):
 		def check_roles():
 			for i in ctx.guild.roles:
