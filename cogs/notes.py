@@ -23,9 +23,9 @@ class Notepad:
         with open("./data/userdata/notes.json", "w") as outfile:
             return json.dump({"notes": self.notes, "timestamp": self.timestamp}, outfile, ensure_ascii=False)
 
-    @commands.command()
+    @commands.command(name="note")
     @commands.cooldown(1, 1, commands.BucketType.user)
-    async def note(self, ctx, *, arg: commands.clean_content = ""):
+    async def _note(self, ctx, *, arg: commands.clean_content = ""):
         author_id = str(ctx.author.id)
         if len(arg) > 400:
             return await ctx.send("Each note cannot be larger than 400 characters")
@@ -60,6 +60,33 @@ class Notepad:
                     await ctx.send(embed=e)
             else:
                 await ctx.send("no data")
+
+    @commands.command(name="quicknote")
+    @commands.cooldown(1, 1, commands.BucketType.user)
+    async def _quicknote(self, ctx, *, arg: commands.clean_content = ""):
+        author_id = str(ctx.author.id)
+        if len(arg) > 400:
+            return await ctx.send("Each note cannot be larger than 400 characters")
+        if len(arg) > 0:
+            async with ctx.typing():
+                if author_id not in self.notes:
+                    self.notes[author_id] = []
+                self.notes[author_id].append(arg)
+                if len(self.notes[author_id]) > 5:
+                    del self.notes[author_id][0]
+                if author_id not in self.timestamp:
+                    self.timestamp[author_id] = []
+                self.timestamp[author_id].append(datetime.datetime.now().strftime("%m-%d-%Y %I:%M%p"))
+                if len(self.timestamp[author_id]) > 5:
+                    del self.timestamp[author_id][0]
+                self.save()
+                path = os.getcwd() + "/data/images/reactions/notes/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/notes/"))
+                e = discord.Embed(color=0xFFC923)
+                e.set_author(name='Noted..', icon_url=ctx.author.avatar_url)
+                e.set_image(url="attachment://" + os.path.basename(path))
+                await ctx.send(file=discord.File(path, filename=os.path.basename(path)), embed=e, delete_after=10)
+            await asyncio.sleep(1)
+            await ctx.message.delete()
 
     @commands.command(name="notes")
     @commands.cooldown(1, 1, commands.BucketType.user)
