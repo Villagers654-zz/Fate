@@ -8,6 +8,7 @@ class Emojis:
 		self.bot = bot
 
 	@commands.command(name="addemoji", aliases=["emote", "addemote"])
+	@commands.cooldown(1, 5, commands.BucketType.guild)
 	@commands.has_permissions(manage_emojis=True)
 	async def _addemoji(self, ctx, name=None):
 		try:
@@ -51,11 +52,13 @@ class Emojis:
 
 	@commands.command(name="fromemoji", aliases=["fromemote"])
 	@commands.cooldown(1, 5, commands.BucketType.guild)
+	@commands.has_permissions(manage_emojis=True)
 	async def _fromemoji(self, ctx, emoji: discord.PartialEmoji):
 		await ctx.guild.create_custom_emoji(name=emoji.name, image=requests.get(emoji.url).content, reason=ctx.author.name)
 		await ctx.send(f"Added `{emoji.name}` to emotes")
 
 	@commands.command(name="delemoji", aliases=["delemote"])
+	@commands.cooldown(1, 5, commands.BucketType.guild)
 	@commands.has_permissions(manage_emojis=True)
 	async def _delemoji(self, ctx, emoji: discord.Emoji):
 		await emoji.delete(reason=ctx.author.name)
