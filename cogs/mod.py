@@ -77,7 +77,7 @@ class Mod:
 	@commands.command(name="ban", aliases=["b"])
 	@commands.has_permissions(ban_members=True)
 	@commands.cooldown(1, 25, commands.BucketType.user)
-	async def ban(self, ctx, user:discord.Member, *, reason=None):
+	async def _ban(self, ctx, user:discord.Member, *, reason=None):
 		if user.top_role.position >= ctx.author.top_role.position:
 			return await ctx.send("That user is above your paygrade, take a seat")
 		await ctx.guild.ban(user, reason=reason, delete_message_days=0)
@@ -93,6 +93,14 @@ class Mod:
 				await user.send(f"You have been banned from **{ctx.guild.name}** by **{ctx.author.name}** for `{reason}`")
 			except Exception as e:
 				pass
+
+	@commands.command(name="bans")
+	@commands.has_permissions(ban_members=True)
+	@commands.cooldown(1, 5, commands.BucketType.guild)
+	async def _bans(self, ctx):
+		bans = await ctx.guild.bans()
+		for ban in bans:
+			await ctx.send(f"{ban[0]}, {ban[1].id}")
 
 	@commands.command(name="pin", aliases=["p"])
 	@commands.has_permissions(manage_messages=True)
