@@ -13,15 +13,22 @@ class Psutil:
 	async def devstats(self, ctx):
 		luck = self.bot.get_user(264838866480005122)
 		f = psutil.Process(os.getpid())
+		try:
+			cpufreq = p.bytes2human(psutil.cpu_freq())
+		except:
+			cpufreq = "unavailable"
+		try:
+			cpufreqmax = p.bytes2human(psutil.cpu_freq().max)
+		except:
+			cpufreqmax = "unavailable"
 		e = discord.Embed()
 		e.set_author(name='| Memory | ', icon_url=luck.avatar_url)
 		e.set_thumbnail(url="https://cdn.discordapp.com/attachments/514213558549217330/514345278669848597/8yx98C.gif")
 		e.description = f"__**Storage**__: [{p.bytes2human(psutil.disk_usage('/').used)}/{p.bytes2human(psutil.disk_usage('/').total)}]\n" \
-			f"__**RAM**__: [{p.bytes2human(psutil.virtual_memory().used)}/{p.bytes2human(psutil.virtual_memory().total)}] ({p.rampercent}%)\n" \
+			f"__**RAM**__: [{p.bytes2human(psutil.virtual_memory().used)}/{p.bytes2human(psutil.virtual_memory().total)}] ({psutil.virtual_memory().percent}%)\n" \
 			f"__**CPU**__: **Global**: {psutil.cpu_percent(interval=1)}% **Bot**: {f.cpu_percent(interval=1)}%\n" \
-			f'__**CPU Frequency**__: [{p.bytes2human(psutil.cpu_freq())}/{p.bytes2human(psutil.cpu_freq().max)}]\n' \
-			f'__**battery**__: {p.batterypercent}% {p.ischarging}'
-		e.set_footer(text=f'{p.percpu}')
+			f'__**CPU Frequency**__: [{cpufreq}/{cpufreqmax}]\n'
+		e.set_footer(text=f'{[round(i) for i in psutil.cpu_percent(interval=1, percpu=True)]}')
 		await ctx.send(embed=e)
 
 	@commands.command()
