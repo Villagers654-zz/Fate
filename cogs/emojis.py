@@ -8,9 +8,9 @@ class Emojis:
 		self.bot = bot
 
 	@commands.command(name="addemoji", aliases=["emote", "addemote"])
-	@commands.cooldown(1, 5, commands.BucketType.guild)
 	@commands.has_permissions(manage_emojis=True)
-	async def _addemoji(self, ctx, name=None):
+	@commands.cooldown(1, 5, commands.BucketType.guild)
+	async def _addemoji(self, ctx, *, name=None):
 		try:
 			chars = list("abcdefghijklmnopqrstuvwxyz")
 			if len(ctx.message.attachments) > 1:
@@ -40,7 +40,7 @@ class Emojis:
 						await ctx.guild.create_custom_emoji(name=name, image=requests.get(attachment.url).content, reason=ctx.author.name)
 						await ctx.send(f"Added `{name}` to emotes")
 		except Exception as HTTPException:
-			if "256kb" in str(HTTPException):
+			if "256 kb" in str(HTTPException):
 				for attachment in ctx.message.attachments:
 					attachment = attachment
 				e = discord.Embed(color=colors.fate())
@@ -51,8 +51,8 @@ class Emojis:
 			await ctx.send(str(HTTPException)[:2000])
 
 	@commands.command(name="fromemoji", aliases=["fromemote"])
-	@commands.cooldown(1, 5, commands.BucketType.guild)
 	@commands.has_permissions(manage_emojis=True)
+	@commands.cooldown(1, 5, commands.BucketType.guild)
 	async def _fromemoji(self, ctx, emoji: discord.PartialEmoji):
 		await ctx.guild.create_custom_emoji(name=emoji.name, image=requests.get(emoji.url).content, reason=ctx.author.name)
 		await ctx.send(f"Added `{emoji.name}` to emotes")
