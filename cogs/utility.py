@@ -137,7 +137,7 @@ class Utility:
 	async def _color(self, ctx):
 		color = colors.random()
 		e = discord.Embed(color=color)
-		e.set_author(name=color, icon_url=ctx.author.avatar_url)
+		e.set_author(name=f"#{color}", icon_url=ctx.author.avatar_url)
 		await ctx.send(embed=e)
 
 	@commands.command(name="timer", pass_context=True, aliases=['reminder', 'alarm'])
