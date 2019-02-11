@@ -21,13 +21,10 @@ class Farewell:
 					self.useimages = dat["useimages"]
 					self.toxicity = dat["toxicity"]
 
-	def luck(ctx):
-		return ctx.message.author.id == 264838866480005122
-
-	def tm(ctx):
-		return ctx.author.id in [264838866480005122, 355026215137968129]
-
-# ~== Main ==~
+	def save(self):
+		with open("./data/userdata/config/farewell.json", "w") as outfile:
+			json.dump({"identifier": self.identifier, "channel": self.channel, "useimages": self.useimages,
+			           "toxicity": self.toxicity}, outfile, ensure_ascii=False)
 
 	@commands.group(name='farewell')
 	@commands.has_permissions(manage_guild=True)
@@ -65,9 +62,7 @@ class Farewell:
 		if str(ctx.guild.id) not in self.toxicity:
 			self.toxicity[str(ctx.guild.id)] = 'False'
 			report += '\nToxicity not set, therefore it has been automatically set to `false`'
-		with open("./data/userdata/config/farewell.json", "w") as outfile:
-			json.dump({"identifier": self.identifier, "channel": self.channel, "useimages": self.useimages,
-			           "toxicity": self.toxicity}, outfile, ensure_ascii=False)
+		self.save()
 		await ctx.send(report)
 
 	@_farewell.command(name='enable')
@@ -88,9 +83,7 @@ class Farewell:
 		if str(ctx.guild.id) not in self.toxicity:
 			self.toxicity[str(ctx.guild.id)] = 'False'
 			report += '\nToxicity not set, therefore it has been automatically set to `false`'
-		with open("./data/userdata/config/farewell.json", "w") as outfile:
-			json.dump({"identifier": self.identifier, "channel": self.channel, "useimages": self.useimages,
-			           "toxicity": self.toxicity}, outfile, ensure_ascii=False)
+		self.save()
 		await ctx.send(report)
 
 	@_farewell.command(name='disable')
@@ -102,9 +95,7 @@ class Farewell:
 		else:
 			self.identifier[str(ctx.guild.id)] = 'False'
 			report += 'Disabled farewell messages'
-		with open("./data/userdata/config/farewell.json", "w") as outfile:
-			json.dump({"identifier": self.identifier, "channel": self.channel, "useimages": self.useimages,
-			           "toxicity": self.toxicity}, outfile, ensure_ascii=False)
+		self.save()
 		await ctx.send(report)
 
 	@_farewell.command(name='setchannel')
@@ -112,9 +103,7 @@ class Farewell:
 		if channel is None:
 			channel = ctx.channel
 		self.channel[str(ctx.guild.id)] = channel.id
-		with open("./data/userdata/config/farewell.json", "w") as outfile:
-			json.dump({"identifier": self.identifier, "channel": self.channel, "useimages": self.useimages,
-			           "toxicity": self.toxicity}, outfile, ensure_ascii=False)
+		self.save()
 		await ctx.send(f'Set the farewell channel to `{channel.name}`')
 
 	@_farewell.command(name='useimages')
@@ -139,9 +128,7 @@ class Farewell:
 				if toggle == 'false':
 					self.useimages[str(ctx.guild.id)] = 'False'
 					await ctx.send('Disabled `useimages`')
-		with open("./data/userdata/config/farewell.json", "w") as outfile:
-			json.dump({"identifier": self.identifier, "channel": self.channel, "useimages": self.useimages,
-			           "toxicity": self.toxicity}, outfile, ensure_ascii=False)
+		self.save()
 
 	@_farewell.command(name='toxicity')
 	async def _toxicity(self, ctx, toggle=None):
@@ -165,20 +152,20 @@ class Farewell:
 				if toggle == 'false':
 					self.useimages[str(ctx.guild.id)] = 'False'
 					await ctx.send('Disabled `toxicity`')
-		with open("./data/userdata/config/farewell.json", "w") as outfile:
-			json.dump({"identifier": self.identifier, "channel": self.channel, "useimages": self.useimages,
-			           "toxicity": self.toxicity}, outfile, ensure_ascii=False)
+		self.save()
 
 	async def on_member_remove(self, member: discord.Member):
-		if str(member.guild.id) in self.identifier:
+		guild_id = str(member.guild.id)
+		if guild_id in self.identifier:
 			if self.identifier[str(member.guild.id)] == 'True':
-				response = random.choice(["Cya", "Goodbye", "Farewell"])
 				message = None
-				channel = self.bot.get_channel(self.channel[str(member.guild.id)])
+				channel = self.bot.get_channel(self.channel[guild_id])
 				path = os.getcwd() + "/data/images/reactions/farewell/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/farewell/"))
 				e = discord.Embed(color=0x80b0ff)
 				if self.toxicity[str(member.guild.id)] == 'True':
-					message = f'{response} {member.name} and good riddance'
+					toxicity = random.choice([
+						"and good riddance", "and please never come back", "I've always gagged every time I read one of your messages", "never come back"])
+					message = f'Cya {member.name}, {toxicity}'
 				else:
 					e.set_author(name=f'Cya {member.name}')
 				if self.useimages[str(member.guild.id)] == 'True':
