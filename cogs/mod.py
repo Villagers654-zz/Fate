@@ -1,5 +1,6 @@
 from discord.ext import commands
 from os.path import isfile
+from utils import colors
 import discord
 import asyncio
 import random
@@ -82,7 +83,7 @@ class Mod:
 			return await ctx.send("That user is above your paygrade, take a seat")
 		await ctx.guild.ban(user, reason=reason, delete_message_days=0)
 		path = os.getcwd() + "/data/images/reactions/beaned/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/beaned/"))
-		e = discord.Embed(color=0x80b0ff)
+		e = discord.Embed(color=colors.fate())
 		e.set_image(url="attachment://" + os.path.basename(path))
 		await ctx.send('◈ {} banned {} ◈'.format(ctx.message.author.display_name, user), file=discord.File(path, filename=os.path.basename(path)), embed=e)
 		await ctx.message.delete()
@@ -93,6 +94,27 @@ class Mod:
 				await user.send(f"You have been banned from **{ctx.guild.name}** by **{ctx.author.name}** for `{reason}`")
 			except Exception as e:
 				pass
+
+	@commands.command(name="softban")
+	@commands.has_permissions(ban_members=True)
+	@commands.cooldown(1, 25, commands.BucketType.user)
+	async def _softban(self, ctx, user:discord.Member, *, reason=None):
+		if user.top_role.position >= ctx.author.top_role.position:
+			return await ctx.send("That user is above your paygrade, take a seat")
+		await ctx.guild.ban(user, reason=reason, delete_message_days=0)
+		path = os.getcwd() + "/data/images/reactions/beaned/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/beaned/"))
+		e = discord.Embed(color=colors.fate())
+		e.set_image(url="attachment://" + os.path.basename(path))
+		await ctx.send('◈ {} banned {} ◈'.format(ctx.message.author.display_name, user), file=discord.File(path, filename=os.path.basename(path)), embed=e)
+		await ctx.message.delete()
+		if reason is None:
+			pass
+		else:
+			try:
+				await user.send(f"You have been soft-banned from **{ctx.guild.name}** by **{ctx.author.name}** for `{reason}`")
+			except Exception as e:
+				pass
+		await user.unban(reason="softban")
 
 	@commands.command(name="bans")
 	@commands.has_permissions(ban_members=True)
