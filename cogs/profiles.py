@@ -520,5 +520,10 @@ class Profiles:
 					with open("./data/userdata/xp.json", "w") as outfile:
 						json.dump({"global": self.global_data, "guilded": self.guilds_data}, outfile, ensure_ascii=False)
 
+	async def on_guild_remove(self, guild):
+		guild_id = str(guild.id)
+		if guild_id in self.guilds_data:
+			del self.guilds_data[guild_id]
+
 def setup(bot):
 	bot.add_cog(Profiles(bot))
