@@ -1,6 +1,6 @@
 from discord.ext import commands
-from data.config import token
 from termcolor import cprint
+from utils import config
 import traceback
 import datetime
 import discord
@@ -13,14 +13,12 @@ import time
 files = ['error_handler', 'owner', 'menus', 'core', 'mod', 'music', 'welcome', 'farewell', 'notes', 'archive', 'coffeeshop', 'custom',
          'actions', 'reactions', 'responses', 'textart', 'fun', 'math', 'dev', '4b4t', 'readme', 'legit', 'reload', 'embeds', 'warning',
          'profiles', 'save', 'clean_rythm', 'tother', 'utility', 'psutil', 'rules', 'duel_chat', 'selfroles', 'limiter', 'lock', 'backup',
-         'cookies', 'avapxian_regime', 'anti_purge']
+         'cookies', 'avapxian_regime', 'anti_purge', 'emojis']
 
 description = '''Fate[Zero]: Personal Bot'''
 bot = commands.Bot(command_prefix=['.', '<@506735111543193601>'], case_insensitive=True)
 bot.START_TIME = time.time()
 bot.remove_command('help')
-bot.LOAD_TIME = None
-bot.LOGIN_TIME = None
 bot.errorcount = 0
 previous = 0
 error = False
@@ -83,9 +81,10 @@ if __name__ == '__main__':
 			bot.errorcount += 1
 			m, s = divmod(time.time() - bot.START_TIME, 60)
 			h, m = divmod(m, 60)
-			cprint(f"{cogs}. Cog: {cog} - error - [{str(s)[:3]}]", "red")
-			bot.info += f"{cogs}. Cog: {cog} - error - [{str(s)[:3]}]\n"
+			cprint(f"{cogs}. Cog: {cog} - error - [{float(str(s)[:3]) - previous}]", "red")
+			bot.info += f"{cogs}. Cog: {cog} - error - [{float(str(s)[:3]) - previous}]\n"
 			error = traceback.format_exc()
+			previous = float(str(s)[:3])
 	if rank == cogs:
 		cprint(f"Loaded {rank}/{cogs} cogs :)", "magenta")
 	else:
@@ -94,4 +93,4 @@ if __name__ == '__main__':
 m, s = divmod(time.time() - bot.START_TIME, 60)
 h, m = divmod(m, 60)
 bot.LOAD_TIME = s
-bot.run(token.fatezero)
+bot.run(config.tokens.fatezero)
