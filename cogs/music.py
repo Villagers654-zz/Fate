@@ -265,9 +265,6 @@ class Music:
     async def __before_invoke(self, ctx):
         ctx.state = self.get_voice_state(ctx.guild)
 
-    async def __error(self, ctx, error):
-        await ctx.send(error)
-
     @commands.command(name='join', invoke_without_command=True)
     async def _join(self, ctx):
         destination = ctx.author.voice.channel
