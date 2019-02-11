@@ -27,7 +27,6 @@ class Events:
 			           "useimages": self.useimages}, outfile, ensure_ascii=False)
 
 	@commands.group(name='welcome')
-	@commands.has_permissions(manage_guild=True)
 	async def _welcome(self, ctx):
 		if ctx.invoked_subcommand is None:
 			await ctx.send('**Welcome Message Instructions:**\n'
@@ -35,9 +34,11 @@ class Events:
 			               '.welcome disable ~ `disables welcome messages`\n'
 			               '.welcome setchannel ~ `sets the channel`\n'
 			               '.welcome usepings ~ `true or false`\n'
-			               '.welcome useimages ~ `true or false`')
+			               '.welcome useimages ~ `true or false`\n'
+			               f'**Current Status:** {self.identifier[str(ctx.guild.id)]}')
 
 	@_welcome.command(name='toggle')
+	@commands.has_permissions(manage_guild=True)
 	async def _toggle(self, ctx):
 		"""Not in use, but still works"""
 		guild_id = str(ctx.guild.id)
@@ -66,6 +67,7 @@ class Events:
 		await ctx.send(report)
 
 	@_welcome.command(name='enable')
+	@commands.has_permissions(manage_guild=True)
 	async def _enable(self, ctx):
 		report = ""
 		if str(ctx.guild.id) not in self.identifier:
@@ -87,6 +89,7 @@ class Events:
 		await ctx.send(report)
 
 	@_welcome.command(name='disable')
+	@commands.has_permissions(manage_guild=True)
 	async def _disable(self, ctx):
 		report = ""
 		if str(ctx.guild.id) not in self.identifier:
@@ -99,6 +102,7 @@ class Events:
 		await ctx.send(report)
 
 	@_welcome.command(name='setchannel')
+	@commands.has_permissions(manage_guild=True)
 	async def _setchannel(self, ctx, channel: discord.TextChannel=None):
 		if channel is None:
 			channel = ctx.channel
@@ -107,6 +111,7 @@ class Events:
 		await ctx.send(f'Set the welcome channel to `{channel.name}`')
 
 	@_welcome.command(name='usepings')
+	@commands.has_permissions(manage_guild=True)
 	async def _usepings(self, ctx, toggle=None):
 		if toggle is None:
 			if str(ctx.guild.id) not in self.useimages:
@@ -131,6 +136,7 @@ class Events:
 		self.save()
 
 	@_welcome.command(name='useimages')
+	@commands.has_permissions(manage_guild=True)
 	async def _useimages(self, ctx, toggle=None):
 		if toggle is None:
 			if str(ctx.guild.id) not in self.useimages:
