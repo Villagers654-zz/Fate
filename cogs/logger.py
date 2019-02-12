@@ -90,7 +90,7 @@ class Logger:
 				e = discord.Embed(color=colors.pink())
 				e.title = "Message Edited"
 				e.set_thumbnail(url=before.author.avatar_url)
-				e.description = f"User Name: {before.author.display_name}\n"
+				e.description = f"Name: {before.author.display_name}\n"
 				e.add_field(name="Before:", value=f"`{cached}`", inline=False)
 				e.add_field(name="After:", value=f"`{msg.content}`", inline=False)
 				await channel.send(embed=e)
