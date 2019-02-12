@@ -54,7 +54,7 @@ async def on_ready():
 	created = datetime.datetime.now()
 	cprint(created.strftime(fmt), 'yellow')
 	if error is not False:
-		await bot.get_channel(534608853300412416).send(f"```{error}```")
+		await bot.get_channel(514214974868946964).send(f"```{error}```")
 	bot.loop.create_task(status_task())
 	m, s = divmod(time.time() - bot.START_TIME, 60)
 	h, m = divmod(m, 60)
