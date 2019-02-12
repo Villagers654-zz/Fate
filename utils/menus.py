@@ -8,7 +8,7 @@ core.add_field(name="◈ Music ◈", value="`join` `summon` `play` `stop` `skip`
 core.add_field(name="◈ Ads ◈", value="`discords` `servers` `realms`", inline=False)
 
 utility = discord.Embed(title="~~~====🥂🍸🍷Utility🍷🍸🥂====~~~", color=0x80b0ff)
-utility.add_field(name="◈ Main ◈", value="`channelinfo` `servericon` `serverinfo` `userinfo` `addemoji` `fromemoji` `delemoji` `makepoll` `welcome` `farewell` `owner` `avatar` `topic` `timer` `limit` `lock` `lockb` `lockm` `note` `quicknote` `notes` `wiki` `ud` `id`", inline=False)
+utility.add_field(name="◈ Main ◈", value="`channelinfo` `servericon` `serverinfo` `userinfo` `addemoji` `fromemoji` `delemoji` `makepoll` `welcome` `farewell` `logger` `owner` `avatar` `topic` `timer` `limit` `lock` `lockb` `lockm` `note` `quicknote` `notes` `wiki` `ud` `id`", inline=False)
 
 react = discord.Embed(title="~~~====🥂🍸🍷Reactions🍷🍸🥂====~~~", color=0x80b0ff)
 react.add_field(name="• FAQ", value="• Some commands may require you to add\ncontent after. For example: `.hug @person`", inline=False)
