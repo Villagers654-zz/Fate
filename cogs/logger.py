@@ -7,8 +7,6 @@ import json
 class Logger:
 	def __init__(self, bot):
 		self.bot = bot
-		self.messages = {}
-		self.guild_names = {}
 		self.channel = {}
 		if isfile("./data/userdata/logger.json"):
 			with open("./data/userdata/logger.json", "r") as infile:
@@ -61,40 +59,53 @@ class Logger:
 		self.save()
 		await ctx.send(f"I will now log actions to {channel.mention}")
 
-	async def on_ready(self):
-		for guild in self.bot.guilds:
-			guild_id = str(guild.id)
-			self.guild_names[guild_id] = guild.name
+	async def on_guild_update(self, before, after):
+		guild_id = str(after.id)
+		if guild_id in self.channel:
+			if before.name != after.name:
+				channel = self.bot.get_channel(self.channel[guild_id])
+				e = discord.Embed(color=colors.cyan())
+				e.title = "Guild Update"
+				e.set_thumbnail(url=before.icon_url)
+				e.description = \
+					f"Before: `{before.name}`\n" \
+					f"After: `{after.name}`"
+				await channel.send(embed=e)
 
-	async def on_message(self, m: discord.Message):
-		if isinstance(m.guild, discord.Guild):
-			message_id = str(m.id)
-			guild_id = str(m.guild.id)
-			if guild_id not in self.messages:
-				self.messages[guild_id] = {}
-			self.messages[guild_id][message_id] = m.content
+	async def on_guild_role_create(self, role):
+		guild_id = str(role.guild.id)
+		if guild_id in self.channel:
+			channel = self.bot.get_channel(self.channel[guild_id])
+			e = discord.Embed(color=colors.blue())
+			e.title = "Role Created"
+			e.set_thumbnail(url=role.guild.icon_url)
+			e.description = f"Name: {role.name}"
+			await channel.send(embed=e)
+
+	async def on_guild_role_delete(self, role):
+		guild_id = str(role.guild.id)
+		if guild_id in self.channel:
+			channel = self.bot.get_channel(self.channel[guild_id])
+			e = discord.Embed(color=colors.blue())
+			e.title = "Role Deleted"
+			e.set_thumbnail(url=role.guild.icon_url)
+			e.description = f"Name: {role.name}\n" \
+				f"Color: {role.color}\n" \
+				f"Users: [{len(list(role.members))}]"
+			await channel.send(embed=e)
 
 	async def on_message_edit(self, before, after):
 		if not before.author.bot:
-			message_id = str(before.id)
 			guild_id = str(before.guild.id)
 			if guild_id in self.channel:
 				channel = self.bot.get_channel(self.channel[guild_id])
-				msg = await before.channel.get_message(before.id)
-				if guild_id not in self.messages:
-					self.messages[guild_id] = {}
-				if message_id in self.messages[guild_id]:
-					cached = self.messages[guild_id][message_id]
-				else:
-					cached = "Uncached Message"
 				e = discord.Embed(color=colors.pink())
 				e.title = "Message Edited"
 				e.set_thumbnail(url=before.author.avatar_url)
 				e.description = f"Name: {before.author.display_name}\n"
-				e.add_field(name="Before:", value=f"`{cached}`", inline=False)
-				e.add_field(name="After:", value=f"`{msg.content}`", inline=False)
+				e.add_field(name="Before:", value=f"`{before.content}`", inline=False)
+				e.add_field(name="After:", value=f"`{after.content}`", inline=False)
 				await channel.send(embed=e)
-				self.messages[guild_id][message_id] = msg.content
 
 	async def on_message_delete(self, m: discord.Message):
 		guild_id = str(m.guild.id)
