@@ -179,7 +179,8 @@ class Utility:
 						e = discord.Embed(color=colors.fate())
 						e.set_author(name="Message Found 🔍", icon_url=ctx.author.avatar_url)
 						e.set_thumbnail(url=ctx.guild.icon_url)
-						e.description = f"[Jump to MSG]({msg.jump_url})"
+						e.description = f"**Author Name:** `{msg.author.name}`\n" \
+							f"[Jump to MSG]({msg.jump_url})"
 						if msg.content != "":
 							e.add_field(name="Full Content:", value=msg.content)
 						if len(msg.attachments) > 0:
@@ -189,29 +190,23 @@ class Utility:
 						return await ctx.message.delete()
 		await ctx.send("Nothing found")
 
-	@commands.command(pass_context=True)
+	@commands.command()
 	async def poll(self, ctx, *, arg):
-		try:
-			e=discord.Embed(description=arg, color=0x80b0ff)
-			e.set_author(name="| {} |".format(ctx.author.name), icon_url=ctx.author.avatar_url)
-			message = await ctx.send(embed=e)
-			await message.add_reaction(':approve:506020668241084416')
-			await asyncio.sleep(0.5)
-			await message.add_reaction(':unapprove:506020690584010772')
-			await asyncio.sleep(0.5)
-			await message.add_reaction('🤷')
-			await ctx.message.delete()
-		except Exception as e:
-			await ctx.send(f'**`ERROR:`** {type(e).__name__} - {e}')
+		e=discord.Embed(description=arg, color=0x80b0ff)
+		e.set_author(name="| {} |".format(ctx.author.name), icon_url=ctx.author.avatar_url)
+		message = await ctx.send(embed=e)
+		await message.add_reaction(':approve:506020668241084416')
+		await asyncio.sleep(0.5)
+		await message.add_reaction(':unapprove:506020690584010772')
+		await asyncio.sleep(0.5)
+		await message.add_reaction('🤷')
+		await ctx.message.delete()
 
 	@commands.command()
 	async def id(self, ctx, *, member: discord.Member=None):
-		try:
-			if member is None:
-				member = ctx.author
-			await ctx.send(member.id)
-		except Exception as e:
-			await ctx.send(f'**```ERROR: {type(e).__name__} - {e}```**')
+		if member is None:
+			member = ctx.author
+		await ctx.send(member.id)
 
 def setup(bot):
 	bot.add_cog(Utility(bot))
