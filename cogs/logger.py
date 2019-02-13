@@ -54,7 +54,7 @@ class Logger:
 		if channel is None:
 			self.channel[guild_id] = ctx.channel.id
 			self.save()
-			return await ctx.send(f"I will not log actions to {ctx.channel.mention}")
+			return await ctx.send(f"I will now log actions to {ctx.channel.mention}")
 		self.channel[guild_id] = channel.id
 		self.save()
 		await ctx.send(f"I will now log actions to {channel.mention}")
@@ -67,9 +67,9 @@ class Logger:
 				e = discord.Embed(color=colors.cyan())
 				e.title = "Guild Update"
 				e.set_thumbnail(url=before.icon_url)
-				e.description = \
-					f"Before: `{before.name}`\n" \
-					f"After: `{after.name}`"
+				e.add_field(name="Type: Name", value= \
+				f"Before: `{before.name}`\n" \
+				f"After: `{after.name}`")
 				await channel.send(embed=e)
 
 	async def on_guild_role_create(self, role):
@@ -102,7 +102,8 @@ class Logger:
 				e = discord.Embed(color=colors.pink())
 				e.title = "Message Edited"
 				e.set_thumbnail(url=before.author.avatar_url)
-				e.description = f"Name: {before.author.display_name}\n"
+				e.description = f"**Author Name:** {before.author.display_name}\n" \
+					f"**Channel:** {before.channel.mention}"
 				e.add_field(name="Before:", value=f"`{before.content}`", inline=False)
 				e.add_field(name="After:", value=f"`{after.content}`", inline=False)
 				await channel.send(embed=e)
@@ -114,15 +115,18 @@ class Logger:
 			e = discord.Embed(color=colors.purple())
 			e.title = "Message Deleted"
 			e.set_thumbnail(url=m.author.avatar_url)
-			e.description = f"User: {m.author.display_name}"
+			e.description = f"**Author Name:** {m.author.display_name}\n" \
+				f"**Channel:** {m.channel.mention}"
+			if m.pinned is True:
+				e.description += f"\nMsg was pinned"
 			if len(m.embeds) > 0:
 				if m.content == "":
-					m.content = "Discord Embed"
+					m.content = "Embed"
 			if m.content == "":
 				m.content = "None"
 			e.add_field(name="Content:", value=f"`{m.content}`", inline=False)
 			if len(m.attachments) > 0:
-				e.add_field(name="Images:", value="`they may not show after time`")
+				e.add_field(name="Cached Images:", value="`they may not show`")
 			for attachment in m.attachments:
 				e.set_image(url=attachment.proxy_url)
 			await channel.send(embed=e)
