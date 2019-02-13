@@ -124,7 +124,7 @@ class Logger:
 					m.content = "Embed"
 			if m.content == "":
 				m.content = "None"
-			e.add_field(name="Content:", value=f"`{m.content}`", inline=False)
+			e.add_field(name="Content:", value=f"`{m.content.replace('`', '')}`", inline=False)
 			if len(m.attachments) > 0:
 				e.add_field(name="Cached Images:", value="`they may not show`")
 			for attachment in m.attachments:
