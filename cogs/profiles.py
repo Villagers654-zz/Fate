@@ -367,6 +367,17 @@ class Profiles:
 		if ctx.invoked_subcommand is None:
 			pass
 
+	@_stats.command(name="fix")
+	@commands.check(luck)
+	async def _fix(self, ctx):
+		self.channel = ctx.channel.id
+		msg = await ctx.send(embed=discord.Embed(description="Preparing stats.."))
+		self.message = msg.id
+		with open("./data/config/stats.json", "w") as outfile:
+			json.dump({"statschannel": self.statschannel, "statsmessage": self.statsmessage}, outfile, ensure_ascii=False)
+		self.bot.loop.create_task(self.stats())
+		await ctx.message.delete()
+
 	@_stats.command(name='setchannel')
 	async def _setchannel(self, ctx, channel: discord.TextChannel=None):
 		if channel is None:
@@ -377,7 +388,7 @@ class Profiles:
 			json.dump({"statschannel": self.statschannel, "statsmessage": self.statsmessage}, outfile, ensure_ascii=False)
 		await ctx.message.delete()
 
-	@_stats.command(name='start', aliases=['fix'])
+	@_stats.command(name='start')
 	async def _start(self, ctx):
 		self.bot.loop.create_task(self.stats())
 		await ctx.message.delete()
@@ -427,8 +438,6 @@ class Profiles:
 				try:
 					message = await statschannel.get_message(self.statsmessage)
 					await message.edit(embed=e)
-				except discord.errors.HTTPException:
-					pass
 				except Exception as e:
 					preparing = discord.Embed()
 					preparing.description = 'preparing stats..'
