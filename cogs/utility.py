@@ -161,13 +161,24 @@ class Utility:
 			await ctx.send(f"{ctx.message.author.mention}, your timer for {r} has expired! I was instructed to remind you about `{remember}`!")
 
 	@commands.command(name="find", aliases=["find_message"])
-	async def _find(self, ctx, *, content):
+	async def _find(self, ctx, *, content=None):
+		if content is None:
+			e = discord.Embed(color=colors.fate())
+			e.set_author(name="Error ⚠", icon_url=ctx.author.avatar_url)
+			e.set_thumbnail(url=ctx.guild.icon_url)
+			e.description = \
+				"Content is a required argument\n" \
+			    "Usage: `.find {content}`\n" \
+				"Limit: 16,000"
+			e.set_footer(text="Searches for a message")
+			return await ctx.send(embed=e)
 		async with ctx.typing():
-			async for msg in ctx.channel.history(limit=50000):
+			async for msg in ctx.channel.history(limit=16000):
 				if ctx.message.id != msg.id:
 					if content.lower() in msg.content.lower():
 						e = discord.Embed(color=colors.fate())
 						e.set_author(name="Message Found 🔍", icon_url=ctx.author.avatar_url)
+						e.set_thumbnail(url=ctx.guild.icon_url)
 						e.description = f"[Jump to MSG]({msg.jump_url})"
 						if msg.content != "":
 							e.add_field(name="Full Content:", value=msg.content)
