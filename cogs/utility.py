@@ -160,6 +160,23 @@ class Utility:
 			await asyncio.sleep(float(t))
 			await ctx.send(f"{ctx.message.author.mention}, your timer for {r} has expired! I was instructed to remind you about `{remember}`!")
 
+	@commands.command(name="find", aliases=["find_message"])
+	async def _find(self, ctx, *, content):
+		async with ctx.typing():
+			async for msg in ctx.channel.history(limit=50000):
+				if ctx.message.id != msg.id:
+					if content.lower() in msg.content.lower():
+						e = discord.Embed(color=colors.fate())
+						e.set_author(name="Message Found 🔍", icon_url=ctx.author.avatar_url)
+						e.description = f"[Jump to MSG]({msg.jump_url})"
+						if msg.content != "":
+							e.add_field(name="Full Content:", value=msg.content)
+						if len(msg.attachments) > 0:
+							for attachment in msg.attachments:
+								e.set_image(url=attachment.url)
+						return await ctx.send(embed=e)
+		await ctx.send("Nothing found")
+
 	@commands.command(pass_context=True)
 	async def poll(self, ctx, *, arg):
 		try:
