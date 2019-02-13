@@ -174,7 +174,8 @@ class Utility:
 						if len(msg.attachments) > 0:
 							for attachment in msg.attachments:
 								e.set_image(url=attachment.url)
-						return await ctx.send(embed=e)
+						await ctx.send(embed=e)
+						return await ctx.message.delete()
 		await ctx.send("Nothing found")
 
 	@commands.command(pass_context=True)
