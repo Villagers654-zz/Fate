@@ -2,12 +2,14 @@ from discord.ext import commands
 from os.path import isfile
 from utils import colors
 import discord
+import asyncio
 import json
 
 class Logger:
 	def __init__(self, bot):
 		self.bot = bot
 		self.channel = {}
+		self.messages = {}
 		if isfile("./data/userdata/logger.json"):
 			with open("./data/userdata/logger.json", "r") as infile:
 				dat = json.load(infile)
@@ -58,6 +60,12 @@ class Logger:
 		self.channel[guild_id] = channel.id
 		self.save()
 		await ctx.send(f"I will now log actions to {channel.mention}")
+
+	async def on_message(self, m: discord.Message):
+		guild_id = str(m.guild.id)
+		if guild_id not in self.messages:
+			self.messages[guild_id] = []
+		self.messages[guild_id].append(m.id)
 
 	async def on_guild_update(self, before, after):
 		guild_id = str(after.id)
@@ -132,6 +140,20 @@ class Logger:
 			for attachment in m.attachments:
 				e.set_image(url=attachment.proxy_url)
 			await channel.send(embed=e)
+
+	async def on_raw_message_delete(self, payload):
+		await asyncio.sleep(0.21)
+		guild_id = str(payload.guild_id)
+		if guild_id in self.channel:
+			if guild_id not in self.messages:
+				self.messages[guild_id] = []
+			if payload.message_id not in self.messages[guild_id]:
+				e = discord.Embed(color=colors.purple())
+				e.title = "Uncached Message Deleted"
+				e.set_thumbnail(url=self.bot.get_guild(payload.guild_id).icon_url)
+				e.description = f"**Channel:** {self.bot.get_channel(payload.channel_id).mention}\n" \
+					f"**Msg ID:** `{payload.message_id}`"
+				await self.bot.get_channel(self.channel[guild_id]).send(embed=e)
 
 	async def on_member_join(self, m: discord.Member):
 		guild_id = str(m.guild.id)
