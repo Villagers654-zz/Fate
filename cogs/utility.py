@@ -8,6 +8,7 @@ import asyncio
 class Utility:
 	def __init__(self, bot):
 		self.bot = bot
+		self.find = {}
 
 	@commands.command()
 	async def channelinfo(self, ctx, channel=None):
@@ -161,6 +162,7 @@ class Utility:
 			await ctx.send(f"{ctx.message.author.mention}, your timer for {r} has expired! I was instructed to remind you about `{remember}`!")
 
 	@commands.command(name="find", aliases=["find_message"])
+	@commands.cooldown(1, 5, commands.BucketType.channel)
 	async def _find(self, ctx, *, content=None):
 		if content is None:
 			e = discord.Embed(color=colors.fate())
@@ -173,7 +175,11 @@ class Utility:
 			e.set_footer(text="Searches for a message")
 			return await ctx.send(embed=e)
 		async with ctx.typing():
-			async for msg in ctx.channel.history(limit=16000):
+			channel_id = str(ctx.channel.id)
+			if channel_id in self.find:
+				return await ctx.send("I'm already searching")
+			self.find[channel_id] = True
+			async for msg in ctx.channel.history(limit=25000):
 				if ctx.message.id != msg.id:
 					if content.lower() in msg.content.lower():
 						e = discord.Embed(color=colors.fate())
@@ -187,8 +193,10 @@ class Utility:
 							for attachment in msg.attachments:
 								e.set_image(url=attachment.url)
 						await ctx.send(embed=e)
+						del self.find[channel_id]
 						return await ctx.message.delete()
 		await ctx.send("Nothing found")
+		del self.find[channel_id]
 
 	@commands.command()
 	async def poll(self, ctx, *, arg):
