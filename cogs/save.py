@@ -15,24 +15,6 @@ class ServerSave:
 	@commands.command(pass_context=True, aliases=['ss'])
 	@commands.check(luck)
 	async def serversave(self, ctx, *, server=""):
-		"""Save an entire server! WHAT?!
-		Saves the details of a server:
-		- name
-		- roles
-		- emoji
-		- region
-		- afk timeout
-		- afk channel
-		- icon
-		- 2FA level
-		- verification level
-		- channels
-	- categories
-
-		[p]serversave [server] - Save the specified server (defaults to the current server) to a file in the server_save folder.
-
-		Saved servers can be loaded with the [p]serverload command ([p]help serverload for more information)
-		"""
 		if server:
 			ctx.guild = self.bot.get_guild(int(server))
 		if not ctx.guild:
