@@ -170,10 +170,10 @@ class Logger:
 
 	async def on_member_remove(self, m: discord.Member):
 		guild_id = str(m.guild.id)
-		async for entry in m.guild.audit_logs(limit=1):
-			if str(entry.action) == "AuditLogAction.ban":
-				return
 		if guild_id in self.channel:
+			async for entry in m.guild.audit_logs(limit=1):
+				if str(entry.action) == "AuditLogAction.ban":
+					return
 			channel = self.bot.get_channel(self.channel[guild_id])
 			e = discord.Embed(color=colors.red())
 			e.title = "Member Left or Was Kicked"
