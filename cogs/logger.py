@@ -170,6 +170,9 @@ class Logger:
 
 	async def on_member_remove(self, m: discord.Member):
 		guild_id = str(m.guild.id)
+		async for entry in m.guild.audit_logs(limit=1):
+			if str(entry.action) == "AuditLogAction.ban":
+				return
 		if guild_id in self.channel:
 			channel = self.bot.get_channel(self.channel[guild_id])
 			e = discord.Embed(color=colors.red())
@@ -183,6 +186,9 @@ class Logger:
 	async def on_member_ban(self, guild, user):
 		guild_id = str(guild.id)
 		if guild_id in self.channel:
+			async for entry in guild.audit_logs(limit=5, action=discord.AuditLogAction.ban):
+				author = entry.user
+				break
 			channel = self.bot.get_channel(self.channel[guild_id])
 			e = discord.Embed(color=colors.red())
 			e.set_thumbnail(url=user.avatar_url)
@@ -190,7 +196,8 @@ class Logger:
 				e.title = "Member Banned"
 			if isinstance(user, discord.User):
 				e.title = "User Banned"
-			e.description = f"Name: {user.name}\n"
+			e.description = f"Member Name: {user.name}\n" \
+				f"Banned by: {author.name}"
 			await channel.send(embed=e)
 
 	async def on_member_unban(self, guild, user):
