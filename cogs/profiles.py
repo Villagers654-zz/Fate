@@ -355,6 +355,8 @@ class Profiles:
 			guild = self.bot.get_guild(int(guild_id))
 			if isinstance(guild, discord.Guild):
 				name = guild.name
+			else:
+				del self.guilds_data[guild_id]
 			embed.description += "**#{}.** `{}`: {}\n".format(rank, name, xp)
 			rank += 1
 			embed.set_thumbnail(url=ctx.guild.icon_url)
