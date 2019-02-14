@@ -103,18 +103,19 @@ class Logger:
 			await channel.send(embed=e)
 
 	async def on_message_edit(self, before, after):
-		if not before.author.bot:
-			guild_id = str(before.guild.id)
-			if guild_id in self.channel:
-				channel = self.bot.get_channel(self.channel[guild_id])
-				e = discord.Embed(color=colors.pink())
-				e.title = "Message Edited"
-				e.set_thumbnail(url=before.author.avatar_url)
-				e.description = f"**Author Name:** {before.author.display_name}\n" \
-					f"**Channel:** {before.channel.mention}"
-				e.add_field(name="Before:", value=f"`{before.content}`", inline=False)
-				e.add_field(name="After:", value=f"`{after.content}`", inline=False)
-				await channel.send(embed=e)
+		guild_id = str(before.guild.id)
+		if guild_id in self.channel:
+			if before.channel.id != self.channel[guild_id]:
+				if len(after.embeds) == 0:
+					channel = self.bot.get_channel(self.channel[guild_id])
+					e = discord.Embed(color=colors.pink())
+					e.title = "Message Edited"
+					e.set_thumbnail(url=before.author.avatar_url)
+					e.description = f"**Author Name:** {before.author.display_name}\n" \
+						f"**Channel:** {before.channel.mention}"
+					e.add_field(name="Before:", value=f"`{before.content}`", inline=False)
+					e.add_field(name="After:", value=f"`{after.content}`", inline=False)
+					await channel.send(embed=e)
 
 	async def on_message_delete(self, m: discord.Message):
 		guild_id = str(m.guild.id)
@@ -142,9 +143,9 @@ class Logger:
 			await channel.send(embed=e)
 
 	async def on_raw_message_delete(self, payload):
-		await asyncio.sleep(0.21)
 		guild_id = str(payload.guild_id)
 		if guild_id in self.channel:
+			await asyncio.sleep(1)
 			if guild_id not in self.messages:
 				self.messages[guild_id] = []
 			if payload.message_id not in self.messages[guild_id]:
