@@ -372,8 +372,8 @@ class Profiles:
 			embed.set_footer(text=random.choice(["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready", "Powered by slaves", "Powered by Beddys ego", "Powered by Samsung", "Powered by the supreme", "Powered by doritos", "Cooldown: 10 seconds"]))
 		await ctx.send(embed=embed)
 
-	@commands.command(name="mlb")
-	async def _mlb(self, ctx):
+	@commands.command(name="mleaderboard", aliases=["mlb"])
+	async def _mleaderboard(self, ctx):
 		guild_id = str(ctx.guild.id)
 		users = list(self.monthly_guilds_data[guild_id])
 		xp = {}
@@ -400,8 +400,8 @@ class Profiles:
 				 "Powered by doritos", "Cooldown: 10 seconds"]))
 		await ctx.send(embed=embed)
 
-	@commands.command(name="gmlb")
-	async def _gmlb(self, ctx):
+	@commands.command(name="gmleaderboard", aliases=["gmlb"])
+	async def _gmleaderboard(self, ctx):
 		users = list(self.monthly_global_data)
 		xp = {}
 		for user in users:
