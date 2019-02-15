@@ -104,19 +104,20 @@ class Logger:
 			await channel.send(embed=e)
 
 	async def on_message_edit(self, before, after):
-		guild_id = str(before.guild.id)
-		if guild_id in self.channel:
-			if before.channel.id != self.channel[guild_id]:
-				if len(after.embeds) == 0:
-					channel = self.bot.get_channel(self.channel[guild_id])
-					e = discord.Embed(color=colors.pink())
-					e.title = "Message Edited"
-					e.set_thumbnail(url=before.author.avatar_url)
-					e.description = f"**Author Name:** {before.author.display_name}\n" \
-						f"**Channel:** {before.channel.mention}"
-					e.add_field(name="Before:", value=f"`{before.content}`", inline=False)
-					e.add_field(name="After:", value=f"`{after.content}`", inline=False)
-					await channel.send(embed=e)
+		if before.pinned == after.pinned:
+			guild_id = str(before.guild.id)
+			if guild_id in self.channel:
+				if before.channel.id != self.channel[guild_id]:
+					if len(after.embeds) == 0:
+						channel = self.bot.get_channel(self.channel[guild_id])
+						e = discord.Embed(color=colors.pink())
+						e.title = "Message Edited"
+						e.set_thumbnail(url=before.author.avatar_url)
+						e.description = f"**Author Name:** {before.author.display_name}\n" \
+							f"**Channel:** {before.channel.mention}"
+						e.add_field(name="Before:", value=f"`{before.content}`", inline=False)
+						e.add_field(name="After:", value=f"`{after.content}`", inline=False)
+						await channel.send(embed=e)
 
 	async def on_message_delete(self, m: discord.Message):
 		guild_id = str(m.guild.id)
@@ -156,6 +157,23 @@ class Logger:
 				e.description = f"**Channel:** {self.bot.get_channel(payload.channel_id).mention}\n" \
 					f"**Msg ID:** `{payload.message_id}`"
 				await self.bot.get_channel(self.channel[guild_id]).send(embed=e)
+
+	async def on_member_update(self, before, after):
+		guild_id = str(before.guild.id)
+		user = before
+		if guild_id in self.channel:
+			async for entry in before.guild.audit_logs(action=discord.AuditLogAction.member_update, limit=1):
+				user = entry.user
+			channel = self.bot.get_channel(self.channel[guild_id])
+			if before.display_name != after.display_name:
+				e = discord.Embed(color=colors.orange())
+				e.title = "Nickname Changed"
+				e.set_thumbnail(url=before.avatar_url)
+				e.description = f"User: {after.name}\n" \
+					f"Changed by: {user.name}\n" \
+					f"Before: {before.display_name}\n" \
+					f"After: {after.display_name}"
+				await channel.send(embed=e)
 
 	async def on_member_join(self, m: discord.Member):
 		guild_id = str(m.guild.id)
