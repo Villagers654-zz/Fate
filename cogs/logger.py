@@ -4,6 +4,7 @@ from utils import colors
 import discord
 import asyncio
 import json
+import time
 
 class Logger:
 	def __init__(self, bot):
@@ -171,7 +172,7 @@ class Logger:
 	async def on_member_remove(self, m: discord.Member):
 		guild_id = str(m.guild.id)
 		if guild_id in self.channel:
-			async for entry in m.guild.audit_logs(limit=1):
+			async for entry in m.guild.audit_logs(limit=1, after=time.time() - 1):
 				if str(entry.action) == "AuditLogAction.ban":
 					return
 			channel = self.bot.get_channel(self.channel[guild_id])
