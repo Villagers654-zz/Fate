@@ -9,16 +9,16 @@ class AutoRole:
 		self.bot = bot
 		self.roles = {}
 		if isfile("./data/userdata/autorole.json"):
-			with open("./data/userdata/autorole.json") as infile:
+			with open("./data/userdata/autorole.json", "r") as infile:
 				dat = json.load(infile)
 				if "roles" in dat:
-					self.role = dat["roles"]
+					self.roles = dat["roles"]
 
 	def save_roles(self):
-		with open("./data/userdata/autorole.json") as outfile:
-			json.dump({"role": self.role}, outfile, ensure_ascii=False)
+		with open("./data/userdata/autorole.json", "w") as outfile:
+			json.dump({"roles": self.roles}, outfile, ensure_ascii=False)
 
-	@commands.group(name="autorole")
+	@commands.command(name="autorole")
 	@commands.has_permissions(manage_roles=True)
 	async def _autorole(self, ctx, item: commands.clean_content=None):
 		guild_id = str(ctx.guild.id)
@@ -27,7 +27,7 @@ class AutoRole:
 			e.set_author(name="Auto-Role Help", icon_url=self.bot.user.avatar_url)
 			e.set_thumbnail(url=ctx.author.avatar_url)
 			e.add_field(name="◈ Usage ◈", value=
-			".autorole {role}\n"
+			".autorole role\n"
 			".autorole list\n"
 			".autorole clear", inline=False)
 			return await ctx.send(embed=e)
@@ -36,7 +36,7 @@ class AutoRole:
 				return await ctx.send("Auto role is not active")
 			del self.roles[guild_id]
 			self.save_roles()
-			return await ctx.send("Removed role(s) from auto-role")
+			return await ctx.send("Cleared list of roles")
 		if item.lower() == "list":
 			if guild_id not in self.roles:
 				return await ctx.send("Auto role is not active")
@@ -52,11 +52,19 @@ class AutoRole:
 			self.roles[guild_id] = []
 		for role in ctx.guild.roles:
 			if item == role.name.lower():
+				if role.position > ctx.author.top_role.position:
+					return await ctx.send("That roles above your paygrade, take a seat")
+				if role.id in self.roles[guild_id]:
+					return await ctx.send("That roles already in use")
 				self.roles[guild_id].append(role.id)
 				self.save_roles()
 				return await ctx.send(f"Added `{role.name}` to the list of auto roles")
 		for role in ctx.guild.roles():
 			if item in role.name.lower():
+				if role.position > ctx.author.top_role.position:
+					return await ctx.send("That roles above your paygrade, take a seat")
+				if role.id in self.roles[guild_id]:
+					return await ctx.send("That roles already in use")
 				self.roles[guild_id].append(role.id)
 				self.save_roles()
 				return await ctx.send(f"Added `{role.name}` to the list of auto roles")
