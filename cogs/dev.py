@@ -4,6 +4,7 @@ import discord
 import asyncio
 import random
 import psutil
+import time
 import os
 
 class Dev:
