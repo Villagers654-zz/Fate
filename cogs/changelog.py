@@ -1,4 +1,4 @@
-from utils import checks, colors, config
+from utils import colors, config
 from discord.ext import commands
 from os.path import isfile
 import datetime
