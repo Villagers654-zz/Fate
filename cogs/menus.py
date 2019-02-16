@@ -1,4 +1,4 @@
-from utils import bytes2human as p, menus as m
+from utils import bytes2human as p, menus as m, test as t
 from discord.ext import commands
 import discord
 import asyncio
@@ -11,364 +11,43 @@ class Menus:
 	def __init__(self, bot):
 		self.bot = bot
 
+	@commands.command()
+	async def test(self, ctx):
+		await ctx.send(embed=t.e)
+
 	@commands.group(name='help')
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def _help(self, ctx):
 		if ctx.invoked_subcommand is None:
 			e = discord.Embed(title="~~~====🥂🍸🍷Help🍷🍸🥂====~~~", color=0x80b0ff)
-			e.add_field(name="◈ Information ◈", value=
-			"**Dev:** Luck#1574\n"
-			"**Version:** 1.0.0a\n"
-			"**Prefix:** `.`", inline=False)
-			e.add_field(name="◈ Commands ◈", value=
-			"• core ~ `main bot usage`\n"
-			"• utility ~ `helpful commands`\n"
-			"• react ~ `reaction gifs / images`\n"
-			"• mod ~ `moderation commands`\n"
-			"• fun ~ `entertaining stuff`\n"
-			"• art ~ `subpar textart ヽ(ﾟｰﾟ)ﾉ`", inline=False)
-			await ctx.send(embed=e)
-			def pred(m):
-				return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+			e.add_field(name="◈ Core ◈", value="`leaderboard` `gleaderboard` `ggleaderboard` `mleaderboard` `gmleaderboard` `partners` `discords` `servers` `realms` `repeat` `links` `ping` `info`", inline=False)
+			e.add_field(name="◈ Responses ◈", value="**`disableresponses` `enableresponses`:** `@Fate` `hello` `ree` `kys` `gm` `gn`", inline=False)
+			e.add_field(name="◈ Music ◈", value="`join` `summon` `play` `stop` `skip` `pause` `resume` `volume` `queue` `remove` `shuffle` `dc` `np`", inline=False)
+			e.add_field(name="◈ Utility ◈", value="`channelinfo` `servericon` `serverinfo` `userinfo` `autorole` `addemoji` `fromemoji` `delemoji` `makepoll` `welcome` `farewell` `logger` `owner` `avatar` `topic` `timer` `limit` `lock` `lockb` `lockm` `note` `quicknote` `notes` `wiki` `find` `ud` `id`", inline=False)
+			e.add_field(name="◈ Reactions ◈", value="`intimidate` `powerup` `observe` `disgust` `admire` `angery` `cuddle` `teasip` `psycho` `thonk` `shrug` `yawn` `hide` `wine` `sigh` `kiss` `kill` `slap` `hug` `pat` `cry`", inline=False)
+			e.add_field(name="◈ Mod ◈", value="`mute` `unmute` `vcmute` `vcunmute` `warn` `clearwarns` `addrole` `removerole` `selfroles` `delete` `purge` `nick` `massnick` `kick` `mute` `ban` `pin`", inline=False)
+			e.add_field(name="◈ Fun ◈", value="`personality` `liedetector` `fancify` `coffee` `encode` `decode` `choose` `notice` `quote` `mock` `meme` `rate` `roll` `soul` `gay` `sue` `fap` `ask` `rps` `rr` `cookie` `shoot` `inject` `slice` `boop` `stab` `kill`", inline=False)
 			try:
-				msg = await self.bot.wait_for('message', check=pred, timeout=25)
-			except asyncio.TimeoutError:
-				pass
-			else:
-				if msg.content.lower() == "k":
-					await ctx.message.delete()
-					await asyncio.sleep(0.5)
-					await msg.delete()
-					async for msg in ctx.channel.history(limit=10):
-						if msg.author.id == self.bot.user.id:
-							if len(msg.embeds) > 0:
-								await msg.delete()
-								break
-
-	@_help.command(name='core')
-	async def _core(self, ctx):
-		await ctx.send(embed=m.core)
-		def pred(m):
-			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
-		try:
-			msg = await self.bot.wait_for('message', check=pred, timeout=25)
-		except asyncio.TimeoutError:
-			pass
-		else:
-			if msg.content.lower() == "k":
-				await ctx.message.delete()
-				await asyncio.sleep(0.5)
-				await msg.delete()
-				async for msg in ctx.channel.history(limit=10):
-					if msg.author.id == self.bot.user.id:
-						if len(msg.embeds) > 0:
-							await msg.delete()
-							break
-
-	@_help.command(name='utility')
-	async def _utility(self, ctx):
-		await ctx.send(embed=m.utility)
-		def pred(m):
-			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
-		try:
-			msg = await self.bot.wait_for('message', check=pred, timeout=25)
-		except asyncio.TimeoutError:
-			pass
-		else:
-			if msg.content.lower() == "k":
-				await ctx.message.delete()
-				await asyncio.sleep(0.5)
-				await msg.delete()
-				async for msg in ctx.channel.history(limit=10):
-					if msg.author.id == self.bot.user.id:
-						if len(msg.embeds) > 0:
-							await msg.delete()
-							break
-
-	@_help.command(name='react')
-	async def _react(self, ctx):
-		await ctx.send(embed=m.react)
-		def pred(m):
-			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
-		try:
-			msg = await self.bot.wait_for('message', check=pred, timeout=25)
-		except asyncio.TimeoutError:
-			pass
-		else:
-			if msg.content.lower() == "k":
-				await ctx.message.delete()
-				await asyncio.sleep(0.5)
-				await msg.delete()
-				async for msg in ctx.channel.history(limit=10):
-					if msg.author.id == self.bot.user.id:
-						if len(msg.embeds) > 0:
-							await msg.delete()
-							break
-
-	@_help.command(name='mod')
-	async def _mod(self, ctx):
-		await ctx.send(embed=m.mod)
-		def pred(m):
-			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
-		try:
-			msg = await self.bot.wait_for('message', check=pred, timeout=25)
-		except asyncio.TimeoutError:
-			pass
-		else:
-			if msg.content.lower() == "k":
-				await ctx.message.delete()
-				await asyncio.sleep(0.5)
-				await msg.delete()
-				async for msg in ctx.channel.history(limit=10):
-					if msg.author.id == self.bot.user.id:
-						if len(msg.embeds) > 0:
-							await msg.delete()
-							break
-
-	@_help.command(name='fun')
-	async def _fun(self, ctx):
-		await ctx.send(embed=m.fun)
-		def pred(m):
-			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
-		try:
-			msg = await self.bot.wait_for('message', check=pred, timeout=25)
-		except asyncio.TimeoutError:
-			pass
-		else:
-			if msg.content.lower() == "k":
-				await ctx.message.delete()
-				await asyncio.sleep(0.5)
-				await msg.delete()
-				async for msg in ctx.channel.history(limit=10):
-					if msg.author.id == self.bot.user.id:
-						if len(msg.embeds) > 0:
-							await msg.delete()
-							break
-
-	@_help.command(name='art')
-	async def _art(self, ctx):
-		await ctx.send(embed=m.art)
-		def pred(m):
-			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
-		try:
-			msg = await self.bot.wait_for('message', check=pred, timeout=25)
-		except asyncio.TimeoutError:
-			pass
-		else:
-			if msg.content.lower() == "k":
-				await ctx.message.delete()
-				await asyncio.sleep(0.5)
-				await msg.delete()
-				async for msg in ctx.channel.history(limit=10):
-					if msg.author.id == self.bot.user.id:
-						if len(msg.embeds) > 0:
-							await msg.delete()
-							break
-
-	@_help.command(name='m')
-	async def _m(self, ctx):
-		await ctx.send(embed=m.m)
-		def pred(m):
-			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
-		try:
-			msg = await self.bot.wait_for('message', check=pred, timeout=25)
-		except asyncio.TimeoutError:
-			pass
-		else:
-			if msg.content.lower() == "k":
-				await ctx.message.delete()
-				await asyncio.sleep(0.5)
-				await msg.delete()
-				async for msg in ctx.channel.history(limit=10):
-					if msg.author.id == self.bot.user.id:
-						if len(msg.embeds) > 0:
-							await msg.delete()
-							break
-
-	@_help.command(name='e')
-	async def _e(self, ctx):
-		await ctx.send(embed=m.e)
-		def pred(m):
-			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
-		try:
-			msg = await self.bot.wait_for('message', check=pred, timeout=25)
-		except asyncio.TimeoutError:
-			pass
-		else:
-			if msg.content.lower() == "k":
-				await ctx.message.delete()
-				await asyncio.sleep(0.5)
-				await msg.delete()
-				async for msg in ctx.channel.history(limit=10):
-					if msg.author.id == self.bot.user.id:
-						if len(msg.embeds) > 0:
-							await msg.delete()
-							break
-
-	@commands.command()
-	@commands.cooldown(1, 5, commands.BucketType.user)
-	async def core(self, ctx):
-		await ctx.send(embed=m.core)
-		def pred(m):
-			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
-		try:
-			msg = await self.bot.wait_for('message', check=pred, timeout=25)
-		except asyncio.TimeoutError:
-			pass
-		else:
-			if msg.content.lower() == "k":
-				await ctx.message.delete()
-				await asyncio.sleep(0.5)
-				await msg.delete()
-				async for msg in ctx.channel.history(limit=10):
-					if msg.author.id == self.bot.user.id:
-						if len(msg.embeds) > 0:
-							await msg.delete()
-							break
-
-	@commands.command()
-	async def utility(self, ctx):
-		await ctx.send(embed=m.utility)
-		def pred(m):
-			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
-		try:
-			msg = await self.bot.wait_for('message', check=pred, timeout=25)
-		except asyncio.TimeoutError:
-			pass
-		else:
-			if msg.content.lower() == "k":
-				await ctx.message.delete()
-				await asyncio.sleep(0.5)
-				await msg.delete()
-				async for msg in ctx.channel.history(limit=10):
-					if msg.author.id == self.bot.user.id:
-						if len(msg.embeds) > 0:
-							await msg.delete()
-							break
-
-	@commands.command()
-	@commands.cooldown(1, 5, commands.BucketType.user)
-	async def react(self, ctx):
-		await ctx.send(embed=m.react)
-		def pred(m):
-			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
-		try:
-			msg = await self.bot.wait_for('message', check=pred, timeout=25)
-		except asyncio.TimeoutError:
-			pass
-		else:
-			if msg.content.lower() == "k":
-				await ctx.message.delete()
-				await asyncio.sleep(0.5)
-				await msg.delete()
-				async for msg in ctx.channel.history(limit=10):
-					if msg.author.id == self.bot.user.id:
-						if len(msg.embeds) > 0:
-							await msg.delete()
-							break
-
-	@commands.command()
-	@commands.cooldown(1, 5, commands.BucketType.user)
-	async def mod(self, ctx):
-		await ctx.send(embed=m.mod)
-		def pred(m):
-			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
-		try:
-			msg = await self.bot.wait_for('message', check=pred, timeout=25)
-		except asyncio.TimeoutError:
-			pass
-		else:
-			if msg.content.lower() == "k":
-				await ctx.message.delete()
-				await asyncio.sleep(0.5)
-				await msg.delete()
-				async for msg in ctx.channel.history(limit=10):
-					if msg.author.id == self.bot.user.id:
-						if len(msg.embeds) > 0:
-							await msg.delete()
-							break
-
-	@commands.command()
-	@commands.cooldown(1, 5, commands.BucketType.user)
-	async def fun(self, ctx):
-		await ctx.send(embed=m.fun)
-		def pred(m):
-			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
-		try:
-			msg = await self.bot.wait_for('message', check=pred, timeout=25)
-		except asyncio.TimeoutError:
-			pass
-		else:
-			if msg.content.lower() == "k":
-				await ctx.message.delete()
-				await asyncio.sleep(0.5)
-				await msg.delete()
-				async for msg in ctx.channel.history(limit=10):
-					if msg.author.id == self.bot.user.id:
-						if len(msg.embeds) > 0:
-							await msg.delete()
-							break
-
-	@commands.command()
-	async def art(self, ctx):
-		await ctx.send(embed=m.art)
-		def pred(m):
-			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
-		try:
-			msg = await self.bot.wait_for('message', check=pred, timeout=25)
-		except asyncio.TimeoutError:
-			pass
-		else:
-			if msg.content.lower() == "k":
-				await ctx.message.delete()
-				await asyncio.sleep(0.5)
-				await msg.delete()
-				async for msg in ctx.channel.history(limit=10):
-					if msg.author.id == self.bot.user.id:
-						if len(msg.embeds) > 0:
-							await msg.delete()
-							break
-
-	@commands.command()
-	@commands.cooldown(1, 5, commands.BucketType.user)
-	async def m(self, ctx):
-		await ctx.send(embed=m.m)
-		def pred(m):
-			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
-		try:
-			msg = await self.bot.wait_for('message', check=pred, timeout=25)
-		except asyncio.TimeoutError:
-			pass
-		else:
-			if msg.content.lower() == "k":
-				await ctx.message.delete()
-				await asyncio.sleep(0.5)
-				await msg.delete()
-				async for msg in ctx.channel.history(limit=10):
-					if msg.author.id == self.bot.user.id:
-						if len(msg.embeds) > 0:
-							await msg.delete()
-							break
-
-	@commands.command()
-	async def e(self, ctx):
-		await ctx.send(embed=m.e)
-		def pred(m):
-			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
-		try:
-			msg = await self.bot.wait_for('message', check=pred, timeout=25)
-		except asyncio.TimeoutError:
-			pass
-		else:
-			if msg.content.lower() == "k":
-				await ctx.message.delete()
-				await asyncio.sleep(0.5)
-				await msg.delete()
-				async for msg in ctx.channel.history(limit=10):
-					if msg.author.id == self.bot.user.id:
-						if len(msg.embeds) > 0:
-							await msg.delete()
-							break
+				await ctx.author.send(embed=e)
+				await ctx.send("Help menu sent to your dm ✅")
+			except:
+				await ctx.send("Failed to send help menu to dm ❎", embed=e)
+				def pred(m):
+					return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+				try:
+					msg = await self.bot.wait_for('message', check=pred, timeout=25)
+				except asyncio.TimeoutError:
+					pass
+				else:
+					if msg.content.lower() == "k":
+						await ctx.message.delete()
+						await asyncio.sleep(0.5)
+						await msg.delete()
+						async for msg in ctx.channel.history(limit=10):
+							if msg.author.id == self.bot.user.id:
+								if len(msg.embeds) > 0:
+									await msg.delete()
+									break
 
 	@commands.command(name='info')
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -536,7 +215,6 @@ class Menus:
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def credits(self, ctx, content='repeating'):
-		e = discord.Embed()
 		embed=discord.Embed(title="~~~====🥂🍸🍷Credits🍷🍸🥂====~~~", color=0x80b0ff)
 		embed.add_field(name="CortexPE#8680", value="• Tought me litterally 99.9% of fates code (and dealt with my storms of questions)", inline=False)
 		embed.add_field(name="Tothy", value="• existed", inline=False)
