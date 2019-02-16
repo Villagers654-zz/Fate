@@ -11,10 +11,6 @@ class Menus:
 	def __init__(self, bot):
 		self.bot = bot
 
-	@commands.command()
-	async def test(self, ctx):
-		await ctx.send(embed=t.e)
-
 	@commands.group(name='help')
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def _help(self, ctx):
