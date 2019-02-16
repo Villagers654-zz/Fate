@@ -1,6 +1,7 @@
 from discord.ext import commands
 import traceback
 import discord
+import asyncio
 import sys
 
 class ErrorHandler:
@@ -30,27 +31,34 @@ class ErrorHandler:
 		if isinstance(error, ignored):
 			return
 		elif isinstance(error, commands.DisabledCommand):
-			await ctx.send(f'`{ctx.command}` has been disabled.')
+			return await ctx.send(f'`{ctx.command}` has been disabled.')
 		elif isinstance(error, commands.NoPrivateMessage):
 			try:
 				return await ctx.author.send(f'`{ctx.command}` can not be used in Private Messages.')
 			except:
-				pass
+				return
 		elif isinstance(error, commands.BadArgument):
 			if ctx.command.qualified_name == 'tag list':
-				await ctx.send('I could not find that member. Please try again.')
+				return await ctx.send('I could not find that member. Please try again.')
 		elif isinstance(error, commands.CommandOnCooldown):
-			await ctx.message.add_reaction('⏳')
+			return await ctx.message.add_reaction('⏳')
 		elif isinstance(error, commands.MissingRequiredArgument):
-			await ctx.send(error)
+			return await ctx.send(error)
 		elif isinstance(error, commands.CheckFailure):
 			await ctx.message.add_reaction('⚠')
+			def check(reaction, user):
+				return user == ctx.author and str(reaction.emoji) == '⚠'
+			try:
+				reaction, user = await self.bot.wait_for('reaction_add', timeout=25.0, check=check)
+			except asyncio.TimeoutError:
+				return
+			else:
+				return await ctx.send(error)
 		elif isinstance(error, discord.errors.Forbidden):
-			await ctx.send("I'm missing permissions")
-		else:
-			print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
-			traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
-			await ctx.send(error)
+			return await ctx.send("I'm missing permissions")
+		print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
+		traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
+		await ctx.send(error)
 
 def setup(bot):
 	bot.add_cog(ErrorHandler(bot))
