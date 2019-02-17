@@ -1,6 +1,5 @@
 from discord.ext import commands
 from os.path import isfile
-import discord
 import json
 import time
 
@@ -53,7 +52,7 @@ class AntiPurge:
 		guild_id = str(m.guild.id)
 		if guild_id in self.toggle:
 			async for entry in m.guild.audit_logs(limit=1, after=time.time() - 2):
-				if str(entry.action) == "AuditLogAction.kick":
+				if str(entry.action) in ["AuditLogAction.kick", "AuditLogAction.ban"]:
 					user_id = str(entry.user.id)
 					if guild_id not in self.cd:
 						self.cd[guild_id] = {}
@@ -61,16 +60,7 @@ class AntiPurge:
 						self.cd[guild_id][user_id] = 0
 					self.cd[guild_id][user_id] = time.time() + 10
 					if self.cd[guild_id][user_id] > time.time() + 21:
-						await entry.user.ban(reason="Purging")
-				if str(entry.action) == "AuditLogAction.ban":
-					user_id = str(entry.user.id)
-					if guild_id not in self.cd:
-						self.cd[guild_id] = {}
-					if user_id not in self.cd[guild_id]:
-						self.cd[guild_id][user_id] = 0
-					self.cd[guild_id][user_id] = time.time() + 10
-					if self.cd[guild_id][user_id] > time.time() + 21:
-						await entry.user.ban(reason="Purging")
+						await m.guild.ban(entry.user, reason="Purging", delete_message_days=0)
 
 def setup(bot):
 	bot.add_cog(AntiPurge(bot))
