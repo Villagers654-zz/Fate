@@ -16,7 +16,7 @@ class Menus:
 	async def _help(self, ctx):
 		if ctx.invoked_subcommand is None:
 			e = discord.Embed(title="~~~====🥂🍸🍷Help🍷🍸🥂====~~~", color=0x80b0ff)
-			e.add_field(name="◈ Core ◈", value="`leaderboard` `gleaderboard` `ggleaderboard` `mleaderboard` `gmleaderboard` `partners` `discords` `servers` `realms` `repeat` `links` `ping` `info`", inline=False)
+			e.add_field(name="◈ Core ◈", value="`leaderboard` `gleaderboard` `ggleaderboard` `mleaderboard` `gmleaderboard` `changelog` `partners` `discords` `servers` `realms` `repeat` `links` `ping` `info`", inline=False)
 			e.add_field(name="◈ Responses ◈", value="**`disableresponses` `enableresponses`:** `@Fate` `hello` `ree` `kys` `gm` `gn`", inline=False)
 			e.add_field(name="◈ Music ◈", value="`join` `summon` `play` `stop` `skip` `pause` `resume` `volume` `queue` `remove` `shuffle` `dc` `np`", inline=False)
 			e.add_field(name="◈ Utility ◈", value="`channelinfo` `servericon` `serverinfo` `userinfo` `autorole` `addemoji` `fromemoji` `delemoji` `makepoll` `welcome` `farewell` `logger` `owner` `avatar` `topic` `timer` `limit` `lock` `lockb` `lockm` `note` `quicknote` `notes` `wiki` `find` `ud` `id`", inline=False)
@@ -63,7 +63,7 @@ class Menus:
 		e.set_image(url="attachment://" + os.path.basename(path))
 		e.add_field(name="◈ Summary ◈", value="Fate is a ~~multipurpose~~ hybrid bot created for ~~sexual assault~~ fun", inline=False)
 		e.add_field(name="◈ Credits ◈", value="• Tothy ~ `rival`\n• Cortex ~ `teacher`", inline=False)
-		e.add_field(name="◈ Statistics ◈", value=f'Commands: [{len(self.bot.commands)}]\nServers: [{guilds}]\nUsers: [{users}]', inline=False)
+		e.add_field(name="◈ Statistics ◈", value=f'Commands: [{len(self.bot.commands)}]\nModules: [{len(self.bot.extensions)}]\nServers: [{guilds}]\nUsers: [{users}]', inline=False)
 		e.add_field(name="◈ Memory ◈", value=
 		f"__**Storage**__: [{p.bytes2human(psutil.disk_usage('/').used)}/{p.bytes2human(psutil.disk_usage('/').total)}]\n"
 		f"__**RAM**__: **Global**: {p.bytes2human(psutil.virtual_memory().used)} **Bot**: {p.bytes2human(f.memory_full_info().rss)}\n"
@@ -86,8 +86,6 @@ class Menus:
 						if len(msg.embeds) > 0:
 							await msg.delete()
 							break
-
-# ~== Ads ==~
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -161,8 +159,6 @@ class Menus:
 							await msg.delete()
 							break
 
-# ~== 4B4T ==~
-
 	async def on_message(self, message: discord.Message):
 		if not message.author.bot:
 			if message.content.startswith(".4b4t"):
@@ -173,8 +169,6 @@ class Menus:
 				e.add_field(name="◈ Server Info ◈", value="**ip:** 4b4t.net : 19132\n**Version:** 1.7.0", inline=False)
 				e.add_field(name="◈ Commands ◈", value="• submitmotd ~ `submits a MOTD`\n• reportbug ~ `report a bug`\n• rules ~ `4b4t's discord rules`\n• vote ~ `vote for 4b4t`", inline=False)
 				await message.channel.send(embed=e)
-
-# ~== Misc ==~
 
 	@commands.command()
 	async def partners(self, ctx):
