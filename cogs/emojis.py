@@ -42,12 +42,11 @@ class Emojis:
 		except Exception as HTTPException:
 			if "256 kb" in str(HTTPException):
 				for attachment in ctx.message.attachments:
-					attachment = attachment
-				e = discord.Embed(color=colors.fate())
-				e.set_author(name=f"File cannot be larger than 256 kb", icon_url=attachment.proxy_url)
-				e.set_thumbnail(url=ctx.author.avatar_url)
-				e.description = f"Try using [TinyPNG](https://tinypng.com/) to reduce the size"
-				return await ctx.send(embed=e)
+					e = discord.Embed(color=colors.fate())
+					e.set_author(name=f"File cannot be larger than 256 kb", icon_url=attachment.proxy_url)
+					e.set_thumbnail(url=ctx.author.avatar_url)
+					e.description = f"Try using [TinyPNG](https://tinypng.com/) to reduce the size"
+					return await ctx.send(embed=e)
 			await ctx.send(str(HTTPException)[:2000])
 
 	@commands.command(name="add_from_emoji", aliases=["fromemote", "fromemoji"])
@@ -73,7 +72,7 @@ class Emojis:
 		for i in list(name):
 			if i in list("abcdefghijklmnopqrstuvwxyz"):
 				clean_name += i
-		await emoji.edit(name=name)
+		await emoji.edit(name=name, reason=ctx.author.name)
 		await ctx.send(f"Renamed emote `{old_name}` to `{clean_name}`")
 
 def setup(bot):
