@@ -42,7 +42,7 @@ class Changelog:
 					await asyncio.sleep(0.5)
 					return await ctx.message.delete()
 				self.changelogs.append(changelog)
-				if len(self.changelogs) > 6:
+				if len(self.changelogs) > 10:
 					del self.changelogs[0]
 				self.last_updated = datetime.datetime.now().strftime("%m-%d-%Y %I:%M%p")
 				self.save_changelog()
