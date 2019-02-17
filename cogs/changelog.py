@@ -3,6 +3,7 @@ from discord.ext import commands
 from os.path import isfile
 import datetime
 import discord
+import asyncio
 import json
 
 class Changelog:
@@ -38,13 +39,15 @@ class Changelog:
 				if changelog.startswith("remove"):
 					del self.changelogs[int(changelog.split(" ")[1]) - 1]
 					self.save_changelog()
-					return await ctx.message.add_reaction("👍")
+					await asyncio.sleep(0.5)
+					return await ctx.message.delete()
 				self.changelogs.append(changelog)
 				if len(self.changelogs) > 6:
 					del self.changelogs[0]
 				self.last_updated = datetime.datetime.now().strftime("%m-%d-%Y %I:%M%p")
 				self.save_changelog()
-				await ctx.message.add_reaction("👍")
+				await asyncio.sleep(0.5)
+				await ctx.message.delete()
 
 def setup(bot):
 	bot.add_cog(Changelog(bot))
