@@ -38,3 +38,6 @@ def purple():
 
 def black():
 	return 0x000001
+
+def white():
+	return 0xffffff
