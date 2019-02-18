@@ -40,7 +40,7 @@ class Core:
 		ping = (time.monotonic() - before) * 1000
 		api = str(self.bot.latency * 1000)
 		api = api[:api.find(".")]
-		e.description = f"**Message Trip:** `{int(ping)}ms`\n**Discord API:** `{api}ms`"
+		e.description = f"**Message Trip:** `{int(ping)}ms`\n**Websocket Heartbeat:** `{api}ms`"
 		await message.edit(embed=e)
 
 	@commands.command(pass_context=True)
