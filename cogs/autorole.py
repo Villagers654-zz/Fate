@@ -78,7 +78,7 @@ class AutoRole:
 					await m.add_roles(m.guild.get_role(role_id))
 				except Exception as e:
 					try:
-						await m.guild.owner.send(f"[AutoRole]**Failed to add role to user:**\n{e}")
+						await m.guild.owner.send(f"**[AutoRole] Error adding role to user:**\n{e}")
 					except:
 						pass
 
