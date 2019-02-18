@@ -147,6 +147,10 @@ class Song:
 
         return embed
 
+    def thumbnail(self):
+        img = self.source.thumbnail
+        return img
+
 class SongQueue(asyncio.Queue):
     def __iter__(self):
         return self._queue.__iter__()
@@ -412,6 +416,12 @@ class Music:
         await ctx.send(embed=e, delete_after=20)
         await asyncio.sleep(20)
         await ctx.message.delete()
+
+    @commands.command(name="thumbnail")
+    async def _thumbnail(self, ctx):
+        e = discord.Embed(color=0x39ff14)
+        e.set_image(url=ctx.state.current.thumbnail())
+        await ctx.send(embed=e)
 
     @commands.command(name='shuffle')
     async def _shuffle(self, ctx):
