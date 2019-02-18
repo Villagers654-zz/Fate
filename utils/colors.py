@@ -35,3 +35,6 @@ def cyan():
 
 def purple():
 	return 0x9400D3
+
+def black():
+	return 0x000001
