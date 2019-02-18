@@ -216,5 +216,12 @@ class Utility:
 			member = ctx.author
 		await ctx.send(member.id)
 
+	@commands.command(name="channels")
+	async def _channels(self, ctx):
+		channels = ""
+		for channel in ctx.guild.channels:
+			channels += channel.name + "\n"
+		await ctx.send(channels)
+
 def setup(bot):
 	bot.add_cog(Utility(bot))
