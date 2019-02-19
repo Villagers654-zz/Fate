@@ -43,7 +43,7 @@ class customclass:
 ■ No pestering staff repetitively
 ■ No useless / annoying pings
 ■ No spamming""", inline=False)
-			e.add_field(name="-~===🌹🥂🍸🍷Misc🍷🍸🥂🌹===~-", value="Minecraft Version: 1.8", inline=False)
+			e.add_field(name="-~===🌹🥂🍸🍷Misc🍷🍸🥂🌹===~-", value="Minecraft Version: 1.9", inline=False)
 			e.set_thumbnail(url=channel.guild.icon_url)
 			self.bot.unload_extension('cogs.readme')
 			self.bot.load_extension('cogs.readme')
