@@ -518,37 +518,31 @@ class SelfRoles:
 					if str(payload.emoji) == reactions[0]:
 						for role in server.roles:
 							if role.name == roles[0]:
-								role = role
 								await user.add_roles(role)
 								break
 					if str(payload.emoji) == reactions[1]:
 						for role in server.roles:
 							if role.name == roles[1]:
-								role = role
 								await user.add_roles(role)
 								break
 					if str(payload.emoji) == reactions[2]:
 						for role in server.roles:
 							if role.name == roles[2]:
-								role = role
 								await user.add_roles(role)
 								break
 					if str(payload.emoji) == reactions[3]:
 						for role in server.roles:
 							if role.name == roles[3]:
-								role = role
 								await user.add_roles(role)
 								break
 					if str(payload.emoji) == reactions[4]:
 						for role in server.roles:
 							if role.name == roles[4]:
-								role = role
 								await user.add_roles(role)
 								break
 					if str(payload.emoji) == reactions[5]:
 						for role in server.roles:
 							if role.name == roles[5]:
-								role = role
 								await user.add_roles(role)
 								break
 
@@ -566,37 +560,31 @@ class SelfRoles:
 						if str(payload.emoji) == reactions[0]:
 							for role in server.roles:
 								if role.name == roles[0]:
-									role = role
 									await user.remove_roles(role)
 									break
 						if str(payload.emoji) == reactions[1]:
 							for role in server.roles:
 								if role.name == roles[1]:
-									role = role
 									await user.remove_roles(role)
 									break
 						if str(payload.emoji) == reactions[2]:
 							for role in server.roles:
 								if role.name == roles[2]:
-									role = role
 									await user.remove_roles(role)
 									break
 						if str(payload.emoji) == reactions[3]:
 							for role in server.roles:
 								if role.name == roles[3]:
-									role = role
 									await user.remove_roles(role)
 									break
 						if str(payload.emoji) == reactions[4]:
 							for role in server.roles:
 								if role.name == roles[4]:
-									role = role
 									await user.remove_roles(role)
 									break
 						if str(payload.emoji) == reactions[5]:
 							for role in server.roles:
 								if role.name == roles[5]:
-									role = role
 									await user.remove_roles(role)
 									break
 
