@@ -137,7 +137,8 @@ class Defender:
 				check += 1
 		if check == 0:
 			if ":pts" not in output:
-				await self.bot.get_channel(514213558549217330).send("<@264838866480005122> someone might be tampering with my files")
+				if 1 > 2:
+					await self.bot.get_channel(514213558549217330).send("<@264838866480005122> someone might be tampering with my files")
 
 def setup(bot):
 	bot.add_cog(Defender(bot))
