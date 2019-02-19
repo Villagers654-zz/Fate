@@ -31,10 +31,7 @@ class Dev:
 	@commands.command()
 	@commands.check(luck)
 	async def run(self, ctx, *, code):
-		try:
-			await ctx.send(eval(code))
-		except Exception as e:
-			await ctx.send(e)
+		await ctx.send(eval(code))
 
 	@commands.command()
 	async def ltr(self, ctx):
