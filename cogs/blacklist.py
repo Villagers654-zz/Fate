@@ -78,6 +78,7 @@ class Blacklist:
 
 	async def on_message(self, m: discord.Message):
 		if isinstance(m.guild, discord.Guild):
+			await asyncio.sleep(0.5)
 			guild_id = str(m.guild.id)
 			if guild_id in self.discord:
 				if "discord.gg" in m.content.lower().replace(" ", ""):
