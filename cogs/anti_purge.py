@@ -1,5 +1,6 @@
 from discord.ext import commands
 from os.path import isfile
+import datetime
 import json
 import time
 
@@ -51,16 +52,17 @@ class AntiPurge:
 	async def on_member_remove(self, m):
 		guild_id = str(m.guild.id)
 		if guild_id in self.toggle:
-			async for entry in m.guild.audit_logs(limit=1, after=time.time() - 2):
-				if str(entry.action) in ["AuditLogAction.kick", "AuditLogAction.ban"]:
-					user_id = str(entry.user.id)
-					if guild_id not in self.cd:
-						self.cd[guild_id] = {}
-					if user_id not in self.cd[guild_id]:
-						self.cd[guild_id][user_id] = 0
-					self.cd[guild_id][user_id] = time.time() + 10
-					if self.cd[guild_id][user_id] > time.time() + 21:
-						await m.guild.ban(entry.user, reason="Purging", delete_message_days=0)
+			async for entry in m.guild.audit_logs(limit=1):
+				if datetime.datetime.utcnow() - datetime.timedelta(seconds=3) < entry.created_at:
+					if str(entry.action) in ["AuditLogAction.kick", "AuditLogAction.ban"]:
+						user_id = str(entry.user.id)
+						if guild_id not in self.cd:
+							self.cd[guild_id] = {}
+						if user_id not in self.cd[guild_id]:
+							self.cd[guild_id][user_id] = 0
+						self.cd[guild_id][user_id] = time.time() + 10
+						if self.cd[guild_id][user_id] > time.time() + 21:
+							await m.guild.ban(entry.user, reason="Purging", delete_message_days=0)
 
 def setup(bot):
 	bot.add_cog(AntiPurge(bot))
