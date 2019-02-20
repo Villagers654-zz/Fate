@@ -61,7 +61,7 @@ class Profiles:
 	def save_xp(self):
 		with open("./data/userdata/xp.json", "w") as outfile:
 			json.dump({"global": self.global_data, "guilded": self.guilds_data, "monthly_global": self.monthly_global_data,
-			           "monthly_guilded": self.monthly_guilds_data}, outfile, ensure_ascii=False)
+			           "monthly_guilded": self.monthly_guilds_data}, outfile, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
 
 	def luck(ctx):
 		return ctx.message.author.id == 264838866480005122
