@@ -545,15 +545,6 @@ class Profiles:
 					level = level[:level.find(".")]
 					leaderboard += "‎**‎#{}.** ‎`‎{}`: ‎{} | {}\n".format(rank, name, level, xp)
 					rank += 1
-				f = psutil.Process(os.getpid())
-				try:
-					cpufreqcurrent = p.bytes2human(psutil.cpu_freq().current)
-				except:
-					cpufreqcurrent = "unavailable"
-				try:
-					cpufreqmax = p.bytes2human(psutil.cpu_freq().max)
-				except:
-					cpufreqmax = "unavailable"
 				e.set_thumbnail(url=channel.guild.icon_url)
 				e.set_author(name=f'~~~====🥂🍸🍷Stats🍷🍸🥂====~~~')
 				e.add_field(name="◈ Discord ◈", value=f'__**Owner**__: Luck\n__**Members**__: {channel.guild.member_count}', inline=False)
