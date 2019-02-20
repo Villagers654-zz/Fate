@@ -68,10 +68,11 @@ class Mod:
 				if msg.attachments:
 					await msg.delete()
 					current_position += 1
-					if current_position is 250:
-						break
-			del self.purge[channel_id]
-			return await ctx.send("{}, successfully purged {} images".format(ctx.author.name, amount), delete_after=5)
+					if current_position == 250:
+						if current_position >= amount:
+							del self.purge[channel_id]
+							await ctx.send("{}, successfully purged {} images".format(ctx.author.name, amount), delete_after=5)
+							return await ctx.message.delete()
 		if channel_id in self.purge:
 			return await ctx.send("I'm already purging..")
 
@@ -88,10 +89,10 @@ class Mod:
 				if msg.embeds:
 					await msg.delete()
 					current_position += 1
-					if current_position is 250:
-						break
-			del self.purge[channel_id]
-			return await ctx.send("{}, successfully purged {} embeds".format(ctx.author.name, amount), delete_after=5)
+					if current_position >= amount:
+						del self.purge[channel_id]
+						await ctx.send("{}, successfully purged {} embeds".format(ctx.author.name, amount), delete_after=5)
+						return await ctx.message.delete()
 		if channel_id in self.purge:
 			return await ctx.send("I'm already purging..")
 
@@ -108,10 +109,11 @@ class Mod:
 				if msg.author.bot:
 					await msg.delete()
 					current_position += 1
-					if current_position is 250:
-						break
-			del self.purge[channel_id]
-			return await ctx.send("{}, successfully purged {} bot messages".format(ctx.author.name, amount), delete_after=5)
+					if current_position == 250:
+						if current_position >= amount:
+							del self.purge[channel_id]
+							await ctx.send("{}, successfully purged {} bot messages".format(ctx.author.name, amount), delete_after=5)
+							return await ctx.message.delete()
 		if channel_id in self.purge:
 			return await ctx.send("I'm already purging..")
 
