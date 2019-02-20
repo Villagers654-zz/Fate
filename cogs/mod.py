@@ -633,7 +633,7 @@ class Mod:
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.has_permissions(administrator=True)
-	async def setwarns(self, ctx, user, count):
+	async def setwarns(self, ctx, user, count: int):
 		if user.startswith("<@"):
 			user = user.replace("<@", "")
 			user = user.replace(">", "")
