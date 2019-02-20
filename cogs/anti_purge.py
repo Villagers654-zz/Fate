@@ -62,7 +62,7 @@ class AntiPurge:
 							self.cd[guild_id][user_id] = 0
 						self.cd[guild_id][user_id] = time.time() + 10
 						if self.cd[guild_id][user_id] > time.time() + 21:
-							await m.guild.ban(entry.user, reason="Purging", delete_message_days=0)
+							await m.guild.ban(entry.user, reason="Attempted Purge", delete_message_days=0)
 
 def setup(bot):
 	bot.add_cog(AntiPurge(bot))
