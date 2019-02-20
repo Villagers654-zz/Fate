@@ -1,6 +1,7 @@
 from discord.ext import commands
 from os.path import isfile
 from utils import colors
+import datetime
 import discord
 import asyncio
 import json
@@ -294,24 +295,29 @@ class Logger:
 	async def on_message_delete(self, m: discord.Message):
 		guild_id = str(m.guild.id)
 		if guild_id in self.channel:
+			user = ""
+			async for entry in m.guild.audit_logs(action=discord.AuditLogAction.message_delete, limit=1):
+				if datetime.datetime.utcnow() - datetime.timedelta(seconds=5) < entry.created_at:
+					user = entry.user
+			if not user:
+				user = "Author"
 			channel = self.bot.get_channel(self.channel[guild_id])
 			e = discord.Embed(color=colors.purple())
 			e.title = "Message Deleted"
 			e.set_thumbnail(url=m.author.avatar_url)
-			e.description = f"**Author Name:** {m.author.display_name}\n" \
+			e.description = f"**Author:** {m.author}\n" \
+				f"**Deleted by:** {user}\n" \
 				f"**Channel:** {m.channel.mention}"
 			if m.pinned is True:
 				e.description += f"\nMsg was pinned"
 			if len(m.embeds) > 0:
 				if m.content == "":
-					m.content = "Embed"
+					m.content = "`Embed`"
 			if m.content == "":
-				m.content = "None"
-			if "`" not in m.content:
-				m.content = f"`{m.content}`"
+				m.content = "`None`"
 			e.add_field(name="Content:", value=f"{m.content}", inline=False)
 			if len(m.attachments) > 0:
-				e.add_field(name="Cached Images:", value="`they may not show`")
+				e.add_field(name="Cached Images:", value="They may not show")
 			for attachment in m.attachments:
 				e.set_image(url=attachment.proxy_url)
 			await channel.send(embed=e)

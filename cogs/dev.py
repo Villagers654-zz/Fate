@@ -4,6 +4,8 @@ import discord
 import asyncio
 import random
 import psutil
+import sqlite3
+import json
 import time
 import os
 
@@ -13,6 +15,21 @@ class Dev:
 
 	def luck(ctx):
 		return ctx.message.author.id == 264838866480005122
+
+	@commands.command(name="db")
+	@commands.check(luck)
+	async def db(self, ctx, arg):
+		dat = sqlite3.connect('notes.db')
+		c = dat.cursor()
+		c.execute("""CREATE TABLE notes (
+					id integer,
+					note text
+					)""")
+		c.execute("INSERT INTO notes VALUES (:id, :note)", {'id': ctx.author.id, 'note': arg})
+		c.execute("SELECT note FROM notes WHERE id={}".format(ctx.author.id))
+		dat.commit()
+		await ctx.send(c.fetchone())
+		dat.close()
 
 	@commands.command()
 	@commands.check(luck)
