@@ -55,6 +55,66 @@ class Mod:
 			await ctx.send("{}, successfully purged {} messages".format(ctx.author.name, amount), delete_after=5)
 			self.purge[channel_id] = False
 
+	@commands.command(name="purge_images")
+	@commands.has_permissions(manage_messages=True)
+	async def _purge_images(self, ctx, amount: int):
+		if amount > 250:
+			return await ctx.send("You cannot purge more than 250 images at a time")
+		channel_id = str(ctx.channel.id)
+		current_position = 0
+		if channel_id not in self.purge:
+			self.purge[channel_id] = True
+			async for msg in ctx.channel.history(limit=10000):
+				if msg.attachments:
+					await msg.delete()
+					current_position += 1
+					if current_position is 250:
+						break
+			del self.purge[channel_id]
+			return await ctx.send("{}, successfully purged {} images".format(ctx.author.name, amount), delete_after=5)
+		if channel_id in self.purge:
+			return await ctx.send("I'm already purging..")
+
+	@commands.command(name="purge_embeds")
+	@commands.has_permissions(manage_messages=True)
+	async def _purge_embeds(self, ctx, amount: int):
+		if amount > 250:
+			return await ctx.send("You cannot purge more than 250 embeds at a time")
+		channel_id = str(ctx.channel.id)
+		current_position = 0
+		if channel_id not in self.purge:
+			self.purge[channel_id] = True
+			async for msg in ctx.channel.history(limit=10000):
+				if msg.embeds:
+					await msg.delete()
+					current_position += 1
+					if current_position is 250:
+						break
+			del self.purge[channel_id]
+			return await ctx.send("{}, successfully purged {} embeds".format(ctx.author.name, amount), delete_after=5)
+		if channel_id in self.purge:
+			return await ctx.send("I'm already purging..")
+
+	@commands.command(name="purge_bots")
+	@commands.has_permissions(manage_messages=True)
+	async def _purge_bots(self, ctx, amount: int):
+		if amount > 250:
+			return await ctx.send("You cannot purge more than 250 bot messages at a time")
+		channel_id = str(ctx.channel.id)
+		current_position = 0
+		if channel_id not in self.purge:
+			self.purge[channel_id] = True
+			async for msg in ctx.channel.history(limit=10000):
+				if msg.author.bot:
+					await msg.delete()
+					current_position += 1
+					if current_position is 250:
+						break
+			del self.purge[channel_id]
+			return await ctx.send("{}, successfully purged {} bot messages".format(ctx.author.name, amount), delete_after=5)
+		if channel_id in self.purge:
+			return await ctx.send("I'm already purging..")
+
 	@commands.command(name="kick", aliases=["k"])
 	@commands.has_permissions(kick_members=True)
 	@commands.cooldown(1, 25, commands.BucketType.user)
