@@ -20,7 +20,7 @@ class Backup:
 			e.set_author(name="Backing up files..", icon_url=self.bot.user.avatar_url)
 			e.set_thumbnail(
 				url="https://cdn.discordapp.com/attachments/514213558549217330/514345278669848597/8yx98C.gif")
-			e.description = "**Progress:** `0%`\nSending message"
+			e.description = "**Progress:** `0%`\nStarting"
 			msg = await ctx.send(embed=e)
 			p = subprocess.Popen("ls /home/luck", stdout=subprocess.PIPE, shell=True)
 			(output, err) = p.communicate()
