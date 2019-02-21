@@ -25,7 +25,7 @@ def green():
 	return 0x39ff14
 
 def lime_green():
-	return 0x32cd32
+	return 0xb8ff00
 
 def blue():
 	return 0x0000FF
