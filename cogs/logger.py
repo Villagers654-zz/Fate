@@ -112,7 +112,6 @@ class Logger:
 	async def on_guild_role_update(self, before, after):
 		guild_id = str(before.guild.id)
 		changed_permissions = ""
-		change_value = False
 		if guild_id in self.channel:
 			channel = self.bot.get_channel(self.channel[guild_id])
 			e = discord.Embed(color=colors.blue())
@@ -120,11 +119,9 @@ class Logger:
 			e.set_thumbnail(url=before.guild.icon_url)
 			if before.name != after.name:
 				e.add_field(name="Name:", value=f"Before: {before.name}\nAfter: {after.name}", inline=False)
-				change_value = True
 			e.description = f"Role: {after.name}"
 			if before.color != after.color:
 				e.add_field(name="Color:", value=f"Before: {before.color}\nAfter: {after.color}")
-				change_value = True
 			if before.permissions.value != after.permissions.value:
 				if before.permissions.administrator != after.permissions.administrator:
 					if before.permissions.administrator:
@@ -272,9 +269,7 @@ class Logger:
 					else:
 						changed_permissions += "➕ manage emojis\n"
 				e.add_field(name="Perms", value=changed_permissions, inline=False)
-				change_value = True
-			if change_value:
-				await channel.send(embed=e)
+			await channel.send(embed=e)
 
 	async def on_message_edit(self, before, after):
 		if before.pinned == after.pinned:
@@ -297,7 +292,7 @@ class Logger:
 		if guild_id in self.channel:
 			user = ""
 			async for entry in m.guild.audit_logs(action=discord.AuditLogAction.message_delete, limit=1):
-				if datetime.datetime.utcnow() - datetime.timedelta(seconds=5) < entry.created_at:
+				if datetime.datetime.utcnow() - datetime.timedelta(seconds=2) < entry.created_at:
 					user = entry.user
 			if not user:
 				user = "Author"
