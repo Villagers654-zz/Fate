@@ -333,19 +333,35 @@ class Logger:
 
 	async def on_member_update(self, before, after):
 		guild_id = str(before.guild.id)
+		change_value = None
 		user = before
 		if guild_id in self.channel:
 			async for entry in before.guild.audit_logs(action=discord.AuditLogAction.member_update, limit=1):
-				user = entry.user
+				if datetime.datetime.utcnow() - datetime.timedelta(seconds=2) < entry.created_at:
+					user = entry.user
+			async for entry in before.guild.audit_logs(action=discord.AuditLogAction.member_role_update, limit=1):
+				if datetime.datetime.utcnow() - datetime.timedelta(seconds=2) < entry.created_at:
+					user = entry.user
 			channel = self.bot.get_channel(self.channel[guild_id])
+			e = discord.Embed(color=colors.lime_green())
+			e.title = "Member Updated"
+			e.description = f"User: {after.name}\n" \
+				f"Changed by: {user.name}\n"
 			if before.display_name != after.display_name:
-				e = discord.Embed(color=colors.orange())
-				e.title = "Nickname Changed"
-				e.set_thumbnail(url=before.avatar_url)
-				e.description = f"User: {after.name}\n" \
-					f"Changed by: {user.name}\n" \
-					f"Before: {before.display_name}\n" \
-					f"After: {after.display_name}"
+				change_value = True
+				e.add_field(name="Nickname:", value=f"**Before:** {before.display_name}\n"
+				f"**After:** {after.display_name}", inline=False)
+			if before.roles != after.roles:
+				change_value = True
+				role_changes = ""
+				for role in before.roles:
+					if role not in after.roles:
+						role_changes += f"❌ {role.name}"
+				for role in after.roles:
+					if role not in before.roles:
+						role_changes += f"➕ {role.name}"
+				e.add_field(name="Roles:", value=role_changes, inline=False)
+			if change_value:
 				await channel.send(embed=e)
 
 	async def on_member_join(self, m: discord.Member):
@@ -396,7 +412,7 @@ class Logger:
 		guild_id = str(guild.id)
 		if guild_id in self.channel:
 			channel = self.bot.get_channel(self.channel[guild_id])
-			e = discord.Embed(color=colors.lime_green())
+			e = discord.Embed(color=colors.orange())
 			e.title = "User Unbanned"
 			e.set_thumbnail(url=user.avatar_url)
 			e.description = f"Name: {user.name}"
