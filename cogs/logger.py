@@ -1,6 +1,6 @@
 from discord.ext import commands
+from utils import colors, config
 from os.path import isfile
-from utils import colors
 import datetime
 import discord
 import asyncio
@@ -109,9 +109,6 @@ class Logger:
 				f"**Channel:** {m.channel.mention}"
 			if m.pinned:
 				e.description += f"\nMsg was pinned"
-			if m.embeds:
-				if m.content == "":
-					m.content = "`Embed`"
 			if not m.content:
 				m.content = "`None`"
 			e.add_field(name="◈ Content ◈", value=m.content, inline=False)
@@ -119,6 +116,8 @@ class Logger:
 				e.add_field(name="◈ Cached Images ◈", value="They may not show")
 			for attachment in m.attachments:
 				e.set_image(url=attachment.proxy_url)
+			if m.embeds:
+				e.footer("Embed ⇓")
 			await channel.send(embed=e)
 
 	async def on_raw_message_delete(self, payload):
@@ -238,147 +237,147 @@ class Logger:
 					if before.permissions.administrator:
 						changed_permissions += "❌ administrator\n"
 					else:
-						changed_permissions += "➕ administrator\n"
+						changed_permissions += f"{config.emojis('plus')} administrator\n"
 				if before.permissions.create_instant_invite != after.permissions.create_instant_invite:
 					if before.permissions.create_instant_invite:
 						changed_permissions += "❌ create instant invites\n"
 					else:
-						changed_permissions += "➕ create instant invites\n"
+						changed_permissions += f"{config.emojis('plus')} create instant invites\n"
 				if before.permissions.kick_members != after.permissions.kick_members:
 					if before.permissions.kick_members:
 						changed_permissions += "❌ kick members\n"
 					else:
-						changed_permissions += "➕ kick members\n"
+						changed_permissions += f"{config.emojis('plus')} kick members\n"
 				if before.permissions.ban_members != after.permissions.ban_members:
 					if before.permissions.ban_members:
 						changed_permissions += "❌ ban members\n"
 					else:
-						changed_permissions += "➕ ban members\n"
+						changed_permissions += f"{config.emojis('plus')} ban members\n"
 				if before.permissions.manage_channels != after.permissions.manage_channels:
 					if before.permissions.manage_channels:
 						changed_permissions += "❌ manage channels\n"
 					else:
-						changed_permissions += "➕ manage channels\n"
+						changed_permissions += f"{config.emojis('plus')} manage channels\n"
 				if before.permissions.manage_guild != after.permissions.manage_guild:
 					if before.permissions.manage_guild:
 						changed_permissions += "❌ manage guild\n"
 					else:
-						changed_permissions += "➕ manage guild\n"
+						changed_permissions += f"{config.emojis('plus')} manage guild\n"
 				if before.permissions.add_reactions != after.permissions.add_reactions:
 					if before.permissions.add_reactions:
 						changed_permissions += "❌ add reactions\n"
 					else:
-						changed_permissions += "➕ add reactions\n"
+						changed_permissions += f"{config.emojis('plus')} add reactions\n"
 				if before.permissions.view_audit_log != after.permissions.view_audit_log:
 					if before.permissions.view_audit_log:
 						changed_permissions += "❌ view audit log\n"
 					else:
-						changed_permissions += "➕ view audit log\n"
+						changed_permissions += f"{config.emojis('plus')} view audit log\n"
 				if before.permissions.priority_speaker != after.permissions.priority_speaker:
 					if before.permissions.priority_speaker:
 						changed_permissions += "❌ priority speaker\n"
 					else:
-						changed_permissions += "➕ priority speaker\n"
+						changed_permissions += f"{config.emojis('plus')} priority speaker\n"
 				if before.permissions.read_messages != after.permissions.read_messages:
 					if before.permissions.read_messages:
 						changed_permissions += "❌ read messages\n"
 					else:
-						changed_permissions += "➕ read messages\n"
+						changed_permissions += f"{config.emojis('plus')} read messages\n"
 				if before.permissions.send_messages != after.permissions.send_messages:
 					if before.permissions.send_messages:
 						changed_permissions += "❌ send messages\n"
 					else:
-						changed_permissions += "➕ send messages\n"
+						changed_permissions += f"{config.emojis('plus')} send messages\n"
 				if before.permissions.send_tts_messages != after.permissions.send_tts_messages:
 					if before.permissions.send_tts_messages:
 						changed_permissions += "❌ send tts messages\n"
 					else:
-						changed_permissions += "➕ send tts messages\n"
+						changed_permissions += f"{config.emojis('plus')} send tts messages\n"
 				if before.permissions.manage_messages != after.permissions.manage_messages:
 					if before.permissions.manage_messages:
 						changed_permissions += "❌ manage messages\n"
 					else:
-						changed_permissions += "➕ manage messages\n"
+						changed_permissions += f"{config.emojis('plus')} manage messages\n"
 				if before.permissions.embed_links != after.permissions.embed_links:
 					if before.permissions.embed_links:
 						changed_permissions += "❌ embed links\n"
 					else:
-						changed_permissions += "➕ embed links\n"
+						changed_permissions += f"{config.emojis('plus')} embed links\n"
 				if before.permissions.attach_files != after.permissions.attach_files:
 					if before.permissions.attach_files:
 						changed_permissions += "❌ attach files\n"
 					else:
-						changed_permissions += "➕ attach files\n"
+						changed_permissions += f"{config.emojis('plus')} attach files\n"
 				if before.permissions.read_message_history != after.permissions.read_message_history:
 					if before.permissions.read_message_history:
 						changed_permissions += "❌ read message history\n"
 					else:
-						changed_permissions += "➕ read message history\n"
+						changed_permissions += f"{config.emojis('plus')} read message history\n"
 				if before.permissions.mention_everyone != after.permissions.mention_everyone:
 					if before.permissions.mention_everyone:
 						changed_permissions += "❌ mention everyone\n"
 					else:
-						changed_permissions += "➕ mention everyone\n"
+						changed_permissions += f"{config.emojis('plus')} mention everyone\n"
 				if before.permissions.external_emojis != after.permissions.external_emojis:
 					if before.permissions.external_emojis:
 						changed_permissions += "❌ external emojis\n"
 					else:
-						changed_permissions += "➕ external emojis\n"
+						changed_permissions += f"{config.emojis('plus')} external emojis\n"
 				if before.permissions.connect != after.permissions.connect:
 					if before.permissions.connect:
 						changed_permissions += "❌ connect\n"
 					else:
-						changed_permissions += "➕ connect\n"
+						changed_permissions += f"{config.emojis('plus')} connect\n"
 				if before.permissions.speak != after.permissions.speak:
 					if before.permissions.speak:
 						changed_permissions += "❌ speak\n"
 					else:
-						changed_permissions += "➕ speak\n"
+						changed_permissions += f"{config.emojis('plus')} speak\n"
 				if before.permissions.mute_members != after.permissions.mute_members:
 					if before.permissions.mute_members:
 						changed_permissions += "❌ mute members\n"
 					else:
-						changed_permissions += "➕ mute members\n"
+						changed_permissions += f"{config.emojis('plus')} mute members\n"
 				if before.permissions.deafen_members != after.permissions.deafen_members:
 					if before.permissions.deafen_members:
 						changed_permissions += "❌ deafen members\n"
 					else:
-						changed_permissions += "➕ deafen members\n"
+						changed_permissions += f"{config.emojis('plus')} deafen members\n"
 				if before.permissions.move_members != after.permissions.move_members:
 					if before.permissions.move_members:
 						changed_permissions += "❌ move members\n"
 					else:
-						changed_permissions += "➕ move members\n"
+						changed_permissions += f"{config.emojis('plus')} move members\n"
 				if before.permissions.use_voice_activation != after.permissions.use_voice_activation:
 					if before.permissions.use_voice_activation:
 						changed_permissions += "❌ use voice activation\n"
 					else:
-						changed_permissions += "➕ use voice activation\n"
+						changed_permissions += f"{config.emojis('plus')} use voice activation\n"
 				if before.permissions.change_nickname != after.permissions.change_nickname:
 					if before.permissions.change_nickname:
 						changed_permissions += "❌ change nickname\n"
 					else:
-						changed_permissions += "➕ change nickname\n"
+						changed_permissions += f"{config.emojis('plus')} change nickname\n"
 				if before.permissions.manage_nicknames != after.permissions.manage_nicknames:
 					if before.permissions.manage_nicknames:
 						changed_permissions += "❌ manage nicknames\n"
 					else:
-						changed_permissions += "➕ manage nicknames\n"
+						changed_permissions += f"{config.emojis('plus')} manage nicknames\n"
 				if before.permissions.manage_roles != after.permissions.manage_roles:
 					if before.permissions.manage_roles:
 						changed_permissions += "❌ manage roles\n"
 					else:
-						changed_permissions += "➕ manage roles\n"
+						changed_permissions += f"{config.emojis('plus')} manage roles\n"
 				if before.permissions.manage_webhooks != after.permissions.manage_webhooks:
 					if before.permissions.manage_webhooks:
 						changed_permissions += "❌ manage webhooks\n"
 					else:
-						changed_permissions += "➕ manage webhooks\n"
+						changed_permissions += f"{config.emojis('plus')} manage webhooks\n"
 				if before.permissions.manage_emojis != after.permissions.manage_emojis:
 					if before.permissions.manage_emojis:
 						changed_permissions += "❌ manage emojis\n"
 					else:
-						changed_permissions += "➕ manage emojis\n"
+						changed_permissions += f"{config.emojis('plus')} manage emojis\n"
 				e.add_field(name="◈ Perms ◈", value=changed_permissions, inline=False)
 			if is_changed:
 				await channel.send(embed=e)
@@ -476,7 +475,7 @@ class Logger:
 						role_changes += f"❌ {role.name}"
 				for role in after.roles:
 					if role not in before.roles:
-						role_changes += f"➕ {role.name}"
+						role_changes += f"{config.emojis('plus')} {role.name}"
 				e.add_field(name="◈ Roles ◈", value=role_changes, inline=False)
 			if change_value:
 				await channel.send(embed=e)
