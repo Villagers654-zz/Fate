@@ -21,6 +21,7 @@ class Mod:
 
 	@commands.command(name="delete", aliases=["d"])
 	@commands.has_permissions(manage_messages=True)
+	@commands.bot_has_permissions(manage_messages=True)
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def delete(self, ctx):
 		try:
@@ -36,6 +37,7 @@ class Mod:
 
 	@commands.command(name="purge")
 	@commands.has_permissions(manage_messages=True)
+	@commands.bot_has_permissions(manage_messages=True)
 	async def _purge(self, ctx, amount: int):
 		if amount > 1000:
 			return await ctx.send("You cannot purge more than 1000 messages at a time")
@@ -57,6 +59,7 @@ class Mod:
 
 	@commands.command(name="purge_images")
 	@commands.has_permissions(manage_messages=True)
+	@commands.bot_has_permissions(manage_messages=True)
 	async def _purge_images(self, ctx, amount: int):
 		if amount > 250:
 			return await ctx.send("You cannot purge more than 250 images at a time")
@@ -78,6 +81,7 @@ class Mod:
 
 	@commands.command(name="purge_embeds")
 	@commands.has_permissions(manage_messages=True)
+	@commands.bot_has_permissions(manage_messages=True)
 	async def _purge_embeds(self, ctx, amount: int):
 		if amount > 250:
 			return await ctx.send("You cannot purge more than 250 embeds at a time")
@@ -98,6 +102,7 @@ class Mod:
 
 	@commands.command(name="purge_bots")
 	@commands.has_permissions(manage_messages=True)
+	@commands.bot_has_permissions(manage_messages=True)
 	async def _purge_bots(self, ctx, amount: int):
 		if amount > 250:
 			return await ctx.send("You cannot purge more than 250 bot messages at a time")
@@ -119,6 +124,7 @@ class Mod:
 
 	@commands.command(name="kick", aliases=["k"])
 	@commands.has_permissions(kick_members=True)
+	@commands.bot_has_permissions(kick_members=True)
 	@commands.cooldown(1, 25, commands.BucketType.user)
 	async def kick(self, ctx, user:discord.Member, *, reason:str=None):
 		if user.top_role.position >= ctx.author.top_role.position:
@@ -139,6 +145,7 @@ class Mod:
 
 	@commands.command(name="ban", aliases=["b"])
 	@commands.has_permissions(ban_members=True)
+	@commands.bot_has_permissions(ban_members=True)
 	@commands.cooldown(1, 25, commands.BucketType.user)
 	async def _ban(self, ctx, user:discord.Member, *, reason=None):
 		if user.top_role.position >= ctx.author.top_role.position:
@@ -159,6 +166,7 @@ class Mod:
 
 	@commands.command(name="softban")
 	@commands.has_permissions(ban_members=True)
+	@commands.bot_has_permissions(ban_members=True)
 	@commands.cooldown(1, 25, commands.BucketType.user)
 	async def _softban(self, ctx, user:discord.Member, *, reason=None):
 		if user.top_role.position >= ctx.author.top_role.position:
@@ -180,6 +188,7 @@ class Mod:
 
 	@commands.command(name="bans")
 	@commands.has_permissions(ban_members=True)
+	@commands.bot_has_permissions(ban_members=True)
 	@commands.cooldown(1, 5, commands.BucketType.guild)
 	async def _bans(self, ctx):
 		bans = await ctx.guild.bans()
@@ -188,6 +197,7 @@ class Mod:
 
 	@commands.command(name="pin", aliases=["p"])
 	@commands.has_permissions(manage_messages=True)
+	@commands.bot_has_permissions(manage_messages=True)
 	@commands.cooldown(1, 25, commands.BucketType.user)
 	async def pin(self, ctx):
 		c = 0
@@ -200,6 +210,7 @@ class Mod:
 
 	@commands.command()
 	@commands.has_permissions(manage_nicknames=True)
+	@commands.bot_has_permissions(manage_nicknames=True)
 	async def nick(self, ctx, member: discord.Member, *, nick=None):
 		if member.top_role.position >= ctx.author.top_role.position:
 			return await ctx.send("That user is above your paygrade, take a seat")
@@ -210,6 +221,7 @@ class Mod:
 
 	@commands.command(name="massnick")
 	@commands.has_permissions(administrator=True)
+	@commands.bot_has_permissions(administrator=True)
 	async def _massnick(self, ctx, *, nick=None):
 		guild_id = str(ctx.guild.id)
 		if guild_id in self.massnick:
@@ -238,6 +250,7 @@ class Mod:
 
 	@commands.command(name="addrole")
 	@commands.has_permissions(manage_roles=True)
+	@commands.bot_has_permissions(manage_roles=True)
 	async def _addrole(self, ctx, arg1: commands.clean_content=None, arg2: commands.clean_content=None):
 		if arg2 is not None:
 			arg1 = arg1.replace("@", "")
@@ -341,6 +354,7 @@ class Mod:
 
 	@commands.command(name="removerole")
 	@commands.has_permissions(manage_roles=True)
+	@commands.bot_has_permissions(manage_roles=True)
 	async def _removerole(self, ctx, arg1: commands.clean_content=None, arg2: commands.clean_content=None):
 		if arg2 is not None:
 			arg1 = arg1.replace("@", "")
@@ -400,6 +414,7 @@ class Mod:
 
 	@commands.command()
 	@commands.has_permissions(manage_roles=True)
+	@commands.bot_has_permissions(manage_roles=True)
 	async def massrole(self, ctx, role: str):
 		role = role.replace("<@&", "").replace(">", "").replace("<@", "").replace("@", "")
 		check = False
@@ -430,6 +445,7 @@ class Mod:
 
 	@commands.command()
 	@commands.has_permissions(manage_roles=True)
+	@commands.bot_has_permissions(manage_roles=True)
 	async def vcmute(self, ctx, member: discord.Member):
 		if member.top_role.position >= ctx.author.top_role.position:
 			return await ctx.send("That user is above your paygrade, take a seat")

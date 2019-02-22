@@ -74,15 +74,15 @@ if __name__ == '__main__':
 			rank += 1
 			m, s = divmod(time.time() - bot.START_TIME, 60)
 			h, m = divmod(m, 60)
-			cprint(f"{cogs}. Cog: {cog} - operational - [{float(str(s)[:3]) - previous}]", "green")
-			bot.info += f"{cogs}. Cog: {cog} - operational - [{float(str(s)[:3]) - previous}]\n"
+			cprint(f"{cogs}. Cog: {cog} - operational - [{str(s - previous)[:3]}]", "green")
+			bot.info += f"{cogs}. Cog: {cog} - operational - [{str(s - previous)[:3]}]\n"
 			previous = float(str(s)[:3])
 		except Exception as e:
 			bot.errorcount += 1
 			m, s = divmod(time.time() - bot.START_TIME, 60)
 			h, m = divmod(m, 60)
-			cprint(f"{cogs}. Cog: {cog} - error - [{float(str(s)[:3]) - previous}]", "red")
-			bot.info += f"{cogs}. Cog: {cog} - error - [{float(str(s)[:3]) - previous}]\n"
+			cprint(f"{cogs}. Cog: {cog} - error - [{str(s - previous)[:3]}]", "red")
+			bot.info += f"{cogs}. Cog: {cog} - error - [{str(s - previous)[:3]}]\n"
 			error = traceback.format_exc()
 			previous = float(str(s)[:3])
 	if rank == cogs:
