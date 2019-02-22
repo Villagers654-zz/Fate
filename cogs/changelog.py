@@ -30,7 +30,7 @@ class Changelog:
 			e.description = ""
 			changelog_count = len(self.changelogs) - 1
 			for i in self.changelogs:
-				e.description += f"• {self.changelogs[changelog_count]}\n"
+				e.description += f"✦ {self.changelogs[changelog_count]}\n"
 				changelog_count -= 1
 			e.set_footer(text=f"Last Updated: {self.last_updated}")
 			await ctx.send(embed=e)
