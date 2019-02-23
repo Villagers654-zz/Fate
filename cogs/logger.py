@@ -115,7 +115,7 @@ class Logger:
 			for attachment in m.attachments:
 				e.set_image(url=attachment.proxy_url)
 			if m.embeds:
-				e.footer("Embed ⇓")
+				e.set_footer(text="Embed ⇓")
 			await channel.send(embed=e)
 
 	async def on_raw_message_delete(self, payload):
@@ -141,8 +141,8 @@ class Logger:
 				e.title = "~==🥂🍸🍷Guild Update🍷🍸🥂==~"
 				e.set_thumbnail(url=before.icon_url)
 				e.add_field(name="◈ Name ◈", value= \
-				f"Before: `{before.name}`\n" \
-				f"After: `{after.name}`")
+				f"**Before:** `{before.name}`\n" \
+				f"**After:** `{after.name}`")
 				await channel.send(embed=e)
 
 	async def on_guild_role_create(self, role):
@@ -152,7 +152,7 @@ class Logger:
 			e = discord.Embed(color=colors.blue())
 			e.title = "~==🥂🍸🍷Role Created🍷🍸🥂==~"
 			e.set_thumbnail(url=role.guild.icon_url)
-			e.description = f"Name: {role.name}"
+			e.description = f"**Name:** {role.name}"
 			await channel.send(embed=e)
 
 	async def on_guild_role_delete(self, role):
@@ -162,9 +162,9 @@ class Logger:
 			e = discord.Embed(color=colors.blue())
 			e.title = "~==🥂🍸🍷Role Deleted🍷🍸🥂==~"
 			e.set_thumbnail(url=role.guild.icon_url)
-			e.description = f"Name: {role.name}\n" \
-				f"Color: {role.color}\n" \
-				f"Users: [{len(list(role.members))}]"
+			e.description = f"**Name:** {role.name}\n" \
+				f"**Color:** {role.color}\n" \
+				f"**Users:** [{len(list(role.members))}]"
 			await channel.send(embed=e)
 
 	async def on_guild_emojis_update(self, guild, before, after):
@@ -189,16 +189,16 @@ class Logger:
 				if emoji not in after:
 					e.title = "~==🥂🍸🍷Emoji Deleted🍷🍸🥂==~"
 					e.description = \
-						f"Deleted by: {user.display_name}\n" \
-						f"Name: {emoji.name}"
+						f"**Deleted by:** {user.display_name}\n" \
+						f"**Name:** {emoji.name}"
 					return await channel.send(embed=e)
 			for emoji in after:
 				if emoji not in before:
 					e.title = "~==🥂🍸🍷Emoji Created🍷🍸🥂==~"
 					e.description = \
-						f"Created by: {user.display_name}\n" \
-						f"Emoji: {emoji}\n" \
-						f"Name: {emoji.name}"
+						f"**Created by:** {user.display_name}\n" \
+						f"**Name:** {emoji.name}" \
+						f"**Emoji:** {emoji}\n"
 					return await channel.send(embed=e)
 			for emoji in before:
 				for future_emoji in after:
@@ -206,8 +206,8 @@ class Logger:
 						if emoji.name != future_emoji.name:
 							e.title = "~==🥂🍸🍷Emoji Updated🍷🍸🥂==~"
 							e.description = \
-								f"Updated by: {user.display_name}\n" \
-								f"Emoji: {emoji}"
+								f"**Updated by:** {user.display_name}\n" \
+								f"**Emoji:** {emoji}"
 							e.add_field(name="◈ Name ◈", value=
 								f"**Before:** {emoji.name}\n"
 								f"**After:** {future_emoji.name}")
@@ -224,11 +224,11 @@ class Logger:
 			e.set_thumbnail(url=before.guild.icon_url)
 			if before.name != after.name:
 				is_changed = True
-				e.add_field(name="◈ Name ◈", value=f"Before: {before.name}\nAfter: {after.name}", inline=False)
-			e.description = f"Role: {after.name}"
+				e.add_field(name="◈ Name ◈", value=f"**Before:** {before.name}\n**After:** {after.name}", inline=False)
+			e.description = f"**Role:** {after.name}"
 			if before.color != after.color:
 				is_changed = True
-				e.add_field(name="◈ Color ◈", value=f"Before: {before.color}\nAfter: {after.color}")
+				e.add_field(name="◈ Color ◈", value=f"**Before:** {before.color}\n**After:** {after.color}")
 			if before.permissions.value != after.permissions.value:
 				is_changed = True
 				if before.permissions.administrator != after.permissions.administrator:
@@ -388,8 +388,8 @@ class Logger:
 			e.title = "~==🥂🍸🍷Member Joined🍷🍸🥂==~"
 			e.set_thumbnail(url=m.avatar_url)
 			e.description = \
-				f"User: {m.mention}\n" \
-				f"ID: {m.id}\n"
+				f"**User:** {m.mention}\n" \
+				f"**ID:** {m.id}\n"
 			await channel.send(embed=e)
 
 	async def on_member_remove(self, m: discord.Member):
@@ -407,15 +407,15 @@ class Logger:
 				e.title = "~==🥂🍸🍷Member Left🍷🍸🥂==~"
 				e.set_thumbnail(url=m.avatar_url)
 				e.description = \
-					f"User: {m}\n" \
-					f"ID: {m.id}\n"
+					f"**User:** {m}\n" \
+					f"**ID:** {m.id}\n"
 			if is_kick:
 				e.title = "~==🥂🍸🍷Member Kicked🍷🍸🥂==~"
 				e.set_thumbnail(url=m.avatar_url)
 				e.description = \
-					f"Member: {m}\n" \
-					f"Kicked by: {user.display_name}" \
-					f"ID: {m.id}\n"
+					f"**Member:** {m}\n" \
+					f"**Kicked by:** {user.display_name}" \
+					f"**ID:** {m.id}\n"
 			await channel.send(embed=e)
 
 	async def on_member_ban(self, guild, user):
@@ -430,8 +430,8 @@ class Logger:
 				e.title = "~==🥂🍸🍷Member Banned🍷🍸🥂==~"
 			if isinstance(user, discord.User):
 				e.title = "~==🥂🍸🍷User Banned🍷🍸🥂==~"
-			e.description = f"User: {user}\n" \
-				f"Banned by: {author.name}"
+			e.description = f"**User:** {user}\n" \
+				f"**Banned by:** {author.name}"
 			await channel.send(embed=e)
 
 	async def on_member_unban(self, guild, user):
@@ -441,7 +441,7 @@ class Logger:
 			e = discord.Embed(color=colors.orange())
 			e.title = "~==🥂🍸🍷User Unbanned🍷🍸🥂==~"
 			e.set_thumbnail(url=user.avatar_url)
-			e.description = f"User: {user}"
+			e.description = f"**User:** {user}"
 			await channel.send(embed=e)
 
 	async def on_member_update(self, before, after):
@@ -459,8 +459,8 @@ class Logger:
 			e = discord.Embed(color=colors.lime_green())
 			e.set_thumbnail(url=before.avatar_url)
 			e.title = "~==🥂🍸🍷Member Updated🍷🍸🥂==~"
-			e.description = f"User: {after}\n" \
-				f"Changed by: {user.name}\n"
+			e.description = f"**User:** {after}\n" \
+				f"**Changed by:** {user.name}\n"
 			if before.display_name != after.display_name:
 				change_value = True
 				e.add_field(name="◈ Nickname ◈", value=f"**Before:** {before.display_name}\n"
@@ -470,10 +470,10 @@ class Logger:
 				role_changes = ""
 				for role in before.roles:
 					if role not in after.roles:
-						role_changes += f"❌ {role.name}"
+						role_changes += f"❌ {role.name}\n"
 				for role in after.roles:
 					if role not in before.roles:
-						role_changes += f"{config.emojis('plus')} {role.name}"
+						role_changes += f"{config.emojis('plus')} {role.name}\n"
 				e.add_field(name="◈ Roles ◈", value=role_changes, inline=False)
 			if change_value:
 				await channel.send(embed=e)
