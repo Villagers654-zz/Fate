@@ -39,9 +39,9 @@ class ErrorHandler:
 		e = discord.Embed(color=colors.lime_green())
 		e.set_author(name=f"| Fatal Error | {ctx.command}", icon_url=ctx.author.avatar_url)
 		e.set_thumbnail(url=ctx.guild.icon_url)
-		e.description("✦ This has been logged and will be resolved shortly!")
+		e.description = "✦ This has been logged and will be resolved shortly!"
 		e.add_field(name="◈ Error ◈", value=error, inline=False)
-		e.footer(f"Author: {ctx.author}")
+		e.set_footer(text=f"Author: {ctx.author}")
 		await self.bot.get_channel(501871950260469790).send(embed=e)
 		error_message = await ctx.send(embed=e)
 		if "manage_messages" in ', '.join(perm for perm, value in
