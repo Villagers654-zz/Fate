@@ -1,7 +1,7 @@
 from discord.ext import commands
 from utils import colors, config
+from utils.datetime import utc
 from os.path import isfile
-import datetime
 import discord
 import asyncio
 import json
@@ -94,12 +94,10 @@ class Logger:
 	async def on_message_delete(self, m: discord.Message):
 		guild_id = str(m.guild.id)
 		if guild_id in self.channel:
-			user = ""
+			user = "Author"
 			async for entry in m.guild.audit_logs(action=discord.AuditLogAction.message_delete, limit=1):
-				if datetime.datetime.utcnow() - datetime.timedelta(seconds=2) < entry.created_at:
+				if utc(2).past() < entry.created_at:
 					user = entry.user
-			if not user:
-				user = "Author"
 			channel = self.bot.get_channel(self.channel[guild_id])
 			e = discord.Embed(color=colors.purple())
 			e.title = "~===🥂🍸🍷Msg Deleted🍷🍸🥂===~"
@@ -174,13 +172,13 @@ class Logger:
 		if guild_id in self.channel:
 			user = "error"
 			async for entry in guild.audit_logs(action=discord.AuditLogAction.emoji_update, limit=1):
-				if datetime.datetime.utcnow() - datetime.timedelta(seconds=2) < entry.created_at:
+				if utc(2).past() < entry.created_at:
 					user = entry.user
 			async for entry in guild.audit_logs(action=discord.AuditLogAction.emoji_create, limit=1):
-				if datetime.datetime.utcnow() - datetime.timedelta(seconds=2) < entry.created_at:
+				if utc(2).past() < entry.created_at:
 					user = entry.user
 			async for entry in guild.audit_logs(action=discord.AuditLogAction.emoji_delete, limit=1):
-				if datetime.datetime.utcnow() - datetime.timedelta(seconds=2) < entry.created_at:
+				if utc(2).past() < entry.created_at:
 					user = entry.user
 			if user == "error":
 				return
@@ -400,7 +398,7 @@ class Logger:
 			is_kick = None
 			async for entry in m.guild.audit_logs(action=discord.AuditLogAction.kick, limit=1):
 				if str(entry.action) == "AuditLogAction.ban":
-					if datetime.datetime.utcnow() - datetime.timedelta(seconds=2) < entry.created_at:
+					if utc(2).past() < entry.created_at:
 						user = entry.user
 						is_kick = True
 			channel = self.bot.get_channel(self.channel[guild_id])
@@ -452,10 +450,10 @@ class Logger:
 		user = before
 		if guild_id in self.channel:
 			async for entry in before.guild.audit_logs(action=discord.AuditLogAction.member_update, limit=1):
-				if datetime.datetime.utcnow() - datetime.timedelta(seconds=2) < entry.created_at:
+				if utc(2).past() < entry.created_at:
 					user = entry.user
 			async for entry in before.guild.audit_logs(action=discord.AuditLogAction.member_role_update, limit=1):
-				if datetime.datetime.utcnow() - datetime.timedelta(seconds=2) < entry.created_at:
+				if utc(2).past() < entry.created_at:
 					user = entry.user
 			channel = self.bot.get_channel(self.channel[guild_id])
 			e = discord.Embed(color=colors.lime_green())
