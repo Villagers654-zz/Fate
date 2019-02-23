@@ -25,6 +25,7 @@ class Audit:
 
 	@_audit.group(name="search")
 	@commands.has_permissions(view_audit_log=True)
+	@commands.bot_has_permissions(view_audit_log=True)
 	async def _search(self, ctx):
 		pass
 
@@ -32,10 +33,21 @@ class Audit:
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def _action(self, ctx, action, amount=1):
 		e = discord.Embed(color=colors.cyan())
-		e.description = f"Last {amount} {action}'s"
+		reached_char_limit = ""
+		e.description = ""
+		audit_position = 0
+		e.set_author(name=f"Last {amount} {action}'s", icon_url=ctx.author.avatar_url)
 		action = eval("discord.AuditLogAction." + action)
 		async for entry in ctx.guild.audit_logs(limit=amount, action=action):
-			e.description += "\n✦ **{0.user.name}:** {0.action} to {0.target.name}".format(entry).replace("AuditLogAction.", "")
+			if len(e.description) + 75 > 2000:
+				reached_char_limit = "| 2k Character Limit Reached"
+				break
+			try:
+				e.description += "\n✦ {0.user.name} | {0.action} to {0.target.name}".format(entry).replace("AuditLogAction.", "")
+			except:
+				e.description += "\n✦ {0.user} | {0.action} to {0.target}".format(entry).replace("AuditLogAction.", "")
+			audit_position += 1
+		e.set_footer(text=f"Total Found: {audit_position} {reached_char_limit}")
 		await ctx.send(embed=e)
 
 	@_search.command(name="user")
@@ -44,11 +56,15 @@ class Audit:
 		e = discord.Embed(color=colors.cyan())
 		e.set_author(name=f"{user}'s last {amount} action(s)", icon_url=user.avatar_url)
 		e.description = ""
+		reached_char_limit = ""
 		audit_position = 0
 		async for entry in ctx.guild.audit_logs(limit=amount, user=user):
+			if len(e.description) + 75 > 2000:
+				reached_char_limit = "| 2k Character Limit Reached"
+				break
 			e.description += "\n✦ **{0.target}:** {0.action}".format(entry).replace("AuditLogAction.", "")
 			audit_position += 1
-		e.set_footer(text=f"Total Found: {audit_position}")
+		e.set_footer(text=f"Total Found: {audit_position} {reached_char_limit}")
 		await ctx.send(embed=e)
 
 	@_search.command(name="target")
@@ -57,27 +73,39 @@ class Audit:
 		e = discord.Embed(color=colors.cyan())
 		e.set_author(name=f"Last {amount} action(s) against {user}", icon_url=user.avatar_url)
 		e.description = ""
+		reached_char_limit = ""
 		audit_position = 0
 		async for entry in ctx.guild.audit_logs():
+			if len(e.description) + 75 > 2000:
+				reached_char_limit = "| 2k Character Limit Reached"
+				break
 			if entry.target is user:
 				e.description += "\n✦ **{0.user}:** {0.action}".format(entry).replace("AuditLogAction.", "")
 				audit_position += 1
 				if audit_position is amount:
 					break
-		e.set_footer(text=f"Total Found: {audit_position}")
+		e.set_footer(text=f"Total Found: {audit_position} {reached_char_limit}")
 		await ctx.send(embed=e)
 
 	@_audit.command(name="last")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.has_permissions(view_audit_log=True)
+	@commands.bot_has_permissions(view_audit_log=True)
 	async def _last(self, ctx, amount=1):
 		e = discord.Embed(color=colors.cyan())
-		e.description = f"Last {amount} action(s)"
+		e.description = ""
+		position = 0
 		async for entry in ctx.guild.audit_logs(limit=amount):
+			if len(e.description) + 75 > 2000:
+				e.set_footer(text="2k Character Limit Reached")
+				break
 			try:
 				e.description += "\n✦ {0.user.name} | {0.action} to {0.target.name}".format(entry).replace("AuditLogAction.", "")
 			except:
 				e.description += "\n✦ {0.user} | {0.action} to {0.target}".format(entry).replace("AuditLogAction.", "")
+			finally:
+				position += 1
+		e.set_author(name=f"Last {position} action(s)", icon_url=ctx.author.avatar_url)
 		await ctx.send(embed=e)
 
 def setup(bot):
