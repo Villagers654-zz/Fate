@@ -31,7 +31,7 @@ class ErrorHandler:
 			return await ctx.send(error)
 		elif isinstance(error, commands.CheckFailure):
 			await ctx.message.add_reaction('⚠')
-			return await ctx.send(error)
+			return await ctx.send(str(error).replace("command.", f"`{ctx.command}`"))
 		elif isinstance(error, discord.errors.Forbidden):
 			return await ctx.send("I'm missing permissions")
 		print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
