@@ -1,5 +1,5 @@
 from discord.ext import commands
-from utils import colors
+from utils import colors, config
 import traceback
 import discord
 import asyncio
@@ -42,13 +42,24 @@ class ErrorHandler:
 		e.description = "✦ This has been logged and will be resolved shortly!"
 		e.add_field(name="◈ Error ◈", value=error, inline=False)
 		e.set_footer(text=f"Author: {ctx.author}")
-		await self.bot.get_channel(501871950260469790).send(embed=e)
 		error_message = await ctx.send(embed=e)
+		message = await self.bot.get_channel(549192817097048080).send(embed=e)
+		await message.add_reaction("✔")
 		if "manage_messages" in ', '.join(perm for perm, value in
 		ctx.guild.get_member(self.bot.user.id).guild_permissions if value):
 			await asyncio.sleep(20)
 			await ctx.message.delete()
 			await error_message.delete()
+
+	async def on_raw_reaction_add(self, data):
+		if not self.bot.get_user(data.user_id).bot:
+			if data.guild_id == config.server("id"):
+				if str(data.emoji) == "✔":
+					channel = self.bot.get_channel(data.channel_id)
+					msg = await channel.get_message(data.message_id)
+					for embed in msg.embeds:
+						await self.bot.get_channel(config.server("log")).send("Error Dismissed", embed=embed)
+					await msg.delete()
 
 def setup(bot):
 	bot.add_cog(ErrorHandler(bot))
