@@ -19,6 +19,9 @@ class AntiPurge:
 		with open("./data/userdata/anti_purge.json", "w") as outfile:
 			json.dump({"toggle": self.toggle}, outfile, ensure_ascii=False)
 
+	def is_guild_owner(self, ctx):
+		return ctx.author.id == ctx.guild.owner.id
+
 	@commands.group(name="anti_purge")
 	async def _anti_purge(self, ctx):
 		if ctx.invoked_subcommand is None:
@@ -32,7 +35,7 @@ class AntiPurge:
 			               f"**Current Status:** {toggle}\n")
 
 	@_anti_purge.command(name="enable")
-	@commands.has_permissions(administrator=True)
+	@commands.check(is_guild_owner)
 	async def _enable(self, ctx):
 		guild_id = str(ctx.guild.id)
 		self.toggle[guild_id] = "enabled"
@@ -40,7 +43,7 @@ class AntiPurge:
 		await ctx.message.add_reaction("👍")
 
 	@_anti_purge.command(name="disable")
-	@commands.has_permissions(administrator=True)
+	@commands.check(is_guild_owner)
 	async def _disable(self, ctx):
 		guild_id = str(ctx.guild.id)
 		if guild_id not in self.toggle:
