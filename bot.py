@@ -1,28 +1,43 @@
 from discord.ext import commands
 from termcolor import cprint
+from os.path import isfile
 from utils import config
 import traceback
 import datetime
 import discord
 import asyncio
 import random
+import json
 import time
 
 # ~== Core ==~
 
+def get_prefix(bot, message):
+	setup_data = {}
+	if not message.guild:
+		return commands.when_mentioned_or(".")(bot, message)
+	if not isfile("./data/userdata/prefixes.json"):
+		with open("./data/userdata/prefixes.json", "w") as f:
+			json.dump(setup_data, f, sort_keys=True,
+			indent=4, separators=(',', ': '))
+	with open(r"./data/userdata/prefixes.json", "r") as f:
+		prefixes = json.load(f)
+	if str(message.guild.id) not in prefixes:
+		return "."
+	prefix = prefixes[str(message.guild.id)]
+	return prefix
+
 files = ['error_handler', 'owner', 'menus', 'core', 'mod', 'music', 'welcome', 'farewell', 'notes', 'archive', 'coffeeshop', 'custom',
          'actions', 'reactions', 'responses', 'textart', 'fun', 'math', 'dev', '4b4t', 'readme', 'legit', 'reload', 'embeds', 'warning',
          'profiles', 'save', 'clean_rythm', 'tother', 'utility', 'psutil', 'rules', 'duel_chat', 'selfroles', 'lock', 'backup', 'audit',
-         'cookies', 'avapxian_regime', 'anti_purge', 'emojis', 'logger', 'autorole', 'changelog', 'whitelist', 'blacklist', 'query']
+         'cookies', 'team', 'anti_purge', 'emojis', 'logger', 'autorole', 'changelog', 'whitelist', 'blacklist', 'query']
 
 description = '''Fate[Zero]: Personal Bot'''
-bot = commands.Bot(command_prefix=['.', '<@506735111543193601>'], case_insensitive=True, max_messages=16000)
+bot = commands.Bot(command_prefix=get_prefix, case_insensitive=True, max_messages=16000)
 bot.START_TIME = time.time()
 bot.remove_command('help')
 bot.errorcount = 0
-previous = 0
 error = False
-bot.info = ""
 
 async def status_task():
 	while True:
@@ -53,8 +68,8 @@ async def on_ready():
 	fmt = "%m-%d-%Y %I:%M%p"
 	created = datetime.datetime.now()
 	cprint(created.strftime(fmt), 'yellow')
-	if error is not False:
-		await bot.get_channel(514214974868946964).send(f"```{error}```")
+	if error:
+		await bot.get_channel(503902845741957131).send(f"```{error}```")
 	bot.loop.create_task(status_task())
 	m, s = divmod(time.time() - bot.START_TIME, 60)
 	h, m = divmod(m, 60)
@@ -64,6 +79,8 @@ async def on_ready():
 
 if __name__ == '__main__':
 	cprint("Loading cogs..", "blue")
+	bot.info = ""
+	previous = 0
 	cogs = 0
 	rank = 0
 	f = None

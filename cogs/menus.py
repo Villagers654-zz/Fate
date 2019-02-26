@@ -1,22 +1,53 @@
 from utils import bytes2human as p
 from discord.ext import commands
+from os.path import isfile
 import discord
 import asyncio
 import random
 import psutil
+import json
 import time
 import os
 
 class Menus:
 	def __init__(self, bot):
 		self.bot = bot
+		self.command_count = {}
+		if isfile("./data/commands_used.json"):
+			with open("./data/commands_used.json", "r") as f:
+				dat = json.load(f)
+				self.command_count = dat["count"]
+
+	async def on_ready(self):
+		self.command_count[str(self.bot.user.id)] = 0
+		if isfile("./data/commands_used.json"):
+			with open("./data/commands_used.json", "w") as f:
+				json.dump({"count": self.command_count}, f, ensure_ascii=False)
+
+	async def on_message(self, msg):
+		if isinstance(msg.guild, discord.Guild):
+			guild_id = str(msg.guild.id)
+			with open(r"./data/userdata/prefixes.json", "r") as f:
+				prefixes = json.load(f)
+			if guild_id in prefixes:
+				if msg.content.startswith(prefixes[guild_id]):
+					self.command_count[str(self.bot.user.id)] += 1
+					with open("./data/commands_used.json", "w") as f:
+						json.dump({"count": self.command_count}, f, ensure_ascii=False)
+					return
+			if msg.content.startswith("."):
+				if msg.content.startswith(".."):
+					return
+				self.command_count[str(self.bot.user.id)] += 1
+				with open("./data/commands_used.json", "w") as f:
+					json.dump({"count": self.command_count}, f, ensure_ascii=False)
 
 	@commands.group(name='help')
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def _help(self, ctx):
 		if ctx.invoked_subcommand is None:
 			e = discord.Embed(title="~~~====🥂🍸🍷Help🍷🍸🥂====~~~", color=0x80b0ff)
-			e.add_field(name="◈ Core ◈", value="`leaderboard` `gleaderboard` `ggleaderboard` `mleaderboard` `gmleaderboard` `changelog` `partners` `discords` `servers` `realms` `repeat` `links` `ping` `info`", inline=False)
+			e.add_field(name="◈ Core ◈", value="`leaderboard` `gleaderboard` `ggleaderboard` `mleaderboard` `gmleaderboard` `changelog` `partners` `discords` `servers` `prefix` `realms` `repeat` `links` `ping` `info`", inline=False)
 			e.add_field(name="◈ Responses ◈", value="**`disableresponses` `enableresponses`:** `@Fate` `hello` `ree` `kys` `gm` `gn`", inline=False)
 			e.add_field(name="◈ Music ◈", value="`join` `summon` `play` `stop` `skip` `pause` `resume` `volume` `queue` `thumbnail` `remove` `shuffle` `dc` `np`", inline=False)
 			e.add_field(name="◈ Utility ◈", value="`channelinfo` `servericon` `serverinfo` `userinfo` `autorole` `addemoji` `add_from_emoji` `rename_emoji` `delemoji` `makepoll` `welcome` `farewell` `logger` `owner` `avatar` `topic` `timer` `limit` `audit` `lock` `lockb` `lockm` `note` `quicknote` `notes` `wiki` `find` `ud` `id`", inline=False)
@@ -58,7 +89,7 @@ class Menus:
 		f = psutil.Process(os.getpid())
 		e=discord.Embed(color=0x80b0ff)
 		e.set_author(name="Fate [Zerø]: Core Info", icon_url=luck.avatar_url)
-		e.description = f'https://discord.gg/BQ23Z2E'
+		e.description = f'Commands Used: {self.command_count[str(self.bot.user.id)]}'
 		e.set_thumbnail(url=fate.avatar_url)
 		e.set_image(url="attachment://" + os.path.basename(path))
 		e.add_field(name="◈ Summary ◈", value="Fate is a ~~multipurpose~~ hybrid bot created for ~~sexual assault~~ fun", inline=False)
@@ -158,17 +189,6 @@ class Menus:
 						if len(msg.embeds) > 0:
 							await msg.delete()
 							break
-
-	async def on_message(self, message: discord.Message):
-		if not message.author.bot:
-			if message.content.startswith(".4b4t"):
-				guild = self.bot.get_guild(470961230362837002)
-				e=discord.Embed(title=guild.name, color=0x0000ff)
-				e.set_thumbnail(url=guild.icon_url)
-				e.add_field(name="◈ Main Info ◈", value="• be sure to mention a mod\nhouse keeper or higher to\nget the player role if you\nplay on the mc server", inline=False)
-				e.add_field(name="◈ Server Info ◈", value="**ip:** 4b4t.net : 19132\n**Version:** 1.7.0", inline=False)
-				e.add_field(name="◈ Commands ◈", value="• submitmotd ~ `submits a MOTD`\n• reportbug ~ `report a bug`\n• rules ~ `4b4t's discord rules`\n• vote ~ `vote for 4b4t`", inline=False)
-				await message.channel.send(embed=e)
 
 	@commands.command()
 	async def partners(self, ctx):

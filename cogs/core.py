@@ -1,15 +1,27 @@
 from bs4 import BeautifulSoup as bs
 from discord.ext import commands
-from utils import menus as m
+from os.path import isfile
+from utils import config
 import wikipedia.exceptions
 import wikipedia
 import discord
 import aiohttp
+import json
 import time
 
 class Core:
 	def __init__(self, bot):
 		self.bot = bot
+		self.count = 0
+
+	def commands_used(self):
+		return self.count
+
+
+
+	@commands.command(name="commands")
+	async def _commands(self, ctx):
+		await ctx.send(self.count)
 
 	@commands.command()
 	async def topguilds(self, ctx):
@@ -24,12 +36,30 @@ class Core:
 
 	@commands.command()
 	async def invite(self, ctx):
-		await ctx.send(embed=m.links)
+		await ctx.send(embed=config.links())
 
 	@commands.command()
 	async def repeat(self, ctx, *, content: commands.clean_content):
 		await ctx.send(content)
 		await ctx.message.delete()
+
+	@commands.command(name="prefix")
+	@commands.has_permissions(manage_guild=True)
+	async def _prefix(self, ctx, *, prefix):
+		if not isinstance(ctx.guild, discord.Guild):
+			return await ctx.send("This command can't be used in dm")
+		guild_id = str(ctx.guild.id)
+		if not isfile("./data/userdata/prefixes.json"):
+			with open("./data/userdata/prefixes.json", "w") as f:
+				failed_save_data = {}
+				json.dump(failed_save_data, f)
+				print("reverted")
+		with open("./data/userdata/prefixes.json", "r") as f:
+			prefixes = json.load(f)
+		with open("./data/userdata/prefixes.json", "w") as f:
+			prefixes[guild_id] = prefix
+			json.dump(prefixes, f, indent=4)
+		await ctx.send(f"Changed the servers prefix to `{prefix}`")
 
 	@commands.command(pass_context=True)
 	async def ping(self, ctx):
