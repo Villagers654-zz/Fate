@@ -35,7 +35,7 @@ class Changelog:
 			e.set_footer(text=f"Last Updated: {self.last_updated}")
 			await ctx.send(embed=e)
 		if changelog:
-			if config.bot.owner:
+			if config.owner(ctx):
 				if changelog.startswith("remove"):
 					del self.changelogs[int(changelog.split(" ")[1]) - 1]
 					self.save_changelog()
