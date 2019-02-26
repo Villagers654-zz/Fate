@@ -14,6 +14,7 @@ class Logger:
 		self.cache = {}
 		self.channel = {}
 		self.blacklist = {}
+		self.waiting = {}
 		self.cd = {}
 		if isfile("./data/userdata/logger.json"):
 			with open("./data/userdata/logger.json", "r") as infile:
@@ -144,6 +145,32 @@ class Logger:
 		guild_id = str(guild.id)
 		if guild_id in self.channel:
 			del self.channel[guild_id]
+
+	async def on_typing(self, channel, user, when):
+		guild_id = str(channel.guild.id)
+		user_id = str(user.id)
+		if guild_id in self.channel:
+			if guild_id not in self.waiting:
+				self.waiting[guild_id] = {}
+			if user_id in self.waiting[guild_id]:
+				return
+			self.waiting[guild_id][user_id] = "waiting"
+			def pred(m):
+				return m.channel.id == channel.id and m.author.id == user.id
+			try:
+				msg = await self.bot.wait_for('message', check=pred, timeout=45)
+			except asyncio.TimeoutError:
+				log = self.bot.get_channel(self.channel[guild_id])
+				e = discord.Embed(color=colors.white())
+				e.title = "~===🥂🍸🍷Ghost Typing🍷🍸🥂===~"
+				e.set_thumbnail(url=channel.guild.icon_url)
+				e.description = f"**User:** {user.display_name}\n" \
+					f"**Channel:** {channel.mention}"
+				e.set_footer(text=datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p'))
+				await log.send(embed=e)
+				del self.waiting[guild_id]
+			else:
+				del self.waiting[guild_id]
 
 	async def on_message(self, m: discord.Message):
 		guild_id = str(m.guild.id)
@@ -705,8 +732,8 @@ class Logger:
 					e.title = "~==🥂🍸🍷Emoji Created🍷🍸🥂==~"
 					e.description = \
 						f"**Created by:** {user.display_name}\n" \
-						f"**Name:** {emoji.name}" \
-						f"**Emoji:** {emoji}\n"
+						f"**Name:** {emoji.name}\n" \
+						f"**Emoji:** {emoji}"
 					return await channel.send(embed=e)
 			for emoji in before:
 				for future_emoji in after:
