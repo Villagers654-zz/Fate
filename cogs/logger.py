@@ -440,57 +440,54 @@ class Logger:
 			if before.category != after.category:
 				e.add_field(name="◈ Category ◈", value=f"**Before:** {before.category}\n"
 					f"**After:** {after.category}", inline=False)
-			if before.changed_roles != after.changed_roles:
-				changed_roles = ""
-				for role in before.changed_roles:
-					if role not in after.changed_roles:
-						changed_roles += f"❌ {role.name}"
-				for role in after.changed_roles:
-					if role not in before.changed_roles:
-						changed_roles += f"{config.emojis('plus')} {role.name}"
-				e.add_field(name="◈ Roles Changed ◈", value=changed_roles, inline=False)
 			if before.overwrites != after.overwrites:
 				value = ""
-				for overwrite in before.overwrites:
-					if overwrite[0] not in after.overwrites:
-						value += f"\n❌ {overwrite[0]}"
-						for perm in overwrite[1]:
-							if perm[1]:
-								value += f"\n✦ {perm[0]}"
-				for overwrite in after.overwrites:
-					if overwrite[0] not in before.overwrites:
-						value += f"\n{config.emojis('plus')} {overwrite[0]}"
-						for perm in overwrite[1]:
-							if perm[1]:
-								value += f"\n✦ {perm[0]}"
-				overwrite_position = 0
-				for overwrite in before.overwrites:
-					if overwrite[1] != after.overwrites[overwrite_position][1]:
-						value += f"\n🖍 {overwrite[0]}"
-						perm_position = 0
-						for perm in overwrite[1]:
-							after_position = 0
-							for after_perm in after.overwrites[overwrite_position][1]:
-								if perm_position is after_position:
-									after_perm = after_perm
-							if perm[1] != after_perm[1]:
-								value += f"\n✦ {perm}"
-							perm_position += 1
-					overwrite_position += 1
-				overwrite_position = 0
-				for overwrite in after.overwrites:
-					if overwrite[1] != before.overwrites[overwrite_position][1]:
-						value += f"\n🖍 {overwrite[0]}"
-						perm_position = 0
-						for perm in overwrite[1]:
-							before_position = 0
-							for before_perm in after.overwrites[overwrite_position][1]:
-								if perm_position is before_position:
-									before_perm = after_perm
-							if perm[1] != before_perm[1]:
-								value += f"\n✦ {perm}"
-							perm_position += 1
-					overwrite_position += 1
+				updated = None
+				existed_before = []
+				existed_after = []
+				for dat in before.overwrites:
+					existed_before.append(dat[0])
+				for dat in after.overwrites:
+					existed_after.append(dat[0])
+				for object in existed_after:
+					if object not in existed_before:
+						updated = True
+						value += f"\n{config.emojis('plus')} {object}"
+				for object in existed_before:
+					if object not in existed_after:
+						perms = ""
+						updated = True
+						for perm_object in before.overwrites[existed_before.index(object)][1]:
+							if perm_object[1]:
+								perms += f"\n✦ {perm_object[0]}"
+						value += f"\n❌ {object}{perms}"
+				if not updated:
+					before_roles = {}
+					after_roles = {}
+					for dat in before.overwrites:
+						before_roles[dat[0].name] = dat[1]
+					for dat in after.overwrites:
+						after_roles[dat[0].name] = dat[1]
+					position = 0
+					for key in list(before_roles.keys()):
+						if key != after_roles[list(after_roles.keys())[list(after_roles).index(key)]]:
+							before_perm = []
+							before_value = []
+							after_perm = []
+							after_value = []
+							for perm in before_roles[key]:
+								before_perm.append(perm[0])
+								before_value.append(perm[1])
+							for perm in after_roles[list(after_roles.keys())[list(after_roles).index(key)]]:
+								after_perm.append(perm[0])
+								after_value.append(perm[1])
+							difference = ""
+							for perm in before_perm:
+								if before_value[before_perm.index(perm)] != after_value[after_perm.index(perm)]:
+									difference += f"\n□ {after_perm[after_perm.index(perm)]}: {after_value[after_perm.index(perm)]}"
+							if difference:
+								value += f"🔹 {list(after_roles.keys())[list(after_roles).index(key)]} + {difference}"
+							position += 1
 				e.add_field(name="◈ Overwrites ◈", value=value, inline=False)
 			await channel.send(embed=e)
 
