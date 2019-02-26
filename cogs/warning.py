@@ -1,4 +1,5 @@
 from discord.ext import commands
+from utils import config
 import subprocess
 import decimal
 import discord
@@ -23,7 +24,8 @@ class Defender:
 			try:
 				f = open('/home/luck/FateZero/data/warn.txt', 'r')
 			except:
-				await self.bot.get_channel(534608853300412416).send("Unable to find warns.txt")
+				msg = await self.bot.get_channel(config.server("error")).send("Unable to find warns.txt")
+				await msg.add_reaction("✔")
 				break
 			users = [luck, legit]
 			if f.read() == "empty":
@@ -90,7 +92,7 @@ class Defender:
 
 	async def on_ready(self):
 		await asyncio.sleep(0.5)
-		channel = self.bot.get_channel(514214974868946964)
+		channel = self.bot.get_channel(config.server("log"))
 		p = subprocess.Popen("last | head -1", stdout=subprocess.PIPE, shell=True)
 		(output, err) = p.communicate()
 		output = str(output)
