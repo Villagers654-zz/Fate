@@ -51,7 +51,7 @@ class Menus:
 			e.add_field(name="◈ Responses ◈", value="**`disableresponses` `enableresponses`:** `@Fate` `hello` `ree` `kys` `gm` `gn`", inline=False)
 			e.add_field(name="◈ Music ◈", value="`join` `summon` `play` `stop` `skip` `pause` `resume` `volume` `queue` `thumbnail` `remove` `shuffle` `dc` `np`", inline=False)
 			e.add_field(name="◈ Utility ◈", value="`channelinfo` `servericon` `serverinfo` `userinfo` `autorole` `addemoji` `add_from_emoji` `rename_emoji` `delemoji` `makepoll` `welcome` `farewell` `logger` `owner` `avatar` `topic` `timer` `limit` `audit` `lock` `lockb` `lockm` `note` `quicknote` `notes` `wiki` `find` `ud` `id`", inline=False)
-			e.add_field(name="◈ Reactions ◈", value="`intimidate` `powerup` `observe` `disgust` `admire` `angery` `cuddle` `teasip` `psycho` `thonk` `shrug` `yawn` `hide` `wine` `sigh` `kiss` `kill` `slap` `hug` `pat` `cry`", inline=False)
+			e.add_field(name="◈ Reactions ◈", value="`intimidate` `powerup` `observe` `disgust` `admire` `angery` `cuddle` `teasip` `psycho` `thonk` `shrug` `bite` `yawn` `hide` `wine` `sigh` `kiss` `kill` `slap` `hug` `pat` `cry`", inline=False)
 			e.add_field(name="◈ Mod ◈", value="`mute` `unmute` `vcmute` `vcunmute` `warn` `clearwarns` `addrole` `removerole` `selfroles` `delete` `purge` `purge_images` `purge_embeds` `purge_bots` `nick` `massnick` `kick` `mute` `ban` `pin`", inline=False)
 			e.add_field(name="◈ Fun ◈", value="`personality` `liedetector` `fancify` `coffee` `encode` `decode` `choose` `notice` `quote` `mock` `meme` `rate` `roll` `soul` `gay` `sue` `fap` `ask` `rps` `rr` `cookie` `shoot` `inject` `slice` `boop` `stab` `kill`", inline=False)
 			try:

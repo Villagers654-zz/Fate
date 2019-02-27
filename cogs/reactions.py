@@ -195,6 +195,15 @@ class Reactions:
 		await ctx.send(file=discord.File(path, filename=os.path.basename(path)), embed=e)
 		await ctx.message.delete()
 
+	@commands.command(name="bite")
+	@commands.cooldown(1, 5, commands.BucketType.user)
+	async def _hug(self, ctx, *, user):
+		path = os.getcwd() + "/data/images/reactions/bite/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/bite/"))
+		e = discord.Embed(color=colors.fate())
+		e.set_image(url="attachment://" + os.path.basename(path))
+		await ctx.send(f"◈ {ctx.author.mention} bites {user} ◈", file=discord.File(path, filename=os.path.basename(path)), embed=e)
+		await ctx.message.delete()
+
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def wine(self, ctx, *, content=""):
