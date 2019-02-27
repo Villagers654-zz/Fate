@@ -57,9 +57,18 @@ class Minecraft:
 			json.dump({"motds": self.motds, "old_motds": self.old_motds}, outfile, ensure_ascii=False)
 		await ctx.send("done")
 
+	@commands.command()
+	@commands.check(luck)
+	async def rmotd(self, ctx, *, motd):
+		for i in self.motds:
+			if motd in i:
+				self.motds.pop(self.motds.index(i))
+		self.save()
+		await ctx.send("done")
+
 	@commands.command(name='submitmotd', aliases=['motd'])
 	@commands.cooldown(1, 5, commands.BucketType.user)
-	async def submitmotd(self, ctx, *, motd=None):
+	async def submitmotd(self, ctx, *, motd: commands.clean_content=None):
 		if motd is None:
 			return await ctx.send('motd is a required argument that is missing')
 		if len(motd) > 35:
