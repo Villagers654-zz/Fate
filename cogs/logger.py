@@ -432,7 +432,7 @@ class Logger:
 			e.title = "~==🥂🍸🍷Channel Updated🍷🍸🥂==~"
 			e.set_thumbnail(url=user.avatar_url)
 			e.description = \
-				f"**Channel:** {channel.mention}\n" \
+				f"**Channel:** {before.mention}\n" \
 				f"**Updated by:** {user.display_name}"
 			if before.name != after.name:
 				e.add_field(name="◈ Name ◈", value=f"**Before:** {before.name}\n"
@@ -486,7 +486,7 @@ class Logger:
 								if before_value[before_perm.index(perm)] != after_value[after_perm.index(perm)]:
 									difference += f"\n□ {after_perm[after_perm.index(perm)]}: {after_value[after_perm.index(perm)]}"
 							if difference:
-								value += f"🔹 {list(after_roles.keys())[list(after_roles).index(key)]} + {difference}"
+								value += f"\n🔹 {list(after_roles.keys())[list(after_roles).index(key)]} + {difference}"
 							position += 1
 				e.add_field(name="◈ Overwrites ◈", value=value, inline=False)
 			await channel.send(embed=e)
