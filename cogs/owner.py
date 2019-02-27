@@ -75,8 +75,8 @@ class Owner:
 				await asyncio.sleep(0.5)
 				await msg.delete()
 				await m.channel.send("next time i ban you")
-		commands = ["t!avatar <@264838866480005122>", ".avatar <@264838866480005122>", "./avatar <@264838866480005122>"]
-		bots = [506735111543193601, 418412306981191680, 172002275412279296]
+		commands = ["t!avatar <@264838866480005122>", ".avatar <@264838866480005122>", "./avatar <@264838866480005122>", "t.avatar <@264838866480005122>"]
+		bots = [506735111543193601, 418412306981191680, 172002275412279296, 452289354296197120]
 		if m.content.lower() in commands:
 			def pred(m):
 				return m.author.id in bots and m.channel == m.channel
