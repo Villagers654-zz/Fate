@@ -150,6 +150,9 @@ class Logger:
 		guild_id = str(channel.guild.id)
 		user_id = str(user.id)
 		if guild_id in self.channel:
+			if guild_id in self.blacklist:
+				if "ghost_typing" in self.blacklist[guild_id]:
+					return
 			if guild_id not in self.waiting:
 				self.waiting[guild_id] = {}
 			if user_id in self.waiting[guild_id]:
