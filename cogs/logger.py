@@ -5,8 +5,8 @@ from os.path import isfile
 import datetime
 import discord
 import asyncio
-import json
 import time
+import json
 
 class Logger:
 	def __init__(self, bot):
@@ -63,7 +63,7 @@ class Logger:
 			return await ctx.send(embed=e)
 		event = event.lower()
 		events = ["message_delete", "message_edit", "guild_update",
-		    "channel_create", "channel_delete", "channel_update",
+		    "channel_create", "channel_delete", "channel_update", "ghost_typing",
 		    "role_create", "role_delete", "role_update", "emoji_update",
 		    "member_join", "member_remove", "member_unban", "member_update"]
 		if event not in events:
@@ -84,7 +84,7 @@ class Logger:
 	async def _whitelist(self, ctx, event):
 		event = event.lower()
 		events = ["message_delete", "message_edit", "guild_update",
-		    "channel_create", "channel_delete", "channel_update",
+		    "channel_create", "channel_delete", "channel_update", "ghost_typing",
 		    "role_create", "role_delete", "role_update", "emoji_update",
 		    "member_join", "member_remove", "member_unban", "member_update"]
 		if event not in events:
@@ -138,7 +138,7 @@ class Logger:
 		e.description = "[message_delete, message_edit, guild_update, " \
 		    "channel_create, channel_delete, channel_update, role_create, " \
 		    "role_delete, role_update, emoji_update, member_join, member_remove, " \
-		    "member_unban, member_update]"
+		    "member_unban, member_update, ghost_typing]"
 		await ctx.send(embed=e)
 
 	async def on_guild_remove(self, guild):
@@ -272,6 +272,7 @@ class Logger:
 				e.add_field(name="◈ Name ◈", value= \
 					f"**Before:** `{before.name}`\n" \
 					f"**After:** `{after.name}`")
+				e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 				await channel.send(embed=e)
 
 	async def on_private_channel_create(self, channel):
@@ -290,6 +291,7 @@ class Logger:
 				f"**Created by:** {user.display_name}\n" \
 				f"**ID:** {channel.id}\n" \
 				f"**Members:** [{len(channel.members)}]"
+			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 			await channel.send(embed=e)
 
 	async def on_private_channel_delete(self, channel):
@@ -308,6 +310,7 @@ class Logger:
 				f"**Deleted by:** {user.display_name}\n" \
 				f"**ID:** {channel.id}\n" \
 				f"**Members:** [{len(channel.members)}]"
+			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 			await channel.send(embed=e)
 
 	async def on_private_channel_update(self, before, after):
@@ -348,31 +351,52 @@ class Logger:
 				e.add_field(name="◈ Roles Changed ◈", value=changed_roles, inline=False)
 			if before.overwrites != after.overwrites:
 				value = ""
-				for overwrite in before.overwrites:
-					if overwrite not in after.overwrites:
-						value += f"❌ {overwrite[0]}"
-						for perm in overwrite[1]:
-							if perm[1]:
-								value += f"\n✦ {perm[0]}"
-				for overwrite in after.overwrites:
-					if overwrite not in before.overwrites:
-						value += f"{config.emojis('plus')} {overwrite[0]}"
-						for perm in overwrite[1]:
-							if perm[1]:
-								value += f"\n✦ {perm[0]}"
-				for overwrite in before.overwrites:
-					if overwrite != after.overwrites[overwrite.index()]:
-						value += f"🖍 {overwrite[0]}"
-						for perm in overwrite[1]:
-							if perm[1] != after.overwrites[overwrite.index()][perm.index()][1]:
-								value += f"\n✦ {perm[0]}"
-				for overwrite in after.overwrites:
-					if overwrite != before.overwrites[overwrite.index()]:
-						value += f"🖍 {overwrite[0]}"
-						for perm in overwrite[1]:
-							if perm[1] != before.overwrites[overwrite.index()][perm.index()][1]:
-								value += f"\n✦ {perm[0]}"
+				updated = None
+				existed_before = []
+				existed_after = []
+				for dat in before.overwrites:
+					existed_before.append(dat[0])
+				for dat in after.overwrites:
+					existed_after.append(dat[0])
+				for object in existed_after:
+					if object not in existed_before:
+						updated = True
+						value += f"\n{config.emojis('plus')} {object}"
+				for object in existed_before:
+					if object not in existed_after:
+						perms = ""
+						updated = True
+						for perm_object in before.overwrites[existed_before.index(object)][1]:
+							if perm_object[1]:
+								perms += f"\n✦ {perm_object[0]}"
+						value += f"\n❌ {object}{perms}"
+				if not updated:
+					before_roles = {}
+					after_roles = {}
+					for dat in before.overwrites:
+						before_roles[dat[0].name] = dat[1]
+					for dat in after.overwrites:
+						after_roles[dat[0].name] = dat[1]
+					for key in list(before_roles.keys()):
+						if key != after_roles[list(after_roles.keys())[list(after_roles).index(key)]]:
+							before_perm = []
+							before_value = []
+							after_perm = []
+							after_value = []
+							for perm in before_roles[key]:
+								before_perm.append(perm[0])
+								before_value.append(perm[1])
+							for perm in after_roles[list(after_roles.keys())[list(after_roles).index(key)]]:
+								after_perm.append(perm[0])
+								after_value.append(perm[1])
+							difference = ""
+							for perm in before_perm:
+								if before_value[before_perm.index(perm)] != after_value[after_perm.index(perm)]:
+									difference += f"\n□ {after_perm[after_perm.index(perm)]}: {after_value[after_perm.index(perm)]}"
+							if difference:
+								value += f"{config.emojis('edited')} {list(after_roles.keys())[list(after_roles).index(key)] + difference}"
 				e.add_field(name="◈ Overwrites ◈", value=value, inline=False)
+			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 			await channel.send(embed=e)
 
 	async def on_guild_channel_create(self, channel):
@@ -391,6 +415,7 @@ class Logger:
 				f"**Created by:** {user.display_name}\n" \
 				f"**ID:** {channel.id}\n" \
 				f"**Members:** [{len(channel.members)}]"
+			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 			await channel.send(embed=e)
 
 	async def on_guild_channel_delete(self, channel):
@@ -409,6 +434,7 @@ class Logger:
 				f"**Deleted by:** {user.display_name}\n" \
 				f"**ID:** {channel.id}\n" \
 				f"**Members:** [{len(channel.members)}]"
+			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 			await channel.send(embed=e)
 
 	async def on_guild_channel_update(self, before, after):
@@ -468,7 +494,6 @@ class Logger:
 						before_roles[dat[0].name] = dat[1]
 					for dat in after.overwrites:
 						after_roles[dat[0].name] = dat[1]
-					position = 0
 					for key in list(before_roles.keys()):
 						if key != after_roles[list(after_roles.keys())[list(after_roles).index(key)]]:
 							before_perm = []
@@ -486,9 +511,9 @@ class Logger:
 								if before_value[before_perm.index(perm)] != after_value[after_perm.index(perm)]:
 									difference += f"\n□ {after_perm[after_perm.index(perm)]}: {after_value[after_perm.index(perm)]}"
 							if difference:
-								value += f"\n🔹 {list(after_roles.keys())[list(after_roles).index(key)]} + {difference}"
-							position += 1
+								value += f"{config.emojis('edited')} {list(after_roles.keys())[list(after_roles).index(key)] + difference}"
 				e.add_field(name="◈ Overwrites ◈", value=value, inline=False)
+			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 			await channel.send(embed=e)
 
 	async def on_guild_role_create(self, role):
@@ -502,6 +527,7 @@ class Logger:
 			e.title = "~==🥂🍸🍷Role Created🍷🍸🥂==~"
 			e.set_thumbnail(url=role.guild.icon_url)
 			e.description = f"**Name:** {role.name}"
+			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 			await channel.send(embed=e)
 
 	async def on_guild_role_delete(self, role):
@@ -517,6 +543,7 @@ class Logger:
 			e.description = f"**Name:** {role.name}\n" \
 				f"**Color:** {role.color}\n" \
 				f"**Users:** [{len(list(role.members))}]"
+			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 			await channel.send(embed=e)
 
 	async def on_guild_role_update(self, before, after):
@@ -694,6 +721,7 @@ class Logger:
 						changed_permissions += f"{config.emojis('plus')} manage emojis\n"
 				e.add_field(name="◈ Perms ◈", value=changed_permissions, inline=False)
 			if is_changed:
+				e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 				await channel.send(embed=e)
 
 	async def on_guild_emojis_update(self, guild, before, after):
@@ -717,6 +745,7 @@ class Logger:
 			channel = self.bot.get_channel(self.channel[guild_id])
 			e = discord.Embed(color=colors.yellow())
 			e.set_thumbnail(url=user.avatar_url)
+			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 			for emoji in before:
 				if emoji not in after:
 					e.title = "~==🥂🍸🍷Emoji Deleted🍷🍸🥂==~"
@@ -759,6 +788,7 @@ class Logger:
 				f"**User:** {m.mention}\n" \
 				f"**ID:** {m.id}\n"
 			await channel.send(embed=e)
+			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 
 	async def on_member_remove(self, m: discord.Member):
 		guild_id = str(m.guild.id)
@@ -768,7 +798,7 @@ class Logger:
 					return
 			is_kick = None
 			async for entry in m.guild.audit_logs(action=discord.AuditLogAction.kick, limit=1):
-				if str(entry.action) == "AuditLogAction.ban":
+				if str(entry.action) == "AuditLogAction.kick":
 					if utc(2).past() < entry.created_at:
 						user = entry.user
 						is_kick = True
@@ -787,6 +817,7 @@ class Logger:
 					f"**Member:** {m}\n" \
 					f"**Kicked by:** {user.display_name}" \
 					f"**ID:** {m.id}\n"
+			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 			await channel.send(embed=e)
 
 	async def on_member_ban(self, guild, user):
@@ -806,6 +837,7 @@ class Logger:
 				e.title = "~==🥂🍸🍷User Banned🍷🍸🥂==~"
 			e.description = f"**User:** {user}\n" \
 				f"**Banned by:** {author.name}"
+			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 			await channel.send(embed=e)
 
 	async def on_member_unban(self, guild, user):
@@ -824,6 +856,7 @@ class Logger:
 			e.title = "~==🥂🍸🍷User Unbanned🍷🍸🥂==~"
 			e.set_thumbnail(url=user.avatar_url)
 			e.description = f"**User:** {user}\nUnbanned by: {user.display_name}"
+			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 			await channel.send(embed=e)
 
 	async def on_member_update(self, before, after):
@@ -863,6 +896,7 @@ class Logger:
 						role_changes += f"{config.emojis('plus')} {role.name}\n"
 				e.add_field(name="◈ Roles ◈", value=role_changes, inline=False)
 			if change_value:
+				e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 				await channel.send(embed=e)
 
 def setup(bot):
