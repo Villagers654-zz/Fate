@@ -1,6 +1,8 @@
 from discord.ext import commands
 from os.path import isfile
+from utils import colors
 import datetime
+import discord
 import json
 import time
 
@@ -29,13 +31,20 @@ class AntiPurge:
 			toggle = "disabled"
 			if guild_id in self.toggle:
 				toggle = "enabled"
-			await ctx.send("**Anti Purge Instructions:**\n"
-			               ".anti_purge enable\n"
-			               ".anti_purge disable\n"
-			               f"**Current Status:** {toggle}\n")
+			e = discord.Embed(color=colors.red())
+			e.set_author(name="| Anti Purge", icon_url=ctx.author.avatar_url)
+			e.set_thumbnail(url=ctx.guild.icon_url)
+			e.description = "Bans a user if they attempt to mass kick/ban members ~ " \
+				"this requires my role to be above theirs & can only be enabled by the guilds owner"
+			e.add_field(name="◈ Usage ◈", value=
+			    ".anti_purge enable\n"
+			    ".anti_purge disable\n", inline=False)
+			e.set_footer(text=f"Current Status: {toggle}")
+			await ctx.send(embed=e)
 
 	@_anti_purge.command(name="enable")
 	@commands.check(is_guild_owner)
+	@commands.bot_has_permissions(ban_members=True)
 	async def _enable(self, ctx):
 		guild_id = str(ctx.guild.id)
 		self.toggle[guild_id] = "enabled"
