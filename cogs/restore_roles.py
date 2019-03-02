@@ -40,11 +40,7 @@ class RestoreRoles:
 						role = member.guild.get_role(role_id)
 						await member.add_roles(role)
 					except:
-						print("error getting role dat")
-			else:
-				print("member not in dat")
-		else:
-			print("guild not in dat")
+						pass
 
 	async def on_member_remove(self, member):
 		guild_id = str(member.guild.id)
@@ -54,6 +50,11 @@ class RestoreRoles:
 			for role in member.roles:
 				self.data[guild_id][member_id].append(role.id)
 			self.save_data()
+
+	async def on_guild_remove(self, guild):
+		guild_id = str(guild.id)
+		if guild_id in self.data:
+			del self.data[guild_id]
 
 def setup(bot):
 	bot.add_cog(RestoreRoles(bot))
