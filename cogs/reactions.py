@@ -204,12 +204,12 @@ class Reactions:
 		await ctx.send(f"◈ {ctx.author.mention} bites {user} ◈", file=discord.File(path, filename=os.path.basename(path)), embed=e)
 		await ctx.message.delete()
 
-	@commands.command()
+	@commands.command(name="wine")
 	@commands.cooldown(1, 5, commands.BucketType.user)
-	async def wine(self, ctx, *, content=""):
+	async def _wine(self, ctx, *, content=""):
 		path = os.getcwd() + "/data/images/reactions/wine/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/wine/"))
 		e = discord.Embed()
-		if len(content) > 0:
+		if content:
 			e.set_author(name=f"{content}", icon_url=ctx.author.avatar_url)
 		else:
 			e.set_author(name=f"{content}", icon_url=ctx.author.avatar_url)
@@ -310,6 +310,14 @@ class Reactions:
 		e = discord.Embed()
 		e.set_image(url="attachment://" + os.path.basename(path))
 		await ctx.send(file=discord.File(path, filename=os.path.basename(path)), embed=e)
+
+	@commands.command(name="rape")
+	@commands.cooldown(1, 5, commands.BucketType.user)
+	async def _rape(self, ctx):
+		e = discord.Embed(color=colors.fate())
+		e.set_image(url="https://cdn.discordapp.com/attachments/507914723858186261/551085804076793876/received_538311363348269.jpeg")
+		await ctx.send(embed=e)
+		await ctx.message.delete()
 
 # ~== Misc == ~
 
