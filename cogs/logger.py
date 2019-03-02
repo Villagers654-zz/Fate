@@ -167,7 +167,7 @@ class Logger:
 				e = discord.Embed(color=colors.white())
 				e.title = "~===🥂🍸🍷Ghost Typing🍷🍸🥂===~"
 				e.set_thumbnail(url=channel.guild.icon_url)
-				e.description = f"**User:** {user.display_name}\n" \
+				e.description = f"**User:** {user.mention}\n" \
 					f"**Channel:** {channel.mention}"
 				e.set_footer(text=datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p'))
 				await log.send(embed=e)
@@ -201,7 +201,7 @@ class Logger:
 							e = discord.Embed(color=colors.pink())
 							e.title = "~===🥂🍸🍷Msg Edited🍷🍸🥂===~"
 							e.set_thumbnail(url=before.author.avatar_url)
-							e.description = f"**Author:** {before.author}\n" \
+							e.description = f"**Author:** {before.author.mention}\n" \
 								f"**Channel:** {before.channel.mention}"
 							e.add_field(name="◈ Before ◈", value=before.content, inline=False)
 							e.add_field(name="◈ After ◈", value=after.content, inline=False)
@@ -218,12 +218,12 @@ class Logger:
 				user = "Author"
 				async for entry in m.guild.audit_logs(action=discord.AuditLogAction.message_delete, limit=1):
 					if utc(2).past() < entry.created_at:
-						user = entry.user
+						user = entry.user.mention
 				channel = self.bot.get_channel(self.channel[guild_id])
 				e = discord.Embed(color=colors.purple())
 				e.title = "~===🥂🍸🍷Msg Deleted🍷🍸🥂===~"
 				e.set_thumbnail(url=m.author.avatar_url)
-				e.description = f"**Author:** {m.author}\n" \
+				e.description = f"**Author:** {m.author.mention}\n" \
 					f"**Deleted by:** {user}\n" \
 					f"**Channel:** {m.channel.mention}"
 				if m.pinned:
@@ -268,10 +268,14 @@ class Logger:
 				if "guild_update" in self.blacklist[guild_id]:
 					return
 			if before.name != after.name:
+				user = "unknown"
+				async for entry in after.guild.audit_logs(action=discord.AuditLogAction.guild_update, limit=1):
+					user = entry.user.mention
 				channel = self.bot.get_channel(self.channel[guild_id])
 				e = discord.Embed(color=colors.cyan())
 				e.title = "~==🥂🍸🍷Guild Update🍷🍸🥂==~"
 				e.set_thumbnail(url=before.icon_url)
+				e.description = f"**Updated by:** {user}"
 				e.add_field(name="◈ Name ◈", value= \
 					f"**Before:** `{before.name}`\n" \
 					f"**After:** `{after.name}`")
@@ -291,7 +295,7 @@ class Logger:
 			e.title = "~==🥂🍸🍷Channel Created🍷🍸🥂==~"
 			e.set_thumbnail(url=user.avatar_url)
 			e.description = f"**Channel:** {channel.mention}\n" \
-				f"**Created by:** {user.display_name}\n" \
+				f"**Created by:** {user.mention}\n" \
 				f"**ID:** {channel.id}\n" \
 				f"**Members:** [{len(channel.members)}]"
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
@@ -310,7 +314,7 @@ class Logger:
 			e.title = "~==🥂🍸🍷Channel Deleted🍷🍸🥂==~"
 			e.set_thumbnail(url=user.avatar_url)
 			e.description = f"**Channel:** {channel.name}\n" \
-				f"**Deleted by:** {user.display_name}\n" \
+				f"**Deleted by:** {user.mention}\n" \
 				f"**ID:** {channel.id}\n" \
 				f"**Members:** [{len(channel.members)}]"
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
@@ -336,7 +340,7 @@ class Logger:
 			e.set_thumbnail(url=user.avatar_url)
 			e.description = \
 				f"**Channel:** {channel.mention}\n" \
-				f"**Updated by:** {user.display_name}"
+				f"**Updated by:** {user.mention}"
 			if before.name != after.name:
 				e.add_field(name="◈ Name ◈", value=f"**Before:** {before.name}\n"
 					f"**After:** {after.name}", inline=False)
@@ -415,7 +419,7 @@ class Logger:
 			e.title = "~==🥂🍸🍷Channel Created🍷🍸🥂==~"
 			e.set_thumbnail(url=user.avatar_url)
 			e.description = f"**Channel:** {channel.mention}\n" \
-				f"**Created by:** {user.display_name}\n" \
+				f"**Created by:** {user.mention}\n" \
 				f"**ID:** {channel.id}\n" \
 				f"**Members:** [{len(channel.members)}]"
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
@@ -434,7 +438,7 @@ class Logger:
 			e.title = "~==🥂🍸🍷Channel Deleted🍷🍸🥂==~"
 			e.set_thumbnail(url=user.avatar_url)
 			e.description = f"**Channel:** {channel.name}\n" \
-				f"**Deleted by:** {user.display_name}\n" \
+				f"**Deleted by:** {user.mention}\n" \
 				f"**ID:** {channel.id}\n" \
 				f"**Members:** [{len(channel.members)}]"
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
@@ -447,7 +451,6 @@ class Logger:
 				if "channel_update" in self.blacklist[guild_id]:
 					return
 			user = None
-			action = None
 			async for entry in before.guild.audit_logs(after=utc(2).past(), action=discord.AuditLogAction.channel_update, limit=1):
 				user = entry.user
 			async for entry in before.guild.audit_logs(after=utc(2).past(), action=discord.AuditLogAction.overwrite_create, limit=1):
@@ -462,7 +465,7 @@ class Logger:
 			e.set_thumbnail(url=user.avatar_url)
 			e.description = \
 				f"**Channel:** {before.mention}\n" \
-				f"**Updated by:** {user.display_name}"
+				f"**Updated by:** {user.mention}"
 			if before.name != after.name:
 				e.add_field(name="◈ Name ◈", value=f"**Before:** {before.name}\n"
 					f"**After:** {after.name}", inline=False)
@@ -525,11 +528,14 @@ class Logger:
 			if guild_id in self.blacklist:
 				if "role_create" in self.blacklist[guild_id]:
 					return
+			async for entry in role.guild.audit_logs(after=utc(2).past(), action=discord.AuditLogAction.role_create, limit=1):
+				user = entry.user
 			channel = self.bot.get_channel(self.channel[guild_id])
 			e = discord.Embed(color=colors.blue())
 			e.title = "~==🥂🍸🍷Role Created🍷🍸🥂==~"
 			e.set_thumbnail(url=role.guild.icon_url)
-			e.description = f"**Name:** {role.name}"
+			e.description = f"**Role:** {role.mention}\n" \
+				f"**Created by:** {user.mention}"
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 			await channel.send(embed=e)
 
@@ -539,11 +545,14 @@ class Logger:
 			if guild_id in self.blacklist:
 				if "role_delete" in self.blacklist[guild_id]:
 					return
+			async for entry in role.guild.audit_logs(after=utc(2).past(), action=discord.AuditLogAction.role_delete, limit=1):
+				user = entry.user
 			channel = self.bot.get_channel(self.channel[guild_id])
 			e = discord.Embed(color=colors.blue())
 			e.title = "~==🥂🍸🍷Role Deleted🍷🍸🥂==~"
 			e.set_thumbnail(url=role.guild.icon_url)
 			e.description = f"**Name:** {role.name}\n" \
+				f"**Deleted by:** {user.mention}\n" \
 				f"**Color:** {role.color}\n" \
 				f"**Users:** [{len(list(role.members))}]"
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
@@ -556,6 +565,8 @@ class Logger:
 			if guild_id in self.blacklist:
 				if "role_update" in self.blacklist[guild_id]:
 					return
+			async for entry in after.guild.audit_logs(after=utc(2).past(), action=discord.AuditLogAction.role_delete, limit=1):
+				user = entry.user
 			user = None
 			async for entry in after.guild.audit_logs(action=discord.AuditLogAction.role_update, limit=1):
 				if utc(2).past() < entry.created_at:
@@ -567,6 +578,7 @@ class Logger:
 			e = discord.Embed(color=colors.blue())
 			e.title = "~==🥂🍸🍷Role Updated🍷🍸🥂==~"
 			e.set_thumbnail(url=before.guild.icon_url)
+			e.description = f"**Updated by:** {user.mention}"
 			if before.name != after.name:
 				is_changed = True
 				e.add_field(name="◈ Name ◈", value=f"**Before:** {before.name}\n**After:** {after.name}", inline=False)
@@ -753,14 +765,14 @@ class Logger:
 				if emoji not in after:
 					e.title = "~==🥂🍸🍷Emoji Deleted🍷🍸🥂==~"
 					e.description = \
-						f"**Deleted by:** {user.display_name}\n" \
+						f"**Deleted by:** {user.mention}\n" \
 						f"**Name:** {emoji.name}"
 					return await channel.send(embed=e)
 			for emoji in after:
 				if emoji not in before:
 					e.title = "~==🥂🍸🍷Emoji Created🍷🍸🥂==~"
 					e.description = \
-						f"**Created by:** {user.display_name}\n" \
+						f"**Created by:** {user.mention}\n" \
 						f"**Name:** {emoji.name}\n" \
 						f"**Emoji:** {emoji}"
 					return await channel.send(embed=e)
@@ -770,7 +782,7 @@ class Logger:
 						if emoji.name != future_emoji.name:
 							e.title = "~==🥂🍸🍷Emoji Updated🍷🍸🥂==~"
 							e.description = \
-								f"**Updated by:** {user.display_name}\n" \
+								f"**Updated by:** {user.mention}\n" \
 								f"**Emoji:** {emoji}"
 							e.add_field(name="◈ Name ◈", value=
 								f"**Before:** {emoji.name}\n"
@@ -818,7 +830,7 @@ class Logger:
 				e.set_thumbnail(url=m.avatar_url)
 				e.description = \
 					f"**Member:** {m}\n" \
-					f"**Kicked by:** {user.display_name}" \
+					f"**Kicked by:** {user.mention}" \
 					f"**ID:** {m.id}\n"
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 			await channel.send(embed=e)
@@ -839,7 +851,7 @@ class Logger:
 			if isinstance(user, discord.User):
 				e.title = "~==🥂🍸🍷User Banned🍷🍸🥂==~"
 			e.description = f"**User:** {user}\n" \
-				f"**Banned by:** {author.name}"
+				f"**Banned by:** {author.mention}"
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 			await channel.send(embed=e)
 
@@ -849,16 +861,15 @@ class Logger:
 			if guild_id in self.blacklist:
 				if "member_unban" in self.blacklist[guild_id]:
 					return
-			user = None
 			async for entry in guild.audit_logs(action=discord.AuditLogAction.unban, after=utc(2).past(), limit=1):
-				user = entry.user
+				author = entry.user
 			if not user:
 				user.display_name = "Unknown"
 			channel = self.bot.get_channel(self.channel[guild_id])
 			e = discord.Embed(color=colors.orange())
 			e.title = "~==🥂🍸🍷User Unbanned🍷🍸🥂==~"
 			e.set_thumbnail(url=user.avatar_url)
-			e.description = f"**User:** {user}\nUnbanned by: {user.display_name}"
+			e.description = f"**User:** {user}\nUnbanned by: {author.mention}"
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 			await channel.send(embed=e)
 
@@ -883,7 +894,7 @@ class Logger:
 			e.set_thumbnail(url=before.avatar_url)
 			e.title = "~==🥂🍸🍷Member Updated🍷🍸🥂==~"
 			e.description = f"**User:** {after}\n" \
-				f"**Changed by:** {user.name}\n"
+				f"**Changed by:** {user.mention}\n"
 			if before.display_name != after.display_name:
 				change_value = True
 				e.add_field(name="◈ Nickname ◈", value=f"**Before:** {before.display_name}\n"
