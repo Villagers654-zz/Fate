@@ -277,7 +277,6 @@ class Music:
         ctx.state.voice = await destination.connect()
 
     @commands.command(name='summon')
-    @commands.has_permissions(manage_guild=True)
     async def _summon(self, ctx, *, channel: discord.VoiceChannel=None):
         if channel is None and not ctx.author.voice:
             await ctx.send('You are not connected to a voice channel nor specified a channel to join.', delete_after=20)
@@ -295,6 +294,7 @@ class Music:
 
     @commands.command(name='play')
     @commands.cooldown(1, 3, commands.BucketType.user)
+    @commands.bot_has_permissions(manage_messages=True)
     async def _play(self, ctx, *, search: str):
         if ctx.state.voice is None:
             await ctx.invoke(self._join)
