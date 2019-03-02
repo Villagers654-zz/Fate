@@ -131,9 +131,12 @@ class ChatBot:
 	@commands.command(name="globalpop")
 	@commands.check(checks.luck)
 	async def _globalpop(self, ctx, *, phrase):
+		popped = []
 		for response in self.cache["global"]:
 			if phrase in response:
 				self.cache["global"].pop(self.cache["global"].index(response))
+				popped.append(response)
+		await ctx.send(f"Removed: {popped}")
 		await ctx.message.delete()
 
 	@commands.command(name="prefixes")
@@ -159,7 +162,7 @@ class ChatBot:
 					def pred(m):
 						return m.channel.id == m.channel.id and m.author.bot is True
 					try:
-						msg = await self.bot.wait_for('message', check=pred, timeout=2)
+						await self.bot.wait_for('message', check=pred, timeout=2)
 					except asyncio.TimeoutError:
 						return
 					else:
@@ -170,9 +173,8 @@ class ChatBot:
 						return
 				blocked = ["http", "discord.gg", "discord,gg", "py", "js", "python", "javascript", "`"]
 				for i in blocked:
-					if i in m.content:
+					if i in m.content.lower():
 						return
-				m.content = m.content.replace("fate", m.author.mention).replace("Fate", m.author.mention)
 				if guild_id in self.toggle:
 					if len(m.content) is 0:
 						return

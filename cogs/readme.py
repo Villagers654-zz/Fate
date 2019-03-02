@@ -35,7 +35,7 @@ class customclass:
 ■ Warnings are just warnings, whether or not you receive a warning or mute is entirely up to the mod unless told otherwise by a higher position
 ■ Some bot commands can be ignored if they contribute to the chat in a certain manner, for instance, reaction commands are allowed depending on the channel, or if you're that special little someone that pushes the rules, no spammy bot commands
 ■ Things outside of the rules can be deemed punishment worthy""", inline=False)
-			e.add_field(name="~==🌹🥂🍸🍷Global Rules🍷🍸🥂🌹==~", value="""■ Leaving to avoid mute results in a higher grade punishment of our choice
+			e.add_field(name="~==🌹🥂🍸🍷Global Rules🍷🍸🥂🌹==~", value="""■ This server abides by discords TOS, therefore breaking the TOS counts as an offense\n■ Leaving to avoid mute results in a higher grade punishment of our choice
 ■ No doxxing (limited to this discord)
 ■ No pinging roles (this goes for mods too)
 ■ No gifs / videos / emotes with flashing lights that may trigger epilepsy

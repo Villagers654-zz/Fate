@@ -1,5 +1,6 @@
 from discord.ext import commands
-from utils import colors
+from utils import colors, config
+import difflib
 import discord
 import asyncio
 import random
@@ -15,6 +16,13 @@ class Dev:
 
 	def luck(ctx):
 		return ctx.message.author.id == 264838866480005122
+
+	@commands.command(name="yeet")
+	async def _yeet(self, ctx, name):
+		members = []
+		for member in ctx.guild.members:
+			members.append(member.name)
+		await ctx.send(difflib.get_close_matches(name, members))
 
 	@commands.command(name="db")
 	@commands.check(luck)

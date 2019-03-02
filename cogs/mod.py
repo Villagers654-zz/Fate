@@ -57,6 +57,27 @@ class Mod:
 			await ctx.send("{}, successfully purged {} messages".format(ctx.author.name, amount), delete_after=5)
 			self.purge[channel_id] = False
 
+	@commands.command(name="purge_user")
+	@commands.has_permissions(manage_messages=True)
+	@commands.bot_has_permissions(manage_messages=True)
+	async def _purge_user(self, ctx, user: discord.Member, amount: int):
+		if amount > 250:
+			return await ctx.send("You cannot purge more than 250 user specific at a time")
+		channel_id = str(ctx.channel.id)
+		current_position = 0
+		if channel_id not in self.purge:
+			self.purge[channel_id] = True
+			async for msg in ctx.channel.history(limit=10000):
+				if msg.author.id is user.id:
+					await msg.delete()
+					current_position += 1
+					if current_position >= amount:
+						del self.purge[channel_id]
+						await ctx.send("{}, successfully purged {} images".format(ctx.author.name, amount), delete_after=5)
+						return await ctx.message.delete()
+		if channel_id in self.purge:
+			return await ctx.send("I'm already purging..")
+
 	@commands.command(name="purge_images")
 	@commands.has_permissions(manage_messages=True)
 	@commands.bot_has_permissions(manage_messages=True)
