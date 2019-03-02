@@ -20,6 +20,7 @@ class AutoRole:
 
 	@commands.command(name="autorole")
 	@commands.has_permissions(manage_roles=True)
+	@commands.bot_has_permissions(manage_roles=True)
 	async def _autorole(self, ctx, item: commands.clean_content=None):
 		guild_id = str(ctx.guild.id)
 		e = discord.Embed(color=colors.fate())
@@ -85,7 +86,7 @@ class AutoRole:
 	async def on_role_delete(self, role):
 		guild_id = str(role.guild.id)
 		if role.id in self.roles[guild_id]:
-			self.roles[guild_id].pop(role.id)
+			self.roles[guild_id].pop(self.roles[guild_id].index(role.id))
 
 def setup(bot):
 	bot.add_cog(AutoRole(bot))
