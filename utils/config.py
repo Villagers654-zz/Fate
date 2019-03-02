@@ -20,6 +20,8 @@ def links():
 def emojis(emoji):
 	if emoji is "plus":
 		return "<:plus:548465119462424595>"
+	if emoji is "edited":
+		return "<:edited:550291696861315093>"
 
 def owner(ctx):
 	return ctx.author.id == 264838866480005122
