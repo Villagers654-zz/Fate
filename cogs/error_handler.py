@@ -36,20 +36,14 @@ class ErrorHandler:
 			return await ctx.send("I'm missing permissions")
 		print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
 		traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
-		e = discord.Embed(color=colors.lime_green())
+		e = discord.Embed(color=colors.red())
 		e.set_author(name=f"| Fatal Error | {ctx.command}", icon_url=ctx.author.avatar_url)
 		e.set_thumbnail(url=ctx.guild.icon_url)
 		e.description = "✦ This has been logged and will be resolved shortly!"
 		e.add_field(name="◈ Error ◈", value=error, inline=False)
-		e.set_footer(text=f"Author: {ctx.author}")
-		error_message = await ctx.send(embed=e)
+		await ctx.send(embed=e)
 		message = await self.bot.get_channel(549192817097048080).send(embed=e)
 		await message.add_reaction("✔")
-		if "manage_messages" in ', '.join(perm for perm, value in
-		ctx.guild.get_member(self.bot.user.id).guild_permissions if value):
-			await asyncio.sleep(20)
-			await ctx.message.delete()
-			await error_message.delete()
 
 	async def on_raw_reaction_add(self, data):
 		if not self.bot.get_user(data.user_id).bot:
