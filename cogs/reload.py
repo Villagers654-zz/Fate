@@ -11,11 +11,6 @@ class Reload:
 	async def __error(self, ctx, error):
 		await ctx.send(error)
 
-	@commands.command(name="reboot", aliases=["restart"])
-	async def _reboot(self, ctx):
-		await ctx.send("Rebooting..")
-		self.bot.logout()
-
 	@commands.command(name="reload", aliases=["relaod"], hidden=True)
 	@commands.check(checks.luck)
 	async def _reload(self, ctx, *, module=""):
