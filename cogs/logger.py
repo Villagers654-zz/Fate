@@ -171,9 +171,9 @@ class Logger:
 					f"**Channel:** {channel.mention}"
 				e.set_footer(text=datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p'))
 				await log.send(embed=e)
-				del self.waiting[guild_id]
+				del self.waiting[guild_id][user_id]
 			else:
-				del self.waiting[guild_id]
+				del self.waiting[guild_id][user_id]
 
 	async def on_message(self, m: discord.Message):
 		guild_id = str(m.guild.id)
