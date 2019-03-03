@@ -1,5 +1,6 @@
 from discord.ext import commands
 from utils import colors, config
+import subprocess
 import traceback
 import discord
 import asyncio
@@ -36,11 +37,19 @@ class ErrorHandler:
 			return await ctx.send("I'm missing permissions")
 		print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
 		traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
+		p = subprocess.Popen("cat  /root/.pm2/logs/bot-error.log", stdout=subprocess.PIPE, shell=True)
+		(output, err) = p.communicate()
+		output = str(output).replace("\\t", "    ").replace("b'", "").replace("`", "").replace("\\", "").split("\\n")
+		msg = ""
+		for i in output[:len(output) - 1]:
+			msg += f"{i}\n"
+		msg = msg[::-1]
+		msg = msg[:msg.find("Ignoring"[::-1])]
+		r = f"```Ignoring{msg[::-1]}```"
 		e = discord.Embed(color=colors.red())
 		e.set_author(name=f"| Fatal Error | {ctx.command}", icon_url=ctx.author.avatar_url)
 		e.set_thumbnail(url=ctx.guild.icon_url)
-		e.description = "✦ This has been logged and will be resolved shortly!"
-		e.add_field(name="◈ Error ◈", value=error, inline=False)
+		e.add_field(name="◈ Error ◈", value=r, inline=False)
 		await ctx.send(embed=e)
 		message = await self.bot.get_channel(549192817097048080).send(embed=e)
 		await message.add_reaction("✔")
