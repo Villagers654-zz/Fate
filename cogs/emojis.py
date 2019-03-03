@@ -49,10 +49,10 @@ class Emojis:
 					return await ctx.send(embed=e)
 			await ctx.send(str(HTTPException)[:2000])
 
-	@commands.command(name="add_from_emoji", aliases=["fromemote", "fromemoji"])
+	@commands.command(name="stealemoji", aliases=["stealemote", "fromemote", "fromemoji"])
 	@commands.has_permissions(manage_emojis=True)
 	@commands.cooldown(1, 5, commands.BucketType.guild)
-	async def _add_from_emoji(self, ctx, emoji: discord.PartialEmoji):
+	async def _stealemoji(self, ctx, emoji: discord.PartialEmoji):
 		await ctx.guild.create_custom_emoji(name=emoji.name, image=requests.get(emoji.url).content, reason=ctx.author.name)
 		await ctx.send(f"Added `{emoji.name}` to emotes")
 
