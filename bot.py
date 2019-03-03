@@ -30,7 +30,8 @@ def get_prefix(bot, message):
 files = ['error_handler', 'owner', 'menus', 'core', 'mod', 'music', 'welcome', 'farewell', 'notes', 'archive', 'coffeeshop', 'custom',
          'actions', 'reactions', 'responses', 'textart', 'fun', 'math', 'dev', '4b4t', 'readme', 'legit', 'reload', 'embeds', 'warning',
          'profiles', 'save', 'clean_rythm', 'tother', 'utility', 'psutil', 'rules', 'duel_chat', 'selfroles', 'lock', 'backup', 'audit',
-         'cookies', 'team', 'anti_purge', 'emojis', 'logger', 'autorole', 'changelog', 'whitelist', 'blacklist', 'query']
+         'cookies', 'team', 'anti_purge', 'emojis', 'logger', 'autorole', 'changelog', 'whitelist', 'blacklist', 'query', 'restore_roles',
+         'chatbot', 'anti_spam', 'anti_raid']
 
 description = '''Fate[Zero]: Personal Bot'''
 bot = commands.Bot(command_prefix=get_prefix, case_insensitive=True, max_messages=16000)
