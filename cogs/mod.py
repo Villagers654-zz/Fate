@@ -481,60 +481,48 @@ class Mod:
 		await member.edit(mute=False)
 		await ctx.send(f'Unmuted {member.display_name} 👍')
 
-	@commands.command()
+	@commands.command(name="mute")
 	@commands.has_permissions(manage_roles=True)
-	async def mute(self, ctx, member: discord.Member=None, timer=None):
+	async def _mute(self, ctx, member: discord.Member=None, timer=None):
 		if member.top_role.position >= ctx.author.top_role.position:
 			return await ctx.send("That user is above your paygrade, take a seat")
 		if member is None and timer is None:
-			await ctx.send(
+			return await ctx.send(
 				"**Mute Usage:**\n"
 				".mute {user}\n"
 				"**timer Usage:**\n"
 				"m = minute(s), h = hour(s), d = day(s)\n"
 				".mute {user} {number}{m/h/d}")
+		role = None
+		async with ctx.typing():
+			for i in ctx.guild.roles:
+				if i.name.lower() == "muted":
+					role = i
+		if role is None:
+			return await ctx.send("this server does not have a muted role")
+		if role in member.roles:
+			return await ctx.send(f"{member.display_name} is already muted")
+		await member.add_roles(role)
+		if timer is None:
+			return await ctx.send(f"**Muted:** {member.name}")
+		r = timer.replace("m", " minutes").replace("1 minutes", "1 minute")
+		r = r.replace("h", " hours").replace("1 hours", "1 hour")
+		r = r.replace("d", " days").replace("1 days", "1 day")
+		await ctx.send(f"Muted **{member.name}** for {r}")
+		if "d" in timer:
+			timer = float(timer.replace("d", "")) * 60 * 60 * 24
+		if "h" in timer:
+			timer = float(timer.replace("h", "")) * 60 * 60
+		if "m" in timer:
+			timer = float(timer.replace("m", "")) * 60
+		if "s" in timer:
+			timer = float(timer.replace("s", ""))
+		await asyncio.sleep(timer)
+		if role not in member.roles:
+			pass
 		else:
-			role = None
-			async with ctx.typing():
-				for i in ctx.guild.roles:
-					if i.name.lower() == "muted":
-						role = i
-			if role is None:
-				await ctx.send("this server does not have a muted role")
-			else:
-				if role in member.roles:
-					await ctx.send(f"{member.display_name} is already muted")
-				else:
-					await member.add_roles(role)
-					if timer is None:
-						await ctx.send(f"**Muted:** {member.name}")
-					else:
-						r = timer.replace("m", " minutes")
-						if r == "1 minutes":
-							r = "1 minute"
-						r = r.replace("h", " hours")
-						if r == "1 hours":
-							r = "1 hour"
-						r = r.replace("d", " days")
-						if r == "1 days":
-							r = "1 day"
-						await ctx.send(f"Muted **{member.name}** for {r}")
-					if timer is not None:
-						if "d" in timer:
-							t = timer.replace("d", "")
-							t = int(t) * 60 * 60 * 24
-						if "h" in timer:
-							t = timer.replace("h", "")
-							t = int(t) * 60 * 60
-						if "m" in timer:
-							t = timer.replace("m", "")
-							t = int(t) * 60
-						await asyncio.sleep(t)
-						if role not in member.roles:
-							pass
-						else:
-							await member.remove_roles(role)
-							await ctx.send(f"**Unmuted:** {member.name}")
+			await member.remove_roles(role)
+			await ctx.send(f"**Unmuted:** {member.name}")
 
 	@commands.command()
 	@commands.has_permissions(manage_roles=True)
