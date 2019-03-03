@@ -10,7 +10,7 @@ class Archive:
 	@commands.command(name='archive')
 	@commands.has_permissions(manage_messages=True)
 	@commands.cooldown(1, 25, commands.BucketType.channel)
-	async def archive(self, ctx, amount:int):
+	async def _archive(self, ctx, amount:int):
 		if amount > 1000:
 			return await ctx.send('You cannot go over 1000')
 		self.saving[str(ctx.channel.id)] = "saving"
