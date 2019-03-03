@@ -3,7 +3,6 @@ from utils import colors, config
 import subprocess
 import traceback
 import discord
-import asyncio
 import sys
 
 class ErrorHandler:
