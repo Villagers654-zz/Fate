@@ -7,14 +7,12 @@ import json
 class SelfRoles:
 	def __init__(self, bot):
 		self.bot = bot
-		self.toggle = {}
 		self.message = {}
 		self.roles = {}
 		if isfile("./data/userdata/selfroles.json"):
 			with open("./data/userdata/selfroles.json", "r") as infile:
 				dat = json.load(infile)
-				if "toggle" in dat and "message" in dat and "roles" in dat:
-					self.toggle = dat["toggle"]
+				if "message" in dat and "roles" in dat:
 					self.message = dat["message"]
 					self.roles = dat["roles"]
 
@@ -23,8 +21,8 @@ class SelfRoles:
 	async def _selfroles(self, ctx, config=None):
 		reactions = ['1⃣', '2⃣', '3⃣', '4⃣', '5⃣', '6⃣', '7⃣', '8⃣', '9⃣']
 		if config == "disable":
-			self.message[str(ctx.guild.id)] = "deleted"
-			await ctx.send("Successfully disabled self roles")
+			del self.message[str(ctx.guild.id)]
+			await ctx.send("Disabled self roles")
 		else:
 			# iteration 1
 			e = discord.Embed(color=0x80b0ff)
@@ -503,7 +501,7 @@ class SelfRoles:
 																															await ctx.send("Channel not found, please restart", delete_after=10)
 																															await embed.delete()
 		with open("./data/userdata/selfroles.json", "w") as outfile:
-			json.dump({"toggle": self.toggle, "message": self.message, "roles": self.roles}, outfile, ensure_ascii=False)
+			json.dump({"message": self.message, "roles": self.roles}, outfile, ensure_ascii=False)
 
 	async def on_raw_reaction_add(self, payload):
 		server = self.bot.get_guild(payload.guild_id)
@@ -588,6 +586,11 @@ class SelfRoles:
 									await user.remove_roles(role)
 									break
 
+	async def on_message_delete(self, m: discord.Message):
+		guild_id = str(m.guild.id)
+		if guild_id in self.message:
+			if self.message[guild_id] == str(m.id):
+				del self.message[guild_id]
 
 def setup(bot):
 	bot.add_cog(SelfRoles(bot))
