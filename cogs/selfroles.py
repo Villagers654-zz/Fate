@@ -592,6 +592,8 @@ class SelfRoles:
 			if self.message[guild_id] == str(m.id):
 				del self.message[guild_id]
 				del self.roles[guild_id]
+				with open("./data/userdata/selfroles.json", "w") as outfile:
+					json.dump({"message": self.message, "roles": self.roles}, outfile, ensure_ascii=False)
 
 def setup(bot):
 	bot.add_cog(SelfRoles(bot))
