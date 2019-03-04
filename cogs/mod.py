@@ -482,7 +482,7 @@ class Mod:
 		await ctx.send(f'Unmuted {member.display_name} 👍')
 
 	@commands.command(name="mute")
-	@commands.has_permissions(manage_roles=True)
+	@commands.has_permissions(manage_roles=True, manage_channels=True)
 	async def _mute(self, ctx, member: discord.Member=None, timer=None):
 		if member.top_role.position >= ctx.author.top_role.position:
 			return await ctx.send("That user is above your paygrade, take a seat")
@@ -499,7 +499,12 @@ class Mod:
 				if i.name.lower() == "muted":
 					role = i
 		if role is None:
-			return await ctx.send("this server does not have a muted role")
+			role = await ctx.guild.create_role()
+			await role.edit(name="Muted", color=colors.black())
+			for channel in ctx.guild.text_channels:
+				await channel.set_permissions(role, send_messages=False)
+			for channel in ctx.guild.voice_channels:
+				await channel.set_permissions(role, speak=False)
 		if role in member.roles:
 			return await ctx.send(f"{member.display_name} is already muted")
 		await member.add_roles(role)
@@ -518,38 +523,39 @@ class Mod:
 		if "s" in timer:
 			timer = float(timer.replace("s", ""))
 		await asyncio.sleep(timer)
-		if role not in member.roles:
-			pass
-		else:
+		if role in member.roles:
 			await member.remove_roles(role)
 			await ctx.send(f"**Unmuted:** {member.name}")
 
 	@commands.command()
 	@commands.has_permissions(manage_roles=True)
+	@commands.bot_has_permissions(manage_roles=True, manage_channels=True)
 	async def unmute(self, ctx, member: discord.Member=None):
 		if member.top_role.position >= ctx.author.top_role.position:
 			return await ctx.send("That user is above your paygrade, take a seat")
 		if member is None:
-			await ctx.send(
-				"**Unmute Usage:**\n"
-				".unmute {user}")
-		else:
-			role = 0
-			for i in ctx.guild.roles:
-				if i.name.lower() == "muted":
-					role = i
-			if role is 0:
-				await ctx.send("this server does not have a muted role")
-			else:
-				if role not in member.roles:
-					await ctx.send(f"{member.display_name} is not muted")
-				else:
-					await member.remove_roles(role)
-					await ctx.send(f"**Unmuted:** {member.name}")
+			return await ctx.send("**Unmute Usage:**\n.unmute {user}")
+		role = None
+		for r in ctx.guild.roles:
+			if r.name.lower() == "muted":
+				role = r
+		if not role:
+			role = await ctx.guild.create_role()
+			await role.edit(name="Muted", color=colors.black())
+			for channel in ctx.guild.text_channels:
+				await channel.set_permissions(role, send_messages=False)
+			for channel in ctx.guild.voice_channels:
+				await channel.set_permissions(role, speak=False)
+		if role not in member.roles:
+			return await ctx.send(f"{member.display_name} is not muted")
+		await member.remove_roles(role)
+		await ctx.send(f"Unmuted {member.name}")
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.has_permissions(manage_guild=True)
+	@commands.bot_has_permissions(manage_roles=True,
+	manage_channels=True, kick_members=True, ban_members=True)
 	async def warn(self, ctx, user, *, reason):
 		if user.startswith("<@"):
 			user = user.replace("<@", "")
@@ -614,18 +620,19 @@ class Mod:
 				if i.name.lower() == "muted":
 					role = i
 			if role is None:
-				await ctx.send("this server does not have a muted role")
-			else:
-				if role in user.roles:
-					await ctx.send(f"{user.display_name} is already muted")
-				else:
-					await user.add_roles(role)
-				await asyncio.sleep(7200)
-				if role not in user.roles:
-					pass
-				else:
-					await user.remove_roles(role)
-					await ctx.send(f"**Unmuted:** {user.name}")
+				role = await ctx.guild.create_role()
+				await role.edit(name="Muted", color=colors.black())
+				for channel in ctx.guild.text_channels:
+					await channel.set_permissions(role, send_messages=False)
+				for channel in ctx.guild.voice_channels:
+					await channel.set_permissions(role, speak=False)
+			if role in user.roles:
+				return await ctx.send(f"{user.display_name} is already muted")
+			await user.add_roles(role)
+			await asyncio.sleep(7200)
+			if role in user.roles:
+				await user.remove_roles(role)
+				await ctx.send(f"**Unmuted:** {user.name}")
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)

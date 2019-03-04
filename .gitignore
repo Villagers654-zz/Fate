@@ -6,4 +6,5 @@ __pycache__/
 /data/images/*
 /data/userdata/*
 /data/misc/*
-/cogs/avapxian_regime/
+/cogs/avapxian_regime
+/utils/*

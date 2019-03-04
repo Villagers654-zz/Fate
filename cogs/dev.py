@@ -17,6 +17,11 @@ class Dev:
 	def luck(ctx):
 		return ctx.message.author.id == 264838866480005122
 
+	@commands.command()
+	async def test_color(self, ctx, color):
+		e = discord.Embed(color=eval(f"0x{color}"))
+		await ctx.send(embed=e)
+
 	@commands.command(name="yeet")
 	async def _yeet(self, ctx, name):
 		members = []

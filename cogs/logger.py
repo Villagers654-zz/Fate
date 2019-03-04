@@ -30,6 +30,9 @@ class Logger:
 			json.dump({"channel": self.channel, "blacklist": self.blacklist,
 			           "blocked": self.blocked}, outfile, ensure_ascii=False)
 
+	def past(self, seconds):
+		return datetime.datetime.utcnow() - datetime.timedelta(seconds=seconds)
+
 	@commands.group(name="logger")
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	async def _logger(self, ctx):
@@ -279,7 +282,7 @@ class Logger:
 						return
 				user = "Author"
 				async for entry in m.guild.audit_logs(action=discord.AuditLogAction.message_delete, limit=1):
-					if utc(2).past() < entry.created_at:
+					if self.past(2) < entry.created_at:
 						user = entry.user.mention
 				channel = self.bot.get_channel(self.channel[guild_id])
 				e = discord.Embed(color=colors.purple())
