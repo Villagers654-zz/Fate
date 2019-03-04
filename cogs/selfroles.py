@@ -591,6 +591,7 @@ class SelfRoles:
 		if guild_id in self.message:
 			if self.message[guild_id] == str(m.id):
 				del self.message[guild_id]
+				del self.roles[guild_id]
 
 def setup(bot):
 	bot.add_cog(SelfRoles(bot))
