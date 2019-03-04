@@ -482,7 +482,8 @@ class Mod:
 		await ctx.send(f'Unmuted {member.display_name} 👍')
 
 	@commands.command(name="mute")
-	@commands.has_permissions(manage_roles=True, manage_channels=True)
+	@commands.has_permissions(manage_roles=True)
+	@commands.bot_has_permissions(manage_roles=True, manage_channels=True)
 	async def _mute(self, ctx, member: discord.Member=None, timer=None):
 		if member.top_role.position >= ctx.author.top_role.position:
 			return await ctx.send("That user is above your paygrade, take a seat")
@@ -506,6 +507,14 @@ class Mod:
 				await channel.set_permissions(role, speak=False)
 		if role in member.roles:
 			return await ctx.send(f"{member.display_name} is already muted")
+		roles = []
+		for r in member.roles:
+			try:
+				await member.remove_roles(r)
+				roles.append(r.id)
+				await asyncio.sleep(0.5)
+			except:
+				pass
 		await member.add_roles(role)
 		if timer is None:
 			return await ctx.send(f"**Muted:** {member.name}")
@@ -513,18 +522,21 @@ class Mod:
 		r = r.replace("h", " hours").replace("1 hours", "1 hour")
 		r = r.replace("d", " days").replace("1 days", "1 day")
 		await ctx.send(f"Muted **{member.name}** for {r}")
-		if "d" in timer:
+		if "d" in str(timer):
 			timer = float(timer.replace("d", "")) * 60 * 60 * 24
-		if "h" in timer:
+		if "h" in str(timer):
 			timer = float(timer.replace("h", "")) * 60 * 60
-		if "m" in timer:
+		if "m" in str(timer):
 			timer = float(timer.replace("m", "")) * 60
-		if "s" in timer:
+		if "s" in str(timer):
 			timer = float(timer.replace("s", ""))
 		await asyncio.sleep(timer)
 		if role in member.roles:
 			await member.remove_roles(role)
 			await ctx.send(f"**Unmuted:** {member.name}")
+		for r in roles:
+			await member.add_roles(ctx.guild.get_role(r))
+			await asyncio.sleep(0.5)
 
 	@commands.command()
 	@commands.has_permissions(manage_roles=True)
@@ -618,7 +630,8 @@ class Mod:
 				if i.name.lower() == "muted":
 					role = i
 			if role is None:
-				role = await ctx.guild.create_role(name="Muted", color=discord.Color(colors.black()))
+				role = await ctx.guild.create_role()
+				await role.edit(name="Muted", color=colors.black())
 				for channel in ctx.guild.text_channels:
 					await channel.set_permissions(role, send_messages=False)
 				for channel in ctx.guild.voice_channels:
