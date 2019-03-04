@@ -11,6 +11,7 @@ class Anti_Spam:
 		self.bot = bot
 		self.toggle = {}
 		self.roles = {}
+		self.working = {}
 		self.cd = {}
 		if isfile("./data/userdata/anti_spam.json"):
 			with open("./data/userdata/anti_spam.json", "r") as f:
@@ -74,14 +75,18 @@ class Anti_Spam:
 				else:
 					self.cd[guild_id][user_id] = [now, 0]
 				if self.cd[guild_id][user_id][1] > 2:
+					if guild_id not in self.working:
+						self.working[guild_id] = {}
+					if user_id in self.working[guild_id]:
+						return
+					self.working[guild_id][user_id] = "working"
 					found = False
 					for role in m.guild.roles:
 						if role.name.lower() == "muted":
 							role = role
 							found = True
 					if not found:
-						role = await m.guild.create_role()
-						await role.edit(name="Muted", color=colors.black())
+						role = await m.guild.create_role(name="Muted", color=discord.Color(colors.black()))
 						for channel in m.guild.text_channels:
 							await channel.set_permissions(role, send_messages=False)
 						for channel in m.guild.voice_channels:
@@ -104,6 +109,7 @@ class Anti_Spam:
 					for r in roles:
 						await m.author.add_roles(m.guild.get_role(r))
 						await asyncio.sleep(0.5)
+					del self.working[guild_id][user_id]
 
 def setup(bot):
 	bot.add_cog(Anti_Spam(bot))
