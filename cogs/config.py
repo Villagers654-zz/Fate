@@ -38,15 +38,15 @@ class Config:
 				return "active"
 			return "inactive"
 
-	def autorole(self, id):
-		with open("./data/userdata/autorole.json", "r") as f:
-			if id in json.load(f)["roles"]:
+	def selfroles(self, id):
+		with open("./data/userdata/selfroles.json", "r") as f:
+			if id in json.load(f)["message"]:
 				return "active"
 			return "inactive"
 
-	def selfrole(self, id):
-		with open("./data/userdata/selfroles.json", "r") as f:
-			if id in json.load(f)["message"]:
+	def autorole(self, id):
+		with open("./data/userdata/autorole.json", "r") as f:
+			if id in json.load(f)["roles"]:
 				return "active"
 			return "inactive"
 
@@ -92,8 +92,8 @@ class Config:
 			f"**Anti Spam:** [`{self.anti_spam(guild_id)}`]\n" \
 			f"**Anti Raid:** [`{self.anti_raid(guild_id)}`]\n" \
 			f"**Anti Purge:** [`{self.anti_purge(guild_id)}`]\n" \
+			f"**Self Roles:** [`{self.selfroles(guild_id)}`]\n" \
 			f"**Auto Role:** [`{self.autorole(guild_id)}`]\n" \
-			f"**Self Role:** [`{self.selfrole(guild_id)}`]\n" \
 			f"**Welcome:** [`{self.welcome(guild_id)}`]\n" \
 			f"**Farewell:** [`{self.farewell(guild_id)}`]\n" \
 			f"**Chatbot:** [`{self.chatbot(guild_id)}`]\n" \
