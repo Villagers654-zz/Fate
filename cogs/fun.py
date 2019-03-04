@@ -185,14 +185,6 @@ class Fun:
 	async def choose(self, ctx, *choices: str):
 		await ctx.send(random.choice(choices))
 
-	@commands.command()
-	@commands.cooldown(1, 5, commands.BucketType.user)
-	async def meme(self, ctx):
-		path = os.getcwd() + "/data/images/core/memes/" + random.choice(os.listdir(os.getcwd() + "/data/images/core/memes/"))
-		e = discord.Embed()
-		e.set_image(url="attachment://" + os.path.basename(path))
-		await ctx.send(file=discord.File(path, filename=os.path.basename(path)), embed=e)
-
 	@commands.command(pass_context=True)
 	async def mock(self, ctx, *, message):
 		msgbuf = ""
@@ -302,52 +294,6 @@ class Fun:
 			await msg.delete()
 
 	@commands.command()
-	async def rpsold(self, ctx):
-		async with ctx.typing():
-			try:
-				rock=discord.Embed(color=0x80b0ff)
-				rock.set_author(name='Rock, Paper, Scissors', icon_url=ctx.author.avatar_url)
-				rock.set_thumbnail(url="https://cdn.discordapp.com/attachments/501871950260469790/511284253728702465/5a0ac29f5a997e1c2cea10a1.png")
-				rock.description = "Rock"
-				paper=discord.Embed(color=0x80b0ff)
-				paper.set_author(name='Rock, Paper, Scissors', icon_url=ctx.author.avatar_url)
-				paper.set_thumbnail(url="https://cdn.discordapp.com/attachments/501871950260469790/511284234275782656/1541969980955.png")
-				paper.description = "Paper"
-				scissors=discord.Embed(color=0x80b0ff)
-				scissors.set_author(name='Rock, Paper, Scissors', icon_url=ctx.author.avatar_url)
-				scissors.set_thumbnail(url="https://cdn.discordapp.com/attachments/501871950260469790/511284246506110997/Scissor-PNG.png")
-				scissors.description = "Scissors"
-				shoot=discord.Embed(color=0x80b0ff)
-				shoot.set_author(name='Rock, Paper, Scissors', icon_url=ctx.author.avatar_url)
-				shoot.set_thumbnail(url="https://cdn.discordapp.com/attachments/501871950260469790/511285414598803486/racing-flags.png")
-				shoot.description = "Shoot"
-				rps = await ctx.send(embed=rock)
-				await asyncio.sleep(2)
-				await rps.edit(embed=paper)
-				await asyncio.sleep(2)
-				await rps.edit(embed=scissors)
-				await asyncio.sleep(2)
-				await rps.edit(embed=shoot)
-				await asyncio.sleep(4)
-				c = 0
-				async for msg in ctx.channel.history(limit=3):
-					if c == 0:
-						c += 1
-						continue
-					if c == 1:
-						await rps.delete()
-						await ctx.message.delete()
-						result=discord.Embed(color=0x80b0ff)
-						result.set_author(name='Rock, Paper, Scissors', icon_url=ctx.author.avatar_url)
-						result.set_thumbnail(url="https://cdn.discordapp.com/attachments/501871950260469790/511286149722013697/aceodo4Mi.png")
-						result.description = f'I choose {random.choice(["rock", "paper", "scissors"])}\n{ctx.author.name} chose [{msg.content}]'
-						await ctx.send(embed=result)
-						break;
-					c += 1
-			except Exception as e:
-				await ctx.send(f'**```ERROR: {type(e).__name__} - {e}```**')
-
-	@commands.command()
 	@commands.cooldown(1, 60, commands.BucketType.user)
 	async def sue(self, ctx, user: discord.Member):
 		r = random.randint(1, 1000)
@@ -366,14 +312,6 @@ class Fun:
 	async def fap(self, ctx):
 		e=discord.Embed(description=">{} starts fapping {}".format(ctx.author.name, random.choice(["to trump", "to beddy", "infront of rogue", "to rogue", "to furries", "to loli's", "to shota's", "to pornhub.com videos", "to illegal porn", "to gay porn", "to lesbian porn", "to hentaihaven.com", "to poleman", "to Tomatoes lucious locks of hair", "to rape", "to Yugioh", "to tomboys"])), color=random.choice([0xFF0000, 0xFF7F00, 0xFFFF00, 0x00FF00, 0x0000FF, 0x4B0082]))
 		await ctx.send(embed=e)
-
-	@commands.command()
-	@commands.cooldown(1, 5, commands.BucketType.user)
-	async def vid(self, ctx):
-		path = os.getcwd() + "/data/vids/" + random.choice(os.listdir(os.getcwd() + "/data/vids/"))
-		e = discord.Embed()
-		e.set_image(url="attachment://" + os.path.basename(path))
-		await ctx.send(file=discord.File(path, filename=os.path.basename(path)), embed=e)
 
 	@commands.command()
 	async def rr(self, ctx):
