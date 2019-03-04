@@ -18,10 +18,12 @@ class SelfRoles:
 
 	@commands.command(name="selfroles", aliases=["sr"])
 	@commands.has_permissions(administrator=True)
+	@commands.bot_has_permissions(manage_roles=True)
 	async def _selfroles(self, ctx, config=None):
 		reactions = ['1⃣', '2⃣', '3⃣', '4⃣', '5⃣', '6⃣', '7⃣', '8⃣', '9⃣']
 		if config == "disable":
 			del self.message[str(ctx.guild.id)]
+			del self.roles[str(ctx.guild.id)]
 			await ctx.send("Disabled self roles")
 		else:
 			# iteration 1
