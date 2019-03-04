@@ -1,10 +1,10 @@
 from discord.ext import commands
 from os.path import isfile
 from utils import colors
+from time import time
 import discord
 import asyncio
 import json
-import time
 
 class Anti_Raid:
 	def __init__(self, bot):
@@ -68,18 +68,18 @@ class Anti_Raid:
 				await m.guild.unban(m, reason="Server locked due to raid")
 			if m.author.bot:
 				return
-			now = time.time()
+			now = time()
 			if guild_id not in self.cd:
 				self.cd[guild_id] = {}
-			self.cd[guild_id][str(time.time())] = (time.time() + 0.5) - now
+			self.cd[guild_id][str(time())] = (time() + 0.5) - now
 			old_keys = []
 			for key in self.cd[guild_id].keys():
-				if float(key) < time.time() - 10:
+				if float(key) < time() - 10:
 					old_keys.append(key)
 			for key in old_keys:
 				del self.cd[guild_id][key]
-			limit = time.time() + 1.5
-			total = time.time()
+			limit = time() + 1.5
+			total = time()
 			for key, value in (sorted(self.cd[guild_id].items(), key=lambda kv: kv[1], reverse=True)):
 				total += value
 			if total > limit:
