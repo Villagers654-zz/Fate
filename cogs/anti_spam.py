@@ -35,7 +35,8 @@ class Anti_Spam:
 
 	@_anti_spam.command(name="enable")
 	@commands.has_permissions(manage_messages=True)
-	@commands.bot_has_permissions(manage_messages=True, manage_roles=True)
+	@commands.bot_has_permissions(manage_messages=True,
+	manage_roles=True, manage_channels=True)
 	async def _enable(self, ctx):
 		guild_id = str(ctx.guild.id)
 		if guild_id in self.toggle:
@@ -46,7 +47,6 @@ class Anti_Spam:
 
 	@_anti_spam.command(name="disable")
 	@commands.has_permissions(manage_messages=True)
-	@commands.bot_has_permissions(manage_messages=True, manage_roles=True)
 	async def _disable(self, ctx):
 		guild_id = str(ctx.guild.id)
 		if guild_id not in self.toggle:
@@ -74,22 +74,36 @@ class Anti_Spam:
 				else:
 					self.cd[guild_id][user_id] = [now, 0]
 				if self.cd[guild_id][user_id][1] > 2:
+					found = False
 					for role in m.guild.roles:
 						if role.name.lower() == "muted":
-							roles = []
-							for r in m.author.roles:
-								try:
-									await m.author.remove_roles(r)
-									roles.append(r.id)
-									await asyncio.sleep(0.5)
-								except:
-									pass
-							await m.author.add_roles(role)
-							await asyncio.sleep(150)
-							await m.author.remove_roles(role)
-							for r in roles:
-								await m.author.add_roles(m.guild.get_role(r))
-								await asyncio.sleep(0.5)
+							role = role
+							found = True
+					if not found:
+						role = await m.guild.create_role()
+						await role.edit(name="Muted", color=colors.black())
+						for channel in m.guild.text_channels:
+							await channel.set_permissions(role, send_messages=False)
+						for channel in m.guild.voice_channels:
+							await channel.set_permissions(role, speak=False)
+					roles = []
+					for r in m.author.roles:
+						try:
+							await m.author.remove_roles(r)
+							roles.append(r.id)
+							await asyncio.sleep(0.5)
+						except:
+							pass
+					await m.author.add_roles(role)
+					try:
+						await m.author.send(f"You've been muted for spam in **{m.guild.name}** for 2mins and 30secs")
+					except:
+						pass
+					await asyncio.sleep(150)
+					await m.author.remove_roles(role)
+					for r in roles:
+						await m.author.add_roles(m.guild.get_role(r))
+						await asyncio.sleep(0.5)
 
 def setup(bot):
 	bot.add_cog(Anti_Spam(bot))
