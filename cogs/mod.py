@@ -499,8 +499,7 @@ class Mod:
 				if i.name.lower() == "muted":
 					role = i
 		if role is None:
-			role = await ctx.guild.create_role()
-			await role.edit(name="Muted", color=colors.black())
+			role = await ctx.guild.create_role(name="Muted", color=discord.Color(colors.black()))
 			for channel in ctx.guild.text_channels:
 				await channel.set_permissions(role, send_messages=False)
 			for channel in ctx.guild.voice_channels:
@@ -540,8 +539,7 @@ class Mod:
 			if r.name.lower() == "muted":
 				role = r
 		if not role:
-			role = await ctx.guild.create_role()
-			await role.edit(name="Muted", color=colors.black())
+			role = await ctx.guild.create_role(name="Muted", color=discord.Color(colors.black()))
 			for channel in ctx.guild.text_channels:
 				await channel.set_permissions(role, send_messages=False)
 			for channel in ctx.guild.voice_channels:
@@ -620,8 +618,7 @@ class Mod:
 				if i.name.lower() == "muted":
 					role = i
 			if role is None:
-				role = await ctx.guild.create_role()
-				await role.edit(name="Muted", color=colors.black())
+				role = await ctx.guild.create_role(name="Muted", color=discord.Color(colors.black()))
 				for channel in ctx.guild.text_channels:
 					await channel.set_permissions(role, send_messages=False)
 				for channel in ctx.guild.voice_channels:
