@@ -14,6 +14,12 @@ class Config:
 				return dat[id]
 			return "."
 
+	def restore_roles(self, id):
+		with open("./data/userdata/restore_roles.json", "r") as f:
+			if id in json.load(f):
+				return "active"
+			return "inactive"
+
 	def anti_spam(self, id):
 		with open("./data/userdata/anti_spam.json", "r") as f:
 			if id in json.load(f)["toggle"]:
@@ -32,6 +38,18 @@ class Config:
 				return "active"
 			return "inactive"
 
+	def autorole(self, id):
+		with open("./data/userdata/autorole.json", "r") as f:
+			if id in json.load(f)["roles"]:
+				return "active"
+			return "inactive"
+
+	def selfrole(self, id):
+		with open("./data/userdata/selfroles.json", "r") as f:
+			if id in json.load(f)["message"]:
+				return "active"
+			return "inactive"
+
 	def welcome(self, id):
 		with open("./data/userdata/config/welcome.json", "r") as f:
 			if id in json.load(f)["identifier"]:
@@ -41,6 +59,12 @@ class Config:
 	def farewell(self, id):
 		with open("./data/userdata/config/farewell.json", "r") as f:
 			if id in json.load(f)["identifier"]:
+				return "active"
+			return "inactive"
+
+	def chatbot(self, id):
+		with open("./data/userdata/chatbot.json", "r") as f:
+			if id in json.load(f)["toggle"]:
 				return "active"
 			return "inactive"
 
@@ -64,11 +88,15 @@ class Config:
 		e.set_author(name="| 💎 Server Config 💎", icon_url=ctx.guild.owner.avatar_url)
 		e.set_thumbnail(url=ctx.guild.icon_url)
 		e.description = f"**Prefix:** [`{self.prefix(guild_id)}`]\n"
-		module_config =  f"**Anti Spam:** [`{self.anti_spam(guild_id)}`]\n" \
+		module_config =  f"**Restore Roles:** [`{self.restore_roles(guild_id)}`]\n" \
+			f"**Anti Spam:** [`{self.anti_spam(guild_id)}`]\n" \
 			f"**Anti Raid:** [`{self.anti_raid(guild_id)}`]\n" \
 			f"**Anti Purge:** [`{self.anti_purge(guild_id)}`]\n" \
+			f"**Auto Role:** [`{self.autorole(guild_id)}`]\n" \
+			f"**Self Role:** [`{self.selfrole(guild_id)}`]\n" \
 			f"**Welcome:** [`{self.welcome(guild_id)}`]\n" \
 			f"**Farewell:** [`{self.farewell(guild_id)}`]\n" \
+			f"**Chatbot:** [`{self.chatbot(guild_id)}`]\n" \
 			f"**Logger:** [`{self.logger(guild_id)}`]\n" \
 			f"**Lock:** [`{self.lock(guild_id)}`]"
 		e.add_field(name="◈ Modules ◈", value=module_config)
