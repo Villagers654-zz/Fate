@@ -476,7 +476,7 @@ class Logger:
 								if before_value[before_perm.index(perm)] != after_value[after_perm.index(perm)]:
 									difference += f"\n□ {after_perm[after_perm.index(perm)]}: {after_value[after_perm.index(perm)]}"
 							if difference:
-								value += f"{config.emojis('edited')} {list(after_roles.keys())[list(after_roles).index(key)] + difference}"
+								value += f"\n{config.emojis('edited')} {list(after_roles.keys())[list(after_roles).index(key)] + difference}"
 				e.add_field(name="◈ Overwrites ◈", value=value, inline=False)
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 			await channel.send(embed=e)
@@ -592,7 +592,7 @@ class Logger:
 								if before_value[before_perm.index(perm)] != after_value[after_perm.index(perm)]:
 									difference += f"\n□ {after_perm[after_perm.index(perm)]}: {after_value[after_perm.index(perm)]}"
 							if difference:
-								value += f"{config.emojis('edited')} {list(after_roles.keys())[list(after_roles).index(key)] + difference}"
+								value += f"\n{config.emojis('edited')} {list(after_roles.keys())[list(after_roles).index(key)] + difference}"
 				e.add_field(name="◈ Overwrites ◈", value=value, inline=False)
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 			await channel.send(embed=e)
