@@ -35,7 +35,7 @@ class AntiPurge:
 			e.set_author(name="| Anti Purge", icon_url=ctx.author.avatar_url)
 			e.set_thumbnail(url=ctx.guild.icon_url)
 			e.description = "Bans a user if they attempt to mass kick/ban members ~ " \
-				"this requires my role to be above theirs & can only be enabled by the guilds owner"
+				"this requires my role to be above theirs & can only be toggled by the guilds owner"
 			e.add_field(name="◈ Usage ◈", value=
 			    ".anti_purge enable\n"
 			    ".anti_purge disable\n", inline=False)

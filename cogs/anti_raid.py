@@ -25,12 +25,16 @@ class Anti_Raid:
 	@commands.group(name="anti_raid")
 	async def _anti_raid(self, ctx):
 		if not ctx.invoked_subcommand:
+			toggle = "disabled"
+			if str(ctx.guild.id) in self.toggle:
+				toggle = "enabled"
 			e = discord.Embed(color=colors.black())
 			e.set_author(name="Anti Server Raid", icon_url=ctx.author.avatar_url)
 			e.set_thumbnail(url=ctx.guild.icon_url)
 			e.add_field(name="Usage", value=
 				".anti_raid enable\n"
 			    ".anti_raid disable", inline=False)
+			e.set_footer(text=f"Current Status: {toggle}")
 			await ctx.send(embed=e)
 
 	@_anti_raid.command(name="enable")
