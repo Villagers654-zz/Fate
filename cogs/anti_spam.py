@@ -84,12 +84,10 @@ class Anti_Spam:
 					if user_id in self.working[guild_id]:
 						return
 					self.working[guild_id][user_id] = "working"
-					found = False
-					for role in m.guild.roles:
-						if role.name.lower() == "muted":
-							role = role
-							found = True
-					if not found:
+					role = discord.utils.get(m.guild.roles, name="Muted")
+					if not role:
+						role = discord.utils.get(m.guild.roles, name="muted")
+					if not role:
 						role = await m.guild.create_role(name="Muted", color=discord.Color(colors.black()), hoist=True)
 						for channel in m.guild.text_channels:
 							await channel.set_permissions(role, send_messages=False)
@@ -109,6 +107,11 @@ class Anti_Spam:
 					except:
 						pass
 					await asyncio.sleep(150)
+					rs = []
+					for r in m.author.roles:
+						rs.append(r.name.lower())
+					if "muted" not in rs:
+						return
 					await m.author.remove_roles(role)
 					for r in roles:
 						await m.author.add_roles(m.guild.get_role(r))
