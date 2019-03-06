@@ -181,7 +181,7 @@ class Logger:
 			del self.channel[guild_id]
 
 	async def on_typing(self, channel, user, when):
-		if isinstance(channel.guild, discord.Guild):
+		if not isinstance(channel, discord.DMChannel):
 			guild_id = str(channel.guild.id)
 			user_id = str(user.id)
 			if guild_id in self.channel:
@@ -221,10 +221,11 @@ class Logger:
 					del self.waiting[guild_id][user_id]
 
 	async def on_message(self, m: discord.Message):
-		guild_id = str(m.guild.id)
-		if guild_id not in self.cache:
-			self.cache[guild_id] = []
-		self.cache[guild_id].append(m.id)
+		if isinstance(m.guild, discord.Guild):
+			guild_id = str(m.guild.id)
+			if guild_id not in self.cache:
+				self.cache[guild_id] = []
+			self.cache[guild_id].append(m.id)
 
 	async def on_message_edit(self, before, after):
 		if isinstance(before.guild, discord.Guild):
@@ -384,7 +385,7 @@ class Logger:
 					return
 			async for entry in channel.guild.audit_logs(action=discord.AuditLogAction.channel_delete, limit=1):
 				user = entry.user
-			channel = self.bot.get_channel(self.channel[guild_id])
+			log = self.bot.get_channel(self.channel[guild_id])
 			e = discord.Embed(color=colors.fate())
 			e.title = "~==🥂🍸🍷Channel Deleted🍷🍸🥂==~"
 			e.set_thumbnail(url=user.avatar_url)
@@ -393,7 +394,7 @@ class Logger:
 				f"**ID:** {channel.id}\n" \
 				f"**Members:** [{len(channel.members)}]"
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
-			await channel.send(embed=e)
+			await log.send(embed=e)
 
 	async def on_private_channel_update(self, before, after):
 		guild_id = str(before.guild.id)
@@ -414,7 +415,7 @@ class Logger:
 			e.title = "~==🥂🍸🍷Channel Updated🍷🍸🥂==~"
 			e.set_thumbnail(url=user.avatar_url)
 			e.description = \
-				f"**Channel:** {channel.mention}\n" \
+				f"**Channel:** {after.mention}\n" \
 				f"**Updated by:** {user.mention}"
 			if before.name != after.name:
 				e.add_field(name="◈ Name ◈", value=f"**Before:** {before.name}\n"
@@ -508,7 +509,7 @@ class Logger:
 					return
 			async for entry in channel.guild.audit_logs(action=discord.AuditLogAction.channel_delete, limit=1):
 				user = entry.user
-			channel = self.bot.get_channel(self.channel[guild_id])
+			log = self.bot.get_channel(self.channel[guild_id])
 			e = discord.Embed(color=colors.fate())
 			e.title = "~==🥂🍸🍷Channel Deleted🍷🍸🥂==~"
 			e.set_thumbnail(url=user.avatar_url)
@@ -517,7 +518,7 @@ class Logger:
 				f"**ID:** {channel.id}\n" \
 				f"**Members:** [{len(channel.members)}]"
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
-			await channel.send(embed=e)
+			await log.send(embed=e)
 
 	async def on_guild_channel_update(self, before, after):
 		guild_id = str(before.guild.id)
@@ -539,7 +540,7 @@ class Logger:
 			e.title = "~==🥂🍸🍷Channel Updated🍷🍸🥂==~"
 			e.set_thumbnail(url=user.avatar_url)
 			e.description = \
-				f"**Channel:** {before.mention}\n" \
+				f"**Channel:** {after.mention}\n" \
 				f"**Updated by:** {user.mention}"
 			if before.name != after.name:
 				e.add_field(name="◈ Name ◈", value=f"**Before:** {before.name}\n"
@@ -640,25 +641,25 @@ class Logger:
 			if guild_id in self.blacklist:
 				if "role_update" in self.blacklist[guild_id]:
 					return
-			async for entry in after.guild.audit_logs(after=utc(2).past(), action=discord.AuditLogAction.role_delete, limit=1):
-				user = entry.user
 			user = None
+			async for entry in after.guild.audit_logs(after=utc(2).past(), action=discord.AuditLogAction.role_delete, limit=1):
+				user = entry.user.mention
 			async for entry in after.guild.audit_logs(action=discord.AuditLogAction.role_update, limit=1):
 				if utc(2).past() < entry.created_at:
-					user = entry.user
+					user = entry.user.mention
 			if not user:
-				user.display_name = "`unknown`"
+				user = "`unknown`"
 			is_changed = None
 			channel = self.bot.get_channel(self.channel[guild_id])
 			e = discord.Embed(color=colors.blue())
 			e.title = "~==🥂🍸🍷Role Updated🍷🍸🥂==~"
 			e.set_thumbnail(url=before.guild.icon_url)
-			e.description = f"**Updated by:** {user.mention}"
+			e.description = f"**Role:** {after.mention}\n**Updated by:** {user.mention}"
 			if before.name != after.name:
 				is_changed = True
 				e.add_field(name="◈ Name ◈", value=f"**Before:** {before.name}\n**After:** {after.name}", inline=False)
 			e.description = f"**Role:** {after.name}\n" \
-				f"**Updated by:** {user.display_name}"
+				f"**Updated by:** {user}"
 			if before.color != after.color:
 				is_changed = True
 				e.add_field(name="◈ Color ◈", value=f"**Before:** {before.color}\n**After:** {after.color}")
