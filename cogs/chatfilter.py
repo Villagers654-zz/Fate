@@ -65,7 +65,7 @@ class ChatFilter:
 		if phrase in self.blacklist[guild_id]:
 			return await ctx.send("That word/phrase is already blacklisted")
 		self.blacklist[guild_id].append(phrase)
-		await ctx.send(f"Added `{phrase}` to this servers blacklist")
+		await ctx.send(f"Added `{phrase}`")
 		self.save_data()
 
 	@_chatfilter.command(name="remove")
@@ -78,19 +78,20 @@ class ChatFilter:
 		if phrase not in self.blacklist[guild_id]:
 			return await ctx.send("Phrase/word not found")
 		self.blacklist[guild_id].pop(self.blacklist[guild_id].index(phrase))
-		await ctx.send(f"Removed `{phrase}` from this servers blacklist")
+		await ctx.send(f"Removed `{phrase}`")
 		if len(self.blacklist[guild_id]) < 1:
 			del self.blacklist[guild_id]
 		self.save_data()
 
 	async def on_message(self, m: discord.Message):
-		guild_id = str(m.guild.id)
-		if m.guild.id in self.toggle:
-			if guild_id in self.blacklist:
-				for phrase in self.blacklist[guild_id]:
-					if phrase in m.content:
-						await asyncio.sleep(0.5)
-						await m.delete()
+		if isinstance(m.guild, discord.Guild):
+			guild_id = str(m.guild.id)
+			if m.guild.id in self.toggle:
+				if guild_id in self.blacklist:
+					for phrase in self.blacklist[guild_id]:
+						if phrase in m.content:
+							await asyncio.sleep(0.5)
+							await m.delete()
 
 def setup(bot):
 	bot.add_cog(ChatFilter(bot))
