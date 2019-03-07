@@ -21,7 +21,7 @@ class AntiPurge:
 		with open("./data/userdata/anti_purge.json", "w") as outfile:
 			json.dump({"toggle": self.toggle}, outfile, ensure_ascii=False)
 
-	def is_guild_owner(self, ctx):
+	def is_guild_owner(ctx):
 		return ctx.author.id == ctx.guild.owner.id
 
 	@commands.group(name="anti_purge")
