@@ -212,9 +212,12 @@ class ChatBot:
 						choice = random.choice(matches)
 						if choice.lower() == m.content.lower():
 							return
-						async with m.channel.typing():
-							await asyncio.sleep(1)
-						await m.channel.send(choice)
+						try:
+							async with m.channel.typing():
+								await asyncio.sleep(1)
+							await m.channel.send(choice)
+						except:
+							pass
 
 def setup(bot):
 	bot.add_cog(ChatBot(bot))

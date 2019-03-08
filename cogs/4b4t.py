@@ -87,7 +87,7 @@ class Minecraft:
 		e.set_thumbnail(url=ctx.author.avatar_url)
 		await ctx.send(embed=e, delete_after=10)
 		await ctx.message.delete()
-		if len(self.motds) > 100:
+		if len(self.motds) > 150:
 			self.old_motds.append(self.motds[0])
 			del self.motds[0]
 		self.save()
@@ -103,7 +103,7 @@ class Minecraft:
 		e.description = f"New: {motd}"
 		await ctx.send(embed=e, delete_after=10)
 		await ctx.message.delete()
-		if len(self.motds) > 100:
+		if len(self.motds) > 150:
 			self.old_motds.append(self.motds[0])
 			del self.motds[0]
 			self.save()

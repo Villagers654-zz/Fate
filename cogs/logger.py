@@ -1,6 +1,5 @@
 from discord.ext import commands
 from utils import colors, config
-from utils.datetime import utc
 from os.path import isfile
 import datetime
 import discord
@@ -206,7 +205,7 @@ class Logger:
 				def pred(m):
 					return m.channel.id == channel.id and m.author.id == user.id
 				try:
-					msg = await self.bot.wait_for('message', check=pred, timeout=45)
+					msg = await self.bot.wait_for('message', check=pred, timeout=120)
 				except asyncio.TimeoutError:
 					log = self.bot.get_channel(self.channel[guild_id])
 					e = discord.Embed(color=colors.white())
@@ -402,13 +401,13 @@ class Logger:
 			if guild_id in self.blacklist:
 				if "channel_update" in self.blacklist[guild_id]:
 					return
-			async for entry in before.guild.audit_logs(after=utc(2).past(), action=discord.AuditLogAction.channel_update, limit=1):
+			async for entry in before.guild.audit_logs(after=self.past(2), action=discord.AuditLogAction.channel_update, limit=1):
 				user = entry.user
-			async for entry in before.guild.audit_logs(after=utc(2).past(), action=discord.AuditLogAction.overwrite_create, limit=1):
+			async for entry in before.guild.audit_logs(after=self.past(2), action=discord.AuditLogAction.overwrite_create, limit=1):
 				user = entry.user
-			async for entry in before.guild.audit_logs(after=utc(2).past(), action=discord.AuditLogAction.overwrite_delete, limit=1):
+			async for entry in before.guild.audit_logs(after=self.past(2), action=discord.AuditLogAction.overwrite_delete, limit=1):
 				user = entry.user
-			async for entry in before.guild.audit_logs(after=utc(2).past(), action=discord.AuditLogAction.overwrite_update, limit=1):
+			async for entry in before.guild.audit_logs(after=self.past(2), action=discord.AuditLogAction.overwrite_update, limit=1):
 				user = entry.user
 			channel = self.bot.get_channel(self.channel[guild_id])
 			e = discord.Embed(color=colors.fate())
@@ -477,7 +476,7 @@ class Logger:
 								if before_value[before_perm.index(perm)] != after_value[after_perm.index(perm)]:
 									difference += f"\n□ {after_perm[after_perm.index(perm)]}: {after_value[after_perm.index(perm)]}"
 							if difference:
-								value += f"\n{config.emojis('edited')} {list(after_roles.keys())[list(after_roles).index(key)] + difference}"
+								value += f"\n<:edited:550291696861315093> {list(after_roles.keys())[list(after_roles).index(key)] + difference}"
 				e.add_field(name="◈ Overwrites ◈", value=value, inline=False)
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 			await channel.send(embed=e)
@@ -527,13 +526,13 @@ class Logger:
 				if "channel_update" in self.blacklist[guild_id]:
 					return
 			user = None
-			async for entry in before.guild.audit_logs(after=utc(2).past(), action=discord.AuditLogAction.channel_update, limit=1):
+			async for entry in before.guild.audit_logs(after=self.past(2), action=discord.AuditLogAction.channel_update, limit=1):
 				user = entry.user
-			async for entry in before.guild.audit_logs(after=utc(2).past(), action=discord.AuditLogAction.overwrite_create, limit=1):
+			async for entry in before.guild.audit_logs(after=self.past(2), action=discord.AuditLogAction.overwrite_create, limit=1):
 				user = entry.user
-			async for entry in before.guild.audit_logs(after=utc(2).past(), action=discord.AuditLogAction.overwrite_delete, limit=1):
+			async for entry in before.guild.audit_logs(after=self.past(2), action=discord.AuditLogAction.overwrite_delete, limit=1):
 				user = entry.user
-			async for entry in before.guild.audit_logs(after=utc(2).past(), action=discord.AuditLogAction.overwrite_update, limit=1):
+			async for entry in before.guild.audit_logs(after=self.past(2), action=discord.AuditLogAction.overwrite_update, limit=1):
 				user = entry.user
 			channel = self.bot.get_channel(self.channel[guild_id])
 			e = discord.Embed(color=colors.fate())
@@ -593,7 +592,7 @@ class Logger:
 								if before_value[before_perm.index(perm)] != after_value[after_perm.index(perm)]:
 									difference += f"\n□ {after_perm[after_perm.index(perm)]}: {after_value[after_perm.index(perm)]}"
 							if difference:
-								value += f"\n{config.emojis('edited')} {list(after_roles.keys())[list(after_roles).index(key)] + difference}"
+								value += f"\n<:edited:550291696861315093> {list(after_roles.keys())[list(after_roles).index(key)] + difference}"
 				e.add_field(name="◈ Overwrites ◈", value=value, inline=False)
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 			await channel.send(embed=e)
@@ -604,7 +603,7 @@ class Logger:
 			if guild_id in self.blacklist:
 				if "role_create" in self.blacklist[guild_id]:
 					return
-			async for entry in role.guild.audit_logs(after=utc(2).past(), action=discord.AuditLogAction.role_create, limit=1):
+			async for entry in role.guild.audit_logs(after=self.past(2), action=discord.AuditLogAction.role_create, limit=1):
 				user = entry.user
 			channel = self.bot.get_channel(self.channel[guild_id])
 			e = discord.Embed(color=colors.blue())
@@ -621,7 +620,7 @@ class Logger:
 			if guild_id in self.blacklist:
 				if "role_delete" in self.blacklist[guild_id]:
 					return
-			async for entry in role.guild.audit_logs(after=utc(2).past(), action=discord.AuditLogAction.role_delete, limit=1):
+			async for entry in role.guild.audit_logs(after=self.past(2), action=discord.AuditLogAction.role_delete, limit=1):
 				user = entry.user
 			channel = self.bot.get_channel(self.channel[guild_id])
 			e = discord.Embed(color=colors.blue())
@@ -642,10 +641,10 @@ class Logger:
 				if "role_update" in self.blacklist[guild_id]:
 					return
 			user = None
-			async for entry in after.guild.audit_logs(after=utc(2).past(), action=discord.AuditLogAction.role_delete, limit=1):
+			async for entry in after.guild.audit_logs(after=self.past(2), action=discord.AuditLogAction.role_delete, limit=1):
 				user = entry.user.mention
 			async for entry in after.guild.audit_logs(action=discord.AuditLogAction.role_update, limit=1):
-				if utc(2).past() < entry.created_at:
+				if self.past(2) < entry.created_at:
 					user = entry.user.mention
 			if not user:
 				user = "`unknown`"
@@ -654,7 +653,7 @@ class Logger:
 			e = discord.Embed(color=colors.blue())
 			e.title = "~==🥂🍸🍷Role Updated🍷🍸🥂==~"
 			e.set_thumbnail(url=before.guild.icon_url)
-			e.description = f"**Role:** {after.mention}\n**Updated by:** {user.mention}"
+			e.description = f"**Role:** {after.mention}\n**Updated by:** {user}"
 			if before.name != after.name:
 				is_changed = True
 				e.add_field(name="◈ Name ◈", value=f"**Before:** {before.name}\n**After:** {after.name}", inline=False)
@@ -813,6 +812,10 @@ class Logger:
 				e.add_field(name="◈ Perms ◈", value=changed_permissions, inline=False)
 			if is_changed:
 				e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
+				async for msg in channel.history(limit=1):
+					for embed in msg.embeds:
+						if embed == e:
+							return
 				await channel.send(embed=e)
 
 	async def on_guild_emojis_update(self, guild, before, after):
@@ -823,13 +826,13 @@ class Logger:
 					return
 			user = "error"
 			async for entry in guild.audit_logs(action=discord.AuditLogAction.emoji_update, limit=1):
-				if utc(2).past() < entry.created_at:
+				if self.past(2) < entry.created_at:
 					user = entry.user
 			async for entry in guild.audit_logs(action=discord.AuditLogAction.emoji_create, limit=1):
-				if utc(2).past() < entry.created_at:
+				if self.past(2) < entry.created_at:
 					user = entry.user
 			async for entry in guild.audit_logs(action=discord.AuditLogAction.emoji_delete, limit=1):
-				if utc(2).past() < entry.created_at:
+				if self.past(2) < entry.created_at:
 					user = entry.user
 			if user == "error":
 				return
@@ -889,7 +892,7 @@ class Logger:
 					return
 			is_kick = None
 			async for entry in m.guild.audit_logs(action=discord.AuditLogAction.kick, limit=1):
-				if utc(2).past() < entry.created_at:
+				if self.past(2) < entry.created_at:
 					if str(entry.action) == "AuditLogAction.kick":
 						user = entry.user
 						is_kick = True
@@ -939,7 +942,7 @@ class Logger:
 			if guild_id in self.blacklist:
 				if "member_unban" in self.blacklist[guild_id]:
 					return
-			async for entry in guild.audit_logs(action=discord.AuditLogAction.unban, after=utc(2).past(), limit=1):
+			async for entry in guild.audit_logs(action=discord.AuditLogAction.unban, after=self.past(2), limit=1):
 				author = entry.user
 			if not user:
 				user.display_name = "Unknown"
@@ -962,10 +965,10 @@ class Logger:
 			if before.name != after.name:
 				return
 			async for entry in before.guild.audit_logs(action=discord.AuditLogAction.member_update, limit=1):
-				if utc(2).past() < entry.created_at:
+				if self.past(2) < entry.created_at:
 					user = entry.user
 			async for entry in before.guild.audit_logs(action=discord.AuditLogAction.member_role_update, limit=1):
-				if utc(2).past() < entry.created_at:
+				if self.past(2) < entry.created_at:
 					user = entry.user
 			channel = self.bot.get_channel(self.channel[guild_id])
 			e = discord.Embed(color=colors.lime_green())

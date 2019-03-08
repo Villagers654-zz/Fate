@@ -33,7 +33,18 @@ class ErrorHandler:
 			await ctx.message.add_reaction('⚠')
 			return await ctx.send(str(error).replace("command.", f"`{ctx.command}`"))
 		elif isinstance(error, discord.errors.Forbidden):
-			return await ctx.send("I'm missing permissions")
+			try:
+				await ctx.send("I'm missing permissions")
+			except:
+				try:
+					await ctx.author.send(f"**Command:** .{ctx.command}\n**{ctx.guild.name}:**\nI'm missing permission to carry out my duties in #{ctx.channel.name}")
+				except:
+					try:
+						await ctx.message.add_reaction("⚠")
+					except:
+						pass
+			finally:
+				return
 		print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
 		traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
 		e = discord.Embed(color=colors.red())

@@ -23,11 +23,9 @@ class Dev:
 		await ctx.send(embed=e)
 
 	@commands.command(name="yeet")
-	async def _yeet(self, ctx, name):
-		members = []
-		for member in ctx.guild.members:
-			members.append(member.name)
-		await ctx.send(difflib.get_close_matches(name, members))
+	async def _yeet(self, ctx):
+		for i in (1, 2, 3):
+			await ctx.send(i)
 
 	@commands.command(name="db")
 	@commands.check(luck)
