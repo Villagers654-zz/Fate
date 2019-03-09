@@ -269,6 +269,21 @@ class Music:
     async def __before_invoke(self, ctx):
         ctx.state = self.get_voice_state(ctx.guild)
 
+    async def on_voice_state_update(self, member, before, after):
+        if before.channel:
+            if not after.channel:
+                c = 0
+                for member in before.channel.members:
+                    if not member.bot:
+                        c += 1
+                if c < 1:
+                    for channel in member.guild.channels:
+                        if isinstance(channel, discord.VoiceChannel):
+                            for member in before.channel.members:
+                                if self.bot.user.id == member.id:
+                                    await VoiceState.stop(self.get_voice_state(member.guild))
+                                    del self.voice_states[str(member.guild.id)]
+
     @commands.command(name='join', invoke_without_command=True)
     async def _join(self, ctx):
         destination = ctx.author.voice.channel
