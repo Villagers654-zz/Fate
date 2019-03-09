@@ -69,6 +69,12 @@ class Profiles:
 			           "monthly_guilded": self.monthly_guilds_data, "vclb": self.vclb, "gvclb": self.gvclb},
 			          outfile, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
 
+	def save_profiles(self):
+		with open("./data/userdata/profiles.json", "w") as outfile:
+			json.dump({"info": self.info, "name": self.name, "color": self.color, "created": self.created,
+			           "channel": self.channel, "discord": self.discord, "website": self.website,
+			           "thumbnail": self.thumbnail, "icon": self.icon}, outfile, ensure_ascii=False)
+
 	def luck(ctx):
 		return ctx.message.author.id == 264838866480005122
 
@@ -92,19 +98,13 @@ class Profiles:
 		else:
 			self.name[str(ctx.author.id)] = name
 			await ctx.send('success')
-		with open("./data/userdata/profiles.json", "w") as outfile:
-			json.dump({"info": self.info, "name": self.name, "color": self.color, "created": self.created,
-			           "channel": self.channel, "discord": self.discord, "website": self.website,
-			           "thumbnail": self.thumbnail, "icon": self.icon}, outfile, ensure_ascii=False)
+		self.save_profiles()
 
 	@_set.command(name="bio", aliases=["info"])
 	async def _bio(self, ctx, *, info):
 		self.info[str(ctx.author.id)] = info
 		await ctx.send('success')
-		with open("./data/userdata/profiles.json", "w") as outfile:
-			json.dump({"info": self.info, "name": self.name, "color": self.color, "created": self.created,
-			           "channel": self.channel, "discord": self.discord, "website": self.website,
-			           "thumbnail": self.thumbnail, "icon": self.icon}, outfile, ensure_ascii=False)
+		self.save_profiles()
 
 	@_set.command(name="color")
 	async def _color(self, ctx, hex=None):
@@ -130,10 +130,7 @@ class Profiles:
 				await ctx.send("Success")
 			else:
 				await ctx.send("that is not a hex")
-		with open("./data/userdata/profiles.json", "w") as outfile:
-			json.dump({"info": self.info, "name": self.name, "color": self.color, "created": self.created,
-			           "channel": self.channel, "discord": self.discord, "website": self.website,
-			           "thumbnail": self.thumbnail, "icon": self.icon}, outfile, ensure_ascii=False)
+		self.save_profiles()
 
 	@_set.command(name="channel")
 	async def _channel(self, ctx, url=None):
@@ -150,10 +147,7 @@ class Profiles:
 				await ctx.send('Success')
 			else:
 				await ctx.send("That's not a youtube channel")
-		with open("./data/userdata/profiles.json", "w") as outfile:
-			json.dump({"info": self.info, "name": self.name, "color": self.color, "created": self.created,
-			           "channel": self.channel, "discord": self.discord, "website": self.website,
-			           "thumbnail": self.thumbnail, "icon": self.icon}, outfile, ensure_ascii=False)
+		self.save_profiles()
 
 	@_set.command(name="discord")
 	async def _discord(self, ctx, url=None):
@@ -166,10 +160,7 @@ class Profiles:
 				await ctx.send('Success')
 			else:
 				await ctx.send("That's not a discord link")
-		with open("./data/userdata/profiles.json", "w") as outfile:
-			json.dump({"info": self.info, "name": self.name, "color": self.color, "created": self.created,
-			           "channel": self.channel, "discord": self.discord, "website": self.website,
-			           "thumbnail": self.thumbnail, "icon": self.icon}, outfile, ensure_ascii=False)
+		self.save_profiles()
 
 	@_set.command(name="website")
 	async def _website(self, ctx, url=None):
@@ -183,10 +174,7 @@ class Profiles:
 				url = "https://" + url
 			self.website[str(ctx.author.id)] = url
 			await ctx.send("Success")
-		with open("./data/userdata/profiles.json", "w") as outfile:
-			json.dump({"info": self.info, "name": self.name, "color": self.color, "created": self.created,
-			           "channel": self.channel, "discord": self.discord, "website": self.website,
-			           "thumbnail": self.thumbnail, "icon": self.icon}, outfile, ensure_ascii=False)
+		self.save_profiles()
 
 	@_set.command(name="thumbnail")
 	async def _thumbnail(self, ctx):
@@ -200,10 +188,7 @@ class Profiles:
 		else:
 			self.thumbnail[str(ctx.author.id)] = "None"
 			await ctx.send("Reset your thumbnail")
-		with open("./data/userdata/profiles.json", "w") as outfile:
-			json.dump({"info": self.info, "name": self.name, "color": self.color, "created": self.created,
-			           "channel": self.channel, "discord": self.discord, "website": self.website,
-			           "thumbnail": self.thumbnail, "icon": self.icon}, outfile, ensure_ascii=False)
+		self.save_profiles()
 
 	@_set.command(name="icon")
 	async def _icon(self, ctx):
@@ -217,10 +202,7 @@ class Profiles:
 		else:
 			self.icon[str(ctx.author.id)] = "None"
 			await ctx.send("Reset your icon")
-		with open("./data/userdata/profiles.json", "w") as outfile:
-			json.dump({"info": self.info, "name": self.name, "color": self.color, "created": self.created,
-			           "channel": self.channel, "discord": self.discord, "website": self.website,
-			           "thumbnail": self.thumbnail, "icon": self.icon}, outfile, ensure_ascii=False)
+		self.save_profiles()
 
 	@commands.command()
 	async def profile(self, ctx, user=None):
@@ -250,7 +232,10 @@ class Profiles:
 				links = ""
 				fmt = "%m-%d-%Y %I:%M%p"
 				created = datetime.now()
-				xp = self.global_data[str(user.id)] + self.gvclb[user_id] / 10
+				if str(user.id) in self.gvclb:
+					xp = self.global_data[str(user.id)] + self.gvclb[user_id] / 10
+				else:
+					xp = self.global_data[str(user.id)]
 				level = str(xp / 750)
 				level = level[:level.find(".")]
 				if str(user.id) in self.color:
@@ -290,8 +275,12 @@ class Profiles:
 					e.set_author(name=name, icon_url=user.avatar_url)
 				if str(user.id) not in self.info:
 					self.info[str(user.id)] = 'nothing to see here, try using .set'
+				if user_id not in self.gvclb:
+					vc_xp = 0
+				else:
+					vc_xp = str(self.gvclb[user_id] / 10)[:str(self.gvclb[user_id] / 10).find('.')]
 				e.description = f"**Level:** {level} **XP:** {str(xp)[:str(xp).find('.')]}\n" \
-					f"**MSG XP:** {self.global_data[user_id]} **VC XP:** {str(self.gvclb[user_id] / 10)[:str(self.gvclb[user_id] / 10).find('.')]}"
+					f"**MSG XP:** {self.global_data[user_id]} **VC XP:** {vc_xp}"
 				e.add_field(name=f"◈ Bio ◈", value=f"{self.info[str(user.id)]}")
 				if str(user.id) not in self.created:
 					self.created[str(user.id)] = created.strftime(fmt)
@@ -316,10 +305,7 @@ class Profiles:
 					e.add_field(name="◈ Links ◈", value=links, inline=False)
 				e.set_footer(text=f'Profile Created: {self.created[str(user.id)]}')
 				await ctx.send(embed=e)
-			with open("./data/userdata/profiles.json", "w") as outfile:
-				json.dump({"info": self.info, "name": self.name, "color": self.color, "created": self.created,
-				           "channel": self.channel, "discord": self.discord, "website": self.website,
-				           "thumbnail": self.thumbnail, "icon": self.icon}, outfile, ensure_ascii=False)
+			self.save_profiles()
 
 	@commands.command(name="leaderboard", aliases=["lb"])
 	@commands.cooldown(1, 10, commands.BucketType.user)
@@ -656,13 +642,21 @@ class Profiles:
 					self.gvclb[user_id] = 0
 				if not before.channel:
 					self.dat[user_id] = datetime.now()
+				if before.afk is True and after.afk is False:
+					self.dat[user_id] = datetime.now()
 				if not after.channel:
 					if user_id in self.dat:
 						seconds = (datetime.now() - self.dat[user_id]).seconds
 						self.vclb[guild_id][user_id] += seconds
 						self.gvclb[user_id] += seconds
 						del self.dat[user_id]
-						self.save_xp()
+				if after.afk:
+					if user_id in self.dat:
+						seconds = (datetime.now() - self.dat[user_id]).seconds
+						self.vclb[guild_id][user_id] += seconds
+						self.gvclb[user_id] += seconds
+						del self.dat[user_id]
+				self.save_xp()
 
 	async def on_guild_remove(self, guild):
 		guild_id = str(guild.id)
