@@ -494,6 +494,9 @@ class Mod:
 				"**timer Usage:**\n"
 				"m = minute(s), h = hour(s), d = day(s)\n"
 				".mute {user} {number}{m/h/d}")
+		for i in list(timer):
+			if i not in "1234567890dhms":
+				return await ctx.send("Invalid character in `timer` field")
 		role = None
 		async with ctx.typing():
 			for i in ctx.guild.roles:
