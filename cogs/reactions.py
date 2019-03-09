@@ -1,7 +1,9 @@
 from discord.ext import commands
 from utils import colors
+import requests
 import discord
 import random
+import json
 import os
 
 class Reactions:
@@ -10,6 +12,29 @@ class Reactions:
 
 	def luck(ctx):
 		return ctx.author.id == 264838866480005122
+
+	@commands.command(name="searchgif")
+	@commands.cooldown(1, 5, commands.BucketType.user)
+	async def _searchgif(self, ctx, search):
+		apikey = "LIWIXISVM3A7"
+		lmt = 8
+		r = requests.get("https://api.tenor.com/v1/anonid?key=%s" % apikey)
+		if r.status_code == 200:
+			anon_id = json.loads(r.content)["anon_id"]
+		else:
+			anon_id = ""
+		search_term = search
+		r = requests.get("https://api.tenor.com/v1/search?q=%s&key=%s&limit=%s&anon_id=%s" % (search_term, apikey, lmt, anon_id))
+		if r.status_code == 200:
+			try:
+				dat = json.loads(r.content)
+				e = discord.Embed(color=colors.random())
+				e.set_image(url=dat['results'][random.randint(0, 7)]['media'][0]['gif']['url'])
+				await ctx.send(embed=e)
+			except:
+				await ctx.send("error")
+		else:
+			await ctx.send("error")
 
 	@commands.command(name='intimidate')
 	@commands.cooldown(1, 5, commands.BucketType.user)

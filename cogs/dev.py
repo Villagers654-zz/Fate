@@ -1,5 +1,6 @@
 from discord.ext import commands
 from utils import colors, config
+import requests
 import difflib
 import discord
 import asyncio
@@ -21,11 +22,6 @@ class Dev:
 	async def test_color(self, ctx, color):
 		e = discord.Embed(color=eval(f"0x{color}"))
 		await ctx.send(embed=e)
-
-	@commands.command(name="yeet")
-	async def _yeet(self, ctx):
-		for i in (1, 2, 3):
-			await ctx.send(i)
 
 	@commands.command(name="db")
 	@commands.check(luck)
@@ -92,10 +88,6 @@ class Dev:
 		for member in ctx.guild.members[:100]:
 			e.description += "{}, ".format(member.name)
 		await ctx.send(embed=e)
-
-	@commands.command()
-	async def members(self, ctx):
-		await ctx.send(ctx.guild.members)
 
 	@commands.command()
 	async def lmgtfy(self, ctx, *, query: str):
