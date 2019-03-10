@@ -15,6 +15,7 @@ class ChatBot:
 		self.prefixes = {}
 		self.dir = {}
 		self.cd = {}
+		self.dm_cd = {}
 		if isfile("./data/userdata/chatbot.json"):
 			with open("./data/userdata/chatbot.json", "r") as infile:
 				dat = json.load(infile)
@@ -222,6 +223,48 @@ class ChatBot:
 							await m.channel.send(choice)
 						except:
 							pass
+		else:
+			if not m.author.bot:
+				found = False
+				user_id = str(m.author.id)
+				blocked = ["http", "discord.gg", "discord,gg", "py", "js", "python", "javascript", "`"]
+				for i in blocked:
+					if i in m.content.lower():
+						return
+				if len(m.content) is 0:
+					return
+				if user_id not in self.dm_cd:
+					self.cd[user_id] = 0
+				if self.cd[user_id] > time.time():
+					return
+				self.cd[user_id] = time.time() + 2
+				if m.content.startswith("."):
+					return
+				keys = m.content.split(" ")
+				key = random.choice(keys)
+				if "the" in keys:
+					key = keys[keys.index("the") + 1]
+				if "if" in keys:
+					key = keys[keys.index("if") + 2]
+				cache = self.cache["global"]
+				if m.content not in cache:
+					self.cache["global"].append(m.content)
+					self.save()
+				matches = []
+				for msg in cache:
+					if key in msg:
+						matches.append(msg)
+						found = True
+				if found:
+					choice = random.choice(matches)
+					if choice.lower() == m.content.lower():
+						return
+					try:
+						async with m.channel.typing():
+							await asyncio.sleep(1)
+						await m.channel.send(choice)
+					except:
+						pass
 
 def setup(bot):
 	bot.add_cog(ChatBot(bot))
