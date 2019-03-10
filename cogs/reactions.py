@@ -13,9 +13,9 @@ class Reactions:
 	def luck(ctx):
 		return ctx.author.id == 264838866480005122
 
-	@commands.command(name="searchgif")
+	@commands.command(name="findgif", aliases=["gifsearch", "searchgif"])
 	@commands.cooldown(1, 5, commands.BucketType.user)
-	async def _searchgif(self, ctx, search):
+	async def _findgif(self, ctx, *, search):
 		apikey = "LIWIXISVM3A7"
 		lmt = 8
 		r = requests.get("https://api.tenor.com/v1/anonid?key=%s" % apikey)
@@ -30,7 +30,9 @@ class Reactions:
 				dat = json.loads(r.content)
 				e = discord.Embed(color=colors.random())
 				e.set_image(url=dat['results'][random.randint(0, 7)]['media'][0]['gif']['url'])
+				e.set_footer(text="Powered by Tenor")
 				await ctx.send(embed=e)
+				await ctx.message.delete()
 			except:
 				await ctx.send("error")
 		else:
