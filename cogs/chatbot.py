@@ -55,7 +55,6 @@ class ChatBot:
 				f".chatbot clear_cache\n"
 				f"`clears guilded cache`",
 			inline=False)
-			e.set_footer(text="Disabling chatbot resets cache location")
 			await ctx.send(embed=e)
 
 	@_chatbot.command(name="enable")
@@ -189,7 +188,12 @@ class ChatBot:
 								return
 					if m.content.startswith("."):
 						return
-					key = random.choice(m.content.split(" "))
+					keys = m.content.split(" ")
+					key = random.choice(keys)
+					if "the" in keys:
+						key = keys[keys.index("the") + 1]
+					if "if" in keys:
+						key = keys[keys.index("if") + 2]
 					cache = self.cache["global"]
 					if self.dir[guild_id] == "guilded":
 						if guild_id not in self.cache:
