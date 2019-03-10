@@ -1,4 +1,4 @@
-from utils import checks, colors
+from utils import checks, colors, ssh
 from discord.ext import commands
 import subprocess
 import discord
@@ -18,21 +18,22 @@ class Backup:
 			self.backup = True
 			e = discord.Embed(color=colors.fate())
 			e.set_author(name="Backing up files..", icon_url=self.bot.user.avatar_url)
-			e.set_thumbnail(
-				url="https://cdn.discordapp.com/attachments/514213558549217330/514345278669848597/8yx98C.gif")
-			e.description = "**Progress:** `0%`\nStarting"
+			e.set_thumbnail(url="https://cdn.discordapp.com/attachments/514213558549217330/514345278669848597/8yx98C.gif")
+			e.description = "**Progress:** `0%`\nChecking for previous backup"
 			msg = await ctx.send(embed=e)
-			p = subprocess.Popen("ls /home/luck", stdout=subprocess.PIPE, shell=True)
+			p = subprocess.Popen("ls", stdout=subprocess.PIPE, shell=True)
 			(output, err) = p.communicate()
-			e.description = "**Progress:** `25%`\nChecking for previous backup"
 			await msg.edit(embed=e)
 			if "Backup.zip" in str(output):
-				os.system("rm /home/luck/Backup.zip")
-				e.description = "**Progress:** `50%`\nRemoving previous backup"
+				e.description = "**Progress:** `25%`\nRemoving previous backup"
 				await msg.edit(embed=e)
-			e.description = "**Progress:** `75%`\nCompressing files"
+				os.system("rm Backup.zip")
+			e.description = "**Progress:** `50%`\nCompressing files"
 			await msg.edit(embed=e)
-			os.system("zip -r /home/luck/Backup.zip /home/luck/FateZero")
+			os.system("zip -r Backup.zip /home/luck/FateZero")
+			e.description = "**Progress:** `75%`\nTransferring Backup"
+			await msg.edit(embed=e)
+			ssh.upload("luck", "Backup.zip", "/home/luck/Backup.zip")
 			e.description = "**Progress:** `100%`\nBackup complete."
 			await msg.edit(embed=e)
 			self.backup = False
