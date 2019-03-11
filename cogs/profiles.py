@@ -1,15 +1,8 @@
-from datetime import datetime, timedelta
-from utils import bytes2human as p
+from datetime import datetime
 from discord.ext import commands
 from os.path import isfile
-import traceback
 import discord
-import asyncio
-import random
-import psutil
 import json
-import time
-import os
 
 class Profiles:
 	def __init__(self, bot):
@@ -36,38 +29,6 @@ class Profiles:
 					self.website = dat["website"]
 					self.thumbnail = dat["thumbnail"]
 					self.icon = dat["icon"]
-		self.cd = {}
-		self.global_data = {}
-		self.guilds_data = {}
-		self.monthly_global_data = {}
-		self.monthly_guilds_data = {}
-		self.gvclb = {}
-		self.vclb = {}
-		self.dat ={}
-		if isfile("./data/userdata/xp.json"):
-			with open("./data/userdata/xp.json", "r") as infile:
-				dat = json.load(infile)
-				if "global" in dat and "guilded" in dat:
-					self.global_data = dat["global"]
-					self.guilds_data = dat["guilded"]
-					self.monthly_global_data = dat["monthly_global"]
-					self.monthly_guilds_data = dat["monthly_guilded"]
-					self.vclb = dat["vclb"]
-					self.gvclb = dat["gvclb"]
-		self.statschannel = {}
-		self.statsmessage = {}
-		if isfile("./data/userdata/config/stats.json"):
-			with open("./data/userdata/config/stats.json", "r") as infile:
-				dat = json.load(infile)
-				if "statschannel" in dat and "statsmessage" in dat:
-					self.statschannel = dat["statschannel"]
-					self.statsmessage = dat["statsmessage"]
-
-	def save_xp(self):
-		with open("./data/userdata/xp.json", "w") as outfile:
-			json.dump({"global": self.global_data, "guilded": self.guilds_data, "monthly_global": self.monthly_global_data,
-			           "monthly_guilded": self.monthly_guilds_data, "vclb": self.vclb, "gvclb": self.gvclb},
-			          outfile, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
 
 	def save_profiles(self):
 		with open("./data/userdata/profiles.json", "w") as outfile:
@@ -75,8 +36,27 @@ class Profiles:
 			           "channel": self.channel, "discord": self.discord, "website": self.website,
 			           "thumbnail": self.thumbnail, "icon": self.icon}, outfile, ensure_ascii=False)
 
-	def luck(ctx):
-		return ctx.message.author.id == 264838866480005122
+	def get(self):
+		with open("./data/userdata/xp.json", "r") as f:
+			return json.load(f)
+
+	def global_data(self):
+		return self.get()["global"]
+
+	def guilds_data(self):
+		return self.get()["guilded"]
+
+	def monthly_global_data(self):
+		return self.get()["monthly_global"]
+
+	def monthly_guilds_data(self):
+		return self.get()["monthly_guilded"]
+
+	def vclb(self):
+		return self.get()["vclb"]
+
+	def gvclb(self):
+		return self.get()["gvclb"]
 
 	@commands.group(name="set")
 	async def _set(self, ctx):
@@ -215,6 +195,7 @@ class Profiles:
 			if user.startswith("<@"):
 				user = user.replace("<@", "")
 				user = user.replace(">", "")
+				user = user.replace("!", "")
 				user = self.bot.get_user(eval(user))
 				check += 1
 			else:
@@ -232,14 +213,14 @@ class Profiles:
 				links = ""
 				fmt = "%m-%d-%Y %I:%M%p"
 				created = datetime.now()
-				if str(user.id) in self.gvclb:
-					xp = self.global_data[str(user.id)] + self.gvclb[user_id] / 10
+				if str(user.id) in self.gvclb():
+					xp = self.global_data()[user_id] + self.gvclb()[user_id] / 20
 				else:
-					xp = self.global_data[str(user.id)]
+					xp = self.global_data()[user_id]
 				level = str(xp / 750)
 				level = level[:level.find(".")]
 				if str(user.id) in self.color:
-					color = f"0x{self.color[str(user.id)]}"
+					color = f"0x{self.color[user_id]}"
 				else:
 					color = "0x9eafe3"
 				#piecing the embed together
@@ -263,405 +244,49 @@ class Profiles:
 				if str(user.id) not in self.name:
 					name = user.name
 				else:
-					name = f"{self.name[str(user.id)]}"
+					name = f"{self.name[user_id]}"
 				icon = user.avatar_url
-				if str(user.id) in self.icon:
-					if self.icon[str(user.id)] != "None":
-						icon = self.icon[str(user.id)]
+				if user_id in self.icon:
+					if self.icon[user_id] != "None":
+						icon = self.icon[user_id]
 				try:
 					e.set_author(name=name, icon_url=icon)
 				except:
 					await ctx.send("There was an error with your icon")
 					e.set_author(name=name, icon_url=user.avatar_url)
-				if str(user.id) not in self.info:
+				if user_id not in self.info:
 					self.info[str(user.id)] = 'nothing to see here, try using .set'
-				if user_id not in self.gvclb:
+				if user_id not in self.gvclb():
 					vc_xp = 0
 				else:
-					vc_xp = str(self.gvclb[user_id] / 10)[:str(self.gvclb[user_id] / 10).find('.')]
+					vc_xp = str(self.gvclb()[user_id] / 10)[:str(self.gvclb()[user_id] / 10).find('.')]
 				e.description = f"**Level:** {level} **XP:** {str(xp)[:str(xp).find('.')]}\n" \
-					f"**MSG XP:** {self.global_data[user_id]} **VC XP:** {vc_xp}"
+					f"**MSG XP:** {self.global_data()[user_id]} **VC XP:** {vc_xp}"
 				e.add_field(name=f"◈ Bio ◈", value=f"{self.info[str(user.id)]}")
-				if str(user.id) not in self.created:
-					self.created[str(user.id)] = created.strftime(fmt)
-				if str(user.id) in self.channel:
+				if user_id not in self.created:
+					self.created[user_id] = created.strftime(fmt)
+				if user_id in self.channel:
 					if self.channel[str(user.id)] == "None":
 						pass
 					else:
-						links += f"[Channel]({self.channel[str(user.id)]})\n"
-				if str(user.id) in self.discord:
+						links += f"[Channel]({self.channel[user_id]})\n"
+				if user_id in self.discord:
 					if self.discord[str(user.id)] == "None":
 						pass
 					else:
-						links += f"[Discord]({self.discord[str(user.id)]})\n"
-				if str(user.id) in self.website:
-					if self.website[str(user.id)] == "None":
+						links += f"[Discord]({self.discord[user_id]})\n"
+				if user_id in self.website:
+					if self.website[user_id] == "None":
 						pass
 					else:
-						links += f"[Website]({self.website[str(user.id)]})\n"
+						links += f"[Website]({self.website[user_id]})\n"
 				if links == "":
 					pass
 				else:
 					e.add_field(name="◈ Links ◈", value=links, inline=False)
-				e.set_footer(text=f'Profile Created: {self.created[str(user.id)]}')
+				e.set_footer(text=f'Profile Created: {self.created[user_id]}')
 				await ctx.send(embed=e)
 			self.save_profiles()
-
-	@commands.command(name="leaderboard", aliases=["lb"])
-	@commands.cooldown(1, 10, commands.BucketType.user)
-	async def leaderboard(self, ctx):
-		embed = discord.Embed(title="Leaderboard", color=0x4A0E50)
-		embed.description = ""
-		rank = 1
-		for user_id, xp in (sorted(self.guilds_data[str(ctx.guild.id)].items(), key=lambda kv: kv[1], reverse=True))[:15]:
-			name = "INVALID-USER"
-			user = self.bot.get_user(int(user_id))
-			if isinstance(user, discord.User):
-				name = user.name
-			level = str(xp / 750)
-			level = level[:level.find(".")]
-			embed.description += "‎**‎#{}.** ‎`‎{}`: ‎{} | {}\n".format(rank, name, level, xp)
-			rank += 1
-			embed.set_thumbnail(url=ctx.guild.icon_url)
-			embed.set_footer(text=random.choice(["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready", "Powered by slaves", "Powered by Beddys ego", "Powered by Samsung", "Powered by the supreme", "Powered by doritos", "Cooldown: 10 seconds"]))
-		await ctx.send(embed=embed)
-
-	@commands.command(name="gleaderboard", aliases=["glb"])
-	@commands.cooldown(1, 10, commands.BucketType.user)
-	async def gleaderboard(self, ctx):
-		embed = discord.Embed(title="Global Leaderboard", color=0x4A0E50)
-		embed.description = ""
-		rank = 1
-		for user_id, xp in (sorted(self.global_data.items(), key=lambda kv: kv[1], reverse=True))[:15]:
-			name = "INVALID-USER"
-			user = self.bot.get_user(int(user_id))
-			if isinstance(user, discord.User):
-				name = user.name
-			level = str(xp / 750)
-			level = level[:level.find(".")]
-			embed.description += "‎**#‎{}.** ‎`‎{}`‎ ~ ‎{} | {}\n".format(rank, name, level, xp)
-			rank += 1
-			embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png")
-			embed.set_footer(text=random.choice(["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready", "Powered by slaves", "Powered by Beddys ego", "Powered by Samsung", "Powered by the supreme", "Powered by doritos", "Cooldown: 10 seconds"]))
-		await ctx.send(embed=embed)
-
-	@commands.command(name="ggleaderboard", aliases=["gglb"])
-	@commands.cooldown(1, 10, commands.BucketType.user)
-	async def ggleaderboard(self, ctx):
-		embed = discord.Embed(title="Guild XP Leaderboard", color=0x4A0E50)
-		embed.description = ""
-		rank = 1
-		for guild_id, xp in (sorted({i:sum(x.values()) for i, x in self.guilds_data.items()}.items(), key=lambda kv: kv[1], reverse=True))[:8]:
-			name = "INVALID-GUILD"
-			guild = self.bot.get_guild(int(guild_id))
-			if isinstance(guild, discord.Guild):
-				name = guild.name
-			else:
-				del self.guilds_data[guild_id]
-			embed.description += "**#{}.** `{}`: {}\n".format(rank, name, xp)
-			rank += 1
-			embed.set_thumbnail(url=ctx.guild.icon_url)
-			embed.set_footer(text=random.choice(["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready", "Powered by slaves", "Powered by Beddys ego", "Powered by Samsung", "Powered by the supreme", "Powered by doritos", "Cooldown: 10 seconds"]))
-		await ctx.send(embed=embed)
-
-	@commands.command(name="mleaderboard", aliases=["mlb"])
-	async def _mleaderboard(self, ctx):
-		guild_id = str(ctx.guild.id)
-		users = list(self.monthly_guilds_data[guild_id])
-		xp = {}
-		for user in users:
-			for msg in self.monthly_guilds_data[guild_id][user]:
-				xp[user] = len(self.monthly_guilds_data[guild_id][user])
-		embed = discord.Embed(title="Monthly Leaderboard", color=0x4A0E50)
-		embed.description = ""
-		rank = 1
-		for user_id, xp in (sorted(xp.items(), key=lambda kv: kv[1], reverse=True))[:15]:
-			name = "INVALID-USER"
-			user = self.bot.get_user(int(user_id))
-			if isinstance(user, discord.User):
-				name = user.name
-			level = str(xp / 750)
-			level = level[:level.find(".")]
-			embed.description += "‎**#‎{}.** ‎`‎{}`‎ ~ ‎{} | {}\n".format(rank, name, level, xp)
-			rank += 1
-			embed.set_thumbnail(
-				url="https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png")
-			embed.set_footer(text=random.choice(
-				["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready",
-				 "Powered by slaves", "Powered by Beddys ego", "Powered by Samsung", "Powered by the supreme",
-				 "Powered by doritos", "Cooldown: 10 seconds"]))
-		await ctx.send(embed=embed)
-
-	@commands.command(name="gmleaderboard", aliases=["gmlb"])
-	async def _gmleaderboard(self, ctx):
-		users = list(self.monthly_global_data)
-		xp = {}
-		for user in users:
-			for msg in self.monthly_global_data[user]:
-				xp[user] = len(self.monthly_global_data[user])
-		embed = discord.Embed(title="Global Monthly Leaderboard", color=0x4A0E50)
-		embed.description = ""
-		rank = 1
-		for user_id, xp in (sorted(xp.items(), key=lambda kv: kv[1], reverse=True))[:15]:
-			name = "INVALID-USER"
-			user = self.bot.get_user(int(user_id))
-			if isinstance(user, discord.User):
-				name = user.name
-			level = str(xp / 750)
-			level = level[:level.find(".")]
-			embed.description += "‎**#‎{}.** ‎`‎{}`‎ ~ ‎{} | {}\n".format(rank, name, level, xp)
-			rank += 1
-			embed.set_thumbnail(
-				url="https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png")
-			embed.set_footer(text=random.choice(
-				["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready",
-				 "Powered by slaves", "Powered by Beddys ego", "Powered by Samsung", "Powered by the supreme",
-				 "Powered by doritos", "Cooldown: 10 seconds"]))
-		await ctx.send(embed=embed)
-
-	@commands.command(name="vcleaderboard", aliases=["vclb"])
-	@commands.cooldown(1, 10, commands.BucketType.user)
-	async def vcleaderboard(self, ctx):
-		e = discord.Embed(title="VC Leaderboard", color=0x4A0E50)
-		e.description = ""
-		rank = 1
-		for user_id, xp in (sorted(self.vclb[str(ctx.guild.id)].items(), key=lambda kv: kv[1], reverse=True))[:15]:
-			name = "INVALID-USER"
-			user = self.bot.get_user(int(user_id))
-			if isinstance(user, discord.User):
-				name = user.name
-			score = timedelta(seconds=xp)
-			e.description += "‎**‎#{}.** ‎`‎{}`: ‎{}\n".format(rank, name, score)
-			rank += 1
-			e.set_thumbnail(url=ctx.guild.icon_url)
-			e.set_footer(text=random.choice(["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready", "Powered by slaves", "Powered by Beddys ego", "Powered by Samsung", "Powered by the supreme", "Powered by tostitos"]))
-		await ctx.send(embed=e)
-
-	@commands.command(name="gvcleaderboard", aliases=["gvclb"])
-	@commands.cooldown(1, 10, commands.BucketType.user)
-	async def gvcleaderboard(self, ctx):
-		embed = discord.Embed(title="Global VC Leaderboard", color=0x4A0E50)
-		embed.description = ""
-		rank = 1
-		for user_id, xp in (sorted(self.gvclb.items(), key=lambda kv: kv[1], reverse=True))[:15]:
-			name = "INVALID-USER"
-			user = self.bot.get_user(int(user_id))
-			if isinstance(user, discord.User):
-				name = user.name
-			score = timedelta(seconds=xp)
-			embed.description += "‎**#‎{}.** ‎`‎{}`‎ ~ ‎{}\n".format(rank, name, score)
-			rank += 1
-			embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png")
-			embed.set_footer(text=random.choice(["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready", "Powered by slaves", "Powered by Beddys ego", "Powered by Samsung", "Powered by the supreme", "Powered by tostitos"]))
-		await ctx.send(embed=embed)
-
-	@commands.group(name='stats')
-	@commands.check(luck)
-	async def _stats(self, ctx):
-		if ctx.invoked_subcommand is None:
-			pass
-
-	@_stats.command(name="fix")
-	@commands.check(luck)
-	async def _fix(self, ctx):
-		self.channel = ctx.channel.id
-		msg = await ctx.send(embed=discord.Embed(description="Preparing stats.."))
-		self.message = msg.id
-		with open("./data/config/stats.json", "w") as outfile:
-			json.dump({"statschannel": self.statschannel, "statsmessage": self.statsmessage}, outfile, ensure_ascii=False)
-		self.bot.loop.create_task(self.stats())
-		await ctx.message.delete()
-
-	@_stats.command(name='setchannel')
-	async def _setchannel(self, ctx, channel: discord.TextChannel=None):
-		if channel is None:
-			self.statschannel = ctx.channel.id
-		else:
-			self.statschannel = channel
-		with open("./data/config/stats.json", "w") as outfile:
-			json.dump({"statschannel": self.statschannel, "statsmessage": self.statsmessage}, outfile, ensure_ascii=False)
-		await ctx.message.delete()
-
-	@_stats.command(name='start')
-	async def _start(self, ctx):
-		self.bot.loop.create_task(self.stats())
-		await ctx.message.delete()
-
-	async def stats(self):
-		while True:
-			try:
-				channel = self.bot.get_channel(self.statschannel)
-				e = discord.Embed(title="", color=0x4A0E50)
-				e.description = "💎 Official 4B4T Server 💎"
-				leaderboard = ""
-				rank = 1
-				for user_id, xp in (sorted(self.guilds_data[str(channel.guild.id)].items(), key=lambda kv: kv[1], reverse=True))[:8]:
-					name = "INVALID-USER"
-					user = self.bot.get_user(int(user_id))
-					if isinstance(user, discord.User):
-						name = user.name
-					level = str(xp / 750)
-					level = level[:level.find(".")]
-					leaderboard += "‎**‎#{}.** ‎`‎{}`: ‎{} | {}\n".format(rank, name, level, xp)
-					rank += 1
-				f = psutil.Process(os.getpid())
-				try:
-					cpufreqcurrent = p.bytes2human(psutil.cpu_freq().current)
-				except:
-					cpufreqcurrent = "unavailable"
-				try:
-					cpufreqmax = p.bytes2human(psutil.cpu_freq().max)
-				except:
-					cpufreqmax = "unavailable"
-				e.set_thumbnail(url=channel.guild.icon_url)
-				e.set_author(name=f'~~~====🥂🍸🍷Stats🍷🍸🥂====~~~')
-				e.add_field(name="◈ Discord ◈", value=f'__**Founder**__: FrequencyX4\n__**Members**__: {channel.guild.member_count}', inline=False)
-				e.add_field(name="Leaderboard", value=leaderboard, inline=False)
-				e.add_field(
-					name="◈ Memory ◈",
-					value=f"__**Storage**__: [{p.bytes2human(psutil.disk_usage('/').used)}/{p.bytes2human(psutil.disk_usage('/').total)}]\n"
-					f"__**RAM**__: **Global**: {p.bytes2human(psutil.virtual_memory().used)} **Bot**: {p.bytes2human(f.memory_full_info().rss)}\n"
-					f"__**CPU**__: **Global**: {psutil.cpu_percent(interval=1)}% **Bot**: {f.cpu_percent(interval=1)}%\n"
-					f"__**CPU Per Core**__: {[round(i) for i in psutil.cpu_percent(interval=1, percpu=True)]}\n"
-					f"__**CPU Frequency**__: [{cpufreqcurrent}/{cpufreqmax}]")
-				fmt = "%m-%d-%Y %I:%M%p"
-				time = datetime.now()
-				time = time.strftime(fmt)
-				e.set_footer(text=f'Updated: {time}')
-				statschannel = self.bot.get_channel(self.statschannel)
-				try:
-					message = await statschannel.get_message(self.statsmessage)
-					await message.edit(embed=e)
-				except Exception as e:
-					preparing = discord.Embed()
-					preparing.description = 'preparing stats..'
-					msg = await statschannel.send(embed=preparing)
-					self.statsmessage = msg.id
-					with open("./data/userdata/config/stats.json", "w") as outfile:
-						json.dump({"statschannel": self.statschannel, "statsmessage": self.statsmessage}, outfile, ensure_ascii=False)
-				async for msg in statschannel.history(limit=3):
-					stats_id = "{}".format(self.statsmessage)
-					msg_id = "{}".format(msg.id)
-					if stats_id not in msg_id:
-						await msg.delete()
-				await asyncio.sleep(60)
-			except Exception as e:
-				await self.bot.get_channel(534608853300412416).send(f"```{traceback.format_exc()}```{e}")
-
-	async def arkadia_stats(self):
-		while True:
-			try:
-				channel = self.bot.get_channel(540086847842549770)
-				channels = 0
-				for server in self.bot.guilds:
-					for c in server.channels:
-						channels += 1
-				e = discord.Embed(title="", color=0x4A0E50)
-				e.description = f"💎 {self.bot.user.name} 💎\n" \
-				f"**Commands:** {len(self.bot.commands)}\n" \
-				f"**Modules:** {len(self.bot.extensions)}\n" \
-				f"**Servers:** {len(list(self.bot.guilds))}\n" \
-				f"**Users:** {len(list(self.bot.users))}\n"
-				leaderboard = ""
-				rank = 1
-				for user_id, xp in (sorted(self.guilds_data[str(channel.guild.id)].items(), key=lambda kv: kv[1], reverse=True))[:8]:
-					name = "INVALID-USER"
-					user = self.bot.get_user(int(user_id))
-					if isinstance(user, discord.User):
-						name = user.name
-					level = str(xp / 750)
-					level = level[:level.find(".")]
-					leaderboard += "‎**‎#{}.** ‎`‎{}`: ‎{} | {}\n".format(rank, name, level, xp)
-					rank += 1
-				e.set_thumbnail(url=channel.guild.icon_url)
-				e.set_author(name=f'~~~====🥂🍸🍷Stats🍷🍸🥂====~~~')
-				e.add_field(name="◈ Discord ◈", value=f'__**Owner**__: Luck\n__**Members**__: {channel.guild.member_count}', inline=False)
-				fmt = "%m-%d-%Y %I:%M%p"
-				time = datetime.now()
-				time = time.strftime(fmt)
-				e.set_footer(text=f'Updated: {time}')
-				message = await channel.get_message(540096913995726848)
-				await message.edit(embed=e)
-				await asyncio.sleep(1500)
-			except Exception as e:
-				await self.bot.get_channel(534608853300412416).send(f"```{traceback.format_exc()}```{e}")
-
-	async def on_ready(self):
-		await asyncio.sleep(0.5)
-		self.bot.loop.create_task(self.stats())
-		self.bot.loop.create_task(self.arkadia_stats())
-
-	async def on_message(self, m:discord.Message):
-		if isinstance(m.guild, discord.Guild):
-			if not m.author.bot:
-				author_id = str(m.author.id)
-				guild_id = str(m.guild.id)
-				msg_id = str(m.id)
-				if author_id not in self.cd:
-					self.cd[author_id] = 0
-				if self.cd[author_id] < time.time():
-					if guild_id not in self.guilds_data:
-						self.guilds_data[guild_id] = {}
-					if author_id not in self.guilds_data[guild_id]:
-						self.guilds_data[guild_id][author_id] = 0
-					if author_id not in self.global_data:
-						self.global_data[author_id] = 0
-					if author_id not in self.monthly_global_data:
-						self.monthly_global_data[author_id] = {}
-					if guild_id not in self.monthly_guilds_data:
-						self.monthly_guilds_data[guild_id] = {}
-					if author_id not in self.monthly_guilds_data[guild_id]:
-						self.monthly_guilds_data[guild_id][author_id] = {}
-
-					self.global_data[author_id] += 1
-					self.guilds_data[guild_id][author_id] += 1
-					self.monthly_global_data[author_id][msg_id] = time.time()
-					self.monthly_guilds_data[guild_id][author_id][msg_id] = time.time()
-					self.cd[author_id] = time.time() + 10
-
-					for msg_id, msg_time in (sorted(self.monthly_global_data[author_id].items(), key=lambda kv: kv[1], reverse=True)):
-						if float(msg_time) < time.time() - 2592000:
-							del self.monthly_global_data[author_id][str(msg_id)]
-
-					for msg_id, msg_time in (sorted(self.monthly_guilds_data[guild_id][author_id].items(), key=lambda kv: kv[1], reverse=True)):
-						if float(msg_time) < time.time() - 2592000:
-							del self.monthly_guilds_data[guild_id][author_id][str(msg_id)]
-
-					self.save_xp()
-
-	async def on_voice_state_update(self, member, before, after):
-		if isinstance(member.guild, discord.Guild):
-			if not member.bot:
-				guild_id = str(member.guild.id)
-				user_id = str(member.id)
-				if guild_id not in self.vclb:
-					self.vclb[guild_id] = {}
-				if user_id not in self.vclb[guild_id]:
-					self.vclb[guild_id][user_id] = 0
-				if user_id not in self.gvclb:
-					self.gvclb[user_id] = 0
-				if not before.channel:
-					self.dat[user_id] = datetime.now()
-				if before.afk is True and after.afk is False:
-					self.dat[user_id] = datetime.now()
-				if not after.channel:
-					if user_id in self.dat:
-						seconds = (datetime.now() - self.dat[user_id]).seconds
-						self.vclb[guild_id][user_id] += seconds
-						self.gvclb[user_id] += seconds
-						del self.dat[user_id]
-				if after.afk:
-					if user_id in self.dat:
-						seconds = (datetime.now() - self.dat[user_id]).seconds
-						self.vclb[guild_id][user_id] += seconds
-						self.gvclb[user_id] += seconds
-						del self.dat[user_id]
-				self.save_xp()
-
-	async def on_guild_remove(self, guild):
-		guild_id = str(guild.id)
-		if guild_id in self.guilds_data:
-			del self.guilds_data[guild_id]
 
 def setup(bot):
 	bot.add_cog(Profiles(bot))
