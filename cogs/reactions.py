@@ -13,9 +13,9 @@ class Reactions:
 	def luck(ctx):
 		return ctx.author.id == 264838866480005122
 
-	@commands.command(name="findgif", aliases=["gifsearch", "searchgif"])
+	@commands.command(name="tenor", aliases=["findgif", "gifsearch", "searchgif"])
 	@commands.cooldown(1, 5, commands.BucketType.user)
-	async def _findgif(self, ctx, *, search):
+	async def _tenor(self, ctx, *, search):
 		apikey = "LIWIXISVM3A7"
 		lmt = 8
 		r = requests.get("https://api.tenor.com/v1/anonid?key=%s" % apikey)
