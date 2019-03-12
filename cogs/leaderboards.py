@@ -224,28 +224,66 @@ class Leaderboards:
 			if not member.bot:
 				guild_id = str(member.guild.id)
 				user_id = str(member.id)
+				channel_id = None
+				k = self.bot.get_channel(548681737320792074)
+				if not after.channel:
+					channel_id = str(before.channel.id)
+				if not before.channel:
+					channel_id = str(after.channel.id)
 				if guild_id not in self.vclb:
 					self.vclb[guild_id] = {}
 				if user_id not in self.vclb[guild_id]:
 					self.vclb[guild_id][user_id] = 0
 				if user_id not in self.gvclb:
 					self.gvclb[user_id] = 0
-				if not before.channel:
-					self.dat[user_id] = datetime.now()
-				if before.afk is True and after.afk is False:
-					self.dat[user_id] = datetime.now()
-				if not after.channel:
-					if user_id in self.dat:
-						seconds = (datetime.now() - self.dat[user_id]).seconds
-						self.vclb[guild_id][user_id] += seconds
-						self.gvclb[user_id] += seconds
-						del self.dat[user_id]
-				if after.afk:
-					if user_id in self.dat:
-						seconds = (datetime.now() - self.dat[user_id]).seconds
-						self.vclb[guild_id][user_id] += seconds
-						self.gvclb[user_id] += seconds
-						del self.dat[user_id]
+				if channel_id is None:
+					return
+				if channel_id not in self.dat:
+					self.dat[channel_id] = {}
+				if "members" not in self.dat[channel_id]:
+					self.dat[channel_id]["members"] = []
+				if "status" not in self.dat[channel_id]:
+					self.dat[channel_id]["status"] = "inactive"
+				if user_id not in self.dat[channel_id]["members"]:
+					self.dat[channel_id]["members"].append(user_id)
+					await k.send(f"added {member.name} to db")
+					if len(after.channel.members) < 2:
+						self.dat[channel_id]["status"] = "inactive"
+						await k.send("member joined but status is inactive")
+					if self.dat[channel_id]["status"] == "inactive":
+						if len(after.channel.members) > 1:
+							self.dat[channel_id]["status"] = "active"
+							await k.send("status is active")
+							for user in after.channel.members:
+								member_id = str(user.id)
+								if member_id not in self.dat[channel_id].keys():
+									self.dat[channel_id][member_id] = datetime.now()
+					else:
+						self.dat[channel_id][user_id] = datetime.now()
+				else:
+					if not after.channel:
+						channel = self.bot.get_channel(before.channel.id)
+						if self.dat[channel_id]["status"] == "active":
+							if len(channel.members) < 2:
+								self.dat[channel_id]["status"] = "inactive"
+								await k.send("status set to inactive")
+								for id in self.dat[channel_id]["members"]:
+									if id in self.dat[channel_id]:
+										seconds = (datetime.now() - self.dat[channel_id][id]).seconds
+										self.vclb[guild_id][id] += seconds
+										self.gvclb[id] += seconds
+										del self.dat[channel_id][id]
+										await k.send(f"(i) added to {channel.guild.get_member(int(id)).name}'s score and set the status to inactive")
+							else:
+								if user_id in self.dat[channel_id]:
+									seconds = (datetime.now() - self.dat[channel_id][user_id]).seconds
+									self.vclb[guild_id][user_id] += seconds
+									self.gvclb[user_id] += seconds
+									del self.dat[channel_id][user_id]
+									await k.send(f"(s) added to {channel.guild.get_member(int(user_id)).name}'s score and set the status to inactive")
+									await k.send(f"wiped {channel.guild.get_member(int(user_id)).name} from db")
+						self.dat[channel_id]["members"].pop(self.dat[channel_id]["members"].index(str(user_id)))
+						await k.send(f"wiped {member.name} from db")
 				self.save_xp()
 
 	async def on_guild_remove(self, guild):
