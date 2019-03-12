@@ -34,6 +34,15 @@ class Leaderboards:
 			           "monthly_guilded": self.monthly_guilds_data, "vclb": self.vclb, "gvclb": self.gvclb},
 			          outfile, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
 
+	def msg_footer(self):
+		return random.choice(["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready",
+		    "Powered by slaves", "Powered by Beddys ego", "Powered by Samsung", "Powered by the supreme",
+		                      "Powered by doritos", "Cooldown: 10 seconds"])
+
+	def vc_footer(self):
+		return random.choice(["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready",
+		    "Powered by slaves", "Powered by Beddys ego", "Powered by Samsung", "Powered by the supreme", "Powered by tostitos"])
+
 	@commands.command(name="leaderboard", aliases=["lb"])
 	@commands.cooldown(1, 10, commands.BucketType.user)
 	async def leaderboard(self, ctx):
@@ -50,7 +59,7 @@ class Leaderboards:
 			e.description += "‎**‎#{}.** ‎`‎{}`: ‎{} | {}\n".format(rank, name, level, xp)
 			rank += 1
 			e.set_thumbnail(url=ctx.guild.icon_url)
-			e.set_footer(text=random.choice(["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready", "Powered by slaves", "Powered by Beddys ego", "Powered by Samsung", "Powered by the supreme", "Powered by doritos", "Cooldown: 10 seconds"]))
+			e.set_footer(text=self.msg_footer())
 		await ctx.send(embed=e)
 
 	@commands.command(name="gleaderboard", aliases=["glb"])
@@ -69,7 +78,7 @@ class Leaderboards:
 			e.description += "‎**#‎{}.** ‎`‎{}`‎ ~ ‎{} | {}\n".format(rank, name, level, xp)
 			rank += 1
 			e.set_thumbnail(url="https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png")
-			e.set_footer(text=random.choice(["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready", "Powered by slaves", "Powered by Beddys ego", "Powered by Samsung", "Powered by the supreme", "Powered by doritos", "Cooldown: 10 seconds"]))
+			e.set_footer(text=self.msg_footer())
 		await ctx.send(embed=e)
 
 	@commands.command(name="ggleaderboard", aliases=["gglb"])
@@ -88,7 +97,7 @@ class Leaderboards:
 			e.description += "**#{}.** `{}`: {}\n".format(rank, name, xp)
 			rank += 1
 			e.set_thumbnail(url=ctx.guild.icon_url)
-			e.set_footer(text=random.choice(["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready", "Powered by slaves", "Powered by Beddys ego", "Powered by Samsung", "Powered by the supreme", "Powered by doritos", "Cooldown: 10 seconds"]))
+			e.set_footer(text=self.msg_footer())
 		await ctx.send(embed=e)
 
 	@commands.command(name="mleaderboard", aliases=["mlb"])
@@ -111,12 +120,8 @@ class Leaderboards:
 			level = level[:level.find(".")]
 			e.description += "‎**#‎{}.** ‎`‎{}`‎ ~ ‎{} | {}\n".format(rank, name, level, xp)
 			rank += 1
-			e.set_thumbnail(
-				url="https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png")
-			e.set_footer(text=random.choice(
-				["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready",
-				 "Powered by slaves", "Powered by Beddys ego", "Powered by Samsung", "Powered by the supreme",
-				 "Powered by doritos", "Cooldown: 10 seconds"]))
+			e.set_thumbnail(url="https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png")
+			e.set_footer(text=self.msg_footer())
 		await ctx.send(embed=e)
 
 	@commands.command(name="gmleaderboard", aliases=["gmlb"])
@@ -138,12 +143,8 @@ class Leaderboards:
 			level = level[:level.find(".")]
 			e.description += "‎**#‎{}.** ‎`‎{}`‎ ~ ‎{} | {}\n".format(rank, name, level, xp)
 			rank += 1
-			e.set_thumbnail(
-				url="https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png")
-			e.set_footer(text=random.choice(
-				["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready",
-				 "Powered by slaves", "Powered by Beddys ego", "Powered by Samsung", "Powered by the supreme",
-				 "Powered by doritos", "Cooldown: 10 seconds"]))
+			e.set_thumbnail(url="https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png")
+			e.set_footer(text=self.msg_footer())
 		await ctx.send(embed=e)
 
 	@commands.command(name="vcleaderboard", aliases=["vclb"])
@@ -161,7 +162,7 @@ class Leaderboards:
 			e.description += "‎**‎#{}.** ‎`‎{}`: ‎{}\n".format(rank, name, score)
 			rank += 1
 			e.set_thumbnail(url=ctx.guild.icon_url)
-			e.set_footer(text=random.choice(["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready", "Powered by slaves", "Powered by Beddys ego", "Powered by Samsung", "Powered by the supreme", "Powered by tostitos"]))
+			e.set_footer(text=self.vc_footer())
 		await ctx.send(embed=e)
 
 	@commands.command(name="gvcleaderboard", aliases=["gvclb"])
@@ -179,7 +180,7 @@ class Leaderboards:
 			e.description += "‎**#‎{}.** ‎`‎{}`‎ ~ ‎{}\n".format(rank, name, score)
 			rank += 1
 			e.set_thumbnail(url="https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png")
-			e.set_footer(text=random.choice(["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready", "Powered by slaves", "Powered by Beddys ego", "Powered by Samsung", "Powered by the supreme", "Powered by tostitos"]))
+			e.set_footer(text=self.vc_footer())
 		await ctx.send(embed=e)
 
 	async def on_message(self, m:discord.Message):
@@ -203,17 +204,14 @@ class Leaderboards:
 						self.monthly_guilds_data[guild_id] = {}
 					if author_id not in self.monthly_guilds_data[guild_id]:
 						self.monthly_guilds_data[guild_id][author_id] = {}
-
 					self.global_data[author_id] += 1
 					self.guilds_data[guild_id][author_id] += 1
 					self.monthly_global_data[author_id][msg_id] = time.time()
 					self.monthly_guilds_data[guild_id][author_id][msg_id] = time.time()
 					self.cd[author_id] = time.time() + 10
-
 					for msg_id, msg_time in (sorted(self.monthly_global_data[author_id].items(), key=lambda kv: kv[1], reverse=True)):
 						if float(msg_time) < time.time() - 2592000:
 							del self.monthly_global_data[author_id][str(msg_id)]
-
 					for msg_id, msg_time in (sorted(self.monthly_guilds_data[guild_id][author_id].items(), key=lambda kv: kv[1], reverse=True)):
 						if float(msg_time) < time.time() - 2592000:
 							del self.monthly_guilds_data[guild_id][author_id][str(msg_id)]
