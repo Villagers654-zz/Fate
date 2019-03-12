@@ -37,8 +37,8 @@ class Leaderboards:
 	@commands.command(name="leaderboard", aliases=["lb"])
 	@commands.cooldown(1, 10, commands.BucketType.user)
 	async def leaderboard(self, ctx):
-		embed = discord.Embed(title="Leaderboard", color=0x4A0E50)
-		embed.description = ""
+		e = discord.Embed(title="Leaderboard", color=0x4A0E50)
+		e.description = ""
 		rank = 1
 		for user_id, xp in (sorted(self.guilds_data[str(ctx.guild.id)].items(), key=lambda kv: kv[1], reverse=True))[:15]:
 			name = "INVALID-USER"
@@ -47,17 +47,17 @@ class Leaderboards:
 				name = user.name
 			level = str(xp / 750)
 			level = level[:level.find(".")]
-			embed.description += "‎**‎#{}.** ‎`‎{}`: ‎{} | {}\n".format(rank, name, level, xp)
+			e.description += "‎**‎#{}.** ‎`‎{}`: ‎{} | {}\n".format(rank, name, level, xp)
 			rank += 1
-			embed.set_thumbnail(url=ctx.guild.icon_url)
-			embed.set_footer(text=random.choice(["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready", "Powered by slaves", "Powered by Beddys ego", "Powered by Samsung", "Powered by the supreme", "Powered by doritos", "Cooldown: 10 seconds"]))
-		await ctx.send(embed=embed)
+			e.set_thumbnail(url=ctx.guild.icon_url)
+			e.set_footer(text=random.choice(["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready", "Powered by slaves", "Powered by Beddys ego", "Powered by Samsung", "Powered by the supreme", "Powered by doritos", "Cooldown: 10 seconds"]))
+		await ctx.send(embed=e)
 
 	@commands.command(name="gleaderboard", aliases=["glb"])
 	@commands.cooldown(1, 10, commands.BucketType.user)
 	async def gleaderboard(self, ctx):
-		embed = discord.Embed(title="Global Leaderboard", color=0x4A0E50)
-		embed.description = ""
+		e = discord.Embed(title="Global Leaderboard", color=0x4A0E50)
+		e.description = ""
 		rank = 1
 		for user_id, xp in (sorted(self.global_data.items(), key=lambda kv: kv[1], reverse=True))[:15]:
 			name = "INVALID-USER"
@@ -66,17 +66,17 @@ class Leaderboards:
 				name = user.name
 			level = str(xp / 750)
 			level = level[:level.find(".")]
-			embed.description += "‎**#‎{}.** ‎`‎{}`‎ ~ ‎{} | {}\n".format(rank, name, level, xp)
+			e.description += "‎**#‎{}.** ‎`‎{}`‎ ~ ‎{} | {}\n".format(rank, name, level, xp)
 			rank += 1
-			embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png")
-			embed.set_footer(text=random.choice(["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready", "Powered by slaves", "Powered by Beddys ego", "Powered by Samsung", "Powered by the supreme", "Powered by doritos", "Cooldown: 10 seconds"]))
-		await ctx.send(embed=embed)
+			e.set_thumbnail(url="https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png")
+			e.set_footer(text=random.choice(["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready", "Powered by slaves", "Powered by Beddys ego", "Powered by Samsung", "Powered by the supreme", "Powered by doritos", "Cooldown: 10 seconds"]))
+		await ctx.send(embed=e)
 
 	@commands.command(name="ggleaderboard", aliases=["gglb"])
 	@commands.cooldown(1, 10, commands.BucketType.user)
 	async def ggleaderboard(self, ctx):
-		embed = discord.Embed(title="Guild XP Leaderboard", color=0x4A0E50)
-		embed.description = ""
+		e = discord.Embed(title="Guild XP Leaderboard", color=0x4A0E50)
+		e.description = ""
 		rank = 1
 		for guild_id, xp in (sorted({i:sum(x.values()) for i, x in self.guilds_data.items()}.items(), key=lambda kv: kv[1], reverse=True))[:8]:
 			name = "INVALID-GUILD"
@@ -85,11 +85,11 @@ class Leaderboards:
 				name = guild.name
 			else:
 				del self.guilds_data[guild_id]
-			embed.description += "**#{}.** `{}`: {}\n".format(rank, name, xp)
+			e.description += "**#{}.** `{}`: {}\n".format(rank, name, xp)
 			rank += 1
-			embed.set_thumbnail(url=ctx.guild.icon_url)
-			embed.set_footer(text=random.choice(["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready", "Powered by slaves", "Powered by Beddys ego", "Powered by Samsung", "Powered by the supreme", "Powered by doritos", "Cooldown: 10 seconds"]))
-		await ctx.send(embed=embed)
+			e.set_thumbnail(url=ctx.guild.icon_url)
+			e.set_footer(text=random.choice(["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready", "Powered by slaves", "Powered by Beddys ego", "Powered by Samsung", "Powered by the supreme", "Powered by doritos", "Cooldown: 10 seconds"]))
+		await ctx.send(embed=e)
 
 	@commands.command(name="mleaderboard", aliases=["mlb"])
 	async def _mleaderboard(self, ctx):
@@ -99,8 +99,8 @@ class Leaderboards:
 		for user in users:
 			for msg in self.monthly_guilds_data[guild_id][user]:
 				xp[user] = len(self.monthly_guilds_data[guild_id][user])
-		embed = discord.Embed(title="Monthly Leaderboard", color=0x4A0E50)
-		embed.description = ""
+		e = discord.Embed(title="Monthly Leaderboard", color=0x4A0E50)
+		e.description = ""
 		rank = 1
 		for user_id, xp in (sorted(xp.items(), key=lambda kv: kv[1], reverse=True))[:15]:
 			name = "INVALID-USER"
@@ -109,15 +109,15 @@ class Leaderboards:
 				name = user.name
 			level = str(xp / 750)
 			level = level[:level.find(".")]
-			embed.description += "‎**#‎{}.** ‎`‎{}`‎ ~ ‎{} | {}\n".format(rank, name, level, xp)
+			e.description += "‎**#‎{}.** ‎`‎{}`‎ ~ ‎{} | {}\n".format(rank, name, level, xp)
 			rank += 1
-			embed.set_thumbnail(
+			e.set_thumbnail(
 				url="https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png")
-			embed.set_footer(text=random.choice(
+			e.set_footer(text=random.choice(
 				["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready",
 				 "Powered by slaves", "Powered by Beddys ego", "Powered by Samsung", "Powered by the supreme",
 				 "Powered by doritos", "Cooldown: 10 seconds"]))
-		await ctx.send(embed=embed)
+		await ctx.send(embed=e)
 
 	@commands.command(name="gmleaderboard", aliases=["gmlb"])
 	async def _gmleaderboard(self, ctx):
@@ -126,8 +126,8 @@ class Leaderboards:
 		for user in users:
 			for msg in self.monthly_global_data[user]:
 				xp[user] = len(self.monthly_global_data[user])
-		embed = discord.Embed(title="Global Monthly Leaderboard", color=0x4A0E50)
-		embed.description = ""
+		e = discord.Embed(title="Global Monthly Leaderboard", color=0x4A0E50)
+		e.description = ""
 		rank = 1
 		for user_id, xp in (sorted(xp.items(), key=lambda kv: kv[1], reverse=True))[:15]:
 			name = "INVALID-USER"
@@ -136,15 +136,15 @@ class Leaderboards:
 				name = user.name
 			level = str(xp / 750)
 			level = level[:level.find(".")]
-			embed.description += "‎**#‎{}.** ‎`‎{}`‎ ~ ‎{} | {}\n".format(rank, name, level, xp)
+			e.description += "‎**#‎{}.** ‎`‎{}`‎ ~ ‎{} | {}\n".format(rank, name, level, xp)
 			rank += 1
-			embed.set_thumbnail(
+			e.set_thumbnail(
 				url="https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png")
-			embed.set_footer(text=random.choice(
+			e.set_footer(text=random.choice(
 				["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready",
 				 "Powered by slaves", "Powered by Beddys ego", "Powered by Samsung", "Powered by the supreme",
 				 "Powered by doritos", "Cooldown: 10 seconds"]))
-		await ctx.send(embed=embed)
+		await ctx.send(embed=e)
 
 	@commands.command(name="vcleaderboard", aliases=["vclb"])
 	@commands.cooldown(1, 10, commands.BucketType.user)
@@ -167,8 +167,8 @@ class Leaderboards:
 	@commands.command(name="gvcleaderboard", aliases=["gvclb"])
 	@commands.cooldown(1, 10, commands.BucketType.user)
 	async def gvcleaderboard(self, ctx):
-		embed = discord.Embed(title="Global VC Leaderboard", color=0x4A0E50)
-		embed.description = ""
+		e = discord.Embed(title="Global VC Leaderboard", color=0x4A0E50)
+		e.description = ""
 		rank = 1
 		for user_id, xp in (sorted(self.gvclb.items(), key=lambda kv: kv[1], reverse=True))[:15]:
 			name = "INVALID-USER"
@@ -176,11 +176,11 @@ class Leaderboards:
 			if isinstance(user, discord.User):
 				name = user.name
 			score = timedelta(seconds=xp)
-			embed.description += "‎**#‎{}.** ‎`‎{}`‎ ~ ‎{}\n".format(rank, name, score)
+			e.description += "‎**#‎{}.** ‎`‎{}`‎ ~ ‎{}\n".format(rank, name, score)
 			rank += 1
-			embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png")
-			embed.set_footer(text=random.choice(["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready", "Powered by slaves", "Powered by Beddys ego", "Powered by Samsung", "Powered by the supreme", "Powered by tostitos"]))
-		await ctx.send(embed=embed)
+			e.set_thumbnail(url="https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png")
+			e.set_footer(text=random.choice(["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready", "Powered by slaves", "Powered by Beddys ego", "Powered by Samsung", "Powered by the supreme", "Powered by tostitos"]))
+		await ctx.send(embed=e)
 
 	async def on_message(self, m:discord.Message):
 		if isinstance(m.guild, discord.Guild):
@@ -225,7 +225,6 @@ class Leaderboards:
 				guild_id = str(member.guild.id)
 				user_id = str(member.id)
 				channel_id = None
-				k = self.bot.get_channel(548681737320792074)
 				if not after.channel:
 					channel_id = str(before.channel.id)
 				if not before.channel:
@@ -246,14 +245,11 @@ class Leaderboards:
 					self.dat[channel_id]["status"] = "inactive"
 				if user_id not in self.dat[channel_id]["members"]:
 					self.dat[channel_id]["members"].append(user_id)
-					await k.send(f"added {member.name} to db")
 					if len(after.channel.members) < 2:
 						self.dat[channel_id]["status"] = "inactive"
-						await k.send("member joined but status is inactive")
 					if self.dat[channel_id]["status"] == "inactive":
 						if len(after.channel.members) > 1:
 							self.dat[channel_id]["status"] = "active"
-							await k.send("status is active")
 							for user in after.channel.members:
 								member_id = str(user.id)
 								if member_id not in self.dat[channel_id].keys():
@@ -266,30 +262,20 @@ class Leaderboards:
 						if self.dat[channel_id]["status"] == "active":
 							if len(channel.members) < 2:
 								self.dat[channel_id]["status"] = "inactive"
-								await k.send("status set to inactive")
 								for id in self.dat[channel_id]["members"]:
 									if id in self.dat[channel_id]:
 										seconds = (datetime.now() - self.dat[channel_id][id]).seconds
 										self.vclb[guild_id][id] += seconds
 										self.gvclb[id] += seconds
 										del self.dat[channel_id][id]
-										await k.send(f"(i) added to {channel.guild.get_member(int(id)).name}'s score and set the status to inactive")
 							else:
 								if user_id in self.dat[channel_id]:
 									seconds = (datetime.now() - self.dat[channel_id][user_id]).seconds
 									self.vclb[guild_id][user_id] += seconds
 									self.gvclb[user_id] += seconds
 									del self.dat[channel_id][user_id]
-									await k.send(f"(s) added to {channel.guild.get_member(int(user_id)).name}'s score and set the status to inactive")
-									await k.send(f"wiped {channel.guild.get_member(int(user_id)).name} from db")
 						self.dat[channel_id]["members"].pop(self.dat[channel_id]["members"].index(str(user_id)))
-						await k.send(f"wiped {member.name} from db")
 				self.save_xp()
-
-	async def on_guild_remove(self, guild):
-		guild_id = str(guild.id)
-		if guild_id in self.guilds_data:
-			del self.guilds_data[guild_id]
 
 def setup(bot: commands.Bot):
 	bot.add_cog(Leaderboards(bot))
