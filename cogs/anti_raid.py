@@ -23,6 +23,7 @@ class Anti_Raid:
 			json.dump({"toggle": self.toggle}, f)
 
 	@commands.group(name="anti_raid")
+	@commands.cooldown(1, 3, commands.BucketType.user)
 	async def _anti_raid(self, ctx):
 		if not ctx.invoked_subcommand:
 			toggle = "disabled"
@@ -38,6 +39,7 @@ class Anti_Raid:
 			await ctx.send(embed=e)
 
 	@_anti_raid.command(name="enable")
+	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.has_permissions(administrator=True)
 	@commands.bot_has_permissions(ban_members=True, manage_roles=True)
 	async def _enable(self, ctx):
@@ -49,6 +51,7 @@ class Anti_Raid:
 		self.save_data()
 
 	@_anti_raid.command(name="disable")
+	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.has_permissions(administrator=True)
 	async def _disable(self, ctx):
 		guild_id = str(ctx.guild.id)
@@ -78,7 +81,7 @@ class Anti_Raid:
 			self.cd[guild_id][str(time())] = (time() + 0.5) - now
 			old_keys = []
 			for key in self.cd[guild_id].keys():
-				if float(key) < time() - 10:
+				if float(key) < time() - 15:
 					old_keys.append(key)
 			for key in old_keys:
 				del self.cd[guild_id][key]
