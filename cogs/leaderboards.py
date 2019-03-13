@@ -223,10 +223,13 @@ class Leaderboards:
 				guild_id = str(member.guild.id)
 				user_id = str(member.id)
 				channel_id = None
+				channel = None
 				if not after.channel:
 					channel_id = str(before.channel.id)
+					channel = before.channel
 				if not before.channel:
 					channel_id = str(after.channel.id)
+					channel = after.channel
 				if guild_id not in self.vclb:
 					self.vclb[guild_id] = {}
 				if user_id not in self.vclb[guild_id]:
@@ -243,12 +246,12 @@ class Leaderboards:
 					self.dat[channel_id]["status"] = "inactive"
 				if user_id not in self.dat[channel_id]["members"]:
 					self.dat[channel_id]["members"].append(user_id)
-					if len(after.channel.members) < 2:
+					if len(channel.members) < 2:
 						self.dat[channel_id]["status"] = "inactive"
 					if self.dat[channel_id]["status"] == "inactive":
-						if len(after.channel.members) > 1:
+						if len(channel.members) > 1:
 							self.dat[channel_id]["status"] = "active"
-							for user in after.channel.members:
+							for user in channel.members:
 								member_id = str(user.id)
 								if member_id not in self.dat[channel_id].keys():
 									self.dat[channel_id][member_id] = datetime.now()
@@ -256,7 +259,6 @@ class Leaderboards:
 						self.dat[channel_id][user_id] = datetime.now()
 				else:
 					if not after.channel:
-						channel = self.bot.get_channel(before.channel.id)
 						if self.dat[channel_id]["status"] == "active":
 							if len(channel.members) < 2:
 								self.dat[channel_id]["status"] = "inactive"
