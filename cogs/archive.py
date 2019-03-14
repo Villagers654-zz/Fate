@@ -17,7 +17,7 @@ class Archive:
 		async with ctx.typing():
 			log = ""
 			async for msg in ctx.channel.history(limit=amount):
-				log = f"{msg.timestamp.strftime('%I:%M%p')} | {msg.author.display_name}: {msg.content}\n{log}"
+				log = f"{msg.created_at.strftime('%I:%M%p')} | {msg.author.display_name}: {msg.content}\n{log}"
 			with open(f'/home/luck/FateZero/data/{ctx.channel.name}.txt', 'w') as f:
 				f.write(log)
 			path = os.getcwd() + f"/data/{ctx.channel.name}.txt"
