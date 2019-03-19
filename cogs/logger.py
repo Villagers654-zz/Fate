@@ -344,7 +344,7 @@ class Logger:
 					return
 			if before.name != after.name:
 				user = "unknown"
-				async for entry in after.guild.audit_logs(action=discord.AuditLogAction.guild_update, limit=1):
+				async for entry in after.audit_logs(action=discord.AuditLogAction.guild_update, limit=1):
 					user = entry.user.mention
 				channel = self.bot.get_channel(self.channel[guild_id])
 				e = discord.Embed(color=colors.cyan())
