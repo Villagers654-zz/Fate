@@ -48,15 +48,13 @@ class Utility:
 	async def userinfo(self, ctx, *, member: discord.Member=None):
 		if member is None:
 			member = ctx.author
-		fmt = "%m/%d/%Y"
-		created = datetime.date(member.created_at)
 		perms = ', '.join(perm for perm, value in member.guild_permissions if value)
 		e=discord.Embed(description="id: {}".format(member.id), color=member.color)
 		e.set_author(name="{}:".format(member.name), icon_url=member.avatar_url)
 		e.set_thumbnail(url=member.avatar_url)
 		e.add_field(name="◈ Main ◈", value="• Nickname [{}]\n• Activity [{}]\n• Status [{}]\n• role [{}]".format(member.nick, member.activity, member.status, member.top_role), inline=False)
 		e.add_field(name="◈ Perms ◈", value="```{}```".format(perms), inline=False)
-		e.add_field(name="◈ Created ◈", value=created.strftime(fmt), inline=False)
+		e.add_field(name="◈ Created ◈", value=datetime.date(member.created_at).strftime("%m/%d/%Y"), inline=False)
 		await ctx.send(embed=e)
 
 	@commands.command(name="roleinfo")
