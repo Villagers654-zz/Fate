@@ -317,7 +317,5 @@ class Fun:
 	async def rr(self, ctx):
 		await ctx.send(random.choice(["You lived", "You died"]))
 
-# ~== Misc ==~
-
 def setup(bot):
 	bot.add_cog(Fun(bot))
