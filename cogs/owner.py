@@ -1,4 +1,5 @@
 from discord.ext import commands
+from os.path import isfile
 from utils import checks
 import subprocess
 import discord
@@ -10,6 +11,37 @@ class Owner:
 
 	def luck(ctx):
 		return ctx.message.author.id == 264838866480005122
+
+	@commands.command(name="scrapeimages")
+	@commands.check(checks.luck)
+	async def _scrapeimages(self, ctx, filename, limit = 1000):
+		if not isfile(f"./data/images/urls/{filename}"):
+			with open(f"./data/images/urls/{filename}", "w") as f:
+				image_urls = ""
+				async for msg in ctx.channel.history(limit=limit):
+					if msg.attachments:
+						for attachment in msg.attachments:
+							if not image_urls:
+								image_urls += attachment.url
+							else:
+								image_urls += f"\n{attachment.url}"
+				f.write(image_urls)
+		else:
+			f = open(f"./data/images/urls/{filename}", "r")
+			urls = f.readlines()
+			f.close()
+			async for msg in ctx.channel.history(limit=limit):
+				if msg.attachments:
+					for attachment in msg.attachments:
+						urls.append(f"{attachment.url}")
+			clean_content = ""
+			for url in urls:
+				if url not in clean_content:
+					clean_content += f"\n{url}"
+			f = open(f"./data/images/urls/{filename}", "w")
+			f.write(clean_content.replace("\n\n", "\n"))
+			f.close()
+		await ctx.send("Done")
 
 	@commands.command(name="changepresence", aliases=["cp"])
 	@commands.check(luck)
