@@ -25,6 +25,7 @@ class AntiPurge:
 		return ctx.author.id == ctx.guild.owner.id
 
 	@commands.group(name="anti_purge")
+	@commands.bot_has_permissions(embed_links=True)
 	async def _anti_purge(self, ctx):
 		if ctx.invoked_subcommand is None:
 			guild_id = str(ctx.guild.id)
