@@ -11,6 +11,7 @@ class Anti_Raid:
 		self.bot = bot
 		self.toggle = {}
 		self.locked = []
+		self.last = {}
 		self.cd = {}
 		if isfile("./data/userdata/anti_raid.json"):
 			with open("./data/userdata/anti_raid.json", "r") as f:
@@ -24,6 +25,7 @@ class Anti_Raid:
 
 	@commands.group(name="anti_raid")
 	@commands.cooldown(1, 3, commands.BucketType.user)
+	@commands.has_permissions(embed_links=True)
 	async def _anti_raid(self, ctx):
 		if not ctx.invoked_subcommand:
 			toggle = "disabled"
@@ -39,7 +41,6 @@ class Anti_Raid:
 			await ctx.send(embed=e)
 
 	@_anti_raid.command(name="enable")
-	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.has_permissions(administrator=True)
 	@commands.bot_has_permissions(ban_members=True, manage_roles=True)
 	async def _enable(self, ctx):
@@ -51,7 +52,6 @@ class Anti_Raid:
 		self.save_data()
 
 	@_anti_raid.command(name="disable")
-	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.has_permissions(administrator=True)
 	async def _disable(self, ctx):
 		guild_id = str(ctx.guild.id)
@@ -63,6 +63,7 @@ class Anti_Raid:
 
 	async def on_member_join(self, m: discord.Member):
 		guild_id = str(m.guild.id)
+		user_id = str(m.id)
 		if guild_id in self.toggle:
 			if guild_id in self.locked:
 				await m.guild.ban(m, reason="Server locked due to raid", delete_message_days=0)
@@ -72,24 +73,22 @@ class Anti_Raid:
 				except:
 					pass
 				await asyncio.sleep(3600)
-				await m.guild.unban(m, reason="Server locked due to raid")
+				return await m.guild.unban(m, reason="Server locked due to raid")
 			if m.author.bot:
 				return
-			now = time()
-			if guild_id not in self.cd:
-				self.cd[guild_id] = {}
-			self.cd[guild_id][str(time())] = (time() + 0.5) - now
-			old_keys = []
-			for key in self.cd[guild_id].keys():
-				if float(key) < time() - 15:
-					old_keys.append(key)
-			for key in old_keys:
-				del self.cd[guild_id][key]
-			limit = time() + 1.5
-			total = time()
-			for key, value in (sorted(self.cd[guild_id].items(), key=lambda kv: kv[1], reverse=True)):
-				total += value
-			if total > limit:
+			if guild_id not in self.last:
+				self.last[guild_id] = {}
+			self.last[guild_id][user_id] = time()
+			now = int(time() / 15)
+			if guild_id not in self.cd[guild_id]:
+				self.cd[guild_id] = [now, 0]
+			if self.cd[guild_id][0] == now:
+				self.cd[guild_id][1] += 1
+			else:
+				self.cd[guild_id] = [now, 0]
+			if self.cd[guild_id][1] > 4:
+				for junkie in list(filter(lambda id: self.last[guild_id][id] > time() - 15, self.last[guild_id].keys())):
+					await m.guild.ban(junkie, reason="raid")
 				self.locked.append(guild_id)
 				await asyncio.sleep(3600)
 				self.locked.pop(self.locked.index(guild_id))
