@@ -36,3 +36,8 @@ def server(item):
 
 def color():
 	return 0x80b0ff
+
+def source():
+	return random.choice(["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready",
+		    "Powered by slaves", "Powered by Beddys ego", "Powered by Samsung", "Powered by the supreme",
+		                      "Powered by doritos", "Cooldown: 10 seconds"])
