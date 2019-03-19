@@ -30,29 +30,26 @@ class Cookies:
 			json.dump({"cookies": self.cookies, "sent": self.sent, "received": self.received,
 			           "eaten": self.eaten, "cd": self.cd}, outfile, ensure_ascii=False)
 
+	def setup(self, id):
+		self.cookies[id] = 0
+		self.sent[id] = 0
+		self.received[id] = 0
+		self.eaten[id] = 0
+		self.cd[id] = 0
+		self.save()
+
 	@commands.command(name="cookie")
 	async def _cookie(self, ctx, user: discord.Member=None):
 		author_id = str(ctx.author.id)
 		e = discord.Embed(color=colors.fate())
-		e.set_thumbnail(url="https://cdn.discordapp.com/attachments/507914723858186261/542465014099869697/580b57fbd9996e24bc43c103.png")
 		if user is not None:
 			user_id = str(user.id)
 			if user.bot is True:
 				return await ctx.send("You cannot give cookies to bots")
 			if user_id not in self.cookies:
-				self.cookies[user_id] = 0
-				self.sent[user_id] = 0
-				self.received[user_id] = 0
-				self.eaten[user_id] = 0
-				self.cd[user_id] = 0
-				self.save()
+				self.setup(user_id)
 		if author_id not in self.cookies:
-			self.cookies[author_id] = 0
-			self.sent[author_id] = 0
-			self.received[author_id] = 0
-			self.eaten[author_id] = 0
-			self.cd[author_id] = 0
-			self.save()
+			self.setup(author_id)
 		if user is not None:
 			if self.cd[author_id] > time.time():
 				return await ctx.send("You cannot send another cookie yet\nCooldown: 1 hour")
@@ -61,8 +58,9 @@ class Cookies:
 			self.sent[author_id] += 1
 			self.received[user_id] += 1
 			self.cookies[user_id] += 1
-			e.set_author(name=f"Cookies: {self.cookies[author_id]} | Sent: {self.sent[author_id]} | Received: {self.received[author_id]} | Eaten: {self.eaten[author_id]}", icon_url=ctx.author.avatar_url)
+			e.set_author(name=f"| 📤 {self.sent[user_id]} | 📥 {self.received[user_id]} | 🍪 {self.cookies[user_id]}", icon_url=user.avatar_url)
 			e.description = f"{ctx.author.display_name} has given {user.display_name} a cookie"
+			e.set_footer(text=f"Powered by Cookie Mix")
 			self.cd[author_id] = time.time() + 3600
 			self.save()
 			return await ctx.send(embed=e)
@@ -71,12 +69,13 @@ class Cookies:
 		self.cookies[author_id] = self.cookies[author_id] - 1
 		self.eaten[author_id] += 1
 		self.save()
-		e.set_author(name=f"Cookies: {self.cookies[author_id]} | Sent: {self.sent[author_id]} | Received: {self.received[author_id]} | Eaten: {self.eaten[author_id]}", icon_url=ctx.author.avatar_url)
+		e.set_author(name=f"| 📤 {self.sent[author_id]} | 📥 {self.received[author_id]} | 🍪 {self.cookies[author_id]}", icon_url=user.avatar_url)
 		actions = ["chews on one of his/her cookies", "nibbles on one of his/her cookies", "eats a cookie whole"]
 		e.description = f"{ctx.author.name} {random.choice(actions)}"
 		path = os.getcwd() + "/data/images/reactions/cookie/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/cookie/"))
 		e.set_image(url="attachment://" + os.path.basename(path))
-		await ctx.send(embed=e)
+		e.set_footer(text="Powered by Cookie Mix")
+		await ctx.send(file=discord.File(path, filename=os.path.basename(path)), embed=e)
 
 	@commands.command(name="cookies")
 	async def _cookies(self, ctx, user: discord.Member=None):
@@ -84,14 +83,10 @@ class Cookies:
 			user = ctx.author
 		user_id = str(user.id)
 		if user_id not in self.cookies:
-			self.cookies[user_id] = 0
-			self.sent[user_id] = 0
-			self.received[user_id] = 0
-			self.eaten[user_id] = 0
-			self.cd[user_id] = 0
-			self.save()
+			self.setup(user_id)
 		e = discord.Embed(color=colors.fate())
-		e.set_author(name=f"Cookies: {self.cookies[user_id]} | Sent: {self.sent[user_id]} | Received: {self.received[user_id]} | Eaten: {self.eaten[user_id]}", icon_url=user.avatar_url)
+		e.set_author(name=f"| 📤 {self.sent[user_id]} | 📥 {self.received[user_id]} | 🍪 {self.cookies[user_id]}", icon_url=user.avatar_url)
+		e.set_footer(text="Powered by Cookie Mix")
 		await ctx.send(embed=e)
 
 def setup(bot):
