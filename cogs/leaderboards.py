@@ -223,7 +223,7 @@ class Leaderboards:
 				guild_id = str(member.guild.id)
 				user_id = str(member.id)
 				channel_id = None
-				channel = None
+				channel = None  # type: discord.TextChannel
 				if not after.channel:
 					channel_id = str(before.channel.id)
 					channel = before.channel
@@ -250,6 +250,10 @@ class Leaderboards:
 						self.dat[channel_id]["status"] = "inactive"
 					if self.dat[channel_id]["status"] == "inactive":
 						if len(channel.members) > 1:
+							if after.self_mute:
+								return
+							if after.mute:
+								return
 							self.dat[channel_id]["status"] = "active"
 							for user in channel.members:
 								member_id = str(user.id)
@@ -275,6 +279,31 @@ class Leaderboards:
 									self.gvclb[user_id] += seconds
 									del self.dat[channel_id][user_id]
 						self.dat[channel_id]["members"].pop(self.dat[channel_id]["members"].index(str(user_id)))
+				if before.self_mute is False and after.self_mute is True:
+					if self.dat[channel_id]["status"] == "active":
+						if len(channel.members) == 2:
+							self.dat[channel_id]["status"] = "inactive"
+							for id in self.dat[channel_id]["members"]:
+								if id in self.dat[channel_id]:
+									seconds = (datetime.now() - self.dat[channel_id][id]).seconds
+									self.vclb[guild_id][id] += seconds
+									self.gvclb[id] += seconds
+									del self.dat[channel_id][id]
+						else:
+							seconds = (datetime.now() - self.dat[channel_id][user_id]).seconds
+							self.vclb[guild_id][user_id] += seconds
+							self.gvclb[user_id] += seconds
+							del self.dat[channel_id][user_id]
+				if before.self_mute is True and after.self_mute is False:
+					if self.dat[channel_id]["status"] == "inactive":
+						if len(channel.members) > 1:
+							self.dat[channel_id]["status"] = "active"
+							for user in channel.members:
+								member_id = str(user.id)
+								if member_id not in self.dat[channel_id].keys():
+									self.dat[channel_id][member_id] = datetime.now()
+					else:
+						self.dat[channel_id][user_id] = datetime.now()
 				self.save_xp()
 
 def setup(bot: commands.Bot):
