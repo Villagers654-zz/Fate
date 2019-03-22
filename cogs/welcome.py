@@ -29,13 +29,17 @@ class Events:
 	@commands.group(name='welcome')
 	async def _welcome(self, ctx):
 		if ctx.invoked_subcommand is None:
+			identifier = 'disabled'
+			if str(ctx.guild.id) in self.identifier:
+				if self.identifier[str(ctx.guild.id)] == "True":
+					identifier = 'enabled'
 			await ctx.send('**Welcome Message Instructions:**\n'
 			               '.welcome enable ~ `enables welcome messages`\n'
 			               '.welcome disable ~ `disables welcome messages`\n'
 			               '.welcome setchannel ~ `sets the channel`\n'
 			               '.welcome usepings ~ `true or false`\n'
 			               '.welcome useimages ~ `true or false`\n'
-			               f'**Current Status:** {self.identifier[str(ctx.guild.id)]}')
+			               f'**Current Status:** {identifier}')
 
 	@_welcome.command(name='toggle')
 	@commands.has_permissions(manage_guild=True)
