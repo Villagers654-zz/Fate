@@ -1,10 +1,14 @@
 from datetime import datetime, timedelta
 from discord.ext import commands
 from os.path import isfile
+from PIL import ImageDraw
+from PIL import ImageFont
+from PIL import Image
 import discord
 import random
 import json
 import time
+import os
 
 class Leaderboards:
 	def __init__(self, bot: commands.Bot):
@@ -44,7 +48,8 @@ class Leaderboards:
 		    "Powered by slaves", "Powered by Beddys ego", "Powered by Samsung", "Powered by the supreme", "Powered by tostitos"])
 
 	@commands.command(name="leaderboard", aliases=["lb"])
-	@commands.cooldown(1, 10, commands.BucketType.user)
+	@commands.cooldown(1, 10, commands.BucketType.channel)
+	@commands.bot_has_permissions(embed_links=True)
 	async def leaderboard(self, ctx):
 		e = discord.Embed(title="Leaderboard", color=0x4A0E50)
 		e.description = ""
@@ -63,7 +68,8 @@ class Leaderboards:
 		await ctx.send(embed=e)
 
 	@commands.command(name="gleaderboard", aliases=["glb"])
-	@commands.cooldown(1, 10, commands.BucketType.user)
+	@commands.cooldown(1, 10, commands.BucketType.channel)
+	@commands.bot_has_permissions(embed_links=True)
 	async def gleaderboard(self, ctx):
 		e = discord.Embed(title="Global Leaderboard", color=0x4A0E50)
 		e.description = ""
@@ -82,7 +88,8 @@ class Leaderboards:
 		await ctx.send(embed=e)
 
 	@commands.command(name="ggleaderboard", aliases=["gglb"])
-	@commands.cooldown(1, 10, commands.BucketType.user)
+	@commands.cooldown(1, 10, commands.BucketType.channel)
+	@commands.bot_has_permissions(embed_links=True)
 	async def ggleaderboard(self, ctx):
 		e = discord.Embed(title="Guild XP Leaderboard", color=0x4A0E50)
 		e.description = ""
@@ -101,6 +108,8 @@ class Leaderboards:
 		await ctx.send(embed=e)
 
 	@commands.command(name="mleaderboard", aliases=["mlb"])
+	@commands.cooldown(1, 10, commands.BucketType.channel)
+	@commands.bot_has_permissions(embed_links=True)
 	async def _mleaderboard(self, ctx):
 		guild_id = str(ctx.guild.id)
 		users = list(self.monthly_guilds_data[guild_id])
@@ -125,6 +134,8 @@ class Leaderboards:
 		await ctx.send(embed=e)
 
 	@commands.command(name="gmleaderboard", aliases=["gmlb"])
+	@commands.cooldown(1, 10, commands.BucketType.channel)
+	@commands.bot_has_permissions(embed_links=True)
 	async def _gmleaderboard(self, ctx):
 		users = list(self.monthly_global_data)
 		xp = {}
@@ -148,7 +159,8 @@ class Leaderboards:
 		await ctx.send(embed=e)
 
 	@commands.command(name="vcleaderboard", aliases=["vclb"])
-	@commands.cooldown(1, 10, commands.BucketType.user)
+	@commands.cooldown(1, 10, commands.BucketType.channel)
+	@commands.bot_has_permissions(embed_links=True)
 	async def vcleaderboard(self, ctx):
 		e = discord.Embed(title="VC Leaderboard", color=0x4A0E50)
 		e.description = ""
@@ -166,7 +178,8 @@ class Leaderboards:
 		await ctx.send(embed=e)
 
 	@commands.command(name="gvcleaderboard", aliases=["gvclb"])
-	@commands.cooldown(1, 10, commands.BucketType.user)
+	@commands.cooldown(1, 10, commands.BucketType.channel)
+	@commands.bot_has_permissions(embed_links=True)
 	async def gvcleaderboard(self, ctx):
 		e = discord.Embed(title="Global VC Leaderboard", color=0x4A0E50)
 		e.description = ""
@@ -182,6 +195,50 @@ class Leaderboards:
 			e.set_thumbnail(url="https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png")
 			e.set_footer(text=self.vc_footer())
 		await ctx.send(embed=e)
+
+	@commands.command(name="card")
+	@commands.cooldown(1, 5, commands.BucketType.channel)
+	@commands.bot_has_permissions(embed_links=True)
+	async def _card(self, ctx):
+		leaderboard = ""
+		rank = 1
+		for user_id, xp in (sorted(self.global_data.items(), key=lambda kv: kv[1], reverse=True))[:15]:
+			name = "INVALID-USER"
+			user = self.bot.get_user(int(user_id))
+			if isinstance(user, discord.User):
+				filter = list('abcdefghijklmnopqrstuvwxyz1234567890 ')
+				name = ""
+				for char in list(user.name):
+					if char.lower() in filter:
+						name += char
+				check = True
+				for char in list(name):
+					if char != " ":
+						check = False
+				if check:
+					name = "Unknown"
+			level = str(xp / 750)
+			level = level[:level.find(".")]
+			leaderboard += "‎#‎{}. ‎{}‎ ~ ‎{} | {}\n".format(rank, name, level, xp)
+			rank += 1
+		card = Image.new("RGBA", (1024, 1024), (255, 255, 255))
+		img = Image.open('./data/images/backgrounds/galaxy.jpg').convert("RGBA")
+		img = img.resize((1024, 1024), Image.BICUBIC)
+		card.paste(img, (0, 0, 1024, 1024), img)
+		card.save("./data/images/backgrounds/galaxy.png", format="png")
+		img = Image.open('./data/images/backgrounds/galaxy.png')
+		draw = ImageDraw.Draw(img)
+		font = ImageFont.truetype("./utils/fonts/Modern_Sans_Light.otf", 60)
+		def large(size):
+			return ImageFont.truetype("./utils/fonts/Fitamint Script.ttf", size)
+		draw.text((25, 25), "Global Leaderboard", (255, 255, 255), font=large(150))
+		draw.text((5, 220), leaderboard, (255, 255, 255), font=font)
+		img = img.convert("RGB")
+		img.save('./data/images/backgrounds/results/galaxy.png')
+		e = discord.Embed(color=0x4A0E50)
+		e.set_image(url="attachment://" + os.path.basename('/data/images/backgrounds/results/galaxy.png'))
+		await ctx.send(file=discord.File('./data/images/backgrounds/results/galaxy.png',
+		    filename=os.path.basename('/data/images/backgrounds/results/galaxy.png')), embed=e)
 
 	async def on_message(self, m:discord.Message):
 		if isinstance(m.guild, discord.Guild):
