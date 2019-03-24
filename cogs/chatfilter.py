@@ -90,8 +90,9 @@ class ChatFilter:
 				if guild_id in self.blacklist:
 					for phrase in self.blacklist[guild_id]:
 						if phrase in m.content:
-							await asyncio.sleep(0.5)
-							await m.delete()
+							if m.author.id != m.guild.owner.id:
+								await asyncio.sleep(0.5)
+								await m.delete()
 
 def setup(bot):
 	bot.add_cog(ChatFilter(bot))
