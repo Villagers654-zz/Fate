@@ -52,7 +52,7 @@ class ErrorHandler:
 		e.set_thumbnail(url=ctx.guild.icon_url)
 		e.description = "This has been logged and will be resolved shortly"
 		e.add_field(name="◈ Error ◈", value=error, inline=False)
-		await ctx.send(embed=e, delete_after=10)
+		await ctx.send(error)
 		p = subprocess.Popen("cat  /root/.pm2/logs/bot-error.log", stdout=subprocess.PIPE, shell=True)
 		(output, err) = p.communicate()
 		output = str(output).replace("\\t", "    ").replace("b'", "").replace("`", "").split("\\n")
