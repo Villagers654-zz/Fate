@@ -1,6 +1,11 @@
-from datetime import datetime
 from discord.ext import commands
+from datetime import datetime
 from os.path import isfile
+from PIL import ImageDraw
+from PIL import ImageFont
+from io import BytesIO
+from PIL import Image
+import requests
 import discord
 import json
 
@@ -58,17 +63,50 @@ class Profiles:
 	def gvclb(self):
 		return self.get()["gvclb"]
 
+	@commands.command(pass_context=True)
+	async def xprofile(self, ctx, user: discord.Member=None):
+		if user is None:
+			user = ctx.author
+		user_id = str(user.id)
+		if str(user.id) in self.gvclb():
+			xp = self.global_data()[user_id] + self.gvclb()[user_id] / 20
+		else:
+			xp = self.global_data()[user_id]
+		level = str(xp / 750)
+		level = level[:level.find(".")]
+		if user_id not in self.gvclb():
+			vc_xp = 0
+		else:
+			vc_xp = str(self.gvclb()[user_id] / 10)[:str(self.gvclb()[user_id] / 10).find('.')]
+		payload = f"Level: {level}\nXP: {str(xp)[:str(xp).find('.')]}\n" \
+			f"MSG: {self.global_data()[user_id]}\nVC: {vc_xp}"
+		card = Image.new("RGBA", (1024, 1024), (255, 255, 255))
+		img = Image.open(BytesIO(requests.get(user.avatar_url).content)).convert("RGBA")
+		img = img.resize((1024, 1024), Image.BICUBIC)
+		card.paste(img, (0, 0, 1024, 1024), img)
+		card.save("background.png", format="png")
+		img = Image.open('background.png')
+		draw = ImageDraw.Draw(img)
+		font = ImageFont.truetype("Modern_Sans_Light.otf", 75)
+		fontbig = ImageFont.truetype("Fitamint Script.ttf", 200)
+		draw.text((10, 30), f"{user.name}", (79, 0, 139), font=fontbig)
+		draw.text((700, 30), f"{payload}", (0, 0, 255), font=ImageFont.truetype("Modern_Sans_Light.otf", 65))
+		draw.text((10, 975), f"{self.info[str(user.id)]}", (255, 255, 255), font=ImageFont.truetype("Modern_Sans_Light.otf", 40))
+		img = img.convert("RGB")
+		img.save('background.png')
+		await ctx.send(file=discord.File("background.png"))
+
 	@commands.group(name="set")
 	async def _set(self, ctx):
 		if ctx.invoked_subcommand is None:
 			await ctx.send("**Profile Usage:**\n"
-			               ".set name {name}\n"
-			               ".set bio {bio}\n"
-			               ".set color {hex}\n"
-			               ".set discord {url}\n"
-			               ".set channel {url}\n"
-			               ".set icon {img}\n"
-			               ".set thumbnail {img}\n")
+			    ".set name {name}\n"
+			    ".set bio {bio}\n"
+			    ".set color {hex}\n"
+			    ".set discord {url}\n"
+			    ".set channel {url}\n"
+			    ".set icon {img}\n"
+			    ".set thumbnail {img}\n")
 
 	@_set.command(name="name")
 	async def _name(self, ctx, *, name=None):

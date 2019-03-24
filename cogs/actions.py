@@ -9,41 +9,33 @@ class Actions:
 	def luck(ctx):
 		return ctx.message.author.id == 264838866480005122
 
-	@commands.command()
-	async def crucify(self, ctx, arg):
-		e=discord.Embed(description="has crucified {}".format(arg), color=0x000001)
-		e.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
-		e.set_thumbnail(url="https://cdn.discordapp.com/attachments/501871950260469790/505160690932121613/crucify-147995__340.png")
-		await ctx.send(embed=e)
+	@commands.command(description="Shoots a user")
+	async def shoot(self, ctx, user: discord.Member):
+		await ctx.send("🔫 | pew pew, {} {}, {}".format(user.display_name, random.choice(["has been shot in the head and died instantly", "has been shot in the heart and died quickly and painfully", "has been shot in the arm and is rolling around in agonizing pain", "has been shot in the leg and is now hopping around on one leg like an autist", "has been shot in the dick"]), random.choice(["you really shouldn't let a bot carry a gun :p", "you should let me shoot people more often", "you should let me shoot faggots more often", "this is fun", "poor faggot didn't stand a chance", "he/she definitely deserved it", "poor autist dropped like a fly"])))
+
+	@commands.command(description="Injects a user with something random")
+	async def inject(self, ctx, user: discord.Member):
+		await ctx.send("💉 | {} {}".format(user, random.choice(["has been injected with AIDS", "has been injected with HIV positive blood", "has been injected with an STD", "has been injected with the cure", "has been injected with Flex Seal", "has been injected with Kool-Aid powder"])))
+
+	@commands.command(description="Slices anything into bits")
+	async def slice(self, ctx, user: discord.Member):
+		await ctx.send("⚔ | {} {}".format(user.display_name, random.choice(["just got sliced up into sushi", "just got sliced up into string cheese"])))
+
+	@commands.command(description="Boops a user")
+	async def boop(self, ctx, user: discord.Member):
+		await ctx.send("<@{}> {} boops {}".format(ctx.author.id, random.choice(["sneakily", "sexually", "forcefully", "gently", "softly"]), user.display_name))
 		await ctx.message.delete()
 
-	@commands.command()
-	async def shoot(self, ctx, *, arg):
-		await ctx.send("🔫 | pew pew, {} {}, {}".format(arg, random.choice(["has been shot in the head and died instantly", "has been shot in the heart and died quickly and painfully", "has been shot in the arm and is rolling around in agonizing pain", "has been shot in the leg and is now hopping around on one leg like an autist", "has been shot in the dick"]), random.choice(["you really shouldn't let a bot carry a gun :p", "you should let me shoot people more often", "you should let me shoot faggots more often", "this is fun", "poor faggot didn't stand a chance", "he/she definitely deserved it", "poor autist dropped like a fly"])))
-
-	@commands.command()
-	async def inject(self, ctx, *, arg):
-		await ctx.send("💉 | {} {}".format(arg, random.choice(["has been injected with AIDS", "has been injected with HIV positive blood", "has been injected with an STD", "has been injected with the cure", "has been injected with Flex Seal", "has been injected with Kool-Aid powder"])))
-
-	@commands.command()
-	async def slice(self, ctx, *, arg):
-		await ctx.send("⚔ | {} {}".format(arg, random.choice(["just got sliced up into sushi", "just got sliced up into string cheese"])))
-
-	@commands.command()
-	async def boop(self, ctx, *, arg):
-		await ctx.send("<@{}> {} boops {}".format(ctx.author.id, random.choice(["sneakily", "sexually", "forcefully", "gently", "softly"]), arg))
+	@commands.command(description="Gives a user anything of your choosing")
+	async def give(self, ctx, *, item):
+		await ctx.send("<@{}> gives {}".format(ctx.author.id, item))
 		await ctx.message.delete()
 
-	@commands.command()
-	async def give(self, ctx, *, arg):
-		await ctx.send("<@{}> gives {}".format(ctx.author.id, arg))
-		await ctx.message.delete()
+	@commands.command(description="Stabs a user")
+	async def stab(self, ctx, user: discord.Member):
+		await ctx.send("⚔ | {} {}, {}".format(user.display_name, random.choice(["has been stabbed in the head", "has been stabbed in the shoulder", "has been stabbed in the chest", "has beeb stabbed in the arm", "has been stabbed in the gut", "has been stabbed in the dick", "has been stabbed in the leg", "has been stabbed in the foot"]), random.choice(["you really shouldn't let a bot carry a blade :p", "you should let me stab people more often", "you should let me stab faggots more often", "this is fun", "poor faggot didn't stand a chance", "whatever that **thing** is, it definitely deserved it", "poor autist dropped like a fly"])))
 
-	@commands.command()
-	async def stab(self, ctx, arg):
-		await ctx.send("⚔ | {} {}, {}".format(arg, random.choice(["has been stabbed in the head", "has been stabbed in the shoulder", "has been stabbed in the chest", "has beeb stabbed in the arm", "has been stabbed in the gut", "has been stabbed in the dick", "has been stabbed in the leg", "has been stabbed in the foot"]), random.choice(["you really shouldn't let a bot carry a blade :p", "you should let me stab people more often", "you should let me stab faggots more often", "this is fun", "poor faggot didn't stand a chance", "whatever that **thing** is, it definitely deserved it", "poor autist dropped like a fly"])))
-
-	@commands.command()
+	@commands.command(description="You simply die")
 	async def die(self, ctx, *, member: discord.Member=None):
 		try:
 			if member is None:
@@ -53,7 +45,7 @@ class Actions:
 		except Exception as e:
 			await ctx.send(f'**```ERROR: {type(e).__name__} - {e}```**', delete_after=10)
 
-	@commands.command(name='kms', aliases=['suicide'])
+	@commands.command(name='kms', aliases=['suicide'], description="Textart")
 	async def kms(self, ctx):
 		await ctx.send("""━━━━━┒
 ┓┏┓┏┓┃Oof
