@@ -2,7 +2,12 @@ from utils import bytes2human as p
 from discord.ext import commands
 from datetime import datetime
 from os.path import isfile
+from PIL import ImageDraw
+from PIL import ImageFont
+from io import BytesIO
+from PIL import Image
 import traceback
+import requests
 import discord
 import asyncio
 import psutil
@@ -96,8 +101,7 @@ class Owner:
 				e.set_author(name=f'~~~====🥂🍸🍷Stats🍷🍸🥂====~~~')
 				e.add_field(name="◈ Discord ◈", value=f'__**Founder**__: FrequencyX4\n__**Members**__: {channel.guild.member_count}', inline=False)
 				e.add_field(name="Leaderboard", value=leaderboard, inline=False)
-				e.add_field(
-					name="◈ Memory ◈",
+				e.add_field(name="◈ Memory ◈",
 					value=f"__**Storage**__: [{p.bytes2human(psutil.disk_usage('/').used)}/{p.bytes2human(psutil.disk_usage('/').total)}]\n"
 					f"__**RAM**__: **Global**: {p.bytes2human(psutil.virtual_memory().used)} **Bot**: {p.bytes2human(f.memory_full_info().rss)}\n"
 					f"__**CPU**__: **Global**: {psutil.cpu_percent(interval=1)}% **Bot**: {f.cpu_percent(interval=1)}%\n"
