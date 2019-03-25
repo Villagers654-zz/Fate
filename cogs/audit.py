@@ -30,7 +30,6 @@ class Audit:
 		pass
 
 	@_search.command(name="action")
-	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def _action(self, ctx, action, amount=1):
 		e = discord.Embed(color=colors.cyan())
 		reached_char_limit = ""
@@ -51,7 +50,6 @@ class Audit:
 		await ctx.send(embed=e)
 
 	@_search.command(name="user")
-	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def _user(self, ctx, user: discord.Member, amount=1):
 		e = discord.Embed(color=colors.cyan())
 		e.set_author(name=f"{user}'s last {amount} action(s)", icon_url=user.avatar_url)
@@ -68,7 +66,6 @@ class Audit:
 		await ctx.send(embed=e)
 
 	@_search.command(name="target")
-	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def _target(self, ctx, user: discord.Member, amount=1):
 		e = discord.Embed(color=colors.cyan())
 		e.set_author(name=f"Last {amount} action(s) against {user}", icon_url=user.avatar_url)
@@ -88,7 +85,6 @@ class Audit:
 		await ctx.send(embed=e)
 
 	@_audit.command(name="last")
-	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.has_permissions(view_audit_log=True)
 	@commands.bot_has_permissions(view_audit_log=True)
 	async def _last(self, ctx, amount=1):
