@@ -58,13 +58,13 @@ class Config:
 
 	def welcome(self, id):
 		with open("./data/userdata/config/welcome.json", "r") as f:
-			if id in json.load(f)["identifier"]:
+			if id in json.load(f)["toggle"]:
 				return "active"
 			return "inactive"
 
 	def farewell(self, id):
 		with open("./data/userdata/config/farewell.json", "r") as f:
-			if id in json.load(f)["identifier"]:
+			if id in json.load(f)["toggle"]:
 				return "active"
 			return "inactive"
 
