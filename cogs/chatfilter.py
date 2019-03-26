@@ -89,10 +89,14 @@ class ChatFilter:
 			if m.guild.id in self.toggle:
 				if guild_id in self.blacklist:
 					for phrase in self.blacklist[guild_id]:
-						if phrase in m.content:
-							if m.author.id != m.guild.owner.id:
+						if "manage_messages" not in list(perm for perm, value in m.author.guild_permissions if value):
+							if phrase in m.content:
 								await asyncio.sleep(0.5)
 								await m.delete()
+						else:
+							if phrase in m.content.replace(" ", ""):
+									await asyncio.sleep(0.5)
+									await m.delete()
 
 def setup(bot):
 	bot.add_cog(ChatFilter(bot))
