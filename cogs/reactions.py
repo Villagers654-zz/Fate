@@ -15,6 +15,7 @@ class Reactions:
 
 	@commands.command(name="tenor", aliases=["findgif", "gifsearch", "searchgif"])
 	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
 	async def _tenor(self, ctx, *, search):
 		apikey = "LIWIXISVM3A7"
 		lmt = 8
@@ -40,6 +41,7 @@ class Reactions:
 
 	@commands.command(name='intimidate')
 	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
 	async def _intimidate(self, ctx, *, content=""):
 		path = os.getcwd() + "/data/images/reactions/apple/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/apple/"))
 		e = discord.Embed()
@@ -53,6 +55,7 @@ class Reactions:
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
 	async def junkfood(self, ctx, *, content=""):
 		path = os.getcwd() + "/data/images/reactions/junkfood/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/junkfood/"))
 		e = discord.Embed()
@@ -66,6 +69,7 @@ class Reactions:
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
 	async def powerup(self, ctx, *, content=""):
 		path = os.getcwd() + "/data/images/reactions/powerup/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/powerup/"))
 		e = discord.Embed()
@@ -79,6 +83,7 @@ class Reactions:
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
 	async def observe(self, ctx, *, content=""):
 		path = os.getcwd() + "/data/images/reactions/observe/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/observe/"))
 		e = discord.Embed()
@@ -92,6 +97,7 @@ class Reactions:
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
 	async def fatehug(self, ctx, *, content):
 		path = os.getcwd() + "/data/images/reactions/hug/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/hug/"))
 		e = discord.Embed(color=colors.fate())
@@ -101,6 +107,7 @@ class Reactions:
 
 	@commands.command(name='disgust', aliases=['ew'])
 	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
 	async def disgust(self, ctx, *, content=""):
 		path = os.getcwd() + "/data/images/reactions/disgust/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/disgust/"))
 		e = discord.Embed()
@@ -114,6 +121,7 @@ class Reactions:
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
 	async def snuggle(self, ctx, *, user: discord.Member):
 		path = os.getcwd() + "/data/images/reactions/snuggle/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/snuggle/"))
 		e = discord.Embed()
@@ -124,6 +132,7 @@ class Reactions:
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
 	async def admire(self, ctx, *, content=""):
 		path = os.getcwd() + "/data/images/reactions/admire/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/admire/"))
 		e = discord.Embed()
@@ -137,6 +146,7 @@ class Reactions:
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
 	async def angery(self, ctx, *, content=""):
 		path = os.getcwd() + "/data/images/reactions/angery/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/angery/"))
 		e = discord.Embed()
@@ -150,6 +160,7 @@ class Reactions:
 
 	@commands.command(name='psycho')
 	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
 	async def _psycho(self, ctx, *, content=""):
 		path = os.getcwd() + "/data/images/reactions/psycho/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/psycho/"))
 		e = discord.Embed()
@@ -163,6 +174,7 @@ class Reactions:
 
 	@commands.command(name="waste", aliases=["wasted"])
 	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
 	async def waste(self, ctx, *, content):
 		path = os.getcwd() + "/data/images/reactions/waste/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/waste/"))
 		e = discord.Embed(color=colors.fate())
@@ -172,6 +184,7 @@ class Reactions:
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
 	async def thonk(self, ctx, *, content=""):
 		path = os.getcwd() + "/data/images/reactions/thonk/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/thonk/"))
 		e = discord.Embed()
@@ -185,6 +198,7 @@ class Reactions:
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
 	async def shrug(self, ctx, *, content=""):
 		path = os.getcwd() + "/data/images/reactions/shrug/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/shrug/"))
 		e = discord.Embed()
@@ -198,6 +212,7 @@ class Reactions:
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
 	async def yawn(self, ctx, *, content=""):
 		path = os.getcwd() + "/data/images/reactions/yawn/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/yawn/"))
 		e = discord.Embed()
@@ -211,6 +226,7 @@ class Reactions:
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
 	async def sigh(self, ctx, *, content=""):
 		path = os.getcwd() + "/data/images/reactions/sigh/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/sigh/"))
 		e = discord.Embed()
@@ -224,6 +240,7 @@ class Reactions:
 
 	@commands.command(name="bite")
 	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
 	async def _hug(self, ctx, *, user):
 		path = os.getcwd() + "/data/images/reactions/bite/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/bite/"))
 		e = discord.Embed(color=colors.fate())
@@ -233,6 +250,7 @@ class Reactions:
 
 	@commands.command(name="wine")
 	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
 	async def _wine(self, ctx, *, content=""):
 		path = os.getcwd() + "/data/images/reactions/wine/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/wine/"))
 		e = discord.Embed()
@@ -246,6 +264,7 @@ class Reactions:
 
 	@commands.command(name='hide')
 	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
 	async def _hide(self, ctx, *, content=""):
 		path = os.getcwd() + "/data/images/reactions/hide/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/hide/"))
 		e = discord.Embed()
@@ -259,6 +278,7 @@ class Reactions:
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
 	async def slap(self, ctx, *, content):
 		path = os.getcwd() + "/data/images/reactions/slap/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/slap/"))
 		e = discord.Embed(color=colors.fate())
@@ -268,6 +288,7 @@ class Reactions:
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
 	async def kiss(self, ctx, *, content):
 		path = os.getcwd() + "/data/images/reactions/kiss/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/kiss/"))
 		e = discord.Embed(color=colors.fate())
@@ -277,6 +298,7 @@ class Reactions:
 
 	@commands.command(name='kill', aliases=['pacify'])
 	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
 	async def kill(self, ctx, *, user):
 		path = os.getcwd() + "/data/images/reactions/kill/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/kill/"))
 		e = discord.Embed(color=colors.fate())
@@ -286,6 +308,7 @@ class Reactions:
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
 	async def hug(self, ctx, *, user):
 		path = os.getcwd() + "/data/images/reactions/hug/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/hug/"))
 		e = discord.Embed(color=colors.fate())
@@ -295,6 +318,7 @@ class Reactions:
 
 	@commands.command(name='tea', aliases=['sipstea', 'teasip', 'st', 'ts'])
 	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
 	async def tea(self, ctx, *, content=""):
 		path = os.getcwd() + "/data/images/reactions/tea/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/tea/"))
 		e = discord.Embed()
@@ -308,6 +332,7 @@ class Reactions:
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
 	async def cry(self, ctx, *, content=""):
 		path = os.getcwd() + "/data/images/reactions/cry/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/cry/"))
 		e = discord.Embed()
@@ -321,6 +346,7 @@ class Reactions:
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
 	async def pat(self, ctx, *, arg):
 		path = os.getcwd() + "/data/images/reactions/pat/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/pat/"))
 		e = discord.Embed(color=colors.fate())
@@ -332,6 +358,7 @@ class Reactions:
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True, attach_files=True)
 	async def horsecock(self, ctx):
 		path = os.getcwd() + "/data/images/misc/horsecock/" + random.choice(os.listdir(os.getcwd() + "/data/images/misc/horsecock/"))
 		e = discord.Embed()
@@ -340,6 +367,7 @@ class Reactions:
 
 	@commands.command(name="rape")
 	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True, attach_files=True)
 	async def _rape(self, ctx):
 		e = discord.Embed(color=colors.fate())
 		e.set_image(url="https://cdn.discordapp.com/attachments/507914723858186261/551085804076793876/received_538311363348269.jpeg")
