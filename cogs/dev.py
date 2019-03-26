@@ -1,6 +1,11 @@
 from utils import colors, config, checks
 from discord.ext import commands
 from os.path import isfile
+from PIL import Image
+from PIL import ImageFont
+from PIL import ImageDraw
+from io import BytesIO
+from datetime import datetime
 import subprocess
 import requests
 import difflib
@@ -20,6 +25,32 @@ class Dev:
 
 	def luck(ctx):
 		return ctx.message.author.id == 264838866480005122
+
+	@commands.command(name="xinfo")
+	async def _info(self, ctx, user: discord.Member = None):
+		if user is None:
+			user = ctx.author
+		card = Image.new("RGBA", (1024, 1024), (255, 255, 255))
+		img = Image.open(BytesIO(requests.get(user.avatar_url).content)).convert("RGBA")
+		img = img.resize((1024, 1024), Image.BICUBIC)
+		card.paste(img, (0, 0, 1024, 1024), img)
+		card.save("background.png", format="png")
+		img = Image.open('background.png')
+		draw = ImageDraw.Draw(img)
+		font = ImageFont.truetype("./utils/fonts/Modern_Sans_Light.otf", 75)  # Make sure you insert a valid font from your folder.
+		fontbig = ImageFont.truetype("./utils/fonts/Fitamint Script.ttf", 200)  # Make sure you insert a valid font from your folder.
+		#    (x,y)::↓ ↓ ↓ (text)::↓ ↓     (r,g,b)::↓ ↓ ↓
+		draw.text((10, 40), "Information:", (255, 255, 255), font=fontbig)
+		draw.text((10, 300), "Username: {}".format(user.name), (255, 255, 255), font=font)
+		draw.text((10, 400), "ID: {}".format(user.id), (255, 255, 255), font=font)
+		draw.text((10, 500), "Status: {}".format(user.status), (255, 255, 255), font=font)
+		draw.text((10, 600), "Created: {}".format(datetime.date(user.created_at).strftime("%m/%d/%Y")), (255, 255, 255), font=font)
+		draw.text((10, 700), "Nickname: {}".format(user.display_name), (255, 255, 255), font=font)
+		draw.text((10, 800), "Top Role: {}".format(user.top_role), (255, 255, 255), font=font)
+		draw.text((10, 900), "Joined: {}".format(datetime.date(user.joined_at).strftime("%m/%d/%Y")), (255, 255, 255), font=font)
+		img = img.convert("RGB")
+		img.save('infoimg2.png')  # Change infoimg2.png if needed.
+		await ctx.send(file=discord.File("infoimg2.png"))
 
 	@commands.command(name="scrapeimages")
 	@commands.check(checks.luck)
