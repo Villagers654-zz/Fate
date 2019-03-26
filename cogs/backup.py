@@ -1,7 +1,8 @@
-from utils import checks, colors, ssh
+from utils import checks, colors, ssh, config
 from discord.ext import commands
 import subprocess
 import discord
+import asyncio
 import os
 
 class Backup:
@@ -37,6 +38,20 @@ class Backup:
 			e.description = "**Progress:** `100%`\nBackup complete."
 			await msg.edit(embed=e)
 			self.backup = False
+
+	async def backup_task(self):
+		while True:
+			await asyncio.sleep(129600)
+			p = subprocess.Popen("ls", stdout=subprocess.PIPE, shell=True)
+			(output, err) = p.communicate()
+			if "Backup.zip" in str(output):
+				os.system("rm Backup.zip")
+			os.system("zip -r Backup.zip /home/luck/FateZero")
+			ssh.upload("luck", "Backup.zip", "/home/luck/Backup.zip")
+			await self.bot.get_channel(config.server("log")).send("Ran scheduled backup successfully")
+
+	async def on_ready(self):
+		self.bot.loop.create_task(self.backup_task())
 
 def setup(bot):
 	bot.add_cog(Backup(bot))
