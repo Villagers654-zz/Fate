@@ -1,5 +1,7 @@
+from utils import colors, config, checks
 from discord.ext import commands
-from utils import colors, config
+from os.path import isfile
+import subprocess
 import requests
 import difflib
 import discord
@@ -14,13 +16,91 @@ import os
 class Dev:
 	def __init__(self, bot):
 		self.bot = bot
+		self.last = {}
 
 	def luck(ctx):
 		return ctx.message.author.id == 264838866480005122
 
-	@commands.command(name="db")
-	@commands.check(luck)
-	async def db(self, ctx, arg):
+	@commands.command(name="scrapeimages")
+	@commands.check(checks.luck)
+	async def _scrapeimages(self, ctx, filename, limit = 1000):
+		if not isfile(f"./data/images/urls/{filename}"):
+			with open(f"./data/images/urls/{filename}", "w") as f:
+				image_urls = ""
+				async for msg in ctx.channel.history(limit=limit):
+					if msg.attachments:
+						for attachment in msg.attachments:
+							if not image_urls:
+								image_urls += attachment.url
+							else:
+								image_urls += f"\n{attachment.url}"
+				f.write(image_urls)
+		else:
+			f = open(f"./data/images/urls/{filename}", "r")
+			urls = f.readlines()
+			f.close()
+			async for msg in ctx.channel.history(limit=limit):
+				if msg.attachments:
+					for attachment in msg.attachments:
+						urls.append(f"{attachment.url}")
+			clean_content = ""
+			for url in urls:
+				if url not in clean_content:
+					clean_content += f"\n{url}"
+			f = open(f"./data/images/urls/{filename}", "w")
+			f.write(clean_content.replace("\n\n", "\n"))
+			f.close()
+		await ctx.send("Done")
+
+	@commands.command(name="changepresence", aliases=["cp"])
+	@commands.check(checks.luck)
+	async def changepresence(self, ctx, *, arg):
+		async with ctx.typing():
+			await self.bot.change_presence(activity=discord.Game(name=arg))
+			await ctx.send('done', delete_after=5)
+			await asyncio.sleep(5)
+			await ctx.message.delete()
+
+	@commands.command()
+	@commands.check(checks.luck)
+	async def sendfile(self, ctx, directory):
+		if "fate/" in directory:
+			directory = directory.replace("fate/", "/home/luck/FateZero/")
+		await ctx.send(file=discord.File(directory))
+
+	@commands.command(name='console', aliases=['c'])
+	@commands.check(checks.luck)
+	async def console(self, ctx, *, command):
+		p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
+		(output, err) = p.communicate()
+		output = str(output).replace("\\t", "    ").replace("b'", "").split("\\n")
+		msg = ""
+		for i in output[:len(output) - 1]:
+			msg += f"{i}\n"
+		await ctx.send(f"```{msg[:1994]}```")
+
+	@commands.command()
+	@commands.check(checks.luck)
+	async def logout(self, ctx):
+		await ctx.send('logging out')
+		await self.bot.logout()
+
+	@commands.command()
+	@commands.check(checks.luck)
+	async def error(self, ctx):
+		p = subprocess.Popen("cat  /root/.pm2/logs/bot-error.log", stdout=subprocess.PIPE, shell=True)
+		(output, err) = p.communicate()
+		output = str(output).replace("\\t", "    ").replace("b'", "").replace("`", "").split("\\n")
+		msg = ""
+		for i in output[:len(output) - 1]:
+			msg += f"{i}\n"
+		msg = msg[::-1]
+		msg = msg[:msg.find("Ignoring"[::-1])]
+		await ctx.send(f"```Ignoring{msg[::-1]}```")
+
+	@commands.command()
+	@commands.check(checks.luck)
+	async def dbbbb(self, ctx, arg):
 		dat = sqlite3.connect('notes.db')
 		c = dat.cursor()
 		c.execute("""CREATE TABLE notes (
@@ -33,8 +113,8 @@ class Dev:
 		await ctx.send(c.fetchone())
 		dat.close()
 
-	@commands.command()
-	@commands.check(luck)
+	@commands.command(description="yeet")
+	@commands.check(checks.luck)
 	async def chs(self, ctx, channel: discord.TextChannel, *, content):
 		await channel.send(content)
 		await ctx.message.delete()
@@ -48,7 +128,7 @@ class Dev:
 		await ctx.send(len(content))
 
 	@commands.command()
-	@commands.check(luck)
+	@commands.check(checks.luck)
 	async def run(self, ctx, *, code):
 		await ctx.send(eval(code))
 
@@ -138,7 +218,7 @@ class Dev:
 			await ctx.send('hmmm {0.content}'.format(msg))
 
 	@commands.command()
-	@commands.check(luck)
+	@commands.check(checks.luck)
 	async def print(self, ctx, *, arg):
 		async with ctx.typing():
 			try:
@@ -152,7 +232,7 @@ class Dev:
 				await ctx.send(f'**```ERROR: {type(e).__name__} - {e}```**')
 
 	@commands.command()
-	@commands.check(luck)
+	@commands.check(checks.luck)
 	async def r(self, ctx, *, arg):
 		try:
 			await ctx.send(arg)
@@ -166,13 +246,16 @@ class Dev:
 			await ctx.send(f'**```ERROR: {type(e).__name__} - {e}```**', delete_after=10)
 
 	@commands.command()
-	@commands.check(luck)
-	async def retreat(self, ctx):
+	@commands.check(checks.luck)
+	async def leave(self, ctx, guild_id: int=None):
+		if guild_id:
+			await ctx.send('leaving guild')
+			await self.bot.get_guild(guild_id).leave()
 		await ctx.send('leaving guild')
 		await ctx.guild.leave()
 
 	@commands.command()
-	@commands.check(luck)
+	@commands.check(checks.luck)
 	async def twist(self, ctx, arg):
 		async with ctx.typing():
 			await ctx.message.delete()
@@ -185,12 +268,12 @@ class Dev:
 			await ctx.send("gives {} coffee in which his dick was the coffee grinds".format(arg))
 
 	@commands.command()
-	@commands.check(luck)
+	@commands.check(checks.luck)
 	async def edit(self, ctx, *, arg):
 		try:
 			c = 0
 			async for msg in ctx.channel.history(limit=3):
-				if c == 1:
+				if msg.author.id == self.bot.user.id:
 					await msg.edit(content=arg)
 					await ctx.message.delete()
 					break;
@@ -200,7 +283,7 @@ class Dev:
 			await ctx.message.delete()
 
 	@commands.command(name='luckydelete', aliases=['md'])
-	@commands.check(luck)
+	@commands.check(checks.luck)
 	async def luckydelete(self, ctx):
 		try:
 			c = 0
@@ -217,7 +300,7 @@ class Dev:
 # ~== Mod ==~
 
 	@commands.command()
-	@commands.check(luck)
+	@commands.check(checks.luck)
 	@commands.cooldown(1, 25, commands.BucketType.user)
 	async def luckykick(self, ctx, user:discord.Member, *, reason:str=None):
 		await ctx.guild.kick(user)
@@ -233,7 +316,7 @@ class Dev:
 		await channel.send(embed=log)
 
 	@commands.command()
-	@commands.check(luck)
+	@commands.check(checks.luck)
 	@commands.cooldown(1, 25, commands.BucketType.user)
 	async def luckyban(self, ctx, user:discord.Member, *, reason=None):
 		await ctx.guild.ban(user)
@@ -251,17 +334,57 @@ class Dev:
 # ~== Fun ==~
 
 	@commands.command()
-	@commands.check(luck)
+	@commands.check(checks.luck)
 	async def luckyspam(self, ctx, times: int, *, content='Format: .spam numberofmessages "content"'):
 		for i in range(times):
 			await ctx.send(content)
 			await asyncio.sleep(1)
 
 	@commands.command()
-	@commands.check(luck)
+	@commands.check(checks.luck)
 	async def antitother(self, ctx, times: int):
 		for i in range(times):
 			await ctx.send(random.choice(["Fagitos", "https://discord.gg/BQ23Z2E", "Reeeeeeeeeeeeeeeeeeeeeee", "<@355026215137968129>", "pUrE wHiTe pRiVelIdgEd mALe", "there's a wasp sucking out all my stick juices", "Really? That's the sperm that won?", "May the fly be with you", "You're not you when you're hungry", "I recognize that flower, see you soon :)", "FBI OPEN UP", "Sponsored by Samsung", "iLiKe NuT", "Florin joins, Yall dislocate yo joints...", "old school tricks rise again", "i can't see, my thumbs are in the way", "All Heil nut", "SARGON NEED MORE DOPAMINE", ".prune 1000", "Nani", "I’m more blind then Hitler when he had that chlorine gas up in his eye", "real art^", "2b2t.org is a copy of the middle east", "warned for advertising", "jOiN sR", "6 million juice", "The 7th SR Fag", "7th team lgbt", "DAiLy reMinDer sEx RoboTs coSt lesS thAn ReAl gRilLs", "elon's musk", "Fuck the battle cat", "9/11"]))
+
+	async def on_message(self, m: discord.Message):
+		if m.content.lower().startswith("pls magik <@264838866480005122>"):
+			def pred(m):
+				return m.author.id == 270904126974590976 and m.channel == m.channel
+			try:
+				msg = await self.bot.wait_for('message', check=pred, timeout=10.0)
+			except asyncio.TimeoutError:
+				async for i in m.channel.history(limit=10):
+					await i.delete()
+				await asyncio.sleep(10)
+				async for i in m.channel.history(limit=10):
+					await i.delete()
+				await asyncio.sleep(10)
+				async for i in m.channel.history(limit=10):
+					await i.delete()
+			else:
+				await asyncio.sleep(0.5)
+				await msg.delete()
+				await m.channel.send("next time i ban you")
+		commands = ["t!avatar <@264838866480005122>", ".avatar <@264838866480005122>", "./avatar <@264838866480005122>", "t.avatar <@264838866480005122>"]
+		bots = [506735111543193601, 418412306981191680, 172002275412279296, 452289354296197120]
+		if m.content.lower() in commands:
+			def pred(m):
+				return m.author.id in bots and m.channel == m.channel
+			try:
+				msg = await self.bot.wait_for('message', check=pred, timeout=10.0)
+			except asyncio.TimeoutError:
+				async for i in m.channel.history(limit=10):
+					await i.delete()
+				await asyncio.sleep(10)
+				async for i in m.channel.history(limit=10):
+					await i.delete()
+				await asyncio.sleep(10)
+				async for i in m.channel.history(limit=10):
+					await i.delete()
+			else:
+				await asyncio.sleep(0.5)
+				await msg.delete()
+				await m.channel.send("next time i ban you")
 
 def setup(bot):
 	bot.add_cog(Dev(bot))
