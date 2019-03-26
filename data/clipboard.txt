@@ -11,6 +11,127 @@ f.close()
 f = open(path + "error.txt", "r")
 await channel.send(f.read())
 
+			def check(reaction, user):
+				return user == ctx.author and str(reaction.emoji) == '⚠'
+			try:
+				reaction, user = await self.bot.wait_for('reaction_add', timeout=25.0, check=check)
+			except asyncio.TimeoutError:
+				return
+			else:
+
+
+
+ 				if not m.author.bot:
+					check = 0
+					m.content = m.content.replace("<@506735111543193601>  ", "")
+					m.content = m.content.replace("<@506735111543193601> ", "")
+					m.content = m.content.replace("<@506735111543193601>", "")
+					if len(m.content) > 2:
+						f = open("./data/misc/responses.txt", "r")
+						for i in f.readlines():
+							if m.content in i:
+								f.close()
+								check += 1
+						if check == 0:
+							f = open("./data/misc/responses.txt", "a")
+							f.write("\n" + m.content)
+							f.close()
+					if r > 1:
+						msg = random.choice(open("./data/misc/responses.txt", "r").readlines())
+					else:
+						msg = random.choice([
+							"Once apon a time in a land far away, there lived a little boy who pinged a bot, first came rape, then came aids",
+							"Don't ping me m8, it hurts you more than it hurts me",
+							"Oh look, another homosexual",
+							"FBI OPEN UP",
+							"pUrE wHiTe pRiVelIdgEd mALe^",
+							"Once apon a time in a land far away, there lived a little boy who pinged a bot, first came rape, then came aids",
+							"Do you need virtual daycare or something?",
+							"Fuck off hitler",
+							"alright you pathetic lost child, use .help",
+							"and what might **you** want",
+							"No sir"])
+					await m.channel.send(msg)
+
+
+
+
+
+            				for overwrite in before.overwrites:
+					if overwrite[0] not in after.overwrites:
+						value += f"\n❌ {overwrite[0]}"
+						for perm in overwrite[1]:
+							if perm[1]:
+								value += f"\n✦ {perm[0]}"
+				for overwrite in after.overwrites:
+					if overwrite[0] not in before.overwrites:
+						value += f"\n{config.emojis('plus')} {overwrite[0]}"
+						for perm in overwrite[1]:
+							if perm[1]:
+								value += f"\n✦ {perm[0]}"
+				overwrite_position = 0
+				for overwrite in before.overwrites:
+					if overwrite[1] != after.overwrites[overwrite_position][1]:
+						value += f"\n🖍 {overwrite[0]}"
+						perm_position = 0
+						for perm in overwrite[1]:
+							after_position = 0
+							for after_perm in after.overwrites[overwrite_position][1]:
+								if perm_position is after_position:
+									after_perm = after_perm
+							if perm[1] != after_perm[1]:
+								value += f"\n✦ {perm}"
+							perm_position += 1
+					overwrite_position += 1
+				overwrite_position = 0
+				for overwrite in after.overwrites:
+					if overwrite[1] != before.overwrites[overwrite_position][1]:
+						value += f"\n🖍 {overwrite[0]}"
+						perm_position = 0
+						for perm in overwrite[1]:
+							before_position = 0
+							for before_perm in after.overwrites[overwrite_position][1]:
+								if perm_position is before_position:
+									before_perm = after_perm
+							if perm[1] != before_perm[1]:
+								value += f"\n✦ {perm}"
+							perm_position += 1
+					overwrite_position += 1
+
+		with open("./data/misc/filter.txt", "r") as f:
+			for x in f.read().split(", "):
+				if x.lower() in motd.lower():
+					return await ctx.send("Nothing that can get me banned please")
+
+
+
+now = time()
+			if guild_id not in self.cd:
+				self.cd[guild_id] = {}
+			self.cd[guild_id][str(time())] = (time() + 0.5) - now
+			old_keys = []
+			for key in self.cd[guild_id].keys():
+				if float(key) < time() - 15:
+					old_keys.append(key)
+			for key in old_keys:
+				del self.cd[guild_id][key]
+			limit = time() + 1.5
+			total = time()
+			for key, value in (sorted(self.cd[guild_id].items(), key=lambda kv: kv[1], reverse=True)):
+				total += value
+			if total > limit:
+
+		except Exception as HTTPException:
+			if "256kb" in str(HTTPException):
+				for attachment in ctx.message.attachments:
+					attachment = attachment
+				e = discord.Embed(color=colors.fate())
+				e.set_author(name=f"File cannot be larger than 256 kb", icon_url=attachment.proxy_url)
+				e.set_thumbnail(url=ctx.author.avatar_url)
+				e.description = f"Try using [TinyPNG](https://tinypng.com/) to reduce the size"
+				return await ctx.send(embed=e)
+			await ctx.send(str(HTTPException)[:2000])
+
 			f = open('/home/legit/4b4t/data/server.properties', 'w')
 			f.write(
 				f"player-idle-timeout=0.000000\n"
