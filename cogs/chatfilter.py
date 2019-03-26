@@ -21,17 +21,26 @@ class ChatFilter:
 		with open("./data/userdata/chatfilter.json", "w") as f:
 			json.dump({"toggle": self.toggle, "blacklist": self.blacklist}, f)
 
-	@commands.group(name="chatfilter")
-	@commands.cooldown(1, 3, commands.BucketType.user)
+	@commands.group(name="chatfilter", description="Deletes messages containing blocked words/phrases")
+	@commands.cooldown(1, 3, commands.BucketType.channel)
 	@commands.bot_has_permissions(embed_links=True)
 	async def _chatfilter(self, ctx):
 		if not ctx.invoked_subcommand:
+			guild_id = str(ctx.guild.id)
 			toggle = "disabled"
 			if ctx.guild.id in self.toggle:
 				toggle = "enabled"
 			e = discord.Embed(color=colors.pink())
-			e.set_author(name="Chat Filter", icon_url=ctx.author.avatar_url)
+			e.set_author(name="| Chat Filter", icon_url=ctx.author.avatar_url)
 			e.set_thumbnail(url=ctx.guild.icon_url)
+			e.description = "Deletes messages containing blocked words/phrases"
+			e.add_field(name="◈ Usage ◈", value=
+				".chatfilter enable\n"
+			    ".chatfilter disable\n"
+			    ".chatfilter add {word/phrase}\n"
+				".chatfilter remove {word/phrase}\n", inline=False)
+			if guild_id in self.blacklist:
+				e.add_field(name="◈ Forbidden Shit ◈", value=self.blacklist[guild_id], inline=False)
 			e.set_footer(text=f"Current Status: {toggle}")
 			await ctx.send(embed=e)
 
