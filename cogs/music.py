@@ -307,7 +307,7 @@ class Music:
             await asyncio.sleep(20)
             await ctx.messagge.delete()
 
-    @commands.command(name='play')
+    @commands.command(name='play', aliases=["p"])
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.bot_has_permissions(manage_messages=True)
     async def _play(self, ctx, *, search: str):
