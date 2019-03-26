@@ -1,5 +1,6 @@
 from discord.ext import commands
 from os.path import isfile
+import asyncio
 import json
 
 class RestoreRoles:
@@ -39,6 +40,7 @@ class RestoreRoles:
 					try:
 						role = member.guild.get_role(role_id)
 						await member.add_roles(role)
+						await asyncio.sleep(1)
 					except:
 						pass
 
