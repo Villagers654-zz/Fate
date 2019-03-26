@@ -10,12 +10,6 @@ def luck():
 def random():
 	return r.randint(0, 0xFFFFFF)
 
-def theme(ctx):
-	with open("./data/userdata/config.json", "r") as f:
-		if str(ctx.guild.id) in json.load(f)["color"]:
-			return eval(json.load(f)["color"][str(ctx.guild.id)])
-	return fate()
-
 def red():
 	return 0xff0000
 
@@ -48,3 +42,6 @@ def black():
 
 def white():
 	return 0xffffff
+
+def tan():
+	return 0xffc8b0
