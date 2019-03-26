@@ -6,7 +6,7 @@ class Audit:
 	def __init__(self, bot):
 		self.bot = bot
 
-	@commands.group(name="audit")
+	@commands.group(name="audit", description="Helps search through the audit")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def _audit(self, ctx):
 		if not ctx.invoked_subcommand:

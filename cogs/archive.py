@@ -7,7 +7,7 @@ class Archive:
 		self.bot = bot
 		self.saving = {}
 
-	@commands.command(name='archive')
+	@commands.command(name='archive', description="saves x messages from channel history into a txt")
 	@commands.has_permissions(manage_messages=True)
 	@commands.cooldown(1, 25, commands.BucketType.channel)
 	async def _archive(self, ctx, amount:int):
