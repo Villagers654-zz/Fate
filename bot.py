@@ -1,7 +1,7 @@
 from discord.ext import commands
 from termcolor import cprint
 from os.path import isfile
-from utils import config
+from utils import config, colors
 import traceback
 import datetime
 import discord
@@ -27,11 +27,11 @@ def get_prefix(bot, message):
 	prefix = prefixes[str(message.guild.id)]
 	return prefix
 
-files = ['error_handler', 'owner', 'menus', 'core', 'mod', 'music', 'welcome', 'farewell', 'notes', 'archive', 'coffeeshop', 'custom',
+files = ['error_handler', 'config', 'menus', 'core', 'mod', 'music', 'welcome', 'farewell', 'notes', 'archive', 'coffeeshop', 'custom',
          'actions', 'reactions', 'responses', 'textart', 'fun', 'math', 'dev', '4b4t', 'readme', 'legit', 'reload', 'embeds', 'warning',
          'profiles', 'save', 'clean_rythm', 'tother', 'utility', 'psutil', 'rules', 'duel_chat', 'selfroles', 'lock', 'backup', 'audit',
          'cookies', 'team', 'anti_purge', 'emojis', 'logger', 'autorole', 'changelog', 'whitelist', 'blacklist', 'query', 'restore_roles',
-         'chatbot', 'anti_spam', 'anti_raid', 'config', 'chatfilter', 'nsfw', 'leaderboards', 'stats', 'chatlock']
+         'chatbot', 'anti_spam', 'anti_raid', 'chatfilter', 'nsfw', 'leaderboards', 'stats', 'chatlock']
 
 description = '''Fate[Zero]: Personal Bot'''
 bot = commands.Bot(command_prefix=get_prefix, case_insensitive=True, max_messages=16000)
@@ -75,6 +75,18 @@ async def on_ready():
 	m, s = divmod(time.time() - bot.START_TIME, 60)
 	h, m = divmod(m, 60)
 	bot.LOGIN_TIME = s
+
+@bot.event
+async def on_guild_remove(guild):
+	channel = bot.get_channel(config.server("log"))
+	e = discord.Embed(color=colors.red())
+	e.set_author(name="Bot Left or Was Removed", icon_url=bot.user.avatar_url)
+	e.set_thumbnail(url=guild.icon_url)
+	e.description = f"**Guild:** {guild.name}\n" \
+		f"**ID:** {guild.id}\n" \
+		f"**Owner:** {guild.owner}\n" \
+		f"**Members:** [`{len(guild.members)}`]"
+	await channel.send(embed=e)
 
 # ~== Startup ==~
 
