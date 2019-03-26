@@ -379,9 +379,13 @@ class Logger:
 	async def on_guild_channel_delete(self, channel):
 		guild_id = str(channel.guild.id)
 		if guild_id in self.channel:
+			if channel.id == self.channel[guild_id]:
+				del self.channel[guild_id]
+				return
 			if guild_id in self.blacklist:
 				if "channel_delete" in self.blacklist[guild_id]:
 					return
+			user = None  # type: discord.User
 			async for entry in channel.guild.audit_logs(action=discord.AuditLogAction.channel_delete, limit=1):
 				user = entry.user
 			log = self.bot.get_channel(self.channel[guild_id])
