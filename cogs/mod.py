@@ -216,7 +216,7 @@ class Mod:
 		for ban in bans:
 			await ctx.send(f"{ban[0]}, {ban[1].id}")
 
-	@commands.command(name="pin", aliases=["p"])
+	@commands.command(name="pin")
 	@commands.has_permissions(manage_messages=True)
 	@commands.bot_has_permissions(manage_messages=True)
 	@commands.cooldown(1, 25, commands.BucketType.user)
