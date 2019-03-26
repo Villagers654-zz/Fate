@@ -1,6 +1,7 @@
 from discord.ext import commands
 from os.path import isfile
 import discord
+import asyncio
 import random
 import json
 
@@ -14,8 +15,9 @@ class Responses:
 				if "responses" in dat:
 					self.responses = dat["responses"]
 
-	def luck(ctx):
-		return ctx.author.id == 264838866480005122
+	def cache(self):
+		with open("./data/userdata/chatbot.json", "r") as f:
+			return json.load(f)["cache"]["global"]
 
 	@commands.command()
 	@commands.has_permissions(manage_guild=True)
@@ -37,41 +39,33 @@ class Responses:
 
 	async def on_message(self, m: discord.Message):
 		if not m.author.bot:
-			# core responses
 			r = random.randint(1, 4)
-			if m.content.startswith("<@506735111543193601>"):
-				if not m.author.bot:
-					check = 0
-					m.content = m.content.replace("<@506735111543193601>  ", "")
-					m.content = m.content.replace("<@506735111543193601> ", "")
-					m.content = m.content.replace("<@506735111543193601>", "")
-					if len(m.content) > 2:
-						f = open("./data/misc/responses.txt", "r")
-						for i in f.readlines():
-							if m.content in i:
-								f.close()
-								check += 1
-						if check == 0:
-							f = open("./data/misc/responses.txt", "a")
-							f.write("\n" + m.content)
-							f.close()
-					if r > 1:
-						msg = random.choice(open("./data/misc/responses.txt", "r").readlines())
-					else:
-						msg = random.choice([
-							"Once apon a time in a land far away, there lived a little boy who pinged a bot, first came rape, then came aids",
-							"Don't ping me m8, it hurts you more than it hurts me",
-							"Oh look, another homosexual",
-							"FBI OPEN UP",
-							"pUrE wHiTe pRiVelIdgEd mALe^",
-							"Once apon a time in a land far away, there lived a little boy who pinged a bot, first came rape, then came aids",
-							"Do you need virtual daycare or something?",
-							"Fuck off hitler",
-							"alright you pathetic lost child, use .help",
-							"and what might **you** want",
-							"No sir"])
-					await m.channel.send(msg)
 			m.content = m.content.lower()
+			# core responses
+			if m.content.startswith("<@!506735111543193601> "):
+				m.content = m.content.replace("<@!506735111543193601> ", "")
+				found = False
+				keys = m.content.split(" ")
+				key = random.choice(keys)
+				if "the" in keys:
+					key = keys[keys.index("the") + 1]
+				if "if" in keys:
+					key = keys[keys.index("if") + 2]
+				matches = []
+				for msg in self.cache():
+					if key in msg:
+						matches.append(msg)
+						found = True
+				if found:
+					choice = random.choice(matches)
+					if choice.lower() == m.content.lower():
+						return
+					try:
+						async with m.channel.typing():
+							await asyncio.sleep(1)
+						await m.channel.send(choice)
+					except:
+						pass
 			# toggleable responses
 			if isinstance(m.guild, discord.Guild):
 				if str(m.guild.id) not in self.responses:
