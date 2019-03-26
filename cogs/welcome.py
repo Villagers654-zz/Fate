@@ -13,8 +13,8 @@ class Welcome:
 		self.channel = {}
 		self.useimages = {}
 		self.format = {}
-		if isfile("./data/testing/welcome.json"):
-			with open("./data/testing/welcome.json", "r") as f:
+		if isfile("./data/userdata/welcome.json"):
+			with open("./data/userdata/welcome.json", "r") as f:
 				dat = json.load(f)
 				if "toggle" in dat:
 					self.toggle = dat["toggle"]
@@ -23,7 +23,7 @@ class Welcome:
 					self.format = dat["format"]
 
 	def save_data(self):
-		with open("./data/testing/welcome.json", "w") as f:
+		with open("./data/userdata/welcome.json", "w") as f:
 			json.dump({"toggle": self.toggle, "channel": self.channel, "useimages": self.useimages,
 			    "format": self.format}, f, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
 
