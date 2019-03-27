@@ -17,7 +17,7 @@ class ChatLock:
 		with open("./data/userdata/chatlock.json", "w") as f:
 			json.dump(self.toggle, f, ensure_ascii=False)
 
-	@commands.group(name="chatlock")
+	@commands.group(name="chatlock", description="Deletes messages by users without the manage_messages permission")
 	@commands.cooldown(1, 3, commands.BucketType.channel)
 	@commands.bot_has_permissions(embed_links=True)
 	async def _chatlock(self, ctx):
@@ -36,10 +36,9 @@ class ChatLock:
 			e = discord.Embed(color=colors.fate())
 			e.set_author(name="| Chatlock", icon_url=ctx.author.avatar_url)
 			e.set_thumbnail(url=ctx.guild.icon_url)
-			e.description = " "
+			e.description = "Deletes messages by users without the manage_messages permission"
 			if channel:
-				e.set_footer(text=f"| Toggle: {toggle}"
-				f" | Channels: {channel}")
+				e.set_footer(text=f"| Toggle: {toggle} | Channels: {channel}")
 			await ctx.send(embed=e)
 
 	@_chatlock.command(name="enable")
