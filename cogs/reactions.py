@@ -292,7 +292,7 @@ class Reactions:
 	@commands.command(name="kill")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
-	async def _kill(self, ctx, *, user):
+	async def _kill(self, ctx, *, user: discord.Member):
 		path = os.getcwd() + "/data/images/reactions/kill/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/kill/"))
 		e = discord.Embed(color=colors.fate())
 		e.set_author(name=f"◈ {ctx.author.display_name} to {user.display_name}: ◈", icon_url=ctx.author.avatar_url)
