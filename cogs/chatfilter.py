@@ -107,5 +107,20 @@ class ChatFilter:
 									await asyncio.sleep(0.5)
 									await m.delete()
 
+	async def on_message_edit(self, before, after):
+		if isinstance(before.guild, discord.Guild):
+			guild_id = str(before.guild.id)
+			if before.guild.id in self.toggle:
+				if guild_id in self.blacklist:
+					for phrase in self.blacklist[guild_id]:
+						if "manage_messages" not in list(perm for perm, value in before.author.guild_permissions if value):
+							if phrase in after.content:
+								await asyncio.sleep(0.5)
+								await after.delete()
+						else:
+							if phrase in after.content.replace(" ", ""):
+								await asyncio.sleep(0.5)
+								await after.delete()
+
 def setup(bot):
 	bot.add_cog(ChatFilter(bot))
