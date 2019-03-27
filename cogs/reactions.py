@@ -15,24 +15,23 @@ class Reactions:
 	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
 	async def _tenor(self, ctx, *, search):
 		apikey = "LIWIXISVM3A7"
-		lmt = 8
+		lmt = 50
 		r = requests.get("https://api.tenor.com/v1/anonid?key=%s" % apikey)
 		if r.status_code == 200:
 			anon_id = json.loads(r.content)["anon_id"]
 		else:
 			anon_id = ""
-		search_term = search
-		r = requests.get("https://api.tenor.com/v1/search?q=%s&key=%s&limit=%s&anon_id=%s" % (search_term, apikey, lmt, anon_id))
+		r = requests.get("https://api.tenor.com/v1/search?q=%s&key=%s&limit=%s&anon_id=%s" % (search, apikey, lmt, anon_id))
 		if r.status_code == 200:
 			try:
 				dat = json.loads(r.content)
 				e = discord.Embed(color=colors.random())
-				e.set_image(url=dat['results'][random.randint(0, 7)]['media'][0]['gif']['url'])
+				e.set_image(url=dat['results'][random.randint(0, len(dat['results']) - 1)]['media'][0]['gif']['url'])
 				e.set_footer(text="Powered by Tenor")
 				await ctx.send(embed=e)
 				await ctx.message.delete()
-			except:
-				await ctx.send("error")
+			except Exception as e:
+				await ctx.send(e)
 		else:
 			await ctx.send("error")
 
