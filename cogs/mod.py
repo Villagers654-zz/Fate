@@ -57,7 +57,7 @@ class Mod:
 			await ctx.send("{}, successfully purged {} messages".format(ctx.author.name, amount), delete_after=5)
 			self.purge[channel_id] = False
 
-	@commands.command(name="purge_user")
+	@commands.command(name="purge_user", description="Usage: `.purge_user @user amount`")
 	@commands.has_permissions(manage_messages=True)
 	@commands.bot_has_permissions(manage_messages=True)
 	async def _purge_user(self, ctx, user: discord.Member, amount: int):
