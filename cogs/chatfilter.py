@@ -114,11 +114,11 @@ class ChatFilter:
 				if guild_id in self.blacklist:
 					for phrase in self.blacklist[guild_id]:
 						if "manage_messages" not in list(perm for perm, value in before.author.guild_permissions if value):
-							if phrase in after.content:
+							if phrase.lower() in after.content.lower():
 								await asyncio.sleep(0.5)
 								await after.delete()
 						else:
-							if phrase in after.content.replace(" ", ""):
+							if phrase.lower() in after.content.replace(" ", "").lower():
 								await asyncio.sleep(0.5)
 								await after.delete()
 
