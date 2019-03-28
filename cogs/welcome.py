@@ -175,15 +175,21 @@ class Welcome:
 
 	async def on_guild_remove(self, guild):
 		guild_id = str(guild.id)
+		is_changed = False
 		if guild_id in self.toggle:
 			del self.toggle[guild_id]
+			is_changed = True
 		if guild_id in self.channel:
 			del self.channel[guild_id]
+			is_changed = True
 		if guild_id in self.useimages:
 			del self.useimages[guild_id]
+			is_changed = True
 		if guild_id in self.format:
 			del self.format[guild_id]
-		self.save_data()
+			is_changed = True
+		if is_changed:
+			self.save_data()
 
 def setup(bot):
 	bot.add_cog(Welcome(bot))
