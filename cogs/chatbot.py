@@ -25,7 +25,7 @@ class ChatBot:
 					self.prefixes = dat["prefixes"]
 					self.dir = dat["dir"]
 
-	def save(self):
+	def save_data(self):
 		with open("./data/userdata/chatbot.json", "w") as outfile:
 			json.dump({"toggle": self.toggle, "cache": self.cache, "prefixes": self.prefixes, "dir": self.dir},
 			          outfile, sort_keys=True, indent=4, separators=(',', ': '))
@@ -67,7 +67,7 @@ class ChatBot:
 			if guild_id not in self.dir:
 				self.dir[guild_id] = "guilded"
 			await ctx.send("Enabled chatbot")
-			return self.save()
+			return self.save_data()
 		await ctx.send("Chatbot is already enabled")
 
 	@_chatbot.command(name="disable")
@@ -77,7 +77,7 @@ class ChatBot:
 		if guild_id not in self.toggle:
 			await ctx.send("Chatbot is not enabled")
 		del self.toggle[guild_id]
-		self.save()
+		self.save_data()
 		await ctx.send("Disabled chatbot")
 
 	@_chatbot.command(name="swap_cache")
@@ -92,7 +92,7 @@ class ChatBot:
 		else:
 			self.dir[guild_id] = "guilded"
 		await ctx.send(f"Swapped cache location to {self.dir[guild_id]}")
-		self.save()
+		self.save_data()
 
 	@_chatbot.command(name="clear_cache")
 	@commands.has_permissions(manage_messages=True)
@@ -102,7 +102,7 @@ class ChatBot:
 			return await ctx.send("No cached data found")
 		del self.cache[guild_id]
 		await ctx.send("Cleared cache")
-		self.save()
+		self.save_data()
 
 	@_chatbot.command(name="load_preset")
 	@commands.has_permissions(manage_messages=True)
@@ -117,7 +117,7 @@ class ChatBot:
 			if response not in self.cache[guild_id]:
 				self.cache[guild_id].append(response)
 		await ctx.send("Loaded preset")
-		self.save()
+		self.save_data()
 
 	@commands.command(name="pop")
 	@commands.check(checks.luck)
@@ -203,11 +203,11 @@ class ChatBot:
 						if m.content not in cache:
 							self.cache[guild_id].append(m.content)
 							self.cache["global"].append(m.content)
-							self.save()
+							self.save_data()
 					else:
 						if m.content not in cache:
 							self.cache["global"].append(m.content)
-							self.save()
+							self.save_data()
 					matches = []
 					for msg in cache:
 						if key in msg:
@@ -249,7 +249,7 @@ class ChatBot:
 				cache = self.cache["global"]
 				if m.content not in cache:
 					self.cache["global"].append(m.content)
-					self.save()
+					self.save_data()
 				matches = []
 				for msg in cache:
 					if key in msg:
@@ -265,6 +265,18 @@ class ChatBot:
 						await m.channel.send(choice)
 					except:
 						pass
+
+	async def on_guild_remove(self, guild):
+		guild_id = str(guild.id)
+		if guild_id in self.toggle:
+			del self.toggle[guild_id]
+		if guild_id in self.cache:
+			del self.cache[guild_id]
+		if guild_id in self.prefixes:
+			del self.prefixes[guild_id]
+		if guild_id in self.dir:
+			del self.dir[guild_id]
+		self.save_data()
 
 def setup(bot):
 	bot.add_cog(ChatBot(bot))

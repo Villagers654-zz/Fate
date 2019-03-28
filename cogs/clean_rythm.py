@@ -14,8 +14,9 @@ class Utility:
 				if "identifier" in dat:
 					self.identifier = dat["identifier"]
 
-	def luck(ctx):
-		return ctx.message.author.id == 264838866480005122
+	def save_data(self):
+		with open("./data/config/clean_rythm.json", "w") as outfile:
+			json.dump({"identifier": self.identifier}, outfile, ensure_ascii=False)
 
 	@commands.group(name="clean_rythm")
 	async def _clean_rythm(self, ctx):
@@ -30,20 +31,18 @@ class Utility:
 	@_clean_rythm.command(name="enable")
 	async def enable(self, ctx):
 		self.identifier[str(ctx.guild.id)] = "Enabled"
-		with open("./data/config/clean_rythm.json", "w") as outfile:
-			json.dump({"identifier": self.identifier}, outfile, ensure_ascii=False)
 		await ctx.send("Enabled clean_rythm", delete_after=20)
 		await asyncio.sleep(20)
 		await ctx.message.delete()
+		self.save_data()
 
 	@_clean_rythm.command(name="disable")
 	async def disable(self, ctx):
 		self.identifier[str(ctx.guild.id)] = "Disabled"
-		with open("./data/config/clean_rythm.json", "w") as outfile:
-			json.dump({"identifier": self.identifier}, outfile, ensure_ascii=False)
 		await ctx.send("Disabled clean_rythm", delete_after=20)
 		await asyncio.sleep(20)
 		await ctx.message.delete()
+		self.save_data()
 
 	async def on_message(self, m:discord.Message):
 		if isinstance(m.guild, discord.Guild):
@@ -72,6 +71,12 @@ class Utility:
 								return await m.delete()
 							await asyncio.sleep(10)
 							await m.delete()
+
+	async def on_guild_remove(self, guild):
+		guild_id = str(guild.id)
+		if guild_id in self.identifier:
+			del self.identifier[guild_id]
+			self.save_data()
 
 def setup(bot):
 	bot.add_cog(Utility(bot))

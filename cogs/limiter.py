@@ -14,6 +14,10 @@ class Utility:
 				if "images" in dat:
 					self.images = dat["images"]
 
+	def save_data(self):
+		with open("./data/userdata/limiter.json", "w") as outfile:
+			json.dump({"images": self.images}, outfile, ensure_ascii=False)
+
 	@commands.group(name="limit", aliases=["limiter"])
 	@commands.has_permissions(manage_guild=True)
 	async def _limit(self, ctx):
@@ -37,8 +41,7 @@ class Utility:
 			del self.images[guild_id][channel_id]
 			await ctx.message.add_reaction("👍")
 			await ctx.send("Disabled channel limiter")
-		with open("./data/userdata/limiter.json", "w") as outfile:
-			json.dump({"images": self.images}, outfile, ensure_ascii=False)
+		self.save_data()
 
 	async def on_message(self, m: discord.Message):
 		if isinstance(m.guild, discord.Guild):
@@ -53,6 +56,12 @@ class Utility:
 				if channel_id in self.images[guild_id]:
 					if len(m.attachments) < 1:
 						await m.delete()
+
+	async def on_guild_remove(self, guild):
+		guild_id = str(guild.id)
+		if guild_id in self.images:
+			del self.images[guild_id]
+			self.save_data()
 
 def setup(bot):
 	bot.add_cog(Utility(bot))

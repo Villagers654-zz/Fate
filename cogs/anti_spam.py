@@ -118,5 +118,11 @@ class Anti_Spam:
 						await asyncio.sleep(0.5)
 					del self.working[guild_id][user_id]
 
+	async def on_guild_remove(self, guild):
+		guild_id = str(guild.id)
+		if guild_id in self.toggle:
+			del self.toggle[guild_id]
+			self.save_data()
+
 def setup(bot):
 	bot.add_cog(Anti_Spam(bot))

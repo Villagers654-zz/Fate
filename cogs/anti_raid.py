@@ -93,5 +93,11 @@ class Anti_Raid:
 				await asyncio.sleep(3600)
 				self.locked.pop(self.locked.index(guild_id))
 
+	async def on_guild_remove(self, guild):
+		guild_id = str(guild.id)
+		if guild_id in self.toggle:
+			del self.toggle[guild_id]
+			self.save_data()
+
 def setup(bot):
 	bot.add_cog(Anti_Raid(bot))

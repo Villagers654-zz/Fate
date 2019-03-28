@@ -79,5 +79,11 @@ class ChatLock:
 						await asyncio.sleep(0.5)
 						await m.delete()
 
+	async def on_guild_remove(self, guild):
+		guild_id = str(guild.id)
+		if guild_id in self.toggle:
+			del self.toggle[guild_id]
+			self.save_data()
+
 def setup(bot):
 	bot.add_cog(ChatLock(bot))

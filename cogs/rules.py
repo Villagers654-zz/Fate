@@ -13,6 +13,10 @@ class Mod:
 				if "rules" in dat:
 					self.rules = dat["rules"]
 
+	def save_data(self):
+		with open("./data/userdata/rules.json", "w") as outfile:
+			json.dump({"rules": self.rules}, outfile, ensure_ascii=False)
+
 	@commands.group(name="rules")
 	async def _rules(self, ctx):
 		if ctx.invoked_subcommand is None:
@@ -33,8 +37,12 @@ class Mod:
 	async def _set(self, ctx, *, rules):
 		self.rules[str(ctx.guild.id)] = rules
 		await ctx.send("Successfully set the rules 👍")
-		with open("./data/userdata/rules.json", "w") as outfile:
-			json.dump({"rules": self.rules}, outfile, ensure_ascii=False)
+		self.save_data()
+
+	async def on_guild_remove(self, guild):
+		guild_id = str(guild.id)
+		if guild_id in self.rules:
+			del self.rules[guild_id]
 
 def setup(bot):
 	bot.add_cog(Mod(bot))

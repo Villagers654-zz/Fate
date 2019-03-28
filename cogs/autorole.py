@@ -14,7 +14,7 @@ class AutoRole:
 				if "roles" in dat:
 					self.roles = dat["roles"]
 
-	def save_roles(self):
+	def save_data(self):
 		with open("./data/userdata/autorole.json", "w") as outfile:
 			json.dump({"roles": self.roles}, outfile, ensure_ascii=False)
 
@@ -37,7 +37,7 @@ class AutoRole:
 			if guild_id not in self.roles:
 				return await ctx.send("Auto role is not active")
 			del self.roles[guild_id]
-			self.save_roles()
+			self.save_data()
 			return await ctx.send("Cleared list of roles")
 		if item.lower() == "list":
 			if guild_id not in self.roles:
@@ -59,7 +59,7 @@ class AutoRole:
 				if role.id in self.roles[guild_id]:
 					return await ctx.send("That roles already in use")
 				self.roles[guild_id].append(role.id)
-				self.save_roles()
+				self.save_data()
 				return await ctx.send(f"Added `{role.name}` to the list of auto roles")
 		for role in ctx.guild.roles():
 			if item in role.name.lower():
@@ -68,7 +68,7 @@ class AutoRole:
 				if role.id in self.roles[guild_id]:
 					return await ctx.send("That roles already in use")
 				self.roles[guild_id].append(role.id)
-				self.save_roles()
+				self.save_data()
 				return await ctx.send(f"Added `{role.name}` to the list of auto roles")
 		await ctx.send("Role not found")
 
@@ -88,6 +88,13 @@ class AutoRole:
 		guild_id = str(role.guild.id)
 		if role.id in self.roles[guild_id]:
 			self.roles[guild_id].pop(self.roles[guild_id].index(role.id))
+			self.save_data()
+
+	async def on_guild_remove(self, guild):
+		guild_id = str(guild.id)
+		if guild_id in self.roles:
+			del self.roles[guild_id]
+			self.save_data()
 
 def setup(bot):
 	bot.add_cog(AutoRole(bot))

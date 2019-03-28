@@ -57,6 +57,7 @@ class RestoreRoles:
 		guild_id = str(guild.id)
 		if guild_id in self.data:
 			del self.data[guild_id]
+			self.save_data()
 
 def setup(bot):
 	bot.add_cog(RestoreRoles(bot))

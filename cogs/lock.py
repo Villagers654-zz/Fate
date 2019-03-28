@@ -15,7 +15,7 @@ class Utility:
 				if "lock" in dat:
 					self.lock = dat["lock"]
 
-	def save(self):
+	def save_data(self):
 		with open("./data/userdata/lock.json", "w") as outfile:
 			json.dump({"lock": self.lock}, outfile, ensure_ascii=False)
 
@@ -25,16 +25,16 @@ class Utility:
 		guild_id = str(ctx.guild.id)
 		if guild_id not in self.lock:
 			self.lock[guild_id] = "lock-kick"
-			self.save()
+			self.save_data()
 			await ctx.send("Locked the server")
 			return await ctx.message.add_reaction("👍")
 		if self.lock[guild_id] is not "lock-kick":
 			self.lock[guild_id] = "lock-kick"
-			self.save()
+			self.save_data()
 			await ctx.send("Changed the server lock type to kick")
 			return await ctx.message.add_reaction("👍")
 		del self.lock[guild_id]
-		self.save()
+		self.save_data()
 		await ctx.send("Unlocked the server")
 		await ctx.message.add_reaction("👍")
 
@@ -44,16 +44,16 @@ class Utility:
 		guild_id = str(ctx.guild.id)
 		if guild_id not in self.lock:
 			self.lock[guild_id] = "lock-ban"
-			self.save()
+			self.save_data()
 			await ctx.send("Locked the server")
 			return await ctx.message.add_reaction("👍")
 		if self.lock[guild_id] is not "lock-ban":
 			self.lock[guild_id] = "lock-ban"
-			self.save()
+			self.save_data()
 			await ctx.send("Changed the server lock type to ban")
 			return await ctx.message.add_reaction("👍")
 		del self.lock[guild_id]
-		self.save()
+		self.save_data()
 		await ctx.send("Unlocked the server")
 		await ctx.message.add_reaction("👍")
 
@@ -70,18 +70,18 @@ class Utility:
 			if check_roles() is False:
 				return await ctx.send("Failed to find a muted role")
 			self.lock[guild_id] = "lock-mute"
-			self.save()
+			self.save_data()
 			await ctx.send("Locked the server")
 			return await ctx.message.add_reaction("👍")
 		if self.lock[guild_id] is not "lock-mute":
 			if check_roles() is False:
 				return await ctx.send("Failed to find a muted role")
 			self.lock[guild_id] = "lock-mute"
-			self.save()
+			self.save_data()
 			await ctx.send("Changed the server lock type to mute")
 			return await ctx.message.add_reaction("👍")
 		del self.lock[guild_id]
-		self.save()
+		self.save_data()
 		await ctx.send("Unlocked the server")
 		await ctx.message.add_reaction("👍")
 
@@ -93,7 +93,7 @@ class Utility:
 			await ctx.send("there is currently no active lock")
 			return await ctx.message.add_reaction("⚠")
 		del self.lock[guild_id]
-		self.save()
+		self.save_data()
 		await ctx.send("Unlocked the server")
 		await ctx.message.add_reaction("👍")
 
@@ -118,6 +118,7 @@ class Utility:
 						pass
 					self.cd[member_id] = time.time() + 25
 			if self.lock[guild_id] == "lock-mute":
+				role = None  # type: discord.Role
 				for i in m.guild.roles:
 					if i.name.lower() == "muted":
 						role = i
@@ -128,6 +129,12 @@ class Utility:
 						pass
 					else:
 						await m.add_roles(role)
+
+	async def on_guild_remove(self, guild):
+		guild_id = str(guild.id)
+		if guild_id in self.lock:
+			del self.lock[guild_id]
+			self.save_data()
 
 def setup(bot):
 	bot.add_cog(Utility(bot))

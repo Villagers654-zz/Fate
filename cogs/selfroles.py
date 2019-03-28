@@ -16,6 +16,10 @@ class SelfRoles:
 					self.message = dat["message"]
 					self.roles = dat["roles"]
 
+	def save_data(self):
+		with open("./data/userdata/selfroles.json", "w") as outfile:
+			json.dump({"message": self.message, "roles": self.roles}, outfile, ensure_ascii=False)
+
 	@commands.command(name="selfroles", aliases=["sr"])
 	@commands.has_permissions(administrator=True)
 	@commands.bot_has_permissions(manage_roles=True)
@@ -502,8 +506,7 @@ class SelfRoles:
 																														if check == 0:
 																															await ctx.send("Channel not found, please restart", delete_after=10)
 																															await embed.delete()
-		with open("./data/userdata/selfroles.json", "w") as outfile:
-			json.dump({"message": self.message, "roles": self.roles}, outfile, ensure_ascii=False)
+		self.save_data()
 
 	async def on_raw_reaction_add(self, payload):
 		server = self.bot.get_guild(payload.guild_id)
@@ -594,8 +597,14 @@ class SelfRoles:
 			if self.message[guild_id] == str(m.id):
 				del self.message[guild_id]
 				del self.roles[guild_id]
-				with open("./data/userdata/selfroles.json", "w") as outfile:
-					json.dump({"message": self.message, "roles": self.roles}, outfile, ensure_ascii=False)
+				self.save_data()
+
+	async def on_guild_remove(self, guild):
+		guild_id = str(guild.id)
+		if guild_id in self.message:
+			del self.message[guild_id]
+			del self.roles[guild_id]
+			self.save_data()
 
 def setup(bot):
 	bot.add_cog(SelfRoles(bot))
