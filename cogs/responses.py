@@ -38,42 +38,41 @@ class Responses:
 # ~== Main ==~
 
 	async def on_message(self, m: discord.Message):
-		if not m.author.bot:
-			r = random.randint(1, 4)
-			m.content = m.content.lower()
-			# core responses
-			if m.content.startswith("<@!506735111543193601> "):
-				m.content = m.content.replace("<@!506735111543193601> ", "")
-				found = False
-				keys = m.content.split(" ")
-				key = random.choice(keys)
-				if "the" in keys:
-					key = keys[keys.index("the") + 1]
-				if "if" in keys:
-					key = keys[keys.index("if") + 2]
-				matches = []
-				for msg in self.cache():
-					if key in msg:
-						matches.append(msg)
-						found = True
-				if found:
-					choice = random.choice(matches)
-					if choice.lower() == m.content.lower():
-						return
-					try:
-						async with m.channel.typing():
-							await asyncio.sleep(1)
-						await m.channel.send(choice)
-					except:
-						pass
-			# toggleable responses
-			if isinstance(m.guild, discord.Guild):
+		if isinstance(m.guild, discord.Guild):
+			if not m.author.bot:
+				m.content = m.content.lower()
+				# non toggleable responses
+				if list(filter(lambda x: m.content.startswith(x), ["<@506735111543193601>", "<@!506735111543193601>"])):
+					m.content = m.content.replace("!", "").replace("<@506735111543193601> ", "")
+					found = False
+					keys = m.content.split(" ")
+					key = random.choice(keys)
+					if "the" in keys:
+						key = keys[keys.index("the") + 1]
+					if "if" in keys:
+						key = keys[keys.index("if") + 2]
+					matches = []
+					for msg in self.cache():
+						if key in msg:
+							matches.append(msg)
+							found = True
+					if found:
+						choice = random.choice(matches)
+						if choice.lower() == m.content.lower():
+							return
+						try:
+							async with m.channel.typing():
+								await asyncio.sleep(1)
+							await m.channel.send(choice)
+						except:
+							pass
+				# toggleable responses
 				if str(m.guild.id) not in self.responses:
 					self.responses[str(m.guild.id)] = 'enabled'
 					with open("./data/userdata/config/toggles.json", "w") as outfile:
 						json.dump({"responses": self.responses}, outfile, ensure_ascii=False)
 				if self.responses[str(m.guild.id)] == 'enabled':
-					if r == 4:
+					if random.randint(1, 4) == 4:
 						if m.content.startswith("hello"):
 							await m.channel.send(random.choice(["Hello", "Hello :3", "Suh", "Suh :3", "Wazzuh"]))
 						if m.content.startswith("gm"):
