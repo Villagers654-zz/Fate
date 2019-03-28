@@ -261,17 +261,20 @@ class Leaderboards:
 						self.monthly_guilds_data[guild_id] = {}
 					if author_id not in self.monthly_guilds_data[guild_id]:
 						self.monthly_guilds_data[guild_id][author_id] = {}
+
 					self.global_data[author_id] += 1
 					self.guilds_data[guild_id][author_id] += 1
 					self.monthly_global_data[author_id][msg_id] = time.time()
 					self.monthly_guilds_data[guild_id][author_id][msg_id] = time.time()
 					self.cd[author_id] = time.time() + 10
+
 					for msg_id, msg_time in (sorted(self.monthly_global_data[author_id].items(), key=lambda kv: kv[1], reverse=True)):
 						if float(msg_time) < time.time() - 2592000:
 							del self.monthly_global_data[author_id][str(msg_id)]
 					for msg_id, msg_time in (sorted(self.monthly_guilds_data[guild_id][author_id].items(), key=lambda kv: kv[1], reverse=True)):
 						if float(msg_time) < time.time() - 2592000:
 							del self.monthly_guilds_data[guild_id][author_id][str(msg_id)]
+
 					self.save_xp()
 
 	async def on_voice_state_update(self, member, before, after):
