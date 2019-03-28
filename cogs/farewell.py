@@ -52,7 +52,7 @@ class Farewell:
 				"$NAME\n"
 				"`uses a users name`\n"
 				"$USER\n"
-				"`uses a users name & tag\n"
+				"`uses a users name & tag`\n"
 				"**Example:**\n"
 				"`.farewell format Cya $NAME`", inline=False)
 			e.set_footer(text=f"Current Status: {toggle}", icon_url=ctx.guild.owner.avatar_url)
