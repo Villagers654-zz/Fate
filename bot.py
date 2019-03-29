@@ -66,14 +66,13 @@ async def on_ready():
 	      '│  ├┘ your day is with the\n'
 	      '└──┘ blood of your enemys')
 	cprint('--------------------------', 'cyan')
+	bot.loop.create_task(status_task())
 	fmt = "%m-%d-%Y %I:%M%p"
 	created = datetime.datetime.now()
 	cprint(created.strftime(fmt), 'yellow')
 	if error:
 		await bot.get_channel(503902845741957131).send(f"```{error}```")
-	bot.loop.create_task(status_task())
 	m, s = divmod(time.time() - bot.START_TIME, 60)
-	h, m = divmod(m, 60)
 	bot.LOGIN_TIME = s
 
 @bot.event
