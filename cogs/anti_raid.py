@@ -74,13 +74,13 @@ class Anti_Raid:
 					pass
 				await asyncio.sleep(3600)
 				return await m.guild.unban(m, reason="Server locked due to raid")
-			if m.author.bot:
+			if m.bot:
 				return
 			if guild_id not in self.last:
 				self.last[guild_id] = {}
 			self.last[guild_id][user_id] = time()
 			now = int(time() / 15)
-			if guild_id not in self.cd[guild_id]:
+			if guild_id not in self.cd:
 				self.cd[guild_id] = [now, 0]
 			if self.cd[guild_id][0] == now:
 				self.cd[guild_id][1] += 1
