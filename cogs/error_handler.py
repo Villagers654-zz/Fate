@@ -32,6 +32,8 @@ class ErrorHandler:
 		elif isinstance(error, commands.CheckFailure):
 			await ctx.message.add_reaction('⚠')
 			return await ctx.send(str(error).replace("command.", f"`{ctx.command}`"))
+		elif isinstance(error, discord.errors.NotFound):
+			return
 		elif isinstance(error, discord.errors.Forbidden):
 			try:
 				await ctx.send(error)
@@ -48,7 +50,7 @@ class ErrorHandler:
 		e.set_author(name=f"| Fatal Error | {ctx.command}", icon_url=ctx.author.avatar_url)
 		e.set_thumbnail(url=ctx.guild.icon_url)
 		e.description = "This has been logged and will be resolved shortly"
-		e.add_field(name="◈ Error ◈", value=error, inline=False)
+		e.add_field(name="◈ Error ◈", value=str(error)[:2000], inline=False)
 		await ctx.send(error)
 		p = subprocess.Popen("cat  /root/.pm2/logs/bot-error.log", stdout=subprocess.PIPE, shell=True)
 		(output, err) = p.communicate()
