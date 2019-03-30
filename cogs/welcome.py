@@ -59,7 +59,7 @@ class Welcome:
 				"$SERVER\n"
 				"`uses the servers name`\n"
 				"**Example:**\n"
-				"`.welcome format $MENTION, welcome to $SERVER`", inline=False)
+				"`.welcome format Welcome $MENTION`", inline=False)
 			images = ""
 			if guild_id in self.images:
 				images = f" | Custom Images: {len(self.images[guild_id])}"
