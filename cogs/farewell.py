@@ -155,7 +155,7 @@ class Farewell:
 					del self.toggle[guild_id]
 					return self.save_data()
 				msg = self.format[guild_id]
-				msg = msg.replace("$NAME", m.name).replace("$USER", m)
+				msg = msg.replace("$NAME", str(m.name)).replace("$USER", str(m))
 				path = os.getcwd() + "/data/images/reactions/farewell/" + random.choice(
 					os.listdir(os.getcwd() + "/data/images/reactions/farewell/"))
 				if guild_id in self.useimages:
