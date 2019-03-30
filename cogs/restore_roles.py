@@ -19,7 +19,7 @@ class RestoreRoles:
 		return ctx.author is ctx.guild.owner
 
 	@commands.command(name="restore_roles")
-	@commands.check(is_guild_owner)
+	@commands.has_permissions(administrator=True)
 	async def _restore_roles(self, ctx):
 		guild_id = str(ctx.guild.id)
 		if guild_id in self.data:
