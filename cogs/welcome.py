@@ -12,6 +12,7 @@ class Welcome:
 		self.toggle = {}
 		self.channel = {}
 		self.useimages = {}
+		self.images = {}
 		self.format = {}
 		if isfile("./data/userdata/welcome.json"):
 			with open("./data/userdata/welcome.json", "r") as f:
@@ -20,11 +21,12 @@ class Welcome:
 					self.toggle = dat["toggle"]
 					self.channel = dat["channel"]
 					self.useimages = dat["useimages"]
+					self.images = dat["images"]
 					self.format = dat["format"]
 
 	def save_data(self):
 		with open("./data/userdata/welcome.json", "w") as f:
-			json.dump({"toggle": self.toggle, "channel": self.channel, "useimages": self.useimages,
+			json.dump({"toggle": self.toggle, "channel": self.channel, "useimages": self.useimages, "images": self.images,
 			    "format": self.format}, f, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
 
 	@commands.group(name="welcome", description="Welcomes users when they join")
@@ -47,6 +49,9 @@ class Welcome:
 				".welcome config\n"
 				".welcome setchannel {channel}\n"
 				".welcome useimages\n"
+				".welcome addimages\n"
+				".welcome delimages\n"
+				".welcome listimages\n"
 				".welcome format {message}\n", inline=False)
 			e.add_field(name="◈ Msg Format ◈", value=
 				"$MENTION\n"
@@ -55,7 +60,10 @@ class Welcome:
 				"`uses the servers name`\n"
 				"**Example:**\n"
 				"`.welcome format $MENTION, welcome to $SERVER`", inline=False)
-			e.set_footer(text=f"Current Status: {toggle}", icon_url=ctx.guild.owner.avatar_url)
+			images = ""
+			if guild_id in self.images:
+				images = f" | Custom Images: {len(self.images[guild_id])}"
+			e.set_footer(text=f"Current Status: {toggle}{images}", icon_url=ctx.guild.owner.avatar_url)
 			await ctx.send(embed=e)
 
 	@_welcome.command(name="enable")
@@ -97,6 +105,7 @@ class Welcome:
 		toggle = "disabled"
 		channel = "none"
 		useimages = "disabled"
+		images = 0
 		format = "none"
 		if guild_id in self.toggle:
 			toggle = "enabled"
@@ -106,12 +115,15 @@ class Welcome:
 			useimages = self.useimages[guild_id]
 		if guild_id in self.format:
 			format = self.format[guild_id]
+		if guild_id in self.images:
+			images = len(self.images[guild_id])
 		e = discord.Embed(color=colors.tan())
 		e.set_author(name="Welcome Config", icon_url=self.bot.user.avatar_url)
 		e.set_thumbnail(url=ctx.guild.icon_url)
 		e.description = f"**Toggle:** {toggle}\n" \
 			f"**Channel:** {channel}\n" \
 			f"**UseImages:** {useimages}\n" \
+			f"**Custom Images:** {images}\n" \
 			f"**Format:** {format}\n"
 		await ctx.send(embed=e)
 
@@ -132,10 +144,46 @@ class Welcome:
 		guild_id = str(ctx.guild.id)
 		if guild_id in self.useimages:
 			del self.useimages[guild_id]
-			return await ctx.send("Disabled UseImages")
+			await ctx.send("Disabled UseImages")
+			return self.save_data()
 		self.useimages[guild_id] = "enabled"
-		await ctx.send("Enabled UseImages")
+		if guild_id in self.images:
+			await ctx.send("Enabled UseImages")
+		else:
+			await ctx.send("Enabled UseImages. You have no custom "
+			    "images, so I'll just use my own for now ^~^")
 		self.save_data()
+
+	@_welcome.command(name="addimages")
+	@commands.has_permissions(manage_guild=True)
+	async def _addimages(self, ctx):
+		guild_id = str(ctx.guild.id)
+		if guild_id not in self.images:
+			self.images[guild_id] = []
+		if not ctx.message.attachments:
+			return await ctx.send("Attach images when using this command")
+		for image in ctx.message.attachments:
+			self.images[guild_id].append(image.url)
+		await ctx.send("Added your images")
+		self.save_data()
+
+	@_welcome.command(name="delimages")
+	@commands.has_permissions(manage_guild=True)
+	async def _delimages(self, ctx):
+		guild_id = str(ctx.guild.id)
+		if guild_id not in self.images:
+			return await ctx.send("No images >:(")
+		del self.images[guild_id]
+		await ctx.send("Purged images")
+		self.save_data()
+
+	@_welcome.command(name="listimages")
+	@commands.has_permissions(manage_guild=True)
+	async def _listimages(self, ctx):
+		guild_id = str(ctx.guild.id)
+		if guild_id not in self.images:
+			return await ctx.send("This guild has no images")
+		await ctx.send(self.images[guild_id])
 
 	@_welcome.command(name="format")
 	@commands.has_permissions(manage_guild=True)
@@ -160,12 +208,21 @@ class Welcome:
 					os.listdir(os.getcwd() + "/data/images/reactions/welcome/"))
 				if guild_id in self.useimages:
 					e = discord.Embed(color=colors.fate())
-					e.set_image(url="attachment://" + os.path.basename(path))
-					try:
-						await channel.send(msg, file=discord.File(path, filename=os.path.basename(path)), embed=e)
-					except:
-						del self.useimages[guild_id]
-						self.save_data()
+					if guild_id in self.images:
+						e.set_image(url=random.choice(self.images[guild_id]))
+						try:
+							await channel.send(msg, embed=e)
+						except:
+							del self.useimages[guild_id]
+							del self.images[guild_id]
+							self.save_data()
+					else:
+						e.set_image(url="attachment://" + os.path.basename(path))
+						try:
+							await channel.send(msg, file=discord.File(path, filename=os.path.basename(path)), embed=e)
+						except:
+							del self.useimages[guild_id]
+							self.save_data()
 				else:
 					try:
 						await channel.send(msg)
