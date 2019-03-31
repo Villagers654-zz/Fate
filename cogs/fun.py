@@ -1,5 +1,6 @@
 from discord.ext import commands
 from random import random as rd
+from utils import colors
 import discord
 import asyncio
 import random
@@ -239,32 +240,42 @@ class Fun:
 	async def roll(self, ctx):
 		await ctx.send(random.choice(["1", "2", "3", "4", "5", "6"]))
 
-	@commands.command(name='ask', aliases=['magicconch', '8ball'])
-	async def _ask(self, ctx, *, arg):
-		e=discord.Embed(color=0x80b0ff)
-		e.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
-		e.description = "**Q**: {}\n**A**: {}".format(arg, random.choice(
-			["Yes", "No", "It's certain", "110% no", "It's uncertain", "Ofc", "I think not m8", "ig", "Why not ¯\_(ツ)_/¯", "Leave.",
-			 "Shut up, homo.", "Sonic says it's gay to ask a discord bot questions",
-			 "You only ask because im either fucking less dumb then your stupid fucking brain or your desperate for me too obliviously agree",
-			 "Ye", "I should be asking the questions here.", "I'm not in the mood to answer to peasants", "Yep", "Yup", "tHe AnSwEr LiEs WiThIn",
-			 "Basically yes^", "Not really", "I do not normally respond to anarchists because I am not a faggot", "Well duh", "hell yeah",
-			 "hell no"]))
-		await ctx.send(embed=e)
-		await asyncio.sleep(0.5)
-		await ctx.message.delete()
+	@commands.command(name="ask", aliases=["8ball"])
+	async def ask(self, ctx):
+		await ctx.send(random.choice(["Yes", "No", "It's certain", "110% no", "It's uncertain", "Ofc", "I think not m8", "Ig",
+			"Why not ¯\_(ツ)_/¯", "Shut up, homo.", "You only ask because im either fucking less dumb then your stupid "
+			"fucking brain or your desperate for me too obliviously agree", "Ye", "Yep", "Yup", "tHe AnSwEr LiEs WiThIn",
+			"Basically yes^", "Not really", "Well duh", "hell yeah", "hell no"]))
 
-	@commands.command(name='gay', aliases=['straight', 'lesbian'])
-	@commands.cooldown(1, 60, commands.BucketType.user)
-	async def gay(self, ctx, *, member: discord.Member=None):
-		if member is None:
-			member = ctx.author
-		r = random.randint(50,100)
-		e=discord.Embed(description=f'Requested by {ctx.author.name}', color=0xFC0FC0)
-		e.set_author(name=f'| You are {r}% {random.choice(["gay", "straight", "lesbian"])}', icon_url=member.avatar_url)
-		e.set_thumbnail(url=member.avatar_url)
+	@commands.command(name="gay")
+	@commands.cooldown(1, 3, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True)
+	async def gay(self, ctx, *, user: discord.Member=None):
+		if user is None:
+			user = ctx.author
+		e=discord.Embed(color=colors.pink())
+		e.set_author(name=f"You are {random.randint(50,100)}% gay", icon_url=user.avatar_url)
 		await ctx.send (embed=e)
-		await ctx.message.delete()
+
+	@commands.command(name="straight")
+	@commands.cooldown(1, 3, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True)
+	async def straight(self, ctx, *, user: discord.Member=None):
+		if user is None:
+			user = ctx.author
+		e=discord.Embed(color=colors.pink())
+		e.set_author(name=f"You are {random.randint(50,100)}% straight", icon_url=user.avatar_url)
+		await ctx.send (embed=e)
+
+	@commands.command(name="lesbian")
+	@commands.cooldown(1, 3, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True)
+	async def lesbian(self, ctx, *, user: discord.Member=None):
+		if user is None:
+			user = ctx.author
+		e=discord.Embed(color=colors.pink())
+		e.set_author(name=f"You are {random.randint(50,100)}% lesbian", icon_url=user.avatar_url)
+		await ctx.send (embed=e)
 
 	@commands.command()
 	async def rps(self, ctx):
