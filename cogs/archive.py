@@ -1,4 +1,5 @@
 from discord.ext import commands
+from utils import config
 import discord
 import os
 
@@ -12,7 +13,8 @@ class Archive:
 	@commands.cooldown(1, 25, commands.BucketType.channel)
 	async def _archive(self, ctx, amount:int):
 		if amount > 1000:
-			return await ctx.send('You cannot go over 1000')
+			if not config.owner(ctx):
+				return await ctx.send('You cannot go over 1000')
 		self.saving[str(ctx.channel.id)] = "saving"
 		async with ctx.typing():
 			log = ""
