@@ -77,7 +77,7 @@ class Profiles:
 		if user_id not in self.gvclb():
 			vc_xp = 0
 		else:
-			vc_xp = str(self.gvclb()[user_id] / 10)[:str(self.gvclb()[user_id] / 10).find('.')]
+			vc_xp = str(self.gvclb()[user_id] / 60)[:str(self.gvclb()[user_id] / 60).find('.')]
 		payload = f"Level: {level}\nXP: {str(xp)[:str(xp).find('.')]}\n" \
 			f"MSG: {self.global_data()[user_id]}\nVC: {vc_xp}"
 		card = Image.new("RGBA", (1024, 1024), (255, 255, 255))
@@ -297,7 +297,7 @@ class Profiles:
 				if user_id not in self.gvclb():
 					vc_xp = 0
 				else:
-					vc_xp = str(self.gvclb()[user_id] / 10)[:str(self.gvclb()[user_id] / 10).find('.')]
+					vc_xp = str(self.gvclb()[user_id] / 60)[:str(self.gvclb()[user_id] / 60).find('.')]
 				e.description = f"**Level:** {level} **XP:** {str(xp)[:str(xp).find('.')]}\n" \
 					f"**MSG XP:** {self.global_data()[user_id]} **VC XP:** {vc_xp}"
 				e.add_field(name=f"◈ Bio ◈", value=f"{self.info[str(user.id)]}")
