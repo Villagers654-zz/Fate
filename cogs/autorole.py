@@ -20,7 +20,7 @@ class AutoRole:
 
 	@commands.command(name="autorole", description="Adds x roles to a user when they join")
 	@commands.has_permissions(manage_roles=True)
-	@commands.bot_has_permissions(manage_roles=True)
+	@commands.bot_has_permissions(embed_links=True, manage_roles=True)
 	async def _autorole(self, ctx, item: commands.clean_content=None):
 		item = item  # type: str
 		guild_id = str(ctx.guild.id)
