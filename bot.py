@@ -76,9 +76,21 @@ async def on_ready():
 	bot.LOGIN_TIME = s
 
 @bot.event
+async def on_guild_join(guild):
+	channel = bot.get_channel(config.server("log"))
+	e = discord.Embed(color=colors.pink())
+	e.set_author(name="Bot Added to Guild", icon_url=bot.user.avatar_url)
+	e.set_thumbnail(url=guild.icon_url)
+	e.description = f"**Guild:** {guild.name}\n" \
+		f"**ID:** {guild.id}\n" \
+		f"**Owner:** {guild.owner}\n" \
+		f"**Members:** [`{len(guild.members)}`]"
+	await channel.send(embed=e)
+
+@bot.event
 async def on_guild_remove(guild):
 	channel = bot.get_channel(config.server("log"))
-	e = discord.Embed(color=colors.red())
+	e = discord.Embed(color=colors.pink())
 	e.set_author(name="Bot Left or Was Removed", icon_url=bot.user.avatar_url)
 	e.set_thumbnail(url=guild.icon_url)
 	e.description = f"**Guild:** {guild.name}\n" \
