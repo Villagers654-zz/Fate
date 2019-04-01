@@ -29,7 +29,7 @@ class AutoRole:
 			e.set_author(name="Auto-Role Help", icon_url=self.bot.user.avatar_url)
 			e.set_thumbnail(url=ctx.author.avatar_url)
 			e.add_field(name="◈ Usage ◈", value=
-			".autorole role\n"
+			".autorole {role}\n"
 			".autorole list\n"
 			".autorole clear", inline=False)
 			return await ctx.send(embed=e)
@@ -61,7 +61,7 @@ class AutoRole:
 				self.roles[guild_id].append(role.id)
 				self.save_data()
 				return await ctx.send(f"Added `{role.name}` to the list of auto roles")
-		for role in ctx.guild.roles():
+		for role in ctx.guild.roles:
 			if item in role.name.lower():
 				if role.position > ctx.author.top_role.position:
 					return await ctx.send("That roles above your paygrade, take a seat")
