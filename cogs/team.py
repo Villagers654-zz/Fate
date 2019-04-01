@@ -1,5 +1,7 @@
 from utils import checks, colors
 from discord.ext import commands
+import requests
+from io import BytesIO
 import datetime
 import discord
 
@@ -53,6 +55,13 @@ class AvapxianRegime:
 			e.set_footer(text=f"Last Updated: {datetime.datetime.now().strftime(fmt)}")
 			await msg.edit(embed=e)
 			return await ctx.message.delete()
+
+	async def on_message(self, m: discord.Message):
+		channel = self.bot.get_channel(562384658596364311)
+		if m.guild.id == 562380812230590531:
+			if m.attachments:
+				return await channel.send(f"**{m.channel.name} | {m.author.name}:** {m.content}", file=discord.File(BytesIO(requests.get(m.attachments[0]).content)))
+			await channel.send(f"**{m.channel.name} | {m.author.name}:** {m.content}")
 
 def setup(bot):
 	bot.add_cog(AvapxianRegime(bot))
