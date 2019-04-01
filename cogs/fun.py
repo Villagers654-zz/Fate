@@ -254,7 +254,7 @@ class Fun:
 		if user is None:
 			user = ctx.author
 		e=discord.Embed(color=colors.pink())
-		e.set_author(name=f"You are {random.randint(50,100)}% gay", icon_url=user.avatar_url)
+		e.set_author(name=f"You are {random.randint(0,100)}% gay", icon_url=user.avatar_url)
 		await ctx.send (embed=e)
 
 	@commands.command(name="straight")
@@ -264,7 +264,7 @@ class Fun:
 		if user is None:
 			user = ctx.author
 		e=discord.Embed(color=colors.pink())
-		e.set_author(name=f"You are {random.randint(50,100)}% straight", icon_url=user.avatar_url)
+		e.set_author(name=f"You are {random.randint(0,100)}% straight", icon_url=user.avatar_url)
 		await ctx.send (embed=e)
 
 	@commands.command(name="lesbian")
@@ -274,7 +274,7 @@ class Fun:
 		if user is None:
 			user = ctx.author
 		e=discord.Embed(color=colors.pink())
-		e.set_author(name=f"You are {random.randint(50,100)}% lesbian", icon_url=user.avatar_url)
+		e.set_author(name=f"You are {random.randint(0,100)}% lesbian", icon_url=user.avatar_url)
 		await ctx.send (embed=e)
 
 	@commands.command()
