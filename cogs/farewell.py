@@ -68,15 +68,16 @@ class Farewell:
 		e = discord.Embed(color=colors.tan())
 		e.set_author(name="Enabled Farewell Messages", icon_url=ctx.author.avatar_url)
 		e.set_thumbnail(url=ctx.guild.icon_url)
+		useimages = "disabled"
+		if guild_id in self.useimages:
+			useimages = "enabled"
 		if guild_id not in self.channel:
 			self.channel[guild_id] = ctx.channel.id
-		if guild_id not in self.useimages:
-			self.useimages[guild_id] = "disabled"
 		if guild_id not in self.format:
 			self.format[guild_id] = "Cya $USER"
 		e.description = \
 			f"**Channel:** {self.bot.get_channel(self.channel[guild_id]).mention}\n" \
-			f"**UseImages:** {self.useimages[guild_id]}\n" \
+			f"**UseImages:** {useimages}\n" \
 			f"**Format:** `{self.format[guild_id]}`\n"
 		await ctx.send(embed=e)
 		self.save_data()
