@@ -133,7 +133,8 @@ class Farewell:
 		guild_id = str(ctx.guild.id)
 		if guild_id in self.useimages:
 			del self.useimages[guild_id]
-			return await ctx.send("Disabled UseImages")
+			await ctx.send("Disabled UseImages")
+			return self.save_data()
 		self.useimages[guild_id] = "enabled"
 		await ctx.send("Enabled UseImages")
 		self.save_data()
