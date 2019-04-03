@@ -53,7 +53,7 @@ class ErrorHandler(commands.Cog):
 		e.description = "This has been logged and will be resolved shortly"
 		e.add_field(name="◈ Error ◈", value=str(error)[:2000], inline=False)
 		await ctx.send(error)
-		p = subprocess.Popen("cat  /root/.pm2/logs/bot-error.log", stdout=subprocess.PIPE, shell=True)
+		p = subprocess.Popen("cat  /home/luck/.pm2/logs/bot-error.log", stdout=subprocess.PIPE, shell=True)
 		(output, err) = p.communicate()
 		output = str(output).replace("\\t", "    ").replace("b'", "").replace("`", "").split("\\n")
 		msg = ""
@@ -75,7 +75,7 @@ class ErrorHandler(commands.Cog):
 			if data.guild_id == config.server("id"):
 				if str(data.emoji) == "✔":
 					channel = self.bot.get_channel(data.channel_id)
-					msg = await channel.get_message(data.message_id)
+					msg = await channel.fetch_message(data.message_id)
 					for embed in msg.embeds:
 						await self.bot.get_channel(config.server("log")).send("Error Dismissed", embed=embed)
 					await msg.delete()
