@@ -1,32 +1,21 @@
 from bs4 import BeautifulSoup as bs
 from discord.ext import commands
-from os.path import isfile
 from utils import config, colors
 import wikipedia.exceptions
-from PIL import Image
-from io import BytesIO
-import requests
+from os.path import isfile
 import wikipedia
 import discord
 import aiohttp
-import random
 import json
 import time
-import os
 
 class Core(commands.Cog):
 	def __init__(self, bot: commands.Bot):
 		self.bot = bot
-		self.count = 0
-
-	def commands_used(self):
-		return self.count
-
-	@commands.command(name="commands")
-	async def _commands(self, ctx):
-		await ctx.send(self.count)
 
 	@commands.command()
+	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True)
 	async def topguilds(self, ctx):
 		e = discord.Embed(color=0x80b0ff)
 		e.title = "Top Guilds"
@@ -38,15 +27,18 @@ class Core(commands.Cog):
 		await ctx.send(embed=e)
 
 	@commands.command()
+	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def invite(self, ctx):
 		await ctx.send(embed=config.links())
 
 	@commands.command()
+	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def repeat(self, ctx, *, content: commands.clean_content):
 		await ctx.send(content)
 		await ctx.message.delete()
 
 	@commands.command(name="prefix")
+	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.has_permissions(manage_guild=True)
 	async def _prefix(self, ctx, *, prefix):
 		if not isinstance(ctx.guild, discord.Guild):
@@ -64,22 +56,9 @@ class Core(commands.Cog):
 			json.dump(prefixes, f, indent=4)
 		await ctx.send(f"Changed the servers prefix to `{prefix}`")
 
-	def get(self, img):
-		if img == 0:
-			id = 562592340493991936
-		if img == 1:
-			id = 562592349805608960
-		if img == 2:
-			id = 562592369233494016
-		if img == 3:
-			id = 562592401177182208
-		if img == 4:
-			id = 562592422899744768
-		if img == 5:
-			id = 562592453215911936
-		return
-
 	@commands.command(pass_context=True)
+	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True)
 	async def ping(self, ctx):
 		e = discord.Embed(color=colors.fate())
 		e.set_author(name="Measuring ping:")
@@ -110,6 +89,8 @@ class Core(commands.Cog):
 		await message.edit(embed=e)
 
 	@commands.command(pass_context=True)
+	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True)
 	async def wiki(self,ctx,*,query:str):
 		try:
 			q = wikipedia.page(query)
@@ -123,6 +104,8 @@ class Core(commands.Cog):
 			await ctx.send(f'**```ERROR: {type(e).__name__} - {e}```**')
 
 	@commands.command(pass_context=True)
+	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True)
 	async def ud(self,ctx,*,query:str):
 		url = "http://www.urbandictionary.com/define.php?term={}".format(query.replace(" ","%20"))
 		async with aiohttp.ClientSession() as sess:
