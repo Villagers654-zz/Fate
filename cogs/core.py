@@ -82,8 +82,7 @@ class Core(commands.Cog):
 	@commands.command(pass_context=True)
 	async def ping(self, ctx):
 		e = discord.Embed(color=colors.fate())
-		e.set_author(name="**Measuring ping:**")
-		e.set_thumbnail(url="https://cdn.discordapp.com/emojis/562598266881966080.png?v=1")
+		e.set_author(name="Measuring ping:")
 		before = time.monotonic()
 		message = await ctx.send(embed=e)
 		ping = (time.monotonic() - before) * 1000
@@ -106,6 +105,7 @@ class Core(commands.Cog):
 		api = str(self.bot.latency * 1000)
 		api = api[:api.find(".")]
 		e.set_author(name="Bots Latency", icon_url=img)
+		e.set_thumbnail(url="https://cdn.discordapp.com/emojis/562598266881966080.png?v=1")
 		e.description = f"**Message Trip:** `{int(ping)}ms`\n**Websocket Heartbeat:** `{api}ms`"
 		await message.edit(embed=e)
 
