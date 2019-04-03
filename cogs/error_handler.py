@@ -1,5 +1,6 @@
 from discord.ext import commands
 from utils import colors, config
+from time import time
 import subprocess
 import traceback
 import discord
@@ -8,6 +9,7 @@ import sys
 class ErrorHandler(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
+		self.cd = {}
 
 	async def __error(self, ctx, error):
 		await ctx.send(error)
@@ -16,7 +18,7 @@ class ErrorHandler(commands.Cog):
 	async def on_command_error(self, ctx, error):
 		if hasattr(ctx.command, 'on_error'):
 			return
-		ignored = (commands.CommandNotFound, commands.NoPrivateMessage)
+		ignored = (commands.CommandNotFound, commands.NoPrivateMessage, discord.errors.NotFound)
 		error = getattr(error, 'original', error)
 		if isinstance(error, ignored):
 			return
@@ -26,15 +28,19 @@ class ErrorHandler(commands.Cog):
 			if ctx.command.qualified_name == 'tag list':
 				return await ctx.send('I could not find that member. Please try again.')
 		elif isinstance(error, commands.CommandOnCooldown):
+			user_id = str(ctx.author.id)
 			await ctx.message.add_reaction('⏳')
-			return await ctx.send(error)
+			if user_id not in self.cd:
+				self.cd[user_id] = 0
+			if self.cd[user_id] < time() - 10:
+				await ctx.send(error)
+			self.cd[user_id] = time() + 10
+			return
 		elif isinstance(error, commands.MissingRequiredArgument):
 			return await ctx.send(error)
 		elif isinstance(error, commands.CheckFailure):
 			await ctx.message.add_reaction('⚠')
 			return await ctx.send(f"You don't have permission to use `{ctx.command}`")
-		elif isinstance(error, discord.errors.NotFound):
-			return
 		elif isinstance(error, discord.errors.Forbidden):
 			try:
 				await ctx.send(error)
