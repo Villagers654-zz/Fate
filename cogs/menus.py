@@ -44,8 +44,9 @@ class Menus(commands.Cog):
 				with open("./data/commands_used.json", "w") as f:
 					json.dump({"count": self.command_count}, f, ensure_ascii=False)
 
-	@commands.command(name='help')
+	@commands.command(name="help")
 	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True)
 	async def _help(self, ctx, command=None):
 		if command:
 			for cmd in self.bot.commands:
@@ -83,7 +84,8 @@ class Menus(commands.Cog):
 							break
 
 	@commands.command(name='info', description="Provides information relevant to the bots stats")
-	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.cooldown(1, 5, commands.BucketType.channel)
+	@commands.bot_has_permissions(embed_links=True)
 	async def info(self, ctx):
 		m, s = divmod(time.time() - self.bot.START_TIME, 60)
 		h, m = divmod(m, 60)
@@ -125,8 +127,9 @@ class Menus(commands.Cog):
 							await msg.delete()
 							break
 
-	@commands.command()
-	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.command(name="discords")
+	@commands.cooldown(1, 5, commands.BucketType.channel)
+	@commands.bot_has_permissions(embed_links=True)
 	async def discords(self, ctx):
 		e=discord.Embed(title="~~~====🥂🍸🍷Discords🍷🍸🥂====~~~", color=0x80b0ff)
 		e.add_field(name="• Anarchy Community", value="[Bridge of Anarchism](https://discord.gg/WN9F82d)\n[2p2e - 2pocket2edition](https://discord.gg/y4V4T84)\n[4B4T (Official)](https://discord.gg/BQ23Z2E)\n[4b4t §pawn Patrol](https://discord.gg/5hn4K8E)", inline=False)
@@ -150,8 +153,9 @@ class Menus(commands.Cog):
 							await msg.delete()
 							break
 
-	@commands.command()
-	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.command(name="servers")
+	@commands.cooldown(1, 5, commands.BucketType.channel)
+	@commands.bot_has_permissions(embed_links=True)
 	async def servers(self, ctx):
 		e=discord.Embed(title="~~~====🥂🍸🍷Servers🍷🍸🥂====~~~", color=0x80b0ff)
 		e.add_field(name="• Anarchy", value="• 4b4t.net : 19132", inline=False)
@@ -173,44 +177,13 @@ class Menus(commands.Cog):
 							await msg.delete()
 							break
 
-	@commands.command()
-	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.command(name="realms")
+	@commands.cooldown(1, 5, commands.BucketType.channel)
+	@commands.bot_has_permissions(embed_links=True)
 	async def realms(self, ctx):
-		embed=discord.Embed(title="~~~====🥂🍸🍷Realms🍷🍸🥂====~~~", color=0x80b0ff)
-		embed.add_field(name="• Anarchy Realms", value="Jappie Anarchy\n• https://realms.gg/pmElWWx5xMk\nAnarchy Realm\n• https://realms.gg/GyxzF5xWnPc\n2c2b Anarchy\n• https://realms.gg/TwbBfe0jGDc\nFraughtian Anarchy\n• https://realms.gg/rdK57KvnA8o\nChaotic Realm\n• https://realms.gg/nzDX1drovu4", inline=False)
-		embed.add_field(name="• Misc", value=".", inline=False)
-		await ctx.send(embed=embed)
-		def pred(m):
-			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
-		try:
-			msg = await self.bot.wait_for('message', check=pred, timeout=25)
-		except asyncio.TimeoutError:
-			pass
-		else:
-			if msg.content.lower() == "k":
-				await ctx.message.delete()
-				await asyncio.sleep(0.5)
-				await msg.delete()
-				async for msg in ctx.channel.history(limit=10):
-					if msg.author.id == self.bot.user.id:
-						if len(msg.embeds) > 0:
-							await msg.delete()
-							break
-
-	@commands.command()
-	async def partners(self, ctx):
-		luck = self.bot.get_user(264838866480005122)
-		bottest = self.bot.get_guild(501868216147247104)
-		fourbfourt = "https://discord.gg/BQ23Z2E"
-		totherbot = "https://discordapp.com/api/oauth2/authorize?client_id=452289354296197120&permissions=0&scope=bot"
-		spookiehotel = "https://discord.gg/DVcF6Yn"
-		threadysserver = "https://discord.gg/6tcqMUt"
-		e=discord.Embed(color=0xffffff)
-		e.set_author(name=f'🥃🥂🍸🍷Partners🍷🍸🥂🥃', icon_url=luck.avatar_url)
-		e.description = "Wanna partner? dm Luck#1574"
-		e.set_thumbnail(url=bottest.icon_url)
-		e.add_field(name="◈ Servers ◈", value=f'• [Threadys Server]({threadysserver})\n• [Spookie Hotel]({spookiehotel})\n• [4b4t]({fourbfourt})', inline=False)
-		e.add_field(name="◈ Bots ◈", value=f'• [TotherBot]({totherbot})', inline=False)
+		e=discord.Embed(title="~~~====🥂🍸🍷Realms🍷🍸🥂====~~~", color=0x80b0ff)
+		e.add_field(name="• Anarchy Realms", value="Jappie Anarchy\n• https://realms.gg/pmElWWx5xMk\nAnarchy Realm\n• https://realms.gg/GyxzF5xWnPc\n2c2b Anarchy\n• https://realms.gg/TwbBfe0jGDc\nFraughtian Anarchy\n• https://realms.gg/rdK57KvnA8o\nChaotic Realm\n• https://realms.gg/nzDX1drovu4", inline=False)
+		e.add_field(name="• Misc", value=".", inline=False)
 		await ctx.send(embed=e)
 		def pred(m):
 			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
@@ -229,13 +202,23 @@ class Menus(commands.Cog):
 							await msg.delete()
 							break
 
-	@commands.command()
-	@commands.cooldown(1, 5, commands.BucketType.user)
-	async def credits(self, ctx, content='repeating'):
-		embed=discord.Embed(title="~~~====🥂🍸🍷Credits🍷🍸🥂====~~~", color=0x80b0ff)
-		embed.add_field(name="CortexPE#8680", value="• Tought me litterally 99.9% of fates code (and dealt with my storms of questions)", inline=False)
-		embed.add_field(name="Tothy", value="• existed", inline=False)
-		await ctx.send(embed=embed)
+	@commands.command(name="partners")
+	@commands.cooldown(1, 5, commands.BucketType.channel)
+	@commands.bot_has_permissions(embed_links=True)
+	async def partners(self, ctx):
+		luck = self.bot.get_user(264838866480005122)
+		bottest = self.bot.get_guild(501868216147247104)
+		fourbfourt = "https://discord.gg/BQ23Z2E"
+		totherbot = "https://discordapp.com/api/oauth2/authorize?client_id=452289354296197120&permissions=0&scope=bot"
+		spookiehotel = "https://discord.gg/DVcF6Yn"
+		threadysserver = "https://discord.gg/6tcqMUt"
+		e=discord.Embed(color=0xffffff)
+		e.set_author(name=f'🥃🥂🍸🍷Partners🍷🍸🥂🥃', icon_url=luck.avatar_url)
+		e.description = "Wanna partner? dm Luck#1574"
+		e.set_thumbnail(url=bottest.icon_url)
+		e.add_field(name="◈ Servers ◈", value=f'• [Threadys Server]({threadysserver})\n• [Spookie Hotel]({spookiehotel})\n• [4b4t]({fourbfourt})', inline=False)
+		e.add_field(name="◈ Bots ◈", value=f'• [TotherBot]({totherbot})', inline=False)
+		await ctx.send(embed=e)
 		def pred(m):
 			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
 		try:
