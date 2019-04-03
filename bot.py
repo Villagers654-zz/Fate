@@ -1,7 +1,7 @@
 from discord.ext import commands
+from utils import config, colors
 from termcolor import cprint
 from os.path import isfile
-from utils import config, colors
 import traceback
 import datetime
 import discord
@@ -81,7 +81,7 @@ async def on_guild_join(guild):
 	e = discord.Embed(color=colors.pink())
 	e.set_author(name="Bot Added to Guild", icon_url=bot.user.avatar_url)
 	e.set_thumbnail(url=guild.icon_url)
-	e.description = f"**Guild:** {guild.name}\n" \
+	e.description = f"**Name:** {guild.name}\n" \
 		f"**ID:** {guild.id}\n" \
 		f"**Owner:** {guild.owner}\n" \
 		f"**Members:** [`{len(guild.members)}`]"
@@ -93,7 +93,7 @@ async def on_guild_remove(guild):
 	e = discord.Embed(color=colors.pink())
 	e.set_author(name="Bot Left or Was Removed", icon_url=bot.user.avatar_url)
 	e.set_thumbnail(url=guild.icon_url)
-	e.description = f"**Guild:** {guild.name}\n" \
+	e.description = f"**Name:** {guild.name}\n" \
 		f"**ID:** {guild.id}\n" \
 		f"**Owner:** {guild.owner}\n" \
 		f"**Members:** [`{len(guild.members)}`]"
