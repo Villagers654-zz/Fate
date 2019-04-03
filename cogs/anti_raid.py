@@ -6,7 +6,7 @@ import discord
 import asyncio
 import json
 
-class Anti_Raid:
+class Anti_Raid(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.toggle = {}
@@ -61,6 +61,7 @@ class Anti_Raid:
 		await ctx.send("Disabled anti raid")
 		self.save_data()
 
+	@commands.Cog.listener()
 	async def on_member_join(self, m: discord.Member):
 		guild_id = str(m.guild.id)
 		user_id = str(m.id)
@@ -93,6 +94,7 @@ class Anti_Raid:
 				await asyncio.sleep(3600)
 				self.locked.pop(self.locked.index(guild_id))
 
+	@commands.Cog.listener()
 	async def on_guild_remove(self, guild):
 		guild_id = str(guild.id)
 		if guild_id in self.toggle:

@@ -2,7 +2,7 @@ from discord.ext import commands
 from utils import colors
 import discord
 
-class Audit:
+class Audit(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 

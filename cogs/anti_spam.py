@@ -6,7 +6,7 @@ import discord
 import asyncio
 import json
 
-class Anti_Spam:
+class Anti_Spam(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.toggle = {}
@@ -60,6 +60,7 @@ class Anti_Spam:
 		await ctx.send("Disabled anti spam")
 		self.save_data()
 
+	@commands.Cog.listener()
 	async def on_message(self, m: discord.Message):
 		if isinstance(m.guild, discord.Guild):
 			guild_id = str(m.guild.id)
@@ -118,6 +119,7 @@ class Anti_Spam:
 						await asyncio.sleep(0.5)
 					del self.working[guild_id][user_id]
 
+	@commands.Cog.listener()
 	async def on_guild_remove(self, guild):
 		guild_id = str(guild.id)
 		if guild_id in self.toggle:

@@ -3,7 +3,7 @@ from utils import config
 import discord
 import os
 
-class Archive:
+class Archive(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.saving = {}

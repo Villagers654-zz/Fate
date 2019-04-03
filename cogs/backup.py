@@ -5,7 +5,7 @@ import discord
 import asyncio
 import os
 
-class Backup:
+class Backup(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.backup = False
@@ -50,6 +50,7 @@ class Backup:
 			ssh.upload("luck", "Backup.zip", "/home/luck/Backup.zip")
 			await self.bot.get_channel(config.server("log")).send("Ran scheduled backup successfully")
 
+	@commands.Cog.listener()
 	async def on_ready(self):
 		self.bot.loop.create_task(self.backup_task())
 

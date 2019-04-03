@@ -6,7 +6,7 @@ import discord
 import json
 import time
 
-class AntiPurge:
+class AntiPurge(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.toggle = {}
@@ -63,6 +63,7 @@ class AntiPurge:
 		self.save()
 		await ctx.message.add_reaction("👍")
 
+	@commands.Cog.listener()
 	async def on_member_remove(self, m):
 		guild_id = str(m.guild.id)
 		if guild_id in self.toggle:

@@ -4,7 +4,7 @@ from utils import colors
 import discord
 import json
 
-class AutoRole:
+class AutoRole(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.roles = {}
@@ -72,6 +72,7 @@ class AutoRole:
 				return await ctx.send(f"Added `{role.name}` to the list of auto roles")
 		await ctx.send("Role not found")
 
+	@commands.Cog.listener()
 	async def on_member_join(self, m: discord.Member):
 		guild_id = str(m.guild.id)
 		if guild_id in self.roles:
@@ -84,12 +85,14 @@ class AutoRole:
 					except:
 						pass
 
+	@commands.Cog.listener()
 	async def on_role_delete(self, role):
 		guild_id = str(role.guild.id)
 		if role.id in self.roles[guild_id]:
 			self.roles[guild_id].pop(self.roles[guild_id].index(role.id))
 			self.save_data()
 
+	@commands.Cog.listener()
 	async def on_guild_remove(self, guild):
 		guild_id = str(guild.id)
 		if guild_id in self.roles:
