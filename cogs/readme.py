@@ -1,7 +1,7 @@
 from discord.ext import commands
 import discord
 
-class customclass:
+class Readme(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 
@@ -56,4 +56,4 @@ class customclass:
 # ~== Pings ==~
 
 def setup(bot):
-	bot.add_cog(customclass(bot))
+	bot.add_cog(Readme(bot))

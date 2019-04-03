@@ -2,19 +2,14 @@ from utils import bytes2human as p
 from discord.ext import commands
 from datetime import datetime
 from os.path import isfile
-from PIL import ImageDraw
-from PIL import ImageFont
-from io import BytesIO
-from PIL import Image
 import traceback
-import requests
 import discord
 import asyncio
 import psutil
 import json
 import os
 
-class Owner:
+class Owner(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.statschannel = {}
@@ -113,7 +108,7 @@ class Owner:
 				e.set_footer(text=f'Updated: {time}')
 				statschannel = self.bot.get_channel(self.statschannel)
 				try:
-					message = await statschannel.get_message(self.statsmessage)
+					message = await statschannel.fetch_message(self.statsmessage)
 					await message.edit(embed=e)
 				except Exception as e:
 					preparing = discord.Embed()
@@ -163,12 +158,13 @@ class Owner:
 				time = datetime.now()
 				time = time.strftime(fmt)
 				e.set_footer(text=f'Updated: {time}')
-				message = await channel.get_message(540096913995726848)
+				message = await channel.fetch_message(540096913995726848)
 				await message.edit(embed=e)
 				await asyncio.sleep(1500)
 			except Exception as e:
-				await self.bot.get_channel(534608853300412416).send(f"```{traceback.format_exc()}```{e}")
+				await self.bot.fetch_channel(534608853300412416).send(f"```{traceback.format_exc()}```{e}")
 
+	@commands.Cog.listener()
 	async def on_ready(self):
 		await asyncio.sleep(0.5)
 		self.bot.loop.create_task(self.stats())

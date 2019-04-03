@@ -18,7 +18,7 @@ import json
 import time
 import os
 
-class Dev:
+class Dev(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.last = {}
@@ -377,7 +377,12 @@ class Dev:
 		for i in range(times):
 			await ctx.send(random.choice(["Fagitos", "https://discord.gg/BQ23Z2E", "Reeeeeeeeeeeeeeeeeeeeeee", "<@355026215137968129>", "pUrE wHiTe pRiVelIdgEd mALe", "there's a wasp sucking out all my stick juices", "Really? That's the sperm that won?", "May the fly be with you", "You're not you when you're hungry", "I recognize that flower, see you soon :)", "FBI OPEN UP", "Sponsored by Samsung", "iLiKe NuT", "Florin joins, Yall dislocate yo joints...", "old school tricks rise again", "i can't see, my thumbs are in the way", "All Heil nut", "SARGON NEED MORE DOPAMINE", ".prune 1000", "Nani", "I’m more blind then Hitler when he had that chlorine gas up in his eye", "real art^", "2b2t.org is a copy of the middle east", "warned for advertising", "jOiN sR", "6 million juice", "The 7th SR Fag", "7th team lgbt", "DAiLy reMinDer sEx RoboTs coSt lesS thAn ReAl gRilLs", "elon's musk", "Fuck the battle cat", "9/11"]))
 
+	@commands.Cog.listener()
 	async def on_message(self, m: discord.Message):
+		if "4B4T" in m.guild.name:
+			if m.author.name == "Legit":
+				if "purchase" in m.content or "$" in m.content:
+					await m.delete()
 		if m.content.lower().startswith("pls magik <@264838866480005122>"):
 			def pred(m):
 				return m.author.id == 270904126974590976 and m.channel == m.channel

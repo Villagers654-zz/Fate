@@ -7,7 +7,7 @@ import random
 import json
 import os
 
-class Mod:
+class Mod(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.purge = {}

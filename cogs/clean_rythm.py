@@ -4,7 +4,7 @@ import discord
 import asyncio
 import json
 
-class Utility:
+class Utility(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.identifier = {}
@@ -44,6 +44,7 @@ class Utility:
 		await ctx.message.delete()
 		self.save_data()
 
+	@commands.Cog.listener()
 	async def on_message(self, m:discord.Message):
 		if isinstance(m.guild, discord.Guild):
 			listed = ["!help", "!play", "!skip", "!np", "!lyrics", "!queue", "!q", "!clear", "!remove", "!repeat", "!dc", "!disconnect",
@@ -73,6 +74,7 @@ class Utility:
 							await asyncio.sleep(10)
 							await m.delete()
 
+	@commands.Cog.listener()
 	async def on_guild_remove(self, guild):
 		guild_id = str(guild.id)
 		if guild_id in self.identifier:

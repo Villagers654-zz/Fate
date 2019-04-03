@@ -6,7 +6,7 @@ import discord
 import asyncio
 import json
 
-class Changelog:
+class Changelog(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.changelogs = []

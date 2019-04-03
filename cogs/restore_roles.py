@@ -3,7 +3,7 @@ from os.path import isfile
 import asyncio
 import json
 
-class RestoreRoles:
+class RestoreRoles(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.data = {}
@@ -31,6 +31,7 @@ class RestoreRoles:
 		"Adds a users roles back if they leave and rejoin")
 		self.save_data()
 
+	@commands.Cog.listener()
 	async def on_member_join(self, member):
 		guild_id = str(member.guild.id)
 		member_id = str(member.id)
@@ -44,6 +45,7 @@ class RestoreRoles:
 					except:
 						pass
 
+	@commands.Cog.listener()
 	async def on_member_remove(self, member):
 		guild_id = str(member.guild.id)
 		member_id = str(member.id)
@@ -53,6 +55,7 @@ class RestoreRoles:
 				self.data[guild_id][member_id].append(role.id)
 			self.save_data()
 
+	@commands.Cog.listener()
 	async def on_guild_remove(self, guild):
 		guild_id = str(guild.id)
 		if guild_id in self.data:

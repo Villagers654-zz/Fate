@@ -4,7 +4,7 @@ import discord
 import json
 import time
 
-class Utility:
+class Lock(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.lock = {}
@@ -97,6 +97,7 @@ class Utility:
 		await ctx.send("Unlocked the server")
 		await ctx.message.add_reaction("👍")
 
+	@commands.Cog.listener()
 	async def on_member_join(self, m:discord.Member):
 		guild_id = str(m.guild.id)
 		member_id = str(m.id)
@@ -130,6 +131,7 @@ class Utility:
 					else:
 						await m.add_roles(role)
 
+	@commands.Cog.listener()
 	async def on_guild_remove(self, guild):
 		guild_id = str(guild.id)
 		if guild_id in self.lock:
@@ -137,4 +139,4 @@ class Utility:
 			self.save_data()
 
 def setup(bot):
-	bot.add_cog(Utility(bot))
+	bot.add_cog(Lock(bot))

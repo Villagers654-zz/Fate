@@ -5,7 +5,7 @@ import asyncio
 import random
 import json
 
-class Responses:
+class Responses(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.responses = {}
@@ -37,6 +37,7 @@ class Responses:
 
 # ~== Main ==~
 
+	@commands.Cog.listener()
 	async def on_message(self, m: discord.Message):
 		if isinstance(m.guild, discord.Guild):
 			if not m.author.bot:

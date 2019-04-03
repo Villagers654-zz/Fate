@@ -5,7 +5,7 @@ import requests
 import discord
 import json
 
-class NSFW:
+class NSFW(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 

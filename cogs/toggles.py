@@ -3,7 +3,7 @@ from os.path import isfile
 import discord
 import json
 
-class Toggles:
+class Toggles(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.responses = {}
@@ -17,15 +17,6 @@ class Toggles:
 
 	def luck(ctx):
 		return ctx.message.author.id == 264838866480005122
-
-# ~== Test ==~
-
-	@commands.command()
-	@commands.check(luck)
-	async def cogs_toggles(self, ctx):
-		await ctx.send('working')
-
-# ~== Main ==~
 
 	@commands.group(name='toggle', aliases=['t'])
 	@commands.has_permissions(manage_guild=True)
@@ -65,6 +56,7 @@ class Toggles:
 		with open("./data/userdata/config/toggles.json", "w") as outfile:
 			json.dump({"responses": self.responses, "mod": self.mod}, outfile, ensure_ascii=False)
 
+	@commands.Cog.listener()
 	async def on_message(self, message: discord.Message):
 		if str(message.guild.id) not in self.responses:
 			self.responses[str(message.guild.id)] = 'enabled'
@@ -76,8 +68,6 @@ class Toggles:
 			self.bot.load_extension('cogs.mod')
 		with open("./data/userdata/config/toggles.json", "w") as outfile:
 			json.dump({"responses": self.responses, "mod": self.mod}, outfile, ensure_ascii=False)
-
-# ~== Pings ==~
 
 def setup(bot):
 	bot.add_cog(Toggles(bot))

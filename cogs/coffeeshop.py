@@ -2,7 +2,7 @@ from discord.ext import commands
 import discord
 import random
 
-class CoffeeShop:
+class CoffeeShop(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 

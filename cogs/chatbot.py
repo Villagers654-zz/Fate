@@ -7,7 +7,7 @@ import random
 import time
 import json
 
-class ChatBot:
+class ChatBot(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.toggle = {}
@@ -151,6 +151,7 @@ class ChatBot:
 		self.prefixes[guild_id].pop(self.prefixes[guild_id].index(prefix))
 		await ctx.message.delete()
 
+	@commands.Cog.listener()
 	async def on_message(self, m: discord.Message):
 		if isinstance(m.guild, discord.Guild):
 			if not m.author.bot:
@@ -266,6 +267,7 @@ class ChatBot:
 					except:
 						pass
 
+	@commands.Cog.listener()
 	async def on_guild_remove(self, guild):
 		guild_id = str(guild.id)
 		if guild_id in self.toggle:

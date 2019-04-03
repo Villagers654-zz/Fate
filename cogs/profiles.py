@@ -9,7 +9,7 @@ import requests
 import discord
 import json
 
-class Profiles:
+class Profiles(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.name = {}

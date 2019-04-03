@@ -7,7 +7,7 @@ import random
 import json
 import os
 
-class Notepad:
+class Notepad(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.notes = {}

@@ -7,7 +7,7 @@ import json
 import time
 import os
 
-class Cookies:
+class Cookies(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.cookies = {}
@@ -43,6 +43,8 @@ class Cookies:
 		e = discord.Embed(color=colors.fate())
 		e.set_footer(text=f"Powered by Cookie Mix")
 		author_id = str(ctx.author.id)
+		if author_id not in self.cookies:
+			self.setup(author_id)
 		if user:
 			user_id = str(user.id)
 			if user.bot is True:

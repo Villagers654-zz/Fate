@@ -28,10 +28,10 @@ def get_prefix(bot, message):
 	return prefix
 
 files = ['error_handler', 'config', 'menus', 'core', 'mod', 'music', 'welcome', 'farewell', 'notes', 'archive', 'coffeeshop', 'custom',
-         'actions', 'reactions', 'responses', 'textart', 'fun', 'math', 'dev', '4b4t', 'readme', 'legit', 'reload', 'embeds', 'warning',
-         'profiles', 'save', 'clean_rythm', 'tother', 'utility', 'psutil', 'rules', 'duel_chat', 'selfroles', 'lock', 'backup', 'audit',
-         'cookies', 'team', 'anti_purge', 'emojis', 'logger', 'autorole', 'changelog', 'restore_roles', 'stats',
-         'chatbot', 'anti_spam', 'anti_raid', 'chatfilter', 'nsfw', 'leaderboards', 'chatlock']
+         'actions', 'reactions', 'responses', 'textart', 'fun', 'math', 'dev', '4b4t', 'readme', 'reload', 'embeds', 'warning', 'profiles',
+         'save', 'clean_rythm', 'utility', 'psutil', 'rules', 'duel_chat', 'selfroles', 'lock', 'backup', 'audit', 'cookies', 'team', 'stats',
+         'anti_purge', 'emojis', 'logger', 'autorole', 'changelog', 'restore_roles', 'chatbot', 'anti_spam', 'anti_raid', 'chatfilter', 'nsfw',
+         'leaderboards', 'chatlock']
 
 description = '''Fate[Zero]: Personal Bot'''
 bot = commands.Bot(command_prefix=get_prefix, case_insensitive=True, max_messages=16000)
@@ -125,6 +125,7 @@ if __name__ == '__main__':
 			cprint(f"{cogs}. Cog: {cog} - error - [{str(s - previous)[:3]}]", "red")
 			bot.info += f"{cogs}. Cog: {cog} - error - [{str(s - previous)[:3]}]\n"
 			error = traceback.format_exc()
+			print(traceback.format_exc())
 			previous = float(str(s)[:3])
 	if rank == cogs:
 		cprint(f"Loaded {rank}/{cogs} cogs :)", "magenta")

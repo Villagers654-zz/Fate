@@ -238,7 +238,7 @@ class VoiceState:
             self.voice = None
 
 
-class Music:
+class Music(commands.Cog):
 
     def luck(ctx):
         return ctx.message.author.id == 264838866480005122
@@ -269,6 +269,7 @@ class Music:
     async def __before_invoke(self, ctx):
         ctx.state = self.get_voice_state(ctx.guild)
 
+    @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
         if before.channel:
             if not after.channel:

@@ -4,7 +4,7 @@ import discord
 import asyncio
 import json
 
-class Legit:
+class Legit(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 

@@ -5,7 +5,7 @@ import random
 import psutil
 import os
 
-class embedsclass:
+class Embeds(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 
@@ -87,4 +87,4 @@ class embedsclass:
 			await ctx.send(f'**```ERROR: {type(e).__name__} - {e}```**')
 
 def setup(bot):
-    bot.add_cog(embedsclass(bot))
+	bot.add_cog(Embeds(bot))

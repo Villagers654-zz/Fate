@@ -4,7 +4,7 @@ import discord
 import asyncio
 import json
 
-class Utility:
+class Utility(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.images = {}
@@ -43,6 +43,7 @@ class Utility:
 			await ctx.send("Disabled channel limiter")
 		self.save_data()
 
+	@commands.Cog.listener()
 	async def on_message(self, m: discord.Message):
 		if isinstance(m.guild, discord.Guild):
 			guild_id = str(m.guild.id)
@@ -57,6 +58,7 @@ class Utility:
 					if len(m.attachments) < 1:
 						await m.delete()
 
+	@commands.Cog.listener()
 	async def on_guild_remove(self, guild):
 		guild_id = str(guild.id)
 		if guild_id in self.images:

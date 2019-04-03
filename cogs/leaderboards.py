@@ -10,7 +10,7 @@ import json
 import time
 import os
 
-class Leaderboards:
+class Leaderboards(commands.Cog):
 	def __init__(self, bot: commands.Bot):
 		self.bot = bot
 		self.cd = {}
@@ -240,6 +240,7 @@ class Leaderboards:
 		await ctx.send(file=discord.File('./data/images/backgrounds/results/galaxy.png',
 		    filename=os.path.basename('/data/images/backgrounds/results/galaxy.png')), embed=e)
 
+	@commands.Cog.listener()
 	async def on_message(self, m:discord.Message):
 		if isinstance(m.guild, discord.Guild):
 			if not m.author.bot:
@@ -277,6 +278,7 @@ class Leaderboards:
 
 					self.save_xp()
 
+	@commands.Cog.listener()
 	async def on_voice_state_update(self, member, before, after):
 		if isinstance(member.guild, discord.Guild):
 			if not member.bot:

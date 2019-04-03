@@ -4,7 +4,7 @@ import discord
 import asyncio
 import json
 
-class SelfRoles:
+class SelfRoles(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.message = {}
@@ -508,6 +508,7 @@ class SelfRoles:
 																															await embed.delete()
 		self.save_data()
 
+	@commands.Cog.listener()
 	async def on_raw_reaction_add(self, payload):
 		server = self.bot.get_guild(payload.guild_id)
 		user = server.get_member(payload.user_id)
@@ -549,6 +550,7 @@ class SelfRoles:
 								await user.add_roles(role)
 								break
 
+	@commands.Cog.listener()
 	async def on_raw_reaction_remove(self, payload):
 		server = self.bot.get_guild(payload.guild_id)
 		user = server.get_member(payload.user_id)
@@ -591,6 +593,7 @@ class SelfRoles:
 									await user.remove_roles(role)
 									break
 
+	@commands.Cog.listener()
 	async def on_message_delete(self, m: discord.Message):
 		guild_id = str(m.guild.id)
 		if guild_id in self.message:
@@ -599,6 +602,7 @@ class SelfRoles:
 				del self.roles[guild_id]
 				self.save_data()
 
+	@commands.Cog.listener()
 	async def on_guild_remove(self, guild):
 		guild_id = str(guild.id)
 		if guild_id in self.message:

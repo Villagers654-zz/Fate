@@ -1,8 +1,7 @@
 from discord.ext import commands
 import discord
-import random
 
-class Math:
+class Math(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 
@@ -59,4 +58,4 @@ class Math:
 			await ctx.send(f'**```{e}```**')
 
 def setup(bot):
-    bot.add_cog(Math(bot))
+	bot.add_cog(Math(bot))

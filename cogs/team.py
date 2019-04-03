@@ -5,7 +5,7 @@ from io import BytesIO
 import datetime
 import discord
 
-class AvapxianRegime:
+class AvapxianRegime(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 
@@ -56,6 +56,7 @@ class AvapxianRegime:
 			await msg.edit(embed=e)
 			return await ctx.message.delete()
 
+	@commands.Cog.listener()
 	async def on_message(self, m: discord.Message):
 		channel = self.bot.get_channel(562384658596364311)
 		if m.guild.id == 562380812230590531:

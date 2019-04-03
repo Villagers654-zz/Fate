@@ -6,7 +6,7 @@ import random
 import json
 import os
 
-class Welcome:
+class Welcome(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.toggle = {}
@@ -194,6 +194,7 @@ class Welcome:
 		await ctx.message.add_reaction("👍")
 		self.save_data()
 
+	@commands.Cog.listener()
 	async def on_member_join(self, m: discord.Member):
 		if isinstance(m.guild, discord.Guild):
 			guild_id = str(m.guild.id)
@@ -231,6 +232,7 @@ class Welcome:
 						del self.toggle[guild_id]
 						self.save_data()
 
+	@commands.Cog.listener()
 	async def on_guild_remove(self, guild):
 		guild_id = str(guild.id)
 		is_changed = False

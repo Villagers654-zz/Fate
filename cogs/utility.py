@@ -5,7 +5,7 @@ import discord
 import aiohttp
 import asyncio
 
-class Utility:
+class Utility(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.find = {}

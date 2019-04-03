@@ -4,7 +4,7 @@ import discord
 import asyncio
 import random
 
-class Reload:
+class Reload(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 

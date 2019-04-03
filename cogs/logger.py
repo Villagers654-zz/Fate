@@ -7,7 +7,7 @@ import asyncio
 import time
 import json
 
-class Logger:
+class Logger(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.cache = {}
@@ -174,11 +174,13 @@ class Logger:
 		    "member_unban, member_update, ghost_typing]"
 		await ctx.send(embed=e)
 
+	@commands.Cog.listener()
 	async def on_guild_remove(self, guild):
 		guild_id = str(guild.id)
 		if guild_id in self.channel:
 			del self.channel[guild_id]
 
+	@commands.Cog.listener()
 	async def on_typing(self, channel, user, when):
 		if not isinstance(channel, discord.DMChannel):
 			guild_id = str(channel.guild.id)
@@ -219,6 +221,7 @@ class Logger:
 				else:
 					del self.waiting[guild_id][user_id]
 
+	@commands.Cog.listener()
 	async def on_message(self, m: discord.Message):
 		if isinstance(m.guild, discord.Guild):
 			guild_id = str(m.guild.id)
@@ -226,6 +229,7 @@ class Logger:
 				self.cache[guild_id] = []
 			self.cache[guild_id].append(m.id)
 
+	@commands.Cog.listener()
 	async def on_message_edit(self, before, after):
 		if isinstance(before.guild, discord.Guild):
 			if before.pinned == after.pinned:
@@ -263,6 +267,7 @@ class Logger:
 							e.set_footer(text=datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p'))
 							await channel.send(embed=e)
 
+	@commands.Cog.listener()
 	async def on_message_delete(self, m: discord.Message):
 		if isinstance(m.guild, discord.Guild):
 			guild_id = str(m.guild.id)
@@ -308,6 +313,7 @@ class Logger:
 				for embed in m.embeds:
 					await channel.send(embed=embed)
 
+	@commands.Cog.listener()
 	async def on_raw_message_delete(self, payload):
 		guild_id = str(payload.guild_id)
 		if guild_id in self.channel:
@@ -336,6 +342,7 @@ class Logger:
 				e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 				await self.bot.get_channel(self.channel[guild_id]).send(embed=e)
 
+	@commands.Cog.listener()
 	async def on_guild_update(self, before, after):
 		guild_id = str(after.id)
 		if guild_id in self.channel:
@@ -357,6 +364,7 @@ class Logger:
 				e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 				await channel.send(embed=e)
 
+	@commands.Cog.listener()
 	async def on_guild_channel_create(self, channel):
 		guild_id = str(channel.guild.id)
 		if guild_id in self.channel:
@@ -376,6 +384,7 @@ class Logger:
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 			await channel.send(embed=e)
 
+	@commands.Cog.listener()
 	async def on_guild_channel_delete(self, channel):
 		guild_id = str(channel.guild.id)
 		if guild_id in self.channel:
@@ -399,6 +408,7 @@ class Logger:
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 			await log.send(embed=e)
 
+	@commands.Cog.listener()
 	async def on_guild_channel_update(self, before, after):
 		guild_id = str(before.guild.id)
 		if guild_id in self.channel:
@@ -477,6 +487,7 @@ class Logger:
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 			await channel.send(embed=e)
 
+	@commands.Cog.listener()
 	async def on_guild_role_create(self, role):
 		guild_id = str(role.guild.id)
 		if guild_id in self.channel:
@@ -494,6 +505,7 @@ class Logger:
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 			await channel.send(embed=e)
 
+	@commands.Cog.listener()
 	async def on_guild_role_delete(self, role):
 		guild_id = str(role.guild.id)
 		if guild_id in self.channel:
@@ -513,6 +525,7 @@ class Logger:
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 			await channel.send(embed=e)
 
+	@commands.Cog.listener()
 	async def on_guild_role_update(self, before, after):
 		guild_id = str(before.guild.id)
 		changed_permissions = ""
@@ -698,6 +711,7 @@ class Logger:
 							return
 				await channel.send(embed=e)
 
+	@commands.Cog.listener()
 	async def on_guild_emojis_update(self, guild, before, after):
 		guild_id = str(guild.id)
 		if guild_id in self.channel:
@@ -748,6 +762,7 @@ class Logger:
 								f"**After:** {future_emoji.name}")
 							return await channel.send(embed=e)
 
+	@commands.Cog.listener()
 	async def on_member_join(self, m: discord.Member):
 		guild_id = str(m.guild.id)
 		if guild_id in self.channel:
@@ -764,6 +779,7 @@ class Logger:
 			await channel.send(embed=e)
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 
+	@commands.Cog.listener()
 	async def on_member_remove(self, m: discord.Member):
 		guild_id = str(m.guild.id)
 		if guild_id in self.channel:
@@ -796,6 +812,7 @@ class Logger:
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 			await channel.send(embed=e)
 
+	@commands.Cog.listener()
 	async def on_member_ban(self, guild, user):
 		guild_id = str(guild.id)
 		if guild_id in self.channel:
@@ -816,6 +833,7 @@ class Logger:
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 			await channel.send(embed=e)
 
+	@commands.Cog.listener()
 	async def on_member_unban(self, guild, user):
 		guild_id = str(guild.id)
 		if guild_id in self.channel:
@@ -834,6 +852,7 @@ class Logger:
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 			await channel.send(embed=e)
 
+	@commands.Cog.listener()
 	async def on_member_update(self, before, after):
 		guild_id = str(before.guild.id)
 		change_value = None

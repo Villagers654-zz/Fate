@@ -5,13 +5,14 @@ import traceback
 import discord
 import sys
 
-class ErrorHandler:
+class ErrorHandler(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 
 	async def __error(self, ctx, error):
 		await ctx.send(error)
 
+	@commands.Cog.listener()
 	async def on_command_error(self, ctx, error):
 		if hasattr(ctx.command, 'on_error'):
 			return
@@ -68,6 +69,7 @@ class ErrorHandler:
 		message = await self.bot.get_channel(549192817097048080).send(embed=e)
 		await message.add_reaction("✔")
 
+	@commands.Cog.listener()
 	async def on_raw_reaction_add(self, data):
 		if not self.bot.get_user(data.user_id).bot:
 			if data.guild_id == config.server("id"):

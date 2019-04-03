@@ -1,8 +1,6 @@
 from discord.ext import commands
-import random
-import discord
 
-class textartclass:
+class textartclass(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 
@@ -67,4 +65,4 @@ class textartclass:
 			await ctx.send(f'**```ERROR: {type(e).__name__} - {e}```**')
 
 def setup(bot):
-    bot.add_cog(textartclass(bot))
+	bot.add_cog(textartclass(bot))

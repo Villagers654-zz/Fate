@@ -9,7 +9,7 @@ import json
 import time
 import os
 
-class Menus:
+class Menus(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.command_count = {}
@@ -18,12 +18,14 @@ class Menus:
 				dat = json.load(f)
 				self.command_count = dat["count"]
 
+	@commands.Cog.listener()
 	async def on_ready(self):
 		self.command_count[str(self.bot.user.id)] = 0
 		if isfile("./data/commands_used.json"):
 			with open("./data/commands_used.json", "w") as f:
 				json.dump({"count": self.command_count}, f, ensure_ascii=False)
 
+	@commands.Cog.listener()
 	async def on_message(self, msg):
 		if isinstance(msg.guild, discord.Guild):
 			guild_id = str(msg.guild.id)

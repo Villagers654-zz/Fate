@@ -1,23 +1,26 @@
 from bs4 import BeautifulSoup as bs
 from discord.ext import commands
 from os.path import isfile
-from utils import config
+from utils import config, colors
 import wikipedia.exceptions
+from PIL import Image
+from io import BytesIO
+import requests
 import wikipedia
 import discord
 import aiohttp
+import random
 import json
 import time
+import os
 
-class Core:
-	def __init__(self, bot):
+class Core(commands.Cog):
+	def __init__(self, bot: commands.Bot):
 		self.bot = bot
 		self.count = 0
 
 	def commands_used(self):
 		return self.count
-
-
 
 	@commands.command(name="commands")
 	async def _commands(self, ctx):
@@ -61,15 +64,48 @@ class Core:
 			json.dump(prefixes, f, indent=4)
 		await ctx.send(f"Changed the servers prefix to `{prefix}`")
 
+	def get(self, img):
+		if img == 0:
+			id = 562592340493991936
+		if img == 1:
+			id = 562592349805608960
+		if img == 2:
+			id = 562592369233494016
+		if img == 3:
+			id = 562592401177182208
+		if img == 4:
+			id = 562592422899744768
+		if img == 5:
+			id = 562592453215911936
+		return
+
 	@commands.command(pass_context=True)
 	async def ping(self, ctx):
-		e = discord.Embed(color=0x80b0ff)
-		e.description = "**Measuring ping:**"
+		e = discord.Embed(color=colors.fate())
+		e.set_author(name="**Measuring ping:**")
+		e.set_thumbnail(url="https://cdn.discordapp.com/emojis/562598266881966080.png?v=1")
 		before = time.monotonic()
 		message = await ctx.send(embed=e)
 		ping = (time.monotonic() - before) * 1000
+		if ping < 175:
+			img = "https://cdn.discordapp.com/emojis/562592256939393035.png?v=1"
+		else:
+			if ping < 250:
+				img = "https://cdn.discordapp.com/emojis/562592178204049408.png?v=1"
+			else:
+				if ping < 400:
+					img = "https://cdn.discordapp.com/emojis/562592177692213248.png?v=1"
+				else:
+					if ping < 550:
+						img = "https://cdn.discordapp.com/emojis/562592176463151105.png?v=1"
+					else:
+						if ping < 700:
+							img = "https://cdn.discordapp.com/emojis/562592175880405003.png?v=1"
+						else:
+							img = "https://cdn.discordapp.com/emojis/562592175192539146.png?v=1"
 		api = str(self.bot.latency * 1000)
 		api = api[:api.find(".")]
+		e.set_author(name="Bots Latency", icon_url=img)
 		e.description = f"**Message Trip:** `{int(ping)}ms`\n**Websocket Heartbeat:** `{api}ms`"
 		await message.edit(embed=e)
 

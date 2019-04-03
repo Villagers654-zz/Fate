@@ -3,7 +3,7 @@ from os.path import isfile
 import discord
 import json
 
-class Mod:
+class Mod(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.rules = {}
@@ -39,6 +39,7 @@ class Mod:
 		await ctx.send("Successfully set the rules 👍")
 		self.save_data()
 
+	@commands.Cog.listener()
 	async def on_guild_remove(self, guild):
 		guild_id = str(guild.id)
 		if guild_id in self.rules:

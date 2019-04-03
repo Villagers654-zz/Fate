@@ -5,7 +5,7 @@ import discord
 import asyncio
 import json
 
-class ChatFilter:
+class ChatFilter(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.toggle = []
@@ -92,6 +92,7 @@ class ChatFilter:
 			del self.blacklist[guild_id]
 		self.save_data()
 
+	@commands.Cog.listener()
 	async def on_message(self, m: discord.Message):
 		if isinstance(m.guild, discord.Guild):
 			guild_id = str(m.guild.id)
@@ -107,6 +108,7 @@ class ChatFilter:
 									await asyncio.sleep(0.5)
 									await m.delete()
 
+	@commands.Cog.listener()
 	async def on_message_edit(self, before, after):
 		if isinstance(before.guild, discord.Guild):
 			guild_id = str(before.guild.id)
@@ -122,6 +124,7 @@ class ChatFilter:
 								await asyncio.sleep(0.5)
 								await after.delete()
 
+	@commands.Cog.listener()
 	async def on_guild_remove(self, guild):
 		guild_id = str(guild.id)
 		if guild_id in self.toggle:

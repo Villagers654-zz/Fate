@@ -4,7 +4,7 @@ import requests
 import discord
 import asyncio
 
-class Emojis:
+class Emojis(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 

@@ -6,7 +6,7 @@ import discord
 import asyncio
 import os
 
-class Defender:
+class Defender(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 
@@ -90,6 +90,7 @@ class Defender:
 		f.close()
 		await ctx.send('done')
 
+	@commands.Cog.listener()
 	async def on_ready(self):
 		await asyncio.sleep(0.5)
 		channel = self.bot.get_channel(config.server("log"))
@@ -97,15 +98,6 @@ class Defender:
 		(output, err) = p.communicate()
 		output = str(output)
 		output = output.replace("b'", "'")
-		h = '75.107.232.117'
-		c = '166.182.244'
-		if h in output:
-			color = 0x39FF14
-		else:
-			if c in output:
-				color = 0x39FF14
-			else:
-				color = 0xff0000
 		color = 0x39FF14
 		load = str(self.bot.LOAD_TIME)[:3]
 		login = str(self.bot.LOGIN_TIME - self.bot.LOAD_TIME)[:3]
@@ -132,15 +124,6 @@ class Defender:
 		e.add_field(name='Security Check', value=f'```{output}```')
 		e.add_field(name="Welcome", value=info, inline=False)
 		await channel.send(embed=e)
-		h = ['75.107.232.117', '166.182.244']
-		check = 0
-		for i in h:
-			if i in output:
-				check += 1
-		if check == 0:
-			if ":pts" not in output:
-				if 1 > 2:
-					await self.bot.get_channel(514213558549217330).send("<@264838866480005122> someone might be tampering with my files")
 
 def setup(bot):
 	bot.add_cog(Defender(bot))

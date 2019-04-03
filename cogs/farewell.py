@@ -6,7 +6,7 @@ import random
 import json
 import os
 
-class Farewell:
+class Farewell(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.toggle = {}
@@ -147,6 +147,7 @@ class Farewell:
 		await ctx.message.add_reaction("👍")
 		self.save_data()
 
+	@commands.Cog.listener()
 	async def on_member_remove(self, m: discord.Member):
 		if isinstance(m.guild, discord.Guild):
 			guild_id = str(m.guild.id)
@@ -175,6 +176,7 @@ class Farewell:
 						del self.toggle[guild_id]
 						self.save_data()
 
+	@commands.Cog.listener()
 	async def on_guild_remove(self, guild):
 		guild_id = str(guild.id)
 		if guild_id in self.toggle:

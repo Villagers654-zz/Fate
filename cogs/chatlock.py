@@ -5,7 +5,7 @@ import discord
 import asyncio
 import json
 
-class ChatLock:
+class ChatLock(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.toggle = {}
@@ -68,6 +68,7 @@ class ChatLock:
 		await ctx.send("Disabled chatlock")
 		self.save_data()
 
+	@commands.Cog.listener()
 	async def on_message(self, m: discord.Message):
 		if not m.author.bot:
 			guild_id = str(m.guild.id)
@@ -79,6 +80,7 @@ class ChatLock:
 						await asyncio.sleep(0.5)
 						await m.delete()
 
+	@commands.Cog.listener()
 	async def on_guild_remove(self, guild):
 		guild_id = str(guild.id)
 		if guild_id in self.toggle:

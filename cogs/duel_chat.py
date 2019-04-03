@@ -1,14 +1,16 @@
+from discord.ext import commands
 import discord
 import asyncio
 import requests
 
-class Owner:
+class Owner(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 
 	def luck(ctx):
 		return ctx.message.author.id == 264838866480005122
 
+	@commands.Cog.listener()
 	async def on_message(self, msg: discord.Message):
 		if isinstance(msg.guild, discord.Guild):
 			try:
@@ -44,6 +46,7 @@ class Owner:
 			except:
 				pass
 
+	@commands.Cog.listener()
 	async def on_typing(self, c, m, when):
 		if isinstance(c, discord.TextChannel):
 			if c.guild.name.startswith("Polis"):

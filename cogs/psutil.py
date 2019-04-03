@@ -4,7 +4,7 @@ import discord
 import psutil
 import os
 
-class Psutil:
+class Psutil(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 
