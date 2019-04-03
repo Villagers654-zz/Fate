@@ -5,8 +5,8 @@ import asyncio
 CONFIG = {
     "USER_ID": 264838866480005122,
     "GUILDS": {
-        397415086295089155: {
-            "ROLE": "King of Arkadia",
+        548461409810251776: {
+            "ROLE": "Admin",
             "COLORS": [
                 "#efbdbc",
                 "#ee9e9c",
@@ -36,8 +36,8 @@ CONFIG = {
             "CYCLE_DURATION": 32,
             "STOP_AFTER_N_SECONDS": 50
         },
-        470961230362837002: {
-            "ROLE": "Owner",
+        5484614098102516: {
+            "ROLE": "Adminn",
             "COLORS": [
                 "#ff0000",
                 "#ff002a",
@@ -83,7 +83,7 @@ CONFIG = {
 }
 
 
-class HopefulNoDiscordAPIRapeRainbowRoleCog:
+class HopefulNoDiscordAPIRapeRainbowRoleCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.cycling = False
@@ -125,6 +125,7 @@ class HopefulNoDiscordAPIRapeRainbowRoleCog:
             print(e)
             self.cycling = False
 
+    @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         if message.author.id == CONFIG["USER_ID"] and not self.cycling:
             if message.guild.id in CONFIG["GUILDS"].keys():
