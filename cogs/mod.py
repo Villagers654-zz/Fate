@@ -46,7 +46,7 @@ class Mod(commands.Cog):
 			self.purge[channel_id] = True
 			await ctx.message.channel.purge(before=ctx.message, limit=amount)
 			await ctx.message.delete()
-			self.purge[channel_id] = False
+			del self.purge[channel_id]
 			return await ctx.send("{}, successfully purged {} messages".format(ctx.author.name, amount), delete_after=5)
 		if self.purge[channel_id] is True:
 			return await ctx.send("I'm already purging..")
@@ -55,7 +55,7 @@ class Mod(commands.Cog):
 			await ctx.message.channel.purge(before=ctx.message, limit=amount)
 			await ctx.message.delete()
 			await ctx.send("{}, successfully purged {} messages".format(ctx.author.name, amount), delete_after=5)
-			self.purge[channel_id] = False
+			del self.purge[channel_id]
 
 	@commands.command(name="purge_user", description="Usage: `.purge_user @user amount`")
 	@commands.has_permissions(manage_messages=True)
@@ -73,7 +73,7 @@ class Mod(commands.Cog):
 					current_position += 1
 					if current_position >= amount:
 						del self.purge[channel_id]
-						await ctx.send("{}, successfully purged {} images".format(ctx.author.name, amount), delete_after=5)
+						await ctx.send(f"{ctx.author.display_name}, successfully purged {amount} images", delete_after=5)
 						return await ctx.message.delete()
 		if channel_id in self.purge:
 			return await ctx.send("I'm already purging..")
@@ -95,7 +95,7 @@ class Mod(commands.Cog):
 					if current_position == 250:
 						if current_position >= amount:
 							del self.purge[channel_id]
-							await ctx.send("{}, successfully purged {} images".format(ctx.author.name, amount), delete_after=5)
+							await ctx.send(f"{ctx.author.display_name}, successfully purged {amount} messages", delete_after=5)
 							return await ctx.message.delete()
 		if channel_id in self.purge:
 			return await ctx.send("I'm already purging..")
@@ -116,7 +116,7 @@ class Mod(commands.Cog):
 					current_position += 1
 					if current_position >= amount:
 						del self.purge[channel_id]
-						await ctx.send("{}, successfully purged {} embeds".format(ctx.author.name, amount), delete_after=5)
+						await ctx.send(f"{ctx.author.display_name}, successfully purged {amount} embeds", delete_after=5)
 						return await ctx.message.delete()
 		if channel_id in self.purge:
 			return await ctx.send("I'm already purging..")
