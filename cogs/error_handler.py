@@ -32,7 +32,7 @@ class ErrorHandler(commands.Cog):
 			return await ctx.send(error)
 		elif isinstance(error, commands.CheckFailure):
 			await ctx.message.add_reaction('⚠')
-			return await ctx.send(str(error).replace("command.", f"`{ctx.command}`"))
+			return await ctx.send(f"You don't have permission to use `{ctx.command}`")
 		elif isinstance(error, discord.errors.NotFound):
 			return
 		elif isinstance(error, discord.errors.Forbidden):
