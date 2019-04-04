@@ -380,14 +380,9 @@ class Dev(commands.Cog):
 	@commands.Cog.listener()
 	async def on_message(self, m: discord.Message):
 		if isinstance(m.guild, discord.Guild):
-			if "4B4T" in m.guild.name:
-				if m.author.name == "Legit":
-					if "purchase" in m.content or "$" in m.content:
-						await m.delete()
 			if m.content.lower().startswith("pls magik <@264838866480005122>"):
 				def pred(m):
 					return m.author.id == 270904126974590976 and m.channel == m.channel
-
 				try:
 					msg = await self.bot.wait_for('message', check=pred, timeout=10.0)
 				except asyncio.TimeoutError:

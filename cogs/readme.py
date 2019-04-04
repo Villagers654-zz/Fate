@@ -1,23 +1,13 @@
 from discord.ext import commands
+from utils import checks
 import discord
 
 class Readme(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 
-	def luck(ctx):
-		return ctx.message.author.id == 264838866480005122
-
-# ~== Test ==~
-
 	@commands.command()
-	@commands.check(luck)
-	async def cogs_readme(self, ctx):
-		await ctx.send('working')
-
-# ~== Fun ==~
-
-	@commands.command()
+	@commands.check(checks.luck)
 	async def updatereadme(self, ctx):
 		try:
 			channel = self.bot.get_channel(470963498914938880)
