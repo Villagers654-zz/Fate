@@ -11,14 +11,15 @@ class Emojis(commands.Cog):
 	@commands.command(name="emoji", aliases=["emote"], description="Sends the emoji's image file")
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
-	async def _emoji(self, ctx, emoji: discord.PartialEmoji):
-		e = discord.Embed(color=colors.fate())
-		e.set_author(name=emoji.name, icon_url=ctx.author.avatar_url)
-		e.set_image(url=emoji.url)
-		e.set_footer(text=f"Requested by {ctx.author.display_name}")
-		await ctx.send(embed=e)
-		await asyncio.sleep(0.5)
-		await ctx.message.delete()
+	async def _emoji(self, ctx, *emoji: discord.PartialEmoji):
+		for emoji in emoji:
+			e = discord.Embed(color=colors.fate())
+			e.set_author(name=emoji.name, icon_url=ctx.author.avatar_url)
+			e.set_image(url=emoji.url)
+			e.set_footer(text=f"Requested by {ctx.author.display_name}")
+			await ctx.send(embed=e)
+			await asyncio.sleep(0.5)
+			await ctx.message.delete()
 
 	@commands.command(name="addemoji", aliases=["addemote"])
 	@commands.cooldown(1, 5, commands.BucketType.guild)
@@ -73,9 +74,10 @@ class Emojis(commands.Cog):
 	@commands.command(name="delemoji", aliases=["delemote"])
 	@commands.cooldown(1, 5, commands.BucketType.guild)
 	@commands.has_permissions(manage_emojis=True)
-	async def _delemoji(self, ctx, emoji: discord.Emoji):
-		await emoji.delete(reason=ctx.author.name)
-		await ctx.send(f"Deleted emote `{emoji.name}`")
+	async def _delemoji(self, ctx, *emoji: discord.Emoji):
+		for emoji in emoji
+			await emoji.delete(reason=ctx.author.name)
+			await ctx.send(f"Deleted emote `{emoji.name}`")
 
 	@commands.command(name="rename_emoji")
 	@commands.cooldown(1, 5, commands.BucketType.guild)
