@@ -65,9 +65,10 @@ class Emojis(commands.Cog):
 	@commands.command(name="stealemoji", aliases=["stealemote", "fromemote", "fromemoji"])
 	@commands.has_permissions(manage_emojis=True)
 	@commands.cooldown(1, 5, commands.BucketType.guild)
-	async def _stealemoji(self, ctx, emoji: discord.PartialEmoji):
-		await ctx.guild.create_custom_emoji(name=emoji.name, image=requests.get(emoji.url).content, reason=ctx.author.name)
-		await ctx.send(f"Added `{emoji.name}` to emotes")
+	async def _stealemoji(self, ctx, *emoji: discord.PartialEmoji):
+		for emoji in emoji:
+			await ctx.guild.create_custom_emoji(name=emoji.name, image=requests.get(emoji.url).content, reason=ctx.author.name)
+			await ctx.send(f"Added `{emoji.name}` to emotes")
 
 	@commands.command(name="delemoji", aliases=["delemote"])
 	@commands.cooldown(1, 5, commands.BucketType.guild)
