@@ -1,17 +1,18 @@
 from bs4 import BeautifulSoup as bs
 from discord.ext import commands
 from utils import config, colors
+from time import time, monotonic
 import wikipedia.exceptions
 from os.path import isfile
 import wikipedia
 import discord
 import aiohttp
 import json
-import time
 
 class Core(commands.Cog):
 	def __init__(self, bot: commands.Bot):
 		self.bot = bot
+		self.last = {}
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -62,9 +63,9 @@ class Core(commands.Cog):
 	async def ping(self, ctx):
 		e = discord.Embed(color=colors.fate())
 		e.set_author(name="Measuring ping:")
-		before = time.monotonic()
+		before = monotonic()
 		message = await ctx.send(embed=e)
-		ping = (time.monotonic() - before) * 1000
+		ping = (monotonic() - before) * 1000
 		if ping < 175:
 			img = "https://cdn.discordapp.com/emojis/562592256939393035.png?v=1"
 		else:
@@ -107,6 +108,13 @@ class Core(commands.Cog):
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.bot_has_permissions(embed_links=True)
 	async def ud(self,ctx,*,query:str):
+		channel_id = str(ctx.channel.id)
+		if channel_id not in self.last:
+			self.last[channel_id] = (None, None)
+		if query == self.last[channel_id][0]:
+			if self.last[channel_id][1] > time() - 60:
+				return await ctx.message.add_reaction("❌")
+		self.last[channel_id] = (query, time())
 		url = "http://www.urbandictionary.com/define.php?term={}".format(query.replace(" ","%20"))
 		async with aiohttp.ClientSession() as sess:
 			async with sess.get(url) as resp:
