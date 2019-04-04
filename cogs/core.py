@@ -4,7 +4,9 @@ from utils import config, colors
 from time import time, monotonic
 import wikipedia.exceptions
 from os.path import isfile
+from io import BytesIO
 import wikipedia
+import requests
 import discord
 import aiohttp
 import json
@@ -135,6 +137,20 @@ class Core(commands.Cog):
 			await ctx.send("Either the page doesn't exist, or you typed it in wrong. Either way, please try again.")
 		except Exception as e:
 			await ctx.send(f'**```ERROR: {type(e).__name__} - {e}```**')
+
+	@commands.Cog.listener()
+	async def on_message(self, msg: discord.Message):
+		if isinstance(msg.channel, discord.DMChannel):
+			channel = self.bot.get_channel(552828495244558381)
+			if not msg.attachments:
+				if msg.author.id == self.bot.user.id:
+					return await channel.send(f"__**Fate --> {msg.channel.recipient}:**__ {msg.content}")
+				await channel.send(f"__**{msg.author}:**__ {msg.content}")
+			else:
+				for attachment in msg.attachments:
+					await channel.send(f"__**{msg.author.name}:**__ {msg.content}",
+						file=discord.File(BytesIO(requests.get(attachment.url).content),
+					       filename=attachment.filename))
 
 def setup(bot):
 	bot.add_cog(Core(bot))
