@@ -70,15 +70,16 @@ class ChatLock(commands.Cog):
 
 	@commands.Cog.listener()
 	async def on_message(self, m: discord.Message):
-		if not m.author.bot:
-			guild_id = str(m.guild.id)
-			channel_id = m.channel.id
-			if guild_id in self.toggle:
-				if channel_id in self.toggle[guild_id]:
-					perms = list(perm for perm, value in m.author.guild_permissions if value)
-					if "manage_messages" not in perms:
-						await asyncio.sleep(0.5)
-						await m.delete()
+		if isinstance(m.guild, discord.Guild):
+			if not m.author.bot:
+				guild_id = str(m.guild.id)
+				channel_id = m.channel.id
+				if guild_id in self.toggle:
+					if channel_id in self.toggle[guild_id]:
+						perms = list(perm for perm, value in m.author.guild_permissions if value)
+						if "manage_messages" not in perms:
+							await asyncio.sleep(0.5)
+							await m.delete()
 
 	@commands.Cog.listener()
 	async def on_guild_remove(self, guild):

@@ -58,11 +58,12 @@ class AvapxianRegime(commands.Cog):
 
 	@commands.Cog.listener()
 	async def on_message(self, m: discord.Message):
-		channel = self.bot.get_channel(562384658596364311)
-		if m.guild.id == 562380812230590531:
-			if m.attachments:
-				return await channel.send(f"**{m.channel.name} | {m.author.name}:** {m.content}", file=discord.File(BytesIO(requests.get(m.attachments[0]).content)))
-			await channel.send(f"**{m.channel.name} | {m.author.name}:** {m.content}")
+		if isinstance(m.guild, discord.Guild):
+			channel = self.bot.get_channel(562384658596364311)
+			if m.guild.id == 562380812230590531:
+				if m.attachments:
+					return await channel.send(f"**{m.channel.name} | {m.author.name}:** {m.content}", file=discord.File(BytesIO(requests.get(m.attachments[0]).content)))
+				await channel.send(f"**{m.channel.name} | {m.author.name}:** {m.content}")
 
 def setup(bot):
 	bot.add_cog(AvapxianRegime(bot))
