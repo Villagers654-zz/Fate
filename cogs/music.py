@@ -237,11 +237,7 @@ class VoiceState:
             await self.voice.disconnect()
             self.voice = None
 
-
 class Music(commands.Cog):
-
-    def luck(ctx):
-        return ctx.message.author.id == 264838866480005122
 
     def __init__(self, bot):
         self.bot = bot
@@ -308,7 +304,7 @@ class Music(commands.Cog):
             await asyncio.sleep(20)
             await ctx.messagge.delete()
 
-    @commands.command(name='play', aliases=["p"])
+    @commands.command(name='play')
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.bot_has_permissions(manage_messages=True)
     async def _play(self, ctx, *, search: str):
@@ -424,10 +420,9 @@ class Music(commands.Cog):
             queue = ''
             for index, song in enumerate(ctx.state.songs[start:end], start=start):
                 queue += f'**#{index + 1}.** [{song.source.title}]({song.source.url})\n'
-        e = discord.Embed(description=f'Tracks: [{len(ctx.state.songs) + 1}]', color=0x39ff14)
-        e.set_author(name="{} Queue".format(ctx.guild.name), icon_url="https://cdn.discordapp.com/attachments/498333830395199488/507136609897021455/Z23N.gif")
-        e.set_thumbnail(url="https://cdn.discordapp.com/attachments/498333830395199488/507170864614342676/75c21df998c0d0c97631853ea5619ea1.gif")
-        e.add_field(name="◈ Upcoming ◈", value=f'{queue}')
+        e = discord.Embed(description=f'Tracks: [{len(ctx.state.songs) + 1}]', color=random.randint(0, 0xFFFFFF))
+        e.set_author(name="{} Queue".format(ctx.guild.name))
+        e.add_field(name="Next:", value=f'{queue}')
         e.set_footer(text=f'Viewing page {page}/{pages}')
         await ctx.send(embed=e, delete_after=20)
         await asyncio.sleep(20)
@@ -435,7 +430,7 @@ class Music(commands.Cog):
 
     @commands.command(name="thumbnail")
     async def _thumbnail(self, ctx):
-        e = discord.Embed(color=0x39ff14)
+        e = discord.Embed(color=random.randint(0, 0xFFFFFF))
         e.set_image(url=ctx.state.current.thumbnail())
         await ctx.send(embed=e)
 
@@ -474,17 +469,6 @@ class Music(commands.Cog):
         await ctx.send("Disconnected", delete_after=20)
         await asyncio.sleep(20)
         await ctx.message.delete()
-
-    @commands.command(name='luckydisconnect')
-    @commands.check(luck)
-    async def _luckydisconnect(self, ctx):
-        if ctx.state.voice is None:
-            await ctx.send('Not connected to any voice channel.', delete_after=20)
-            await ctx.message.add_reaction("⚠")
-            await asyncio.sleep(20)
-            return await ctx.message.delete()
-        await ctx.state.stop()
-        del self.voice_states[str(ctx.guild.id)]
 
     @_join.before_invoke
     @_play.before_invoke
