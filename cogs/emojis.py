@@ -2,7 +2,6 @@ from discord.ext import commands
 from utils import colors
 import requests
 import discord
-import asyncio
 
 class Emojis(commands.Cog):
 	def __init__(self, bot):
@@ -16,10 +15,7 @@ class Emojis(commands.Cog):
 			e = discord.Embed(color=colors.fate())
 			e.set_author(name=emoji.name, icon_url=ctx.author.avatar_url)
 			e.set_image(url=emoji.url)
-			e.set_footer(text=f"Requested by {ctx.author.display_name}")
 			await ctx.send(embed=e)
-			await asyncio.sleep(0.5)
-			await ctx.message.delete()
 
 	@commands.command(name="addemoji", aliases=["addemote"])
 	@commands.cooldown(1, 5, commands.BucketType.guild)
@@ -75,7 +71,7 @@ class Emojis(commands.Cog):
 	@commands.cooldown(1, 5, commands.BucketType.guild)
 	@commands.has_permissions(manage_emojis=True)
 	async def _delemoji(self, ctx, *emoji: discord.Emoji):
-		for emoji in emoji
+		for emoji in emoji:
 			await emoji.delete(reason=ctx.author.name)
 			await ctx.send(f"Deleted emote `{emoji.name}`")
 
