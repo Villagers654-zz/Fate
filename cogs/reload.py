@@ -26,7 +26,10 @@ class Reload(commands.Cog):
 			await asyncio.sleep(0.5)
 			return await ctx.message.delete()
 		try:
-			self.bot.unload_extension(f'cogs.{module}')
+			try:
+				self.bot.unload_extension(f'cogs.{module}')
+			except:
+				pass
 			self.bot.load_extension(f'cogs.{module}')
 		except Exception as e:
 			e = discord.Embed(color=colors.fate())
