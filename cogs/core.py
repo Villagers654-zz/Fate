@@ -36,7 +36,7 @@ class Core(commands.Cog):
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
-	async def repeat(self, ctx, *, content: commands.clean_content):
+	async def say(self, ctx, *, content: commands.clean_content):
 		await ctx.send(content)
 		await ctx.message.delete()
 

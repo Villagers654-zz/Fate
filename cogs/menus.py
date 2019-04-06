@@ -54,7 +54,7 @@ class Menus(commands.Cog):
 					return await ctx.send(cmd.description)
 			return await ctx.send("Either the command wasn't found or it has no help message")
 		e = discord.Embed(title="~~~====🥂🍸🍷Help🍷🍸🥂====~~~", color=0x80b0ff)
-		e.add_field(name="◈ Core ◈", value="`leaderboard` `gleaderboard` `ggleaderboard` `mleaderboard` `gmleaderboard` `vcleaderboard` `gvcleaderboard` `changelog` `partners` `discords` `servers` `config` `prefix` `realms` `repeat` `links` `ping` `info`", inline=False)
+		e.add_field(name="◈ Core ◈", value="`leaderboard` `gleaderboard` `ggleaderboard` `mleaderboard` `gmleaderboard` `vcleaderboard` `gvcleaderboard` `changelog` `partners` `discords` `servers` `config` `prefix` `realms` `links` `ping` `info` `say`", inline=False)
 		e.add_field(name="◈ Responses ◈", value="**`disableresponses` `enableresponses`:** `@Fate` `hello` `ree` `kys` `gm` `gn`", inline=False)
 		e.add_field(name="◈ Music ◈", value="`join` `summon` `play` `stop` `skip` `pause` `resume` `volume` `queue` `thumbnail` `remove` `shuffle` `dc` `np`", inline=False)
 		e.add_field(name="◈ Utility ◈", value="`channelinfo` `servericon` `serverinfo` `userinfo` `test_color` `makepoll` `welcome` `farewell` `logger` `emoji` `addemoji` `stealemoji` `rename_emoji` `delemoji` `owner` `avatar` `topic` `timer` `note` `quicknote` `notes` `wiki` `find` `ud` `id`", inline=False)
