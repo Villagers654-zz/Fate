@@ -362,8 +362,6 @@ class Dev(commands.Cog):
 		channel = self.bot.get_channel(503902845741957131)
 		await channel.send(embed=log)
 
-# ~== Fun ==~
-
 	@commands.command()
 	@commands.check(checks.luck)
 	async def luckyspam(self, ctx, times: int, *, content='Format: .spam numberofmessages "content"'):
