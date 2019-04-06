@@ -145,9 +145,11 @@ class ChatBot(commands.Cog):
 		await ctx.send(self.prefixes[guild_id])
 
 	@commands.command(name="delkey")
+	@commands.check(checks.luck)
 	async def delkey(self, ctx, key: int):
 		del self.toggle[str(key)]
 		await ctx.message.add_reaction("👍")
+		self.save_data()
 
 	@commands.command(name="delprefix")
 	@commands.check(checks.luck)
