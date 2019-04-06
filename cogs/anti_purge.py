@@ -1,6 +1,7 @@
 from discord.ext import commands
 from os.path import isfile
 from utils import colors
+from time import time
 import datetime
 import discord
 import json
@@ -36,7 +37,7 @@ class AntiPurge(commands.Cog):
 			e = discord.Embed(color=colors.red())
 			e.set_author(name="| Anti Purge", icon_url=ctx.author.avatar_url)
 			e.set_thumbnail(url=ctx.guild.icon_url)
-			e.description = "Bans a user if they attempt to mass kick/ban members ~ " \
+			e.description = "Bans a user if they attempt to mass kick/ban members or mass delete channels ~ " \
 				"this requires my role to be above theirs & can only be toggled by the guilds owner"
 			e.add_field(name="◈ Usage ◈", value=
 			    ".anti_purge enable\n"
@@ -71,13 +72,41 @@ class AntiPurge(commands.Cog):
 				if datetime.datetime.utcnow() - datetime.timedelta(seconds=3) < entry.created_at:
 					if str(entry.action) in ["AuditLogAction.kick", "AuditLogAction.ban"]:
 						user_id = str(entry.user.id)
+						now = int(time() / 15)
 						if guild_id not in self.cd:
 							self.cd[guild_id] = {}
 						if user_id not in self.cd[guild_id]:
-							self.cd[guild_id][user_id] = 0
-						self.cd[guild_id][user_id] = time.time() + 10
-						if self.cd[guild_id][user_id] > time.time() + 21:
+							self.cd[guild_id][user_id] = [now, 0]
+						if self.cd[guild_id][user_id][0] == now:
+							self.cd[guild_id][user_id][1] += 1
+						else:
+							self.cd[guild_id][user_id] = [now, 0]
+						if self.cd[guild_id][user_id][1] > 2:
 							await m.guild.ban(entry.user, reason="Attempted Purge", delete_message_days=0)
+
+	@commands.Cog.listener()
+	async def on_guild_channel_delete(self, channel):
+		guild_id = str(channel.guild.id)
+		if guild_id in self.toggle:
+			async for entry in channel.guild.audit_logs(limit=1):
+				if datetime.datetime.utcnow() - datetime.timedelta(seconds=3) < entry.created_at:
+					if str(entry.action) in ["AuditLogAction.channel_delete"]:
+						user_id = str(entry.user.id)
+						now = int(time() / 15)
+						if guild_id not in self.cd:
+							self.cd[guild_id] = {}
+						if user_id not in self.cd[guild_id]:
+							self.cd[guild_id][user_id] = [now, 0]
+						if self.cd[guild_id][user_id][0] == now:
+							self.cd[guild_id][user_id][1] += 1
+						else:
+							self.cd[guild_id][user_id] = [now, 0]
+						if self.cd[guild_id][user_id][1] > 2:
+							try:
+								await channel.guild.ban(entry.user, reason="Attempted Purge", delete_message_days=0)
+								await channel.guild.owner.send(f"Banned `{entry.user}` in **{channel.guild.name}** for attempting a purge")
+							except:
+								pass
 
 def setup(bot):
 	bot.add_cog(AntiPurge(bot))
