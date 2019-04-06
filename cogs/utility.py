@@ -164,9 +164,9 @@ class Utility(commands.Cog):
 			await asyncio.sleep(float(t))
 			await ctx.send(f"{ctx.message.author.mention}, your timer for {r} has expired! I was instructed to remind you about `{remember}`!")
 
-	@commands.command(name="find", aliases=["find_message"])
+	@commands.command(name="findmsg")
 	@commands.cooldown(1, 5, commands.BucketType.channel)
-	async def _find(self, ctx, *, content=None):
+	async def _findmsg(self, ctx, *, content=None):
 		if content is None:
 			e = discord.Embed(color=colors.fate())
 			e.set_author(name="Error ⚠", icon_url=ctx.author.avatar_url)
