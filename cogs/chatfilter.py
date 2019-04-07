@@ -119,10 +119,10 @@ class ChatFilter(commands.Cog):
 							if phrase.lower() in after.content.lower():
 								await asyncio.sleep(0.5)
 								await after.delete()
-						else:
-							if phrase.lower() in after.content.replace(" ", "").lower():
-								await asyncio.sleep(0.5)
-								await after.delete()
+							else:
+								if phrase.lower() in after.content.replace(" ", "").lower():
+									await asyncio.sleep(0.5)
+									await after.delete()
 
 	@commands.Cog.listener()
 	async def on_guild_remove(self, guild):
