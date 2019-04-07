@@ -68,8 +68,6 @@ class Anti_Spam(commands.Cog):
 			if guild_id in self.toggle:
 				if m.author.bot:
 					return
-				if m.author.top_role.position >= m.guild.get_member(self.bot.user.id).top_role.position:
-					return await m.delete()
 				user_id = str(m.author.id)
 				now = int(time() / 5)
 				if guild_id not in self.cd:
@@ -81,6 +79,8 @@ class Anti_Spam(commands.Cog):
 				else:
 					self.cd[guild_id][user_id] = [now, 0]
 				if self.cd[guild_id][user_id][1] > 2:
+					if m.author.top_role.position >= m.guild.get_member(self.bot.user.id).top_role.position:
+						return await m.delete()
 					if guild_id not in self.working:
 						self.working[guild_id] = {}
 					if user_id in self.working[guild_id]:
