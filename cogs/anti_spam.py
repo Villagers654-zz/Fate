@@ -23,7 +23,8 @@ class Anti_Spam(commands.Cog):
 		with open("./data/userdata/anti_spam.json", "w") as f:
 			json.dump({"toggle": self.toggle}, f)
 
-	@commands.group(name="anti_spam")
+	@commands.group(name="anti_spam", aliases=["antispam"])
+	@commands.bot_has_permissions(embed_links=True)
 	async def _anti_spam(self, ctx):
 		if not ctx.invoked_subcommand:
 			toggle = "disabled"
