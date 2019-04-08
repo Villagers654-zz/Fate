@@ -103,8 +103,8 @@ class ChatFilter(commands.Cog):
 							if phrase in m.content:
 								await asyncio.sleep(0.5)
 								await m.delete()
-						else:
-							if phrase in m.content.replace(" ", ""):
+							else:
+								if phrase in m.content.replace(" ", ""):
 									await asyncio.sleep(0.5)
 									await m.delete()
 
