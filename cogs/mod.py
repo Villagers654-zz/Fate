@@ -241,8 +241,8 @@ class Mod(commands.Cog):
 		await ctx.message.add_reaction('👍')
 
 	@commands.command(name="massnick")
-	@commands.has_permissions(administrator=True)
-	@commands.bot_has_permissions(administrator=True)
+	@commands.has_permissions(manage_nicknames=True)
+	@commands.bot_has_permissions(manage_nicknames=True)
 	async def _massnick(self, ctx, *, nick=None):
 		guild_id = str(ctx.guild.id)
 		if guild_id in self.massnick:
