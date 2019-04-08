@@ -40,7 +40,9 @@ class ErrorHandler(commands.Cog):
 			return await ctx.send(error)
 		elif isinstance(error, commands.CheckFailure):
 			await ctx.message.add_reaction('⚠')
-			return await ctx.send(str(error).replace("command", ctx.command))
+			return await ctx.send(str(error).replace("command", str(ctx.command)))
+		elif isinstance(error, KeyError):
+			return await ctx.send(f"KeyError: {error}")
 		elif isinstance(error, discord.errors.Forbidden):
 			try:
 				await ctx.send(error)
