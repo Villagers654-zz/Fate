@@ -63,7 +63,7 @@ class ChatBot(commands.Cog):
 	async def _enable(self, ctx):
 		guild_id = str(ctx.guild.id)
 		if guild_id not in self.toggle:
-			self.toggle[guild_id] = ctx.guild.name
+			self.toggle[guild_id] = ctx.channel.id
 			if guild_id not in self.dir:
 				self.dir[guild_id] = "guilded"
 			await ctx.send("Enabled chatbot")
@@ -144,13 +144,6 @@ class ChatBot(commands.Cog):
 		guild_id = str(ctx.guild.id)
 		await ctx.send(self.prefixes[guild_id])
 
-	@commands.command(name="delkey")
-	@commands.check(checks.luck)
-	async def delkey(self, ctx, key: int):
-		del self.toggle[str(key)]
-		await ctx.message.add_reaction("👍")
-		self.save_data()
-
 	@commands.command(name="delprefix")
 	@commands.check(checks.luck)
 	async def _delprefix(self, ctx, prefix):
@@ -184,53 +177,54 @@ class ChatBot(commands.Cog):
 					if i in m.content.lower():
 						return
 				if guild_id in self.toggle:
-					if len(m.content) is 0:
-						return
-					if guild_id not in self.cd:
-						self.cd[guild_id] = 0
-					if self.cd[guild_id] > time.time():
-						return
-					self.cd[guild_id] = time.time() + 2
-					if guild_id in self.prefixes:
-						for prefix in self.prefixes[guild_id]:
-							if m.content.startswith(prefix):
-								return
-					if m.content.startswith("."):
-						return
-					keys = m.content.split(" ")
-					key = random.choice(keys)
-					if "the" in keys:
-						key = keys[keys.index("the") + 1]
-					if "if" in keys:
-						key = keys[keys.index("if") + 2]
-					cache = self.cache["global"]
-					if self.dir[guild_id] == "guilded":
-						if guild_id not in self.cache:
-							self.cache[guild_id] = []
-						cache = self.cache[guild_id]
-						if m.content not in cache:
-							self.cache[guild_id].append(m.content)
-							self.cache["global"].append(m.content)
-							self.save_data()
-					else:
-						if m.content not in cache:
-							self.cache["global"].append(m.content)
-							self.save_data()
-					matches = []
-					for msg in cache:
-						if key in msg:
-							matches.append(msg)
-							found = True
-					if found:
-						choice = random.choice(matches)
-						if choice.lower() == m.content.lower():
+					if m.channel.id == self.toggle[guild_id]:
+						if len(m.content) is 0:
 							return
-						try:
-							async with m.channel.typing():
-								await asyncio.sleep(1)
-							await m.channel.send(choice)
-						except:
-							pass
+						if guild_id not in self.cd:
+							self.cd[guild_id] = 0
+						if self.cd[guild_id] > time.time():
+							return
+						self.cd[guild_id] = time.time() + 2
+						if guild_id in self.prefixes:
+							for prefix in self.prefixes[guild_id]:
+								if m.content.startswith(prefix):
+									return
+						if m.content.startswith("."):
+							return
+						keys = m.content.split(" ")
+						key = random.choice(keys)
+						if "the" in keys:
+							key = keys[keys.index("the") + 1]
+						if "if" in keys:
+							key = keys[keys.index("if") + 2]
+						cache = self.cache["global"]
+						if self.dir[guild_id] == "guilded":
+							if guild_id not in self.cache:
+								self.cache[guild_id] = []
+							cache = self.cache[guild_id]
+							if m.content not in cache:
+								self.cache[guild_id].append(m.content)
+								self.cache["global"].append(m.content)
+								self.save_data()
+						else:
+							if m.content not in cache:
+								self.cache["global"].append(m.content)
+								self.save_data()
+						matches = []
+						for msg in cache:
+							if key in msg:
+								matches.append(msg)
+								found = True
+						if found:
+							choice = random.choice(matches)
+							if choice.lower() == m.content.lower():
+								return
+							try:
+								async with m.channel.typing():
+									await asyncio.sleep(1)
+								await m.channel.send(choice)
+							except:
+								pass
 		else:
 			if not m.author.bot:
 				found = False
