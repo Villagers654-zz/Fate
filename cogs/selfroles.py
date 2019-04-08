@@ -554,44 +554,45 @@ class SelfRoles(commands.Cog):
 	async def on_raw_reaction_remove(self, payload):
 		server = self.bot.get_guild(payload.guild_id)
 		user = server.get_member(payload.user_id)
-		if not user.bot:
-			guild_id = str(payload.guild_id)
-			reaction_id = str(payload.message_id)
-			reactions = ['1⃣', '2⃣', '3⃣', '4⃣', '5⃣', '6⃣', '7⃣', '8⃣', '9⃣']
-			if guild_id in self.message:
-				roles = self.roles[guild_id].split(",")
-				if self.message[guild_id] == reaction_id:
-					if reaction_id == self.message[guild_id]:
-						if str(payload.emoji) == reactions[0]:
-							for role in server.roles:
-								if role.name == roles[0]:
-									await user.remove_roles(role)
-									break
-						if str(payload.emoji) == reactions[1]:
-							for role in server.roles:
-								if role.name == roles[1]:
-									await user.remove_roles(role)
-									break
-						if str(payload.emoji) == reactions[2]:
-							for role in server.roles:
-								if role.name == roles[2]:
-									await user.remove_roles(role)
-									break
-						if str(payload.emoji) == reactions[3]:
-							for role in server.roles:
-								if role.name == roles[3]:
-									await user.remove_roles(role)
-									break
-						if str(payload.emoji) == reactions[4]:
-							for role in server.roles:
-								if role.name == roles[4]:
-									await user.remove_roles(role)
-									break
-						if str(payload.emoji) == reactions[5]:
-							for role in server.roles:
-								if role.name == roles[5]:
-									await user.remove_roles(role)
-									break
+		if isinstance(user, discord.Member):
+			if not user.bot:
+				guild_id = str(payload.guild_id)
+				reaction_id = str(payload.message_id)
+				reactions = ['1⃣', '2⃣', '3⃣', '4⃣', '5⃣', '6⃣', '7⃣', '8⃣', '9⃣']
+				if guild_id in self.message:
+					roles = self.roles[guild_id].split(",")
+					if self.message[guild_id] == reaction_id:
+						if reaction_id == self.message[guild_id]:
+							if str(payload.emoji) == reactions[0]:
+								for role in server.roles:
+									if role.name == roles[0]:
+										await user.remove_roles(role)
+										break
+							if str(payload.emoji) == reactions[1]:
+								for role in server.roles:
+									if role.name == roles[1]:
+										await user.remove_roles(role)
+										break
+							if str(payload.emoji) == reactions[2]:
+								for role in server.roles:
+									if role.name == roles[2]:
+										await user.remove_roles(role)
+										break
+							if str(payload.emoji) == reactions[3]:
+								for role in server.roles:
+									if role.name == roles[3]:
+										await user.remove_roles(role)
+										break
+							if str(payload.emoji) == reactions[4]:
+								for role in server.roles:
+									if role.name == roles[4]:
+										await user.remove_roles(role)
+										break
+							if str(payload.emoji) == reactions[5]:
+								for role in server.roles:
+									if role.name == roles[5]:
+										await user.remove_roles(role)
+										break
 
 	@commands.Cog.listener()
 	async def on_message_delete(self, m: discord.Message):
