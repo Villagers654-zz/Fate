@@ -1,7 +1,5 @@
 from utils import checks, colors
 from discord.ext import commands
-import requests
-from io import BytesIO
 import datetime
 import discord
 
@@ -55,5 +53,6 @@ class AvapxianRegime(commands.Cog):
 			e.set_footer(text=f"Last Updated: {datetime.datetime.now().strftime(fmt)}")
 			await msg.edit(embed=e)
 			return await ctx.message.delete()
+
 def setup(bot):
 	bot.add_cog(AvapxianRegime(bot))
