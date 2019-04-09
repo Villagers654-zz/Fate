@@ -188,14 +188,6 @@ class Dev(commands.Cog):
 		await ctx.send(embed=e)
 
 	@commands.command()
-	async def reee(self, ctx):
-		e = discord.Embed()
-		e.description = ""
-		for member in ctx.guild.members[:100]:
-			e.description += "{}, ".format(member.name)
-		await ctx.send(embed=e)
-
-	@commands.command()
 	async def lmgtfy(self, ctx, *, query: str):
 		msg = query.replace(" ", "+")
 		msg = "http://lmgtfy.com/?q={}".format(msg)
@@ -219,34 +211,11 @@ class Dev(commands.Cog):
 		await ctx.send(embed=e)
 
 	@commands.command()
-	async def linkie(self, ctx):
-		try:
-			url = "https://discord.gg/BQ23Z2E"
-			e=discord.Embed()
-			e.description = f'[4b4t]({url})'
-			await ctx.send(embed=e)
-		except Exception as e:
-			await ctx.send(f'**```ERROR: {type(e).__name__} - {e}```**')
-
-	@commands.command()
 	async def guilds(self, ctx):
 		s = [f"{guild[0]}: - {guild[2]} members, Owner: {guild[1]}" for guild in sorted([[g.name, g.owner.name, len(g.members)] for g in self.bot.guilds], key=lambda k: k[2], reverse=True)[:100]]
 		e=discord.Embed(color=0x80b0ff)
 		e.description = f'```{s}```'
 		await ctx.send(embed=e)
-
-	@commands.command()
-	async def mh(self, ctx):
-		def pred(ctx):
-			return ctx.author == ctx.author and ctx.channel == ctx.channel
-		try:
-			msg = await self.bot.wait_for('message', check=pred, timeout=10.0)
-		except asyncio.TimeoutError:
-			await ctx.send(f'you faggot, you took too long')
-		except Exception as e:
-			await ctx.send(e)
-		else:
-			await ctx.send('hmmm {0.content}'.format(msg))
 
 	@commands.command()
 	@commands.check(checks.luck)
