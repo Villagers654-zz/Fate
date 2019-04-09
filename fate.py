@@ -105,42 +105,40 @@ async def on_command_completion(ctx):
 		commands = json.load(f)["commands"]
 	with open("./data/stats.json", "w") as f:
 		json.dump({"commands": commands + 1}, f, ensure_ascii=False)
-	channel = bot.get_channel(config.server("log"))
 
 # ~== Startup ==~
 
 if __name__ == '__main__':
 	cprint("Loading cogs..", "blue")
 	bot.info = ""
-	previous = 0
-	cogs = 0
-	rank = 0
+	previous_load_time = 0
+	cog_count = 0
+	loaded_cogs = 0
 	f = None
 	for cog in files:
-		cogs += 1
+		cog_count += 1
 		try:
 			bot.load_extension("cogs." + cog)
-			rank += 1
+			loaded_cogs += 1
 			m, s = divmod(time.time() - bot.START_TIME, 60)
 			h, m = divmod(m, 60)
-			cprint(f"{cogs}. Cog: {cog} - operational - [{str(s - previous)[:3]}]", "green")
-			bot.info += f"{cogs}. Cog: {cog} - operational - [{str(s - previous)[:3]}]\n"
+			cprint(f"{cog_count}. Cog: {cog} - operational - [{str(s - previous_load_time)[:3]}]", "green")
+			bot.info += f"{cog_count}. Cog: {cog} - operational - [{str(s - previous_load_time)[:3]}]\n"
 			previous = float(str(s)[:3])
 		except Exception as e:
 			bot.errorcount += 1
 			m, s = divmod(time.time() - bot.START_TIME, 60)
 			h, m = divmod(m, 60)
-			cprint(f"{cogs}. Cog: {cog} - error - [{str(s - previous)[:3]}]", "red")
-			bot.info += f"{cogs}. Cog: {cog} - error - [{str(s - previous)[:3]}]\n"
+			cprint(f"{cog_count}. Cog: {cog} - error - [{str(s - previous_load_time)[:3]}]", "red")
+			bot.info += f"{cog_count}. Cog: {cog} - error - [{str(s - previous_load_time)[:3]}]\n"
 			error = traceback.format_exc()
 			print(traceback.format_exc())
 			previous = float(str(s)[:3])
-	if rank == cogs:
-		cprint(f"Loaded {rank}/{cogs} cogs :)", "magenta")
+	if loaded_cogs == cog_count:
+		cprint(f"Loaded {loaded_cogs}/{cog_count} cogs :)", "magenta")
 	else:
-		cprint(f"Loaded {rank}/{cogs} cogs :(", "magenta")
+		cprint(f"Loaded {loaded_cogs}/{cog_count} cogs :(", "magenta")
 	cprint(f"Logging into discord..", "blue")
 m, s = divmod(time.time() - bot.START_TIME, 60)
-h, m = divmod(m, 60)
 bot.LOAD_TIME = s
 bot.run(config.tokens("fatezero"))
