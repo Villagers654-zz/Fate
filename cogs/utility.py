@@ -188,7 +188,7 @@ class Utility(commands.Cog):
 						e = discord.Embed(color=colors.fate())
 						e.set_author(name="Message Found 🔍", icon_url=ctx.author.avatar_url)
 						e.set_thumbnail(url=ctx.guild.icon_url)
-						e.description = f"**Author:** `{msg.author.name}`\n" \
+						e.description = f"**Author:** `{msg.author}`\n" \
 							f"[Jump to MSG]({msg.jump_url})"
 						if msg.content != "":
 							e.add_field(name="Full Content:", value=msg.content)
