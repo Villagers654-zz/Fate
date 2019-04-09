@@ -26,6 +26,9 @@ def emojis(emoji):
 def owner(ctx):
 	return ctx.author.id == 264838866480005122
 
+def owner_id():
+	return 264838866480005122
+
 def server(item):
 	if item is "id":
 		return 501868216147247104

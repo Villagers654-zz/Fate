@@ -1,4 +1,4 @@
-from utils import bytes2human as p
+from utils import bytes2human as p, config
 from discord.ext import commands
 from os.path import isfile
 import discord
@@ -12,37 +12,6 @@ import os
 class Menus(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
-		self.command_count = {}
-		if isfile("./data/commands_used.json"):
-			with open("./data/commands_used.json", "r") as f:
-				dat = json.load(f)
-				self.command_count = dat["count"]
-
-	@commands.Cog.listener()
-	async def on_ready(self):
-		self.command_count[str(self.bot.user.id)] = 0
-		if isfile("./data/commands_used.json"):
-			with open("./data/commands_used.json", "w") as f:
-				json.dump({"count": self.command_count}, f, ensure_ascii=False)
-
-	@commands.Cog.listener()
-	async def on_message(self, msg):
-		if isinstance(msg.guild, discord.Guild):
-			guild_id = str(msg.guild.id)
-			with open(r"./data/userdata/prefixes.json", "r") as f:
-				prefixes = json.load(f)
-			if guild_id in prefixes:
-				if msg.content.startswith(prefixes[guild_id]):
-					self.command_count[str(self.bot.user.id)] += 1
-					with open("./data/commands_used.json", "w") as f:
-						json.dump({"count": self.command_count}, f, ensure_ascii=False)
-					return
-			if msg.content.startswith("."):
-				if msg.content.startswith(".."):
-					return
-				self.command_count[str(self.bot.user.id)] += 1
-				with open("./data/commands_used.json", "w") as f:
-					json.dump({"count": self.command_count}, f, ensure_ascii=False)
 
 	@commands.command(name="help")
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -91,14 +60,14 @@ class Menus(commands.Cog):
 		h, m = divmod(m, 60)
 		guilds = len(list(self.bot.guilds))
 		users = len(list(self.bot.users))
-		fate = self.bot.get_user(506735111543193601)
-		luck = self.bot.get_user(264838866480005122)
 		path = os.getcwd() + "/data/images/banners/" + random.choice(os.listdir(os.getcwd() + "/data/images/banners/"))
-		f = psutil.Process(os.getpid())
+		bot_pid = psutil.Process(os.getpid())
 		e=discord.Embed(color=0x80b0ff)
-		e.set_author(name="Fate [Zerø]: Core Info", icon_url=luck.avatar_url)
-		e.description = f'Commands Used: {self.command_count[str(self.bot.user.id)]}'
-		e.set_thumbnail(url=fate.avatar_url)
+		e.set_author(name="Fate [Zerø]: Core Info", icon_url=self.bot.get_user(config.owner_id()).avatar_url)
+		if isfile('./data/stats.json'):
+			with open('./data/stats.json', 'r') as f:
+				e.description = f'Commands Used: {json.load(f)["commands"]}'
+		e.set_thumbnail(url=self.bot.user.avatar_url)
 		e.set_image(url="attachment://" + os.path.basename(path))
 		e.add_field(name="◈ Summary ◈", value="Fate is a ~~multipurpose~~ hybrid bot created for ~~sexual assault~~ fun", inline=False)
 		e.add_field(name="◈ Credits ◈", value="• Tothy ~ `rival`\n• Cortex ~ `teacher`", inline=False)
@@ -106,8 +75,8 @@ class Menus(commands.Cog):
 		e.add_field(name="◈ Memory ◈", value=
 		f"__**Storage**__: [{p.bytes2human(psutil.disk_usage('/').used)}/{p.bytes2human(psutil.disk_usage('/').total)}]\n"
 		f"__**RAM**__: [{p.bytes2human(psutil.virtual_memory().used)}/{p.bytes2human(psutil.virtual_memory().total)}] ({psutil.virtual_memory().percent}%)\n"
-		f"__**Bot RAM**__: {p.bytes2human(f.memory_full_info().rss)} ({round(f.memory_percent())}%)\n"
-		f"__**CPU**__: **Global**: {psutil.cpu_percent(interval=1)}% **Bot**: {f.cpu_percent(interval=1)}%\n")
+		f"__**Bot RAM**__: {p.bytes2human(bot_pid.memory_full_info().rss)} ({round(bot_pid.memory_percent())}%)\n"
+		f"__**CPU**__: **Global**: {psutil.cpu_percent(interval=1)}% **Bot**: {bot_pid.cpu_percent(interval=1)}%\n")
 		e.set_footer(text="Uptime: {} Hours {} Minutes {} seconds".format(int(h), int(m), int(s)))
 		await ctx.send(file=discord.File(path, filename=os.path.basename(path)), embed=e)
 		def pred(m):

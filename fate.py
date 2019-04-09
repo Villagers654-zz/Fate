@@ -66,14 +66,14 @@ async def on_ready():
 	      '│  ├┘ your day is with the\n'
 	      '└──┘ blood of your enemys')
 	cprint('--------------------------', 'cyan')
-	bot.loop.create_task(status_task())
-	fmt = "%m-%d-%Y %I:%M%p"
-	created = datetime.datetime.now()
-	cprint(created.strftime(fmt), 'yellow')
-	if error:
-		await bot.get_channel(503902845741957131).send(f"```{error}```")
 	m, s = divmod(time.time() - bot.START_TIME, 60)
 	bot.LOGIN_TIME = s
+	bot.loop.create_task(status_task())
+	cprint(datetime.datetime.now().strftime("%m-%d-%Y %I:%M%p"), 'yellow')
+	if error:
+		await bot.get_channel(503902845741957131).send(f"```{error}```")
+	with open("./data/stats.json", "w") as f:
+		json.dump({"commands": 0}, f, ensure_ascii=False)
 
 @bot.event
 async def on_guild_join(guild: discord.Guild):
@@ -98,6 +98,14 @@ async def on_guild_remove(guild: discord.Guild):
 		f"**Owner:** {guild.owner}\n" \
 		f"**Members:** [`{len(guild.members)}`]"
 	await channel.send(embed=e)
+
+@bot.event
+async def on_command_completion(ctx):
+	with open("./data/stats.json", "r") as f:
+		commands = json.load(f)["commands"]
+	with open("./data/stats.json", "w") as f:
+		json.dump({"commands": commands + 1}, f, ensure_ascii=False)
+	channel = bot.get_channel(config.server("log"))
 
 # ~== Startup ==~
 
