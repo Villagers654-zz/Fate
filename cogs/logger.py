@@ -1,11 +1,12 @@
 from discord.ext import commands
 from utils import colors, config
 from os.path import isfile
+from time import time
 import datetime
 import discord
 import asyncio
-import time
 import json
+import os
 
 class Logger(commands.Cog):
 	def __init__(self, bot):
@@ -252,8 +253,8 @@ class Logger(commands.Cog):
 						user_id = str(before.author.id)
 						if user_id not in self.cd:
 							self.cd[user_id] = 0
-						self.cd[user_id] += time.time() + 1
-						if self.cd[user_id] > time.time() + 2:
+						self.cd[user_id] += time() + 1
+						if self.cd[user_id] > time() + 2:
 							return
 						if len(after.embeds) == 0:
 							channel = self.bot.get_channel(self.channel[guild_id])
@@ -341,6 +342,50 @@ class Logger(commands.Cog):
 					f"**Channel:** {self.bot.get_channel(payload.channel_id).mention}"
 				e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 				await self.bot.get_channel(self.channel[guild_id]).send(embed=e)
+
+	@commands.Cog.listener()
+	async def on_bulk_message_delete(self, messages):
+		guild_id = str(messages[0].guild.id)
+		m = messages[0]  # type: discord.Message
+		if guild_id in self.channel:
+			if guild_id in self.blacklist:
+				if "message_delete" in self.blacklist[guild_id]:
+					return
+			if guild_id in self.blocked:
+				if messages[0].channel.id in self.blocked[guild_id]:
+					for id in self.blocked[guild_id]:
+						try:
+							self.bot.get_channel(id)
+						except:
+							self.blocked[guild_id].pop(self.blocked[guild_id].index(id))
+						if len(self.blocked[guild_id]) == 0:
+							del self.blocked[guild_id]
+					return
+			user = "unknown"
+			async for entry in messages[0].guild.audit_logs(action=discord.AuditLogAction.message_delete, limit=1):
+				if self.past(2) < entry.created_at:
+					user = entry.user.mention
+			purged_messages = ""
+			authors = []
+			for msg in messages:
+				purged_messages = f"{msg.created_at.strftime('%I:%M%p')} | {msg.author.display_name}: {msg.content}\n{purged_messages}"
+				if msg.author.id not in authors:
+					authors.append(msg.author.id)
+			with open('./data/temp/purged_messages.txt', 'w') as f:
+				f.write(purged_messages)
+			path = os.getcwd() + "/data/temp/purged_messages.txt"
+			channel = self.bot.get_channel(self.channel[guild_id])
+			e = discord.Embed(color=colors.black())
+			e.title = "~===🥂🍸🍷Bulk Msg Delete🍷🍸🥂===~"
+			e.set_thumbnail(url=m.author.avatar_url)
+			e.description = f"**Users Affected:** {len(authors)}\n" \
+				f"**Messages Deleted:** {len(messages)}\n" \
+				f"**Triggered by:** {user}\n" \
+				f"**Channel:** {m.channel.mention}"
+			footer = f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}"
+			e.set_footer(text=footer)
+			await channel.send(embed=e, file=discord.File(path))
+			os.system("rm ./data/temp/purged_messages.txt")
 
 	@commands.Cog.listener()
 	async def on_guild_update(self, before, after):
