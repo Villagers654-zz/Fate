@@ -33,13 +33,13 @@ class Config(commands.Cog):
 			return "inactive"
 
 	def anti_raid(self, id):
-		with open("./data/userdata/anti_spam.json", "r") as f:
+		with open("./data/userdata/anti_raid.json", "r") as f:
 			if id in json.load(f)["toggle"]:
 				return "active"
 			return "inactive"
 
 	def anti_purge(self, id):
-		with open("./data/userdata/anti_spam.json", "r") as f:
+		with open("./data/userdata/anti_purge.json", "r") as f:
 			if id in json.load(f)["toggle"]:
 				return "active"
 			return "inactive"
