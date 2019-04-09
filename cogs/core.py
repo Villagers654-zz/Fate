@@ -148,15 +148,20 @@ class Core(commands.Cog):
 	async def on_message(self, msg: discord.Message):
 		if isinstance(msg.channel, discord.DMChannel):
 			channel = self.bot.get_channel(552828495244558381)
-			if not msg.attachments:
-				if msg.author.id == self.bot.user.id:
-					return await channel.send(f"__**Fate --> {msg.channel.recipient}:**__ {msg.content}")
-				await channel.send(f"__**{msg.author}:**__ {msg.content}")
-			else:
+			if msg.attachments:
 				for attachment in msg.attachments:
-					await channel.send(f"__**{msg.author.name}:**__ {msg.content}",
-						file=discord.File(BytesIO(requests.get(attachment.url).content),
-					       filename=attachment.filename))
+					if msg.author.id == self.bot.user.id:
+						return await channel.send(f"__**Fate --> {msg.channel.recipient}:**__ {msg.content}",
+						    file=discord.File(BytesIO(requests.get(attachment.url).content), filename=attachment.filename))
+					return await channel.send(f"__**{msg.author.name}:**__ {msg.content}",
+						file=discord.File(BytesIO(requests.get(attachment.url).content), filename=attachment.filename))
+			if msg.embeds:
+				if msg.author.id == self.bot.user.id:
+					return await channel.send(f"__**Fate --> {msg.channel.recipient}:**__ {msg.content}", embed=msg.embeds[0])
+				return await channel.send(f"__**{msg.channel.recipient}:**__ {msg.content}", embed=msg.embeds[0])
+			if msg.author.id == self.bot.user.id:
+				return await channel.send(f"__**Fate --> {msg.channel.recipient}:**__ {msg.content}")
+			await channel.send(f"__**{msg.author}:**__ {msg.content}")
 
 def setup(bot):
 	bot.add_cog(Core(bot))
