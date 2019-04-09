@@ -786,7 +786,8 @@ class Logger(commands.Cog):
 			if guild_id in self.blacklist:
 				if "member_remove" in self.blacklist[guild_id]:
 					return
-			is_kick = None
+			is_kick = None  # type: bool
+			user = None  # type: discord.User
 			async for entry in m.guild.audit_logs(action=discord.AuditLogAction.kick, limit=1):
 				if self.past(2) < entry.created_at:
 					if str(entry.action) == "AuditLogAction.kick":
@@ -816,6 +817,7 @@ class Logger(commands.Cog):
 	async def on_member_ban(self, guild, user):
 		guild_id = str(guild.id)
 		if guild_id in self.channel:
+			author = None  # type: discord.User
 			if guild_id in self.blacklist:
 				if "member_remove" in self.blacklist[guild_id]:
 					return
@@ -828,8 +830,7 @@ class Logger(commands.Cog):
 				e.title = "~==🥂🍸🍷Member Banned🍷🍸🥂==~"
 			if isinstance(user, discord.User):
 				e.title = "~==🥂🍸🍷User Banned🍷🍸🥂==~"
-			e.description = f"**User:** {user}\n" \
-				f"**Banned by:** {author.mention}"
+			e.description = f"**User:** {user}\n" + f"**Banned by:** {author.mention}" if author else ""
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 			await channel.send(embed=e)
 
