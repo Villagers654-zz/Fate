@@ -69,11 +69,11 @@ class ErrorHandler(commands.Cog):
 			msg += f"{i}\n"
 		msg = msg[::-1]
 		msg = msg[:msg.find("Ignoring"[::-1])]
-		r = f"```Ignoring{msg[::-1]}```"
+		r = f"```Ignoring{msg[::-1][:1000]}```"
 		e = discord.Embed(color=colors.red())
 		e.set_author(name=f"| Fatal Error | {ctx.command}", icon_url=ctx.author.avatar_url)
 		e.set_thumbnail(url=ctx.guild.icon_url)
-		e.add_field(name="◈ Error ◈", value=str(r)[:1024], inline=False)
+		e.add_field(name="◈ Error ◈", value=r, inline=False)
 		message = await self.bot.get_channel(549192817097048080).send(embed=e)
 		await message.add_reaction("✔")
 
