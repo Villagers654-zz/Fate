@@ -485,6 +485,8 @@ class Mod(commands.Cog):
 	@commands.has_permissions(manage_roles=True)
 	@commands.bot_has_permissions(manage_roles=True, manage_channels=True)
 	async def _mute(self, ctx, member: discord.Member=None, timer=None):
+		if not member:
+			return await ctx.send("**Format:** `.mute {username or @user} {timer: 2m, 2h, or 2d}`")
 		if member.top_role.position >= ctx.author.top_role.position:
 			return await ctx.send("That user is above your paygrade, take a seat")
 		if member is None and timer is None:
