@@ -63,7 +63,10 @@ class Leaderboards(commands.Cog):
 			level = level[:level.find(".")]
 			e.description += "‎**‎#{}.** ‎`‎{}`: ‎{} | {}\n".format(rank, name, level, xp)
 			rank += 1
-			e.set_thumbnail(url=ctx.guild.icon_url)
+			try:
+				e.set_thumbnail(url=ctx.guild.icon_url)
+			except:
+				pass
 			e.set_footer(text=self.msg_footer())
 		await ctx.send(embed=e)
 
