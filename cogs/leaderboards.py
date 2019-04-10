@@ -32,7 +32,15 @@ class Leaderboards(commands.Cog):
 					self.vclb = dat["vclb"]
 					self.gvclb = dat["gvclb"]
 
-	def save_xp(self):
+	async def cleanup(self, author_id, guild_id):
+		for msg_id, msg_time in (sorted(self.monthly_global_data[author_id].items(), key=lambda kv: kv[1], reverse=True)):
+			if float(msg_time) < time.time() - 2592000:
+				del self.monthly_global_data[author_id][str(msg_id)]
+		for msg_id, msg_time in (sorted(self.monthly_guilds_data[guild_id][author_id].items(), key=lambda kv: kv[1], reverse=True)):
+			if float(msg_time) < time.time() - 2592000:
+				del self.monthly_guilds_data[guild_id][author_id][str(msg_id)]
+
+	async def save_json(self):
 		with open("./data/userdata/xp.json", "w") as outfile:
 			json.dump({"global": self.global_data, "guilded": self.guilds_data, "monthly_global": self.monthly_global_data,
 			           "monthly_guilded": self.monthly_guilds_data, "vclb": self.vclb, "gvclb": self.gvclb},
@@ -275,14 +283,8 @@ class Leaderboards(commands.Cog):
 					self.monthly_guilds_data[guild_id][author_id][msg_id] = time.time()
 					self.cd[author_id] = time.time() + 10
 
-					for msg_id, msg_time in (sorted(self.monthly_global_data[author_id].items(), key=lambda kv: kv[1], reverse=True)):
-						if float(msg_time) < time.time() - 2592000:
-							del self.monthly_global_data[author_id][str(msg_id)]
-					for msg_id, msg_time in (sorted(self.monthly_guilds_data[guild_id][author_id].items(), key=lambda kv: kv[1], reverse=True)):
-						if float(msg_time) < time.time() - 2592000:
-							del self.monthly_guilds_data[guild_id][author_id][str(msg_id)]
-
-					self.save_xp()
+					await self.cleanup(author_id, guild_id)
+					await self.save_json()
 
 	@commands.Cog.listener()
 	async def on_voice_state_update(self, member, before, after):
@@ -372,7 +374,7 @@ class Leaderboards(commands.Cog):
 									self.dat[channel_id][member_id] = datetime.now()
 					else:
 						self.dat[channel_id][user_id] = datetime.now()
-				self.save_xp()
+				await self.save_json()
 
 def setup(bot: commands.Bot):
 	bot.add_cog(Leaderboards(bot))
