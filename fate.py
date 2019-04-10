@@ -43,13 +43,13 @@ error = False
 async def status_task():
 	while True:
 		motds = ['FBI OPEN UP', 'YEET to DELETE', 'Pole-Man', '♡Juice wrld♡', 'ANIMOO', 'Mad cuz Bad', 'Quest for Cake', 'Gone Sexual']
-		await bot.change_presence(activity=discord.Game(name=f"4b4t.net | {random.choice(motds)}"))
+		await bot.change_presence(activity=discord.Game(name=f"Arkadia | {random.choice(motds)}"))
 		await asyncio.sleep(15)
-		await bot.change_presence(activity=discord.Game(name='4b4t.net | use .help'))
+		await bot.change_presence(activity=discord.Game(name='Arkadia | use .help'))
 		await asyncio.sleep(15)
-		await bot.change_presence(activity=discord.Game(name=f'4b4t.net | {len(bot.users)} users'))
+		await bot.change_presence(activity=discord.Game(name=f'Arkadia | {len(bot.users)} users'))
 		await asyncio.sleep(15)
-		await bot.change_presence(activity=discord.Game(name=f'4b4t.net | {len(bot.guilds)} servers'))
+		await bot.change_presence(activity=discord.Game(name=f'Arkadia | {len(bot.guilds)} servers'))
 		await asyncio.sleep(15)
 
 @bot.event
