@@ -13,11 +13,17 @@ class Mod(commands.Cog):
 		self.purge = {}
 		self.massnick = {}
 		self.warns = {}
+		self.roles = {}
 		if isfile("./data/userdata/mod.json"):
 			with open("./data/userdata/mod.json", "r") as infile:
 				dat = json.load(infile)
 				if "warns" in dat:
 					self.warns = dat["warns"]
+					self.roles = dat["roles"]
+
+	def save_json(self):
+		with open("./data/userdata/mod.json", "w") as outfile:
+			json.dump({"warns": self.warns, "roles": self.roles}, outfile, ensure_ascii=False)
 
 	@commands.command(name="delete", aliases=["d"])
 	@commands.has_permissions(manage_messages=True)
@@ -483,44 +489,58 @@ class Mod(commands.Cog):
 
 	@commands.command(name="mute")
 	@commands.has_permissions(manage_roles=True)
-	@commands.bot_has_permissions(manage_roles=True, manage_channels=True)
+	@commands.bot_has_permissions(manage_roles=True)
 	async def _mute(self, ctx, member: discord.Member=None, timer=None):
 		if not member:
-			return await ctx.send("**Format:** `.mute {username or @user} {timer: 2m, 2h, or 2d}`")
+			return await ctx.send("**Format:** `.mute {@user} {timer: 2m, 2h, or 2d}`")
 		if member.top_role.position >= ctx.author.top_role.position:
 			return await ctx.send("That user is above your paygrade, take a seat")
-		if member is None and timer is None:
-			return await ctx.send(
-				"**Mute Usage:**\n"
-				".mute {user}\n"
-				"**timer Usage:**\n"
-				"m = minute(s), h = hour(s), d = day(s)\n"
-				".mute {user} {number}{m/h/d}")
-		for i in list(timer):
-			if i not in "1234567890dhms":
-				return await ctx.send("Invalid character in `timer` field")
-		role = None
+		guild_id = str(ctx.guild.id)
+		user_id = str(member.id)
+		mute_role = None  # type: discord.Role
 		async with ctx.typing():
 			for i in ctx.guild.roles:
 				if i.name.lower() == "muted":
-					role = i
-		if role is None:
-			role = await ctx.guild.create_role(name="Muted", color=discord.Color(colors.black()))
+					mute_role = i
+		if not mute_role:
+			bot = discord.utils.get(ctx.guild.members, id=self.bot.user.id)
+			perms = list(perm for perm, value in bot.guild_permissions if value)
+			if "manage_channels" not in perms:
+				return await ctx.send("No muted role found, and I'm missing manage_channel permissions to set one up")
+			mute_role = await ctx.guild.create_role(name="Muted", color=discord.Color(colors.black()))
 			for channel in ctx.guild.text_channels:
-				await channel.set_permissions(role, send_messages=False)
+				await channel.set_permissions(mute_role, send_messages=False)
 			for channel in ctx.guild.voice_channels:
-				await channel.set_permissions(role, speak=False)
-		if role in member.roles:
+				await channel.set_permissions(mute_role, speak=False)
+		if mute_role in member.roles:
 			return await ctx.send(f"{member.display_name} is already muted")
-		roles = []
-		for r in member.roles:
+		if not timer:
+			if guild_id not in self.roles:
+				self.roles[guild_id] = {}
+			self.roles[guild_id][user_id] = []
+			for role in member.roles:
+				try:
+					await member.remove_roles(role)
+					self.roles[guild_id][user_id].append(role.id)
+					await asyncio.sleep(0.5)
+				except:
+					pass
+			self.save_json()
+			await member.add_roles(mute_role)
+			await ctx.send(f"Muted {member.display_name}")
+			return await ctx.message.add_reaction("👍")
+		for i in list(timer):
+			if i not in "1234567890dhms":
+				return await ctx.send("Invalid character in `timer` field")
+		user_roles = []
+		for role in member.roles:
 			try:
-				await member.remove_roles(r)
-				roles.append(r.id)
+				await member.remove_roles(role)
+				user_roles.append(role.id)
 				await asyncio.sleep(0.5)
 			except:
 				pass
-		await member.add_roles(role)
+		await member.add_roles(mute_role)
 		if timer is None:
 			return await ctx.send(f"**Muted:** {member.name}")
 		r = timer.replace("m", " minutes").replace("1 minutes", "1 minute")
@@ -536,37 +556,46 @@ class Mod(commands.Cog):
 		if "s" in str(timer):
 			timer = float(timer.replace("s", ""))
 		await asyncio.sleep(timer)
-		if role in member.roles:
-			await member.remove_roles(role)
+		if mute_role in member.roles:
+			await member.remove_roles(mute_role)
 			await ctx.send(f"**Unmuted:** {member.name}")
-		for r in roles:
-			await member.add_roles(ctx.guild.get_role(r))
+		for role_id in user_roles:
+			await member.add_roles(ctx.guild.get_role(role_id))
 			await asyncio.sleep(0.5)
 
 	@commands.command()
 	@commands.has_permissions(manage_roles=True)
 	@commands.bot_has_permissions(manage_roles=True, manage_channels=True)
 	async def unmute(self, ctx, member: discord.Member=None):
+		if member is None:
+			return await ctx.send("**Unmute Usage:**\n.unmute {@user}")
 		if member.top_role.position >= ctx.author.top_role.position:
 			return await ctx.send("That user is above your paygrade, take a seat")
-		if member is None:
-			return await ctx.send("**Unmute Usage:**\n.unmute {user}")
-		role = None
-		for r in ctx.guild.roles:
-			if r.name.lower() == "muted":
-				role = r
-		if not role:
+		guild_id = str(ctx.guild.id)
+		user_id = str(member.id)
+		mute_role = None  # type: discord.Role
+		for role in ctx.guild.roles:
+			if role.name.lower() == "muted":
+				mute_role = role
+		if not mute_role:
 			role = await ctx.guild.create_role(name="Muted", color=discord.Color(colors.black()))
 			for channel in ctx.guild.text_channels:
 				await channel.set_permissions(role, send_messages=False)
 			for channel in ctx.guild.voice_channels:
 				await channel.set_permissions(role, speak=False)
-		if role not in member.roles:
+		if mute_role not in member.roles:
 			return await ctx.send(f"{member.display_name} is not muted")
-		await member.remove_roles(role)
+		await member.remove_roles(mute_role)
+		if guild_id in self.roles:
+			if user_id in self.roles:
+				for role_id in self.roles[guild_id][user_id]:
+					await member.add_roles(ctx.guild.get_role(role_id))
+					await asyncio.sleep(0.5)
+				del self.roles[guild_id][user_id]
+				self.save_json()
 		await ctx.send(f"Unmuted {member.name}")
 
-	@commands.command()
+	@commands.command(name="warn")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.has_permissions(manage_guild=True)
 	@commands.bot_has_permissions(manage_roles=True,
@@ -628,8 +657,7 @@ class Mod(commands.Cog):
 		               f"Warn count: [{self.warns[guild_id][user_id]}]\n"
 		               f"Punishment: {punishment}\n"
 		               f"Next Punishment: {next_punishment}")
-		with open("./data/userdata/mod.json", "w") as outfile:
-			json.dump({"warns": self.warns}, outfile, ensure_ascii=False)
+		self.save_json()
 		if mute is True:
 			for i in ctx.guild.roles:
 				if i.name.lower() == "muted":
@@ -728,6 +756,16 @@ class Mod(commands.Cog):
 		if user_id not in self.warns[guild_id]:
 			self.warns[guild_id][user_id] = 0
 		await ctx.send(f"**{user.display_name}:** `{self.warns[guild_id][user_id]}`")
+
+	@commands.Cog.listener()
+	async def on_guild_remove(self, guild):
+		guild_id = str(guild.id)
+		if guild_id in self.warns:
+			del self.warns[guild_id]
+			self.save_json()
+		if guild_id in self.roles:
+			del self.warns[guild_id]
+			self.save_json()
 
 def setup(bot):
 	bot.add_cog(Mod(bot))
