@@ -598,8 +598,7 @@ class Mod(commands.Cog):
 	@commands.command(name="warn")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.has_permissions(manage_guild=True)
-	@commands.bot_has_permissions(manage_roles=True,
-	manage_channels=True, kick_members=True, ban_members=True)
+	@commands.bot_has_permissions(manage_roles=True)
 	async def warn(self, ctx, user, *, reason):
 		if user.startswith("<@"):
 			user = user.replace("<@", "")
@@ -616,12 +615,9 @@ class Mod(commands.Cog):
 			return await ctx.send("That user is above your paygrade, take a seat")
 		guild_id = str(ctx.guild.id)
 		user_id = str(user.id)
-		mute = False
-		role = None
-		try:
-			await user.send(f"You have been warned in **{ctx.guild.name}** for `{reason}`")
-		except:
-			pass
+		punishment = None  # type: str
+		next_punishment = None  # type: str
+		mute_trigger = False
 		if guild_id not in self.warns:
 			self.warns[guild_id] = {}
 			self.warns[guild_id][user_id] = 0
@@ -637,7 +633,7 @@ class Mod(commands.Cog):
 		if self.warns[guild_id][user_id] == 3:
 			punishment = "2 hour mute"
 			next_punishment = "kick"
-			mute = True
+			mute_trigger = True
 		if self.warns[guild_id][user_id] == 4:
 			try:
 				await ctx.guild.kick(user, reason=reason)
@@ -653,28 +649,36 @@ class Mod(commands.Cog):
 			punishment = "ban"
 			next_punishment = "ban"
 		await ctx.send(f"**{user.display_name} has been warned.**\n"
-		               f"Reason: {reason}\n"
-		               f"Warn count: [{self.warns[guild_id][user_id]}]\n"
-		               f"Punishment: {punishment}\n"
-		               f"Next Punishment: {next_punishment}")
+			f"Reason: {reason}\n"
+			f"Warn count: [{self.warns[guild_id][user_id]}]\n"
+			f"Punishment: {punishment}\n"
+			f"Next Punishment: {next_punishment}")
+		try:
+			await user.send(f"You have been warned in **{ctx.guild.name}** for `{reason}`")
+		except:
+			pass
 		self.save_json()
-		if mute is True:
-			for i in ctx.guild.roles:
-				if i.name.lower() == "muted":
-					role = i
-			if role is None:
-				role = await ctx.guild.create_role()
-				await role.edit(name="Muted", color=colors.black())
+		if mute_trigger:
+			mute_role = None  # type: discord.Role
+			for role in ctx.guild.roles:
+				if role.name.lower() == "muted":
+					mute_role = role
+			if not mute_role:
+				bot = discord.utils.get(ctx.guild.members, id=self.bot.user.id)
+				perms = list(perm for perm, value in bot.guild_permissions if value)
+				if "manage_channels" not in perms:
+					return await ctx.send("No muted role found, and I'm missing manage_channel permissions to set one up")
+				mute_role = await ctx.guild.create_role(name="Muted", color=discord.Color(colors.black()))
 				for channel in ctx.guild.text_channels:
-					await channel.set_permissions(role, send_messages=False)
+					await channel.set_permissions(mute_role, send_messages=False)
 				for channel in ctx.guild.voice_channels:
-					await channel.set_permissions(role, speak=False)
-			if role in user.roles:
+					await channel.set_permissions(mute_role, speak=False)
+			if mute_role in user.roles:
 				return await ctx.send(f"{user.display_name} is already muted")
-			await user.add_roles(role)
+			await user.add_roles(mute_role)
 			await asyncio.sleep(7200)
-			if role in user.roles:
-				await user.remove_roles(role)
+			if mute_role in user.roles:
+				await user.remove_roles(mute_role)
 				await ctx.send(f"**Unmuted:** {user.name}")
 
 	@commands.command()
@@ -682,15 +686,12 @@ class Mod(commands.Cog):
 	@commands.has_permissions(administrator=True)
 	async def clearwarns(self, ctx, *, user=None):
 		if user.startswith("<@"):
-			user = user.replace("<@", "")
-			user = user.replace(">", "")
-			user = user.replace("!", "")
-			user = ctx.guild.get_member(eval(user))
+			user_id = user.replace("<@", "").replace(">", "").replace("!", "")
+			user = ctx.guild.get_member(int(user_id))
 		else:
 			for member in ctx.guild.members:
-				if str(user).lower() in str(member.display_name).lower():
-					user_id = member.id
-					user = ctx.guild.get_member(user_id)
+				if user.lower() in member.display_name.lower():
+					user = member
 					break
 		if user.top_role.position >= ctx.author.top_role.position:
 			return await ctx.send("That user is above your paygrade, take a seat")
@@ -701,24 +702,20 @@ class Mod(commands.Cog):
 		if user_id not in self.warns[guild_id]:
 			self.warns[guild_id][user_id] = 0
 		self.warns[guild_id][user_id] = 0
-		with open("./data/userdata/mod.json", "w") as outfile:
-			json.dump({"warns": self.warns}, outfile, ensure_ascii=False)
 		await ctx.send(f"Cleared {user.name}'s warn count")
+		self.save_json()
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.has_permissions(administrator=True)
 	async def setwarns(self, ctx, user, count: int):
 		if user.startswith("<@"):
-			user = user.replace("<@", "")
-			user = user.replace(">", "")
-			user = user.replace("!", "")
-			user = ctx.guild.get_member(eval(user))
+			user_id = user.replace("<@", "").replace(">", "").replace("!", "")
+			user = ctx.guild.get_member(int(user_id))
 		else:
 			for member in ctx.guild.members:
-				if str(user).lower() in str(member.display_name).lower():
-					user_id = member.id
-					user = ctx.guild.get_member(user_id)
+				if user.lower() in member.display_name.lower():
+					user = member
 					break
 		if user.top_role.position >= ctx.author.top_role.position:
 			return await ctx.send("That user is above your paygrade, take a seat")
@@ -735,26 +732,23 @@ class Mod(commands.Cog):
 
 	@commands.command(name="warns")
 	async def _warns(self, ctx, user=None):
-		if user is None:
+		if not user:
 			user = ctx.author
 		else:
 			if user.startswith("<@"):
-				user = user.replace("<@", "")
-				user = user.replace(">", "")
-				user = user.replace("!", "")
-				user = ctx.guild.get_member(eval(user))
+				user_id = user.replace("<@", "").replace(">", "").replace("!", "")
+				user = ctx.guild.get_member(int(user_id))
 			else:
 				for member in ctx.guild.members:
-					if str(user).lower() in str(member.display_name).lower():
-						user_id = member.id
-						user = ctx.guild.get_member(user_id)
+					if user.lower() in member.display_name.lower():
+						user = member
 						break
 		guild_id = str(ctx.guild.id)
 		user_id = str(user.id)
 		if guild_id not in self.warns:
-			self.warns[guild_id] = {}
+			return await ctx.send(0)
 		if user_id not in self.warns[guild_id]:
-			self.warns[guild_id][user_id] = 0
+			return await ctx.send(0)
 		await ctx.send(f"**{user.display_name}:** `{self.warns[guild_id][user_id]}`")
 
 	@commands.Cog.listener()
