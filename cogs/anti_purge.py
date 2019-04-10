@@ -18,12 +18,9 @@ class AntiPurge(commands.Cog):
 				if "toggle" in dat:
 					self.toggle = dat["toggle"]
 
-	def save(self):
+	def save_json(self):
 		with open("./data/userdata/anti_purge.json", "w") as outfile:
 			json.dump({"toggle": self.toggle}, outfile, ensure_ascii=False)
-
-	def is_guild_owner(ctx):
-		return ctx.author.id == ctx.guild.owner.id
 
 	@commands.group(name="anti_purge")
 	@commands.cooldown(1, 3, commands.BucketType.user)
@@ -46,22 +43,24 @@ class AntiPurge(commands.Cog):
 			await ctx.send(embed=e)
 
 	@_anti_purge.command(name="enable")
-	@commands.check(is_guild_owner)
 	@commands.bot_has_permissions(ban_members=True)
 	async def _enable(self, ctx):
+		if ctx.author != ctx.guild.owner:
+			return await ctx.send("Only the guild owner can toggle this")
 		guild_id = str(ctx.guild.id)
 		self.toggle[guild_id] = "enabled"
-		self.save()
+		self.save_json()
 		await ctx.message.add_reaction("👍")
 
 	@_anti_purge.command(name="disable")
-	@commands.check(is_guild_owner)
 	async def _disable(self, ctx):
+		if ctx.author != ctx.guild.owner:
+			return await ctx.send("Only the guild owner can toggle this")
 		guild_id = str(ctx.guild.id)
 		if guild_id not in self.toggle:
 			return await ctx.send("Anti-Purge isn't enabled")
 		del self.toggle[guild_id]
-		self.save()
+		self.save_json()
 		await ctx.message.add_reaction("👍")
 
 	@commands.Cog.listener()
