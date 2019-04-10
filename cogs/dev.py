@@ -119,7 +119,7 @@ class Dev(commands.Cog):
 	@commands.command()
 	@commands.check(checks.luck)
 	async def error(self, ctx):
-		p = subprocess.Popen("cat  /home/luck/.pm2/logs/bot-error.log", stdout=subprocess.PIPE, shell=True)
+		p = subprocess.Popen("cat  /home/luck/.pm2/logs/fate-error.log", stdout=subprocess.PIPE, shell=True)
 		(output, err) = p.communicate()
 		output = str(output).replace("\\t", "    ").replace("b'", "").replace("`", "").split("\\n")
 		msg = ""
