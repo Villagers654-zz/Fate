@@ -25,10 +25,11 @@ class Mod(commands.Cog):
 		with open("./data/userdata/mod.json", "w") as outfile:
 			json.dump({"warns": self.warns, "roles": self.roles}, outfile, ensure_ascii=False)
 
-	@commands.command(name="delete", aliases=["d"])
+	@commands.command(name="delete")
+	@commands.cooldown(1, 3, commands.BucketType.user)
+	@commands.guild_only()
 	@commands.has_permissions(manage_messages=True)
 	@commands.bot_has_permissions(manage_messages=True)
-	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def delete(self, ctx):
 		try:
 			c = 0
@@ -42,6 +43,8 @@ class Mod(commands.Cog):
 			await ctx.send(f'**```ERROR: {type(e).__name__} - {e}```**')
 
 	@commands.command(name="purge")
+	@commands.cooldown(1, 5, commands.BucketType.channel)
+	@commands.guild_only()
 	@commands.has_permissions(manage_messages=True)
 	@commands.bot_has_permissions(manage_messages=True)
 	async def _purge(self, ctx, amount: int):
@@ -64,6 +67,8 @@ class Mod(commands.Cog):
 			del self.purge[channel_id]
 
 	@commands.command(name="purge_user", description="Usage: `.purge_user @user amount`")
+	@commands.cooldown(1, 5, commands.BucketType.channel)
+	@commands.guild_only()
 	@commands.has_permissions(manage_messages=True)
 	@commands.bot_has_permissions(manage_messages=True)
 	async def _purge_user(self, ctx, user: discord.Member, amount: int):
@@ -85,6 +90,8 @@ class Mod(commands.Cog):
 			return await ctx.send("I'm already purging..")
 
 	@commands.command(name="purge_images")
+	@commands.cooldown(1, 5, commands.BucketType.channel)
+	@commands.guild_only()
 	@commands.has_permissions(manage_messages=True)
 	@commands.bot_has_permissions(manage_messages=True)
 	async def _purge_images(self, ctx, amount: int):
@@ -107,6 +114,8 @@ class Mod(commands.Cog):
 			return await ctx.send("I'm already purging..")
 
 	@commands.command(name="purge_embeds")
+	@commands.cooldown(1, 5, commands.BucketType.channel)
+	@commands.guild_only()
 	@commands.has_permissions(manage_messages=True)
 	@commands.bot_has_permissions(manage_messages=True)
 	async def _purge_embeds(self, ctx, amount: int):
@@ -128,6 +137,8 @@ class Mod(commands.Cog):
 			return await ctx.send("I'm already purging..")
 
 	@commands.command(name="purge_bots")
+	@commands.cooldown(1, 5, commands.BucketType.channel)
+	@commands.guild_only()
 	@commands.has_permissions(manage_messages=True)
 	@commands.bot_has_permissions(manage_messages=True)
 	async def _purge_bots(self, ctx, amount: int):
@@ -149,10 +160,11 @@ class Mod(commands.Cog):
 		if channel_id in self.purge:
 			return await ctx.send("I'm already purging..")
 
-	@commands.command(name="kick", aliases=["k"])
+	@commands.command(name="kick")
+	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.guild_only()
 	@commands.has_permissions(kick_members=True)
 	@commands.bot_has_permissions(kick_members=True)
-	@commands.cooldown(1, 25, commands.BucketType.user)
 	async def kick(self, ctx, user:discord.Member, *, reason:str=None):
 		if user.top_role.position >= ctx.author.top_role.position:
 			return await ctx.send("That user is above your paygrade, take a seat")
@@ -170,10 +182,11 @@ class Mod(commands.Cog):
 			except Exception as e:
 				pass
 
-	@commands.command(name="ban", aliases=["b"])
+	@commands.command(name="ban")
+	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.guild_only()
 	@commands.has_permissions(ban_members=True)
 	@commands.bot_has_permissions(ban_members=True)
-	@commands.cooldown(1, 25, commands.BucketType.user)
 	async def _ban(self, ctx, user:discord.Member, *, reason=None):
 		if user.top_role.position >= ctx.author.top_role.position:
 			return await ctx.send("That user is above your paygrade, take a seat")
@@ -192,9 +205,10 @@ class Mod(commands.Cog):
 				pass
 
 	@commands.command(name="softban")
+	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.guild_only()
 	@commands.has_permissions(ban_members=True)
 	@commands.bot_has_permissions(ban_members=True)
-	@commands.cooldown(1, 25, commands.BucketType.user)
 	async def _softban(self, ctx, user:discord.Member, *, reason=None):
 		if user.top_role.position >= ctx.author.top_role.position:
 			return await ctx.send("That user is above your paygrade, take a seat")
@@ -214,18 +228,19 @@ class Mod(commands.Cog):
 		await user.unban(reason="softban")
 
 	@commands.command(name="bans")
+	@commands.cooldown(1, 5, commands.BucketType.channel)
+	@commands.guild_only()
 	@commands.has_permissions(ban_members=True)
 	@commands.bot_has_permissions(ban_members=True)
-	@commands.cooldown(1, 5, commands.BucketType.guild)
 	async def _bans(self, ctx):
 		bans = await ctx.guild.bans()
 		for ban in bans:
 			await ctx.send(f"{ban[0]}, {ban[1].id}")
 
 	@commands.command(name="pin")
+	@commands.cooldown(1, 5, commands.BucketType.channel)
 	@commands.has_permissions(manage_messages=True)
 	@commands.bot_has_permissions(manage_messages=True)
-	@commands.cooldown(1, 25, commands.BucketType.user)
 	async def pin(self, ctx):
 		c = 0
 		async for msg in ctx.channel.history(limit=3):
@@ -236,6 +251,8 @@ class Mod(commands.Cog):
 			c += 1
 
 	@commands.command()
+	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.guild_only()
 	@commands.has_permissions(manage_nicknames=True)
 	@commands.bot_has_permissions(manage_nicknames=True)
 	async def nick(self, ctx, member: discord.Member, *, nick=None):
@@ -247,6 +264,8 @@ class Mod(commands.Cog):
 		await ctx.message.add_reaction('👍')
 
 	@commands.command(name="massnick")
+	@commands.cooldown(1, 10, commands.BucketType.guild)
+	@commands.guild_only()
 	@commands.has_permissions(manage_nicknames=True)
 	@commands.bot_has_permissions(manage_nicknames=True)
 	async def _massnick(self, ctx, *, nick=None):
@@ -276,9 +295,13 @@ class Mod(commands.Cog):
 			await ctx.send(failed)
 
 	@commands.command(name="addrole")
+	@commands.cooldown(1, 3, commands.BucketType.user)
+	@commands.guild_only()
 	@commands.has_permissions(manage_roles=True)
 	@commands.bot_has_permissions(manage_roles=True)
 	async def _addrole(self, ctx, arg1: commands.clean_content=None, arg2: commands.clean_content=None):
+		arg1 = arg1  # type: str
+		arg2 = arg2  # type: str
 		if arg2 is not None:
 			arg1 = arg1.replace("@", "")
 			arg2 = arg2.replace("@", "")
@@ -380,6 +403,8 @@ class Mod(commands.Cog):
 		await ctx.send("Either the member or role was not found")
 
 	@commands.command(name="removerole")
+	@commands.cooldown(1, 3, commands.BucketType.user)
+	@commands.guild_only()
 	@commands.has_permissions(manage_roles=True)
 	@commands.bot_has_permissions(manage_roles=True)
 	async def _removerole(self, ctx, arg1: commands.clean_content=None, arg2: commands.clean_content=None):
@@ -439,7 +464,9 @@ class Mod(commands.Cog):
 						return await ctx.send(f"Removed the role **{r.name}** from **{member.display_name}**")
 		await ctx.send("There was an error finding the user or the role")
 
-	@commands.command()
+	@commands.command(name="massrole")
+	@commands.cooldown(1, 10, commands.BucketType.guild)
+	@commands.guild_only()
 	@commands.has_permissions(manage_roles=True)
 	@commands.bot_has_permissions(manage_roles=True)
 	async def massrole(self, ctx, role: str):
@@ -470,7 +497,9 @@ class Mod(commands.Cog):
 			await ctx.send(failed)
 		await ctx.message.add_reaction("🏁")
 
-	@commands.command()
+	@commands.command(name="vcmute")
+	@commands.cooldown(1, 3, commands.BucketType.user)
+	@commands.guild_only()
 	@commands.has_permissions(manage_roles=True)
 	@commands.bot_has_permissions(manage_roles=True)
 	async def vcmute(self, ctx, member: discord.Member):
@@ -479,7 +508,9 @@ class Mod(commands.Cog):
 		await member.edit(mute=True)
 		await ctx.send(f'Muted {member.display_name} 👍')
 
-	@commands.command()
+	@commands.command(name="vcunmute")
+	@commands.cooldown(1, 3, commands.BucketType.user)
+	@commands.guild_only()
 	@commands.has_permissions(manage_roles=True)
 	async def vcunmute(self, ctx, member: discord.Member):
 		if member.top_role.position >= ctx.author.top_role.position:
@@ -488,6 +519,8 @@ class Mod(commands.Cog):
 		await ctx.send(f'Unmuted {member.display_name} 👍')
 
 	@commands.command(name="mute", description="Blocks users from sending messages")
+	@commands.cooldown(1, 3, commands.BucketType.user)
+	@commands.guild_only()
 	@commands.has_permissions(manage_roles=True)
 	@commands.bot_has_permissions(manage_roles=True)
 	async def mute(self, ctx, member: discord.Member=None, timer=None):
@@ -566,7 +599,9 @@ class Mod(commands.Cog):
 				pass
 			await asyncio.sleep(0.5)
 
-	@commands.command()
+	@commands.command(name="unmute", description="Unblocks users from sending messages")
+	@commands.cooldown(1, 3, commands.BucketType.user)
+	@commands.guild_only()
 	@commands.has_permissions(manage_roles=True)
 	@commands.bot_has_permissions(manage_roles=True, manage_channels=True)
 	async def unmute(self, ctx, member: discord.Member=None):
@@ -600,6 +635,7 @@ class Mod(commands.Cog):
 
 	@commands.command(name="warn")
 	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.guild_only()
 	@commands.bot_has_permissions(manage_roles=True)
 	async def warn(self, ctx, user, *, reason):
 		perms = list(perm for perm, value in ctx.author.guild_permissions)
@@ -688,8 +724,9 @@ class Mod(commands.Cog):
 				await user.remove_roles(mute_role)
 				await ctx.send(f"**Unmuted:** {user.name}")
 
-	@commands.command()
+	@commands.command(name="clearwarns")
 	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.guild_only()
 	async def clearwarns(self, ctx, *, user=None):
 		perms = list(perm for perm, value in ctx.author.guild_permissions)
 		if "manage_guild" not in perms:
@@ -716,8 +753,9 @@ class Mod(commands.Cog):
 		await ctx.send(f"Cleared {user.name}'s warn count")
 		self.save_json()
 
-	@commands.command()
+	@commands.command(name="setwarns")
 	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.guild_only()
 	async def setwarns(self, ctx, user, count: int):
 		perms = list(perm for perm, value in ctx.author.guild_permissions)
 		if "manage_guild" not in perms:
@@ -746,6 +784,8 @@ class Mod(commands.Cog):
 		await ctx.send(f"Set {user.name}'s warn count to {count}")
 
 	@commands.command(name="warns")
+	@commands.cooldown(1, 3, commands.BucketType.user)
+	@commands.guild_only()
 	async def _warns(self, ctx, user=None):
 		if not user:
 			user = ctx.author
