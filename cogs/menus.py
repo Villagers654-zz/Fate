@@ -25,7 +25,7 @@ class Menus(commands.Cog):
 		e = discord.Embed(title="~~~====🥂🍸🍷Help🍷🍸🥂====~~~", color=0x80b0ff)
 		e.add_field(name="◈ Core ◈", value="`leaderboard` `gleaderboard` `ggleaderboard` `mleaderboard` `gmleaderboard` `vcleaderboard` `gvcleaderboard` `changelog` `partners` `discords` `servers` `config` `prefix` `realms` `links` `ping` `info` `say`", inline=False)
 		e.add_field(name="◈ Responses ◈", value="**`disableresponses` `enableresponses`:** `@Fate` `hello` `ree` `kys` `gm` `gn`", inline=False)
-		e.add_field(name="◈ Music ◈", value="`join` `summon` `play` `stop` `skip` `pause` `resume` `volume` `queue` `thumbnail` `remove` `shuffle` `dc` `np`", inline=False)
+		e.add_field(name="◈ Music ◈", value="`play` `playnow` `playat` `find` `stop` `skip` `previous` `repeat` `pause` `resume` `volume` `queue` `remove` `shuffle` `dc` `np`", inline=False)
 		e.add_field(name="◈ Utility ◈", value="`channelinfo` `servericon` `serverinfo` `userinfo` `test_color` `makepoll` `welcome` `farewell` `logger` `emoji` `addemoji` `stealemoji` `rename_emoji` `delemoji` `owner` `avatar` `topic` `timer` `note` `quicknote` `notes` `wiki` `find` `ud` `id`", inline=False)
 		e.add_field(name="◈ Reactions ◈", value="`tenor` `intimidate` `powerup` `observe` `disgust` `admire` `angery` `cuddle` `teasip` `psycho` `thonk` `shrug` `bite` `yawn` `hide` `wine` `sigh` `kiss` `kill` `slap` `hug` `pat` `cry`", inline=False)
 		e.add_field(name="◈ Mod ◈", value="`mute` `unmute` `vcmute` `vcunmute` `warn` `clearwarns` `addrole` `removerole` `restore_roles` `selfroles` `autorole` `limit` `audit` `lock` `lockb` `delete` `purge` `purge_user` `purge_images` `purge_embeds` `purge_bots` `nick` `massnick` `kick` `mute` `ban` `pin`", inline=False)

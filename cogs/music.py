@@ -135,11 +135,11 @@ class Music(commands.Cog):
         await asyncio.sleep(20)
         await ctx.message.delete()
 
-    @commands.command(name='seek')
+    @commands.command(name="forward", aliases=["seek"])
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
     @commands.has_permissions(manage_messages=True)
-    async def _seek(self, ctx, *, time: str):
+    async def _forward(self, ctx, *, time: str):
         """ Seeks to a given position in a track. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
         if not player.is_playing:

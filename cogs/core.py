@@ -70,26 +70,20 @@ class Core(commands.Cog):
 		ping = (monotonic() - before) * 1000
 		if ping < 175:
 			img = "https://cdn.discordapp.com/emojis/562592256939393035.png?v=1"
-			emoji = "<:5_:562592256939393035>"
 		else:
 			if ping < 250:
 				img = "https://cdn.discordapp.com/emojis/562592178204049408.png?v=1"
-				emoji = "<:4_:562592178204049408>"
 			else:
 				if ping < 400:
 					img = "https://cdn.discordapp.com/emojis/562592177692213248.png?v=1"
-					emoji = "<:3_:562592177692213248>"
 				else:
 					if ping < 550:
 						img = "https://cdn.discordapp.com/emojis/562592176463151105.png?v=1"
-						emoji = "<:2_:562592176463151105>"
 					else:
 						if ping < 700:
 							img = "https://cdn.discordapp.com/emojis/562592175880405003.png?v=1"
-							emoji = "<:1_:562592175880405003>"
 						else:
 							img = "https://cdn.discordapp.com/emojis/562592175192539146.png?v=1"
-							emoji = "<:0_:562592175192539146>"
 		api = str(self.bot.latency * 1000)
 		api = api[:api.find(".")]
 		e.set_author(name=f"Bots Latency", icon_url=self.bot.user.avatar_url)

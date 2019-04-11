@@ -31,7 +31,7 @@ files = ['error_handler', 'config', 'menus', 'core', 'music', 'mod', 'welcome', 
          'actions', 'reactions', 'responses', 'textart', 'fun', 'math', 'dev', '4b4t', 'readme', 'reload', 'embeds', 'warning', 'profiles',
          'save', 'clean_rythm', 'utility', 'psutil', 'rules', 'duel_chat', 'selfroles', 'lock', 'backup', 'audit', 'cookies', 'team', 'stats',
          'anti_purge', 'emojis', 'logger', 'autorole', 'changelog', 'restore_roles', 'chatbot', 'anti_spam', 'anti_raid', 'chatfilter', 'nsfw',
-         'leaderboards', 'chatlock']
+         'leaderboards', 'chatlock', 'rainbow']
 
 description = '''Fate[Zero]: Personal Bot'''
 bot = commands.Bot(command_prefix=get_prefix, case_insensitive=True, max_messages=16000)
