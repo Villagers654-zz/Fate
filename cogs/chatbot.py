@@ -156,9 +156,10 @@ class ChatBot(commands.Cog):
 		if isinstance(m.guild, discord.Guild):
 			if not m.author.bot:
 				guild_id = str(m.guild.id)
-				found = None
 				if m.content.startswith("<@506735111543193601>"):
 					m.content = m.content.replace("<@506735111543193601>", m.author.mention)
+				if m.content.startswith(self.bot.user.mention):
+					return
 				if "help" in m.content[:8]:
 					def pred(m):
 						return m.channel.id == m.channel.id and m.author.bot is True
@@ -211,6 +212,7 @@ class ChatBot(commands.Cog):
 								self.cache["global"].append(m.content)
 								self.save_data()
 						matches = []
+						found = False
 						for msg in cache:
 							if key in msg:
 								matches.append(msg)
