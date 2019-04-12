@@ -35,6 +35,7 @@ class Logger(commands.Cog):
 
 	@commands.group(name="logger")
 	@commands.cooldown(1, 3, commands.BucketType.user)
+	@commands.guild_only()
 	async def _logger(self, ctx):
 		if ctx.invoked_subcommand is None:
 			guild_id = str(ctx.guild.id)
@@ -262,7 +263,8 @@ class Logger(commands.Cog):
 							e.title = "~===🥂🍸🍷Msg Edited🍷🍸🥂===~"
 							e.set_thumbnail(url=before.author.avatar_url)
 							e.description = f"**Author:** {before.author.mention}\n" \
-								f"**Channel:** {before.channel.mention}"
+								f"**Channel:** {before.channel.mention}" \
+								f"[Jump to MSG]({before.jump_url})\n"
 							e.add_field(name="◈ Before ◈", value=before.content, inline=False)
 							e.add_field(name="◈ After ◈", value=after.content, inline=False)
 							e.set_footer(text=datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p'))
@@ -296,7 +298,8 @@ class Logger(commands.Cog):
 				e.set_thumbnail(url=m.author.avatar_url)
 				e.description = f"**Author:** {m.author.mention}\n" \
 					f"**Deleted by:** {user}\n" \
-					f"**Channel:** {m.channel.mention}"
+					f"**Channel:** {m.channel.mention}\n" \
+					f"[Jump to MSG]({m.jump_url})\n"
 				if m.pinned:
 					e.description += f"\nMsg was pinned"
 				if not m.content:
@@ -365,27 +368,53 @@ class Logger(commands.Cog):
 			async for entry in messages[0].guild.audit_logs(action=discord.AuditLogAction.message_delete, limit=1):
 				if self.past(2) < entry.created_at:
 					user = entry.user.mention
-			purged_messages = ""
-			authors = []
-			for msg in messages:
-				purged_messages = f"{msg.created_at.strftime('%I:%M%p')} | {msg.author.display_name}: {msg.content}\n{purged_messages}"
-				if msg.author.id not in authors:
-					authors.append(msg.author.id)
-			with open('./data/temp/purged_messages.txt', 'w') as f:
-				f.write(purged_messages)
-			path = os.getcwd() + "/data/temp/purged_messages.txt"
 			channel = self.bot.get_channel(self.channel[guild_id])
-			e = discord.Embed(color=colors.black())
-			e.title = "~===🥂🍸🍷Bulk Msg Delete🍷🍸🥂===~"
-			e.set_thumbnail(url=m.author.avatar_url)
-			e.description = f"**Users Affected:** {len(authors)}\n" \
-				f"**Messages Deleted:** {len(messages)}\n" \
-				f"**Triggered by:** {user}\n" \
-				f"**Channel:** {m.channel.mention}"
-			footer = f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}"
-			e.set_footer(text=footer)
-			await channel.send(embed=e, file=discord.File(path))
-			os.system("rm ./data/temp/purged_messages.txt")
+			if m.channel.id == self.channel[guild_id]:
+				for msg in messages:
+					e = discord.Embed(color=colors.purple())
+					e.title = "~===🥂🍸🍷Msg Deleted🍷🍸🥂===~"
+					e.set_thumbnail(url=msg.author.avatar_url)
+					e.description = f"**Author:** {msg.author.mention}\n" \
+						f"**Deleted by:** {user}\n" \
+						f"**Channel:** {msg.channel.mention}\n" \
+						f"[Jump to MSG]({msg.jump_url})\n"
+					if msg.pinned:
+						e.description += f"\nMsg was pinned"
+					if not msg.content:
+						msg.content = "`None`"
+					e.add_field(name="◈ Content ◈", value=msg.content, inline=False)
+					if msg.attachments:
+						e.add_field(name="◈ Cached Images ◈", value="They may not show")
+					for attachment in msg.attachments:
+						e.set_image(url=attachment.proxy_url)
+					footer = f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}"
+					if msg.embeds:
+						footer += " | Embed(s) ⇓"
+					e.set_footer(text=footer)
+					await channel.send(embed=e)
+					for embed in msg.embeds:
+						await channel.send(embed=embed)
+			else:
+				purged_messages = ""
+				authors = []
+				for msg in messages:
+					purged_messages = f"{msg.created_at.strftime('%I:%M%p')} | {msg.author.display_name}: {msg.content}\n{purged_messages}"
+					if msg.author.id not in authors:
+						authors.append(msg.author.id)
+				with open('./data/temp/purged_messages.txt', 'w') as f:
+					f.write(purged_messages)
+				path = os.getcwd() + "/data/temp/purged_messages.txt"
+				e = discord.Embed(color=colors.black())
+				e.title = "~===🥂🍸🍷Bulk Msg Delete🍷🍸🥂===~"
+				e.set_thumbnail(url=m.author.avatar_url)
+				e.description = f"**Users Affected:** {len(authors)}\n" \
+					f"**Messages Deleted:** {len(messages)}\n" \
+					f"**Triggered by:** {user}\n" \
+					f"**Channel:** {m.channel.mention}"
+				footer = f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}"
+				e.set_footer(text=footer)
+				await channel.send(embed=e, file=discord.File(path))
+				os.system("rm ./data/temp/purged_messages.txt")
 
 	@commands.Cog.listener()
 	async def on_guild_update(self, before, after):
