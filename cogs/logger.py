@@ -25,7 +25,7 @@ class Logger(commands.Cog):
 					self.blacklist = dat["blacklist"]
 					self.blocked = dat["blocked"]
 
-	def save_data(self):
+	def save_json(self):
 		with open("./data/userdata/logger.json", "w") as outfile:
 			json.dump({"channel": self.channel, "blacklist": self.blacklist,
 			           "blocked": self.blocked}, outfile, ensure_ascii=False)
@@ -35,6 +35,7 @@ class Logger(commands.Cog):
 
 	@commands.group(name="logger")
 	@commands.cooldown(1, 3, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True)
 	@commands.guild_only()
 	async def _logger(self, ctx):
 		if ctx.invoked_subcommand is None:
@@ -50,7 +51,7 @@ class Logger(commands.Cog):
 				".logger setchannel {channel}\n" \
 				".logger blacklist {event}\n" \
 				".logger whitelist {event}\n" \
-				".logger block {channel}\n" \
+				".logger blockchannel {channel}\n" \
 				".logger disable\n" \
 				".logger events"
 			await ctx.send(embed=e)
@@ -58,6 +59,7 @@ class Logger(commands.Cog):
 	@_logger.command(name="blacklist")
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.has_permissions(manage_guild=True)
+	@commands.bot_has_permissions(embed_links=True)
 	async def _blacklist(self, ctx, event=None):
 		guild_id = str(ctx.guild.id)
 		if event is None:
@@ -79,7 +81,7 @@ class Logger(commands.Cog):
 		if guild_id not in self.blacklist:
 			self.blacklist[guild_id] = []
 		self.blacklist[guild_id].append(event)
-		self.save_data()
+		self.save_json()
 		e = discord.Embed(color=colors.fate())
 		e.set_author(name=f"| {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
 		e.set_thumbnail(url=ctx.guild.icon_url)
@@ -89,13 +91,14 @@ class Logger(commands.Cog):
 	@_logger.command(name="whitelist")
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.has_permissions(manage_guild=True)
+	@commands.bot_has_permissions(embed_links=True)
 	async def _whitelist(self, ctx, event):
 		event = event.lower()
-		events = ["message_delete", "message_edit", "guild_update",
+		known_events = ["message_delete", "message_edit", "guild_update",
 		    "channel_create", "channel_delete", "channel_update", "ghost_typing",
 		    "role_create", "role_delete", "role_update", "emoji_update",
 		    "member_join", "member_remove", "member_unban", "member_update"]
-		if event not in events:
+		if event not in known_events:
 			return await ctx.send("Unknown Event")
 		guild_id = str(ctx.guild.id)
 		if guild_id not in self.blacklist:
@@ -106,39 +109,45 @@ class Logger(commands.Cog):
 		self.blacklist[guild_id].pop(target)
 		if len(self.blacklist[guild_id]) is 0:
 			del self.blacklist[guild_id]
-		self.save_data()
 		e = discord.Embed(color=colors.fate())
 		e.set_author(name=f"| {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
 		e.set_thumbnail(url=ctx.guild.icon_url)
 		e.description = f"Whitelisted {event}"
 		await ctx.send(embed=e)
+		self.save_json()
 
-	@_logger.command(name="block")
+	@_logger.command(name="blockchannel")
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.has_permissions(manage_guild=True)
-	async def _block(self, ctx, channel: discord.TextChannel=None):
+	@commands.bot_has_permissions(embed_links=True)
+	async def _blockchannel(self, ctx, channel: discord.TextChannel=None):
 		guild_id = str(ctx.guild.id)
-		if not channel:
+		if channel:
+			if guild_id not in self.blocked:
+				self.blocked[guild_id] = []
+			self.blocked[guild_id].append(channel.id)
+			await ctx.send(f"Blocked {channel.mention}")
+			return self.save_json()
+		if guild_id in self.blocked:
 			channels = []
-			if guild_id in self.blocked:
-				for id in self.blocked[guild_id]:
-					try:
-						channels.append(self.bot.get_channel(id).mention)
-					except:
-						self.blocked[guild_id].pop(self.blocked[guild_id].index(id))
-						self.save_data()
-			else:
-				channels = "None"
+			for channel_id in self.blocked[guild_id]:
+				channel = self.bot.get_channel(channel_id)
+				if isinstance(channel, discord.TextChannel):
+					channels.append(self.bot.get_channel(channel_id).mention)
+				else:
+					self.blocked[guild_id].pop(self.blocked[guild_id].index(channel_id))
+					if len(self.blocked[guild_id]) is 0:
+						del self.blocked[guild_id]
+					self.save_json()
+			if guild_id not in self.blocked:
+				return await ctx.send("This server currently has no blocked channels")
 			e = discord.Embed(color=colors.fate())
 			e.set_author(name="| Blocked Channels", icon_url=ctx.author.avatar_url)
 			e.set_thumbnail(url=ctx.guild.icon_url)
-			e.description = f"**Blocked Channels:** {channels}"
-			return await ctx.send(embed=e)
-		if guild_id not in self.blocked:
-			self.blocked[guild_id] = []
-		self.blocked[guild_id].append(channel.id)
-		await ctx.send(f"Blocked {channel.mention}")
-		self.save_data()
+			e.description = channels
+			await ctx.send(embed=e)
+		else:
+			await ctx.send("This server currently has no blocked channels")
 
 	@_logger.command(name="disable")
 	@commands.cooldown(1, 3, commands.BucketType.user)
@@ -147,23 +156,22 @@ class Logger(commands.Cog):
 		guild_id = str(ctx.guild.id)
 		if guild_id in self.channel:
 			del self.channel[guild_id]
-			self.save_data()
-			return await ctx.send("Disabled logging")
-		await ctx.send("Logging is not enabled")
+			self.save_json()
+			return await ctx.send("Disabled logger")
+		await ctx.send("Logger is not enabled")
 
 	@_logger.command(name="setchannel")
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.has_permissions(manage_guild=True)
-	@commands.bot_has_permissions(view_audit_log=True,
-	embed_links=True, external_emojis=True)
+	@commands.bot_has_permissions(view_audit_log=True, embed_links=True, external_emojis=True)
 	async def _setchannel(self, ctx, channel: discord.TextChannel=None):
 		guild_id = str(ctx.guild.id)
 		if channel is None:
 			self.channel[guild_id] = ctx.channel.id
-			self.save_data()
+			self.save_json()
 			return await ctx.send(f"I will now log actions to {ctx.channel.mention}")
 		self.channel[guild_id] = channel.id
-		self.save_data()
+		self.save_json()
 		await ctx.send(f"I will now log all actions to {channel.mention}")
 
 	@_logger.command(name="events")
@@ -193,13 +201,6 @@ class Logger(commands.Cog):
 						return
 				if guild_id in self.blocked:
 					if channel.id in self.blocked[guild_id]:
-						for id in self.blocked[guild_id]:
-							try:
-								self.bot.get_channel(id)
-							except:
-								self.blocked[guild_id].pop(self.blocked[guild_id].index(id))
-							if len(self.blocked[guild_id]) == 0:
-								del self.blocked[guild_id]
 						return
 				if guild_id not in self.waiting:
 					self.waiting[guild_id] = {}
@@ -209,7 +210,7 @@ class Logger(commands.Cog):
 				def pred(m):
 					return m.channel.id == channel.id and m.author.id == user.id
 				try:
-					msg = await self.bot.wait_for('message', check=pred, timeout=120)
+					await self.bot.wait_for('message', check=pred, timeout=120)
 				except asyncio.TimeoutError:
 					log = self.bot.get_channel(self.channel[guild_id])
 					e = discord.Embed(color=colors.white())
@@ -243,13 +244,6 @@ class Logger(commands.Cog):
 								return
 						if guild_id in self.blocked:
 							if before.channel.id in self.blocked[guild_id]:
-								for id in self.blocked[guild_id]:
-									try:
-										self.bot.get_channel(id)
-									except:
-										self.blocked[guild_id].pop(self.blocked[guild_id].index(id))
-									if len(self.blocked[guild_id]) == 0:
-										del self.blocked[guild_id]
 								return
 						user_id = str(before.author.id)
 						if user_id not in self.cd:
@@ -280,13 +274,6 @@ class Logger(commands.Cog):
 						return
 				if guild_id in self.blocked:
 					if m.channel.id in self.blocked[guild_id]:
-						for id in self.blocked[guild_id]:
-							try:
-								self.bot.get_channel(id)
-							except:
-								self.blocked[guild_id].pop(self.blocked[guild_id].index(id))
-							if len(self.blocked[guild_id]) == 0:
-								del self.blocked[guild_id]
 						return
 				user = "Author"
 				async for entry in m.guild.audit_logs(action=discord.AuditLogAction.message_delete, limit=1):
@@ -326,13 +313,6 @@ class Logger(commands.Cog):
 					return
 			if guild_id in self.blocked:
 				if payload.channel_id in self.blocked[guild_id]:
-					for id in self.blocked[guild_id]:
-						try:
-							self.bot.get_channel(id)
-						except:
-							self.blocked[guild_id].pop(self.blocked[guild_id].index(id))
-						if len(self.blocked[guild_id]) == 0:
-							del self.blocked[guild_id]
 					return
 			await asyncio.sleep(1)
 			if guild_id not in self.cache:
@@ -356,13 +336,6 @@ class Logger(commands.Cog):
 					return
 			if guild_id in self.blocked:
 				if messages[0].channel.id in self.blocked[guild_id]:
-					for id in self.blocked[guild_id]:
-						try:
-							self.bot.get_channel(id)
-						except:
-							self.blocked[guild_id].pop(self.blocked[guild_id].index(id))
-						if len(self.blocked[guild_id]) == 0:
-							del self.blocked[guild_id]
 					return
 			user = "unknown"
 			async for entry in messages[0].guild.audit_logs(action=discord.AuditLogAction.message_delete, limit=1):
@@ -445,26 +418,37 @@ class Logger(commands.Cog):
 			if guild_id in self.blacklist:
 				if "channel_create" in self.blacklist[guild_id]:
 					return
+			user = None  # type: discord.Member
 			async for entry in channel.guild.audit_logs(action=discord.AuditLogAction.channel_create, limit=1):
 				user = entry.user
-			channel = self.bot.get_channel(self.channel[guild_id])
+			log_channel = self.bot.get_channel(self.channel[guild_id])
+			channel_name = channel.name
+			if isinstance(channel, discord.TextChannel):
+				channel_name = channel.mention
 			e = discord.Embed(color=colors.fate())
 			e.title = "~==🥂🍸🍷Channel Created🍷🍸🥂==~"
-			e.set_thumbnail(url=user.avatar_url)
-			e.description = f"**Channel:** {channel.mention}\n" \
-				f"**Created by:** {user.mention}\n" \
+			if user:
+				e.set_thumbnail(url=user.avatar_url)
+			e.description = f"**Channel:** {channel_name}\n" \
+				f"**Created by:** {user.mention if user else '`unknown`'}\n" \
 				f"**ID:** {channel.id}\n" \
 				f"**Members:** [{len(channel.members)}]"
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
-			await channel.send(embed=e)
+			await log_channel.send(embed=e)
 
 	@commands.Cog.listener()
 	async def on_guild_channel_delete(self, channel):
 		guild_id = str(channel.guild.id)
 		if guild_id in self.channel:
+			if guild_id in self.blocked:
+				if channel.id in self.blocked[guild_id]:
+					self.blocked[guild_id].pop(channel.id)
+					if len(self.blocked[guild_id]) is 0:
+						del self.blocked[guild_id]
+					self.save_json()
 			if channel.id == self.channel[guild_id]:
 				del self.channel[guild_id]
-				return
+				return self.save_json()
 			if guild_id in self.blacklist:
 				if "channel_delete" in self.blacklist[guild_id]:
 					return
@@ -489,7 +473,7 @@ class Logger(commands.Cog):
 			if guild_id in self.blacklist:
 				if "channel_update" in self.blacklist[guild_id]:
 					return
-			user = None
+			user = None  # type: discord.Member
 			async for entry in before.guild.audit_logs(after=self.past(2), action=discord.AuditLogAction.channel_update, limit=1):
 				user = entry.user
 			async for entry in before.guild.audit_logs(after=self.past(2), action=discord.AuditLogAction.overwrite_create, limit=1):
@@ -501,10 +485,11 @@ class Logger(commands.Cog):
 			channel = self.bot.get_channel(self.channel[guild_id])
 			e = discord.Embed(color=colors.fate())
 			e.title = "~==🥂🍸🍷Channel Updated🍷🍸🥂==~"
-			e.set_thumbnail(url=user.avatar_url)
+			if user:
+				e.set_thumbnail(url=user.avatar_url)
 			e.description = \
 				f"**Channel:** {after.mention}\n" \
-				f"**Updated by:** {user.mention}"
+				f"**Updated by:** {user.mention if user else '`unknown`'}"
 			if before.name != after.name:
 				e.add_field(name="◈ Name ◈", value=f"**Before:** {before.name}\n"
 					f"**After:** {after.name}", inline=False)
@@ -568,14 +553,16 @@ class Logger(commands.Cog):
 			if guild_id in self.blacklist:
 				if "role_create" in self.blacklist[guild_id]:
 					return
+			user = None  # type: discord.Member
 			async for entry in role.guild.audit_logs(after=self.past(2), action=discord.AuditLogAction.role_create, limit=1):
 				user = entry.user
 			channel = self.bot.get_channel(self.channel[guild_id])
 			e = discord.Embed(color=colors.blue())
 			e.title = "~==🥂🍸🍷Role Created🍷🍸🥂==~"
-			e.set_thumbnail(url=role.guild.icon_url)
+			if user:
+				e.set_thumbnail(url=role.guild.icon_url)
 			e.description = f"**Role:** {role.mention}\n" \
-				f"**Created by:** {user.mention}"
+				f"**Created by:** {user.mention if user else '`unknown`'}"
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 			await channel.send(embed=e)
 
@@ -586,14 +573,16 @@ class Logger(commands.Cog):
 			if guild_id in self.blacklist:
 				if "role_delete" in self.blacklist[guild_id]:
 					return
+			user = None  # type: discord.Member
 			async for entry in role.guild.audit_logs(after=self.past(2), action=discord.AuditLogAction.role_delete, limit=1):
 				user = entry.user
 			channel = self.bot.get_channel(self.channel[guild_id])
 			e = discord.Embed(color=colors.blue())
 			e.title = "~==🥂🍸🍷Role Deleted🍷🍸🥂==~"
-			e.set_thumbnail(url=role.guild.icon_url)
+			if user:
+				e.set_thumbnail(url=role.guild.icon_url)
 			e.description = f"**Name:** {role.name}\n" \
-				f"**Deleted by:** {user.mention}\n" \
+				f"**Deleted by:** {user.mention if user else '`unknown`'}\n" \
 				f"**Color:** {role.color}\n" \
 				f"**Users:** [{len(list(role.members))}]"
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
@@ -607,20 +596,18 @@ class Logger(commands.Cog):
 			if guild_id in self.blacklist:
 				if "role_update" in self.blacklist[guild_id]:
 					return
-			user = None
+			user = None  # type: discord.Member
 			async for entry in after.guild.audit_logs(after=self.past(2), action=discord.AuditLogAction.role_delete, limit=1):
 				user = entry.user.mention
 			async for entry in after.guild.audit_logs(action=discord.AuditLogAction.role_update, limit=1):
 				if self.past(2) < entry.created_at:
-					user = entry.user.mention
-			if not user:
-				user = "`unknown`"
-			is_changed = None
+					user = entry.user
+			is_changed = False
 			channel = self.bot.get_channel(self.channel[guild_id])
 			e = discord.Embed(color=colors.blue())
 			e.title = "~==🥂🍸🍷Role Updated🍷🍸🥂==~"
 			e.set_thumbnail(url=before.guild.icon_url)
-			e.description = f"**Role:** {after.mention}\n**Updated by:** {user}"
+			e.description = f"**Role:** {after.mention}\n**Updated by:** {user.display_name if user else '`unknown`'}"
 			if before.name != after.name:
 				is_changed = True
 				e.add_field(name="◈ Name ◈", value=f"**Before:** {before.name}\n**After:** {after.name}", inline=False)
@@ -792,34 +779,30 @@ class Logger(commands.Cog):
 			if guild_id in self.blacklist:
 				if "emoji_update" in self.blacklist[guild_id]:
 					return
-			user = "error"
-			async for entry in guild.audit_logs(action=discord.AuditLogAction.emoji_update, limit=1):
-				if self.past(2) < entry.created_at:
-					user = entry.user
-			async for entry in guild.audit_logs(action=discord.AuditLogAction.emoji_create, limit=1):
-				if self.past(2) < entry.created_at:
-					user = entry.user
-			async for entry in guild.audit_logs(action=discord.AuditLogAction.emoji_delete, limit=1):
-				if self.past(2) < entry.created_at:
-					user = entry.user
-			if user == "error":
-				return
+			user = None  # type: discord.Member
 			channel = self.bot.get_channel(self.channel[guild_id])
 			e = discord.Embed(color=colors.yellow())
-			e.set_thumbnail(url=user.avatar_url)
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 			for emoji in before:
 				if emoji not in after:
+					async for entry in guild.audit_logs(action=discord.AuditLogAction.emoji_delete, limit=1):
+						if self.past(2) < entry.created_at:
+							user = entry.user
+							e.set_thumbnail(url=user.avatar_url)
 					e.title = "~==🥂🍸🍷Emoji Deleted🍷🍸🥂==~"
 					e.description = \
-						f"**Deleted by:** {user.mention}\n" \
+						f"**Deleted by:** {user.mention if user else '`unknown`'}\n" \
 						f"**Name:** {emoji.name}"
 					return await channel.send(embed=e)
 			for emoji in after:
 				if emoji not in before:
+					async for entry in guild.audit_logs(action=discord.AuditLogAction.emoji_create, limit=1):
+						if self.past(2) < entry.created_at:
+							user = entry.user
+							e.set_thumbnail(url=user.avatar_url)
 					e.title = "~==🥂🍸🍷Emoji Created🍷🍸🥂==~"
 					e.description = \
-						f"**Created by:** {user.mention}\n" \
+						f"**Created by:** {user.mention if user else '`unknown`'}\n" \
 						f"**Name:** {emoji.name}\n" \
 						f"**Emoji:** {emoji}"
 					return await channel.send(embed=e)
@@ -827,9 +810,13 @@ class Logger(commands.Cog):
 				for future_emoji in after:
 					if emoji.id == future_emoji.id:
 						if emoji.name != future_emoji.name:
+							async for entry in guild.audit_logs(action=discord.AuditLogAction.emoji_update, limit=1):
+								if self.past(2) < entry.created_at:
+									user = entry.user
+									e.set_thumbnail(url=user.avatar_url)
 							e.title = "~==🥂🍸🍷Emoji Updated🍷🍸🥂==~"
 							e.description = \
-								f"**Updated by:** {user.mention}\n" \
+								f"**Updated by:** {user.mention if user else '`unknown`'}\n" \
 								f"**Emoji:** {emoji}"
 							e.add_field(name="◈ Name ◈", value=
 								f"**Before:** {emoji.name}\n"
@@ -848,7 +835,7 @@ class Logger(commands.Cog):
 			e.title = "~==🥂🍸🍷Member Joined🍷🍸🥂==~"
 			e.set_thumbnail(url=m.avatar_url)
 			e.description = \
-				f"**User:** {m.mention}\n" \
+				f"**User:** {m}\n" \
 				f"**ID:** {m.id}\n"
 			await channel.send(embed=e)
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
@@ -860,41 +847,36 @@ class Logger(commands.Cog):
 			if guild_id in self.blacklist:
 				if "member_remove" in self.blacklist[guild_id]:
 					return
-			is_kick = None  # type: bool
-			user = None  # type: discord.User
-			async for entry in m.guild.audit_logs(action=discord.AuditLogAction.kick, limit=1):
-				if self.past(2) < entry.created_at:
-					if str(entry.action) == "AuditLogAction.kick":
-						user = entry.user
-						is_kick = True
-					if str(entry.action) == "AuditLogAction.ban":
-						return
 			channel = self.bot.get_channel(self.channel[guild_id])
 			e = discord.Embed(color=colors.red())
-			if not is_kick:
-				e.title = "~==🥂🍸🍷Member Left🍷🍸🥂==~"
-				e.set_thumbnail(url=m.avatar_url)
-				e.description = \
-					f"**User:** {m}\n" \
-					f"**ID:** {m.id}\n"
-			if is_kick:
-				e.title = "~==🥂🍸🍷Member Kicked🍷🍸🥂==~"
-				e.set_thumbnail(url=m.avatar_url)
-				e.description = \
-					f"**Member:** {m}\n" \
-					f"**Kicked by:** {user.mention}" \
-					f"**ID:** {m.id}\n"
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
-			await channel.send(embed=e)
+			async for entry in m.guild.audit_logs(action=discord.AuditLogAction.kick, limit=1):
+				if self.past(2) < entry.created_at:
+					user = entry.user
+					e.title = "~==🥂🍸🍷Member Kicked🍷🍸🥂==~"
+					e.set_thumbnail(url=m.avatar_url)
+					e.description = \
+						f"**Member:** {m}\n" \
+						f"**Kicked by:** {user.mention}" \
+						f"**ID:** {m.id}\n"
+					return await channel.send(embed=e)
+			async for entry in m.guild.audit_logs(action=discord.AuditLogAction.ban, limit=1):
+				if self.past(2) > entry.created_at:
+					e.title = "~==🥂🍸🍷Member Left🍷🍸🥂==~"
+					e.set_thumbnail(url=m.avatar_url)
+					e.description = \
+						f"**User:** {m}\n" \
+						f"**ID:** {m.id}\n"
+					await channel.send(embed=e)
 
 	@commands.Cog.listener()
 	async def on_member_ban(self, guild, user):
 		guild_id = str(guild.id)
 		if guild_id in self.channel:
-			author = None  # type: discord.User
 			if guild_id in self.blacklist:
 				if "member_remove" in self.blacklist[guild_id]:
 					return
+			author = None  # type: discord.Member
 			async for entry in guild.audit_logs(limit=1, action=discord.AuditLogAction.ban):
 				author = entry.user
 			channel = self.bot.get_channel(self.channel[guild_id])
@@ -915,24 +897,23 @@ class Logger(commands.Cog):
 			if guild_id in self.blacklist:
 				if "member_unban" in self.blacklist[guild_id]:
 					return
+			author = None  # type: discord.Member
 			async for entry in guild.audit_logs(action=discord.AuditLogAction.unban, after=self.past(2), limit=1):
 				author = entry.user
-			if not user:
-				user.display_name = "Unknown"
 			channel = self.bot.get_channel(self.channel[guild_id])
 			e = discord.Embed(color=colors.orange())
 			e.title = "~==🥂🍸🍷User Unbanned🍷🍸🥂==~"
 			e.set_thumbnail(url=user.avatar_url)
-			e.description = f"**User:** {user}\nUnbanned by: {author.mention}"
+			e.description = f"**User:** {user}\nUnbanned by: {author.mention if author else '`unknown`'}"
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 			await channel.send(embed=e)
 
 	@commands.Cog.listener()
 	async def on_member_update(self, before, after):
 		guild_id = str(before.guild.id)
-		change_value = None
-		user = before
 		if guild_id in self.channel:
+			member_changed = False
+			user = before  # type: discord.Member
 			if guild_id in self.blacklist:
 				if "member_update" in self.blacklist[guild_id]:
 					return
@@ -951,11 +932,11 @@ class Logger(commands.Cog):
 			e.description = f"**User:** {after.mention}\n" \
 				f"**Changed by:** {user.mention}\n"
 			if before.display_name != after.display_name:
-				change_value = True
+				member_changed = True
 				e.add_field(name="◈ Nickname ◈", value=f"**Before:** {before.display_name}\n"
 				f"**After:** {after.display_name}", inline=False)
 			if before.roles != after.roles:
-				change_value = True
+				member_changed = True
 				role_changes = ""
 				for role in before.roles:
 					if role not in after.roles:
@@ -964,7 +945,7 @@ class Logger(commands.Cog):
 					if role not in before.roles:
 						role_changes += f"{config.emojis('plus')} {role.name}\n"
 				e.add_field(name="◈ Roles ◈", value=role_changes, inline=False)
-			if change_value:
+			if member_changed:
 				e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 				await channel.send(embed=e)
 
