@@ -25,8 +25,9 @@ class ErrorHandler(commands.Cog):
 		elif isinstance(error, commands.DisabledCommand):
 			return await ctx.send(f'`{ctx.command}` has been disabled.')
 		elif isinstance(error, commands.BadArgument):
-			if ctx.command.qualified_name == 'tag list':
-				return await ctx.send('I could not find that member. Please try again.')
+			return await ctx.send(f"Bad Argument: {error}")
+			#if ctx.command.qualified_name == 'tag list':
+				#return await ctx.send('I could not find that member. Please try again.')
 		elif isinstance(error, commands.CommandOnCooldown):
 			user_id = str(ctx.author.id)
 			await ctx.message.add_reaction('⏳')
@@ -69,7 +70,7 @@ class ErrorHandler(commands.Cog):
 			msg += f"{i}\n"
 		msg = msg[::-1]
 		msg = msg[:msg.find("Ignoring"[::-1])]
-		r = f"```Ignoring{msg[::-1][:1000]}```"
+		r = f"```Ignoring{msg[::-1]}```"[-1000:]
 		e = discord.Embed(color=colors.red())
 		e.set_author(name=f"| Fatal Error | {ctx.command}", icon_url=ctx.author.avatar_url)
 		e.set_thumbnail(url=ctx.guild.icon_url)
