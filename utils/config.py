@@ -12,7 +12,7 @@ def links():
 	embed.set_author(name=f'| Links | 📚', icon_url="https://images-ext-1.discordapp.net/external/kgeJxDOsmMoy2gdBr44IFpg5hpYzqxTkOUqwjYZbPtI/%3Fsize%3D1024/https/cdn.discordapp.com/avatars/506735111543193601/689cf49cf2435163ca420996bcb723a5.webp")
 	embed.set_thumbnail(url=random.choice(["https://cdn.discordapp.com/attachments/501871950260469790/513636718835007488/kisspng-computer-icons-message-icon-design-download-invite-5abf1e6f0905a2.045504771522474607037.png", "https://cdn.discordapp.com/attachments/501871950260469790/513636728733433857/mail-open-outline.png", "https://cdn.discordapp.com/attachments/501871950260469790/513636736492896271/mail-open-solid.png"]))
 	embed.description = \
-		f'[Invite](https://discordapp.com/oauth2/authorize?client_id=506735111543193601&permissions=1559620710&scope=bot) 📥\n' \
+		f'[Invite](https://discordapp.com/oauth2/authorize?client_id=506735111543193601&permissions=1551232246&scope=bot) 📥\n' \
 		f'[Support](https://discord.gg/HkeCzSw) 📧\n' \
 		f'[Discord](https://discord.gg/BQ23Z2E) <:discord:513634338487795732>'
 	return embed
