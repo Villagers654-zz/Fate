@@ -1,6 +1,7 @@
+from datetime import datetime, timedelta
 from discord.ext import commands
+from utils import colors, config, checks, utils
 from os.path import isfile
-from utils import colors
 import discord
 import asyncio
 import random
@@ -14,16 +15,81 @@ class Mod(commands.Cog):
 		self.massnick = {}
 		self.warns = {}
 		self.roles = {}
+		self.timers = {}
 		if isfile("./data/userdata/mod.json"):
 			with open("./data/userdata/mod.json", "r") as infile:
 				dat = json.load(infile)
 				if "warns" in dat:
 					self.warns = dat["warns"]
+				if "roles" in dat:
 					self.roles = dat["roles"]
+				if "timers" in dat:
+					self.timers = dat["timers"]
 
 	def save_json(self):
 		with open("./data/userdata/mod.json", "w") as outfile:
-			json.dump({"warns": self.warns, "roles": self.roles}, outfile, ensure_ascii=False)
+			json.dump({"warns": self.warns, "roles": self.roles, "timers": self.timers}, outfile, ensure_ascii=False)
+
+	async def start_timer(self, user_id):
+		if user_id in self.timers:
+			action = self.timers[user_id][0]
+			if action == 'mute':
+				channel = self.bot.get_channel(self.timers[user_id]['channel'])  # type: discord.TextChannel
+				user = channel.guild.get_member(self.timers[user_id]['user'])  # type: discord.Member
+				end_time = datetime.strptime(self.timers[user_id]['end_time'], "%Y-%m-%d %H:%M:%S.%f")  # type: datetime.now()
+				mute_role = channel.guild.get_role(self.timers[user_id]['mute_role'])  # type: discord.Role
+				removed_roles = self.timers[user_id]['roles']  # type: list
+				sleep_time = (end_time - datetime.now()).seconds
+				async def unmute():
+					if mute_role in user.roles:
+						await user.remove_roles(mute_role)
+						await channel.send(f"**Unmuted:** {user.name}")
+					for role_id in removed_roles:
+						role = channel.guild.get_role(role_id)
+						if role not in user.roles:
+							await user.add_roles(channel.guild.get_role(role_id))
+						await asyncio.sleep(0.5)
+				if datetime.now() < end_time:
+					await asyncio.sleep(sleep_time)
+					await unmute()
+				else:
+					await unmute()
+				del self.timers[user_id]
+				self.save_json()
+
+	@commands.Cog.listener()
+	async def on_ready(self):
+		for user_id in self.timers.keys():
+			await self.bot.get_channel(config.server("log")).send(f"Timer: {user_id}", delete_after=3)
+
+	@commands.Cog.listener()
+	async def on_message(self, m: discord.Message):
+		if isinstance(m.guild, discord.Guild):
+			if m.channel.id == config.server("log"):
+				if m.content.startswith("Timer:"):
+					user_id = m.content.replace("Timer: ", "")
+					await self.start_timer(user_id)
+
+	@commands.Cog.listener()
+	async def on_guild_remove(self, guild):
+		guild_id = str(guild.id)
+		if guild_id in self.warns:
+			del self.warns[guild_id]
+			self.save_json()
+		if guild_id in self.roles:
+			del self.warns[guild_id]
+			self.save_json()
+		if guild_id in self.timers:
+			del self.timers[guild_id]
+			self.save_json()
+
+	@commands.command(name="cleartimers")
+	@commands.check(checks.luck)
+	async def cleartimers(self, ctx):
+		keys = self.timers.keys()
+		for key in keys:
+			del self.timers[key]
+		await ctx.message.add_reaction("👍")
 
 	@commands.command(name="delete")
 	@commands.cooldown(1, 3, commands.BucketType.user)
@@ -300,9 +366,9 @@ class Mod(commands.Cog):
 	@commands.has_permissions(manage_roles=True)
 	@commands.bot_has_permissions(manage_roles=True)
 	async def _addrole(self, ctx, arg1: commands.clean_content=None, arg2: commands.clean_content=None):
-		arg1 = arg1  # type: str
-		arg2 = arg2  # type: str
 		if arg2 is not None:
+			arg1 = arg1  # type: str
+			arg2 = arg2  # type: str
 			arg1 = arg1.replace("@", "")
 			arg2 = arg2.replace("@", "")
 		# giving the author a role
@@ -409,6 +475,8 @@ class Mod(commands.Cog):
 	@commands.bot_has_permissions(manage_roles=True)
 	async def _removerole(self, ctx, arg1: commands.clean_content=None, arg2: commands.clean_content=None):
 		if arg2 is not None:
+			arg1 = arg1  # type: str
+			arg2 = arg2  # type: str
 			arg1 = arg1.replace("@", "")
 			arg2 = arg2.replace("@", "")
 		# removing the role from the author
@@ -469,32 +537,24 @@ class Mod(commands.Cog):
 	@commands.guild_only()
 	@commands.has_permissions(manage_roles=True)
 	@commands.bot_has_permissions(manage_roles=True)
-	async def massrole(self, ctx, role: str):
-		role = role.replace("<@&", "").replace(">", "").replace("<@", "").replace("@", "")
-		check = False
-		for r in ctx.guild.roles:
-			if role.lower() == r.name.lower():
-				role = r
-				check = True
+	async def massrole(self, ctx, target_role: str):
+		target_role = target_role.replace("<@&", "").replace(">", "").replace("<@", "").lower()
+		for role in ctx.guild.roles:
+			if target_role == role.name.lower():
+				target_role = role
 				break
-		if check is False:
-			for r in ctx.guild.roles:
-				if role.lower() in r.name.lower():
-					role = r
-					check = True
+		if not isinstance(target_role, discord.Role):
+			for role in ctx.guild.roles:
+				if target_role in role.name.lower():
+					target_role = role
 					break
-		if check is False:
+		if not isinstance(target_role, discord.Role):
 			await ctx.send("Role not found")
-		failed = "**Failed to edit the roles of:**"
 		await ctx.message.add_reaction("🖍")
 		for member in ctx.guild.members:
-			try:
-				await member.add_roles(role)
-				await asyncio.sleep(0.25)
-			except:
-				failed += f"\n{member.name}"
-		if failed.endswith("**"):
-			await ctx.send(failed)
+			if member.top_role.position < utils.Bot().user(ctx).top_role.position:
+				await member.add_roles(target_role)
+				await asyncio.sleep(1)
 		await ctx.message.add_reaction("🏁")
 
 	@commands.command(name="vcmute")
@@ -518,19 +578,19 @@ class Mod(commands.Cog):
 		await member.edit(mute=False)
 		await ctx.send(f'Unmuted {member.display_name} 👍')
 
-	@commands.command(name="mute", description="Blocks users from sending messages")
+	@commands.command(name="mute", description="Blocks a user from sending messages")
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.guild_only()
 	@commands.has_permissions(manage_roles=True)
 	@commands.bot_has_permissions(manage_roles=True)
-	async def mute(self, ctx, member: discord.Member=None, timer=None):
+	async def mute(self, ctx, user: discord.Member=None, timer=None):
 		async with ctx.typing():
-			if not member:
+			if not user:
 				return await ctx.send("**Format:** `.mute {@user} {timer: 2m, 2h, or 2d}`")
-			if member.top_role.position >= ctx.author.top_role.position:
+			if user.top_role.position >= ctx.author.top_role.position:
 				return await ctx.send("That user is above your paygrade, take a seat")
 			guild_id = str(ctx.guild.id)
-			user_id = str(member.id)
+			user_id = str(user.id)
 			mute_role = None  # type: discord.Role
 			for role in ctx.guild.roles:
 				if role.name.lower() == "muted":
@@ -543,43 +603,45 @@ class Mod(commands.Cog):
 				mute_role = await ctx.guild.create_role(name="Muted", color=discord.Color(colors.black()))
 				for channel in ctx.guild.text_channels:
 					await channel.set_permissions(mute_role, send_messages=False)
+					await asyncio.sleep(0.5)
 				for channel in ctx.guild.voice_channels:
 					await channel.set_permissions(mute_role, speak=False)
-			if mute_role in member.roles:
-				return await ctx.send(f"{member.display_name} is already muted")
+					await asyncio.sleep(0.5)
+			if mute_role in user.roles:
+				return await ctx.send(f"{user.display_name} is already muted")
 			if not timer:
 				if guild_id not in self.roles:
 					self.roles[guild_id] = {}
 				self.roles[guild_id][user_id] = []
-				for role in member.roles:
+				for role in user.roles:
 					try:
-						await member.remove_roles(role)
+						await user.remove_roles(role)
 						self.roles[guild_id][user_id].append(role.id)
 						await asyncio.sleep(0.5)
 					except:
 						pass
 				self.save_json()
-				await member.add_roles(mute_role)
-				await ctx.send(f"Muted {member.display_name}")
+				await user.add_roles(mute_role)
+				await ctx.send(f"Muted {user.display_name}")
 				return await ctx.message.add_reaction("👍")
 			for x in list(timer):
 				if x not in "1234567890dhms":
 					return await ctx.send("Invalid character in `timer` field")
-			user_roles = []
-			for role in member.roles:
+			removed_roles = []
+			for role in user.roles:
 				try:
-					await member.remove_roles(role)
-					user_roles.append(role.id)
+					await user.remove_roles(role)
+					removed_roles.append(role.id)
 					await asyncio.sleep(0.5)
 				except:
 					pass
-			await member.add_roles(mute_role)
+			await user.add_roles(mute_role)
 			if timer is None:
-				return await ctx.send(f"**Muted:** {member.name}")
+				return await ctx.send(f"**Muted:** {user.name}")
 			r = timer.replace("m", " minutes").replace("1 minutes", "1 minute")
 			r = r.replace("h", " hours").replace("1 hours", "1 hour")
 			r = r.replace("d", " days").replace("1 days", "1 day")
-			await ctx.send(f"Muted **{member.name}** for {r}")
+			await ctx.send(f"Muted **{user.name}** for {r}")
 			if "d" in str(timer):
 				timer = float(timer.replace("d", "")) * 60 * 60 * 24
 			if "h" in str(timer):
@@ -588,50 +650,72 @@ class Mod(commands.Cog):
 				timer = float(timer.replace("m", "")) * 60
 			if "s" in str(timer):
 				timer = float(timer.replace("s", ""))
+		self.timers[user_id] = {
+			'action': 'mute',
+			'channel': ctx.channel.id,
+			'user': user.id,
+			'end_time': str(datetime.now() + timedelta(seconds=timer)),
+			'mute_role': mute_role.id,
+			'roles': removed_roles}
+		self.save_json()
 		await asyncio.sleep(timer)
-		if mute_role in member.roles:
-			await member.remove_roles(mute_role)
-			await ctx.send(f"**Unmuted:** {member.name}")
-		for role_id in user_roles:
-			try:
-				await member.add_roles(ctx.guild.get_role(role_id))
-			except:
-				pass
-			await asyncio.sleep(0.5)
+		if user_id in self.timers:
+			if mute_role in user.roles:
+				await user.remove_roles(mute_role)
+				await ctx.send(f"**Unmuted:** {user.name}")
+			for role_id in removed_roles:
+				role = ctx.guild.get_role(role_id)
+				if role not in user.roles:
+					await user.add_roles(role)
+					await asyncio.sleep(0.5)
+			del self.timers[user_id]
+			self.save_json()
 
 	@commands.command(name="unmute", description="Unblocks users from sending messages")
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.guild_only()
 	@commands.has_permissions(manage_roles=True)
 	@commands.bot_has_permissions(manage_roles=True, manage_channels=True)
-	async def unmute(self, ctx, member: discord.Member=None):
-		if member is None:
+	async def unmute(self, ctx, user: discord.Member=None):
+		if user is None:
 			return await ctx.send("**Unmute Usage:**\n.unmute {@user}")
-		if member.top_role.position >= ctx.author.top_role.position:
+		if user.top_role.position >= ctx.author.top_role.position:
 			return await ctx.send("That user is above your paygrade, take a seat")
 		guild_id = str(ctx.guild.id)
-		user_id = str(member.id)
+		user_id = str(user.id)
 		mute_role = None  # type: discord.Role
 		for role in ctx.guild.roles:
 			if role.name.lower() == "muted":
 				mute_role = role
 		if not mute_role:
-			role = await ctx.guild.create_role(name="Muted", color=discord.Color(colors.black()))
+			mute_role = await ctx.guild.create_role(name="Muted", color=discord.Color(colors.black()))
 			for channel in ctx.guild.text_channels:
-				await channel.set_permissions(role, send_messages=False)
+				await channel.set_permissions(mute_role, send_messages=False)
 			for channel in ctx.guild.voice_channels:
-				await channel.set_permissions(role, speak=False)
-		if mute_role not in member.roles:
-			return await ctx.send(f"{member.display_name} is not muted")
-		await member.remove_roles(mute_role)
+				await channel.set_permissions(mute_role, speak=False)
+		if mute_role not in user.roles:
+			return await ctx.send(f"{user.display_name} is not muted")
+		await user.remove_roles(mute_role)
 		if guild_id in self.roles:
 			if user_id in self.roles:
 				for role_id in self.roles[guild_id][user_id]:
-					await member.add_roles(ctx.guild.get_role(role_id))
-					await asyncio.sleep(0.5)
+					role = ctx.guild.get_role(role_id)
+					if role not in user.roles:
+						await user.add_roles(role)
+						await asyncio.sleep(0.5)
 				del self.roles[guild_id][user_id]
 				self.save_json()
-		await ctx.send(f"Unmuted {member.name}")
+		if user_id in self.timers:
+			channel = self.bot.get_channel(self.timers[user_id]['channel'])  # type: discord.TextChannel
+			removed_roles = self.timers[user_id]['roles']  # type: list
+			for role_id in removed_roles:
+				role = channel.guild.get_role(role_id)
+				if role not in user.roles:
+					await user.add_roles(channel.guild.get_role(role_id))
+					await asyncio.sleep(0.5)
+			del self.timers[user_id]
+			self.save_json()
+		await ctx.send(f"Unmuted {user.name}")
 
 	@commands.command(name="warn")
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -718,11 +802,23 @@ class Mod(commands.Cog):
 					await channel.set_permissions(mute_role, speak=False)
 			if mute_role in user.roles:
 				return await ctx.send(f"{user.display_name} is already muted")
+			user_roles = []
+			for role in user.roles:
+				try:
+					await user.remove_roles(role)
+					user_roles.append(role.id)
+					await asyncio.sleep(0.5)
+				except:
+					pass
 			await user.add_roles(mute_role)
+			self.timers[user_id] = ('mute', ctx.channel.id, user.id, str(datetime.now() + timedelta(seconds=7200)), mute_role.id, user_roles)
+			self.save_json()
 			await asyncio.sleep(7200)
 			if mute_role in user.roles:
 				await user.remove_roles(mute_role)
 				await ctx.send(f"**Unmuted:** {user.name}")
+			del self.timers[user_id]
+			self.save_json()
 
 	@commands.command(name="clearwarns")
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -805,16 +901,6 @@ class Mod(commands.Cog):
 		if user_id not in self.warns[guild_id]:
 			return await ctx.send(0)
 		await ctx.send(f"**{user.display_name}:** `{self.warns[guild_id][user_id]}`")
-
-	@commands.Cog.listener()
-	async def on_guild_remove(self, guild):
-		guild_id = str(guild.id)
-		if guild_id in self.warns:
-			del self.warns[guild_id]
-			self.save_json()
-		if guild_id in self.roles:
-			del self.warns[guild_id]
-			self.save_json()
 
 def setup(bot):
 	bot.add_cog(Mod(bot))

@@ -31,6 +31,8 @@ class ChatBot(commands.Cog):
 			          outfile, sort_keys=True, indent=4, separators=(',', ': '))
 
 	@commands.group(name="chatbot")
+	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.guild_only()
 	@commands.has_permissions(manage_messages=True)
 	async def _chatbot(self, ctx):
 		if not ctx.invoked_subcommand:
@@ -275,13 +277,16 @@ class ChatBot(commands.Cog):
 		guild_id = str(guild.id)
 		if guild_id in self.toggle:
 			del self.toggle[guild_id]
+			self.save_data()
 		if guild_id in self.cache:
 			del self.cache[guild_id]
+			self.save_data()
 		if guild_id in self.prefixes:
 			del self.prefixes[guild_id]
+			self.save_data()
 		if guild_id in self.dir:
 			del self.dir[guild_id]
-		self.save_data()
+			self.save_data()
 
 def setup(bot):
 	bot.add_cog(ChatBot(bot))

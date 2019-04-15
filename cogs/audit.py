@@ -15,12 +15,12 @@ class Audit(commands.Cog):
 			e.set_thumbnail(url=ctx.guild.icon_url)
 			e.description = ""
 			e.add_field(name="◈ Commands ◈", value=
-			".audit last {amount (default 1)}\n"
-			".audit search action {action} {amount}\n"
-			".audit search target {@user} {amount}\n"
-			".audit search user {@user} {amount}\n", inline=False)
+				".audit last {amount (default 1)}\n"
+				".audit search action {action} {amount}\n"
+				".audit search target {@user} {amount}\n"
+				".audit search user {@user} {amount}\n", inline=False)
 			e.add_field(name="◈ Actions ◈", value="Examples: kick, ban, message_delete\nFor a full list "
-			"[click here](https://discordpy.readthedocs.io/en/rewrite/api.html#discord.AuditLogAction)", inline=False)
+				"[click here](https://discordpy.readthedocs.io/en/rewrite/api.html#discord.AuditLogAction)", inline=False)
 			await ctx.send(embed=e)
 
 	@_audit.group(name="search")

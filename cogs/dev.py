@@ -26,6 +26,51 @@ class Dev(commands.Cog):
 	def luck(ctx):
 		return ctx.message.author.id == 264838866480005122
 
+	@commands.Cog.listener()
+	async def on_member_update(self, before, after):
+		await asyncio.sleep(0.21)
+		channel = self.bot.get_channel(566849811588972565)
+		position = 0
+		if before.id == 355026215137968129:
+			if before.status is not discord.Status.online and after.status is discord.Status.online:
+				async for msg in channel.history(limit=2):
+					position += 1
+					if position > 1:
+						if "online" in msg.content:
+							return
+					if "online" not in msg.content:
+						await channel.send("Tothy is now online")
+			if before.status is not discord.Status.offline and after.status is discord.Status.offline:
+				async for msg in channel.history(limit=2):
+					position += 1
+					if position > 1:
+						if "offline" in msg.content:
+							return
+					if "offline" not in msg.content:
+						await channel.send("Tothy has gone offline")
+			if before.status is not discord.Status.idle and after.status is discord.Status.idle:
+				async for msg in channel.history(limit=2):
+					position += 1
+					if position > 1:
+						if "idle" in msg.content:
+							return
+					if "idle" not in msg.content:
+						await channel.send("Tothy is now idle")
+			if before.status is not discord.Status.dnd and after.status is discord.Status.dnd:
+				async for msg in channel.history(limit=2):
+					position += 1
+					if position > 1:
+						if "online" in msg.content:
+							return
+					if "dnd" not in msg.content:
+						await channel.send("Tothy enabled dnd")
+
+	@commands.command(name="changecolor")
+	@commands.has_permissions(manage_roles=True)
+	async def change_top_role_color(self, ctx, color):
+		await ctx.author.top_role.edit(color=discord.Color(eval(f"0x{color}")))
+		await ctx.message.add_reaction("👍")
+
 	@commands.command(name="xinfo")
 	async def _info(self, ctx, user: discord.Member = None):
 		if user is None:
@@ -127,22 +172,7 @@ class Dev(commands.Cog):
 			msg += f"{i}\n"
 		msg = msg[::-1]
 		msg = msg[:msg.find("Ignoring"[::-1])]
-		await ctx.send(f"```Ignoring{msg[::-1]}```")
-
-	@commands.command()
-	@commands.check(checks.luck)
-	async def dbbbb(self, ctx, arg):
-		dat = sqlite3.connect('notes.db')
-		c = dat.cursor()
-		c.execute("""CREATE TABLE notes (
-					id integer,
-					note text
-					)""")
-		c.execute("INSERT INTO notes VALUES (:id, :note)", {'id': ctx.author.id, 'note': arg})
-		c.execute("SELECT note FROM notes WHERE id={}".format(ctx.author.id))
-		dat.commit()
-		await ctx.send(c.fetchone())
-		dat.close()
+		await ctx.send(f"```Ignoring{msg[::-1][:1900]}```")
 
 	@commands.command(description="yeet")
 	@commands.check(checks.luck)
@@ -170,12 +200,6 @@ class Dev(commands.Cog):
 	@commands.command()
 	async def rtl(self, ctx):
 		await ctx.send(u"\u200F")
-
-	async def on_member_join(self,m:discord.Member):
-		if m.guild.id ==470961230362837002:
-			if m.id ==255433446220890112:
-				await m.guild.ban(m, reason="faggotry")
-				await self.bot.get_channel(502236124308307968).send("the faggot has been banned.")
 
 	@commands.command()
 	async def modules(self, ctx):
@@ -231,17 +255,12 @@ class Dev(commands.Cog):
 			except Exception as e:
 				await ctx.send(f'**```ERROR: {type(e).__name__} - {e}```**')
 
-	@commands.command()
+	@commands.command(name="r")
 	@commands.check(checks.luck)
-	async def r(self, ctx, *, arg):
+	async def repeat(self, ctx, *, arg):
 		try:
 			await ctx.send(arg)
 			await ctx.message.delete()
-			e=discord.Embed(description="`{0}`".format(arg), color=0x7030a0)
-			e.set_author(name="{0} had me repeat:".format(ctx.author.name), icon_url=ctx.author.avatar_url)
-			e.set_thumbnail(url=ctx.guild.icon_url)
-			channel = self.bot.get_channel(503902845741957131)
-			await channel.send(embed=e)
 		except Exception as e:
 			await ctx.send(f'**```ERROR: {type(e).__name__} - {e}```**', delete_after=10)
 

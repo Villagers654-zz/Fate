@@ -19,6 +19,8 @@ class RestoreRoles(commands.Cog):
 		return ctx.author is ctx.guild.owner
 
 	@commands.command(name="restore_roles")
+	@commands.cooldown(1, 3, commands.BucketType.user)
+	@commands.guild_only()
 	@commands.has_permissions(administrator=True)
 	async def _restore_roles(self, ctx):
 		guild_id = str(ctx.guild.id)
@@ -39,9 +41,10 @@ class RestoreRoles(commands.Cog):
 			if member_id in self.data[guild_id]:
 				for role_id in self.data[guild_id][member_id]:
 					try:
-						role = member.guild.get_role(role_id)
-						await member.add_roles(role)
 						await asyncio.sleep(1)
+						role = member.guild.get_role(role_id)
+						if role:
+							await member.add_roles(role)
 					except:
 						pass
 

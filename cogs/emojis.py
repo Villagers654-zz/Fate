@@ -2,6 +2,7 @@ from discord.ext import commands
 from utils import colors
 import requests
 import discord
+import asyncio
 
 class Emojis(commands.Cog):
 	def __init__(self, bot):
@@ -12,6 +13,7 @@ class Emojis(commands.Cog):
 	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
 	async def _emoji(self, ctx, *emoji: discord.PartialEmoji):
 		for emoji in emoji:
+			await asyncio.sleep(1)
 			e = discord.Embed(color=colors.fate())
 			e.set_author(name=emoji.name, icon_url=ctx.author.avatar_url)
 			e.set_image(url=emoji.url)

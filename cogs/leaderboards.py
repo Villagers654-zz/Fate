@@ -4,16 +4,19 @@ from os.path import isfile
 from PIL import ImageDraw
 from PIL import ImageFont
 from PIL import Image
+from time import time
 import discord
 import random
 import json
-import time
 import os
 
 class Leaderboards(commands.Cog):
 	def __init__(self, bot: commands.Bot):
 		self.bot = bot
 		self.cd = {}
+		self.spam_cd = {}
+		self.macro_cd = {}
+		self.yeet = {}
 		self.global_data = {}
 		self.guilds_data = {}
 		self.monthly_global_data = {}
@@ -31,14 +34,6 @@ class Leaderboards(commands.Cog):
 					self.monthly_guilds_data = dat["monthly_guilded"]
 					self.vclb = dat["vclb"]
 					self.gvclb = dat["gvclb"]
-
-	async def cleanup(self, author_id, guild_id):
-		for msg_id, msg_time in (sorted(self.monthly_global_data[author_id].items(), key=lambda kv: kv[1], reverse=True)):
-			if float(msg_time) < time.time() - 2592000:
-				del self.monthly_global_data[author_id][str(msg_id)]
-		for msg_id, msg_time in (sorted(self.monthly_guilds_data[guild_id][author_id].items(), key=lambda kv: kv[1], reverse=True)):
-			if float(msg_time) < time.time() - 2592000:
-				del self.monthly_guilds_data[guild_id][author_id][str(msg_id)]
 
 	async def save_json(self):
 		with open("./data/userdata/xp.json", "w") as outfile:
@@ -259,15 +254,47 @@ class Leaderboards(commands.Cog):
 		if isinstance(m.guild, discord.Guild):
 			if not m.author.bot:
 				author_id = str(m.author.id)
+				user_id = str(m.author.id)
 				guild_id = str(m.guild.id)
 				msg_id = str(m.id)
-				if author_id not in self.cd:
-					self.cd[author_id] = 0
-				if self.cd[author_id] < time.time():
+
+				# anti spam
+				now = int(time() / 5)
+				if guild_id not in self.spam_cd:
+					self.spam_cd[guild_id] = {}
+				if author_id not in self.spam_cd[guild_id]:
+					self.spam_cd[guild_id][author_id] = [now, 0]
+				if self.spam_cd[guild_id][author_id][0] == now:
+					self.spam_cd[guild_id][author_id][1] += 1
+				else:
+					self.spam_cd[guild_id][author_id] = [now, 0]
+				if self.spam_cd[guild_id][author_id][1] > 2:
+					self.cd[author_id] = time() + 150
+					print(f"{m.author} is spamming")
+
+				# anti macro
+				if user_id not in self.macro_cd:
+					self.macro_cd[user_id] = {}
+					self.macro_cd[user_id]['intervals'] = []
+				if 'last' not in self.macro_cd[user_id]:
+					self.macro_cd[user_id]['last'] = datetime.now()
+				else:
+					last = self.macro_cd[user_id]['last']
+					self.macro_cd[user_id]['intervals'].append((datetime.now() - last).seconds)
+					intervals = self.macro_cd[user_id]['intervals']
+					self.macro_cd[user_id]['intervals'] = intervals[-3:]
+					if len(intervals) > 2:
+						if all(interval == intervals[0] for interval in intervals):
+							self.cd[user_id] = time() + 150
+							print(f"Detected that {m.author} is using a macro")
+
+				if user_id not in self.cd:
+					self.cd[user_id] = 0
+				if self.cd[user_id] < time():
 					if guild_id not in self.guilds_data:
 						self.guilds_data[guild_id] = {}
-					if author_id not in self.guilds_data[guild_id]:
-						self.guilds_data[guild_id][author_id] = 0
+					if user_id not in self.guilds_data[guild_id]:
+						self.guilds_data[guild_id][user_id] = 0
 					if author_id not in self.global_data:
 						self.global_data[author_id] = 0
 					if author_id not in self.monthly_global_data:
@@ -279,11 +306,20 @@ class Leaderboards(commands.Cog):
 
 					self.global_data[author_id] += 1
 					self.guilds_data[guild_id][author_id] += 1
-					self.monthly_global_data[author_id][msg_id] = time.time()
-					self.monthly_guilds_data[guild_id][author_id][msg_id] = time.time()
-					self.cd[author_id] = time.time() + 10
+					self.monthly_global_data[author_id][msg_id] = time()
+					self.monthly_guilds_data[guild_id][author_id][msg_id] = time()
+					self.cd[author_id] = time() + 10
 
-					await self.cleanup(author_id, guild_id)
+					for author_id in self.monthly_global_data.keys():
+						for msg_id, msg_time in (sorted(self.monthly_global_data[author_id].items(), key=lambda kv: kv[1], reverse=True)):
+							if float(msg_time) < time() - 2592000:
+								del self.monthly_global_data[author_id][str(msg_id)]
+					for guild_id in self.monthly_guilds_data.keys():
+						for author_id in self.monthly_guilds_data[guild_id].keys():
+							for msg_id, msg_time in (sorted(self.monthly_guilds_data[guild_id][author_id].items(), key=lambda kv: kv[1], reverse=True)):
+								if float(msg_time) < time() - 2592000:
+									del self.monthly_guilds_data[guild_id][author_id][str(msg_id)]
+
 					await self.save_json()
 
 	@commands.Cog.listener()

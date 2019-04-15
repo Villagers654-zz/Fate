@@ -68,16 +68,20 @@ class ServerSave(commands.Cog):
 			for channel in category.channels:
 				category_dict["channels"].append(channel.name)
 
-			for overwrite in category.overwrites:
-				overwrite_dict = {
-					"name": overwrite[0].name,
-					"permissions": list(overwrite[1]),
-					"type": "member" if type(overwrite[0]) == discord.Member else "role"
-				}
+			try:
+				for overwrite in category.overwrites:
+					overwrite_dict = {
+						"name": overwrite[0].name,
+						"permissions": list(overwrite[1]),
+						"type": "member" if type(overwrite[0]) == discord.Member else "role"
+					}
 
-				category_dict["overwrites"].append(overwrite_dict)
+					category_dict["overwrites"].append(overwrite_dict)
+				saved_guild["categories"].append(category_dict)
+			except:
+				pass
 
-			saved_guild["categories"].append(category_dict)
+
 
 		for channel in ctx.guild.text_channels:
 			channel_dict = {
@@ -88,16 +92,20 @@ class ServerSave(commands.Cog):
 				"overwrites": [],
 				"category": channel.category.name if channel.category else None
 			}
-			for overwrite in channel.overwrites:
-				overwrite_dict = {
-					"name": overwrite[0].name,
-					"permissions": list(overwrite[1]),
-					"type": "member" if type(overwrite[0]) == discord.Member else "role"
-				}
+			try:
+				for overwrite in channel.overwrites:
+					overwrite_dict = {
+						"name": overwrite[0].name,
+						"permissions": list(overwrite[1]),
+						"type": "member" if type(overwrite[0]) == discord.Member else "role"
+					}
 
-				channel_dict["overwrites"].append(overwrite_dict)
+					channel_dict["overwrites"].append(overwrite_dict)
+				saved_guild["text_channels"].append(channel_dict)
+			except:
+				pass
 
-			saved_guild["text_channels"].append(channel_dict)
+
 
 		for channel in ctx.guild.voice_channels:
 			channel_dict = {
@@ -112,16 +120,20 @@ class ServerSave(commands.Cog):
 				channel_dict["category"] = channel.category.name
 			except:
 				pass
-			for overwrite in channel.overwrites:
-				overwrite_dict = {
-					"name": overwrite[0].name,
-					"permissions": list(overwrite[1]),
-					"type": "member" if type(overwrite[0]) == discord.Member else "role"
-				}
+			try:
+				for overwrite in channel.overwrites:
+					overwrite_dict = {
+						"name": overwrite[0].name,
+						"permissions": list(overwrite[1]),
+						"type": "member" if type(overwrite[0]) == discord.Member else "role"
+					}
 
-				channel_dict["overwrites"].append(overwrite_dict)
+					channel_dict["overwrites"].append(overwrite_dict)
+				saved_guild["voice_channels"].append(channel_dict)
+			except:
+				pass
 
-			saved_guild["voice_channels"].append(channel_dict)
+
 
 		for emoji in ctx.guild.emojis:
 			emoji_dict = {

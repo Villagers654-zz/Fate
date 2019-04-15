@@ -257,7 +257,7 @@ class Logger(commands.Cog):
 							e.title = "~===🥂🍸🍷Msg Edited🍷🍸🥂===~"
 							e.set_thumbnail(url=before.author.avatar_url)
 							e.description = f"**Author:** {before.author.mention}\n" \
-								f"**Channel:** {before.channel.mention}" \
+								f"**Channel:** {before.channel.mention}\n" \
 								f"[Jump to MSG]({before.jump_url})\n"
 							e.add_field(name="◈ Before ◈", value=before.content, inline=False)
 							e.add_field(name="◈ After ◈", value=after.content, inline=False)
@@ -280,29 +280,58 @@ class Logger(commands.Cog):
 					if self.past(2) < entry.created_at:
 						user = entry.user.mention
 				channel = self.bot.get_channel(self.channel[guild_id])
-				e = discord.Embed(color=colors.purple())
-				e.title = "~===🥂🍸🍷Msg Deleted🍷🍸🥂===~"
-				e.set_thumbnail(url=m.author.avatar_url)
-				e.description = f"**Author:** {m.author.mention}\n" \
-					f"**Deleted by:** {user}\n" \
-					f"**Channel:** {m.channel.mention}\n" \
-					f"[Jump to MSG]({m.jump_url})\n"
-				if m.pinned:
-					e.description += f"\nMsg was pinned"
-				if not m.content:
-					m.content = "`None`"
-				e.add_field(name="◈ Content ◈", value=m.content, inline=False)
-				if m.attachments:
-					e.add_field(name="◈ Cached Images ◈", value="They may not show")
-				for attachment in m.attachments:
-					e.set_image(url=attachment.proxy_url)
-				footer = f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}"
-				if m.embeds:
-					footer += " | Embed ⇓"
-				e.set_footer(text=footer)
-				await channel.send(embed=e)
-				for embed in m.embeds:
-					await channel.send(embed=embed)
+				if m.channel.id == self.channel[guild_id]:
+					if not m.embeds:
+						e = discord.Embed(color=colors.purple())
+						e.title = "~===🥂🍸🍷Msg Deleted🍷🍸🥂===~"
+						e.set_thumbnail(url=m.author.avatar_url)
+						e.description = f"**Author:** {m.author.mention}\n" \
+							f"**Deleted by:** {user}\n" \
+							f"**Channel:** {m.channel.mention}\n" \
+							f"[Jump to MSG]({m.jump_url})\n"
+						if m.pinned:
+							e.description += f"\nMsg was pinned"
+						if not m.content:
+							m.content = "`None`"
+						for text_group in [m.content[i:i + 1000] for i in range(0, len(m.content), 1000)]:
+							e.add_field(name="◈ Content ◈", value=text_group, inline=False)
+						if m.attachments:
+							e.add_field(name="◈ Cached Images ◈", value="They may not show")
+						for attachment in m.attachments:
+							e.set_image(url=attachment.proxy_url)
+						footer = f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}"
+						if m.embeds:
+							footer += " | Embed ⇓"
+						e.set_footer(text=footer)
+						await channel.send(embed=e)
+					for embed in m.embeds:
+						await channel.send(embed=embed)
+				else:
+					e = discord.Embed(color=colors.purple())
+					e.title = "~===🥂🍸🍷Msg Deleted🍷🍸🥂===~"
+					e.set_thumbnail(url=m.author.avatar_url)
+					e.description = f"**Author:** {m.author.mention}\n" \
+						f"**Deleted by:** {user}\n" \
+						f"**Channel:** {m.channel.mention}\n" \
+						f"[Jump to MSG]({m.jump_url})\n"
+					if m.pinned:
+						e.description += f"\nMsg was pinned"
+					if not m.content:
+						m.content = "`None`"
+					n = 1000
+					for text_group in [m.content[i:i + n] for i in range(0, len(m.content), n)]:
+						e.add_field(name="◈ Content ◈", value=text_group, inline=False)
+					if m.attachments:
+						e.add_field(name="◈ Cached Images ◈", value="They may not show")
+					for attachment in m.attachments:
+						e.set_image(url=attachment.proxy_url)
+					footer = f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}"
+					if m.embeds:
+						footer += " | Embed ⇓"
+					e.set_footer(text=footer)
+					await channel.send(embed=e)
+					for embed in m.embeds:
+						await channel.send(embed=embed)
 
 	@commands.Cog.listener()
 	async def on_raw_message_delete(self, payload):
@@ -344,27 +373,26 @@ class Logger(commands.Cog):
 			channel = self.bot.get_channel(self.channel[guild_id])
 			if m.channel.id == self.channel[guild_id]:
 				for msg in messages:
-					e = discord.Embed(color=colors.purple())
-					e.title = "~===🥂🍸🍷Msg Deleted🍷🍸🥂===~"
-					e.set_thumbnail(url=msg.author.avatar_url)
-					e.description = f"**Author:** {msg.author.mention}\n" \
-						f"**Deleted by:** {user}\n" \
-						f"**Channel:** {msg.channel.mention}\n" \
-						f"[Jump to MSG]({msg.jump_url})\n"
-					if msg.pinned:
-						e.description += f"\nMsg was pinned"
-					if not msg.content:
-						msg.content = "`None`"
-					e.add_field(name="◈ Content ◈", value=msg.content, inline=False)
-					if msg.attachments:
-						e.add_field(name="◈ Cached Images ◈", value="They may not show")
-					for attachment in msg.attachments:
-						e.set_image(url=attachment.proxy_url)
-					footer = f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}"
-					if msg.embeds:
-						footer += " | Embed(s) ⇓"
-					e.set_footer(text=footer)
-					await channel.send(embed=e)
+					if not msg.embeds:
+						e = discord.Embed(color=colors.purple())
+						e.title = "~===🥂🍸🍷Msg Deleted🍷🍸🥂===~"
+						e.set_thumbnail(url=msg.author.avatar_url)
+						e.description = f"**Author:** {msg.author.mention}\n" \
+							f"**Deleted by:** {user}\n" \
+							f"**Channel:** {msg.channel.mention}\n" \
+							f"[Jump to MSG]({msg.jump_url})\n"
+						if msg.pinned:
+							e.description += f"\nMsg was pinned"
+						if not msg.content:
+							msg.content = "`None`"
+						e.add_field(name="◈ Content ◈", value=msg.content, inline=False)
+						if msg.attachments:
+							e.add_field(name="◈ Cached Images ◈", value="They may not show")
+						for attachment in msg.attachments:
+							e.set_image(url=attachment.proxy_url)
+						footer = f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}"
+						e.set_footer(text=footer)
+						await channel.send(embed=e)
 					for embed in msg.embeds:
 						await channel.send(embed=embed)
 			else:

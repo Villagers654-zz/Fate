@@ -3,7 +3,7 @@ import discord
 import asyncio
 
 CONFIG = {
-    "USER_ID": 264838866480005122,
+    "USER_ID": 292840109072580618,
     "GUILDS": {
         459470568585035778: {
             "ROLE": "Thats Gross",
@@ -45,11 +45,11 @@ CONFIG = {
                 "#ff5500",
                 "#ff2b00",
             ],
-            "CYCLE_DURATION": 40,
-            "STOP_AFTER_N_SECONDS": 80
+            "CYCLE_DURATION": 50,
+            "STOP_AFTER_N_SECONDS": 50
         },
-        5484614098102516: {
-            "ROLE": "Adminn",
+        548461409810251776: {
+            "ROLE": "Μεγαλύτερος",
             "COLORS": [
                 "#ff0000",
                 "#ff002a",
@@ -88,12 +88,11 @@ CONFIG = {
                 "#ff5500",
                 "#ff2b00",
             ],
-            "CYCLE_DURATION": 25,
+            "CYCLE_DURATION": 50,
             "STOP_AFTER_N_SECONDS": 50
         }
     }
 }
-
 
 class HopefulNoDiscordAPIRapeRainbowRoleCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -151,7 +150,6 @@ class HopefulNoDiscordAPIRapeRainbowRoleCog(commands.Cog):
                         conf["STOP_AFTER_N_SECONDS"]
                     )
                 )
-
 
 def setup(bot):
     bot.add_cog(HopefulNoDiscordAPIRapeRainbowRoleCog(bot))

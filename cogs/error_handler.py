@@ -1,5 +1,5 @@
 from discord.ext import commands
-from utils import colors, config
+from utils import colors, config, utils
 from time import time
 import subprocess
 import traceback
@@ -26,8 +26,6 @@ class ErrorHandler(commands.Cog):
 			return await ctx.send(f'`{ctx.command}` has been disabled.')
 		elif isinstance(error, commands.BadArgument):
 			return await ctx.send(f"Bad Argument: {error}")
-			#if ctx.command.qualified_name == 'tag list':
-				#return await ctx.send('I could not find that member. Please try again.')
 		elif isinstance(error, commands.CommandOnCooldown):
 			user_id = str(ctx.author.id)
 			await ctx.message.add_reaction('⏳')
@@ -41,19 +39,18 @@ class ErrorHandler(commands.Cog):
 			return await ctx.send(error)
 		elif isinstance(error, commands.CheckFailure):
 			await ctx.message.add_reaction('⚠')
-			return await ctx.send(str(error).replace("command", str(ctx.command)))
+			return await ctx.send(error)
 		elif isinstance(error, KeyError):
 			return await ctx.send(f"KeyError: {error}")
 		elif isinstance(error, discord.errors.Forbidden):
-			try:
-				await ctx.send(error)
-			except:
-				try:
-					await ctx.message.add_reaction("⚠")
-				except:
-					pass
-			finally:
-				return
+			bot = ctx.guild.get_member(self.bot.user.id)
+			if ctx.channel.permissions_for(bot).send_messages:
+				return await ctx.send(error)
+			if ctx.channel.permissions_for(bot).add_reactions:
+				return await ctx.message.add_reaction("⚠")
+			if utils.Bot().can_dm(ctx.author):
+				await ctx.author.send(f"__**{ctx.guild.name}:**__\nERROR: {error}")
+			return
 		print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
 		traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
 		e = discord.Embed(color=colors.red())
