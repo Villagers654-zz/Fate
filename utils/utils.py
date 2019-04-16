@@ -1,15 +1,18 @@
-from discord.ext import commands
 import datetime
 import discord
 import time
 
-class Bot:
+class User:
+	def __init__(self, user: discord.User):
+		self.user = user
 
-	async def can_dm(self, user: discord.User):
-		dm_channel = user.dm_channel
+	async def init(self):
+		dm_channel = self.user.dm_channel
 		if not dm_channel:
-			dm_channel = await user.create_dm()
-		return dm_channel.permissions_for(self).send_messages
+			await self.user.create_dm()
+
+	def can_dm(self):
+		return self.user.dm_channel.permissions_for(self).send_messages
 
 class Datetime:
 	def __init__(self, seconds):
