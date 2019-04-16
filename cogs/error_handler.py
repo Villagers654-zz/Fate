@@ -48,7 +48,8 @@ class ErrorHandler(commands.Cog):
 				return await ctx.send(error)
 			if ctx.channel.permissions_for(bot).add_reactions:
 				return await ctx.message.add_reaction("⚠")
-			if utils.Bot().can_dm(ctx.author):
+			await utils.User(ctx.author).init()
+			if utils.User(ctx.author).can_dm():
 				await ctx.author.send(f"__**{ctx.guild.name}:**__\nERROR: {error}")
 			return
 		print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
