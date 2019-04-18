@@ -626,7 +626,20 @@ class Mod(commands.Cog):
 				return await ctx.message.add_reaction("👍")
 			for x in list(timer):
 				if x not in "1234567890dhms":
-					return await ctx.send("Invalid character in `timer` field")
+					return await ctx.send("Invalid character used in timer field")
+			time = timer.replace("m", " minutes").replace("1 minutes", "1 minute")
+			time = time.replace("h", " hours").replace("1 hours", "1 hour")
+			time = time.replace("d", " days").replace("1 days", "1 day")
+			if "d" in str(timer):
+				timer = float(timer.replace("d", "")) * 60 * 60 * 24
+			if "h" in str(timer):
+				timer = float(timer.replace("h", "")) * 60 * 60
+			if "m" in str(timer):
+				timer = float(timer.replace("m", "")) * 60
+			if "s" in str(timer):
+				timer = float(timer.replace("s", ""))
+			if not isinstance(timer, float):
+				return await ctx.send("Invalid character used in timer field")
 			removed_roles = []
 			for role in user.roles:
 				try:
@@ -638,18 +651,7 @@ class Mod(commands.Cog):
 			await user.add_roles(mute_role)
 			if timer is None:
 				return await ctx.send(f"**Muted:** {user.name}")
-			r = timer.replace("m", " minutes").replace("1 minutes", "1 minute")
-			r = r.replace("h", " hours").replace("1 hours", "1 hour")
-			r = r.replace("d", " days").replace("1 days", "1 day")
-			await ctx.send(f"Muted **{user.name}** for {r}")
-			if "d" in str(timer):
-				timer = float(timer.replace("d", "")) * 60 * 60 * 24
-			if "h" in str(timer):
-				timer = float(timer.replace("h", "")) * 60 * 60
-			if "m" in str(timer):
-				timer = float(timer.replace("m", "")) * 60
-			if "s" in str(timer):
-				timer = float(timer.replace("s", ""))
+			await ctx.send(f"Muted **{user.name}** for {time}")
 		self.timers[user_id] = {
 			'action': 'mute',
 			'channel': ctx.channel.id,
@@ -811,7 +813,13 @@ class Mod(commands.Cog):
 				except:
 					pass
 			await user.add_roles(mute_role)
-			self.timers[user_id] = ('mute', ctx.channel.id, user.id, str(datetime.now() + timedelta(seconds=7200)), mute_role.id, user_roles)
+			self.timers[user_id] = {
+				'action': 'mute',
+				'channel': ctx.channel.id,
+				'user': user.id,
+				'end_time': str(datetime.now() + timedelta(seconds=7200)),
+				'mute_role': mute_role.id,
+				'roles': user_roles}
 			self.save_json()
 			await asyncio.sleep(7200)
 			if mute_role in user.roles:
