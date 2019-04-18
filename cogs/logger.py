@@ -962,7 +962,7 @@ class Logger(commands.Cog):
 					e.set_thumbnail(url=m.avatar_url)
 					e.description = \
 						f"**Member:** {m}\n" \
-						f"**Kicked by:** {user.mention}" \
+						f"**Kicked by:** {user.mention}\n" \
 						f"**ID:** {m.id}\n"
 					return await channel.send(embed=e)
 			async for entry in m.guild.audit_logs(action=discord.AuditLogAction.ban, limit=1):
