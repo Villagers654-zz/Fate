@@ -81,7 +81,8 @@ async def on_guild_join(guild: discord.Guild):
 	channel = bot.get_channel(config.server("log"))
 	e = discord.Embed(color=colors.pink())
 	e.set_author(name="Bot Added to Guild", icon_url=bot.user.avatar_url)
-	e.set_thumbnail(url=guild.icon_url)
+	if guild.icon_url:
+		e.set_thumbnail(url=guild.icon_url)
 	e.description = f"**Name:** {guild.name}\n" \
 		f"**ID:** {guild.id}\n" \
 		f"**Owner:** {guild.owner}\n" \
@@ -93,7 +94,8 @@ async def on_guild_remove(guild: discord.Guild):
 	channel = bot.get_channel(config.server("log"))
 	e = discord.Embed(color=colors.pink())
 	e.set_author(name="Bot Left or Was Removed", icon_url=bot.user.avatar_url)
-	e.set_thumbnail(url=guild.icon_url)
+	if guild.icon_url:
+		e.set_thumbnail(url=guild.icon_url)
 	e.description = f"**Name:** {guild.name}\n" \
 		f"**ID:** {guild.id}\n" \
 		f"**Owner:** {guild.owner}\n" \
