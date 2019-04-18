@@ -21,8 +21,8 @@ class SelfRoles(commands.Cog):
 			json.dump({"message": self.message, "roles": self.roles}, outfile, ensure_ascii=False)
 
 	@commands.command(name="selfroles", aliases=["sr"])
-	@commands.has_permissions(administrator=True)
-	@commands.bot_has_permissions(manage_roles=True)
+	@commands.has_permissions(manage_roles=True)
+	@commands.bot_has_permissions(manage_roles=True, manage_messages=True, embed_links=True)
 	async def _selfroles(self, ctx, config=None):
 		reactions = ['1⃣', '2⃣', '3⃣', '4⃣', '5⃣', '6⃣', '7⃣', '8⃣', '9⃣']
 		if config == "disable":

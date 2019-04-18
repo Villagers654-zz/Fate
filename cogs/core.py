@@ -16,7 +16,7 @@ class Core(commands.Cog):
 		self.bot = bot
 		self.last = {}
 
-	@commands.command()
+	@commands.command(name="topguilds")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.bot_has_permissions(embed_links=True)
 	async def topguilds(self, ctx):
@@ -29,12 +29,12 @@ class Core(commands.Cog):
 			rank += 1
 		await ctx.send(embed=e)
 
-	@commands.command()
-	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.command(name="invite")
+	@commands.cooldown(1, 5, commands.BucketType.channel)
 	async def invite(self, ctx):
 		await ctx.send(embed=config.links())
 
-	@commands.command()
+	@commands.command(name="say")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def say(self, ctx, *, content: commands.clean_content):
 		await ctx.send(content)
@@ -42,6 +42,7 @@ class Core(commands.Cog):
 
 	@commands.command(name="prefix")
 	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.guild_only()
 	@commands.has_permissions(manage_guild=True)
 	async def _prefix(self, ctx, *, prefix):
 		if not isinstance(ctx.guild, discord.Guild):
@@ -59,7 +60,7 @@ class Core(commands.Cog):
 			json.dump(prefixes, f, indent=4)
 		await ctx.send(f"Changed the servers prefix to `{prefix}`")
 
-	@commands.command(pass_context=True)
+	@commands.command(name="ping")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.bot_has_permissions(embed_links=True)
 	async def ping(self, ctx):
@@ -91,7 +92,7 @@ class Core(commands.Cog):
 		e.description = f"**Message Trip:** `{int(ping)}ms`\n**Websocket Heartbeat:** `{api}ms`"
 		await message.edit(embed=e)
 
-	@commands.command(pass_context=True)
+	@commands.command(name="wiki")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.bot_has_permissions(embed_links=True)
 	async def wiki(self,ctx,*,query:str):

@@ -7,6 +7,7 @@ from PIL import ImageDraw
 from io import BytesIO
 from datetime import datetime
 import subprocess
+import platform
 import requests
 import difflib
 import discord
@@ -16,6 +17,7 @@ import psutil
 import sqlite3
 import json
 import time
+import sys
 import os
 
 class Dev(commands.Cog):

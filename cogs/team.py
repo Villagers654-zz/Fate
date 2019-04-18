@@ -54,5 +54,18 @@ class AvapxianRegime(commands.Cog):
 			await msg.edit(embed=e)
 			return await ctx.message.delete()
 
+	@commands.command(name="_update")
+	@commands.check(checks.luck)
+	async def _update(self, ctx):
+		server = self.bot.get_guild(566461197860470804)
+		msg = await self.bot.get_channel(567821718798860306).fetch_message(567823095164043267)
+		e = discord.Embed(color=colors.cyan())
+		e.set_author(name=f"💎 {ctx.guild.name} Partners 💎")
+		e.set_thumbnail(url=ctx.guild.icon_url)
+		e.description = f"■ [4B4T - Gone Sexual](https://discord.gg/BQ23Z2E)\n• Description"
+		e.set_footer(text=f"Last Updated: {datetime.datetime.now().strftime('%m-%d-%Y %I:%M%p')}")
+		await msg.edit(embed=e)
+		await ctx.message.delete()
+
 def setup(bot):
 	bot.add_cog(AvapxianRegime(bot))
