@@ -1,6 +1,7 @@
-from utils import bytes2human as p, config
+from utils import bytes2human as p, config, utils
 from discord.ext import commands
 from os.path import isfile
+import platform
 import discord
 import asyncio
 import random
@@ -12,6 +13,24 @@ import os
 class Menus(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
+
+	async def wait_for_dismissal(self, ctx):
+		def pred(m):
+			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+		try:
+			msg = await self.bot.wait_for('message', check=pred, timeout=25)
+		except asyncio.TimeoutError:
+			pass
+		else:
+			if msg.content.lower() == "k":
+				await ctx.message.delete()
+				await asyncio.sleep(0.5)
+				await msg.delete()
+				async for msg in ctx.channel.history(limit=10):
+					if msg.author.id == self.bot.user.id:
+						if len(msg.embeds) > 0:
+							await msg.delete()
+							break
 
 	@commands.command(name="help")
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -30,27 +49,13 @@ class Menus(commands.Cog):
 		e.add_field(name="◈ Reactions ◈", value="`tenor` `intimidate` `powerup` `observe` `disgust` `admire` `angery` `cuddle` `teasip` `psycho` `thonk` `shrug` `bite` `yawn` `hide` `wine` `sigh` `kiss` `kill` `slap` `hug` `pat` `cry`", inline=False)
 		e.add_field(name="◈ Mod ◈", value="`mute` `unmute` `vcmute` `vcunmute` `warn` `clearwarns` `addrole` `removerole` `restore_roles` `selfroles` `autorole` `limit` `audit` `lock` `lockb` `delete` `purge` `purge_user` `purge_images` `purge_embeds` `purge_bots` `nick` `massnick` `kick` `mute` `ban` `pin`", inline=False)
 		e.add_field(name="◈ Fun ◈", value="`personality` `liedetector` `chatbot` `fancify` `coffee` `encode` `decode` `choose` `notice` `quote` `mock` `meme` `rate` `roll` `soul` `gay` `sue` `fap` `ask` `rps` `rr` `cookie` `shoot` `inject` `slice` `boop` `stab` `kill`", inline=False)
-		try:
+		await utils.User(ctx.author).init()
+		if utils.User(ctx.author).can_dm():
 			await ctx.author.send(embed=e)
-			await ctx.send("Help menu sent to your dm ✅")
-		except:
+			await ctx.send("Help menu sent to dm ✅")
+		else:
 			await ctx.send("Failed to send help menu to dm ❎", embed=e)
-			def pred(m):
-				return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
-			try:
-				msg = await self.bot.wait_for('message', check=pred, timeout=25)
-			except asyncio.TimeoutError:
-				pass
-			else:
-				if msg.content.lower() == "k":
-					await ctx.message.delete()
-					await asyncio.sleep(0.5)
-					await msg.delete()
-					async for msg in ctx.channel.history(limit=10):
-						if msg.author.id == self.bot.user.id:
-							if len(msg.embeds) > 0:
-								await msg.delete()
-							break
+			await self.wait_for_dismissal(ctx)
 
 	@commands.command(name='info', description="Provides information relevant to the bots stats")
 	@commands.cooldown(1, 5, commands.BucketType.channel)
@@ -70,57 +75,28 @@ class Menus(commands.Cog):
 		e.set_thumbnail(url=self.bot.user.avatar_url)
 		e.set_image(url="attachment://" + os.path.basename(path))
 		e.add_field(name="◈ Summary ◈", value="Fate is a ~~multipurpose~~ hybrid bot created for ~~sexual assault~~ fun", inline=False)
-		e.add_field(name="◈ Credits ◈", value="• Tothy ~ `rival`\n• Cortex ~ `teacher`", inline=False)
-		e.add_field(name="◈ Statistics ◈", value=f'Commands: [{len(self.bot.commands)}]\nModules: [{len(self.bot.extensions)}]\nServers: [{guilds}]\nUsers: [{users}]', inline=False)
+		e.add_field(name="◈ Statistics ◈", value=f'Commands: [{len(self.bot.commands)}]\nModules: [{len(self.bot.extensions)}]\nServers: [{guilds}]\nUsers: [{users}]')
+		e.add_field(name="◈ Credits ◈", value="• Tothy ~ `rival`\n• Cortex ~ `teacher`\n• Discord.py ~ `existing`")
 		e.add_field(name="◈ Memory ◈", value=
 		f"__**Storage**__: [{p.bytes2human(psutil.disk_usage('/').used)}/{p.bytes2human(psutil.disk_usage('/').total)}]\n"
 		f"__**RAM**__: [{p.bytes2human(psutil.virtual_memory().used)}/{p.bytes2human(psutil.virtual_memory().total)}] ({psutil.virtual_memory().percent}%)\n"
 		f"__**Bot RAM**__: {p.bytes2human(bot_pid.memory_full_info().rss)} ({round(bot_pid.memory_percent())}%)\n"
 		f"__**CPU**__: **Global**: {psutil.cpu_percent(interval=1)}% **Bot**: {bot_pid.cpu_percent(interval=1)}%\n")
-		e.set_footer(text="Uptime: {} Hours {} Minutes {} seconds".format(int(h), int(m), int(s)))
+		e.add_field(name="◈ Uptime ◈", value="Uptime: {} Hours {} Minutes {} seconds".format(int(h), int(m), int(s)))
+		e.set_footer(text=f"Powered by Python {platform.python_version()} and Discord.py {discord.__version__}", icon_url="https://cdn.discordapp.com/attachments/501871950260469790/567779834533773315/RPrw70n.png")
 		await ctx.send(file=discord.File(path, filename=os.path.basename(path)), embed=e)
-		def pred(m):
-			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
-		try:
-			msg = await self.bot.wait_for('message', check=pred, timeout=25)
-		except asyncio.TimeoutError:
-			pass
-		else:
-			if msg.content.lower() == "k":
-				await ctx.message.delete()
-				await asyncio.sleep(0.5)
-				await msg.delete()
-				async for msg in ctx.channel.history(limit=10):
-					if msg.author.id == self.bot.user.id:
-						if len(msg.embeds) > 0:
-							await msg.delete()
-							break
+		await self.wait_for_dismissal(ctx)
 
 	@commands.command(name="discords")
 	@commands.cooldown(1, 5, commands.BucketType.channel)
 	@commands.bot_has_permissions(embed_links=True)
 	async def discords(self, ctx):
 		e=discord.Embed(title="~~~====🥂🍸🍷Discords🍷🍸🥂====~~~", color=0x80b0ff)
-		e.add_field(name="• Anarchy Community", value="[Bridge of Anarchism](https://discord.gg/WN9F82d)\n[2p2e - 2pocket2edition](https://discord.gg/y4V4T84)\n[4B4T (Official)](https://discord.gg/BQ23Z2E)\n[4b4t §pawn Patrol](https://discord.gg/5hn4K8E)", inline=False)
-		e.add_field(name="• Games", value="[PUBG Mobile](https://discord.gg/gVe27r4)", inline=False)
-		e.add_field(name="• Misc", value="[Memes (Tothers Hotel)](https://discord.gg/TzGNyRg)\n[Threadys Alpha server](https://discord.gg/6tcqMUt)", inline=False)
+		e.add_field(name="• Anarchy Community", value="[Exousía Supreme Regime](https://discord.gg/Xn5ZRjk)\n[2p2e - 2pocket2edition](https://discord.gg/y4V4T84)\n[Bridge of Anarchism](https://discord.gg/WN9F82d)\n[4B4T (Official)](https://discord.gg/BQ23Z2E)\n", inline=False)
+		e.add_field(name="• Games", value="[PUBG / MC Hangout](https://discord.gg/ES6q6Q)\n[MC Fun](https://discord.gg/zjrTPKQ)", inline=False)
+		e.add_field(name="• Misc", value="[Tothers Hotel](https://discord.gg/XshWswg)", inline=False)
 		await ctx.send(embed=e)
-		def pred(m):
-			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
-		try:
-			msg = await self.bot.wait_for('message', check=pred, timeout=25)
-		except asyncio.TimeoutError:
-			pass
-		else:
-			if msg.content.lower() == "k":
-				await ctx.message.delete()
-				await asyncio.sleep(0.5)
-				await msg.delete()
-				async for msg in ctx.channel.history(limit=10):
-					if msg.author.id == self.bot.user.id:
-						if len(msg.embeds) > 0:
-							await msg.delete()
-							break
+
 
 	@commands.command(name="servers")
 	@commands.cooldown(1, 5, commands.BucketType.channel)
@@ -129,22 +105,7 @@ class Menus(commands.Cog):
 		e=discord.Embed(title="~~~====🥂🍸🍷Servers🍷🍸🥂====~~~", color=0x80b0ff)
 		e.add_field(name="• Anarchy", value="• 4b4t.net : 19132", inline=False)
 		await ctx.send(embed=e)
-		def pred(m):
-			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
-		try:
-			msg = await self.bot.wait_for('message', check=pred, timeout=25)
-		except asyncio.TimeoutError:
-			pass
-		else:
-			if msg.content.lower() == "k":
-				await ctx.message.delete()
-				await asyncio.sleep(0.5)
-				await msg.delete()
-				async for msg in ctx.channel.history(limit=10):
-					if msg.author.id == self.bot.user.id:
-						if len(msg.embeds) > 0:
-							await msg.delete()
-							break
+		await self.wait_for_dismissal(ctx)
 
 	@commands.command(name="realms")
 	@commands.cooldown(1, 5, commands.BucketType.channel)
@@ -154,22 +115,7 @@ class Menus(commands.Cog):
 		e.add_field(name="• Anarchy Realms", value="Jappie Anarchy\n• https://realms.gg/pmElWWx5xMk\nAnarchy Realm\n• https://realms.gg/GyxzF5xWnPc\n2c2b Anarchy\n• https://realms.gg/TwbBfe0jGDc\nFraughtian Anarchy\n• https://realms.gg/rdK57KvnA8o\nChaotic Realm\n• https://realms.gg/nzDX1drovu4", inline=False)
 		e.add_field(name="• Misc", value=".", inline=False)
 		await ctx.send(embed=e)
-		def pred(m):
-			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
-		try:
-			msg = await self.bot.wait_for('message', check=pred, timeout=25)
-		except asyncio.TimeoutError:
-			pass
-		else:
-			if msg.content.lower() == "k":
-				await ctx.message.delete()
-				await asyncio.sleep(0.5)
-				await msg.delete()
-				async for msg in ctx.channel.history(limit=10):
-					if msg.author.id == self.bot.user.id:
-						if len(msg.embeds) > 0:
-							await msg.delete()
-							break
+		await self.wait_for_dismissal(ctx)
 
 	@commands.command(name="partners")
 	@commands.cooldown(1, 5, commands.BucketType.channel)
@@ -188,22 +134,7 @@ class Menus(commands.Cog):
 		e.add_field(name="◈ Servers ◈", value=f'• [Threadys Server]({threadysserver})\n• [Spookie Hotel]({spookiehotel})\n• [4b4t]({fourbfourt})', inline=False)
 		e.add_field(name="◈ Bots ◈", value=f'• [TotherBot]({totherbot})', inline=False)
 		await ctx.send(embed=e)
-		def pred(m):
-			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
-		try:
-			msg = await self.bot.wait_for('message', check=pred, timeout=25)
-		except asyncio.TimeoutError:
-			pass
-		else:
-			if msg.content.lower() == "k":
-				await ctx.message.delete()
-				await asyncio.sleep(0.5)
-				await msg.delete()
-				async for msg in ctx.channel.history(limit=10):
-					if msg.author.id == self.bot.user.id:
-						if len(msg.embeds) > 0:
-							await msg.delete()
-							break
+		await self.wait_for_dismissal(ctx)
 
 def setup(bot):
 	bot.add_cog(Menus(bot))
