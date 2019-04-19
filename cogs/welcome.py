@@ -2,6 +2,7 @@ from discord.ext import commands
 from os.path import isfile
 from utils import colors
 import discord
+import asyncio
 import random
 import json
 import os
@@ -43,23 +44,16 @@ class Welcome(commands.Cog):
 			e.set_author(name="Welcome Messages", icon_url=self.bot.user.avatar_url)
 			e.set_thumbnail(url=ctx.guild.icon_url)
 			e.description = "Welcomes users when they join"
-			e.add_field(name="◈ Basic Usage ◈", value=
+			e.add_field(name="◈ Command Usage ◈", value=
 				".welcome enable\n"
 				".welcome disable\n"
 				".welcome config\n"
-				".welcome setchannel {channel}\n"
-				".welcome useimages\n"
+				".welcome setchannel\n"
+				".welcome enableimages\n"
 				".welcome addimages\n"
 				".welcome delimages\n"
 				".welcome listimages\n"
-				".welcome format {message}\n", inline=False)
-			e.add_field(name="◈ Msg Format ◈", value=
-				"$MENTION\n"
-				"`mentions the user`\n"
-				"$SERVER\n"
-				"`uses the servers name`\n"
-				"**Example:**\n"
-				"`.welcome format Welcome $MENTION`", inline=False)
+				".welcome format\n", inline=False)
 			images = ""
 			if guild_id in self.images:
 				images = f" | Custom Images: {len(self.images[guild_id])}"
@@ -138,21 +132,21 @@ class Welcome(commands.Cog):
 		await ctx.send(f"Set the welcome message channel to {channel.mention}")
 		self.save_data()
 
-	@_welcome.command(name="useimages")
+	@_welcome.command(name="enableimages")
 	@commands.has_permissions(manage_guild=True)
 	@commands.bot_has_permissions(attach_files=True)
-	async def _useimages(self, ctx):
+	async def _enable_images(self, ctx):
 		guild_id = str(ctx.guild.id)
 		if guild_id in self.useimages:
 			del self.useimages[guild_id]
-			await ctx.send("Disabled UseImages")
+			await ctx.send("Disabled Images")
 			return self.save_data()
 		self.useimages[guild_id] = "enabled"
 		if guild_id in self.images:
-			await ctx.send("Enabled UseImages")
+			await ctx.send("Enabled Images")
 		else:
-			await ctx.send("Enabled UseImages. You have no custom "
-			    "images, so I'll just use my own for now ^~^")
+			await ctx.send("Enabled Images. You have no custom "
+			    "images so I'll just use my own for now ^~^")
 		self.save_data()
 
 	@_welcome.command(name="addimages")
@@ -162,10 +156,24 @@ class Welcome(commands.Cog):
 		if guild_id not in self.images:
 			self.images[guild_id] = []
 		if not ctx.message.attachments:
-			return await ctx.send("Attach images when using this command")
-		for image in ctx.message.attachments:
-			self.images[guild_id].append(image.url)
-		await ctx.send("Added your images")
+			complete = False
+			await ctx.send('Send the image(s) you\'d like to use\nReply with "done" when finished')
+			while complete is False:
+				def pred(m):
+					return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+				try:
+					msg = await self.bot.wait_for('message', check=pred, timeout=30)
+				except asyncio.TimeoutError:
+					await ctx.send("Timeout error")
+				else:
+					if msg.content:
+						if "done" in msg.content.lower():
+							return await ctx.send("Added your images 👍")
+					for attachment in msg.attachments:
+						self.images[guild_id].append(attachment.url)
+		for attachment in ctx.message.attachments:
+			self.images[guild_id].append(attachment.url)
+		await ctx.send("Added your image(s)")
 		self.save_data()
 
 	@_welcome.command(name="delimages")
@@ -188,10 +196,22 @@ class Welcome(commands.Cog):
 
 	@_welcome.command(name="format")
 	@commands.has_permissions(manage_guild=True)
-	async def _format(self, ctx, *, message):
+	async def _format(self, ctx, *, message=None):
 		guild_id = str(ctx.guild.id)
-		self.format[guild_id] = message
-		await ctx.message.add_reaction("👍")
+		if message:
+			self.format[guild_id] = message
+		else:
+			await ctx.send("What message format would you like to use?\n"
+			    "Example: `Welcome $USER to **$SERVER**`\nType cancel to stop / leave it as is")
+			def pred(m):
+				return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+			try:
+				msg = await self.bot.wait_for('message', check=pred, timeout=30)
+			except asyncio.TimeoutError:
+				await ctx.send("Timeout error")
+			else:
+				self.format[guild_id] = msg.content
+		await ctx.send("Set the welcome format 👍")
 		self.save_data()
 
 	@commands.Cog.listener()
