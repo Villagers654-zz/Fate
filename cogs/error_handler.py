@@ -84,7 +84,7 @@ class ErrorHandler(commands.Cog):
 					channel = self.bot.get_channel(data.channel_id)
 					msg = await channel.fetch_message(data.message_id)
 					for embed in msg.embeds:
-						await self.bot.get_channel(config.server("log")).send("Error Dismissed", embed=embed)
+						await self.bot.get_channel(566849811588972565).send("Error Dismissed", embed=embed)
 					await msg.delete()
 
 def setup(bot):
