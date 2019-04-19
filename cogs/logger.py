@@ -31,12 +31,18 @@ class Logger(commands.Cog):
 			           "blocked": self.blocked}, outfile, ensure_ascii=False)
 
 	def wipe_data(self, guild_id):
+		if guild_id in self.cache:
+			del self.cache[guild_id]
 		if guild_id in self.channel:
 			del self.channel[guild_id]
 		if guild_id in self.blacklist:
 			del self.blacklist[guild_id]
 		if guild_id in self.blocked:
 			del self.blocked[guild_id]
+		if guild_id in self.waiting:
+			del self.waiting[guild_id]
+		if guild_id in self.cd:
+			del self.cd[guild_id]
 		return self.save_json()
 
 	async def notify_of_termination(self, guild_id):
