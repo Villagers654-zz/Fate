@@ -46,12 +46,18 @@ class Logger(commands.Cog):
 		return self.save_json()
 
 	async def notify_of_termination(self, guild_id):
-		guild = self.bot.get_guild(guild_id)
+		guild = self.bot.get_guild(int(guild_id))
 		bot = guild.get_member(self.bot.user.id)
-		for channel in guild.text_channels:
+		msg = None  # type: discord.Message
+		if guild_id in self.channel:
+			channel = self.bot.get_channel(self.channel[guild_id])
 			if channel.permissions_for(bot).send_messages:
-				await channel.send("Disabled logger, missing required perms")
-				break
+				msg = await channel.send("Disabled logger, missing required perms")
+		if not msg:
+			for channel in guild.text_channels:
+				if channel.permissions_for(bot).send_messages:
+					await channel.send("Disabled logger, missing required perms")
+					break
 
 	async def wait_for_access(self, guild_id):
 		guild = self.bot.get_guild(int(guild_id))
@@ -85,18 +91,30 @@ class Logger(commands.Cog):
 			await asyncio.sleep(25)
 
 	async def channel_check(self, guild_id):
-		guild = self.bot.get_guild(int(guild_id))
-		bot = guild.get_member(self.bot.user.id)
-		channel = self.bot.get_channel(self.channel[guild_id])
-		if not channel:
-			channel_access = await self.wait_for_access(guild_id)
-			if not channel_access:
-				return False
-		else:
-			if not channel.permissions_for(bot).send_messages:
+		if guild_id in self.channel:
+			guild = self.bot.get_guild(int(guild_id))
+			bot = guild.get_member(self.bot.user.id)
+			channel = self.bot.get_channel(self.channel[guild_id])
+			if not channel:
 				channel_access = await self.wait_for_access(guild_id)
 				if not channel_access:
 					return False
+			else:
+				if not channel.permissions_for(bot).send_messages:
+					channel_access = await self.wait_for_access(guild_id)
+					if not channel_access:
+						return False
+			return True
+		return False
+
+	async def ensure_permissions(self, guild_id):
+		guild = self.bot.get_guild(int(guild_id))
+		bot = guild.get_member(self.bot.user.id)
+		perms = bot.guild_permissions
+		if not perms.view_audit_log or not perms.external_emojis or not perms.embed_links:
+			await self.notify_of_termination(guild_id)
+			self.wipe_data(guild_id)
+			return False
 		return True
 
 	def past(self, seconds):
@@ -353,6 +371,9 @@ class Logger(commands.Cog):
 				if guild_id in self.blocked:
 					if m.channel.id in self.blocked[guild_id]:
 						return
+				guild_requirements = await self.ensure_permissions(guild_id)
+				if not guild_requirements:
+					return
 				user = "Author"
 				async for entry in m.guild.audit_logs(action=discord.AuditLogAction.message_delete, limit=1):
 					if self.past(2) < entry.created_at:
@@ -450,6 +471,9 @@ class Logger(commands.Cog):
 			if guild_id in self.blocked:
 				if messages[0].channel.id in self.blocked[guild_id]:
 					return
+			guild_requirements = await self.ensure_permissions(guild_id)
+			if not guild_requirements:
+				return
 			user = "unknown"
 			async for entry in messages[0].guild.audit_logs(action=discord.AuditLogAction.message_delete, limit=1):
 				if self.past(2) < entry.created_at:
@@ -511,6 +535,9 @@ class Logger(commands.Cog):
 			if guild_id in self.blacklist:
 				if "guild_update" in self.blacklist[guild_id]:
 					return
+			guild_requirements = await self.ensure_permissions(guild_id)
+			if not guild_requirements:
+				return
 			if before.name != after.name:
 				user = "unknown"
 				async for entry in after.audit_logs(action=discord.AuditLogAction.guild_update, limit=1):
@@ -536,7 +563,10 @@ class Logger(commands.Cog):
 			if guild_id in self.blacklist:
 				if "channel_create" in self.blacklist[guild_id]:
 					return
-			user = None  # type: discord.Member
+			guild_requirements = await self.ensure_permissions(guild_id)
+			if not guild_requirements:
+				return
+			user = None  # type: discord.User
 			async for entry in channel.guild.audit_logs(action=discord.AuditLogAction.channel_create, limit=1):
 				user = entry.user
 			log = self.bot.get_channel(self.channel[guild_id])
@@ -573,6 +603,9 @@ class Logger(commands.Cog):
 			if guild_id in self.blacklist:
 				if "channel_delete" in self.blacklist[guild_id]:
 					return
+			guild_requirements = await self.ensure_permissions(guild_id)
+			if not guild_requirements:
+				return
 			user = None  # type: discord.User
 			async for entry in channel.guild.audit_logs(action=discord.AuditLogAction.channel_delete, limit=1):
 				user = entry.user
@@ -597,6 +630,9 @@ class Logger(commands.Cog):
 			if guild_id in self.blacklist:
 				if "channel_update" in self.blacklist[guild_id]:
 					return
+			guild_requirements = await self.ensure_permissions(guild_id)
+			if not guild_requirements:
+				return
 			user = None  # type: discord.Member
 			async for entry in before.guild.audit_logs(after=self.past(2), action=discord.AuditLogAction.channel_update, limit=1):
 				user = entry.user
@@ -658,6 +694,9 @@ class Logger(commands.Cog):
 			if guild_id in self.blacklist:
 				if "role_create" in self.blacklist[guild_id]:
 					return
+			guild_requirements = await self.ensure_permissions(guild_id)
+			if not guild_requirements:
+				return
 			user = None  # type: discord.Member
 			async for entry in role.guild.audit_logs(after=self.past(2), action=discord.AuditLogAction.role_create, limit=1):
 				user = entry.user
@@ -681,6 +720,9 @@ class Logger(commands.Cog):
 			if guild_id in self.blacklist:
 				if "role_delete" in self.blacklist[guild_id]:
 					return
+			guild_requirements = await self.ensure_permissions(guild_id)
+			if not guild_requirements:
+				return
 			user = None  # type: discord.Member
 			async for entry in role.guild.audit_logs(after=self.past(2), action=discord.AuditLogAction.role_delete, limit=1):
 				user = entry.user
@@ -707,6 +749,9 @@ class Logger(commands.Cog):
 			if guild_id in self.blacklist:
 				if "role_update" in self.blacklist[guild_id]:
 					return
+			guild_requirements = await self.ensure_permissions(guild_id)
+			if not guild_requirements:
+				return
 			user = None  # type: discord.Member
 			async for entry in after.guild.audit_logs(after=self.past(2), action=discord.AuditLogAction.role_delete, limit=1):
 				user = entry.user.mention
@@ -893,6 +938,9 @@ class Logger(commands.Cog):
 			if guild_id in self.blacklist:
 				if "emoji_update" in self.blacklist[guild_id]:
 					return
+			guild_requirements = await self.ensure_permissions(guild_id)
+			if not guild_requirements:
+				return
 			user = None  # type: discord.Member
 			channel = self.bot.get_channel(self.channel[guild_id])
 			channel_requirements = await self.channel_check(guild_id)
@@ -967,6 +1015,9 @@ class Logger(commands.Cog):
 			if guild_id in self.blacklist:
 				if "member_remove" in self.blacklist[guild_id]:
 					return
+			guild_requirements = await self.ensure_permissions(guild_id)
+			if not guild_requirements:
+				return
 			channel = self.bot.get_channel(self.channel[guild_id])
 			channel_requirements = await self.channel_check(guild_id)
 			if not channel_requirements:
@@ -999,6 +1050,9 @@ class Logger(commands.Cog):
 			if guild_id in self.blacklist:
 				if "member_remove" in self.blacklist[guild_id]:
 					return
+			guild_requirements = await self.ensure_permissions(guild_id)
+			if not guild_requirements:
+				return
 			author = None  # type: discord.Member
 			async for entry in guild.audit_logs(limit=1, action=discord.AuditLogAction.ban):
 				author = entry.user
@@ -1023,6 +1077,9 @@ class Logger(commands.Cog):
 			if guild_id in self.blacklist:
 				if "member_unban" in self.blacklist[guild_id]:
 					return
+			guild_requirements = await self.ensure_permissions(guild_id)
+			if not guild_requirements:
+				return
 			author = None  # type: discord.Member
 			async for entry in guild.audit_logs(action=discord.AuditLogAction.unban, after=self.past(2), limit=1):
 				author = entry.user
@@ -1048,12 +1105,6 @@ class Logger(commands.Cog):
 					return
 			if before.name != after.name:
 				return
-			async for entry in before.guild.audit_logs(action=discord.AuditLogAction.member_update, limit=1):
-				if self.past(2) < entry.created_at:
-					user = entry.user
-			async for entry in before.guild.audit_logs(action=discord.AuditLogAction.member_role_update, limit=1):
-				if self.past(2) < entry.created_at:
-					user = entry.user
 			channel = self.bot.get_channel(self.channel[guild_id])
 			channel_requirements = await self.channel_check(guild_id)
 			if not channel_requirements:
@@ -1061,14 +1112,28 @@ class Logger(commands.Cog):
 			e = discord.Embed(color=colors.lime_green())
 			e.set_thumbnail(url=before.avatar_url)
 			e.title = "~==🥂🍸🍷Member Updated🍷🍸🥂==~"
-			e.description = f"**User:** {after.mention}\n" \
-				f"**Changed by:** {user.mention}\n"
 			if before.display_name != after.display_name:
 				member_changed = True
+				guild_requirements = await self.ensure_permissions(guild_id)
+				if not guild_requirements:
+					return
+				async for entry in before.guild.audit_logs(action=discord.AuditLogAction.member_update, limit=1):
+					if self.past(2) < entry.created_at:
+						user = entry.user
+				e.description = f"**User:** {after.mention}\n" \
+					f"**Changed by:** {user.mention}\n"
 				e.add_field(name="◈ Nickname ◈", value=f"**Before:** {before.display_name}\n"
 				f"**After:** {after.display_name}", inline=False)
 			if before.roles != after.roles:
 				member_changed = True
+				guild_requirements = await self.ensure_permissions(guild_id)
+				if not guild_requirements:
+					return
+				async for entry in before.guild.audit_logs(action=discord.AuditLogAction.member_role_update, limit=1):
+					if self.past(2) < entry.created_at:
+						user = entry.user
+				e.description = f"**User:** {after.mention}\n" \
+					f"**Changed by:** {user.mention}\n"
 				role_changes = ""
 				for role in before.roles:
 					if role not in after.roles:
