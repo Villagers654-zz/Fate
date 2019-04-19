@@ -263,13 +263,18 @@ class Leaderboards(commands.Cog):
 				if guild_id not in self.spam_cd:
 					self.spam_cd[guild_id] = {}
 				if author_id not in self.spam_cd[guild_id]:
-					self.spam_cd[guild_id][author_id] = [now, 0]
-				if self.spam_cd[guild_id][author_id][0] == now:
-					self.spam_cd[guild_id][author_id][1] += 1
+					self.spam_cd[guild_id][user_id] = [now, 0]
+				if self.spam_cd[guild_id][user_id][0] == now:
+					self.spam_cd[guild_id][user_id][1] += 1
 				else:
-					self.spam_cd[guild_id][author_id] = [now, 0]
-				if self.spam_cd[guild_id][author_id][1] > 2:
-					self.cd[author_id] = time() + 150
+					self.spam_cd[guild_id][user_id] = [now, 0]
+				if self.spam_cd[guild_id][user_id][1] > 2:
+					self.cd[user_id] = time() + 600
+					self.global_data[user_id] -= 3
+					self.guilds_data[guild_id][user_id] -= 3
+					self.monthly_global_data[user_id] -= 3
+					self.monthly_guilds_data[guild_id] -= 3
+					await self.save_json()
 					print(f"{m.author} is spamming")
 
 				# anti macro
@@ -285,7 +290,11 @@ class Leaderboards(commands.Cog):
 					self.macro_cd[user_id]['intervals'] = intervals[-3:]
 					if len(intervals) > 2:
 						if all(interval == intervals[0] for interval in intervals):
-							self.cd[user_id] = time() + 150
+							self.cd[user_id] = time() + 600
+							self.global_data[user_id] -= 3
+							self.guilds_data[guild_id][user_id] -= 3
+							self.monthly_global_data[user_id] -= 3
+							self.monthly_guilds_data[guild_id] -= 3
 							print(f"Detected that {m.author} is using a macro")
 
 				if user_id not in self.cd:
