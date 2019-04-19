@@ -39,6 +39,14 @@ class Logger(commands.Cog):
 			del self.blocked[guild_id]
 		return self.save_json()
 
+	async def notify_of_termination(self, guild_id):
+		guild = self.bot.get_guild(guild_id)
+		bot = guild.get_member(self.bot.user.id)
+		for channel in guild.text_channels:
+			if channel.permissions_for(bot).send_messages:
+				await channel.send("Disabled logger, missing required perms")
+				break
+
 	async def wait_for_access(self, guild_id):
 		guild = self.bot.get_guild(int(guild_id))
 		bot = guild.get_member(self.bot.user.id)
@@ -53,7 +61,9 @@ class Logger(commands.Cog):
 				break
 			else:
 				if loops >= 72:
-					self.wipe_data(guild_id)
+					if guild_id in self.channel:
+						self.wipe_data(guild_id)
+						await self.notify_of_termination(guild_id)
 					return False
 		while channel_access is False:
 			loops += 1
@@ -62,7 +72,9 @@ class Logger(commands.Cog):
 				return True
 			else:
 				if loops >= 72:
-					self.wipe_data(guild_id)
+					if guild_id in self.channel:
+						self.wipe_data(guild_id)
+						await self.notify_of_termination(guild_id)
 					return False
 			await asyncio.sleep(25)
 
@@ -308,6 +320,9 @@ class Logger(commands.Cog):
 							return
 						if len(after.embeds) == 0:
 							channel = self.bot.get_channel(self.channel[guild_id])
+							channel_requirements = await self.channel_check(guild_id)
+							if not channel_requirements:
+								return
 							e = discord.Embed(color=colors.pink())
 							e.title = "~===🥂🍸🍷Msg Edited🍷🍸🥂===~"
 							e.set_thumbnail(url=before.author.avatar_url)
@@ -407,6 +422,9 @@ class Logger(commands.Cog):
 			if guild_id not in self.cache:
 				self.cache[guild_id] = []
 			if payload.message_id not in self.cache[guild_id]:
+				channel_requirements = await self.channel_check(guild_id)
+				if not channel_requirements:
+					return
 				e = discord.Embed(color=colors.purple())
 				e.title = "🥂🍸🍷Uncached Msg Deleted🍷🍸🥂"
 				e.set_thumbnail(url=self.bot.get_guild(payload.guild_id).icon_url)
@@ -492,6 +510,9 @@ class Logger(commands.Cog):
 				async for entry in after.audit_logs(action=discord.AuditLogAction.guild_update, limit=1):
 					user = entry.user.mention
 				channel = self.bot.get_channel(self.channel[guild_id])
+				channel_requirements = await self.channel_check(guild_id)
+				if not channel_requirements:
+					return
 				e = discord.Embed(color=colors.cyan())
 				e.title = "~==🥂🍸🍷Guild Update🍷🍸🥂==~"
 				e.set_thumbnail(url=before.icon_url)
@@ -512,7 +533,10 @@ class Logger(commands.Cog):
 			user = None  # type: discord.Member
 			async for entry in channel.guild.audit_logs(action=discord.AuditLogAction.channel_create, limit=1):
 				user = entry.user
-			log_channel = self.bot.get_channel(self.channel[guild_id])
+			log = self.bot.get_channel(self.channel[guild_id])
+			channel_requirements = await self.channel_check(guild_id)
+			if not channel_requirements:
+				return
 			channel_name = channel.name
 			if isinstance(channel, discord.TextChannel):
 				channel_name = channel.mention
@@ -525,7 +549,7 @@ class Logger(commands.Cog):
 				f"**ID:** {channel.id}\n" \
 				f"**Members:** [{len(channel.members)}]"
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
-			await log_channel.send(embed=e)
+			await log.send(embed=e)
 
 	@commands.Cog.listener()
 	async def on_guild_channel_delete(self, channel):
@@ -594,54 +618,30 @@ class Logger(commands.Cog):
 				e.add_field(name="◈ Category ◈", value=f"**Before:** {before.category}\n"
 					f"**After:** {after.category}", inline=False)
 			if before.overwrites != after.overwrites:
-
-				# old
-				value = ""
-				updated = None
-				existed_before = []
-				existed_after = []
-				for dat in before.overwrites:
-					existed_before.append(dat[0])
-				for dat in after.overwrites:
-					existed_after.append(dat[0])
-				for object in existed_after:
-					if object not in existed_before:
-						updated = True
-						value += f"\n{config.emojis('plus')} {object}"
-				for object in existed_before:
-					if object not in existed_after:
-						perms = ""
-						updated = True
-						for perm_object in before.overwrites[existed_before.index(object)][1]:
-							if perm_object[1]:
-								perms += f"\n✦ {perm_object[0]}"
-						value += f"\n❌ {object}{perms}"
-				if not updated:
-					before_roles = {}
-					after_roles = {}
-					for dat in before.overwrites:
-						before_roles[dat[0].name] = dat[1]
-					for dat in after.overwrites:
-						after_roles[dat[0].name] = dat[1]
-					for key in list(before_roles.keys()):
-						if key != after_roles[list(after_roles.keys())[list(after_roles).index(key)]]:
-							before_perm = []
-							before_value = []
-							after_perm = []
-							after_value = []
-							for perm in before_roles[key]:
-								before_perm.append(perm[0])
-								before_value.append(perm[1])
-							for perm in after_roles[list(after_roles.keys())[list(after_roles).index(key)]]:
-								after_perm.append(perm[0])
-								after_value.append(perm[1])
-							difference = ""
-							for perm in before_perm:
-								if before_value[before_perm.index(perm)] != after_value[after_perm.index(perm)]:
-									difference += f"\n□ {after_perm[after_perm.index(perm)]}: {after_value[after_perm.index(perm)]}"
-							if difference:
-								value += f"\n<:edited:550291696861315093> {list(after_roles.keys())[list(after_roles).index(key)] + difference}"
-				e.add_field(name="◈ Overwrites ◈", value=value, inline=False)
+				updated_overwrites = ""
+				valueless_overwrites = []
+				for overwrite in before.overwrites.keys():
+					if overwrite not in after.overwrites:
+						updated_overwrites += f"\n<:plus:548465119462424595> {overwrite}"
+						valueless_overwrites.append(overwrite)
+				for overwrite in after.overwrites.keys():
+					if overwrite not in before.overwrites:
+						updated_overwrites += f"\n❌ {overwrite}"
+						valueless_overwrites.append(overwrite)
+				for overwrite, permissions in before.overwrites.items():
+					if overwrite not in valueless_overwrites:
+						if permissions != after.overwrites[overwrite]:
+							updated_overwrites += f"\n<:edited:550291696861315093> {overwrite.name}"
+							before_perms = {}
+							after_perms = {}
+							for perm, value in permissions:
+								before_perms[perm] = value
+							for perm, value in after.overwrites[overwrite]:
+								after_perms[perm] = value
+							for perm, value in before_perms.items():
+								if value != after_perms[perm]:
+									updated_overwrites += f"\n□ {perm}: {after_perms[perm]}"
+				e.add_field(name="◈ Overwrites ◈", value=updated_overwrites, inline=False)
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 			await channel.send(embed=e)
 
@@ -656,6 +656,9 @@ class Logger(commands.Cog):
 			async for entry in role.guild.audit_logs(after=self.past(2), action=discord.AuditLogAction.role_create, limit=1):
 				user = entry.user
 			channel = self.bot.get_channel(self.channel[guild_id])
+			channel_requirements = await self.channel_check(guild_id)
+			if not channel_requirements:
+				return
 			e = discord.Embed(color=colors.blue())
 			e.title = "~==🥂🍸🍷Role Created🍷🍸🥂==~"
 			if user:
@@ -886,6 +889,9 @@ class Logger(commands.Cog):
 					return
 			user = None  # type: discord.Member
 			channel = self.bot.get_channel(self.channel[guild_id])
+			channel_requirements = await self.channel_check(guild_id)
+			if not channel_requirements:
+				return
 			e = discord.Embed(color=colors.yellow())
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 			for emoji in before:
@@ -936,6 +942,9 @@ class Logger(commands.Cog):
 				if "member_join" in self.blacklist[guild_id]:
 					return
 			channel = self.bot.get_channel(self.channel[guild_id])
+			channel_requirements = await self.channel_check(guild_id)
+			if not channel_requirements:
+				return
 			e = discord.Embed(color=colors.green())
 			e.title = "~==🥂🍸🍷Member Joined🍷🍸🥂==~"
 			e.set_thumbnail(url=m.avatar_url)
@@ -953,6 +962,9 @@ class Logger(commands.Cog):
 				if "member_remove" in self.blacklist[guild_id]:
 					return
 			channel = self.bot.get_channel(self.channel[guild_id])
+			channel_requirements = await self.channel_check(guild_id)
+			if not channel_requirements:
+				return
 			e = discord.Embed(color=colors.red())
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 			async for entry in m.guild.audit_logs(action=discord.AuditLogAction.kick, limit=1):
@@ -985,6 +997,9 @@ class Logger(commands.Cog):
 			async for entry in guild.audit_logs(limit=1, action=discord.AuditLogAction.ban):
 				author = entry.user
 			channel = self.bot.get_channel(self.channel[guild_id])
+			channel_requirements = await self.channel_check(guild_id)
+			if not channel_requirements:
+				return
 			e = discord.Embed(color=colors.red())
 			e.set_thumbnail(url=user.avatar_url)
 			if isinstance(user, discord.Member):
@@ -1006,6 +1021,9 @@ class Logger(commands.Cog):
 			async for entry in guild.audit_logs(action=discord.AuditLogAction.unban, after=self.past(2), limit=1):
 				author = entry.user
 			channel = self.bot.get_channel(self.channel[guild_id])
+			channel_requirements = await self.channel_check(guild_id)
+			if not channel_requirements:
+				return
 			e = discord.Embed(color=colors.orange())
 			e.title = "~==🥂🍸🍷User Unbanned🍷🍸🥂==~"
 			e.set_thumbnail(url=user.avatar_url)
