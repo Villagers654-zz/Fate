@@ -62,8 +62,8 @@ class Logger(commands.Cog):
 			else:
 				if loops >= 72:
 					if guild_id in self.channel:
-						self.wipe_data(guild_id)
 						await self.notify_of_termination(guild_id)
+					self.wipe_data(guild_id)
 					return False
 		while channel_access is False:
 			loops += 1
@@ -73,8 +73,8 @@ class Logger(commands.Cog):
 			else:
 				if loops >= 72:
 					if guild_id in self.channel:
-						self.wipe_data(guild_id)
 						await self.notify_of_termination(guild_id)
+					self.wipe_data(guild_id)
 					return False
 			await asyncio.sleep(25)
 
@@ -622,11 +622,11 @@ class Logger(commands.Cog):
 				valueless_overwrites = []
 				for overwrite in before.overwrites.keys():
 					if overwrite not in after.overwrites:
-						updated_overwrites += f"\n<:plus:548465119462424595> {overwrite}"
+						updated_overwrites += f"\n❌ {overwrite}"
 						valueless_overwrites.append(overwrite)
 				for overwrite in after.overwrites.keys():
 					if overwrite not in before.overwrites:
-						updated_overwrites += f"\n❌ {overwrite}"
+						updated_overwrites += f"\n<:plus:548465119462424595> {overwrite}"
 						valueless_overwrites.append(overwrite)
 				for overwrite, permissions in before.overwrites.items():
 					if overwrite not in valueless_overwrites:
