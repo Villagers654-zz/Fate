@@ -5,7 +5,6 @@ from time import time
 import datetime
 import discord
 import json
-import time
 
 class AntiPurge(commands.Cog):
 	def __init__(self, bot):
