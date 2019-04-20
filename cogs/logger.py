@@ -313,7 +313,11 @@ class Logger(commands.Cog):
 					log = self.bot.get_channel(self.channel[guild_id])
 					e = discord.Embed(color=colors.white())
 					e.title = "~===🥂🍸🍷Ghost Typing🍷🍸🥂===~"
-					e.set_thumbnail(url=channel.guild.icon_url)
+					if channel.guild.icon_url:
+						e.set_thumbnail(url=channel.guild.icon_url)
+					else:
+						if user.avatar_url:
+							e.set_thumbnail(url=user.avatar_url)
 					e.description = f"**User:** {user.mention}\n" \
 						f"**Channel:** {channel.mention}"
 					e.set_footer(text=datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p'))
@@ -356,7 +360,8 @@ class Logger(commands.Cog):
 								return
 							e = discord.Embed(color=colors.pink())
 							e.title = "~===🥂🍸🍷Msg Edited🍷🍸🥂===~"
-							e.set_thumbnail(url=before.author.avatar_url)
+							if before.author.avatar_url:
+								e.set_thumbnail(url=before.author.avatar_url)
 							e.description = f"**Author:** {before.author.mention}\n" \
 								f"**Channel:** {before.channel.mention}\n" \
 								f"[Jump to MSG]({before.jump_url})\n"
@@ -393,7 +398,8 @@ class Logger(commands.Cog):
 					if not m.embeds:
 						e = discord.Embed(color=colors.purple())
 						e.title = "~===🥂🍸🍷Msg Deleted🍷🍸🥂===~"
-						e.set_thumbnail(url=m.author.avatar_url)
+						if m.author.avatar_url:
+							e.set_thumbnail(url=m.author.avatar_url)
 						e.description = f"**Author:** {m.author.mention}\n" \
 							f"**Deleted by:** {user}\n" \
 							f"**Channel:** {m.channel.mention}\n" \
@@ -418,7 +424,8 @@ class Logger(commands.Cog):
 				else:
 					e = discord.Embed(color=colors.purple())
 					e.title = "~===🥂🍸🍷Msg Deleted🍷🍸🥂===~"
-					e.set_thumbnail(url=m.author.avatar_url)
+					if m.author.avatar_url:
+						e.set_thumbnail(url=m.author.avatar_url)
 					e.description = f"**Author:** {m.author.mention}\n" \
 						f"**Deleted by:** {user}\n" \
 						f"**Channel:** {m.channel.mention}\n" \
@@ -459,9 +466,11 @@ class Logger(commands.Cog):
 				channel_requirements = await self.channel_check(guild_id)
 				if not channel_requirements:
 					return
+				guild = self.bot.get_guild(payload.guild_id)
 				e = discord.Embed(color=colors.purple())
 				e.title = "🥂🍸🍷Uncached Msg Deleted🍷🍸🥂"
-				e.set_thumbnail(url=self.bot.get_guild(payload.guild_id).icon_url)
+				if guild.icon_url:
+					e.set_thumbnail(url=guild.icon_url)
 				e.description = f"**Msg ID:** `{payload.message_id}`\n" \
 					f"**Channel:** {self.bot.get_channel(payload.channel_id).mention}"
 				e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
@@ -494,7 +503,8 @@ class Logger(commands.Cog):
 					if not msg.embeds:
 						e = discord.Embed(color=colors.purple())
 						e.title = "~===🥂🍸🍷Msg Deleted🍷🍸🥂===~"
-						e.set_thumbnail(url=msg.author.avatar_url)
+						if msg.author.avatar_url:
+							e.set_thumbnail(url=msg.author.avatar_url)
 						e.description = f"**Author:** {msg.author.mention}\n" \
 							f"**Deleted by:** {user}\n" \
 							f"**Channel:** {msg.channel.mention}\n" \
@@ -525,7 +535,8 @@ class Logger(commands.Cog):
 				path = os.getcwd() + "/data/temp/purged_messages.txt"
 				e = discord.Embed(color=colors.black())
 				e.title = "~===🥂🍸🍷Bulk Msg Delete🍷🍸🥂===~"
-				e.set_thumbnail(url=m.author.avatar_url)
+				if m.author.avatar_url:
+					e.set_thumbnail(url=m.author.avatar_url)
 				e.description = f"**Users Affected:** {len(authors)}\n" \
 					f"**Messages Deleted:** {len(messages)}\n" \
 					f"**Triggered by:** {user}\n" \
@@ -555,7 +566,8 @@ class Logger(commands.Cog):
 					return
 				e = discord.Embed(color=colors.cyan())
 				e.title = "~==🥂🍸🍷Guild Update🍷🍸🥂==~"
-				e.set_thumbnail(url=before.icon_url)
+				if before.icon_url:
+					e.set_thumbnail(url=before.icon_url)
 				e.description = f"**Updated by:** {user}"
 				e.add_field(name="◈ Name ◈", value= \
 					f"**Before:** `{before.name}`\n" \
@@ -622,7 +634,8 @@ class Logger(commands.Cog):
 				return
 			e = discord.Embed(color=colors.fate())
 			e.title = "~==🥂🍸🍷Channel Deleted🍷🍸🥂==~"
-			e.set_thumbnail(url=user.avatar_url)
+			if user.avatar_url:
+				e.set_thumbnail(url=user.avatar_url)
 			e.description = f"**Channel:** {channel.name}\n" \
 				f"**Deleted by:** {user.mention}\n" \
 				f"**ID:** {channel.id}\n" \
@@ -656,7 +669,8 @@ class Logger(commands.Cog):
 			e = discord.Embed(color=colors.fate())
 			e.title = "~==🥂🍸🍷Channel Updated🍷🍸🥂==~"
 			if user:
-				e.set_thumbnail(url=user.avatar_url)
+				if user.avatar_url:
+					e.set_thumbnail(url=user.avatar_url)
 			e.description = \
 				f"**Channel:** {after.mention}\n" \
 				f"**Updated by:** {user.mention if user else '`unknown`'}"
@@ -714,7 +728,8 @@ class Logger(commands.Cog):
 			e = discord.Embed(color=colors.blue())
 			e.title = "~==🥂🍸🍷Role Created🍷🍸🥂==~"
 			if user:
-				e.set_thumbnail(url=role.guild.icon_url)
+				if role.guild.icon_url:
+					e.set_thumbnail(url=role.guild.icon_url)
 			e.description = f"**Role:** {role.mention}\n" \
 				f"**Created by:** {user.mention if user else '`unknown`'}"
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
@@ -740,7 +755,8 @@ class Logger(commands.Cog):
 			e = discord.Embed(color=colors.blue())
 			e.title = "~==🥂🍸🍷Role Deleted🍷🍸🥂==~"
 			if user:
-				e.set_thumbnail(url=role.guild.icon_url)
+				if role.guild.icon_url:
+					e.set_thumbnail(url=role.guild.icon_url)
 			e.description = f"**Name:** {role.name}\n" \
 				f"**Deleted by:** {user.mention if user else '`unknown`'}\n" \
 				f"**Color:** {role.color}\n" \
@@ -772,7 +788,8 @@ class Logger(commands.Cog):
 				return
 			e = discord.Embed(color=colors.blue())
 			e.title = "~==🥂🍸🍷Role Updated🍷🍸🥂==~"
-			e.set_thumbnail(url=before.guild.icon_url)
+			if before.guild.icon_url:
+				e.set_thumbnail(url=before.guild.icon_url)
 			e.description = f"**Role:** {after.mention}\n**Updated by:** {user.display_name if user else '`unknown`'}"
 			if before.name != after.name:
 				is_changed = True
@@ -971,7 +988,8 @@ class Logger(commands.Cog):
 					async for entry in guild.audit_logs(action=discord.AuditLogAction.emoji_create, limit=1):
 						if self.past(2) < entry.created_at:
 							user = entry.user
-							e.set_thumbnail(url=user.avatar_url)
+							if user.avatar_url:
+								e.set_thumbnail(url=user.avatar_url)
 					e.title = "~==🥂🍸🍷Emoji Created🍷🍸🥂==~"
 					e.description = \
 						f"**Created by:** {user.mention if user else '`unknown`'}\n" \
@@ -985,7 +1003,8 @@ class Logger(commands.Cog):
 							async for entry in guild.audit_logs(action=discord.AuditLogAction.emoji_update, limit=1):
 								if self.past(2) < entry.created_at:
 									user = entry.user
-									e.set_thumbnail(url=user.avatar_url)
+									if user.avatar_url:
+										e.set_thumbnail(url=user.avatar_url)
 							e.title = "~==🥂🍸🍷Emoji Updated🍷🍸🥂==~"
 							e.description = \
 								f"**Updated by:** {user.mention if user else '`unknown`'}\n" \
@@ -1008,7 +1027,8 @@ class Logger(commands.Cog):
 				return
 			e = discord.Embed(color=colors.green())
 			e.title = "~==🥂🍸🍷Member Joined🍷🍸🥂==~"
-			e.set_thumbnail(url=m.avatar_url)
+			if m.avatar_url:
+				e.set_thumbnail(url=m.avatar_url)
 			e.description = \
 				f"**User:** {m}\n" \
 				f"**ID:** {m.id}\n"
@@ -1035,7 +1055,8 @@ class Logger(commands.Cog):
 				if self.past(2) < entry.created_at:
 					user = entry.user
 					e.title = "~==🥂🍸🍷Member Kicked🍷🍸🥂==~"
-					e.set_thumbnail(url=m.avatar_url)
+					if m.avatar_url:
+						e.set_thumbnail(url=m.avatar_url)
 					e.description = \
 						f"**Member:** {m}\n" \
 						f"**Kicked by:** {user.mention}\n" \
@@ -1044,7 +1065,8 @@ class Logger(commands.Cog):
 			async for entry in m.guild.audit_logs(action=discord.AuditLogAction.ban, limit=1):
 				if self.past(2) > entry.created_at:
 					e.title = "~==🥂🍸🍷Member Left🍷🍸🥂==~"
-					e.set_thumbnail(url=m.avatar_url)
+					if m.avatar_url:
+						e.set_thumbnail(url=m.avatar_url)
 					e.description = \
 						f"**User:** {m}\n" \
 						f"**ID:** {m.id}\n"
@@ -1068,7 +1090,8 @@ class Logger(commands.Cog):
 			if not channel_requirements:
 				return
 			e = discord.Embed(color=colors.red())
-			e.set_thumbnail(url=user.avatar_url)
+			if user.avatar_url:
+				e.set_thumbnail(url=user.avatar_url)
 			if isinstance(user, discord.Member):
 				e.title = "~==🥂🍸🍷Member Banned🍷🍸🥂==~"
 			if isinstance(user, discord.User):
@@ -1096,7 +1119,8 @@ class Logger(commands.Cog):
 				return
 			e = discord.Embed(color=colors.orange())
 			e.title = "~==🥂🍸🍷User Unbanned🍷🍸🥂==~"
-			e.set_thumbnail(url=user.avatar_url)
+			if user.avatar_url:
+				e.set_thumbnail(url=user.avatar_url)
 			e.description = f"**User:** {user}\nUnbanned by: {author.mention if author else '`unknown`'}"
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 			await channel.send(embed=e)
@@ -1117,7 +1141,8 @@ class Logger(commands.Cog):
 			if not channel_requirements:
 				return
 			e = discord.Embed(color=colors.lime_green())
-			e.set_thumbnail(url=before.avatar_url)
+			if before.avatar_url:
+				e.set_thumbnail(url=before.avatar_url)
 			e.title = "~==🥂🍸🍷Member Updated🍷🍸🥂==~"
 			if before.display_name != after.display_name:
 				member_changed = True
