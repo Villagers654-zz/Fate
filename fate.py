@@ -103,7 +103,7 @@ async def on_guild_remove(guild: discord.Guild):
 	await channel.send(embed=e)
 
 @bot.event
-async def on_command_completion(ctx):
+async def on_command(ctx):
 	with open("./data/stats.json", "r") as f:
 		commands = json.load(f)["commands"]
 	with open("./data/stats.json", "w") as f:
