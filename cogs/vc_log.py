@@ -108,7 +108,7 @@ class VcLog(commands.Cog):
 						self.leave_cd[guild_id][user_id] = time() + 10
 						return
 				if before.channel.id != after.channel.id:
-					now = int(time() / 10)
+					now = int(time() / 5)
 					if guild_id not in self.move_cd:
 						self.move_cd[guild_id] = {}
 					if user_id not in self.move_cd[guild_id]:
@@ -119,9 +119,7 @@ class VcLog(commands.Cog):
 						self.move_cd[guild_id][user_id] = [now, 0]
 					if self.move_cd[guild_id][user_id][1] > 2:
 						return
-					await channel.send(f'🚸 **{member.display_name} moved to {after.channel.name}**')
-					self.move_cd[guild_id][user_id] = time() + 5
-					return
+					return await channel.send(f'🚸 **{member.display_name} moved to {after.channel.name}**')
 				if before.mute is False and after.mute is True:
 					return await channel.send(f'🔈 **{member.display_name} was muted**')
 				if before.mute is True and after.mute is False:
