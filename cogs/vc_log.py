@@ -108,7 +108,7 @@ class VcLog(commands.Cog):
 						self.leave_cd[guild_id][user_id] = time() + 10
 						return
 				if before.channel.id != after.channel.id:
-					now = int(time() / 5)
+					now = int(time() / 10)
 					if guild_id not in self.move_cd:
 						self.move_cd[guild_id] = {}
 					if user_id not in self.move_cd[guild_id]:
