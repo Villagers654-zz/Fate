@@ -92,11 +92,17 @@ class Menus(commands.Cog):
 	@commands.bot_has_permissions(embed_links=True)
 	async def discords(self, ctx):
 		e=discord.Embed(title="~~~====🥂🍸🍷Discords🍷🍸🥂====~~~", color=0x80b0ff)
-		e.add_field(name="• Anarchy Community", value="[Exousía Supreme Regime](https://discord.gg/Xn5ZRjk)\n[2p2e - 2pocket2edition](https://discord.gg/y4V4T84)\n[Bridge of Anarchism](https://discord.gg/WN9F82d)\n[4B4T (Official)](https://discord.gg/BQ23Z2E)\n", inline=False)
-		e.add_field(name="• Games", value="[PUBG / MC Hangout](https://discord.gg/a6zVWav)\n[MC Fun](https://discord.gg/zjrTPKQ)", inline=False)
-		e.add_field(name="• Misc", value="[Tothers Hotel](https://discord.gg/XshWswg)", inline=False)
+		games = '[2p2e - 2pocket2edition](https://discord.gg/y4V4T84)\n' \
+				'[PUBG / MC Hangout](https://discord.gg/a6zVWav)\n' \
+		        '[4B4T (Minecraft)](https://discord.gg/BQ23Z2E)\n' \
+		        '[2B2T §pawn](https://discord.gg/jByKWTF)\n' \
+				'[MC Fun](https://discord.gg/zjrTPKQ)'
+		misc = '[Exousía Supreme Regime](https://discord.gg/Xn5ZRjk)\n' \
+		       '[Bridge of Anarchism](https://discord.gg/WN9F82d)\n' \
+		       '[Tothers Hotel](https://discord.gg/XshWswg)'
+		e.add_field(name="• Games", value=games, inline=False)
+		e.add_field(name="• Misc", value=misc, inline=False)
 		await ctx.send(embed=e)
-
 
 	@commands.command(name="servers")
 	@commands.cooldown(1, 5, commands.BucketType.channel)

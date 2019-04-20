@@ -262,7 +262,7 @@ class ChatBot(commands.Cog):
 						matches.append(msg)
 						found = True
 				if found:
-					choice = random.choice(matches)
+					choice = random.choice(matches).lower().replace("fate", f"{m.author.display_name}")
 					if choice.lower() == m.content.lower():
 						return
 					try:

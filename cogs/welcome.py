@@ -1,6 +1,6 @@
 from discord.ext import commands
 from os.path import isfile
-from utils import colors
+from utils import colors, utils
 import discord
 import asyncio
 import random
@@ -159,13 +159,8 @@ class Welcome(commands.Cog):
 			complete = False
 			await ctx.send('Send the image(s) you\'d like to use\nReply with "done" when finished')
 			while complete is False:
-				def pred(m):
-					return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
-				try:
-					msg = await self.bot.wait_for('message', check=pred, timeout=30)
-				except asyncio.TimeoutError:
-					await ctx.send("Timeout error")
-				else:
+				msg = utils.Bot(self.bot).wait_for_msg(ctx)  # type: discord.Message
+				if msg:
 					if msg.content:
 						if "done" in msg.content.lower():
 							return await ctx.send("Added your images 👍")
@@ -173,7 +168,11 @@ class Welcome(commands.Cog):
 						self.images[guild_id].append(attachment.url)
 		for attachment in ctx.message.attachments:
 			self.images[guild_id].append(attachment.url)
-		await ctx.send("Added your image(s)")
+		if len(self.images[guild_id]) > 0:
+			await ctx.send("Added your image(s)")
+		else:
+			await ctx.send('No worries, I\'ll just keep using my own gifs for now')
+			del self.images[guild_id]
 		self.save_data()
 
 	@_welcome.command(name="delimages")
