@@ -13,6 +13,7 @@ class VcLog(commands.Cog):
 		self.channel = {}
 		self.join_cd = {}
 		self.leave_cd = {}
+		self.move_cd = {}
 		if isfile(self.path):
 			with open(self.path, 'r') as f:
 				self.channel = json.load(f)
@@ -95,7 +96,8 @@ class VcLog(commands.Cog):
 						self.join_cd[guild_id][user_id] = 0
 					if self.join_cd[guild_id][user_id] < time():
 						await channel.send(f'<:plus:548465119462424595> **{member.display_name} joined {after.channel.name}**')
-						self.join_cd[guild_id][user_id] = time() + 15
+						self.join_cd[guild_id][user_id] = time() + 10
+						return
 				if not after.channel:
 					if guild_id not in self.leave_cd:
 						self.leave_cd[guild_id] = {}
@@ -103,20 +105,48 @@ class VcLog(commands.Cog):
 						self.leave_cd[guild_id][user_id] = 0
 					if self.leave_cd[guild_id][user_id] < time():
 						await channel.send(f'❌ **{member.display_name} left {before.channel.name}**')
-						self.leave_cd[guild_id][user_id] = time() + 15
+						self.leave_cd[guild_id][user_id] = time() + 10
+						return
+				if before.channel.id != after.channel.id:
+					now = int(time() / 10)
+					if guild_id not in self.move_cd:
+						self.move_cd[guild_id] = {}
+					if user_id not in self.move_cd[guild_id]:
+						self.move_cd[guild_id][user_id] = [now, 0]
+					if self.move_cd[guild_id][user_id][0] == now:
+						self.move_cd[guild_id][user_id][1] += 1
+					else:
+						self.move_cd[guild_id][user_id] = [now, 0]
+					if self.move_cd[guild_id][user_id][1] > 2:
+						return
+					await channel.send(f'🚸 **{member.display_name} moved to {after.channel.name}**')
+					self.move_cd[guild_id][user_id] = time() + 5
+					return
+				if before.mute is False and after.mute is True:
+					return await channel.send(f'🔈 **{member.display_name} was muted**')
+				if before.mute is True and after.mute is False:
+					return await channel.send(f'🔊 **{member.display_name} was unmuted**')
+				if before.deaf is False and after.deaf is True:
+					return await channel.send(f'🎧 **{member.display_name} was deafened**')
+				if before.deaf is True and after.deaf is False:
+					await channel.send(f'🎤 **{member.display_name} was undeafened**')
 
 	@commands.Cog.listener()
 	async def on_message(self, msg: discord.Message):
 		guild_id = str(msg.guild.id)
 		if guild_id in self.channel:
 			if msg.channel.id == self.channel[guild_id]:
-				if not msg.content.startswith('<:plus:548465119462424595>'):
-					if not msg.content.startswith('❌'):
-						bot = msg.guild.get_member(self.bot.user.id)
-						if msg.channel.permissions_for(bot).manage_messages:
-							await asyncio.sleep(20)
-							if msg.channel.fetch_message(msg.id):
-								await msg.delete()
+				if msg.author.id == self.bot.user.id:
+					chars = ['<:plus:548465119462424595>', '❌', '🔈', '🔊', '🚸', '🎧', '🎤']
+					for x in chars:
+						if msg.content.startswith(x):
+							return
+				bot = msg.guild.get_member(self.bot.user.id)
+				if msg.channel.permissions_for(bot).manage_messages:
+					await asyncio.sleep(20)
+					message = await msg.channel.fetch_message(msg.id)
+					if message:
+						await msg.delete()
 
 def setup(bot):
 	bot.add_cog(VcLog(bot))
