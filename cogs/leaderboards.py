@@ -41,6 +41,14 @@ class Leaderboards(commands.Cog):
 			           "monthly_guilded": self.monthly_guilds_data, "vclb": self.vclb, "gvclb": self.gvclb},
 			          outfile, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
 
+	async def subtract_from_monthly(self, guild_id, user_id):
+		for msg_id, msg_time in (sorted(self.monthly_global_data[user_id].items(), key=lambda kv: kv[1], reverse=True)):
+			if float(msg_time) > time() - 600:
+				del self.monthly_global_data[user_id][str(msg_id)]
+		for msg_id, msg_time in (sorted(self.monthly_guilds_data[guild_id][user_id].items(), key=lambda kv: kv[1], reverse=True)):
+			if float(msg_time) > time() - 600:
+				del self.monthly_guilds_data[guild_id][user_id][str(msg_id)]
+
 	def msg_footer(self):
 		return random.choice(["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready",
 		    "Powered by slaves", "Powered by Beddys ego", "Powered by Samsung", "Powered by the supreme",
@@ -272,8 +280,7 @@ class Leaderboards(commands.Cog):
 					self.cd[user_id] = time() + 600
 					self.global_data[user_id] -= 1
 					self.guilds_data[guild_id][user_id] -= 1
-					self.monthly_global_data[user_id] -= 1
-					self.monthly_guilds_data[guild_id] -= 1
+					await self.subtract_from_monthly(guild_id, user_id)
 					await self.save_json()
 					print(f"{m.author} is spamming")
 
@@ -293,8 +300,7 @@ class Leaderboards(commands.Cog):
 							self.cd[user_id] = time() + 600
 							self.global_data[user_id] -= 1
 							self.guilds_data[guild_id][user_id] -= 1
-							self.monthly_global_data[user_id] -= 1
-							self.monthly_guilds_data[guild_id] -= 1
+							await self.subtract_from_monthly(guild_id, user_id)
 							print(f"Detected that {m.author} is using a macro")
 
 				if user_id not in self.cd:
