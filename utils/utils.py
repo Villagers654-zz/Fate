@@ -1,6 +1,21 @@
 import datetime
 import discord
+import asyncio
 import time
+
+class Bot:
+	def __init__(self, bot):
+		self.bot = bot
+
+	async def wait_for_msg(self, ctx):
+		def pred(m):
+			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+		try:
+			msg = await self.bot.wait_for('message', check=pred, timeout=60)
+		except asyncio.TimeoutError:
+			await ctx.send("Timeout error")
+		else:
+			return msg
 
 class User:
 	def __init__(self, user: discord.User):
