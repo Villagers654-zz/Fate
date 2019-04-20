@@ -15,6 +15,7 @@ class Logger(commands.Cog):
 		self.channel = {}
 		self.blacklist = {}
 		self.blocked = {}
+		self.typing = {}
 		self.waiting = {}
 		self.cd = {}
 		if isfile("./data/userdata/logger.json"):
@@ -60,6 +61,9 @@ class Logger(commands.Cog):
 					break
 
 	async def wait_for_access(self, guild_id):
+		if guild_id in self.waiting:
+			return False
+		self.waiting[guild_id] = "waiting"
 		guild = self.bot.get_guild(int(guild_id))
 		bot = guild.get_member(self.bot.user.id)
 		channel_access = False
@@ -76,17 +80,20 @@ class Logger(commands.Cog):
 					if guild_id in self.channel:
 						await self.notify_of_termination(guild_id)
 					self.wipe_data(guild_id)
+					del self.waiting[guild_id]
 					return False
 		while channel_access is False:
 			loops += 1
 			channel = self.bot.get_channel(self.channel[guild_id])
 			if channel.permissions_for(bot).send_messages:
+				del self.waiting[guild_id]
 				return True
 			else:
 				if loops >= 72:
 					if guild_id in self.channel:
 						await self.notify_of_termination(guild_id)
 					self.wipe_data(guild_id)
+					del self.waiting[guild_id]
 					return False
 			await asyncio.sleep(25)
 
@@ -293,11 +300,11 @@ class Logger(commands.Cog):
 				if guild_id in self.blocked:
 					if channel.id in self.blocked[guild_id]:
 						return
-				if guild_id not in self.waiting:
-					self.waiting[guild_id] = {}
-				if user_id in self.waiting[guild_id]:
+				if guild_id not in self.typing:
+					self.typing[guild_id] = {}
+				if user_id in self.typing[guild_id]:
 					return
-				self.waiting[guild_id][user_id] = "waiting"
+				self.typing[guild_id][user_id] = "waiting"
 				def pred(m):
 					return m.channel.id == channel.id and m.author.id == user.id
 				try:
@@ -311,9 +318,9 @@ class Logger(commands.Cog):
 						f"**Channel:** {channel.mention}"
 					e.set_footer(text=datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p'))
 					await log.send(embed=e)
-					del self.waiting[guild_id][user_id]
+					del self.typing[guild_id][user_id]
 				else:
-					del self.waiting[guild_id][user_id]
+					del self.typing[guild_id][user_id]
 
 	@commands.Cog.listener()
 	async def on_message(self, m: discord.Message):
