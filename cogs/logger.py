@@ -297,6 +297,12 @@ class Logger(commands.Cog):
 				if guild_id in self.blacklist:
 					if "ghost_typing" in self.blacklist[guild_id]:
 						return
+				guild_requirements = await self.ensure_permissions(guild_id)
+				if not guild_requirements:
+					return
+				channel_requirements = await self.channel_check(guild_id)
+				if not channel_requirements:
+					return
 				if guild_id in self.blocked:
 					if channel.id in self.blocked[guild_id]:
 						return
@@ -350,14 +356,17 @@ class Logger(commands.Cog):
 						user_id = str(before.author.id)
 						if user_id not in self.cd:
 							self.cd[user_id] = 0
-						self.cd[user_id] += time() + 1
-						if self.cd[user_id] > time() + 2:
+						self.cd[user_id] = time() + 2
+						if self.cd[user_id] < time():
 							return
 						if len(after.embeds) == 0:
-							channel = self.bot.get_channel(self.channel[guild_id])
+							guild_requirements = await self.ensure_permissions(guild_id)
+							if not guild_requirements:
+								return
 							channel_requirements = await self.channel_check(guild_id)
 							if not channel_requirements:
 								return
+							channel = self.bot.get_channel(self.channel[guild_id])
 							e = discord.Embed(color=colors.pink())
 							e.title = "~===🥂🍸🍷Msg Edited🍷🍸🥂===~"
 							if before.author.avatar_url:
@@ -767,7 +776,6 @@ class Logger(commands.Cog):
 	@commands.Cog.listener()
 	async def on_guild_role_update(self, before, after):
 		guild_id = str(before.guild.id)
-		changed_permissions = ""
 		if guild_id in self.channel:
 			if guild_id in self.blacklist:
 				if "role_update" in self.blacklist[guild_id]:
@@ -776,11 +784,8 @@ class Logger(commands.Cog):
 			if not guild_requirements:
 				return
 			user = None  # type: discord.Member
-			async for entry in after.guild.audit_logs(after=self.past(2), action=discord.AuditLogAction.role_delete, limit=1):
-				user = entry.user.mention
 			async for entry in after.guild.audit_logs(action=discord.AuditLogAction.role_update, limit=1):
-				if self.past(2) < entry.created_at:
-					user = entry.user
+				user = entry.user
 			is_changed = False
 			channel = self.bot.get_channel(self.channel[guild_id])
 			channel_requirements = await self.channel_check(guild_id)
@@ -790,7 +795,7 @@ class Logger(commands.Cog):
 			e.title = "~==🥂🍸🍷Role Updated🍷🍸🥂==~"
 			if before.guild.icon_url:
 				e.set_thumbnail(url=before.guild.icon_url)
-			e.description = f"**Role:** {after.mention}\n**Updated by:** {user.display_name if user else '`unknown`'}"
+			e.description = f"**Role:** {after.mention}\n**Updated by:** {user.display_name}"
 			if before.name != after.name:
 				is_changed = True
 				e.add_field(name="◈ Name ◈", value=f"**Before:** {before.name}\n**After:** {after.name}", inline=False)
@@ -800,7 +805,7 @@ class Logger(commands.Cog):
 				is_changed = True
 				e.add_field(name="◈ Color ◈", value=f"**Before:** {before.color}\n**After:** {after.color}")
 			if before.permissions.value != after.permissions.value:
-				is_changed = True
+				changed_permissions = ""
 				if before.permissions.administrator != after.permissions.administrator:
 					if before.permissions.administrator:
 						changed_permissions += "❌ administrator\n"
@@ -946,9 +951,10 @@ class Logger(commands.Cog):
 						changed_permissions += "❌ manage emojis\n"
 					else:
 						changed_permissions += f"{config.emojis('plus')} manage emojis\n"
-				e.add_field(name="◈ Perms ◈", value=changed_permissions, inline=False)
+				if changed_permissions:
+					e.add_field(name="◈ Perms ◈", value=changed_permissions, inline=False)
 			if is_changed:
-				e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
+				e.set_footer(text=f"{datetime.datetime.utcnow().strftime('%m/%d/%Y %I:%M%p')}")
 				async for msg in channel.history(limit=1):
 					for embed in msg.embeds:
 						if embed == e:
