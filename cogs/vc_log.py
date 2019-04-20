@@ -11,28 +11,51 @@ class VcLog(commands.Cog):
 		self.bot = bot
 		self.path = './data/userdata/VcLog.json'
 		self.channel = {}
+		self.clean_channel = {}
 		self.join_cd = {}
 		self.leave_cd = {}
 		self.move_cd = {}
 		if isfile(self.path):
 			with open(self.path, 'r') as f:
-				self.channel = json.load(f)
+				dat = json.load(f)
+				if 'channel' in dat:
+					self.channel = dat['channel']
+				if 'clean_channel' in dat:
+					self.clean_channel = dat['clean_channel']
 
 	def save_json(self):
 		with open(self.path, 'w') as f:
-			json.dump(self.channel, f, ensure_ascii=False)
+			json.dump({'channel': self.channel, 'clean_channel': self.clean_channel}, f, ensure_ascii=False)
 
-	async def ensure_permissions(self, guild_id):
-		channel = self.bot.get_channel(self.channel[guild_id])
-		if not channel:
-			del self.channel[guild_id]
-			self.save_json()
+	async def ensure_permissions(self, guild_id, channel_id=None):
+		if channel_id:
+			channel = self.bot.get_channel(channel_id)
+			if channel:
+				bot = channel.guild.get_member(self.bot.user.id)
+				if channel.permissions_for(bot).send_messages:
+					return True
 			return False
-		bot = channel.guild.get_member(self.bot.user.id)
-		if not channel.permissions_for(bot).send_messages:
-			del self.channel[guild_id]
-			self.save_json()
-			return False
+		if guild_id in self.channel:
+			channel = self.bot.get_channel(self.channel[guild_id])
+			if not channel:
+				del self.channel[guild_id]
+				self.save_json()
+				return False
+		if guild_id in self.clean_channel:
+			channel = self.bot.get_channel(self.clean_channel[guild_id])
+			if not channel:
+				del self.clean_channel[guild_id]
+				self.save_json()
+				return False
+			bot = channel.guild.get_member(self.bot.user.id)
+			if not channel.permissions_for(bot).send_messages:
+				del self.clean_channel[guild_id]
+				self.save_json()
+				return False
+			if not channel.permissions_for(bot).manage_messages:
+				del self.clean_channel[guild_id]
+				self.save_json()
+				return False
 		return True
 
 	@commands.group(name='vclog')
@@ -61,13 +84,22 @@ class VcLog(commands.Cog):
 		guild_id = str(ctx.guild.id)
 		await ctx.send('Mention the channel I should use')
 		msg = await utils.Bot(self.bot).wait_for_msg(ctx)
-		mentions = msg.channel_mentions
-		if not mentions:
+		if not msg.channel_mentions:
 			return await ctx.send('That isn\'t a channel mention')
-		self.channel[guild_id] = msg.channel_mentions[0].id
-		channel_access = await self.ensure_permissions(guild_id)
+		channel_id = msg.channel_mentions[0].id
+		channel_access = await self.ensure_permissions(guild_id, channel_id)
 		if not channel_access:
-			await ctx.send('Sry, I don\'t have access to that channel')
+			return await ctx.send('Sry, I don\'t have access to that channel')
+		await ctx.send('Would you like me to delete all non vc-log messages?')
+		msg = await utils.Bot(self.bot).wait_for_msg(ctx)
+		reply = msg.content.lower()
+		if 'yes' in reply or 'sure' in reply or 'ok' in reply or 'yep' in reply:
+			self.clean_channel[guild_id] = channel_id
+			channel_access = await self.ensure_permissions(guild_id)
+			if not channel_access:
+				return await ctx.send('Sry, I\'m missing manage message(s) permissions in there')
+		else:
+			self.channel[guild_id] = channel_id
 		await ctx.send('Enabled VcLog')
 		self.save_json()
 
@@ -84,10 +116,10 @@ class VcLog(commands.Cog):
 	@commands.Cog.listener()
 	async def on_voice_state_update(self, member, before, after):
 		guild_id = str(member.guild.id)
-		if guild_id in self.channel:
+		if guild_id in self.channel or guild_id in self.clean_channel:
 			channel = self.bot.get_channel(self.channel[guild_id])
-			bot_has_required_perms = await self.ensure_permissions(guild_id)
-			if bot_has_required_perms:
+			bot_has_permissions = await self.ensure_permissions(guild_id)
+			if bot_has_permissions:
 				user_id = str(member.id)
 				if not before.channel:
 					if guild_id not in self.join_cd:
@@ -131,20 +163,22 @@ class VcLog(commands.Cog):
 
 	@commands.Cog.listener()
 	async def on_message(self, msg: discord.Message):
-		guild_id = str(msg.guild.id)
-		if guild_id in self.channel:
-			if msg.channel.id == self.channel[guild_id]:
-				if msg.author.id == self.bot.user.id:
-					chars = ['<:plus:548465119462424595>', '❌', '🔈', '🔊', '🚸', '🎧', '🎤']
-					for x in chars:
-						if msg.content.startswith(x):
-							return
-				bot = msg.guild.get_member(self.bot.user.id)
-				if msg.channel.permissions_for(bot).manage_messages:
-					await asyncio.sleep(20)
-					message = await msg.channel.fetch_message(msg.id)
-					if message:
-						await msg.delete()
+		if isinstance(msg.guild, discord.Guild):
+			guild_id = str(msg.guild.id)
+			if guild_id in self.clean_channel:
+				if msg.channel.id == self.clean_channel[guild_id]:
+					if msg.author.id == self.bot.user.id:
+						chars = ['<:plus:548465119462424595>', '❌', '🔈', '🔊', '🚸', '🎧', '🎤']
+						for x in chars:
+							if msg.content.startswith(x):
+								return
+					bot_has_permissions = await self.ensure_permissions(guild_id)
+					if bot_has_permissions:
+						await asyncio.sleep(20)
+						try:
+							await msg.delete()
+						except:
+							pass
 
 def setup(bot):
 	bot.add_cog(VcLog(bot))
