@@ -93,7 +93,7 @@ class Menus(commands.Cog):
 	async def discords(self, ctx):
 		e=discord.Embed(title="~~~====🥂🍸🍷Discords🍷🍸🥂====~~~", color=0x80b0ff)
 		e.add_field(name="• Anarchy Community", value="[Exousía Supreme Regime](https://discord.gg/Xn5ZRjk)\n[2p2e - 2pocket2edition](https://discord.gg/y4V4T84)\n[Bridge of Anarchism](https://discord.gg/WN9F82d)\n[4B4T (Official)](https://discord.gg/BQ23Z2E)\n", inline=False)
-		e.add_field(name="• Games", value="[PUBG / MC Hangout](https://discord.gg/ES6q6Q)\n[MC Fun](https://discord.gg/zjrTPKQ)", inline=False)
+		e.add_field(name="• Games", value="[PUBG / MC Hangout](https://discord.gg/a6zVWav)\n[MC Fun](https://discord.gg/zjrTPKQ)", inline=False)
 		e.add_field(name="• Misc", value="[Tothers Hotel](https://discord.gg/XshWswg)", inline=False)
 		await ctx.send(embed=e)
 
