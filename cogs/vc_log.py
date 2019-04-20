@@ -117,7 +117,10 @@ class VcLog(commands.Cog):
 	async def on_voice_state_update(self, member, before, after):
 		guild_id = str(member.guild.id)
 		if guild_id in self.channel or guild_id in self.clean_channel:
-			channel = self.bot.get_channel(self.channel[guild_id])
+			if guild_id in self.channel:
+				channel = self.bot.get_channel(self.channel[guild_id])
+			else:
+				channel = self.bot.get_channel(self.clean_channel[guild_id])
 			bot_has_permissions = await self.ensure_permissions(guild_id)
 			if bot_has_permissions:
 				user_id = str(member.id)
