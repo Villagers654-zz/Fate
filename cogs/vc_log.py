@@ -1,7 +1,9 @@
 from discord.ext import commands
 from utils import colors, utils
 from os.path import isfile
+from time import time
 import discord
+import asyncio
 import json
 
 class VcLog(commands.Cog):
@@ -9,6 +11,8 @@ class VcLog(commands.Cog):
 		self.bot = bot
 		self.path = './data/userdata/VcLog.json'
 		self.channel = {}
+		self.join_cd = {}
+		self.leave_cd = {}
 		if isfile(self.path):
 			with open(self.path, 'r') as f:
 				self.channel = json.load(f)
@@ -83,10 +87,36 @@ class VcLog(commands.Cog):
 			channel = self.bot.get_channel(self.channel[guild_id])
 			bot_has_required_perms = await self.ensure_permissions(guild_id)
 			if bot_has_required_perms:
+				user_id = str(member.id)
 				if not before.channel:
-					await channel.send(f'<:plus:548465119462424595> **{member.display_name} joined {after.channel.name}**')
+					if guild_id not in self.join_cd:
+						self.join_cd[guild_id] = {}
+					if user_id not in self.join_cd[guild_id]:
+						self.join_cd[guild_id][user_id] = 0
+					if self.join_cd[guild_id][user_id] < time():
+						await channel.send(f'<:plus:548465119462424595> **{member.display_name} joined {after.channel.name}**')
+						self.join_cd[guild_id][user_id] = time() + 15
 				if not after.channel:
-					await channel.send(f'❌ **{member.display_name} left {before.channel.name}**')
+					if guild_id not in self.leave_cd:
+						self.leave_cd[guild_id] = {}
+					if user_id not in self.leave_cd[guild_id]:
+						self.leave_cd[guild_id][user_id] = 0
+					if self.leave_cd[guild_id][user_id] < time():
+						await channel.send(f'❌ **{member.display_name} left {before.channel.name}**')
+						self.leave_cd[guild_id][user_id] = time() + 15
+
+	@commands.Cog.listener()
+	async def on_message(self, msg: discord.Message):
+		guild_id = str(msg.guild.id)
+		if guild_id in self.channel:
+			if msg.channel.id == self.channel[guild_id]:
+				if not msg.content.startswith('<:plus:548465119462424595>'):
+					if not msg.content.startswith('❌'):
+						bot = msg.guild.get_member(self.bot.user.id)
+						if msg.channel.permissions_for(bot).manage_messages:
+							await asyncio.sleep(20)
+							if msg.channel.fetch_message(msg.id):
+								await msg.delete()
 
 def setup(bot):
 	bot.add_cog(VcLog(bot))
