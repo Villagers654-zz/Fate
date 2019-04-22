@@ -1,13 +1,15 @@
 from discord.ext import commands
+from os.path import isfile
+from utils import colors
 import discord
+import asyncio
+import json
 
-class Example:
+class Mute:
 	def __init__(self, bot):
 		self.bot = bot
 
-	@commands.command()
-	async def kill(self, ctx, user):
-		await ctx.send(f"{ctx.author.mention} has killed {user}")
+
 
 def setup(bot):
-	bot.add_cog(Example(bot))
+	bot.add_cog(Mute(bot))

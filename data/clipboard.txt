@@ -20,6 +20,75 @@ await channel.send(f.read())
 			else:
 
 
+				# old
+				value = ""
+				updated = None
+				existed_before = []
+				existed_after = []
+				for dat in before.overwrites:
+					existed_before.append(dat[0])
+				for dat in after.overwrites:
+					existed_after.append(dat[0])
+				for object in existed_after:
+					if object not in existed_before:
+						updated = True
+						value += f"\n{config.emojis('plus')} {object}"
+				for object in existed_before:
+					if object not in existed_after:
+						perms = ""
+						updated = True
+						for perm_object in before.overwrites[existed_before.index(object)][1]:
+							if perm_object[1]:
+								perms += f"\n✦ {perm_object[0]}"
+						value += f"\n❌ {object}{perms}"
+				if not updated:
+					before_roles = {}
+					after_roles = {}
+					for dat in before.overwrites:
+						before_roles[dat[0].name] = dat[1]
+					for dat in after.overwrites:
+						after_roles[dat[0].name] = dat[1]
+					for key in list(before_roles.keys()):
+						if key != after_roles[list(after_roles.keys())[list(after_roles).index(key)]]:
+							before_perm = []
+							before_value = []
+							after_perm = []
+							after_value = []
+							for perm in before_roles[key]:
+								before_perm.append(perm[0])
+								before_value.append(perm[1])
+							for perm in after_roles[list(after_roles.keys())[list(after_roles).index(key)]]:
+								after_perm.append(perm[0])
+								after_value.append(perm[1])
+							difference = ""
+							for perm in before_perm:
+								if before_value[before_perm.index(perm)] != after_value[after_perm.index(perm)]:
+									difference += f"\n□ {after_perm[after_perm.index(perm)]}: {after_value[after_perm.index(perm)]}"
+							if difference:
+								value += f"\n<:edited:550291696861315093> {list(after_roles.keys())[list(after_roles).index(key)] + difference}"
+				e.add_field(name="◈ Overwrites ◈", value=value, inline=False)
+
+
+				if guild_id not in self.macro_cd:
+					self.macro_cd[guild_id] = {}
+				if user_id not in self.macro_cd[guild_id]:
+					self.macro_cd[guild_id][user_id] = []
+				index_size = len(self.macro_cd[guild_id][user_id])
+				self.macro_cd[guild_id][user_id].append(datetime.now())
+				if index_size > 3:
+					msg_one = self.macro_cd[guild_id][user_id][index_size - 5]
+					msg_two = self.macro_cd[guild_id][user_id][index_size - 4]
+					msg_three = self.macro_cd[guild_id][user_id][index_size - 3]
+					msg_four = self.macro_cd[guild_id][user_id][index_size - 2]
+					interval_one = (msg_two - msg_one).seconds
+					interval_two = (msg_three - msg_two).seconds
+					interval_three = (msg_four - msg_three).seconds
+					if interval_one + 3 > interval_two:
+						if interval_one - 3 < interval_two:
+							if interval_two + 3 > interval_three:
+								if interval_two - 3 < interval_three:
+									self.cd[user_id] = time.time() + 150
+
 
  				if not m.author.bot:
 					check = 0

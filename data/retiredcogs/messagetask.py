@@ -15,6 +15,9 @@ bot = commands.Bot(command_prefix='~', case_insensitive=True)
 initial_extensions = ['cogs.core']
 bot.remove_command('help')
 
+
+
+
 async def status_task():
 	while True:
 		def bytes2human(n):

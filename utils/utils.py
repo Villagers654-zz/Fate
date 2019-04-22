@@ -14,6 +14,7 @@ class Bot:
 			msg = await self.bot.wait_for('message', check=pred, timeout=60)
 		except asyncio.TimeoutError:
 			await ctx.send("Timeout error")
+			return False
 		else:
 			return msg
 
