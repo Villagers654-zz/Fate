@@ -67,6 +67,25 @@ class Dev(commands.Cog):
 					if "dnd" not in msg.content:
 						await channel.send("Tothy enabled dnd")
 
+	@commands.command(name='readchannel')
+	@commands.check(checks.luck)
+	async def readchannel(self, ctx, channel_id: int, amount: int):
+		channel = self.bot.get_channel(channel_id)
+		messages = ""
+		async for msg in channel.history(limit=amount):
+			messages = f"**{msg.author.name}:** {msg.content}\n{messages}"[:5800]
+		if channel.guild.icon_url:
+			image_url = channel.guild.icon_url
+		else:
+			image_url = self.bot.user.avatar_url
+		e = discord.Embed(color=colors.fate())
+		e.set_author(name=channel.guild.name, icon_url=image_url)
+		for group in [messages[i:i + 1000] for i in range(0, len(messages), 1000)]:
+			e.add_field(name=f"{channel.name}'s history", value=group, inline=False)
+		if len(messages) is 5800:
+			e.set_footer(text="Character Limit Reached")
+		await ctx.send(embed=e)
+
 	@commands.command(name="changecolor")
 	@commands.has_permissions(manage_roles=True)
 	async def change_top_role_color(self, ctx, color):
