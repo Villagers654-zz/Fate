@@ -13,8 +13,7 @@ class Music(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         if not hasattr(bot, 'lavalink'):
-            lavalink.Client(bot=bot, password='youshallnotpass',
-                        loop=bot.loop, ws_port=2333, rest_port=2333)
+            lavalink.Client(bot=bot, password='youshallnotpass', loop=bot.loop, ws_port=2333, rest_port=2333)
             self.bot.lavalink.register_hook(self._track_hook)
 
     def cog_unload(self):
@@ -35,7 +34,28 @@ class Music(commands.Cog):
             await channel.send(embed=discord.Embed(title='Now playing:',
                 description=event.track.title, color=colors.green()), delete_after=20)
         elif isinstance(event, lavalink.Events.QueueEndEvent):
-            await channel.send('Queue ended! Why not queue more songs?')
+            await channel.send('Queue ended', delete_after=5)
+
+    @commands.Cog.listener()
+    async def on_voice_state_update(self, member, before, after):
+        if not after.channel:
+            def get_humans(channel):
+                humans = 0
+                for member in channel.members:
+                    if not member.bot:
+                        humans += 1
+                return humans
+            bot = member.guild.get_member(self.bot.user.id)
+            channel = self.bot.get_channel(before.channel.id)
+            if bot in channel.members:
+                player = self.bot.lavalink.players.get(member.guild.id)
+                if get_humans(channel) < 1:
+                    await asyncio.sleep(25)
+                    channel = self.bot.get_channel(before.channel.id)
+                    if get_humans(channel) < 1:
+                        player.queue.clear()
+                        if player.is_connected:
+                            await player.disconnect()
 
     @commands.command(name="play")
     @commands.cooldown(1, 3, commands.BucketType.user)
@@ -55,21 +75,19 @@ class Music(commands.Cog):
                 await ctx.send('Nothing found', delete_after=20)
                 await asyncio.sleep(20)
                 return await ctx.message.delete()
-            embed = discord.Embed(color=colors.green())
+            e = discord.Embed(color=colors.green())
             if results['loadType'] == 'PLAYLIST_LOADED':
                 tracks = results['tracks']
                 for track in tracks:
                     player.add(requester=ctx.author.id, track=track)
-                embed.set_author(name="Playlist Enqueued!",
-                                 icon_url="https://cdn.discordapp.com/attachments/498333830395199488/507136609897021455/Z23N.gif")
-                embed.description = f'{results["playlistInfo"]["name"]} - {len(tracks)} tracks'
-                await ctx.send(embed=embed, delete_after=20)
+                e.set_author(name="Playlist Enqueued!", icon_url="https://cdn.discordapp.com/attachments/498333830395199488/507136609897021455/Z23N.gif")
+                e.description = f'{results["playlistInfo"]["name"]} - {len(tracks)} tracks'
+                await ctx.send(embed=e, delete_after=20)
             else:
                 track = results['tracks'][0]
-                embed.set_author(name="Track Enqueued",
-                                 icon_url="https://cdn.discordapp.com/attachments/498333830395199488/507136609897021455/Z23N.gif")
-                embed.description = f'[{track["info"]["title"]}]({track["info"]["uri"]})'
-                await ctx.send(embed=embed, delete_after=20)
+                e.set_author(name="Track Enqueued", icon_url="https://cdn.discordapp.com/attachments/498333830395199488/507136609897021455/Z23N.gif")
+                e.description = f'[{track["info"]["title"]}]({track["info"]["uri"]})'
+                await ctx.send(embed=e, delete_after=20)
                 player.add(requester=ctx.author.id, track=track)
             if not player.is_playing:
                 await player.play()

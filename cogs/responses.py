@@ -58,9 +58,12 @@ class Responses(commands.Cog):
 							matches.append(msg)
 							found = True
 					if found:
+						name = m.author.display_name
 						choice = random.choice(matches)
+						choice = choice.replace(str(self.bot.user.mention), str(m.author.mention))
 						if choice.lower() == m.content.lower():
 							return
+						choice = choice.replace('Fate', name).replace('fate', name)
 						try:
 							async with m.channel.typing():
 								await asyncio.sleep(1)
