@@ -42,12 +42,15 @@ class Leaderboards(commands.Cog):
 			          outfile, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
 
 	async def subtract_from_monthly(self, guild_id, user_id):
+		deleted = 0
 		for msg_id, msg_time in (sorted(self.monthly_global_data[user_id].items(), key=lambda kv: kv[1], reverse=True)):
 			if float(msg_time) > time() - 600:
 				del self.monthly_global_data[user_id][str(msg_id)]
+				deleted += 1
 		for msg_id, msg_time in (sorted(self.monthly_guilds_data[guild_id][user_id].items(), key=lambda kv: kv[1], reverse=True)):
 			if float(msg_time) > time() - 600:
 				del self.monthly_guilds_data[guild_id][user_id][str(msg_id)]
+		return deleted
 
 	def msg_footer(self):
 		return random.choice(["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready",
@@ -278,9 +281,9 @@ class Leaderboards(commands.Cog):
 					self.spam_cd[guild_id][user_id] = [now, 0]
 				if self.spam_cd[guild_id][user_id][1] > 2:
 					self.cd[user_id] = time() + 600
-					self.global_data[user_id] -= 1
-					self.guilds_data[guild_id][user_id] -= 1
-					await self.subtract_from_monthly(guild_id, user_id)
+					count = await self.subtract_from_monthly(guild_id, user_id)
+					self.global_data[user_id] -= count
+					self.guilds_data[guild_id][user_id] -= count
 					await self.save_json()
 					print(f"{m.author} is spamming")
 
@@ -298,9 +301,9 @@ class Leaderboards(commands.Cog):
 					if len(intervals) > 2:
 						if all(interval == intervals[0] for interval in intervals):
 							self.cd[user_id] = time() + 600
-							self.global_data[user_id] -= 1
-							self.guilds_data[guild_id][user_id] -= 1
-							await self.subtract_from_monthly(guild_id, user_id)
+							count = await self.subtract_from_monthly(guild_id, user_id)
+							self.global_data[user_id] -= count
+							self.guilds_data[guild_id][user_id] -= count
 							print(f"Detected that {m.author} is using a macro")
 
 				if user_id not in self.cd:
