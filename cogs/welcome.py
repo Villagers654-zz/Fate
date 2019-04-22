@@ -49,7 +49,7 @@ class Welcome(commands.Cog):
 				".welcome disable\n"
 				".welcome config\n"
 				".welcome setchannel\n"
-				".welcome enableimages\n"
+				".welcome toggleimages\n"
 				".welcome addimages\n"
 				".welcome delimages\n"
 				".welcome listimages\n"
@@ -132,10 +132,10 @@ class Welcome(commands.Cog):
 		await ctx.send(f"Set the welcome message channel to {channel.mention}")
 		self.save_data()
 
-	@_welcome.command(name="enableimages")
+	@_welcome.command(name="toggleimages")
 	@commands.has_permissions(manage_guild=True)
 	@commands.bot_has_permissions(attach_files=True)
-	async def _enable_images(self, ctx):
+	async def _toggle_images(self, ctx):
 		guild_id = str(ctx.guild.id)
 		if guild_id in self.useimages:
 			del self.useimages[guild_id]
