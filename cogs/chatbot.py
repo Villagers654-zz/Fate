@@ -222,9 +222,10 @@ class ChatBot(commands.Cog):
 						if found:
 							choice = random.choice(matches)
 							name = m.author.display_name
-							choice = choice.replace('Fate', name).replace('fate', name)
+							choice = choice.replace(str(self.bot.user.mention), str(m.author.mention))
 							if choice.lower() == m.content.lower():
 								return
+							choice = choice.replace('Fate', name).replace('fate', name)
 							try:
 								async with m.channel.typing():
 									await asyncio.sleep(1)
