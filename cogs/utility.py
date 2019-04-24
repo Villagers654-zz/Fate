@@ -99,6 +99,28 @@ class Utility(commands.Cog):
 				break;
 			c += 1
 
+	@commands.command(name='members', aliases=['membercount'])
+	@commands.bot_has_permissions(embed_links=True)
+	async def members(self, ctx):
+		humans = 0
+		bots = 0
+		online = 0
+		for member in ctx.guild.members:
+			if member.bot:
+				bots += 1
+			else:
+				humans += 1
+			if member.status is discord.Status.online:
+				online += 1
+		e = discord.Embed(color=colors.fate())
+		e.set_author(name=f"Member Count", icon_url=ctx.guild.owner.avatar_url)
+		e.set_thumbnail(url=ctx.guild.icon_url)
+		e.description = f'**Total:** [`{len(ctx.guild.members)}`]\n' \
+			f'**Online:** [`{online}`]\n' \
+			f'**Humans:** [`{humans}`]\n' \
+			f'**Bots:** [`{bots}`]'
+		await ctx.send(embed=e)
+
 	@commands.command()
 	async def tinyurl(self, ctx, *, link: str):
 		await ctx.message.delete()

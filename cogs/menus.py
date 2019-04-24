@@ -45,15 +45,14 @@ class Menus(commands.Cog):
 		e.add_field(name="◈ Core ◈", value="`leaderboard` `gleaderboard` `ggleaderboard` `mleaderboard` `gmleaderboard` `vcleaderboard` `gvcleaderboard` `changelog` `partners` `discords` `servers` `config` `prefix` `realms` `links` `ping` `info` `say`", inline=False)
 		e.add_field(name="◈ Responses ◈", value="**`disableresponses` `enableresponses`:** `@Fate` `hello` `ree` `kys` `gm` `gn`", inline=False)
 		e.add_field(name="◈ Music ◈", value="`play` `playnow` `playat` `find` `stop` `skip` `previous` `repeat` `pause` `resume` `volume` `queue` `remove` `shuffle` `dc` `np`", inline=False)
-		e.add_field(name="◈ Utility ◈", value="`channelinfo` `servericon` `serverinfo` `userinfo` `test_color` `makepoll` `welcome` `farewell` `logger` `emoji` `addemoji` `stealemoji` `rename_emoji` `delemoji` `owner` `avatar` `topic` `timer` `note` `quicknote` `notes` `wiki` `find` `ud` `id`", inline=False)
+		e.add_field(name="◈ Utility ◈", value="`membercount` `channelinfo` `servericon` `serverinfo` `userinfo` `testcolor` `makepoll` `welcome` `farewell` `logger` `emoji` `addemoji` `stealemoji` `rename_emoji` `delemoji` `owner` `avatar` `topic` `timer` `note` `quicknote` `notes` `wiki` `find` `ud` `id`", inline=False)
 		e.add_field(name="◈ Reactions ◈", value="`tenor` `intimidate` `powerup` `observe` `disgust` `admire` `angery` `cuddle` `teasip` `psycho` `thonk` `shrug` `bite` `yawn` `hide` `wine` `sigh` `kiss` `kill` `slap` `hug` `pat` `cry`", inline=False)
 		e.add_field(name="◈ Mod ◈", value="`mute` `unmute` `vcmute` `vcunmute` `warn` `clearwarns` `addrole` `removerole` `restore_roles` `selfroles` `autorole` `limit` `audit` `lock` `lockb` `delete` `purge` `purge_user` `purge_images` `purge_embeds` `purge_bots` `nick` `massnick` `kick` `mute` `ban` `pin`", inline=False)
 		e.add_field(name="◈ Fun ◈", value="`personality` `liedetector` `chatbot` `fancify` `coffee` `encode` `decode` `choose` `notice` `quote` `mock` `meme` `rate` `roll` `soul` `gay` `sue` `fap` `ask` `rps` `rr` `cookie` `shoot` `inject` `slice` `boop` `stab` `kill`", inline=False)
-		await utils.User(ctx.author).init()
-		if utils.User(ctx.author).can_dm():
+		try:
 			await ctx.author.send(embed=e)
 			await ctx.send("Help menu sent to dm ✅")
-		else:
+		except:
 			await ctx.send("Failed to send help menu to dm ❎", embed=e)
 			await self.wait_for_dismissal(ctx)
 
