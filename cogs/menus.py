@@ -14,23 +14,20 @@ class Menus(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 
-	async def wait_for_dismissal(self, ctx):
+	async def wait_for_dismissal(self, ctx, msg):
 		def pred(m):
-			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+			return m.channel.id == ctx.channel.id and m.content.lower().startswith('k')
 		try:
-			msg = await self.bot.wait_for('message', check=pred, timeout=25)
+			reply = await self.bot.wait_for('message', check=pred, timeout=25)
 		except asyncio.TimeoutError:
 			pass
 		else:
-			if msg.content.lower() == "k":
-				await ctx.message.delete()
-				await asyncio.sleep(0.5)
-				await msg.delete()
-				async for msg in ctx.channel.history(limit=10):
-					if msg.author.id == self.bot.user.id:
-						if len(msg.embeds) > 0:
-							await msg.delete()
-							break
+			await asyncio.sleep(0.21)
+			await ctx.message.delete()
+			await asyncio.sleep(0.21)
+			await msg.delete()
+			await asyncio.sleep(0.21)
+			await reply.delete()
 
 	@commands.command(name="help")
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -53,8 +50,8 @@ class Menus(commands.Cog):
 			await ctx.author.send(embed=e)
 			await ctx.send("Help menu sent to dm ✅")
 		except:
-			await ctx.send("Failed to send help menu to dm ❎", embed=e)
-			await self.wait_for_dismissal(ctx)
+			msg = await ctx.send("Failed to send help menu to dm ❎", embed=e)
+			await self.wait_for_dismissal(ctx, msg)
 
 	@commands.command(name='info', description="Provides information relevant to the bots stats")
 	@commands.cooldown(1, 5, commands.BucketType.channel)
@@ -83,8 +80,8 @@ class Menus(commands.Cog):
 		f"__**CPU**__: **Global**: {psutil.cpu_percent(interval=1)}% **Bot**: {bot_pid.cpu_percent(interval=1)}%\n")
 		e.add_field(name="◈ Uptime ◈", value="Uptime: {} Hours {} Minutes {} seconds".format(int(h), int(m), int(s)))
 		e.set_footer(text=f"Powered by Python {platform.python_version()} and Discord.py {discord.__version__}", icon_url="https://cdn.discordapp.com/attachments/501871950260469790/567779834533773315/RPrw70n.png")
-		await ctx.send(file=discord.File(path, filename=os.path.basename(path)), embed=e)
-		await self.wait_for_dismissal(ctx)
+		msg = await ctx.send(file=discord.File(path, filename=os.path.basename(path)), embed=e)
+		await self.wait_for_dismissal(ctx, msg)
 
 	@commands.command(name="discords")
 	@commands.cooldown(1, 5, commands.BucketType.channel)
@@ -109,8 +106,8 @@ class Menus(commands.Cog):
 	async def servers(self, ctx):
 		e=discord.Embed(title="~~~====🥂🍸🍷Servers🍷🍸🥂====~~~", color=0x80b0ff)
 		e.add_field(name="• Anarchy", value="• 4b4t.net : 19132", inline=False)
-		await ctx.send(embed=e)
-		await self.wait_for_dismissal(ctx)
+		msg = await ctx.send(embed=e)
+		await self.wait_for_dismissal(ctx, msg)
 
 	@commands.command(name="realms")
 	@commands.cooldown(1, 5, commands.BucketType.channel)
@@ -119,8 +116,8 @@ class Menus(commands.Cog):
 		e=discord.Embed(title="~~~====🥂🍸🍷Realms🍷🍸🥂====~~~", color=0x80b0ff)
 		e.add_field(name="• Anarchy Realms", value="Jappie Anarchy\n• https://realms.gg/pmElWWx5xMk\nAnarchy Realm\n• https://realms.gg/GyxzF5xWnPc\n2c2b Anarchy\n• https://realms.gg/TwbBfe0jGDc\nFraughtian Anarchy\n• https://realms.gg/rdK57KvnA8o\nChaotic Realm\n• https://realms.gg/nzDX1drovu4", inline=False)
 		e.add_field(name="• Misc", value=".", inline=False)
-		await ctx.send(embed=e)
-		await self.wait_for_dismissal(ctx)
+		msg = await ctx.send(embed=e)
+		await self.wait_for_dismissal(ctx, msg)
 
 	@commands.command(name="partners")
 	@commands.cooldown(1, 5, commands.BucketType.channel)
@@ -138,8 +135,8 @@ class Menus(commands.Cog):
 		e.set_thumbnail(url=bottest.icon_url)
 		e.add_field(name="◈ Servers ◈", value=f'• [Threadys Server]({threadysserver})\n• [Spookie Hotel]({spookiehotel})\n• [4b4t]({fourbfourt})', inline=False)
 		e.add_field(name="◈ Bots ◈", value=f'• [TotherBot]({totherbot})', inline=False)
-		await ctx.send(embed=e)
-		await self.wait_for_dismissal(ctx)
+		msg = await ctx.send(embed=e)
+		await self.wait_for_dismissal(ctx, msg)
 
 def setup(bot):
 	bot.add_cog(Menus(bot))
