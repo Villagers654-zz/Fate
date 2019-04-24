@@ -69,7 +69,7 @@ class Anti_Spam(commands.Cog):
 				return
 			guild_id = str(m.guild.id)
 			if guild_id in self.toggle:
-				if m.author.id is self.bot.user.id:
+				if m.author.id == self.bot.user.id:
 					return
 				user_id = str(m.author.id)
 				now = int(time() / 5)
