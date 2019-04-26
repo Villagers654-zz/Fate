@@ -1,11 +1,13 @@
 from datetime import datetime, timedelta
 from discord.ext import commands
+from multiprocessing import Process
 from os.path import isfile
 from PIL import ImageDraw
 from PIL import ImageFont
 from PIL import Image
-from time import time
+from time import time, sleep
 import discord
+import asyncio
 import random
 import json
 import os
@@ -14,9 +16,9 @@ class Leaderboards(commands.Cog):
 	def __init__(self, bot: commands.Bot):
 		self.bot = bot
 		self.cd = {}
+		self.cleaning = False
 		self.spam_cd = {}
 		self.macro_cd = {}
-		self.yeet = {}
 		self.global_data = {}
 		self.guilds_data = {}
 		self.monthly_global_data = {}
@@ -41,7 +43,7 @@ class Leaderboards(commands.Cog):
 			           "monthly_guilded": self.monthly_guilds_data, "vclb": self.vclb, "gvclb": self.gvclb},
 			          outfile, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
 
-	async def subtract_from_monthly(self, guild_id, user_id):
+	async def subtract_spam_from_monthly(self, guild_id, user_id):
 		deleted = 0
 		for msg_id, msg_time in (sorted(self.monthly_global_data[user_id].items(), key=lambda kv: kv[1], reverse=True)):
 			if float(msg_time) > time() - 600:
@@ -51,6 +53,44 @@ class Leaderboards(commands.Cog):
 			if float(msg_time) > time() - 600:
 				del self.monthly_guilds_data[guild_id][user_id][str(msg_id)]
 		return deleted
+
+	async def routine_cleanup_task(self):
+		while True:
+			self.cleaning = True
+			log = self.bot.get_channel(571171616214614028)
+			try:
+				for user_id in self.monthly_global_data.keys():
+					for msg_id, msg_time in (sorted(self.monthly_global_data[user_id].items(), key=lambda kv: kv[1], reverse=True)):
+						if float(msg_time) < time() - 2592000:
+							del self.monthly_global_data[user_id][str(msg_id)]
+				for guild_id in self.monthly_guilds_data.keys():
+					for user_id in self.monthly_guilds_data[guild_id].keys():
+						for msg_id, msg_time in (sorted(self.monthly_guilds_data[guild_id][user_id].items(), key=lambda kv: kv[1],  reverse=True)):
+							if float(msg_time) < time() - 2592000:
+								del self.monthly_guilds_data[guild_id][user_id][str(msg_id)]
+				user_keys = list(self.global_data.keys())
+				for user_id in user_keys:
+					user = self.bot.get_user(int(user_id))
+					if not isinstance(user, discord.User):
+						if user_id in self.global_data:
+							del self.global_data[user_id]
+						guild_keys = list(self.guilds_data.keys())
+						for guild_id in guild_keys:
+							if user_id in self.guilds_data[guild_id]:
+								del self.guilds_data[guild_id][user_id]
+						if user_id in self.monthly_global_data:
+							del self.monthly_global_data[user_id]
+						monthly_guild_keys = list(self.monthly_guilds_data.keys())
+						for guild_id in monthly_guild_keys:
+							if user_id in self.monthly_guilds_data[guild_id]:
+								del self.monthly_guilds_data[guild_id][user_id]
+				await self.save_json()
+				self.cleaning = False
+				await log.send('Routine XP Cleanup successful')
+			except Exception as e:
+				self.cleaning = False
+				await log.send(f'*__*Exception in Routine XP Cleanup:**__\n`{e}`')
+			await asyncio.sleep(3600)
 
 	def msg_footer(self):
 		return random.choice(["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready",
@@ -261,9 +301,17 @@ class Leaderboards(commands.Cog):
 		    filename=os.path.basename('/data/images/backgrounds/results/galaxy.png')), embed=e)
 
 	@commands.Cog.listener()
+	async def on_ready(self):
+		self.bot.loop.create_task(self.routine_cleanup_task())
+
+	@commands.Cog.listener()
 	async def on_message(self, m:discord.Message):
 		if isinstance(m.guild, discord.Guild):
 			if not m.author.bot:
+
+				if self.cleaning:
+					return
+
 				author_id = str(m.author.id)
 				user_id = str(m.author.id)
 				guild_id = str(m.guild.id)
@@ -281,7 +329,7 @@ class Leaderboards(commands.Cog):
 					self.spam_cd[guild_id][user_id] = [now, 0]
 				if self.spam_cd[guild_id][user_id][1] > 2:
 					self.cd[user_id] = time() + 600
-					count = await self.subtract_from_monthly(guild_id, user_id)
+					count = await self.subtract_spam_from_monthly(guild_id, user_id)
 					self.global_data[user_id] -= count
 					self.guilds_data[guild_id][user_id] -= count
 					await self.save_json()
@@ -301,7 +349,7 @@ class Leaderboards(commands.Cog):
 					if len(intervals) > 2:
 						if all(interval == intervals[0] for interval in intervals):
 							self.cd[user_id] = time() + 600
-							count = await self.subtract_from_monthly(guild_id, user_id)
+							count = await self.subtract_spam_from_monthly(guild_id, user_id)
 							self.global_data[user_id] -= count
 							self.guilds_data[guild_id][user_id] -= count
 							print(f"Detected that {m.author} is using a macro")
@@ -327,16 +375,6 @@ class Leaderboards(commands.Cog):
 					self.monthly_global_data[author_id][msg_id] = time()
 					self.monthly_guilds_data[guild_id][author_id][msg_id] = time()
 					self.cd[author_id] = time() + 10
-
-					for author_id in self.monthly_global_data.keys():
-						for msg_id, msg_time in (sorted(self.monthly_global_data[author_id].items(), key=lambda kv: kv[1], reverse=True)):
-							if float(msg_time) < time() - 2592000:
-								del self.monthly_global_data[author_id][str(msg_id)]
-					for guild_id in self.monthly_guilds_data.keys():
-						for author_id in self.monthly_guilds_data[guild_id].keys():
-							for msg_id, msg_time in (sorted(self.monthly_guilds_data[guild_id][author_id].items(), key=lambda kv: kv[1], reverse=True)):
-								if float(msg_time) < time() - 2592000:
-									del self.monthly_guilds_data[guild_id][author_id][str(msg_id)]
 
 					await self.save_json()
 
