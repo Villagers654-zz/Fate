@@ -59,19 +59,23 @@ class Leaderboards(commands.Cog):
 			self.cleaning = True
 			log = self.bot.get_channel(571171616214614028)
 			try:
+				dumped_messages = 0
 				for user_id in self.monthly_global_data.keys():
 					for msg_id, msg_time in (sorted(self.monthly_global_data[user_id].items(), key=lambda kv: kv[1], reverse=True)):
 						if float(msg_time) < time() - 2592000:
 							del self.monthly_global_data[user_id][str(msg_id)]
+							dumped_messages += 1
 				for guild_id in self.monthly_guilds_data.keys():
 					for user_id in self.monthly_guilds_data[guild_id].keys():
 						for msg_id, msg_time in (sorted(self.monthly_guilds_data[guild_id][user_id].items(), key=lambda kv: kv[1],  reverse=True)):
 							if float(msg_time) < time() - 2592000:
 								del self.monthly_guilds_data[guild_id][user_id][str(msg_id)]
 				user_keys = list(self.global_data.keys())
+				dumped_users = 0
 				for user_id in user_keys:
 					user = self.bot.get_user(int(user_id))
 					if not isinstance(user, discord.User):
+						dumped_users += 1
 						if user_id in self.global_data:
 							del self.global_data[user_id]
 						guild_keys = list(self.guilds_data.keys())
@@ -86,11 +90,11 @@ class Leaderboards(commands.Cog):
 								del self.monthly_guilds_data[guild_id][user_id]
 				await self.save_json()
 				self.cleaning = False
-				await log.send('Routine XP Cleanup successful')
+				await log.send(f'__**Routine XP Dump:**__\nMessages: [`{dumped_messages}`]\nUsers: [`{dumped_users}`]')
 			except Exception as e:
 				self.cleaning = False
-				await log.send(f'*__*Exception in Routine XP Cleanup:**__\n`{e}`')
-			await asyncio.sleep(3600)
+				await log.send(f'__**Exception in Routine XP Cleanup:**__\n`{e}`')
+			await asyncio.sleep(21600)
 
 	def msg_footer(self):
 		return random.choice(["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready",
