@@ -154,17 +154,17 @@ class Utility(commands.Cog):
 	async def topic(self, ctx):
 		await ctx.send("{}".format(ctx.channel.topic))
 
-	@commands.command(name="color")
-	async def _color(self, ctx):
-		color = colors.random()
-		e = discord.Embed(color=color)
-		e.set_author(name=f"#{color}", icon_url=ctx.author.avatar_url)
-		await ctx.send(embed=e)
-
-	@commands.command()
-	async def test_color(self, ctx, hex):
-		e = discord.Embed(color=eval(f"0x{hex}"))
-		await ctx.send(embed=e)
+	@commands.command(name='color')
+	async def color(self, ctx, hex=None):
+		if hex:
+			hex = hex.replace('#', '')
+			e = discord.Embed(color=eval(f"0x{hex}"))
+			await ctx.send(embed=e)
+		else:
+			color = colors.random()
+			e = discord.Embed(color=color)
+			e.set_author(name=f"#{color}", icon_url=ctx.author.avatar_url)
+			await ctx.send(embed=e)
 
 	@commands.command(name="timer", pass_context=True, aliases=['reminder', 'alarm'])
 	async def _timer(self, ctx, time, *, remember: commands.clean_content = ""):
