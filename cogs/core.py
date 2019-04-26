@@ -90,6 +90,53 @@ class Core(commands.Cog):
 		e.set_author(name=f"Bots Latency", icon_url=self.bot.user.avatar_url)
 		e.set_thumbnail(url=img)
 		e.description = f"**Message Trip:** `{int(ping)}ms`\n**Websocket Heartbeat:** `{api}ms`"
+		before = monotonic()
+		await message.edit(embed=e)
+		ping = (monotonic() - before) * 1000
+		e.description = f"**Message Trip:** `{int(ping)}ms`\n**Websocket Heartbeat:** `{api}ms`"
+		await message.edit(embed=e)
+
+	@commands.command(name="devping")
+	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True)
+	async def devping(self, ctx):
+		e = discord.Embed(color=colors.fate())
+		e.set_author(name="Measuring ping:")
+		before = monotonic()
+		message = await ctx.send(embed=e)
+		ping = (monotonic() - before) * 1000
+		if ping < 175:
+			img = "https://cdn.discordapp.com/emojis/562592256939393035.png?v=1"
+		else:
+			if ping < 250:
+				img = "https://cdn.discordapp.com/emojis/562592178204049408.png?v=1"
+			else:
+				if ping < 400:
+					img = "https://cdn.discordapp.com/emojis/562592177692213248.png?v=1"
+				else:
+					if ping < 550:
+						img = "https://cdn.discordapp.com/emojis/562592176463151105.png?v=1"
+					else:
+						if ping < 700:
+							img = "https://cdn.discordapp.com/emojis/562592175880405003.png?v=1"
+						else:
+							img = "https://cdn.discordapp.com/emojis/562592175192539146.png?v=1"
+		api = str(self.bot.latency * 1000)
+		api = api[:api.find(".")]
+		e.set_author(name=f"Bots Latency", icon_url=self.bot.user.avatar_url)
+		e.set_thumbnail(url=img)
+		e.description = f"**Message Trip 1:** `{int(ping)}ms`\n**Websocket Heartbeat:** `{api}ms`"
+		before = monotonic()
+		await message.edit(embed=e)
+		edit_ping = (monotonic() - before) * 1000
+		e.description = f"**Message Trip 1:** `{int(ping)}ms`\n**Msg Edit Trip:** `{int(edit_ping)}ms`\n**Websocket Heartbeat:** `{api}ms`"
+		before = monotonic()
+		await message.edit(embed=e)
+		second_edit_ping = (monotonic() - before) * 1000
+		before = monotonic()
+		await ctx.send('Measuring Ping', delete_after=0.5)
+		second_ping = (monotonic() - before) * 1000
+		e.description = f"**Message Trip 1:** `{int(ping)}ms`\n**Message Trip 2:** `{int(second_ping)}ms`\n**Msg Edit Trip 1:** `{int(edit_ping)}ms`\n**Msg Edit Trip 2:** `{int(second_edit_ping)}ms`\n**Websocket Heartbeat:** `{api}ms`"
 		await message.edit(embed=e)
 
 	@commands.command(name="wiki")
