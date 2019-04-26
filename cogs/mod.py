@@ -32,7 +32,7 @@ class Mod(commands.Cog):
 
 	async def start_timer(self, user_id):
 		if user_id in self.timers:
-			action = self.timers[user_id][0]
+			action = self.timers[user_id]['action']
 			if action == 'mute':
 				channel = self.bot.get_channel(self.timers[user_id]['channel'])  # type: discord.TextChannel
 				user = channel.guild.get_member(self.timers[user_id]['user'])  # type: discord.Member
