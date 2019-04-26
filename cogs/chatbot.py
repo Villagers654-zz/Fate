@@ -179,6 +179,10 @@ class ChatBot(commands.Cog):
 				for i in blocked:
 					if i in m.content.lower():
 						return
+				for mention in m.mentions:
+					m.content = m.content.replace(str(mention), self.bot.user.mention)
+				for mention in m.role_mentions:
+					m.content.replace(str(mention), str(self.bot.user.mention))
 				if guild_id in self.toggle:
 					if m.channel.id == self.toggle[guild_id]:
 						if len(m.content) is 0:
@@ -226,6 +230,9 @@ class ChatBot(commands.Cog):
 							if choice.lower() == m.content.lower():
 								return
 							choice = choice.replace('Fate', name).replace('fate', name)
+							for mention in m.channel_mentions:
+								channel = random.choice(list(m.guild.text_channels))
+								choice.replace(str(mention), channel.mention)
 							try:
 								async with m.channel.typing():
 									await asyncio.sleep(1)
