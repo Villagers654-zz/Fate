@@ -11,9 +11,6 @@ class ErrorHandler(commands.Cog):
 		self.bot = bot
 		self.cd = {}
 
-	async def __error(self, ctx, error):
-		await ctx.send(error)
-
 	@commands.Cog.listener()
 	async def on_command_error(self, ctx, error):
 		if hasattr(ctx.command, 'on_error'):
