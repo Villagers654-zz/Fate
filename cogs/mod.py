@@ -36,19 +36,24 @@ class Mod(commands.Cog):
 			if action == 'mute':
 				channel = self.bot.get_channel(self.timers[user_id]['channel'])  # type: discord.TextChannel
 				user = channel.guild.get_member(self.timers[user_id]['user'])  # type: discord.Member
+				if not user:
+					del self.timers[user_id]
+					return
 				end_time = datetime.strptime(self.timers[user_id]['end_time'], "%Y-%m-%d %H:%M:%S.%f")  # type: datetime.now()
 				mute_role = channel.guild.get_role(self.timers[user_id]['mute_role'])  # type: discord.Role
 				removed_roles = self.timers[user_id]['roles']  # type: list
 				sleep_time = (end_time - datetime.now()).seconds
 				async def unmute():
-					if mute_role in user.roles:
-						await user.remove_roles(mute_role)
-						await channel.send(f"**Unmuted:** {user.name}")
+					if mute_role:
+						if mute_role in user.roles:
+							await user.remove_roles(mute_role)
+							await channel.send(f"**Unmuted:** {user.name}")
 					for role_id in removed_roles:
 						role = channel.guild.get_role(role_id)
-						if role not in user.roles:
-							await user.add_roles(channel.guild.get_role(role_id))
-						await asyncio.sleep(0.5)
+						if role:
+							if role not in user.roles:
+								await user.add_roles(channel.guild.get_role(role_id))
+								await asyncio.sleep(0.5)
 				if datetime.now() < end_time:
 					await asyncio.sleep(sleep_time)
 					await unmute()
