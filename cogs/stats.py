@@ -111,12 +111,13 @@ class Owner(commands.Cog):
 					message = await statschannel.fetch_message(self.statsmessage)
 					await message.edit(embed=e)
 				except Exception as e:
-					preparing = discord.Embed()
-					preparing.description = 'preparing stats..'
-					msg = await statschannel.send(embed=preparing)
-					self.statsmessage = msg.id
-					with open("./data/userdata/config/stats.json", "w") as outfile:
-						json.dump({"statschannel": self.statschannel, "statsmessage": self.statsmessage}, outfile, ensure_ascii=False)
+					if 'reset' not in str(e):
+						preparing = discord.Embed()
+						preparing.description = 'preparing stats..'
+						msg = await statschannel.send(embed=preparing)
+						self.statsmessage = msg.id
+						with open("./data/userdata/config/stats.json", "w") as outfile:
+							json.dump({"statschannel": self.statschannel, "statsmessage": self.statsmessage}, outfile, ensure_ascii=False)
 				async for msg in statschannel.history(limit=3):
 					stats_id = "{}".format(self.statsmessage)
 					msg_id = "{}".format(msg.id)
@@ -124,7 +125,7 @@ class Owner(commands.Cog):
 						await msg.delete()
 				await asyncio.sleep(60)
 			except Exception as e:
-				await self.bot.get_channel(534608853300412416).send(f"```{traceback.format_exc()}```{e}")
+				pass
 
 	async def arkadia_stats(self):
 		while True:
