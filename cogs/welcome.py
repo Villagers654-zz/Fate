@@ -237,6 +237,8 @@ class Welcome(commands.Cog):
 							del self.useimages[guild_id]
 							del self.images[guild_id]
 							self.save_data()
+						else:
+							pass
 					else:
 						e.set_image(url="attachment://" + os.path.basename(path))
 						try:
@@ -244,12 +246,16 @@ class Welcome(commands.Cog):
 						except discord.errors.Forbidden:
 							del self.useimages[guild_id]
 							self.save_data()
+						else:
+							pass
 				else:
 					try:
 						await channel.send(msg)
 					except discord.errors.Forbidden:
 						del self.toggle[guild_id]
 						self.save_data()
+					else:
+						pass
 
 	@commands.Cog.listener()
 	async def on_guild_remove(self, guild):
