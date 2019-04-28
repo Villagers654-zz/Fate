@@ -20,19 +20,12 @@ class VcLog(commands.Cog):
 				dat = json.load(f)
 				if 'channel' in dat:
 					self.channel = dat['channel']
-				if 'clean_channels' in dat:
-					self.keep_clean = dat['clean_channel']
+				if 'keep_clean' in dat:
+					self.keep_clean = dat['keep_clean']
 
 	def save_json(self):
 		with open(self.path, 'w') as f:
-			json.dump({'channel': self.channel, 'clean_channel': self.keep_clean}, f, ensure_ascii=False)
-
-	async def cog_before_invoke(self, ctx):
-		bot = ctx.guild.get_member(self.bot.user.id)
-		if not ctx.channel.permissions_for(bot).send_messages:
-			if ctx.channel.permissions_for(bot).add_reactions:
-				await ctx.message.add_reaction('⚠')
-			return
+			json.dump({'channel': self.channel, 'keep_clean': self.keep_clean}, f, ensure_ascii=False)
 
 	async def ensure_permissions(self, guild_id, channel_id=None):
 		if channel_id:
@@ -92,7 +85,7 @@ class VcLog(commands.Cog):
 		await ctx.send('Would you like me to delete all non vc-log messages?')
 		msg = await utils.Bot(self.bot).wait_for_msg(ctx)
 		reply = msg.content.lower()
-		if 'yes' in reply or 'sure' in reply or 'ok' in reply or 'yep' in reply:
+		if 'yes' in reply or 'sure' in reply or 'yep' in reply or 'ye' in reply:
 			self.channel[guild_id] = channel_id
 			channel_access = await self.ensure_permissions(guild_id)
 			if not channel_access:
@@ -100,6 +93,7 @@ class VcLog(commands.Cog):
 				del self.keep_clean[guild_id]
 				return await ctx.send('Sry, I\'m missing either manage message(s) or send message(s) permissions in there')
 			self.keep_clean[guild_id] = 'enabled'
+			await ctx.send('Aight, i\'ll make sure it stays clean .-.')
 		await ctx.send('Enabled VcLog')
 		self.save_json()
 
@@ -110,6 +104,8 @@ class VcLog(commands.Cog):
 		if guild_id not in self.channel:
 			return await ctx.send('VcLog isn\'t enabled')
 		del self.channel[guild_id]
+		if guild_id in self.keep_clean:
+			del self.keep_clean[guild_id]
 		await ctx.send('Disabled VcLog')
 		self.save_json()
 
