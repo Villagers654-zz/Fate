@@ -146,7 +146,7 @@ class Welcome(commands.Cog):
 			await ctx.send("Enabled Images")
 		else:
 			await ctx.send("Enabled Images. You have no custom "
-			    "images so I'll just use my own for now ^~^")
+			    "images so I'll just use my own for now")
 		self.save_data()
 
 	@_welcome.command(name="addimages")
@@ -233,7 +233,7 @@ class Welcome(commands.Cog):
 						e.set_image(url=random.choice(self.images[guild_id]))
 						try:
 							await channel.send(msg, embed=e)
-						except:
+						except discord.errors.Forbidden:
 							del self.useimages[guild_id]
 							del self.images[guild_id]
 							self.save_data()
@@ -241,13 +241,13 @@ class Welcome(commands.Cog):
 						e.set_image(url="attachment://" + os.path.basename(path))
 						try:
 							await channel.send(msg, file=discord.File(path, filename=os.path.basename(path)), embed=e)
-						except:
+						except discord.errors.Forbidden:
 							del self.useimages[guild_id]
 							self.save_data()
 				else:
 					try:
 						await channel.send(msg)
-					except:
+					except discord.errors.Forbidden:
 						del self.toggle[guild_id]
 						self.save_data()
 
