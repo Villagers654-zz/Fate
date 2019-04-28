@@ -225,7 +225,7 @@ class ChatBot(commands.Cog):
 								found = True
 						if found:
 							choice = random.choice(matches)
-							name = m.author.display_name
+							name = m.author.mention
 							choice = choice.replace(str(self.bot.user.mention), str(m.author.mention))
 							if choice.lower() == m.content.lower():
 								return
