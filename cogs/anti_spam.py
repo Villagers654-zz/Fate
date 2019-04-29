@@ -146,19 +146,21 @@ class Anti_Spam(commands.Cog):
 							await m.author.send(f"You've been muted for spam in **{m.guild.name}** for {timer} seconds")
 						await m.channel.send(f"Muted {m.author.display_name}")
 					await asyncio.sleep(timer)
-					with open("./data/userdata/mod.json", "r") as f:
-						dat = json.load(f)  # type: dict
-						if "timers" in dat:
-							if user_id in dat['timers']:
-								return
-					if mute_role in m.author.roles:
-						async with m.channel.typing():
-							await m.author.remove_roles(mute_role)
-							for role in roles:
-								if role not in m.author.roles:
-									await m.author.add_roles(role)
-									await asyncio.sleep(1)
-							await m.channel.send(f"Unmuted {m.author.display_name}")
+					user = self.bot.get_user(int(user_id))
+					if isinstance(user, discord.User):
+						with open("./data/userdata/mod.json", "r") as f:
+							dat = json.load(f)  # type: dict
+							if "timers" in dat:
+								if user_id in dat['timers']:
+									return
+						if mute_role in m.author.roles:
+							async with m.channel.typing():
+								await m.author.remove_roles(mute_role)
+						for role in roles:
+							if role not in m.author.roles:
+								await asyncio.sleep(1)
+								await m.author.add_roles(role)
+						await m.channel.send(f"Unmuted {m.author.display_name}")
 					del self.status[guild_id][user_id]
 
 	@commands.Cog.listener()

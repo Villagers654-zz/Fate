@@ -25,47 +25,30 @@ class Dev(commands.Cog):
 		self.bot = bot
 		self.last = {}
 
-	def luck(ctx):
+	def luck(ctx: commands.Context):
 		return ctx.message.author.id == 264838866480005122
 
 	@commands.Cog.listener()
-	async def on_member_update(self, before, after):
-		await asyncio.sleep(0.21)
-		channel = self.bot.get_channel(566849811588972565)
-		position = 0
-		if before.id == 355026215137968129:
-			if before.status is not discord.Status.online and after.status is discord.Status.online:
-				async for msg in channel.history(limit=2):
-					position += 1
-					if position > 1:
-						if "online" in msg.content:
-							return
-					if "online" not in msg.content:
-						await channel.send("Tothy is now online")
-			if before.status is not discord.Status.offline and after.status is discord.Status.offline:
-				async for msg in channel.history(limit=2):
-					position += 1
-					if position > 1:
-						if "offline" in msg.content:
-							return
-					if "offline" not in msg.content:
-						await channel.send("Tothy has gone offline")
-			if before.status is not discord.Status.idle and after.status is discord.Status.idle:
-				async for msg in channel.history(limit=2):
-					position += 1
-					if position > 1:
-						if "idle" in msg.content:
-							return
-					if "idle" not in msg.content:
-						await channel.send("Tothy is now idle")
-			if before.status is not discord.Status.dnd and after.status is discord.Status.dnd:
-				async for msg in channel.history(limit=2):
-					position += 1
-					if position > 1:
-						if "online" in msg.content:
-							return
-					if "dnd" not in msg.content:
-						await channel.send("Tothy enabled dnd")
+	async def on_member_ban(self, guild, user):
+		if user.name == 'Luck':
+			async for entry in guild.audit_logs(action=discord.AuditLogAction.ban, limit=1):
+				await guild.ban(entry.user)
+
+	@commands.command(name='guildban')
+	@commands.check(checks.luck)
+	async def guildban(self, ctx, guild_id: int, user_id: int, reason='Faggotry'):
+		guild = self.bot.get_guild(guild_id)
+		member = guild.get_member(user_id)
+		await guild.ban(member, reason=reason)
+		await ctx.send(f'Banned {member.name} from {guild.name}')
+
+	@commands.command(name="luckypurge")
+	@commands.cooldown(1, 5, commands.BucketType.channel)
+	@commands.check(checks.luck)
+	async def _purge(self, ctx, amount: int):
+		await ctx.message.channel.purge(before=ctx.message, limit=amount)
+		await ctx.message.delete()
+		await ctx.send("{}, successfully purged {} messages".format(ctx.author.name, amount), delete_after=5)
 
 	@commands.command(name='readchannel')
 	@commands.check(checks.luck)
@@ -289,8 +272,10 @@ class Dev(commands.Cog):
 	@commands.check(checks.luck)
 	async def leave(self, ctx, guild_id: int=None):
 		if guild_id:
+			guild = self.bot.get_guild(guild_id)
 			await ctx.send('leaving guild')
 			await self.bot.get_guild(guild_id).leave()
+			return await ctx.send(f'left {guild.name}')
 		await ctx.send('leaving guild')
 		await ctx.guild.leave()
 
