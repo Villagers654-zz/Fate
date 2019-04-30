@@ -356,9 +356,9 @@ class Logger(commands.Cog):
 						user_id = str(before.author.id)
 						if user_id not in self.cd:
 							self.cd[user_id] = 0
-						self.cd[user_id] = time() + 2
-						if self.cd[user_id] < time():
+						if self.cd[user_id] > time():
 							return
+						self.cd[user_id] = time() + 2
 						if len(after.embeds) == 0:
 							guild_requirements = await self.ensure_permissions(guild_id)
 							if not guild_requirements:
@@ -683,13 +683,17 @@ class Logger(commands.Cog):
 			e.description = \
 				f"**Channel:** {after.mention}\n" \
 				f"**Updated by:** {user.mention if user else '`unknown`'}"
+			changed = False
 			if before.name != after.name:
+				changed = True
 				e.add_field(name="◈ Name ◈", value=f"**Before:** {before.name}\n"
 					f"**After:** {after.name}", inline=False)
 			if before.category != after.category:
+				changed = True
 				e.add_field(name="◈ Category ◈", value=f"**Before:** {before.category}\n"
 					f"**After:** {after.category}", inline=False)
 			if before.overwrites != after.overwrites:
+				changed = True
 				updated_overwrites = ""
 				valueless_overwrites = []
 				for overwrite in before.overwrites.keys():
@@ -715,7 +719,8 @@ class Logger(commands.Cog):
 									updated_overwrites += f"\n□ {perm}: {after_perms[perm]}"
 				e.add_field(name="◈ Overwrites ◈", value=updated_overwrites, inline=False)
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
-			await channel.send(embed=e)
+			if changed:
+				await channel.send(embed=e)
 
 	@commands.Cog.listener()
 	async def on_guild_role_create(self, role):
