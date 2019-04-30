@@ -1,11 +1,15 @@
 from discord.ext import commands
 from utils import checks, colors
 from os.path import isfile
+from io import BytesIO
+from PIL import Image
+import requests
 import discord
 import asyncio
 import random
 import time
 import json
+import os
 
 class ChatBot(commands.Cog):
 	def __init__(self, bot):
@@ -180,7 +184,7 @@ class ChatBot(commands.Cog):
 					if i in m.content.lower():
 						return
 				for mention in m.mentions:
-					m.content = m.content.replace(str(mention), self.bot.user.mention)
+					m.content = m.content.replace(str(mention), str(self.bot.user.mention))
 				for mention in m.role_mentions:
 					m.content.replace(str(mention), str(self.bot.user.mention))
 				if guild_id in self.toggle:
@@ -217,6 +221,26 @@ class ChatBot(commands.Cog):
 							if m.content not in cache:
 								self.cache["global"].append(m.content)
 								self.save_data()
+						if random.randint(1, 10) > 9:
+							async with m.channel.typing():
+								apikey = "LIWIXISVM3A7"
+								lmt = 50
+								r = requests.get("https://api.tenor.com/v1/anonid?key=%s" % apikey)
+								if r.status_code == 200:
+									anon_id = json.loads(r.content)["anon_id"]
+								else:
+									anon_id = ""
+								r = requests.get("https://api.tenor.com/v1/search?q=%s&key=%s&limit=%s&anon_id=%s" % (key, apikey, lmt, anon_id))
+								if r.status_code == 200:
+									try:
+										dat = json.loads(r.content)
+										e = discord.Embed()
+										e.set_image(url=dat['results'][random.randint(0, len(dat['results']) - 1)]['media'][0]['gif']['url'])
+										return await m.channel.send(embed=e)
+									except Exception as e:
+										return
+								else:
+									return
 						matches = []
 						found = False
 						for msg in cache:
