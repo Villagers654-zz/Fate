@@ -1,6 +1,6 @@
 from bs4 import BeautifulSoup as bs
 from discord.ext import commands
-from utils import config, colors
+from utils import config, colors, checks
 from time import time, monotonic
 import wikipedia.exceptions
 from os.path import isfile
@@ -15,6 +15,12 @@ class Core(commands.Cog):
 	def __init__(self, bot: commands.Bot):
 		self.bot = bot
 		self.last = {}
+		self.dm = ''
+
+	@commands.command(name='who')
+	@commands.check(checks.luck)
+	async def who(self, ctx):
+		await ctx.send(self.dm)
 
 	@commands.command(name="topguilds")
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -204,6 +210,7 @@ class Core(commands.Cog):
 			if msg.author.id == self.bot.user.id:
 				return await channel.send(f"__**Fate --> {msg.channel.recipient}:**__ {msg.content}")
 			await channel.send(f"__**{msg.author}:**__ {msg.content}")
+			self.dm = msg.author.mention
 
 def setup(bot):
 	bot.add_cog(Core(bot))
