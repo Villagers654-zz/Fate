@@ -160,12 +160,16 @@ class ChatBot(commands.Cog):
 	@commands.Cog.listener()
 	async def on_message(self, m: discord.Message):
 		if isinstance(m.guild, discord.Guild):
+			if m.content.startswith("<@506735111543193601>"):
+				m.content = m.content.replace("<@506735111543193601>", m.author.mention)
+			if m.content.startswith(self.bot.user.mention):
+				return
+			for mention in m.mentions:
+				m.content = m.content.replace(str(mention), str(self.bot.user.mention))
+			for mention in m.role_mentions:
+				m.content.replace(str(mention), str(self.bot.user.mention))
 			if not m.author.bot:
 				guild_id = str(m.guild.id)
-				if m.content.startswith("<@506735111543193601>"):
-					m.content = m.content.replace("<@506735111543193601>", m.author.mention)
-				if m.content.startswith(self.bot.user.mention):
-					return
 				if "help" in m.content[:8]:
 					def pred(m):
 						return m.channel.id == m.channel.id and m.author.bot is True
@@ -183,10 +187,6 @@ class ChatBot(commands.Cog):
 				for i in blocked:
 					if i in m.content.lower():
 						return
-				for mention in m.mentions:
-					m.content = m.content.replace(str(mention), str(self.bot.user.mention))
-				for mention in m.role_mentions:
-					m.content.replace(str(mention), str(self.bot.user.mention))
 				if guild_id in self.toggle:
 					if m.channel.id == self.toggle[guild_id]:
 						if len(m.content) is 0:
@@ -221,26 +221,27 @@ class ChatBot(commands.Cog):
 							if m.content not in cache:
 								self.cache["global"].append(m.content)
 								self.save_data()
-						if random.randint(1, 10) > 9:
-							async with m.channel.typing():
-								apikey = "LIWIXISVM3A7"
-								lmt = 50
-								r = requests.get("https://api.tenor.com/v1/anonid?key=%s" % apikey)
-								if r.status_code == 200:
-									anon_id = json.loads(r.content)["anon_id"]
-								else:
-									anon_id = ""
-								r = requests.get("https://api.tenor.com/v1/search?q=%s&key=%s&limit=%s&anon_id=%s" % (key, apikey, lmt, anon_id))
-								if r.status_code == 200:
-									try:
-										dat = json.loads(r.content)
-										e = discord.Embed()
-										e.set_image(url=dat['results'][random.randint(0, len(dat['results']) - 1)]['media'][0]['gif']['url'])
-										return await m.channel.send(embed=e)
-									except Exception as e:
+						if len(keys) < 4:
+							if random.randint(1, 10) > 8:
+								async with m.channel.typing():
+									apikey = "LIWIXISVM3A7"
+									lmt = 4
+									r = requests.get("https://api.tenor.com/v1/anonid?key=%s" % apikey)
+									if r.status_code == 200:
+										anon_id = json.loads(r.content)["anon_id"]
+									else:
+										anon_id = ""
+									r = requests.get("https://api.tenor.com/v1/search?q=%s&key=%s&limit=%s&anon_id=%s" % (m.content, apikey, lmt, anon_id))
+									if r.status_code == 200:
+										try:
+											dat = json.loads(r.content)
+											e = discord.Embed()
+											e.set_image(url=dat['results'][random.randint(0, len(dat['results']) - 1)]['media'][0]['gif']['url'])
+											return await m.channel.send(embed=e)
+										except Exception as e:
+											return
+									else:
 										return
-								else:
-									return
 						matches = []
 						found = False
 						for msg in cache:
@@ -290,6 +291,27 @@ class ChatBot(commands.Cog):
 				if m.content not in cache:
 					self.cache["global"].append(m.content)
 					self.save_data()
+				if len(keys) < 4:
+					if random.randint(1, 10) > 9:
+						async with m.channel.typing():
+							apikey = "LIWIXISVM3A7"
+							lmt = 4
+							r = requests.get("https://api.tenor.com/v1/anonid?key=%s" % apikey)
+							if r.status_code == 200:
+								anon_id = json.loads(r.content)["anon_id"]
+							else:
+								anon_id = ""
+							r = requests.get("https://api.tenor.com/v1/search?q=%s&key=%s&limit=%s&anon_id=%s" % (m.content, apikey, lmt, anon_id))
+							if r.status_code == 200:
+								try:
+									dat = json.loads(r.content)
+									e = discord.Embed()
+									e.set_image(url=dat['results'][random.randint(0, len(dat['results']) - 1)]['media'][0]['gif']['url'])
+									return await m.channel.send(embed=e)
+								except Exception as e:
+									return
+							else:
+								return
 				matches = []
 				for msg in cache:
 					if key in msg:
@@ -297,8 +319,11 @@ class ChatBot(commands.Cog):
 						found = True
 				if found:
 					choice = random.choice(matches)
+					name = m.author.mention
+					choice = choice.replace(str(self.bot.user.mention), str(m.author.mention))
 					if choice.lower() == m.content.lower():
 						return
+					choice = choice.replace('Fate', name).replace('fate', name)
 					try:
 						async with m.channel.typing():
 							await asyncio.sleep(1)
