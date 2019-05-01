@@ -110,7 +110,8 @@ class Utility(commands.Cog):
 				bots += 1
 			else:
 				humans += 1
-			if member.status is discord.Status.online:
+			status_array = [discord.Status.online, discord.Status.idle, discord.Status.dnd]
+			if member.status in status_array:
 				online += 1
 		e = discord.Embed(color=colors.fate())
 		e.set_author(name=f"Member Count", icon_url=ctx.guild.owner.avatar_url)
