@@ -116,7 +116,7 @@ class Utility(commands.Cog):
 		e = discord.Embed(color=colors.fate())
 		e.set_author(name=f"Member Count", icon_url=ctx.guild.owner.avatar_url)
 		e.set_thumbnail(url=ctx.guild.icon_url)
-		e.description = f'**Total:** [`{len(ctx.guild.members)}`]\n' \
+		e.description = f'**Total:** [`{ctx.guild.member_count}`]\n' \
 			f'**Online:** [`{online}`]\n' \
 			f'**Humans:** [`{humans}`]\n' \
 			f'**Bots:** [`{bots}`]'
