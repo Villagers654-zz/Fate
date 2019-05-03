@@ -1,5 +1,5 @@
 from discord.ext import commands
-from utils import colors
+from utils import colors, utils
 import requests
 import discord
 import asyncio
@@ -19,47 +19,44 @@ class Emojis(commands.Cog):
 			e.set_image(url=emoji.url)
 			await ctx.send(embed=e)
 
-	@commands.command(name="addemoji", aliases=["addemote"])
+	@commands.command(name='addemoji', aliases=['addemote'])
 	@commands.cooldown(1, 5, commands.BucketType.guild)
+	@commands.guild_only()
 	@commands.has_permissions(manage_emojis=True)
-	async def _addemoji(self, ctx, *, name=None):
-		try:
-			chars = list("abcdefghijklmnopqrstuvwxyz")
-			if len(ctx.message.attachments) > 1:
-				for attachment in ctx.message.attachments:
-					clean = ""
-					name = str(attachment.filename)
-					name = name[:name.find(".")]
-					for i in list(name):
-						if i.lower() in chars:
-							clean += i
-					await ctx.guild.create_custom_emoji(name=clean, image=requests.get(attachment.url).content, reason=ctx.author.name)
-					await ctx.send(f"Added `{clean}` to emotes")
+	@commands.bot_has_permissions(manage_emojis=True)
+	async def addemoji(self, ctx, *, emoji_name=None):
+		if not ctx.message.attachments:
+			return await ctx.send('You forgot to attach an image')
+		multiple = False
+		if len(ctx.message.attachments) > 1:
+			multiple = True
+		for attachment in ctx.message.attachments:
+			uploaded = False
+			attempts = 0
+			if multiple:
+				emoji_name = attachment.filename
 			else:
-				if name is None:
-					for attachment in ctx.message.attachments:
-						clean = ""
-						name = str(attachment.filename)
-						name = name[:name.find(".")]
-						for i in list(name):
-							if i.lower() in chars:
-								clean += i
-						await ctx.guild.create_custom_emoji(name=clean, image=requests.get(attachment.url).content, reason=ctx.author.name)
-						await ctx.send(f"Added `{clean}` to emotes")
-				else:
-					for attachment in ctx.message.attachments:
-						name = name[:32].replace(" ", "")
-						await ctx.guild.create_custom_emoji(name=name, image=requests.get(attachment.url).content, reason=ctx.author.name)
-						await ctx.send(f"Added `{name}` to emotes")
-		except Exception as HTTPException:
-			if "256 kb" in str(HTTPException):
-				for attachment in ctx.message.attachments:
-					e = discord.Embed(color=colors.fate())
-					e.set_author(name=f"File cannot be larger than 256 kb", icon_url=attachment.proxy_url)
-					e.set_thumbnail(url=ctx.author.avatar_url)
-					e.description = f"Try using [TinyPNG](https://tinypng.com/) to reduce the size"
-					return await ctx.send(embed=e)
-			await ctx.send(str(HTTPException)[:2000])
+				if not emoji_name:
+					emoji_name = attachment.filename
+			while uploaded is False:
+				attempts += 1
+				try:
+					name = utils.Text.cleanup(emoji_name)
+					image = requests.get(attachment.url).content
+					await ctx.guild.create_custom_emoji(name=name, image=image, reason=ctx.author.name)
+					await ctx.send(f"Added `{emoji_name}` to emotes")
+				except Exception as e:
+					if '256 kb' in str(e):
+						e = discord.Embed(color=colors.fate())
+						e.set_author(name=f"File cannot be larger than 256 kb", icon_url=attachment.proxy_url)
+						e.description = f"Try using [TinyPNG](https://tinypng.com/) to reduce the size"
+						await ctx.send(f'Failed to add `{emoji_name}`', embed=e)
+						break
+					if attempts > 3:
+						await ctx.send(f'Failed to add `{emoji_name}`')
+						break
+					await ctx.send(f'Failed to add `{emoji_name}`, I\'ll try again')
+				await asyncio.sleep(2)
 
 	@commands.command(name="stealemoji", aliases=["stealemote", "fromemote", "fromemoji"])
 	@commands.has_permissions(manage_emojis=True)
