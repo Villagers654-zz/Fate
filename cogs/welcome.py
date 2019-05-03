@@ -45,9 +45,11 @@ class Welcome(commands.Cog):
 			e.set_thumbnail(url=ctx.guild.icon_url)
 			e.description = "Welcomes users when they join"
 			e.add_field(name="◈ Command Usage ◈", value=
+				"__**Core:**__\n"
 				".welcome enable\n"
 				".welcome disable\n"
 				".welcome config\n"
+				"__**Utils:**__\n"
 				".welcome setchannel\n"
 				".welcome toggleimages\n"
 				".welcome addimages\n"
@@ -64,24 +66,67 @@ class Welcome(commands.Cog):
 	@commands.has_permissions(manage_guild=True)
 	async def _enable(self, ctx):
 		guild_id = str(ctx.guild.id)
+		messages = []
 		if guild_id in self.toggle:
 			return await ctx.send("This module is already enabled")
-		self.toggle[guild_id] = "enabled"
+		async def cleanup():
+			await ctx.message.delete()
+			for msg in messages:
+				await asyncio.sleep(1)
+				await msg.delete()
+		async def wait_for_msg():
+			def pred(m):
+				return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+			try:
+				msg = await self.bot.wait_for('message', check=pred, timeout=30)
+			except asyncio.TimeoutError:
+				await cleanup()
+			else:
+				return msg
+		msg = await ctx.send('Mention the channel I should use')
+		messages.append(msg)
+		completed = False
+		while not completed:
+			msg = await wait_for_msg()
+			messages.append(msg)
+			if 'cancel' in msg.content.lower():
+				return await cleanup()
+			if len(msg.channel_mentions) < 1:
+				msg = await ctx.send('That\'s not a channel mention, reply with "cancel" to stop')
+				messages.append(msg)
+				continue
+			self.channel[guild_id] = msg.channel_mentions[0].id
+			break
+		msg = await ctx.send('Should I use images/gifs?')
+		messages.append(msg)
+		while not completed:
+			msg = await wait_for_msg()
+			messages.append(msg)
+			if 'cancel' in msg.content.lower():
+				return await cleanup()
+			if 'ye' in msg.content.lower():
+				self.useimages[guild_id] = 'enabled'
+				msg = await ctx.send('Aight, I\'ll use my own for now')
+				messages.append(msg)
+				break
+			else:
+				msg = await ctx.send('kk')
+				messages.append(msg)
+				break
+		msg = await ctx.send('Now to set a message format:```css\nExample:\nWelcome !user to !server```')
+		messages.append(msg)
+		while not completed:
+			msg = await wait_for_msg()
+			messages.append(msg)
+			if 'cancel' in msg.content.lower():
+				return await cleanup()
+			self.format[guild_id] = msg.content
+			break
+		self.toggle[guild_id] = 'enabled'
 		e = discord.Embed(color=colors.tan())
 		e.set_author(name="Enabled Welcome Messages", icon_url=ctx.author.avatar_url)
-		e.set_thumbnail(url=ctx.guild.icon_url)
-		useimages = "disabled"
-		if guild_id in self.useimages:
-			useimages = "enabled"
-		if guild_id not in self.channel:
-			self.channel[guild_id] = ctx.channel.id
-		if guild_id not in self.format:
-			self.format[guild_id] = "Welcome $MENTION to **$SERVER**"
-		e.description = \
-			f"**Channel:** {self.bot.get_channel(self.channel[guild_id]).mention}\n" \
-			f"**UseImages:** {useimages}\n" \
-			f"**Format:** `{self.format[guild_id]}`\n"
-		await ctx.send(embed=e)
+		await ctx.send(embed=e, delete_after=10)
+		await cleanup()
 		self.save_data()
 
 	@_welcome.command(name="disable")
@@ -117,7 +162,7 @@ class Welcome(commands.Cog):
 		e.set_thumbnail(url=ctx.guild.icon_url)
 		e.description = f"**Toggle:** {toggle}\n" \
 			f"**Channel:** {channel}\n" \
-			f"**UseImages:** {useimages}\n" \
+			f"**Images:** {useimages}\n" \
 			f"**Custom Images:** {images}\n" \
 			f"**Format:** {format}\n"
 		await ctx.send(embed=e)
@@ -200,8 +245,7 @@ class Welcome(commands.Cog):
 		if message:
 			self.format[guild_id] = message
 		else:
-			await ctx.send("What message format would you like to use?\n"
-			    "Example: `Welcome $USER to **$SERVER**`\nType cancel to stop / leave it as is")
+			await ctx.send('What format should I use?:```css\nExample:\nWelcome !user to !server```')
 			def pred(m):
 				return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
 			try:
@@ -225,6 +269,7 @@ class Welcome(commands.Cog):
 					return self.save_data()
 				msg = self.format[guild_id]
 				msg = msg.replace("$MENTION", m.mention).replace("$SERVER", m.guild.name)
+				msg = msg.replace('!user', m.mention).replace('!server', m.guild.name)
 				path = os.getcwd() + "/data/images/reactions/welcome/" + random.choice(
 					os.listdir(os.getcwd() + "/data/images/reactions/welcome/"))
 				if guild_id in self.useimages:
