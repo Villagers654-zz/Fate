@@ -49,3 +49,13 @@ class Time:
 
 	def past(self):
 		return time.time() - self.seconds
+
+class Text:
+
+	def cleanup(text):
+		chars = list('abcdefghijklmnopqrstuvwxyz')
+		clean = ''
+		for char in list(text):
+			if char in chars:
+				clean += char
+		return clean
