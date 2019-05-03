@@ -14,6 +14,7 @@ class Anti_Spam(commands.Cog):
 		self.status = {}
 		self.mutes = {}
 		self.cd = {}
+		self.msgs = {}
 		if isfile("./data/userdata/anti_spam.json"):
 			with open("./data/userdata/anti_spam.json", "r") as f:
 				dat = json.load(f)
@@ -72,6 +73,9 @@ class Anti_Spam(commands.Cog):
 				if m.author.id == self.bot.user.id:
 					return
 				user_id = str(m.author.id)
+				if user_id not in self.msgs:
+					self.msgs[user_id] = []
+				self.msgs[user_id].append([m.id, time()])
 				now = int(time() / 5)
 				if guild_id not in self.cd:
 					self.cd[guild_id] = {}
@@ -90,8 +94,18 @@ class Anti_Spam(commands.Cog):
 							await m.channel.send("Disabled anti spam, missing required permissions")
 							self.save_data()
 						return
+					async def delete_recent():
+						self.msgs[user_id] = self.msgs[user_id][-10:]
+						for msg_id, msg_time in self.msgs[user_id]:
+							if msg_time > time() - 10:
+								try:
+									msg = await m.channel.fetch_message(msg_id)
+									await msg.delete()
+								except:
+									pass
 					if m.author.top_role.position >= bot.top_role.position:
-						return await m.delete()
+						return await delete_recent()
+					await delete_recent()
 					if "send_messages" not in perms:
 						return
 					async with m.channel.typing():
@@ -144,7 +158,7 @@ class Anti_Spam(commands.Cog):
 						await utils.User(m.author).init()
 						if utils.User(m.author).can_dm():
 							await m.author.send(f"You've been muted for spam in **{m.guild.name}** for {timer} seconds")
-						await m.channel.send(f"Muted {m.author.display_name}")
+						await m.channel.send(f"Temp muted `{m.author.display_name}` for spam")
 					await asyncio.sleep(timer)
 					user = self.bot.get_user(int(user_id))
 					if isinstance(user, discord.User):
