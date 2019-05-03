@@ -224,6 +224,12 @@ class ChatBot(commands.Cog):
 						if len(keys) < 4:
 							if random.randint(1, 10) > 8:
 								async with m.channel.typing():
+									search = ''
+									m.content = m.content.replace(str(self.bot.user.mention), '')
+									m.content = m.content.replace('Fate', '').replace('fate', '')
+									for char in list(m.content):
+										if char in list('abcdefghijklmnopqrstuvwxyz '):
+											search += char
 									apikey = "LIWIXISVM3A7"
 									lmt = 4
 									r = requests.get("https://api.tenor.com/v1/anonid?key=%s" % apikey)
@@ -231,7 +237,7 @@ class ChatBot(commands.Cog):
 										anon_id = json.loads(r.content)["anon_id"]
 									else:
 										anon_id = ""
-									r = requests.get("https://api.tenor.com/v1/search?q=%s&key=%s&limit=%s&anon_id=%s" % (m.content, apikey, lmt, anon_id))
+									r = requests.get("https://api.tenor.com/v1/search?q=%s&key=%s&limit=%s&anon_id=%s" % (search, apikey, lmt, anon_id))
 									if r.status_code == 200:
 										try:
 											dat = json.loads(r.content)
