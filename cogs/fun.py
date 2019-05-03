@@ -9,9 +9,30 @@ import base64
 class Fun(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
+		self.last = {}
 
 	def luck(ctx):
 		return ctx.message.author.id == 264838866480005122
+
+	@commands.Cog.listener()
+	async def on_message_delete(self, m: discord.Message):
+		if m.content:
+			channel_id = str(m.channel.id)
+			self.last[channel_id] = m
+
+	@commands.command(name='snipe')
+	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.guild_only()
+	@commands.bot_has_permissions(embed_links=True)
+	async def snipe(self, ctx):
+		channel_id = str(ctx.channel.id)
+		if channel_id not in self.last:
+			return await ctx.message.delete()
+		m = self.last[channel_id]  # type: discord.Message
+		e = discord.Embed(color=m.author.top_role.color)
+		e.set_author(name=m.author, icon_url=m.author.avatar_url)
+		e.description = m.content
+		await ctx.send(embed=e)
 
 	@commands.command()
 	async def fancify(self, ctx, *, text: str):
