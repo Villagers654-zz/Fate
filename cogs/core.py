@@ -54,16 +54,11 @@ class Core(commands.Cog):
 		if not isinstance(ctx.guild, discord.Guild):
 			return await ctx.send("This command can't be used in dm")
 		guild_id = str(ctx.guild.id)
-		if not isfile("./data/userdata/prefixes.json"):
-			with open("./data/userdata/prefixes.json", "w") as f:
-				failed_save_data = {}
-				json.dump(failed_save_data, f)
-				print("reverted")
-		with open("./data/userdata/prefixes.json", "r") as f:
-			prefixes = json.load(f)
-		with open("./data/userdata/prefixes.json", "w") as f:
-			prefixes[guild_id] = prefix
-			json.dump(prefixes, f, indent=4)
+		with open("./data/config.json", "r") as f:
+			config = json.load(f)
+		with open("./data/config.json", "w") as f:
+			config['prefix'][guild_id] = prefix
+			json.dump(config, f, ensure_ascii=False)
 		await ctx.send(f"Changed the servers prefix to `{prefix}`")
 
 	@commands.command(name="ping")

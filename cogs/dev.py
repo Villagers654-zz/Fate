@@ -132,15 +132,6 @@ class Dev(commands.Cog):
 			f.close()
 		await ctx.send("Done")
 
-	@commands.command(name="changepresence", aliases=["cp"])
-	@commands.check(checks.luck)
-	async def changepresence(self, ctx, *, arg):
-		async with ctx.typing():
-			await self.bot.change_presence(activity=discord.Game(name=arg))
-			await ctx.send('done', delete_after=5)
-			await asyncio.sleep(5)
-			await ctx.message.delete()
-
 	@commands.command()
 	@commands.check(checks.luck)
 	async def sendfile(self, ctx, directory):

@@ -12,26 +12,28 @@ import time
 
 # ~== Core ==~
 
-def get_prefix(bot, message):
-	setup_data = {}
-	if not message.guild:
-		return commands.when_mentioned_or(".")(bot, message)
-	if not isfile("./data/userdata/prefixes.json"):
-		with open("./data/userdata/prefixes.json", "w") as f:
-			json.dump(setup_data, f, sort_keys=True,
-			indent=4, separators=(',', ': '))
-	with open(r"./data/userdata/prefixes.json", "r") as f:
-		prefixes = json.load(f)
-	if str(message.guild.id) not in prefixes:
+def get_config():
+	with open('./data/config.json', 'r') as config:
+		return json.load(config)
+
+def get_prefix(bot, msg):
+	config = get_config()  # type: dict
+	blocked_users = config['blocked']
+	if msg.author.id in blocked_users:
+		return 'lsimhbiwfefmtalol'
+	if not msg.guild:
+		return commands.when_mentioned_or(".")(bot, msg)
+	guild_id = str(msg.guild.id)
+	prefixes = config['prefix']
+	if guild_id not in prefixes:
 		return "."
-	prefix = prefixes[str(message.guild.id)]
-	return prefix
+	return prefixes[guild_id]
 
 files = ['error_handler', 'config', 'menus', 'core', 'music', 'mod', 'welcome', 'farewell', 'notes', 'archive', 'coffeeshop', 'custom',
          'actions', 'reactions', 'responses', 'textart', 'fun', 'math', 'dev', '4b4t', 'readme', 'reload', 'embeds', 'warning', 'profiles',
          'save', 'clean_rythm', 'utility', 'psutil', 'rules', 'duel_chat', 'selfroles', 'lock', 'backup', 'audit', 'cookies', 'team', 'stats',
          'anti_purge', 'emojis', 'logger', 'autorole', 'changelog', 'restore_roles', 'chatbot', 'anti_spam', 'anti_raid', 'chatfilter', 'nsfw',
-         'leaderboards', 'chatlock', 'rainbow', 'vc_log', 'system']
+         'leaderboards', 'chatlock', 'rainbow', 'vc_log', 'system', 'user']
 
 description = '''Fate[Zero]: Personal Bot'''
 bot = commands.Bot(command_prefix=get_prefix, case_insensitive=True, max_messages=16000)
@@ -42,14 +44,16 @@ error = False
 
 async def status_task():
 	while True:
+		config = get_config()  # type: dict
+		presence = config['presence']
 		motds = ['FBI OPEN UP', 'YEET to DELETE', 'Pole-Man', '♡Juice wrld♡', 'ANIMOO', 'Mad cuz Bad', 'Quest for Cake', 'Gone Sexual']
-		await bot.change_presence(activity=discord.Game(name=f"Serendipity | {random.choice(motds)}"))
+		await bot.change_presence(activity=discord.Game(name=f'{presence} | {random.choice(motds)}'))
 		await asyncio.sleep(15)
-		await bot.change_presence(activity=discord.Game(name='Serendipity | use .help'))
+		await bot.change_presence(activity=discord.Game(name=f'{presence} | use .help'))
 		await asyncio.sleep(15)
-		await bot.change_presence(activity=discord.Game(name=f'Serendipity | {len(bot.users)} users'))
+		await bot.change_presence(activity=discord.Game(name=f'{presence} | {len(bot.users)} users'))
 		await asyncio.sleep(15)
-		await bot.change_presence(activity=discord.Game(name=f'Serendipity | {len(bot.guilds)} servers'))
+		await bot.change_presence(activity=discord.Game(name=f'{presence} | {len(bot.guilds)} servers'))
 		await asyncio.sleep(15)
 
 @bot.event
