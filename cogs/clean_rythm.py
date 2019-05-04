@@ -53,26 +53,29 @@ class Utility(commands.Cog):
 				pass
 			else:
 				if self.identifier[str(m.guild.id)] == "Enabled":
-					if m.author.id == 235088799074484224:
-						await asyncio.sleep(9)
-						await m.delete()
-					m.content = m.content.lower()
-					for i in listed:
-						if m.content.startswith(i):
-							if m.content.startswith("!play"):
-								await asyncio.sleep(1)
-								return await m.delete()
-							if i == "!lyrics":
-								await asyncio.sleep(60)
-								return await m.delete()
-							if i == "!queue":
-								await asyncio.sleep(20)
-								return await m.delete()
-							if i == "!q":
-								await asyncio.sleep(20)
-								return await m.delete()
-							await asyncio.sleep(10)
+					try:
+						if m.author.id == 235088799074484224:
+							await asyncio.sleep(9)
 							await m.delete()
+						m.content = m.content.lower()
+						for i in listed:
+							if m.content.startswith(i):
+								if m.content.startswith("!play"):
+									await asyncio.sleep(1)
+									return await m.delete()
+								if i == "!lyrics":
+									await asyncio.sleep(60)
+									return await m.delete()
+								if i == "!queue":
+									await asyncio.sleep(20)
+									return await m.delete()
+								if i == "!q":
+									await asyncio.sleep(20)
+									return await m.delete()
+								await asyncio.sleep(10)
+								await m.delete()
+					except discord.errors.NotFound:
+						pass
 
 	@commands.Cog.listener()
 	async def on_guild_remove(self, guild):

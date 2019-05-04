@@ -152,13 +152,20 @@ class Anti_Spam(commands.Cog):
 							if mute_time > time() - 3600:
 								multiplier += 1
 							else:
-								self.mutes[guild_id][user_id].pop(mute_time)
+								index = self.mutes[guild_id][user_id].index(mute_time)
+								self.mutes[guild_id][user_id].pop(index)
 						timer = 150 * multiplier
+						timer_str = '2 minutes and 30 seconds'
+						if multiplier == 2:
+							timer_str = '3 minutes'
+						if multiplier > 2:
+							timer_str = '3+ minutes'
 						await m.author.add_roles(mute_role)
-						await utils.User(m.author).init()
-						if utils.User(m.author).can_dm():
-							await m.author.send(f"You've been muted for spam in **{m.guild.name}** for {timer} seconds")
-						await m.channel.send(f"Temp muted `{m.author.display_name}` for spam")
+						try:
+							await m.author.send(f"You've been muted for spam in **{m.guild.name}** for {timer_str}")
+						except:
+							pass
+						await m.channel.send(f"Temporarily muted `{m.author.display_name}` for spam")
 					await asyncio.sleep(timer)
 					user = self.bot.get_user(int(user_id))
 					if isinstance(user, discord.User):
