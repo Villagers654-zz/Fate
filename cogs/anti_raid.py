@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from discord.ext import commands
 from os.path import isfile
 from utils import colors
@@ -12,6 +13,8 @@ class Anti_Raid(commands.Cog):
 		self.toggle = {}
 		self.locked = []
 		self.last = {}
+		self.join_cd = {}
+		self.macro_cd = {}
 		self.cd = {}
 		if isfile("./data/userdata/anti_raid.json"):
 			with open("./data/userdata/anti_raid.json", "r") as f:
@@ -23,7 +26,22 @@ class Anti_Raid(commands.Cog):
 		with open("./data/userdata/anti_raid.json", "w") as f:
 			json.dump({"toggle": self.toggle}, f)
 
-	@commands.group(name="anti_raid")
+	async def ensure_permissions(self, guild):
+		guild_id = str(guild.id)
+		bot = guild.get_member(self.bot.user.id)
+		perms = [perm for perm, value in bot.guild_permissions if value]
+		required = ['view_audit_log', 'ban_members']
+		for perm in required:
+			if perm not in perms:
+				del self.toggle[guild_id]
+				try:
+					await guild.owner.send(f'Disabled anti raid, missing {perm} permissions')
+				except:
+					pass
+				return False
+		return True
+
+	@commands.group(name='antiraid', aliases=['anti_raid'])
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.has_permissions(embed_links=True)
 	async def _anti_raid(self, ctx):
@@ -31,12 +49,13 @@ class Anti_Raid(commands.Cog):
 			toggle = "disabled"
 			if str(ctx.guild.id) in self.toggle:
 				toggle = "enabled"
-			e = discord.Embed(color=colors.black())
-			e.set_author(name="Anti Server Raid", icon_url=ctx.author.avatar_url)
+			e = discord.Embed(color=colors.red())
+			e.set_author(name="Anti Raid", icon_url=ctx.author.avatar_url)
 			e.set_thumbnail(url=ctx.guild.icon_url)
+			e.description = 'Prevents mass-join and mass-kick/ban raids'
 			e.add_field(name="Usage", value=
-				".anti_raid enable\n"
-			    ".anti_raid disable", inline=False)
+				".antiraid enable\n"
+			    ".antiraid disable", inline=False)
 			e.set_footer(text=f"Current Status: {toggle}")
 			await ctx.send(embed=e)
 
@@ -66,6 +85,9 @@ class Anti_Raid(commands.Cog):
 		guild_id = str(m.guild.id)
 		user_id = str(m.id)
 		if guild_id in self.toggle:
+			required_permission = await self.ensure_permissions(m.guild)
+			if not required_permission:
+				return
 			if guild_id in self.locked:
 				await m.guild.ban(m, reason="Server locked due to raid", delete_message_days=0)
 				try:
@@ -81,18 +103,70 @@ class Anti_Raid(commands.Cog):
 				self.last[guild_id] = {}
 			self.last[guild_id][user_id] = time()
 			now = int(time() / 15)
-			if guild_id not in self.cd:
-				self.cd[guild_id] = [now, 0]
-			if self.cd[guild_id][0] == now:
-				self.cd[guild_id][1] += 1
+			if guild_id not in self.join_cd:
+				self.join_cd[guild_id] = [now, 0]
+			if self.join_cd[guild_id][0] == now:
+				self.join_cd[guild_id][1] += 1
 			else:
-				self.cd[guild_id] = [now, 0]
-			if self.cd[guild_id][1] > 4:
+				self.join_cd[guild_id] = [now, 0]
+			if self.join_cd[guild_id][1] > 4:
 				for junkie in list(filter(lambda id: self.last[guild_id][id] > time() - 15, self.last[guild_id].keys())):
 					await m.guild.ban(junkie, reason="raid")
 				self.locked.append(guild_id)
 				await asyncio.sleep(3600)
 				self.locked.pop(self.locked.index(guild_id))
+
+	@commands.Cog.listener()
+	async def on_member_remove(self, m):
+		guild_id = str(m.guild.id)
+		if guild_id in self.toggle:
+			required_permission = await self.ensure_permissions(m.guild)
+			if not required_permission:
+				return
+			async for entry in m.guild.audit_logs(limit=1):
+				if entry.created_at > datetime.utcnow() - timedelta(seconds=3):
+					actions = [discord.AuditLogAction.kick, discord.AuditLogAction.ban]
+					if entry.action in actions:
+						user_id = str(entry.user.id)
+						now = int(time() / 15)
+						if guild_id not in self.cd:
+							self.cd[guild_id] = {}
+						if user_id not in self.cd[guild_id]:
+							self.cd[guild_id][user_id] = [now, 0]
+						if self.cd[guild_id][user_id][0] == now:
+							self.cd[guild_id][user_id][1] += 1
+						else:
+							self.cd[guild_id][user_id] = [now, 0]
+						if self.cd[guild_id][user_id][1] > 2:
+							await m.guild.ban(entry.user, reason="Attempted Purge", delete_message_days=0)
+
+	@commands.Cog.listener()
+	async def on_guild_channel_delete(self, channel: discord.TextChannel):
+		guild = channel.guild
+		guild_id = str(guild.id)
+		if guild_id in self.toggle:
+			required_permission = await self.ensure_permissions(guild)
+			if not required_permission:
+				return
+			async for entry in guild.audit_logs(limit=1):
+				if datetime.utcnow() - timedelta(seconds=3) < entry.created_at:
+					if str(entry.action) in ["AuditLogAction.channel_delete"]:
+						user_id = str(entry.user.id)
+						now = int(time() / 15)
+						if guild_id not in self.cd:
+							self.cd[guild_id] = {}
+						if user_id not in self.cd[guild_id]:
+							self.cd[guild_id][user_id] = [now, 0]
+						if self.cd[guild_id][user_id][0] == now:
+							self.cd[guild_id][user_id][1] += 1
+						else:
+							self.cd[guild_id][user_id] = [now, 0]
+						if self.cd[guild_id][user_id][1] > 2:
+							try:
+								await guild.ban(entry.user, reason="Attempted Purge", delete_message_days=0)
+								await guild.owner.send(f"Banned `{entry.user}` in **{guild.name}** for attempting a purge")
+							except:
+								pass
 
 	@commands.Cog.listener()
 	async def on_guild_remove(self, guild):

@@ -38,12 +38,6 @@ class Config(commands.Cog):
 				return "active"
 			return "inactive"
 
-	def anti_purge(self, id):
-		with open("./data/userdata/anti_purge.json", "r") as f:
-			if id in json.load(f)["toggle"]:
-				return "active"
-			return "inactive"
-
 	def selfroles(self, id):
 		with open("./data/userdata/selfroles.json", "r") as f:
 			if id in json.load(f)["message"]:
@@ -98,7 +92,6 @@ class Config(commands.Cog):
 			f"**Chat Filter:** [`{self.chatfilter(guild_id)}`]\n" \
 			f"**Anti Spam:** [`{self.anti_spam(guild_id)}`]\n" \
 			f"**Anti Raid:** [`{self.anti_raid(guild_id)}`]\n" \
-			f"**Anti Purge:** [`{self.anti_purge(guild_id)}`]\n" \
 			f"**Self Roles:** [`{self.selfroles(guild_id)}`]\n" \
 			f"**Auto Role:** [`{self.autorole(guild_id)}`]\n" \
 			f"**Welcome:** [`{self.welcome(guild_id)}`]\n" \
