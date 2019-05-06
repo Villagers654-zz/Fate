@@ -1,13 +1,11 @@
 from datetime import datetime, timedelta
 from discord.ext import commands
-from multiprocessing import Process
 from os.path import isfile
 from PIL import ImageDraw
 from PIL import ImageFont
 from PIL import Image
-from time import time, sleep
+from time import time, monotonic
 import discord
-import asyncio
 import random
 import json
 import os
@@ -25,7 +23,8 @@ class Leaderboards(commands.Cog):
 		self.monthly_guilds_data = {}
 		self.gvclb = {}
 		self.vclb = {}
-		self.dat = {}
+		self.cache = {}
+		self.cache_dir = './data/leaderboard.cache'
 		if isfile("./data/userdata/xp.json"):
 			with open("./data/userdata/xp.json", "r") as infile:
 				dat = json.load(infile)
@@ -36,12 +35,28 @@ class Leaderboards(commands.Cog):
 					self.monthly_guilds_data = dat["monthly_guilded"]
 					self.vclb = dat["vclb"]
 					self.gvclb = dat["gvclb"]
+		if isfile('./data/leaderboard.cache'):
+			with open(self.cache_dir, 'r') as cache:
+				self.cache = json.load(cache)
 
-	async def save_json(self):
+	def save_xp(self):
 		with open("./data/userdata/xp.json", "w") as outfile:
 			json.dump({"global": self.global_data, "guilded": self.guilds_data, "monthly_global": self.monthly_global_data,
 			           "monthly_guilded": self.monthly_guilds_data, "vclb": self.vclb, "gvclb": self.gvclb},
 			          outfile, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
+
+	def save_cache(self):
+		with open(self.cache_dir, 'w') as f:
+			json.dump(self.cache, f, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
+
+	def msg_footer(self):
+		return random.choice(["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready",
+		    "Powered by slaves", "Powered by Beddys ego", "Powered by Samsung", "Powered by the supreme",
+		                      "Powered by doritos", "Cooldown: 10 seconds", '[result]'])
+
+	def vc_footer(self):
+		return random.choice(["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready",
+		    "Powered by slaves", "Powered by Beddys ego", "Powered by Samsung", "Powered by the supreme", "Powered by tostitos"])
 
 	async def subtract_spam_from_monthly(self, guild_id, user_id):
 		deleted = 0
@@ -54,62 +69,46 @@ class Leaderboards(commands.Cog):
 				del self.monthly_guilds_data[guild_id][user_id][str(msg_id)]
 		return deleted
 
-	async def routine_cleanup_task(self):
-		while True:
-			self.cleaning = True
-			log = self.bot.get_channel(571171616214614028)
-			try:
-				dumped_messages = 0
-				for user_id in self.monthly_global_data.keys():
-					for msg_id, msg_time in (sorted(self.monthly_global_data[user_id].items(), key=lambda kv: kv[1], reverse=True)):
-						if float(msg_time) < time() - 2592000:
-							del self.monthly_global_data[user_id][str(msg_id)]
-							dumped_messages += 1
-				for guild_id in self.monthly_guilds_data.keys():
-					for user_id in self.monthly_guilds_data[guild_id].keys():
-						for msg_id, msg_time in (sorted(self.monthly_guilds_data[guild_id][user_id].items(), key=lambda kv: kv[1],  reverse=True)):
-							if float(msg_time) < time() - 2592000:
-								del self.monthly_guilds_data[guild_id][user_id][str(msg_id)]
-				user_keys = list(self.global_data.keys())
-				dumped_users = 0
-				for user_id in user_keys:
-					user = self.bot.get_user(int(user_id))
-					if not isinstance(user, discord.User):
-						dumped_users += 1
-						if user_id in self.global_data:
-							del self.global_data[user_id]
-						guild_keys = list(self.guilds_data.keys())
-						for guild_id in guild_keys:
-							if user_id in self.guilds_data[guild_id]:
-								del self.guilds_data[guild_id][user_id]
-						if user_id in self.monthly_global_data:
-							del self.monthly_global_data[user_id]
-						monthly_guild_keys = list(self.monthly_guilds_data.keys())
-						for guild_id in monthly_guild_keys:
-							if user_id in self.monthly_guilds_data[guild_id]:
-								del self.monthly_guilds_data[guild_id][user_id]
-				await self.save_json()
-				self.cleaning = False
-				await log.send(f'__**Routine XP Dump:**__\nMessages: [`{dumped_messages}`]\nUsers: [`{dumped_users}`]')
-			except Exception as e:
-				self.cleaning = False
-				await log.send(f'__**Exception in Routine XP Cleanup:**__\n`{e}`')
-			await asyncio.sleep(21600)
-
-	def msg_footer(self):
-		return random.choice(["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready",
-		    "Powered by slaves", "Powered by Beddys ego", "Powered by Samsung", "Powered by the supreme",
-		                      "Powered by doritos", "Cooldown: 10 seconds"])
-
-	def vc_footer(self):
-		return random.choice(["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready",
-		    "Powered by slaves", "Powered by Beddys ego", "Powered by Samsung", "Powered by the supreme", "Powered by tostitos"])
+	async def run_xp_cleanup(self):
+		before = monotonic()
+		for user_id in self.monthly_global_data.keys():
+			for msg_id, msg_time in (sorted(self.monthly_global_data[user_id].items(), key=lambda kv: kv[1], reverse=True)):
+				if float(msg_time) < time() - 2592000:
+					del self.monthly_global_data[user_id][str(msg_id)]
+		for guild_id in self.monthly_guilds_data.keys():
+			for user_id in self.monthly_guilds_data[guild_id].keys():
+				for msg_id, msg_time in (sorted(self.monthly_guilds_data[guild_id][user_id].items(), key=lambda kv: kv[1], reverse=True)):
+					if float(msg_time) < time() - 2592000:
+						del self.monthly_guilds_data[guild_id][user_id][str(msg_id)]
+		for guild in self.bot.guilds:
+			if guild.unavailable:
+				return
+		for user_id in list(self.global_data.keys()):
+			user = self.bot.get_user(int(user_id))
+			if not isinstance(user, discord.User):
+				del self.global_data[user_id]
+				for guild_id in list(self.guilds_data.keys()):
+					if user_id in self.guilds_data[guild_id]:
+						del self.guilds_data[guild_id][user_id]
+				if user_id in self.monthly_global_data:
+					del self.monthly_global_data[user_id]
+				for guild_id in list(self.monthly_guilds_data.keys()):
+					if user_id in self.monthly_guilds_data[guild_id]:
+						del self.monthly_guilds_data[guild_id][user_id]
+				if user_id in self.gvclb:
+					del self.gvclb[user_id]
+				for guild_id in list(self.vclb.keys()):
+					if user_id in self.vclb[guild_id]:
+						del self.vclb[guild_id][user_id]
+		return str(round((monotonic() - before) * 1000)) + 'ms'
 
 	@commands.command(name="leaderboard", aliases=["lb"])
 	@commands.cooldown(1, 10, commands.BucketType.channel)
 	@commands.bot_has_permissions(embed_links=True)
 	async def leaderboard(self, ctx):
-		e = discord.Embed(title="Leaderboard", color=0x4A0E50)
+		result = await self.run_xp_cleanup()
+		e = discord.Embed(color=0x4A0E50)
+		e.title = "Leaderboard"
 		e.description = ""
 		rank = 1
 		for user_id, xp in (sorted(self.guilds_data[str(ctx.guild.id)].items(), key=lambda kv: kv[1], reverse=True))[:15]:
@@ -119,40 +118,44 @@ class Leaderboards(commands.Cog):
 				name = user.name
 			level = str(xp / 750)
 			level = level[:level.find(".")]
-			e.description += "‎**‎#{}.** ‎`‎{}`: ‎{} | {}\n".format(rank, name, level, xp)
+			e.description += f'**#{rank}.** `{name}`: {level} | {xp}\n'
 			rank += 1
-			try:
-				e.set_thumbnail(url=ctx.guild.icon_url)
-			except:
-				pass
-			e.set_footer(text=self.msg_footer())
+		if ctx.guild.icon_url:
+			e.set_thumbnail(url=ctx.guild.icon_url)
+		else:
+			e.set_thumbnail(url=self.bot.user.avatar_url)
+		e.set_footer(text=self.msg_footer().replace('[result]', f'XP Cleanup: {result}'))
 		await ctx.send(embed=e)
 
 	@commands.command(name="gleaderboard", aliases=["glb"])
 	@commands.cooldown(1, 10, commands.BucketType.channel)
 	@commands.bot_has_permissions(embed_links=True)
 	async def gleaderboard(self, ctx):
-		e = discord.Embed(title="Global Leaderboard", color=0x4A0E50)
-		e.description = ""
+		result = await self.run_xp_cleanup()
+		e = discord.Embed(color=0x4A0E50)
+		e.title = 'Global Leaderboard'
+		e.description = ''
 		rank = 1
 		for user_id, xp in (sorted(self.global_data.items(), key=lambda kv: kv[1], reverse=True))[:15]:
-			name = "INVALID-USER"
+			name = 'INVALID-USER'
 			user = self.bot.get_user(int(user_id))
 			if isinstance(user, discord.User):
 				name = user.name
 			level = str(xp / 750)
 			level = level[:level.find(".")]
-			e.description += "‎**#‎{}.** ‎`‎{}`‎ ~ ‎{} | {}\n".format(rank, name, level, xp)
+			e.description += f'**#{rank}.** `{name}`: {level} | {xp}\n'
 			rank += 1
-			e.set_thumbnail(url="https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png")
-			e.set_footer(text=self.msg_footer())
+		e.set_thumbnail(url='https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png')
+		e.set_footer(text=self.msg_footer().replace('[result]', f'XP Cleanup: {result}'))
 		await ctx.send(embed=e)
 
 	@commands.command(name="ggleaderboard", aliases=["gglb"])
 	@commands.cooldown(1, 10, commands.BucketType.channel)
 	@commands.bot_has_permissions(embed_links=True)
 	async def ggleaderboard(self, ctx):
-		e = discord.Embed(title="Guild XP Leaderboard", color=0x4A0E50)
+		result = await self.run_xp_cleanup()
+		e = discord.Embed(color=0x4A0E50)
+		e.title = 'Guild Leaderboard'
 		e.description = ""
 		rank = 1
 		for guild_id, xp in (sorted({i:sum(x.values()) for i, x in self.guilds_data.items()}.items(), key=lambda kv: kv[1], reverse=True))[:8]:
@@ -162,16 +165,20 @@ class Leaderboards(commands.Cog):
 				name = guild.name
 			else:
 				del self.guilds_data[guild_id]
-			e.description += "**#{}.** `{}`: {}\n".format(rank, name, xp)
+			e.description += f'**#{rank}.** `{name}`: {xp}\n'
 			rank += 1
+		if ctx.guild.icon_url:
 			e.set_thumbnail(url=ctx.guild.icon_url)
-			e.set_footer(text=self.msg_footer())
+		else:
+			e.set_thumbnail(url=self.bot.user.avatar_url)
+		e.set_footer(text=self.msg_footer().replace('[result]', f'XP Cleanup: {result}'))
 		await ctx.send(embed=e)
 
 	@commands.command(name="mleaderboard", aliases=["mlb"])
 	@commands.cooldown(1, 10, commands.BucketType.channel)
 	@commands.bot_has_permissions(embed_links=True)
 	async def _mleaderboard(self, ctx):
+		result = await self.run_xp_cleanup()
 		guild_id = str(ctx.guild.id)
 		users = list(self.monthly_guilds_data[guild_id])
 		xp = {}
@@ -188,45 +195,49 @@ class Leaderboards(commands.Cog):
 				name = user.name
 			level = str(xp / 750)
 			level = level[:level.find(".")]
-			e.description += "‎**#‎{}.** ‎`‎{}`‎ ~ ‎{} | {}\n".format(rank, name, level, xp)
+			e.description += f'**#{rank}.** `{name}`: {level} | {xp}\n'
 			rank += 1
-			try:
-				e.set_thumbnail(url=ctx.guild.icon_url)
-			except:
-				pass
-			e.set_footer(text=self.msg_footer())
+		if ctx.guild.icon_url:
+			e.set_thumbnail(url=ctx.guild.icon_url)
+		else:
+			e.set_thumbnail(url=self.bot.user.avatar_url)
+		e.set_footer(text=self.msg_footer().replace('[result]', f'XP Cleanup: {result}'))
 		await ctx.send(embed=e)
 
 	@commands.command(name="gmleaderboard", aliases=["gmlb"])
 	@commands.cooldown(1, 10, commands.BucketType.channel)
 	@commands.bot_has_permissions(embed_links=True)
 	async def _gmleaderboard(self, ctx):
+		result = await self.run_xp_cleanup()
 		users = list(self.monthly_global_data)
 		xp = {}
 		for user in users:
 			for msg in self.monthly_global_data[user]:
 				xp[user] = len(self.monthly_global_data[user])
-		e = discord.Embed(title="Global Monthly Leaderboard", color=0x4A0E50)
+		e = discord.Embed(color=0x4A0E50)
+		e.title = 'Global Monthly Leaderboard'
 		e.description = ""
 		rank = 1
 		for user_id, xp in (sorted(xp.items(), key=lambda kv: kv[1], reverse=True))[:15]:
-			name = "INVALID-USER"
+			name = 'INVALID-USER'
 			user = self.bot.get_user(int(user_id))
 			if isinstance(user, discord.User):
 				name = user.name
 			level = str(xp / 750)
 			level = level[:level.find(".")]
-			e.description += "‎**#‎{}.** ‎`‎{}`‎ ~ ‎{} | {}\n".format(rank, name, level, xp)
+			e.description += f'**#{rank}.** `{name}`: {level} | {xp}\n'
 			rank += 1
-			e.set_thumbnail(url="https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png")
-			e.set_footer(text=self.msg_footer())
+		e.set_thumbnail(url='https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png')
+		e.set_footer(text=self.msg_footer().replace('[result]', f'XP Cleanup: {result}'))
 		await ctx.send(embed=e)
 
-	@commands.command(name="vcleaderboard", aliases=["vclb"])
+	@commands.command(name='vcleaderboard', aliases=['vclb'])
 	@commands.cooldown(1, 10, commands.BucketType.channel)
 	@commands.bot_has_permissions(embed_links=True)
 	async def vcleaderboard(self, ctx):
-		e = discord.Embed(title="VC Leaderboard", color=0x4A0E50)
+		result = await self.run_xp_cleanup()
+		e = discord.Embed(color=0x4A0E50)
+		e.title = 'VC Leaderboard'
 		e.description = ""
 		rank = 1
 		for user_id, xp in (sorted(self.vclb[str(ctx.guild.id)].items(), key=lambda kv: kv[1], reverse=True))[:15]:
@@ -235,17 +246,22 @@ class Leaderboards(commands.Cog):
 			if isinstance(user, discord.User):
 				name = user.name
 			score = timedelta(seconds=xp)
-			e.description += "‎**‎#{}.** ‎`‎{}`: ‎{}\n".format(rank, name, score)
+			e.description += f'‎**‎#{rank}.** ‎`‎{name}`: ‎{score}\n'
 			rank += 1
+		if ctx.guild.icon_url:
 			e.set_thumbnail(url=ctx.guild.icon_url)
-			e.set_footer(text=self.vc_footer())
+		else:
+			e.set_thumbnail(url=self.bot.user.avatar_url)
+		e.set_footer(text=self.msg_footer().replace('[result]', f'XP Cleanup: {result}'))
 		await ctx.send(embed=e)
 
 	@commands.command(name="gvcleaderboard", aliases=["gvclb"])
 	@commands.cooldown(1, 10, commands.BucketType.channel)
 	@commands.bot_has_permissions(embed_links=True)
 	async def gvcleaderboard(self, ctx):
-		e = discord.Embed(title="Global VC Leaderboard", color=0x4A0E50)
+		result = await self.run_xp_cleanup()
+		e = discord.Embed(color=0x4A0E50)
+		e.title = 'Global VC Leaderboard'
 		e.description = ""
 		rank = 1
 		for user_id, xp in (sorted(self.gvclb.items(), key=lambda kv: kv[1], reverse=True))[:15]:
@@ -254,10 +270,111 @@ class Leaderboards(commands.Cog):
 			if isinstance(user, discord.User):
 				name = user.name
 			score = timedelta(seconds=xp)
-			e.description += "‎**#‎{}.** ‎`‎{}`‎ ~ ‎{}\n".format(rank, name, score)
+			e.description += f'‎**‎#{rank}.** ‎`‎{name}`: ‎{score}\n'
 			rank += 1
-			e.set_thumbnail(url="https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png")
-			e.set_footer(text=self.vc_footer())
+		e.set_thumbnail(url="https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png")
+		e.set_footer(text=self.msg_footer().replace('[result]', f'XP Cleanup: {result}'))
+		await ctx.send(embed=e)
+
+	@commands.command(name='leaderboards', aliases=['lbs'])
+	async def leaderboards(self, ctx):
+		result = await self.run_xp_cleanup()
+		e = discord.Embed(color=0x4A0E50)
+		e.set_author(name='Leaderboard')
+		e.set_thumbnail(url=self.bot.user.avatar_url)
+		leaderboard = ''
+		rank = 1
+		for user_id, xp in (sorted(self.guilds_data[str(ctx.guild.id)].items(), key=lambda kv: kv[1], reverse=True))[:15]:
+			name = "INVALID-USER"
+			user = self.bot.get_user(int(user_id))
+			if isinstance(user, discord.User):
+				name = user.name
+			level = str(xp / 750)
+			level = level[:level.find(".")]
+			leaderboard += f'**#{rank}.** `{name}`: {level} | {xp}\n'
+		e.description = leaderboard
+		gleaderboard = ''
+		rank = 1
+		for user_id, xp in (sorted(self.global_data.items(), key=lambda kv: kv[1], reverse=True))[:15]:
+			name = 'INVALID-USER'
+			user = self.bot.get_user(int(user_id))
+			if isinstance(user, discord.User):
+				name = user.name
+			level = str(xp / 750)
+			level = level[:level.find(".")]
+			gleaderboard += f'**#{rank}.** `{name}`: {level} | {xp}\n'
+			rank += 1
+		e.add_field(name='Global Leaderboard', value=gleaderboard, inline=False)
+		ggleaderboard = ''
+		rank = 1
+		for guild_id, xp in (sorted({i: sum(x.values()) for i, x in self.guilds_data.items()}.items(), key=lambda kv: kv[1], reverse=True))[:8]:
+			name = "INVALID-GUILD"
+			guild = self.bot.get_guild(int(guild_id))
+			if isinstance(guild, discord.Guild):
+				name = guild.name
+			else:
+				del self.guilds_data[guild_id]
+			ggleaderboard += f'**#{rank}.** `{name}`: {xp}\n'
+			rank += 1
+		e.add_field(name='Guild Leaderboard', value=ggleaderboard, inline=False)
+		mleaderboard = ''
+		guild_id = str(ctx.guild.id)
+		users = list(self.monthly_guilds_data[guild_id])
+		xp = {}
+		for user in users:
+			for msg in self.monthly_guilds_data[guild_id][user]:
+				xp[user] = len(self.monthly_guilds_data[guild_id][user])
+		rank = 1
+		for user_id, xp in (sorted(xp.items(), key=lambda kv: kv[1], reverse=True))[:15]:
+			name = "INVALID-USER"
+			user = self.bot.get_user(int(user_id))
+			if isinstance(user, discord.User):
+				name = user.name
+			level = str(xp / 750)
+			level = level[:level.find(".")]
+			mleaderboard += f'**#{rank}.** `{name}`: {level} | {xp}\n'
+			rank += 1
+		e.add_field(name='Monthly Leaderboard', value=mleaderboard, inline=False)
+		gmleaderboard = ''
+		users = list(self.monthly_global_data)
+		xp = {}
+		for user in users:
+			for msg in self.monthly_global_data[user]:
+				xp[user] = len(self.monthly_global_data[user])
+		rank = 1
+		for user_id, xp in (sorted(xp.items(), key=lambda kv: kv[1], reverse=True))[:15]:
+			name = 'INVALID-USER'
+			user = self.bot.get_user(int(user_id))
+			if isinstance(user, discord.User):
+				name = user.name
+			level = str(xp / 750)
+			level = level[:level.find(".")]
+			gmleaderboard += f'**#{rank}.** `{name}`: {level} | {xp}\n'
+			rank += 1
+		e.add_field(name='Global Monthly Leaderboard', value=gmleaderboard, inline=False)
+		vcleaderboard = ''
+		rank = 1
+		for user_id, xp in (sorted(self.vclb[str(ctx.guild.id)].items(), key=lambda kv: kv[1], reverse=True))[:15]:
+			name = "INVALID-USER"
+			user = self.bot.get_user(int(user_id))
+			if isinstance(user, discord.User):
+				name = user.name
+			score = timedelta(seconds=xp)
+			vcleaderboard += f'‎**‎#{rank}.** ‎`‎{name}`: ‎{score}\n'
+			rank += 1
+		e.add_field(name='VC Leaderboard', value=vcleaderboard, inline=False)
+		gvcleaderboard = ''
+		rank = 1
+		for user_id, xp in (sorted(self.gvclb.items(), key=lambda kv: kv[1], reverse=True))[:15]:
+			name = "INVALID-USER"
+			user = self.bot.get_user(int(user_id))
+			if isinstance(user, discord.User):
+				name = user.name
+			score = timedelta(seconds=xp)
+			gvcleaderboard += f'‎**‎#{rank}.** ‎`‎{name}`: ‎{score}\n'
+			rank += 1
+		e.add_field(name='Global VC Leaderboard', value=gvcleaderboard, inline=False)
+		e.set_footer(text=self.msg_footer().replace('[result]', f'XP Cleanup: {result}'))
 		await ctx.send(embed=e)
 
 	@commands.command(name="card")
@@ -306,15 +423,15 @@ class Leaderboards(commands.Cog):
 
 	@commands.Cog.listener()
 	async def on_ready(self):
-		self.bot.loop.create_task(self.routine_cleanup_task())
+		if isfile(self.cache_dir):
+			os.remove(self.cache_dir)
+		self.cache = {}
+		await self.run_xp_cleanup()
 
 	@commands.Cog.listener()
 	async def on_message(self, m:discord.Message):
 		if isinstance(m.guild, discord.Guild):
 			if not m.author.bot:
-
-				if self.cleaning:
-					return
 
 				author_id = str(m.author.id)
 				user_id = str(m.author.id)
@@ -336,7 +453,7 @@ class Leaderboards(commands.Cog):
 					count = await self.subtract_spam_from_monthly(guild_id, user_id)
 					self.global_data[user_id] -= count
 					self.guilds_data[guild_id][user_id] -= count
-					await self.save_json()
+					self.save_xp()
 					print(f"{m.author} is spamming")
 
 				# anti macro
@@ -356,7 +473,8 @@ class Leaderboards(commands.Cog):
 							count = await self.subtract_spam_from_monthly(guild_id, user_id)
 							self.global_data[user_id] -= count
 							self.guilds_data[guild_id][user_id] -= count
-							print(f"Detected that {m.author} is using a macro")
+							self.save_xp()
+							print(f"{m.author} is using a macro")
 
 				if user_id not in self.cd:
 					self.cd[user_id] = 0
@@ -380,7 +498,7 @@ class Leaderboards(commands.Cog):
 					self.monthly_guilds_data[guild_id][author_id][msg_id] = time()
 					self.cd[author_id] = time() + 10
 
-					await self.save_json()
+					self.save_xp()
 
 	@commands.Cog.listener()
 	async def on_voice_state_update(self, member, before, after):
@@ -404,73 +522,73 @@ class Leaderboards(commands.Cog):
 					self.gvclb[user_id] = 0
 				if channel_id is None:
 					return
-				if channel_id not in self.dat:
-					self.dat[channel_id] = {}
-				if "members" not in self.dat[channel_id]:
-					self.dat[channel_id]["members"] = []
-				if "status" not in self.dat[channel_id]:
-					self.dat[channel_id]["status"] = "inactive"
-				if user_id not in self.dat[channel_id]["members"]:
-					self.dat[channel_id]["members"].append(user_id)
+				if channel_id not in self.cache:
+					self.cache[channel_id] = {}
+				if "members" not in self.cache[channel_id]:
+					self.cache[channel_id]["members"] = []
+				if "status" not in self.cache[channel_id]:
+					self.cache[channel_id]["status"] = "inactive"
+				if user_id not in self.cache[channel_id]["members"]:
+					self.cache[channel_id]["members"].append(user_id)
 					if len(channel.members) < 2:
-						self.dat[channel_id]["status"] = "inactive"
-					if self.dat[channel_id]["status"] == "inactive":
+						self.cache[channel_id]["status"] = "inactive"
+					if self.cache[channel_id]["status"] == "inactive":
 						if len(channel.members) > 1:
 							if after.self_mute:
 								return
 							if after.mute:
 								return
-							self.dat[channel_id]["status"] = "active"
+							self.cache[channel_id]["status"] = "active"
 							for user in channel.members:
 								member_id = str(user.id)
-								if member_id not in self.dat[channel_id].keys():
-									self.dat[channel_id][member_id] = datetime.now()
+								if member_id not in self.cache[channel_id].keys():
+									self.cache[channel_id][member_id] = datetime.now()
 					else:
-						self.dat[channel_id][user_id] = datetime.now()
+						self.cache[channel_id][user_id] = datetime.now()
 				else:
 					if not after.channel:
-						if self.dat[channel_id]["status"] == "active":
+						if self.cache[channel_id]["status"] == "active":
 							if len(channel.members) < 2:
-								self.dat[channel_id]["status"] = "inactive"
-								for id in self.dat[channel_id]["members"]:
-									if id in self.dat[channel_id]:
-										seconds = (datetime.now() - self.dat[channel_id][id]).seconds
+								self.cache[channel_id]["status"] = "inactive"
+								for id in self.cache[channel_id]["members"]:
+									if id in self.cache[channel_id]:
+										seconds = (datetime.now() - self.cache[channel_id][id]).seconds
 										self.vclb[guild_id][id] += seconds
 										self.gvclb[id] += seconds
-										del self.dat[channel_id][id]
+										del self.cache[channel_id][id]
 							else:
-								if user_id in self.dat[channel_id]:
-									seconds = (datetime.now() - self.dat[channel_id][user_id]).seconds
+								if user_id in self.cache[channel_id]:
+									seconds = (datetime.now() - self.cache[channel_id][user_id]).seconds
 									self.vclb[guild_id][user_id] += seconds
 									self.gvclb[user_id] += seconds
-									del self.dat[channel_id][user_id]
-						self.dat[channel_id]["members"].pop(self.dat[channel_id]["members"].index(str(user_id)))
+									del self.cache[channel_id][user_id]
+						self.cache[channel_id]["members"].pop(self.cache[channel_id]["members"].index(str(user_id)))
 				if before.self_mute is False and after.self_mute is True:
-					if self.dat[channel_id]["status"] == "active":
+					if self.cache[channel_id]["status"] == "active":
 						if len(channel.members) == 2:
-							self.dat[channel_id]["status"] = "inactive"
-							for id in self.dat[channel_id]["members"]:
-								if id in self.dat[channel_id]:
-									seconds = (datetime.now() - self.dat[channel_id][id]).seconds
+							self.cache[channel_id]["status"] = "inactive"
+							for id in self.cache[channel_id]["members"]:
+								if id in self.cache[channel_id]:
+									seconds = (datetime.now() - self.cache[channel_id][id]).seconds
 									self.vclb[guild_id][id] += seconds
 									self.gvclb[id] += seconds
-									del self.dat[channel_id][id]
+									del self.cache[channel_id][id]
 						else:
-							seconds = (datetime.now() - self.dat[channel_id][user_id]).seconds
+							seconds = (datetime.now() - self.cache[channel_id][user_id]).seconds
 							self.vclb[guild_id][user_id] += seconds
 							self.gvclb[user_id] += seconds
-							del self.dat[channel_id][user_id]
+							del self.cache[channel_id][user_id]
 				if before.self_mute is True and after.self_mute is False:
-					if self.dat[channel_id]["status"] == "inactive":
+					if self.cache[channel_id]["status"] == "inactive":
 						if len(channel.members) > 1:
-							self.dat[channel_id]["status"] = "active"
+							self.cache[channel_id]["status"] = "active"
 							for user in channel.members:
 								member_id = str(user.id)
-								if member_id not in self.dat[channel_id].keys():
-									self.dat[channel_id][member_id] = datetime.now()
+								if member_id not in self.cache[channel_id].keys():
+									self.cache[channel_id][member_id] = datetime.now()
 					else:
-						self.dat[channel_id][user_id] = datetime.now()
-				await self.save_json()
+						self.cache[channel_id][user_id] = datetime.now()
+				self.save_xp()
 
 def setup(bot: commands.Bot):
 	bot.add_cog(Leaderboards(bot))

@@ -52,7 +52,7 @@ class Mod(commands.Cog):
 						role = channel.guild.get_role(role_id)
 						if role:
 							if role not in user.roles:
-								await user.add_roles(channel.guild.get_role(role_id))
+								await user.add_roles(role)
 								await asyncio.sleep(0.5)
 				if datetime.now() < end_time:
 					await asyncio.sleep(sleep_time)

@@ -225,11 +225,14 @@ class ChatBot(commands.Cog):
 							if random.randint(1, 10) > 8:
 								async with m.channel.typing():
 									search = ''
+									m.content = m.content.lower()
 									m.content = m.content.replace(str(self.bot.user.mention), '')
-									m.content = m.content.replace('Fate', '').replace('fate', '')
+									m.content = m.content.replace('fate', '')
 									for char in list(m.content):
-										if char in list('abcdefghijklmnopqrstuvwxyz '):
+										if char.lower() in list('abcdefghijklmnopqrstuvwxyz '):
 											search += char
+									search = search.replace(' i ', 'you').replace(' my ', 'your')
+									search = search.replace('dont', '')
 									apikey = "LIWIXISVM3A7"
 									lmt = 4
 									r = requests.get("https://api.tenor.com/v1/anonid?key=%s" % apikey)

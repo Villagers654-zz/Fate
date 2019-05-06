@@ -124,52 +124,14 @@ class Owner(commands.Cog):
 					if stats_id not in msg_id:
 						await msg.delete()
 				await asyncio.sleep(60)
-			except Exception as e:
-				pass
-
-	async def arkadia_stats(self):
-		while True:
-			try:
-				channel = self.bot.get_channel(540086847842549770)
-				channels = 0
-				for server in self.bot.guilds:
-					for c in server.channels:
-						channels += 1
-				e = discord.Embed(title="", color=0x4A0E50)
-				e.description = f"💎 {self.bot.user.name} 💎\n" \
-				f"**Commands:** {len(self.bot.commands)}\n" \
-				f"**Modules:** {len(self.bot.extensions)}\n" \
-				f"**Servers:** {len(list(self.bot.guilds))}\n" \
-				f"**Users:** {len(list(self.bot.users))}\n"
-				leaderboard = ""
-				rank = 1
-				for user_id, xp in (sorted(self.guilds_data()[str(channel.guild.id)].items(), key=lambda kv: kv[1], reverse=True))[:8]:
-					name = "INVALID-USER"
-					user = self.bot.get_user(int(user_id))
-					if isinstance(user, discord.User):
-						name = user.name
-					level = str(xp / 750)
-					level = level[:level.find(".")]
-					leaderboard += "‎**‎#{}.** ‎`‎{}`: ‎{} | {}\n".format(rank, name, level, xp)
-					rank += 1
-				e.set_thumbnail(url=channel.guild.icon_url)
-				e.set_author(name=f'~~~====🥂🍸🍷Stats🍷🍸🥂====~~~')
-				e.add_field(name="◈ Discord ◈", value=f'__**Owner**__: Luck\n__**Members**__: {channel.guild.member_count}', inline=False)
-				fmt = "%m-%d-%Y %I:%M%p"
-				time = datetime.now()
-				time = time.strftime(fmt)
-				e.set_footer(text=f'Updated: {time}')
-				message = await channel.fetch_message(540096913995726848)
-				await message.edit(embed=e)
-				await asyncio.sleep(1500)
-			except Exception as e:
-				await self.bot.fetch_channel(534608853300412416).send(f"```{traceback.format_exc()}```{e}")
+			except AttributeError:
+				print(AttributeError)
+				await asyncio.sleep(60)
 
 	@commands.Cog.listener()
 	async def on_ready(self):
 		await asyncio.sleep(0.5)
 		self.bot.loop.create_task(self.stats())
-		self.bot.loop.create_task(self.arkadia_stats())
 
 def setup(bot):
 	bot.add_cog(Owner(bot))
