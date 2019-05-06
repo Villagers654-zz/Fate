@@ -49,6 +49,7 @@ class Welcome(commands.Cog):
 				".welcome enable\n"
 				".welcome disable\n"
 				".welcome config\n"
+				".welcome test\n"
 				"__**Utils:**__\n"
 				".welcome setchannel\n"
 				".welcome toggleimages\n"
@@ -166,6 +167,46 @@ class Welcome(commands.Cog):
 			f"**Custom Images:** {images}\n" \
 			f"**Format:** {format}\n"
 		await ctx.send(embed=e)
+
+	@_welcome.command(name='test')
+	async def _test(self, ctx):
+		guild_id = str(ctx.guild.id)
+		m = ctx.author
+		channel = ctx.channel
+		msg = self.format[guild_id]
+		msg = msg.replace("$MENTION", m.mention).replace("$SERVER", m.guild.name)
+		msg = msg.replace('!user', m.mention).replace('!server', m.guild.name)
+		path = os.getcwd() + "/data/images/reactions/welcome/" + random.choice(
+			os.listdir(os.getcwd() + "/data/images/reactions/welcome/"))
+		if guild_id in self.useimages:
+			e = discord.Embed(color=colors.fate())
+			if guild_id in self.images:
+				e.set_image(url=random.choice(self.images[guild_id]))
+				try:
+					await channel.send(msg, embed=e)
+				except discord.errors.Forbidden:
+					del self.useimages[guild_id]
+					del self.images[guild_id]
+					self.save_data()
+				else:
+					pass
+			else:
+				e.set_image(url="attachment://" + os.path.basename(path))
+				try:
+					await channel.send(msg, file=discord.File(path, filename=os.path.basename(path)), embed=e)
+				except discord.errors.Forbidden:
+					del self.useimages[guild_id]
+					self.save_data()
+				else:
+					pass
+		else:
+			try:
+				await channel.send(msg)
+			except discord.errors.Forbidden:
+				del self.toggle[guild_id]
+				self.save_data()
+			else:
+				pass
 
 	@_welcome.command(name="setchannel")
 	@commands.has_permissions(manage_guild=True)
