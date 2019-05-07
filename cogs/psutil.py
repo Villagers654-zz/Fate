@@ -26,7 +26,7 @@ class Psutil(commands.Cog):
 		e.set_thumbnail(url="https://cdn.discordapp.com/attachments/514213558549217330/514345278669848597/8yx98C.gif")
 		e.description = f"__**Storage**__: [{p.bytes2human(psutil.disk_usage('/').used)}/{p.bytes2human(psutil.disk_usage('/').total)}]\n" \
 			f"__**RAM**__: [{p.bytes2human(psutil.virtual_memory().used)}/{p.bytes2human(psutil.virtual_memory().total)}] ({psutil.virtual_memory().percent}%)\n" \
-			f"__**CPU**__: **Global**: {psutil.cpu_percent(interval=1)}% **Bot**: {f.cpu_percent(interval=1)}%\n" \
+			f"__**CPU**__: **Global**: {psutil.cpu_percent()}% **Bot**: {f.cpu_percent()}%\n" \
 			f'__**CPU Frequency**__: [{cpufreq}/{cpufreqmax}]\n'
 		e.set_footer(text=f'{[round(i) for i in psutil.cpu_percent(interval=1, percpu=True)]}')
 		await ctx.send(embed=e)

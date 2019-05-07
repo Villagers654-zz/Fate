@@ -1,5 +1,6 @@
 from discord.ext import commands
 from utils import colors, checks
+from urllib.parse import quote
 import requests
 import discord
 import asyncio
@@ -10,6 +11,33 @@ import os
 class Reactions(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
+
+	@commands.command(name='giphy', aliases=['gif'])
+	@commands.cooldown(2, 5)
+	async def giphy(self, ctx, *, text:str=None):
+		if text is None:
+			api = 'http://api.giphy.com/v1/gifs/random?&api_key=ZHFNQ6t7tKkCiaIjzImn69IvwQZD6TF2'
+		else:
+			api = 'http://api.giphy.com/v1/gifs/search?q={0}&api_key=ZHFNQ6t7tKkCiaIjzImn69IvwQZD6TF2'.format(quote(text))
+		load = json.loads(requests.get(api).content)
+		if len(load['data']) == 0:
+			await self.bot.say('No results')
+		else:
+			rand = False
+			try:
+				gif = random.choice(load['data'])
+			except:
+				gif = load['data']
+				rand = True
+			url = gif['url']
+			if rand:
+				gif_url = gif['image_url']
+			else:
+				gif_url = gif['images']['fixed_height']['url']
+			e = discord.Embed(color=colors.random())
+			e.set_image(url=url)
+			e.set_footer(text='Powered by Giphy', icon_url='https://steamuserimages-a.akamaihd.net/ugc/946207409568428741/B33DE674498D851EBAAE377473F6BF95E843603B/')
+			await ctx.send(embed=e)
 
 	@commands.command(name="tenor")
 	@commands.cooldown(1, 5, commands.BucketType.user)

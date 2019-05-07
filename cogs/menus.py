@@ -1,4 +1,4 @@
-from utils import bytes2human as p, config, utils
+from utils import bytes2human as p, config, colors
 from discord.ext import commands
 from os.path import isfile
 import platform
@@ -63,7 +63,7 @@ class Menus(commands.Cog):
 		users = len(list(self.bot.users))
 		path = os.getcwd() + "/data/images/banners/" + random.choice(os.listdir(os.getcwd() + "/data/images/banners/"))
 		bot_pid = psutil.Process(os.getpid())
-		e=discord.Embed(color=0x80b0ff)
+		e=discord.Embed(color=colors.fate())
 		e.set_author(name="Fate [Zerø]: Core Info", icon_url=self.bot.get_user(config.owner_id()).avatar_url)
 		if isfile('./data/stats.json'):
 			with open('./data/stats.json', 'r') as f:
@@ -74,10 +74,10 @@ class Menus(commands.Cog):
 		e.add_field(name="◈ Statistics ◈", value=f'Commands: [{len(self.bot.commands)}]\nModules: [{len(self.bot.extensions)}]\nServers: [{guilds}]\nUsers: [{users}]')
 		e.add_field(name="◈ Credits ◈", value="• Tothy ~ `rival`\n• Cortex ~ `teacher`\n• Discord.py ~ `existing`")
 		e.add_field(name="◈ Memory ◈", value=
-		f"__**Storage**__: [{p.bytes2human(psutil.disk_usage('/').used)}/{p.bytes2human(psutil.disk_usage('/').total)}]\n"
-		f"__**RAM**__: [{p.bytes2human(psutil.virtual_memory().used)}/{p.bytes2human(psutil.virtual_memory().total)}] ({psutil.virtual_memory().percent}%)\n"
-		f"__**Bot RAM**__: {p.bytes2human(bot_pid.memory_full_info().rss)} ({round(bot_pid.memory_percent())}%)\n"
-		f"__**CPU**__: **Global**: {psutil.cpu_percent(interval=1)}% **Bot**: {bot_pid.cpu_percent(interval=1)}%\n")
+			f"__**Storage**__: [{p.bytes2human(psutil.disk_usage('/').used)}/{p.bytes2human(psutil.disk_usage('/').total)}]\n"
+			f"__**RAM**__: [{p.bytes2human(psutil.virtual_memory().used)}/{p.bytes2human(psutil.virtual_memory().total)}] ({psutil.virtual_memory().percent}%)\n"
+			f"__**Bot RAM**__: {p.bytes2human(bot_pid.memory_full_info().rss)} ({round(bot_pid.memory_percent())}%)\n"
+			f"__**CPU**__: **Global**: {psutil.cpu_percent()}% **Bot**: {bot_pid.cpu_percent()}%\n")
 		e.add_field(name="◈ Uptime ◈", value="Uptime: {} Hours {} Minutes {} seconds".format(int(h), int(m), int(s)))
 		e.set_footer(text=f"Powered by Python {platform.python_version()} and Discord.py {discord.__version__}", icon_url="https://cdn.discordapp.com/attachments/501871950260469790/567779834533773315/RPrw70n.png")
 		msg = await ctx.send(file=discord.File(path, filename=os.path.basename(path)), embed=e)

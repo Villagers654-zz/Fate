@@ -35,7 +35,7 @@ class ChatBot(commands.Cog):
 			          outfile, sort_keys=True, indent=4, separators=(',', ': '))
 
 	@commands.group(name="chatbot")
-	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.guild_only()
 	@commands.has_permissions(manage_messages=True)
 	async def _chatbot(self, ctx):
