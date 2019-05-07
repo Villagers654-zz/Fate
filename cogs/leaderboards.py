@@ -6,6 +6,7 @@ from PIL import ImageFont
 from PIL import Image
 from time import time, monotonic
 import discord
+import asyncio
 import random
 import json
 import os
@@ -24,7 +25,6 @@ class Leaderboards(commands.Cog):
 		self.gvclb = {}
 		self.vclb = {}
 		self.cache = {}
-		self.cache_dir = './data/leaderboard.cache'
 		if isfile("./data/userdata/xp.json"):
 			with open("./data/userdata/xp.json", "r") as infile:
 				dat = json.load(infile)
@@ -35,19 +35,14 @@ class Leaderboards(commands.Cog):
 					self.monthly_guilds_data = dat["monthly_guilded"]
 					self.vclb = dat["vclb"]
 					self.gvclb = dat["gvclb"]
-		if isfile('./data/leaderboard.cache'):
-			with open(self.cache_dir, 'r') as cache:
-				self.cache = json.load(cache)
 
-	def save_xp(self):
-		with open("./data/userdata/xp.json", "w") as outfile:
-			json.dump({"global": self.global_data, "guilded": self.guilds_data, "monthly_global": self.monthly_global_data,
-			           "monthly_guilded": self.monthly_guilds_data, "vclb": self.vclb, "gvclb": self.gvclb},
-			          outfile, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
-
-	def save_cache(self):
-		with open(self.cache_dir, 'w') as f:
-			json.dump(self.cache, f, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
+	async def xp_dump_task(self):
+		while True:
+			with open("./data/userdata/xp.json", "w") as outfile:
+				json.dump({"global": self.global_data, "guilded": self.guilds_data, "monthly_global": self.monthly_global_data,
+			               "monthly_guilded": self.monthly_guilds_data, "vclb": self.vclb, "gvclb": self.gvclb},
+				          outfile, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
+			await asyncio.sleep(60)
 
 	def msg_footer(self):
 		return random.choice(["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready",
@@ -180,11 +175,9 @@ class Leaderboards(commands.Cog):
 	async def _mleaderboard(self, ctx):
 		result = await self.run_xp_cleanup()
 		guild_id = str(ctx.guild.id)
-		users = list(self.monthly_guilds_data[guild_id])
 		xp = {}
-		for user in users:
-			for msg in self.monthly_guilds_data[guild_id][user]:
-				xp[user] = len(self.monthly_guilds_data[guild_id][user])
+		for user in list(self.monthly_guilds_data[guild_id]):
+			xp[user] = len(self.monthly_guilds_data[guild_id][user])
 		e = discord.Embed(title="Monthly Leaderboard", color=0x4A0E50)
 		e.description = ""
 		rank = 1
@@ -209,11 +202,9 @@ class Leaderboards(commands.Cog):
 	@commands.bot_has_permissions(embed_links=True)
 	async def _gmleaderboard(self, ctx):
 		result = await self.run_xp_cleanup()
-		users = list(self.monthly_global_data)
 		xp = {}
-		for user in users:
-			for msg in self.monthly_global_data[user]:
-				xp[user] = len(self.monthly_global_data[user])
+		for user in list(self.monthly_global_data):
+			xp[user] = len(self.monthly_global_data[user])
 		e = discord.Embed(color=0x4A0E50)
 		e.title = 'Global Monthly Leaderboard'
 		e.description = ""
@@ -319,11 +310,9 @@ class Leaderboards(commands.Cog):
 		e.add_field(name='Guild Leaderboard', value=ggleaderboard, inline=False)
 		mleaderboard = ''
 		guild_id = str(ctx.guild.id)
-		users = list(self.monthly_guilds_data[guild_id])
 		xp = {}
-		for user in users:
-			for msg in self.monthly_guilds_data[guild_id][user]:
-				xp[user] = len(self.monthly_guilds_data[guild_id][user])
+		for user in list(self.monthly_guilds_data[guild_id]):
+			xp[user] = len(self.monthly_guilds_data[guild_id][user])
 		rank = 1
 		for user_id, xp in (sorted(xp.items(), key=lambda kv: kv[1], reverse=True))[:15]:
 			name = "INVALID-USER"
@@ -336,11 +325,9 @@ class Leaderboards(commands.Cog):
 			rank += 1
 		e.add_field(name='Monthly Leaderboard', value=mleaderboard, inline=False)
 		gmleaderboard = ''
-		users = list(self.monthly_global_data)
 		xp = {}
-		for user in users:
-			for msg in self.monthly_global_data[user]:
-				xp[user] = len(self.monthly_global_data[user])
+		for user in list(self.monthly_global_data):
+			xp[user] = len(self.monthly_global_data[user])
 		rank = 1
 		for user_id, xp in (sorted(xp.items(), key=lambda kv: kv[1], reverse=True))[:15]:
 			name = 'INVALID-USER'
@@ -423,9 +410,8 @@ class Leaderboards(commands.Cog):
 
 	@commands.Cog.listener()
 	async def on_ready(self):
-		if isfile(self.cache_dir):
-			os.remove(self.cache_dir)
-		self.cache = {}
+		await asyncio.sleep(1)
+		await self.bot.loop.create_task(self.xp_dump_task())
 		await self.run_xp_cleanup()
 
 	@commands.Cog.listener()
@@ -453,7 +439,6 @@ class Leaderboards(commands.Cog):
 					count = await self.subtract_spam_from_monthly(guild_id, user_id)
 					self.global_data[user_id] -= count
 					self.guilds_data[guild_id][user_id] -= count
-					self.save_xp()
 					print(f"{m.author} is spamming")
 
 				# anti macro
@@ -473,7 +458,6 @@ class Leaderboards(commands.Cog):
 							count = await self.subtract_spam_from_monthly(guild_id, user_id)
 							self.global_data[user_id] -= count
 							self.guilds_data[guild_id][user_id] -= count
-							self.save_xp()
 							print(f"{m.author} is using a macro")
 
 				if user_id not in self.cd:
@@ -497,8 +481,6 @@ class Leaderboards(commands.Cog):
 					self.monthly_global_data[author_id][msg_id] = time()
 					self.monthly_guilds_data[guild_id][author_id][msg_id] = time()
 					self.cd[author_id] = time() + 10
-
-					self.save_xp()
 
 	@commands.Cog.listener()
 	async def on_voice_state_update(self, member, before, after):
@@ -588,7 +570,6 @@ class Leaderboards(commands.Cog):
 									self.cache[channel_id][member_id] = datetime.now()
 					else:
 						self.cache[channel_id][user_id] = datetime.now()
-				self.save_xp()
 
 def setup(bot: commands.Bot):
 	bot.add_cog(Leaderboards(bot))
