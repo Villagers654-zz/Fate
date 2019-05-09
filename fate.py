@@ -8,8 +8,13 @@ import asyncio
 import random
 import json
 import time
+import os
 
 # ~== Core ==~
+
+def get_stats():
+	with open('./data/stats.json', 'r') as stats:
+		return json.load(stats)
 
 def get_config():
 	with open('./data/config.json', 'r') as config:
@@ -39,6 +44,8 @@ bot = commands.Bot(command_prefix=get_prefix, case_insensitive=True, max_message
 bot.START_TIME = time.time()
 bot.remove_command('help')
 bot.errorcount = 0
+bot.get_stats = get_stats()
+bot.get_config = get_config()
 error = False
 
 async def status_task():
@@ -76,8 +83,8 @@ async def on_ready():
 	cprint(datetime.datetime.now().strftime("%m-%d-%Y %I:%M%p"), 'yellow')
 	if error:
 		await bot.get_channel(503902845741957131).send(f"```{error}```")
-	with open("./data/stats.json", "w") as f:
-		json.dump({"commands": 0}, f, ensure_ascii=False)
+	with open('./data/stats.json', 'w') as f:
+		json.dump({'commands': 0}, f, ensure_ascii=False)
 
 @bot.event
 async def on_guild_join(guild: discord.Guild):
@@ -107,10 +114,10 @@ async def on_guild_remove(guild: discord.Guild):
 
 @bot.event
 async def on_command(ctx):
-	with open("./data/stats.json", "r") as f:
-		commands = json.load(f)["commands"]
-	with open("./data/stats.json", "w") as f:
-		json.dump({"commands": commands + 1}, f, ensure_ascii=False)
+	stats = bot.get_stats  # type: dict
+	stats['commands'] += 1
+	with open('./data/stats.json', 'w') as f:
+		json.dump(stats, f, ensure_ascii=False)
 
 # ~== Startup ==~
 
