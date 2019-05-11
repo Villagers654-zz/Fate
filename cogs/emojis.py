@@ -45,6 +45,7 @@ class Emojis(commands.Cog):
 					image = requests.get(attachment.url).content
 					await ctx.guild.create_custom_emoji(name=name, image=image, reason=ctx.author.name)
 					await ctx.send(f"Added `{emoji_name}` to emotes")
+					break
 				except Exception as e:
 					if '256 kb' in str(e):
 						e = discord.Embed(color=colors.fate())
@@ -53,9 +54,9 @@ class Emojis(commands.Cog):
 						await ctx.send(f'Failed to add `{emoji_name}`', embed=e)
 						break
 					if attempts > 3:
-						await ctx.send(f'Failed to add `{emoji_name}`')
+						await ctx.send(e)
 						break
-					await ctx.send(f'Failed to add `{emoji_name}`, I\'ll try again')
+					await ctx.send(e)
 				await asyncio.sleep(2)
 
 	@commands.command(name="stealemoji", aliases=["stealemote", "fromemote", "fromemoji"])

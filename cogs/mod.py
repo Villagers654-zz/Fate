@@ -64,7 +64,7 @@ class Mod(commands.Cog):
 
 	@commands.Cog.listener()
 	async def on_ready(self):
-		for user_id in self.timers.keys():
+		for user_id in list(self.timers.keys()):
 			await self.bot.get_channel(config.server("log")).send(f"Timer: {user_id}", delete_after=3)
 
 	@commands.Cog.listener()
@@ -122,114 +122,133 @@ class Mod(commands.Cog):
 		if amount > 1000:
 			return await ctx.send("You cannot purge more than 1000 messages at a time")
 		channel_id = str(ctx.channel.id)
-		if channel_id not in self.purge:
+		if channel_id in self.purge:
+			return await ctx.send('I\'m already purging')
+		else:
 			self.purge[channel_id] = True
+		try:
 			await ctx.message.channel.purge(before=ctx.message, limit=amount)
 			await ctx.message.delete()
-			del self.purge[channel_id]
-			return await ctx.send("{}, successfully purged {} messages".format(ctx.author.name, amount), delete_after=5)
-		if self.purge[channel_id] is True:
-			return await ctx.send("I'm already purging..")
-		if self.purge[channel_id] is False:
-			self.purge[channel_id] = True
-			await ctx.message.channel.purge(before=ctx.message, limit=amount)
-			await ctx.message.delete()
-			await ctx.send("{}, successfully purged {} messages".format(ctx.author.name, amount), delete_after=5)
-			del self.purge[channel_id]
+			await ctx.send(f'{ctx.author.name}, successfully purged {amount} messages', delete_after=5)
+		except Exception as e:
+			await ctx.send(e)
+		del self.purge[channel_id]
 
 	@commands.command(name="purge_user", description="Usage: `.purge_user @user amount`")
 	@commands.cooldown(1, 5, commands.BucketType.channel)
 	@commands.guild_only()
 	@commands.has_permissions(manage_messages=True)
 	@commands.bot_has_permissions(manage_messages=True)
-	async def _purge_user(self, ctx, user: discord.Member, amount: int):
+	async def purge_user(self, ctx, user: discord.Member, amount: int):
 		if amount > 250:
 			return await ctx.send("You cannot purge more than 250 user specific at a time")
 		channel_id = str(ctx.channel.id)
-		current_position = 0
-		if channel_id not in self.purge:
+		if channel_id in self.purge:
+			return await ctx.send('I\'m already purging')
+		else:
 			self.purge[channel_id] = True
-			async for msg in ctx.channel.history(limit=10000):
+		position = 0
+		try:
+			async for msg in ctx.channel.history(limit=1000):
 				if msg.author.id is user.id:
 					await msg.delete()
-					current_position += 1
-					if current_position >= amount:
-						del self.purge[channel_id]
-						await ctx.send(f"{ctx.author.display_name}, successfully purged {amount} images", delete_after=5)
-						return await ctx.message.delete()
-		if channel_id in self.purge:
-			return await ctx.send("I'm already purging..")
+					position += 1
+					if position == amount:
+						break
+			await ctx.send(f"{ctx.author.display_name} purged {amount} images", delete_after=5)
+			return await ctx.message.delete()
+		except Exception as e:
+			await ctx.send(e)
+		finally:
+			del self.purge[channel_id]
+		await ctx.send(f'{ctx.author.display_name} purged {position} messages')
 
 	@commands.command(name="purge_images")
 	@commands.cooldown(1, 5, commands.BucketType.channel)
 	@commands.guild_only()
 	@commands.has_permissions(manage_messages=True)
 	@commands.bot_has_permissions(manage_messages=True)
-	async def _purge_images(self, ctx, amount: int):
+	async def purge_images(self, ctx, amount: int):
 		if amount > 250:
 			return await ctx.send("You cannot purge more than 250 images at a time")
 		channel_id = str(ctx.channel.id)
-		current_position = 0
-		if channel_id not in self.purge:
+		if channel_id in self.purge:
+			return await ctx.send('I\'m already purging')
+		else:
 			self.purge[channel_id] = True
-			async for msg in ctx.channel.history(limit=10000):
+		position = 0
+		try:
+			async for msg in ctx.channel.history(limit=1000):
 				if msg.attachments:
 					await msg.delete()
-					current_position += 1
-					if current_position == 250:
-						if current_position >= amount:
-							del self.purge[channel_id]
-							await ctx.send(f"{ctx.author.display_name}, successfully purged {amount} messages", delete_after=5)
-							return await ctx.message.delete()
-		if channel_id in self.purge:
-			return await ctx.send("I'm already purging..")
+					position += 1
+					if position == amount:
+						break
+			await ctx.send(f"{ctx.author.display_name}, successfully purged {amount} images", delete_after=5)
+			return await ctx.message.delete()
+		except Exception as e:
+			await ctx.send(e)
+		finally:
+			del self.purge[channel_id]
+		await ctx.send(f'{ctx.author.display_name} purged {position} messages')
 
 	@commands.command(name="purge_embeds")
 	@commands.cooldown(1, 5, commands.BucketType.channel)
 	@commands.guild_only()
 	@commands.has_permissions(manage_messages=True)
 	@commands.bot_has_permissions(manage_messages=True)
-	async def _purge_embeds(self, ctx, amount: int):
+	async def purge_embeds(self, ctx, amount: int):
 		if amount > 250:
 			return await ctx.send("You cannot purge more than 250 embeds at a time")
 		channel_id = str(ctx.channel.id)
-		current_position = 0
-		if channel_id not in self.purge:
+		if channel_id in self.purge:
+			return await ctx.send('I\'m already purging')
+		else:
 			self.purge[channel_id] = True
-			async for msg in ctx.channel.history(limit=10000):
+		position = 0
+		try:
+			async for msg in ctx.channel.history(limit=1000):
 				if msg.embeds:
 					await msg.delete()
-					current_position += 1
-					if current_position >= amount:
-						del self.purge[channel_id]
-						await ctx.send(f"{ctx.author.display_name}, successfully purged {amount} embeds", delete_after=5)
-						return await ctx.message.delete()
-		if channel_id in self.purge:
-			return await ctx.send("I'm already purging..")
+					position += 1
+					if position == amount:
+						break
+			await ctx.send(f"{ctx.author.display_name}, successfully purged {amount} embeds", delete_after=5)
+			return await ctx.message.delete()
+		except Exception as e:
+			await ctx.send(e)
+		finally:
+			del self.purge[channel_id]
+		await ctx.send(f'{ctx.author.display_name} purged {position} messages')
 
 	@commands.command(name="purge_bots")
 	@commands.cooldown(1, 5, commands.BucketType.channel)
 	@commands.guild_only()
 	@commands.has_permissions(manage_messages=True)
 	@commands.bot_has_permissions(manage_messages=True)
-	async def _purge_bots(self, ctx, amount: int):
+	async def purge_bots(self, ctx, amount: int):
 		if amount > 250:
 			return await ctx.send("You cannot purge more than 250 bot messages at a time")
 		channel_id = str(ctx.channel.id)
-		current_position = 0
-		if channel_id not in self.purge:
+		if channel_id in self.purge:
+			return await ctx.send('I\'m already purging')
+		else:
 			self.purge[channel_id] = True
-			async for msg in ctx.channel.history(limit=10000):
+		position = 0
+		try:
+			async for msg in ctx.channel.history(limit=1000):
 				if msg.author.bot:
 					await msg.delete()
-					current_position += 1
-					if current_position == 250:
-						if current_position >= amount:
-							del self.purge[channel_id]
-							await ctx.send("{}, successfully purged {} bot messages".format(ctx.author.name, amount), delete_after=5)
-							return await ctx.message.delete()
-		if channel_id in self.purge:
-			return await ctx.send("I'm already purging..")
+					position += 1
+					if position == amount:
+						break
+			await ctx.send(f"{ctx.author.display_name}, successfully purged {amount} bot messages", delete_after=5)
+			return await ctx.message.delete()
+		except Exception as e:
+			await ctx.send(e)
+		finally:
+			del self.purge[channel_id]
+		await ctx.send(f'{ctx.author.display_name} purged {position} messages')
 
 	@commands.command(name="kick")
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -272,7 +291,7 @@ class Mod(commands.Cog):
 		else:
 			try:
 				await user.send(f"You have been banned from **{ctx.guild.name}** by **{ctx.author.name}** for `{reason}`")
-			except Exception as e:
+			except:
 				pass
 
 	@commands.command(name="softban")
@@ -294,7 +313,7 @@ class Mod(commands.Cog):
 		else:
 			try:
 				await user.send(f"You have been soft-banned from **{ctx.guild.name}** by **{ctx.author.name}** for `{reason}`")
-			except Exception as e:
+			except:
 				pass
 		await user.unban(reason="softban")
 
@@ -365,200 +384,57 @@ class Mod(commands.Cog):
 		else:
 			await ctx.send(failed)
 
-	@commands.command(name="addrole")
+	@commands.command(name='role')
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.guild_only()
 	@commands.has_permissions(manage_roles=True)
 	@commands.bot_has_permissions(manage_roles=True)
-	async def _addrole(self, ctx, arg1: commands.clean_content=None, arg2: commands.clean_content=None):
-		if arg2 is not None:
-			arg1 = arg1  # type: str
-			arg2 = arg2  # type: str
-			arg1 = arg1.replace("@", "")
-			arg2 = arg2.replace("@", "")
-		# giving the author a role
-		if arg2 is None:
-			for i in ctx.guild.roles:
-				if i.name.lower() == arg1.lower():
-					for r in ctx.author.roles:
-						if i.name == r.name:
-							return await ctx.send("You already have this role")
-					if i.position >= ctx.author.top_role.position:
-						return await ctx.send("This role is above your paygrade, take a seat")
-					await ctx.author.add_roles(i)
-					return await ctx.send(f"Gave the role **{i.name}** to **{ctx.author.display_name}**")
-		# giving a non author the role
+	async def role(self, ctx, user:commands.clean_content, role:commands.clean_content):
+		user_name = str(user).lower().replace('@', '')
+		user = None  # type: discord.Member
 		for member in ctx.guild.members:
-			if arg1.lower() == member.name.lower():
-				for i in ctx.guild.roles:
-					if i.name.lower() == arg2.lower():
-						if i.name.lower == arg2.lower():
-							for role in member.roles:
-								if arg2 == role.name.lower():
-									return await ctx.send("User already has the role")
-							for role in member.roles:
-								if arg2 in role.name.lower():
-									return await ctx.send("User already has the role")
-						if arg2.lower() in i.name.lower():
-							for role in member.roles:
-								if arg2 == role.name.lower():
-									return await ctx.send("User already has the role")
-							for role in member.roles:
-								if arg2 in role.name.lower():
-									return await ctx.send("User already has the role")
-						if i.position >= ctx.author.top_role.position:
-							return await ctx.send("This role is above your paygrade, take a seat")
-						await member.add_roles(i)
-						return await ctx.send(f"Gave the role **{i.name}** to **{member.display_name}**")
-				for i in ctx.guild.roles:
-					if arg2.lower() in i.name.lower():
-						if i.name.lower == arg2.lower():
-							for role in member.roles:
-								if arg2 == role.name.lower():
-									return await ctx.send("User already has the role")
-							for role in member.roles:
-								if arg2 in role.name.lower():
-									return await ctx.send("User already has the role")
-						if arg2.lower() in i.name.lower():
-							for role in member.roles:
-								if arg2 == role.name.lower():
-									return await ctx.send("User already has the role")
-							for role in member.roles:
-								if arg2 in role.name.lower():
-									return await ctx.send("User already has the role")
-						if i.position >= ctx.author.top_role.position:
-							return await ctx.send("This role is above your paygrade, take a seat")
-						await member.add_roles(i)
-						return await ctx.send(f"Gave the role **{i.name}** to **{member.display_name}**")
-			if arg1.lower() in member.name.lower():
-				for i in ctx.guild.roles:
-					if i.name.lower() == arg2.lower():
-						if i.name.lower == arg2.lower():
-							for role in member.roles:
-								if arg2 == role.name.lower():
-									return await ctx.send("User already has the role")
-							for role in member.roles:
-								if arg2 in role.name.lower():
-									return await ctx.send("User already has the role")
-						if arg2.lower() in i.name.lower():
-							for role in member.roles:
-								if arg2 == role.name.lower():
-									return await ctx.send("User already has the role")
-							for role in member.roles:
-								if arg2 in role.name.lower():
-									return await ctx.send("User already has the role")
-						if i.position >= ctx.author.top_role.position:
-							return await ctx.send("This role is above your paygrade, take a seat")
-						await member.add_roles(i)
-						return await ctx.send(f"Gave the role **{i.name}** to **{member.display_name}**")
-				for i in ctx.guild.roles:
-					if arg2.lower() in i.name.lower():
-						if i.name.lower == arg2.lower():
-							for role in member.roles:
-								if arg2 == role.name.lower():
-									return await ctx.send("User already has the role")
-							for role in member.roles:
-								if arg2 in role.name.lower():
-									return await ctx.send("User already has the role")
-						if arg2.lower() in i.name.lower():
-							for role in member.roles:
-								if arg2 == role.name.lower():
-									return await ctx.send("User already has the role")
-							for role in member.roles:
-								if arg2 in role.name.lower():
-									return await ctx.send("User already has the role")
-						if i.position >= ctx.author.top_role.position:
-							return await ctx.send("This role is above your paygrade, take a seat")
-						await member.add_roles(i)
-						return await ctx.send(f"Gave the role **{i.name}** to **{member.display_name}**")
-		await ctx.send("Either the member or role was not found")
-
-	@commands.command(name="removerole")
-	@commands.cooldown(1, 3, commands.BucketType.user)
-	@commands.guild_only()
-	@commands.has_permissions(manage_roles=True)
-	@commands.bot_has_permissions(manage_roles=True)
-	async def _removerole(self, ctx, arg1: commands.clean_content=None, arg2: commands.clean_content=None):
-		if arg2 is not None:
-			arg1 = arg1  # type: str
-			arg2 = arg2  # type: str
-			arg1 = arg1.replace("@", "")
-			arg2 = arg2.replace("@", "")
-		# removing the role from the author
-		if arg2 is None:
-			for i in ctx.guild.roles:
-				if arg1.lower() == i.name.lower():
-					if i.position >= ctx.author.top_role.position:
-						return await ctx.send("This role is above your paygrade, take a seat")
-					if i not in ctx.author.roles:
-						return await ctx.send(f"You don't have the role **{i.name}**")
-					await ctx.author.remove_roles(i)
-					return await ctx.send(f"Removed the role **{i.name}** from **{ctx.author.display_name}**")
-				if arg1.lower() in i.name.lower():
-					if i.position >= ctx.author.top_role.position:
-						return await ctx.send("This role is above your paygrade, take a seat")
-					if i not in ctx.author.roles:
-						return await ctx.send(f"You don't have the role **{i.name}**")
-					await ctx.author.remove_roles(i)
-					return await ctx.send(f"Removed the role **{i.name}** from **{ctx.author.display_name}**")
-		# removing the role from a different user
-		for member in ctx.guild.members:
-			if arg1.lower() == member.name.lower():
-				for r in ctx.guild.roles:
-					if arg2.lower() == r.name.lower():
-						if r.position >= ctx.author.top_role.position:
-							return await ctx.send("This role is above your paygrade, take a seat")
-						if r not in member.roles:
-							return await ctx.send(f"**{member.name}** does'nt have the role **{r.name}**")
-						await member.remove_roles(r)
-						return await ctx.send(f"Removed the role **{r.name}** from **{member.display_name}**")
-					if arg2.lower() in r.name.lower():
-						if r.position >= ctx.author.top_role.position:
-							return await ctx.send("This role is above your paygrade, take a seat")
-						if r not in member.roles:
-							return await ctx.send(f"**{member.name}** does'nt have the role **{r.name}**")
-						await member.remove_roles(r)
-						return await ctx.send(f"Removed the role **{r.name}** from **{member.display_name}**")
-			if arg1.lower() in member.name.lower():
-				for r in ctx.guild.roles:
-					if arg2.lower() == r.name.lower():
-						if r.position >= ctx.author.top_role.position:
-							return await ctx.send("This role is above your paygrade, take a seat")
-						if r not in member.roles:
-							return await ctx.send(f"**{member.name}** does'nt have the role **{r.name}**")
-						await member.remove_roles(r)
-						return await ctx.send(f"Removed the role **{r.name}** from **{member.display_name}**")
-					if arg2.lower() in r.name.lower():
-						if r.position >= ctx.author.top_role.position:
-							return await ctx.send("This role is above your paygrade, take a seat")
-						if r not in member.roles:
-							return await ctx.send(f"**{member.name}** does'nt have the role **{r.name}**")
-						await member.remove_roles(r)
-						return await ctx.send(f"Removed the role **{r.name}** from **{member.display_name}**")
-		await ctx.send("There was an error finding the user or the role")
+			if user_name in member.name.lower():
+				user = member
+				break
+		if not user:
+			return await ctx.send('User not found')
+		role_name = str(role).lower().replace('@', '')
+		role = None  # type: discord.Role
+		for guild_role in ctx.guild.roles:
+			if role_name in guild_role.name.lower():
+				role = guild_role
+				break
+		if not role:
+			return await ctx.send('Role not fount')
+		if user.top_role.position >= ctx.author.top_role.position:
+			return await ctx.send('This user is above your paygrade, take a seat')
+		if role.position >= ctx.author.top_role.position:
+			return await ctx.send('This role is above your paygrade, take a seat')
+		if role in user.roles:
+			await user.remove_roles(role)
+		else:
+			await user.add_roles(role)
+		await ctx.send('👍')
 
 	@commands.command(name="massrole")
-	@commands.cooldown(1, 10, commands.BucketType.guild)
+	@commands.cooldown(1, 25, commands.BucketType.guild)
 	@commands.guild_only()
 	@commands.has_permissions(manage_roles=True)
 	@commands.bot_has_permissions(manage_roles=True)
-	async def massrole(self, ctx, target_role: str):
-		target_role = target_role.replace("<@&", "").replace(">", "").replace("<@", "").lower()
-		for role in ctx.guild.roles:
-			if target_role == role.name.lower():
-				target_role = role
+	async def massrole(self, ctx, role: commands.clean_content):
+		target_name = str(role).lower().replace('@', '')
+		role = None  # type: discord.Role
+		for guild_role in ctx.guild.roles:
+			if target_name in guild_role.name.lower():
+				role = guild_role
 				break
-		if not isinstance(target_role, discord.Role):
-			for role in ctx.guild.roles:
-				if target_role in role.name.lower():
-					target_role = role
-					break
-		if not isinstance(target_role, discord.Role):
+		if not role:
 			await ctx.send("Role not found")
 		await ctx.message.add_reaction("🖍")
 		for member in ctx.guild.members:
-			if member.top_role.position < utils.Bot().user(ctx).top_role.position:
-				await member.add_roles(target_role)
+			bot = ctx.guild.get_member(self.bot.user.id)
+			if member.top_role.position < bot.top_role.position:
+				await member.add_roles(role)
 				await asyncio.sleep(1)
 		await ctx.message.add_reaction("🏁")
 
@@ -745,6 +621,8 @@ class Mod(commands.Cog):
 					user_id = member.id
 					user = ctx.guild.get_member(user_id)
 					break
+		if not user:
+			return await ctx.send("User not found")
 		if user.top_role.position >= ctx.author.top_role.position:
 			return await ctx.send("That user is above your paygrade, take a seat")
 		guild_id = str(ctx.guild.id)
@@ -788,7 +666,7 @@ class Mod(commands.Cog):
 			f"Punishment: {punishment}\n"
 			f"Next Punishment: {next_punishment}")
 		try:
-			await user.send(f"You have been warned in **{ctx.guild.name}** for `{reason}`")
+			await user.send(f"You've been warned in **{ctx.guild.name}** for `{reason}`")
 		except:
 			pass
 		self.save_json()

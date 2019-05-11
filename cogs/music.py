@@ -200,7 +200,7 @@ class Music(commands.Cog):
     @commands.command(name='previous', aliases=['pv'])
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
-    @commands.has_permissions(manage_messages=True)
+    @commands.bot_has_permissions(manage_messages=True)
     async def _previous(self, ctx):
         """ Plays the previous song. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
@@ -217,7 +217,7 @@ class Music(commands.Cog):
     @commands.command(name='playnow', aliases=['pn'])
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
-    @commands.has_permissions(embed_links=True, manage_messages=True)
+    @commands.bot_has_permissions(embed_links=True, manage_messages=True)
     async def _playnow(self, ctx, *, query: str):
         """ Plays immediately a song. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
@@ -245,7 +245,7 @@ class Music(commands.Cog):
     @commands.command(name='playat', aliases=['pa'])
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
-    @commands.has_permissions(embed_links=True, manage_messages=True)
+    @commands.bot_has_permissions(embed_links=True, manage_messages=True)
     async def _playat(self, ctx, index: int):
         """ Plays the queue from a specific point. Disregards tracks before the index. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
@@ -265,7 +265,7 @@ class Music(commands.Cog):
     @commands.command(name="forward", aliases=["seek"])
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
-    @commands.has_permissions(manage_messages=True)
+    @commands.bot_has_permissions(manage_messages=True)
     async def _forward(self, ctx, *, time: str):
         """ Seeks to a given position in a track. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
@@ -290,7 +290,7 @@ class Music(commands.Cog):
     @commands.command(name='skip', aliases=['forceskip', 'fs'])
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
-    @commands.has_permissions(manage_messages=True)
+    @commands.bot_has_permissions(manage_messages=True)
     async def _skip(self, ctx):
         """ Skips the current track. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
@@ -306,7 +306,7 @@ class Music(commands.Cog):
     @commands.command(name='stop')
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
-    @commands.has_permissions(manage_messages=True)
+    @commands.bot_has_permissions(manage_messages=True)
     async def _stop(self, ctx):
         """ Stops the player and clears its queue. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
@@ -323,7 +323,7 @@ class Music(commands.Cog):
     @commands.command(name='now', aliases=['np', 'n', 'playing'])
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
-    @commands.has_permissions(embed_links=True, manage_messages=True)
+    @commands.bot_has_permissions(embed_links=True, manage_messages=True)
     async def _now(self, ctx):
         """ Shows some stats about the currently playing song. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
@@ -343,7 +343,7 @@ class Music(commands.Cog):
     @commands.command(name='queue', aliases=['q'])
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
-    @commands.has_permissions(embed_links=True, manage_messages=True)
+    @commands.bot_has_permissions(embed_links=True, manage_messages=True)
     async def _queue(self, ctx, page: int = 1):
         """ Shows the player's queue. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
@@ -369,7 +369,7 @@ class Music(commands.Cog):
     @commands.command(name='pause', aliases=['resume'])
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
-    @commands.has_permissions(manage_messages=True)
+    @commands.bot_has_permissions(manage_messages=True)
     async def _pause(self, ctx):
         """ Pauses/Resumes the current track. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
@@ -391,7 +391,7 @@ class Music(commands.Cog):
     @commands.command(name='volume', aliases=['vol'])
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
-    @commands.has_permissions(manage_messages=True)
+    @commands.bot_has_permissions(manage_messages=True)
     async def _volume(self, ctx, volume: int = None):
         """ Changes the player's volume. Must be between 0 and 1000. Error Handling for that is done by Lavalink. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
@@ -407,7 +407,7 @@ class Music(commands.Cog):
     @commands.command(name='shuffle')
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
-    @commands.has_permissions(manage_messages=True)
+    @commands.bot_has_permissions(manage_messages=True)
     async def _shuffle(self, ctx):
         """ Shuffles the player's queue. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
@@ -423,7 +423,7 @@ class Music(commands.Cog):
     @commands.command(name='repeat', aliases=['loop'])
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
-    @commands.has_permissions(manage_messages=True)
+    @commands.bot_has_permissions(manage_messages=True)
     async def _repeat(self, ctx):
         """ Repeats the current song until the command is invoked again. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
@@ -439,7 +439,7 @@ class Music(commands.Cog):
     @commands.command(name='remove')
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
-    @commands.has_permissions(manage_messages=True)
+    @commands.bot_has_permissions(manage_messages=True)
     async def _remove(self, ctx, index: int):
         """ Removes an item from the player's queue with the given index. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
@@ -460,7 +460,7 @@ class Music(commands.Cog):
     @commands.command(name='find')
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
-    @commands.has_permissions(embed_links=True, manage_messages=True)
+    @commands.bot_has_permissions(embed_links=True, manage_messages=True)
     async def _find(self, ctx, *, query):
         """ Lists the first 10 search results from a given query. """
         if not query.startswith('ytsearch:') and not query.startswith('scsearch:'):
@@ -484,7 +484,7 @@ class Music(commands.Cog):
     @commands.command(name='disconnect', aliases=['dc'])
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
-    @commands.has_permissions(manage_messages=True)
+    @commands.bot_has_permissions(manage_messages=True)
     async def _disconnect(self, ctx):
         """ Disconnects the player from the voice channel and clears its queue. """
         player = self.bot.lavalink.players.get(ctx.guild.id)

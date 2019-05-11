@@ -1,6 +1,6 @@
 from utils import bytes2human as p, config, colors
+from utils.utils import bytes2human
 from discord.ext import commands
-from os.path import isfile
 import platform
 import discord
 import asyncio
@@ -13,6 +13,13 @@ import os
 class Menus(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
+
+	def update_data_usage(self, path):
+		file_size = os.path.getsize(path)
+		stats = self.bot.get_stats  # type: dict
+		stats['data_usage'] += file_size
+		with open('./data/stats.json', 'w') as f:
+			json.dump(stats, f, ensure_ascii=False)
 
 	async def wait_for_dismissal(self, ctx, msg):
 		def pred(m):
@@ -65,9 +72,8 @@ class Menus(commands.Cog):
 		bot_pid = psutil.Process(os.getpid())
 		e=discord.Embed(color=colors.fate())
 		e.set_author(name="Fate [Zerø]: Core Info", icon_url=self.bot.get_user(config.owner_id()).avatar_url)
-		if isfile('./data/stats.json'):
-			with open('./data/stats.json', 'r') as f:
-				e.description = f'Commands Used: {json.load(f)["commands"]}'
+		stats = self.bot.get_stats  # type: dict
+		e.description = f'Commands Used: {stats["commands"]}'
 		e.set_thumbnail(url=self.bot.user.avatar_url)
 		e.set_image(url="attachment://" + os.path.basename(path))
 		e.add_field(name="◈ Summary ◈", value="Fate is a ~~multipurpose~~ hybrid bot created for ~~sexual assault~~ fun", inline=False)
@@ -81,6 +87,7 @@ class Menus(commands.Cog):
 		e.add_field(name="◈ Uptime ◈", value="Uptime: {} Hours {} Minutes {} seconds".format(int(h), int(m), int(s)))
 		e.set_footer(text=f"Powered by Python {platform.python_version()} and Discord.py {discord.__version__}", icon_url="https://cdn.discordapp.com/attachments/501871950260469790/567779834533773315/RPrw70n.png")
 		msg = await ctx.send(file=discord.File(path, filename=os.path.basename(path)), embed=e)
+		self.update_data_usage(path)
 		await self.wait_for_dismissal(ctx, msg)
 
 	@commands.command(name="discords")

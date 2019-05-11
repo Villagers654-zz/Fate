@@ -1,6 +1,6 @@
 from discord.ext import commands
 from os.path import isfile
-from utils import colors, utils
+from utils import colors
 from time import time
 import discord
 import asyncio
@@ -10,6 +10,7 @@ class Anti_Spam(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.toggle = {}
+		self.blacklist = {}
 		self.roles = {}
 		self.status = {}
 		self.mutes = {}
@@ -20,6 +21,8 @@ class Anti_Spam(commands.Cog):
 				dat = json.load(f)
 				if "toggle" in dat:
 					self.toggle = dat["toggle"]
+				if 'blacklist' in dat:
+					self.blacklist = dat['blacklist']
 
 	def save_data(self):
 		with open("./data/userdata/anti_spam.json", "w") as f:
@@ -37,7 +40,9 @@ class Anti_Spam(commands.Cog):
 			e.set_thumbnail(url=ctx.guild.icon_url)
 			e.add_field(name="Usage", value=
 				".anti_spam enable\n"
-			    ".anti_spam disable", inline=False)
+			    ".anti_spam disable\n"
+				".anti_spam blockchannel\n"
+				".anti_spam unblockchannel", inline=False)
 			e.set_footer(text=f"Current Status: {toggle}")
 			await ctx.send(embed=e)
 
@@ -63,6 +68,35 @@ class Anti_Spam(commands.Cog):
 		await ctx.send("Disabled anti spam")
 		self.save_data()
 
+	@_anti_spam.command(name='blockchannel')
+	@commands.has_permissions(manage_messages=True)
+	async def _block_channel(self, ctx, channel: discord.TextChannel=None):
+		guild_id = str(ctx.guild.id)
+		if guild_id not in self.blacklist:
+			self.blacklist[guild_id] = []
+		if not channel:
+			channel = ctx.channel
+		if channel.id in self.blacklist[guild_id]:
+			return await ctx.send('This channel is already blocked')
+		self.blacklist[guild_id].append(channel.id)
+		await ctx.send('👍')
+		self.save_data()
+
+	@_anti_spam.command(name='unblockchannel')
+	@commands.has_permissions(manage_messages=True)
+	async def _unblock_channel(self, ctx, channel: discord.TextChannel=None):
+		guild_id = str(ctx.guild.id)
+		if guild_id not in self.blacklist[guild_id]:
+			return await ctx.send('This guild has no blocked channels')
+		if not channel:
+			channel = ctx.channel
+		if channel.id not in self.blacklist[guild_id]:
+			return await ctx.send('This channel isn\'t blocked')
+		index = self.blacklist[guild_id].index(channel.id)
+		self.blacklist[guild_id].pop(index)
+		await ctx.send('👍')
+		self.save_data()
+
 	@commands.Cog.listener()
 	async def on_message(self, m: discord.Message):
 		if isinstance(m.guild, discord.Guild):
@@ -70,6 +104,9 @@ class Anti_Spam(commands.Cog):
 				return
 			guild_id = str(m.guild.id)
 			if guild_id in self.toggle:
+				if guild_id in self.blacklist:
+					if m.channel.id in self.blacklist[guild_id]:
+						return
 				if m.author.id == self.bot.user.id:
 					return
 				user_id = str(m.author.id)
@@ -176,11 +213,17 @@ class Anti_Spam(commands.Cog):
 									return
 						if mute_role in m.author.roles:
 							async with m.channel.typing():
-								await m.author.remove_roles(mute_role)
+								try:
+									await m.author.remove_roles(mute_role)
+								except:
+									pass
 						for role in roles:
 							if role not in m.author.roles:
 								await asyncio.sleep(1)
-								await m.author.add_roles(role)
+								try:
+									await m.author.add_roles(role)
+								except:
+									pass
 						await m.channel.send(f"Unmuted {m.author.display_name}")
 					del self.status[guild_id][user_id]
 

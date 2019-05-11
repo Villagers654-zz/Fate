@@ -1,6 +1,5 @@
 from discord.ext import commands
 from utils import colors, checks
-from urllib.parse import quote
 import requests
 import discord
 import asyncio
@@ -11,33 +10,6 @@ import os
 class Reactions(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
-
-	@commands.command(name='giphy', aliases=['gif'])
-	@commands.cooldown(2, 5)
-	async def giphy(self, ctx, *, text:str=None):
-		if text is None:
-			api = 'http://api.giphy.com/v1/gifs/random?&api_key=ZHFNQ6t7tKkCiaIjzImn69IvwQZD6TF2'
-		else:
-			api = 'http://api.giphy.com/v1/gifs/search?q={0}&api_key=ZHFNQ6t7tKkCiaIjzImn69IvwQZD6TF2'.format(quote(text))
-		load = json.loads(requests.get(api).content)
-		if len(load['data']) == 0:
-			await self.bot.say('No results')
-		else:
-			rand = False
-			try:
-				gif = random.choice(load['data'])
-			except:
-				gif = load['data']
-				rand = True
-			url = gif['url']
-			if rand:
-				gif_url = gif['image_url']
-			else:
-				gif_url = gif['images']['fixed_height']['url']
-			e = discord.Embed(color=colors.random())
-			e.set_image(url=url)
-			e.set_footer(text='Powered by Giphy', icon_url='https://steamuserimages-a.akamaihd.net/ugc/946207409568428741/B33DE674498D851EBAAE377473F6BF95E843603B/')
-			await ctx.send(embed=e)
 
 	@commands.command(name="tenor")
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -76,6 +48,7 @@ class Reactions(commands.Cog):
 		await ctx.send(file=discord.File(path, filename=os.path.basename(path)), embed=e)
 		await asyncio.sleep(0.5)
 		await ctx.message.delete()
+		self.update_data_usage(path)
 
 	@commands.command(name="junkfood")
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -197,7 +170,7 @@ class Reactions(commands.Cog):
 	async def _waste(self, ctx, *, user: discord.Member):
 		path = os.getcwd() + "/data/images/reactions/waste/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/waste/"))
 		e = discord.Embed(color=colors.fate())
-		e.set_author(name=f"◈ {ctx.author.display_name} to {user.display_name}: ◈", icon_url=ctx.author.avatar_url)
+		e.set_author(name=f"◈ {ctx.author.display_name} to {user.display_name} ◈", icon_url=ctx.author.avatar_url)
 		e.set_image(url="attachment://" + os.path.basename(path))
 		await ctx.send(file=discord.File(path, filename=os.path.basename(path)), embed=e)
 		await asyncio.sleep(0.5)
@@ -299,7 +272,7 @@ class Reactions(commands.Cog):
 	async def _slap(self, ctx, *, user: discord.Member):
 		path = os.getcwd() + "/data/images/reactions/slap/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/slap/"))
 		e = discord.Embed(color=colors.fate())
-		e.set_author(name=f"◈ {ctx.author.display_name} slaps {user.display_name}: ◈", icon_url=ctx.author.avatar_url)
+		e.set_author(name=f"◈ {ctx.author.display_name} slaps {user.display_name} ◈", icon_url=ctx.author.avatar_url)
 		e.set_image(url="attachment://" + os.path.basename(path))
 		await ctx.send(file=discord.File(path, filename=os.path.basename(path)), embed=e)
 		await asyncio.sleep(0.5)
@@ -311,7 +284,7 @@ class Reactions(commands.Cog):
 	async def _kiss(self, ctx, user: discord.Member):
 		path = os.getcwd() + "/data/images/reactions/kiss/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/kiss/"))
 		e = discord.Embed(color=colors.fate())
-		e.set_author(name=f"◈ {ctx.author.display_name} kisses {user.display_name}: ◈", icon_url=ctx.author.avatar_url)
+		e.set_author(name=f"◈ {ctx.author.display_name} kisses {user.display_name} ◈", icon_url=ctx.author.avatar_url)
 		e.set_image(url="attachment://" + os.path.basename(path))
 		await ctx.send(file=discord.File(path, filename=os.path.basename(path)), embed=e)
 		await asyncio.sleep(0.5)
@@ -323,7 +296,7 @@ class Reactions(commands.Cog):
 	async def _kill(self, ctx, *, user: discord.Member):
 		path = os.getcwd() + "/data/images/reactions/kill/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/kill/"))
 		e = discord.Embed(color=colors.fate())
-		e.set_author(name=f"◈ {ctx.author.display_name} to {user.display_name}: ◈", icon_url=ctx.author.avatar_url)
+		e.set_author(name=f"◈ {ctx.author.display_name} to {user.display_name} ◈", icon_url=ctx.author.avatar_url)
 		e.set_image(url="attachment://" + os.path.basename(path))
 		await ctx.send(file=discord.File(path, filename=os.path.basename(path)), embed=e)
 		await asyncio.sleep(0.5)
@@ -335,7 +308,7 @@ class Reactions(commands.Cog):
 	async def _hug(self, ctx, *, user: discord.Member):
 		path = os.getcwd() + "/data/images/reactions/hug/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/hug/"))
 		e = discord.Embed(color=colors.fate())
-		e.set_author(name=f"◈ {ctx.author.display_name} hugs {user.display_name}: ◈", icon_url=ctx.author.avatar_url)
+		e.set_author(name=f"◈ {ctx.author.display_name} hugs {user.display_name} ◈", icon_url=ctx.author.avatar_url)
 		e.set_image(url="attachment://" + os.path.basename(path))
 		await ctx.send(file=discord.File(path, filename=os.path.basename(path)), embed=e)
 		await asyncio.sleep(0.5)
@@ -373,7 +346,7 @@ class Reactions(commands.Cog):
 	async def _pat(self, ctx, user: discord.Member):
 		path = os.getcwd() + "/data/images/reactions/pat/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/pat/"))
 		e = discord.Embed(color=colors.fate())
-		e.set_author(name=f"◈ {ctx.author.display_name} pats {user.display_name}: ◈", icon_url=ctx.author.avatar_url)
+		e.set_author(name=f"◈ {ctx.author.display_name} pats {user.display_name} ◈", icon_url=ctx.author.avatar_url)
 		e.set_image(url="attachment://" + os.path.basename(path))
 		await ctx.send(file=discord.File(path, filename=os.path.basename(path)), embed=e)
 		await asyncio.sleep(0.5)

@@ -12,6 +12,10 @@ class Actions(commands.Cog):
 	@commands.command(description="Shoots a user")
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	async def shoot(self, ctx, user: discord.Member):
+		if user.id == 355026215137968129:
+			if ctx.author.id == 355026215137968129:
+				return await ctx.send('nO')
+			return await ctx.send('*shoots you instead*')
 		await ctx.send("🔫 | pew pew, {} {}, {}".format(user.display_name, random.choice(["has been shot in the head and died instantly", "has been shot in the heart and died quickly and painfully", "has been shot in the arm and is rolling around in agonizing pain", "has been shot in the leg and is now hopping around on one leg like an autist", "has been shot in the dick"]), random.choice(["you really shouldn't let a bot carry a gun :p", "you should let me shoot people more often", "you should let me shoot faggots more often", "this is fun", "poor faggot didn't stand a chance", "he/she definitely deserved it", "poor autist dropped like a fly"])))
 
 	@commands.command(description="Injects a user with something random")
@@ -55,6 +59,8 @@ class Actions(commands.Cog):
 	@commands.command(name='kms', aliases=['suicide'], description="Textart")
 	@commands.cooldown(1, 5, commands.BucketType.channel)
 	async def kms(self, ctx):
+		if ctx.author.id == 355026215137968129:
+			return await ctx.send('nO')
 		await ctx.send("""━━━━━┒
 ┓┏┓┏┓┃Oof
 ┛┗┛┗┛┃＼O／
