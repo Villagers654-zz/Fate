@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from discord.ext import commands
+from utils import checks
 from os.path import isfile
 from PIL import ImageDraw
 from PIL import ImageFont
@@ -408,6 +409,15 @@ class Leaderboards(commands.Cog):
 		await ctx.send(file=discord.File('./data/images/backgrounds/results/galaxy.png',
 		    filename=os.path.basename('/data/images/backgrounds/results/galaxy.png')), embed=e)
 
+	@commands.command(name='giv')
+	@commands.check(checks.luck)
+	async def giv(self, ctx, user: discord.Member, seconds: int):
+		guild_id = str(ctx.guild.id)
+		user_id = str(user.id)
+		self.vclb[guild_id][user_id] += seconds
+		self.gvclb[user_id] += seconds
+		await ctx.send('👍')
+
 	@commands.Cog.listener()
 	async def on_ready(self):
 		await asyncio.sleep(1)
@@ -516,9 +526,7 @@ class Leaderboards(commands.Cog):
 						self.cache[channel_id]["status"] = "inactive"
 					if self.cache[channel_id]["status"] == "inactive":
 						if len(channel.members) > 1:
-							if after.self_mute:
-								return
-							if after.mute:
+							if after.mute or after.self_mute:
 								return
 							self.cache[channel_id]["status"] = "active"
 							for user in channel.members:
