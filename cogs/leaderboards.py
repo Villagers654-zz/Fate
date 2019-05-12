@@ -57,11 +57,11 @@ class Leaderboards(commands.Cog):
 	async def subtract_spam_from_monthly(self, guild_id, user_id):
 		deleted = 0
 		for msg_id, msg_time in (sorted(self.monthly_global_data[user_id].items(), key=lambda kv: kv[1], reverse=True)):
-			if float(msg_time) > time() - 600:
+			if float(msg_time) > time() - 60:
 				del self.monthly_global_data[user_id][str(msg_id)]
 				deleted += 1
 		for msg_id, msg_time in (sorted(self.monthly_guilds_data[guild_id][user_id].items(), key=lambda kv: kv[1], reverse=True)):
-			if float(msg_time) > time() - 600:
+			if float(msg_time) > time() - 60:
 				del self.monthly_guilds_data[guild_id][user_id][str(msg_id)]
 		return deleted
 
@@ -493,91 +493,80 @@ class Leaderboards(commands.Cog):
 					self.cd[author_id] = time() + 10
 
 	@commands.Cog.listener()
-	async def on_voice_state_update(self, member, before, after):
-		if isinstance(member.guild, discord.Guild):
-			if not member.bot:
-				guild_id = str(member.guild.id)
-				user_id = str(member.id)
-				channel_id = None
-				channel = None  # type: discord.TextChannel
-				if not after.channel:
+	async def on_voice_state_update(self, user, before, after):
+		if isinstance(user.guild, discord.Guild):
+			log = self.bot.get_channel(501871950260469790)
+			guild_id = str(user.guild.id)
+			channel_id = None  # type: discord.TextChannel
+			if before.channel:
+				channel_id = str(before.channel.id)
+			if after.channel:
+				channel_id = str(after.channel.id)
+			user_id = str(user.id)
+			if guild_id not in self.vclb:
+				self.vclb[guild_id] = {}
+			if user_id not in self.vclb[guild_id]:
+				self.vclb[guild_id][user_id] = 0
+			if user_id not in self.gvclb:
+				self.gvclb[user_id] = 0
+			if channel_id not in self.cache:
+				self.cache[channel_id] = {}
+				self.cache[channel_id]['members'] = {}
+			def get_active_members(channel):
+				members = []
+				total = 0
+				for member in channel.members:
+					if not member.bot:
+						total += 1
+						state = member.voice
+						if not state.mute and not state.self_mute:
+							if not state.deaf and not state.self_deaf:
+								members.append(member)
+				return (members, total)
+			async def wrap(channel):
+				cid = str(channel.id)
+				for member_id in list(self.cache[cid]['members'].keys()):
+					seconds = (datetime.now() - self.cache[cid]['members'][member_id]).seconds
+					self.vclb[guild_id][member_id] += seconds
+					self.gvclb[member_id] += seconds
+					del self.cache[cid]['members'][member_id]
+					print(f'Removed {self.bot.get_user(int(member_id)).name} 1')
+			async def run(channel):
+				channel_id = str(channel.id)
+				members, total = get_active_members(channel)
+				if len(members) == 0 or len(members) == 1 and len(members) == total:
+					return await wrap(channel)
+				for member in channel.members:
+					if member not in self.cache[channel_id]['members']:
+						if not member.bot:
+							member_id = str(member.id)
+							if member_id not in self.cache[channel_id]['members']:
+								self.cache[channel_id]['members'][member_id] = datetime.now()
+								print(f'Added {self.bot.get_user(int(member_id)).name}')
+			if before.channel and after.channel:
+				if before.channel.id != after.channel.id:
 					channel_id = str(before.channel.id)
-					channel = before.channel
-				if not before.channel:
-					channel_id = str(after.channel.id)
-					channel = after.channel
-				if guild_id not in self.vclb:
-					self.vclb[guild_id] = {}
-				if user_id not in self.vclb[guild_id]:
-					self.vclb[guild_id][user_id] = 0
-				if user_id not in self.gvclb:
-					self.gvclb[user_id] = 0
-				if channel_id is None:
-					return
-				if channel_id not in self.cache:
-					self.cache[channel_id] = {}
-				if "members" not in self.cache[channel_id]:
-					self.cache[channel_id]["members"] = []
-				if "status" not in self.cache[channel_id]:
-					self.cache[channel_id]["status"] = "inactive"
-				if user_id not in self.cache[channel_id]["members"]:
-					self.cache[channel_id]["members"].append(user_id)
-					if len(channel.members) < 2:
-						self.cache[channel_id]["status"] = "inactive"
-					if self.cache[channel_id]["status"] == "inactive":
-						if len(channel.members) > 1:
-							if after.mute or after.self_mute:
-								return
-							self.cache[channel_id]["status"] = "active"
-							for user in channel.members:
-								member_id = str(user.id)
-								if member_id not in self.cache[channel_id].keys():
-									self.cache[channel_id][member_id] = datetime.now()
-					else:
-						self.cache[channel_id][user_id] = datetime.now()
-				else:
-					if not after.channel:
-						if self.cache[channel_id]["status"] == "active":
-							if len(channel.members) < 2:
-								self.cache[channel_id]["status"] = "inactive"
-								for id in self.cache[channel_id]["members"]:
-									if id in self.cache[channel_id]:
-										seconds = (datetime.now() - self.cache[channel_id][id]).seconds
-										self.vclb[guild_id][id] += seconds
-										self.gvclb[id] += seconds
-										del self.cache[channel_id][id]
-							else:
-								if user_id in self.cache[channel_id]:
-									seconds = (datetime.now() - self.cache[channel_id][user_id]).seconds
-									self.vclb[guild_id][user_id] += seconds
-									self.gvclb[user_id] += seconds
-									del self.cache[channel_id][user_id]
-						self.cache[channel_id]["members"].pop(self.cache[channel_id]["members"].index(str(user_id)))
-				if before.self_mute is False and after.self_mute is True:
-					if self.cache[channel_id]["status"] == "active":
-						if len(channel.members) == 2:
-							self.cache[channel_id]["status"] = "inactive"
-							for id in self.cache[channel_id]["members"]:
-								if id in self.cache[channel_id]:
-									seconds = (datetime.now() - self.cache[channel_id][id]).seconds
-									self.vclb[guild_id][id] += seconds
-									self.gvclb[id] += seconds
-									del self.cache[channel_id][id]
-						else:
-							seconds = (datetime.now() - self.cache[channel_id][user_id]).seconds
-							self.vclb[guild_id][user_id] += seconds
-							self.gvclb[user_id] += seconds
-							del self.cache[channel_id][user_id]
-				if before.self_mute is True and after.self_mute is False:
-					if self.cache[channel_id]["status"] == "inactive":
-						if len(channel.members) > 1:
-							self.cache[channel_id]["status"] = "active"
-							for user in channel.members:
-								member_id = str(user.id)
-								if member_id not in self.cache[channel_id].keys():
-									self.cache[channel_id][member_id] = datetime.now()
-					else:
-						self.cache[channel_id][user_id] = datetime.now()
+					if user_id in self.cache[channel_id]['members']:
+						seconds = (datetime.now() - self.cache[channel_id]['members'][user_id]).seconds
+						self.vclb[guild_id][user_id] += seconds
+						self.gvclb[user_id] += seconds
+						del self.cache[channel_id]['members'][user_id]
+						print(f'Removed {self.bot.get_user(int(user_id)).name} 2')
+					await run(before.channel)
+					await run(after.channel)
+			if not after.channel:
+				channel_id = str(before.channel.id)
+				if user_id in self.cache[channel_id]['members']:
+					seconds = (datetime.now() - self.cache[channel_id]['members'][user_id]).seconds
+					self.vclb[guild_id][user_id] += seconds
+					self.gvclb[user_id] += seconds
+					del self.cache[channel_id]['members'][user_id]
+					print(f'Removed {self.bot.get_user(int(user_id)).name} 3')
+					await run(before.channel)
+			if before.channel is not None:
+				await run(before.channel)
+			if after.channel is not None:
+				await run(after.channel)
 
 def setup(bot: commands.Bot):
 	bot.add_cog(Leaderboards(bot))
