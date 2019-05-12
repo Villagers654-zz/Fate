@@ -69,9 +69,10 @@ class Minecraft(commands.Cog):
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.guild_only()
 	async def shufflemotd(self, ctx):
-		guild = self.bot.get_guild(470961230362837002)
+		guild = ctx.guild
+		name = guild.name[:guild.name.find('-')]
 		motd = f"{random.choice(self.motds)}"
-		await guild.edit(name=f"4B4T - {motd}")
+		await guild.edit(name=name + ' - ' + motd)
 		e=discord.Embed(color=0x80b0ff)
 		e.set_author(name="{} shuffled the MOTD".format(ctx.author.name), icon_url=ctx.author.avatar_url)
 		e.description = f"New: {motd}"
