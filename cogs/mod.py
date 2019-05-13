@@ -30,6 +30,10 @@ class Mod(commands.Cog):
 		with open("./data/userdata/mod.json", "w") as outfile:
 			json.dump({"warns": self.warns, "roles": self.roles, "timers": self.timers}, outfile, ensure_ascii=False)
 
+	def save_config(self, config):
+		with open('./data/config.json', 'w') as f:
+			json.dump(config, f, ensure_ascii=False)
+
 	async def start_timer(self, user_id):
 		if user_id in self.timers:
 			action = self.timers[user_id]['action']
@@ -87,6 +91,10 @@ class Mod(commands.Cog):
 		if guild_id in self.timers:
 			del self.timers[guild_id]
 			self.save_json()
+		config = self.bot.get_config
+		if guild_id in config['restricted']:
+			del config['restricted'][guild_id]
+			self.save_config(config)
 
 	@commands.command(name="cleartimers")
 	@commands.check(checks.luck)
@@ -95,6 +103,103 @@ class Mod(commands.Cog):
 		for key in keys:
 			del self.timers[key]
 		await ctx.message.add_reaction("👍")
+
+	@commands.command(name='restrict')
+	@commands.guild_only()
+	@commands.cooldown(1, 3, commands.BucketType.user)
+	@commands.has_permissions(administrator=True)
+	async def restrict(self, ctx):
+		guild_id = str(ctx.guild.id)
+		config = self.bot.get_config  # type: dict
+		if 'restricted' not in config:
+			config['restricted'] = {}
+		if guild_id not in config['restricted']:
+			config['restricted'][guild_id] = {}
+			config['restricted'][guild_id]['channels'] = []
+			config['restricted'][guild_id]['users'] = []
+		restricted = '**Restricted:**'
+		dat = config['restricted'][guild_id]
+		for channel in ctx.message.channel_mentions:
+			if channel.id in dat['channels']:
+				continue
+			config['restricted'][guild_id]['channels'].append(channel.id)
+			restricted += f'\n{channel.mention}'
+		for member in ctx.message.mentions:
+			if member.id in dat['users']:
+				continue
+			config['restricted'][guild_id]['users'].append(member.id)
+			restricted += f'\n{member.mention}'
+		e = discord.Embed(color=colors.fate(), description=restricted)
+		await ctx.send(embed=e)
+		self.save_config(config)
+
+	@commands.command(name='unrestrict')
+	@commands.guild_only()
+	@commands.cooldown(1, 3, commands.BucketType.user)
+	@commands.has_permissions(administrator=True)
+	async def unrestrict(self, ctx):
+		guild_id = str(ctx.guild.id)
+		config = self.bot.get_config  # type: dict
+		if 'restricted' not in config:
+			config['restricted'] = {}
+		unrestricted = '**Unrestricted:**'
+		dat = config['restricted'][guild_id]
+		if guild_id not in config['restricted']:
+			config['restricted'][guild_id] = {}
+			config['restricted'][guild_id]['channels'] = []
+			config['restricted'][guild_id]['users'] = []
+		for channel in ctx.message.channel_mentions:
+			if channel.id in dat['channels']:
+				index = config['restricted'][guild_id]['channels'].index(channel.id)
+				config['restricted'][guild_id]['channels'].pop(index)
+				unrestricted += f'\n{channel.mention}'
+		for member in ctx.message.mentions:
+			if member.id in dat['users']:
+				index = config['restricted'][guild_id]['users'].index(member.id)
+				config['restricted'][guild_id]['users'].pop(index)
+				unrestricted += f'\n{member.mention}'
+		e = discord.Embed(color=colors.fate(), description=unrestricted)
+		await ctx.send(embed=e)
+		self.save_config(config)
+
+	@commands.command(name='restricted')
+	@commands.guild_only()
+	@commands.cooldown(1, 3, commands.BucketType.user)
+	@commands.has_permissions(administrator=True)
+	async def restricted(self, ctx):
+		guild_id = str(ctx.guild.id)
+		config = self.bot.get_config  # type: dict
+		if guild_id not in config['restricted']:
+			return await ctx.send('No restricted channels/users')
+		dat = config['restricted'][guild_id]
+		e = discord.Embed(color=colors.fate())
+		e.set_author(name='Restricted:', icon_url=ctx.author.avatar_url)
+		e.description = ''
+		if dat['channels']:
+			changelog = ''
+			for channel_id in dat['channels']:
+				channel = self.bot.get_channel(channel_id)
+				if not isinstance(channel, discord.TextChannel):
+					position = config['restricted'][guild_id]['channels'].index(channel_id)
+					config['restricted'][guild_id]['channels'].pop(position)
+					self.save_config(config)
+				else:
+					changelog += '\n' + channel.mention
+			if changelog:
+				e.description += changelog
+		if dat['users']:
+			changelog = ''
+			for user_id in dat['users']:
+				user = self.bot.get_user(user_id)
+				if not isinstance(user, discord.User):
+					position = config['restricted'][guild_id]['users'].index(user_id)
+					config['restricted'][guild_id]['users'].pop(position)
+					self.save_config(config)
+				else:
+					changelog += '\n' + user.mention
+			if changelog:
+				e.description += changelog
+		await ctx.send(embed=e)
 
 	@commands.command(name="delete")
 	@commands.cooldown(1, 3, commands.BucketType.user)
@@ -258,6 +363,9 @@ class Mod(commands.Cog):
 	async def kick(self, ctx, user:discord.Member, *, reason:str=None):
 		if user.top_role.position >= ctx.author.top_role.position:
 			return await ctx.send("That user is above your paygrade, take a seat")
+		bot = ctx.guild.get_member(self.bot.user.id)
+		if user.top_role.position >= bot.top_role.position:
+			return await ctx.send('I can\'t kick that user ;-;')
 		await ctx.guild.kick(user, reason=reason)
 		path = os.getcwd() + "/data/images/reactions/beaned/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/beaned/"))
 		e = discord.Embed(color=0x80b0ff)
@@ -280,6 +388,9 @@ class Mod(commands.Cog):
 	async def _ban(self, ctx, user:discord.Member, *, reason=None):
 		if user.top_role.position >= ctx.author.top_role.position:
 			return await ctx.send("That user is above your paygrade, take a seat")
+		bot = ctx.guild.get_member(self.bot.user.id)
+		if user.top_role.position >= bot.top_role.position:
+			return await ctx.send('I can\'t ban that user ;-;')
 		await ctx.guild.ban(user, reason=reason, delete_message_days=0)
 		path = os.getcwd() + "/data/images/reactions/beaned/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/beaned/"))
 		e = discord.Embed(color=colors.fate())
@@ -302,6 +413,9 @@ class Mod(commands.Cog):
 	async def _softban(self, ctx, user:discord.Member, *, reason=None):
 		if user.top_role.position >= ctx.author.top_role.position:
 			return await ctx.send("That user is above your paygrade, take a seat")
+		bot = ctx.guild.get_member(self.bot.user.id)
+		if user.top_role.position >= bot.top_role.position:
+			return await ctx.send('I can\'t kick that user ;-;')
 		await ctx.guild.ban(user, reason=reason, delete_message_days=0)
 		path = os.getcwd() + "/data/images/reactions/beaned/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/beaned/"))
 		e = discord.Embed(color=colors.fate())
@@ -604,7 +718,7 @@ class Mod(commands.Cog):
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.guild_only()
 	@commands.bot_has_permissions(manage_roles=True)
-	async def warn(self, ctx, user, *, reason):
+	async def warn(self, ctx, user, *, reason=None):
 		perms = list(perm for perm, value in ctx.author.guild_permissions)
 		if "manage_guild" not in perms:
 			if "manage_messages" not in perms:
@@ -623,8 +737,12 @@ class Mod(commands.Cog):
 					break
 		if not user:
 			return await ctx.send("User not found")
+		if user.id == self.bot.user.id:
+			return await ctx.send('nO')
 		if user.top_role.position >= ctx.author.top_role.position:
 			return await ctx.send("That user is above your paygrade, take a seat")
+		if not reason:
+			reason = "unspecified"
 		guild_id = str(ctx.guild.id)
 		user_id = str(user.id)
 		punishment = None  # type: str
