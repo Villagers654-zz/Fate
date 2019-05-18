@@ -890,10 +890,19 @@ class Mod(commands.Cog):
 			except:
 				await ctx.send('Failed to ban that user')
 
-	@commands.command(name='warnconfig')
+	@commands.group(name='editconfig')
+	@commands.cooldown(1, 3, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True)
+	async def _edit_config(self, ctx):
+		if not ctx.invoked_subcommand:
+			e = discord.Embed(color=colors.fate())
+			e.description = '.editconfig warns'
+			await ctx.send(embed=e)
+
+	@_edit_config.command(name='warns')
 	@commands.has_permissions(manage_guild=True)
 	@commands.bot_has_permissions(embed_links=True, manage_messages=True)
-	async def _config(self, ctx):
+	async def _warns(self, ctx):
 		guild_id = str(ctx.guild.id)
 		emojis = ['1⃣', '2⃣', '3⃣', '4⃣', '5⃣']
 		async def wait_for_reaction():
