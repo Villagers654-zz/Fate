@@ -31,11 +31,11 @@ def owner_id():
 
 def server(item):
 	if item is "id":
-		return 501868216147247104
+		return 397415086295089155
 	if item is "log":
-		return 503902845741957131
+		return 577661500802465813
 	if item is "error":
-		return 549192817097048080
+		return 577661461543780382
 
 def color():
 	return 0x80b0ff

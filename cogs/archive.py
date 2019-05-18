@@ -20,11 +20,11 @@ class Archive(commands.Cog):
 			log = ""
 			async for msg in ctx.channel.history(limit=amount):
 				log = f"{msg.created_at.strftime('%I:%M%p')} | {msg.author.display_name}: {msg.content}\n{log}"
-			with open(f'/home/luck/FateZero/data/{ctx.channel.name}.txt', 'w') as f:
+			with open(f'./data/{ctx.channel.name}.txt', 'w') as f:
 				f.write(log)
 			path = os.getcwd() + f"/data/{ctx.channel.name}.txt"
 			await ctx.send(file=discord.File(path))
-			os.system(f'rm data/{ctx.channel.name}.txt')
+			os.remove(f'./data/{ctx.channel.name}.txt')
 			del self.saving[str(ctx.channel.id)]
 
 def setup(bot):

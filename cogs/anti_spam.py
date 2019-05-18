@@ -26,7 +26,7 @@ class Anti_Spam(commands.Cog):
 
 	def save_data(self):
 		with open("./data/userdata/anti_spam.json", "w") as f:
-			json.dump({"toggle": self.toggle}, f)
+			json.dump({"toggle": self.toggle, 'blacklist': self.blacklist}, f)
 
 	@commands.group(name="anti_spam", aliases=["antispam"])
 	@commands.bot_has_permissions(embed_links=True)
@@ -99,7 +99,7 @@ class Anti_Spam(commands.Cog):
 
 	@commands.Cog.listener()
 	async def on_message(self, m: discord.Message):
-		if isinstance(m.guild, discord.Guild):
+		if isinstance(m.author, discord.Member):
 			if "spam" in m.channel.name:
 				return
 			guild_id = str(m.guild.id)

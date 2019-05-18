@@ -39,11 +39,19 @@ class Leaderboards(commands.Cog):
 
 	async def xp_dump_task(self):
 		while True:
-			with open("./data/userdata/xp.json", "w") as outfile:
-				json.dump({"global": self.global_data, "guilded": self.guilds_data, "monthly_global": self.monthly_global_data,
-			               "monthly_guilded": self.monthly_guilds_data, "vclb": self.vclb, "gvclb": self.gvclb},
-				          outfile, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
-			await asyncio.sleep(60)
+			try:
+				with open("./data/userdata/xp.json", "w") as outfile:
+					json.dump({"global": self.global_data, "guilded": self.guilds_data, "monthly_global": self.monthly_global_data,
+				               "monthly_guilded": self.monthly_guilds_data, "vclb": self.vclb, "gvclb": self.gvclb},
+					          outfile, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
+				await asyncio.sleep(60)
+			except Exception as e:
+				try:
+					log = self.bot.get_channel(501871950260469790)
+					await log.send(f'Error saving xp: {e}')
+				except:
+					pass
+				await asyncio.sleep(60)
 
 	def msg_footer(self):
 		return random.choice(["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready",
@@ -418,6 +426,15 @@ class Leaderboards(commands.Cog):
 		self.gvclb[user_id] += seconds
 		await ctx.send('👍')
 
+	@commands.command(name='take')
+	@commands.check(checks.luck)
+	async def take(self, ctx, user: discord.Member, seconds: int):
+		guild_id = str(ctx.guild.id)
+		user_id = str(user.id)
+		self.vclb[guild_id][user_id] -= seconds
+		self.gvclb[user_id] -= seconds
+		await ctx.send('👍')
+
 	@commands.Cog.listener()
 	async def on_ready(self):
 		await asyncio.sleep(1)
@@ -445,11 +462,12 @@ class Leaderboards(commands.Cog):
 				else:
 					self.spam_cd[guild_id][user_id] = [now, 0]
 				if self.spam_cd[guild_id][user_id][1] > 2:
-					self.cd[user_id] = time() + 600
-					count = await self.subtract_spam_from_monthly(guild_id, user_id)
-					self.global_data[user_id] -= count
-					self.guilds_data[guild_id][user_id] -= count
-					print(f"{m.author} is spamming")
+					if m.author.id != 264838866480005122:
+						self.cd[user_id] = time() + 600
+						count = await self.subtract_spam_from_monthly(guild_id, user_id)
+						self.global_data[user_id] -= count
+						self.guilds_data[guild_id][user_id] -= count
+						print(f"{m.author} is spamming")
 
 				# anti macro
 				if user_id not in self.macro_cd:
@@ -464,11 +482,12 @@ class Leaderboards(commands.Cog):
 					self.macro_cd[user_id]['intervals'] = intervals[-3:]
 					if len(intervals) > 2:
 						if all(interval == intervals[0] for interval in intervals):
-							self.cd[user_id] = time() + 600
-							count = await self.subtract_spam_from_monthly(guild_id, user_id)
-							self.global_data[user_id] -= count
-							self.guilds_data[guild_id][user_id] -= count
-							print(f"{m.author} is using a macro")
+							if m.author.id != 264838866480005122:
+								self.cd[user_id] = time() + 600
+								count = await self.subtract_spam_from_monthly(guild_id, user_id)
+								self.global_data[user_id] -= count
+								self.guilds_data[guild_id][user_id] -= count
+								print(f"{m.author} is using a macro")
 
 				if user_id not in self.cd:
 					self.cd[user_id] = 0
@@ -495,7 +514,6 @@ class Leaderboards(commands.Cog):
 	@commands.Cog.listener()
 	async def on_voice_state_update(self, user, before, after):
 		if isinstance(user.guild, discord.Guild):
-			log = self.bot.get_channel(501871950260469790)
 			guild_id = str(user.guild.id)
 			channel_id = None  # type: discord.TextChannel
 			if before.channel:

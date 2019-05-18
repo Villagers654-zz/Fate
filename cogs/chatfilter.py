@@ -94,7 +94,7 @@ class ChatFilter(commands.Cog):
 
 	@commands.Cog.listener()
 	async def on_message(self, m: discord.Message):
-		if isinstance(m.guild, discord.Guild):
+		if isinstance(m.author, discord.Member):
 			guild_id = str(m.guild.id)
 			if m.guild.id in self.toggle:
 				if guild_id in self.blacklist:
@@ -111,7 +111,7 @@ class ChatFilter(commands.Cog):
 
 	@commands.Cog.listener()
 	async def on_message_edit(self, before, after):
-		if isinstance(before.guild, discord.Guild):
+		if isinstance(before.author, discord.Member):
 			guild_id = str(before.guild.id)
 			if before.guild.id in self.toggle:
 				if guild_id in self.blacklist:

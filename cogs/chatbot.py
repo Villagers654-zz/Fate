@@ -167,7 +167,7 @@ class ChatBot(commands.Cog):
 			for mention in m.mentions:
 				m.content = m.content.replace(str(mention), str(self.bot.user.mention))
 			for mention in m.role_mentions:
-				m.content.replace(str(mention), str(self.bot.user.mention))
+				m.content = m.content.replace(str(mention), str(self.bot.user.mention))
 			if not m.author.bot:
 				guild_id = str(m.guild.id)
 				if "help" in m.content[:8]:
@@ -266,7 +266,7 @@ class ChatBot(commands.Cog):
 							choice = choice.replace('Fate', name).replace('fate', name)
 							for mention in m.channel_mentions:
 								channel = random.choice(list(m.guild.text_channels))
-								choice.replace(str(mention), channel.mention)
+								choice = choice.replace(str(mention), channel.mention)
 							try:
 								async with m.channel.typing():
 									await asyncio.sleep(1)

@@ -1,8 +1,11 @@
 from discord.ext import commands
 from utils import colors, utils
+from io import BytesIO
+from PIL import Image
 import requests
 import discord
 import asyncio
+import os
 
 class Emojis(commands.Cog):
 	def __init__(self, bot):
@@ -10,7 +13,7 @@ class Emojis(commands.Cog):
 
 	@commands.command(name="emoji", aliases=["emote"], description="Sends the emoji's image file")
 	@commands.cooldown(1, 3, commands.BucketType.user)
-	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
+	@commands.bot_has_permissions(embed_links=True, attach_files=True)
 	async def _emoji(self, ctx, *emoji: discord.PartialEmoji):
 		for emoji in emoji:
 			await asyncio.sleep(1)
@@ -48,10 +51,12 @@ class Emojis(commands.Cog):
 					break
 				except Exception as e:
 					if '256 kb' in str(e):
-						e = discord.Embed(color=colors.fate())
-						e.set_author(name=f"File cannot be larger than 256 kb", icon_url=attachment.proxy_url)
-						e.description = f"Try using [TinyPNG](https://tinypng.com/) to reduce the size"
-						await ctx.send(f'Failed to add `{emoji_name}`', embed=e)
+						img = Image.open(BytesIO(requests.get(attachment.url).content)).convert("RGBA")
+						img = img.resize((512, 512), Image.BICUBIC)
+						img.save(attachment.filename)
+						name = utils.Text.cleanup(emoji_name)
+						await ctx.guild.create_custom_emoji(name=name, image=discord.File(attachment.filename), reason=ctx.author.name)
+						await ctx.send(f"Resized and added `{emoji_name}` to emotes")
 						break
 					if attempts > 3:
 						await ctx.send(e)

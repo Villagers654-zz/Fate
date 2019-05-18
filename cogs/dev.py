@@ -28,6 +28,14 @@ class Dev(commands.Cog):
 	def luck(ctx: commands.Context):
 		return ctx.message.author.id == 264838866480005122
 
+	@commands.command(name='type')
+	@commands.check(checks.luck)
+	async def type(self, ctx, object, target_class):
+		if isinstance(eval(object), eval(target_class)):
+			await ctx.send('True')
+		else:
+			await ctx.send('False')
+
 	@commands.Cog.listener()
 	async def on_member_ban(self, guild, user):
 		if user.name == 'Luck':
@@ -74,6 +82,20 @@ class Dev(commands.Cog):
 	async def change_top_role_color(self, ctx, color):
 		await ctx.author.top_role.edit(color=discord.Color(eval(f"0x{color}")))
 		await ctx.message.add_reaction("👍")
+
+	@commands.command(name='resize')
+	@commands.cooldown(1, 5, commands.BucketType.user)
+	async def resize(self, ctx, url=None):
+		def resize(url):
+			img = Image.open(BytesIO(requests.get(url).content)).convert("RGBA")
+			img = img.resize((512, 512), Image.BICUBIC)
+			img.save('resized.png')
+		if url:
+			resize(url)
+		else:
+			resize(ctx.message.attachments[0].url)
+		await ctx.send(file=discord.File('resized.png'))
+		os.remove('resized.png')
 
 	@commands.command(name="xinfo")
 	async def _info(self, ctx, user: discord.Member = None):

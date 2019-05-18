@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from discord.ext import commands
-from utils import colors, config, checks, utils
+from utils import colors, config, checks
+from time import monotonic
 from os.path import isfile
 import discord
 import asyncio
@@ -16,6 +17,7 @@ class Mod(commands.Cog):
 		self.warns = {}
 		self.roles = {}
 		self.timers = {}
+		self.config = {}
 		if isfile("./data/userdata/mod.json"):
 			with open("./data/userdata/mod.json", "r") as infile:
 				dat = json.load(infile)
@@ -25,10 +27,12 @@ class Mod(commands.Cog):
 					self.roles = dat["roles"]
 				if "timers" in dat:
 					self.timers = dat["timers"]
+				if "warn_config" in dat:
+					self.config = dat["warn_config"]
 
 	def save_json(self):
 		with open("./data/userdata/mod.json", "w") as outfile:
-			json.dump({"warns": self.warns, "roles": self.roles, "timers": self.timers}, outfile, ensure_ascii=False)
+			json.dump({"warns": self.warns, "roles": self.roles, "timers": self.timers, 'warn_config': self.config}, outfile, ensure_ascii=False)
 
 	def save_config(self, config):
 		with open('./data/config.json', 'w') as f:
@@ -65,6 +69,36 @@ class Mod(commands.Cog):
 					await unmute()
 				del self.timers[user_id]
 				self.save_json()
+
+	def get_user(self, ctx, user):
+		if user.startswith("<@"):
+			for char in list(user):
+				if char not in list('1234567890'):
+					user = user.replace(str(char), '')
+			return ctx.guild.get_member(int(user))
+		else:
+			user = user.lower()
+			for member in ctx.guild.members:
+				if user == member.name.lower():
+					return member
+			for member in ctx.guild.members:
+				if user == member.display_name.lower():
+					return member
+			for member in ctx.guild.members:
+				if user in member.name.lower():
+					return member
+			for member in ctx.guild.members:
+				if user in member.display_name.lower():
+					return member
+		return None
+
+	@commands.command(name='getuser')
+	async def getuser(self, ctx, user):
+		before = monotonic()
+		user = self.get_user(ctx, user)
+		ping = str((monotonic() - before) * 1000)
+		ping = ping[:ping.find('.')]
+		await ctx.send(f'**{user}:** `{ping}ms`')
 
 	@commands.Cog.listener()
 	async def on_ready(self):
@@ -108,7 +142,14 @@ class Mod(commands.Cog):
 	@commands.guild_only()
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.has_permissions(administrator=True)
-	async def restrict(self, ctx):
+	async def restrict(self, ctx, args=None):
+		if not args:
+			e = discord.Embed(color=colors.fate())
+			e.set_author(name='Channel Restricting')
+			e.description = 'Prevents everyone except mods from using commands'
+			e.add_field(name='Usage', value='.restrict #channel_mention\n'
+				'.unrestrict #channel_mention\n.restricted')
+			return await ctx.send(embed=e)
 		guild_id = str(ctx.guild.id)
 		config = self.bot.get_config  # type: dict
 		if 'restricted' not in config:
@@ -513,6 +554,7 @@ class Mod(commands.Cog):
 		if not user:
 			return await ctx.send('User not found')
 		role_name = str(role).lower().replace('@', '')
+		role_name.replace('+', '').replace('-', '')
 		role = None  # type: discord.Role
 		for guild_role in ctx.guild.roles:
 			if role_name in guild_role.name.lower():
@@ -526,9 +568,11 @@ class Mod(commands.Cog):
 			return await ctx.send('This role is above your paygrade, take a seat')
 		if role in user.roles:
 			await user.remove_roles(role)
+			msg = f'Removed **{role.name}** from @{user.name}'
 		else:
 			await user.add_roles(role)
-		await ctx.send('👍')
+			msg = f'Gave **{role.name}** to **@{user.name}**'
+		await ctx.send(msg)
 
 	@commands.command(name="massrole")
 	@commands.cooldown(1, 25, commands.BucketType.guild)
@@ -718,77 +762,78 @@ class Mod(commands.Cog):
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.guild_only()
 	@commands.bot_has_permissions(manage_roles=True)
-	async def warn(self, ctx, user, *, reason=None):
+	async def _warn(self, ctx, user, *, reason=None):
+		if ctx.invoked_subcommand:
+			return
 		perms = list(perm for perm, value in ctx.author.guild_permissions)
 		if "manage_guild" not in perms:
 			if "manage_messages" not in perms:
 				return await ctx.send("You are missing manage server "
 				    "or manage messages permission(s) to run this command")
-		if user.startswith("<@"):
-			user = user.replace("<@", "")
-			user = user.replace(">", "")
-			user = user.replace("!", "")
-			user = ctx.guild.get_member(eval(user))
-		else:
-			for member in ctx.guild.members:
-				if str(user).lower() in str(member.display_name).lower():
-					user_id = member.id
-					user = ctx.guild.get_member(user_id)
-					break
-		if not user:
+		user = self.get_user(ctx, user)
+		if not isinstance(user, discord.Member):
 			return await ctx.send("User not found")
-		if user.id == self.bot.user.id:
-			return await ctx.send('nO')
 		if user.top_role.position >= ctx.author.top_role.position:
 			return await ctx.send("That user is above your paygrade, take a seat")
+		if user.id == self.bot.user.id:
+			return await ctx.send('nO')
 		if not reason:
 			reason = "unspecified"
 		guild_id = str(ctx.guild.id)
 		user_id = str(user.id)
-		punishment = None  # type: str
-		next_punishment = None  # type: str
-		mute_trigger = False
+		punishments = ['None', 'Mute', 'Kick', 'Softban', 'Ban']
+		if guild_id in self.config:
+			if 'punishments' in self.config[guild_id]:
+				punishments = self.config[guild_id]['punishments']
 		if guild_id not in self.warns:
 			self.warns[guild_id] = {}
-			self.warns[guild_id][user_id] = 0
 		if user_id not in self.warns[guild_id]:
-			self.warns[guild_id][user_id] = 0
-		self.warns[guild_id][user_id] += 1
-		if self.warns[guild_id][user_id] == 1:
-			punishment = "none"
-			next_punishment = "none"
-		if self.warns[guild_id][user_id] == 2:
-			punishment = "none"
-			next_punishment = "2 hour mute"
-		if self.warns[guild_id][user_id] == 3:
-			punishment = "2 hour mute"
-			next_punishment = "kick"
-			mute_trigger = True
-		if self.warns[guild_id][user_id] == 4:
-			try:
-				await ctx.guild.kick(user, reason=reason)
-			except:
-				await ctx.send("I couldn't kick this user, BUT HOWEVER")
-			punishment = "kick"
-			next_punishment = "ban"
-		if self.warns[guild_id][user_id] >= 5:
-			try:
-				await ctx.guild.ban(user, reason=reason, delete_message_days=0)
-			except:
-				await ctx.send("I couldn't ban this user, BUT HOWEVER")
-			punishment = "ban"
-			next_punishment = "ban"
-		await ctx.send(f"**{user.display_name} has been warned.**\n"
-			f"Reason: {reason}\n"
-			f"Warn count: [{self.warns[guild_id][user_id]}]\n"
-			f"Punishment: {punishment}\n"
-			f"Next Punishment: {next_punishment}")
+			self.warns[guild_id][user_id] = []
+		if not isinstance(self.warns[guild_id][user_id], list):
+			self.warns[guild_id][user_id] = []
+		self.warns[guild_id][user_id].append([reason, str(datetime.now())])
+		warns = 0
+		for reason, time in self.warns[guild_id][user_id]:
+			time = datetime.strptime(time, '%Y-%m-%d %H:%M:%S.%f')
+			if (datetime.now() - time).days > 30:
+				if 'expire' in self.warns[guild_id]:
+					if self.warns[guild_id]['expire'] == 'True':
+						index = self.warns[guild_id][user_id].index([reason, time])
+						self.warns[guild_id][user_id].pop(index)
+						continue
+			warns += 1
+		self.save_json()
+		if warns > len(punishments):
+			punishment = punishments[-1:][0]
+		else:
+			punishment = punishments[warns - 1]
+		if warns >= len(punishments):
+			next_punishment = punishments[-1:][0]
+		else:
+			next_punishment = punishments[warns]
+		e = discord.Embed(color=colors.fate())
+		url = self.bot.user.avatar_url
+		if user.avatar_url:
+			url = user.avatar_url
+		e.set_author(name=f'{user.name} has been warned', icon_url=url)
+		e.description = f'**Warns:** [`{warns}`] '
+		if punishment != 'None':
+			e.description += f'**Punishment:** [`{punishment}`]'
+		if punishment == 'None' and next_punishment != 'None':
+			e.description += f'**Next Punishment:** [`{next_punishment}`]'
+		else:
+			if punishment == 'None' and next_punishment == 'None':
+				e.description += f'**Reason:** [`{reason}`]'
+			if next_punishment != 'None':
+				e.description += f'\n**Next Punishment:** [`{next_punishment}``]'
+		if punishment != 'None' and next_punishment != 'None':
+			e.add_field(name='Reason', value=reason, inline=False)
+		await ctx.send(embed=e)
 		try:
 			await user.send(f"You've been warned in **{ctx.guild.name}** for `{reason}`")
 		except:
 			pass
-		self.save_json()
-		if mute_trigger:
+		if punishment == 'Mute':
 			mute_role = None  # type: discord.Role
 			for role in ctx.guild.roles:
 				if role.name.lower() == "muted":
@@ -828,6 +873,143 @@ class Mod(commands.Cog):
 				await ctx.send(f"**Unmuted:** {user.name}")
 			del self.timers[user_id]
 			self.save_json()
+		if punishment == 'Kick':
+			try:
+				await ctx.guild.kick(user, reason='Reached Sufficient Warns')
+			except:
+				await ctx.send('Failed to kick that user')
+		if punishment == 'Softban':
+			try:
+				await ctx.guild.kick(user, reason='Softban - Reached Sufficient Warns')
+				await ctx.guild.unban(user, reason='Softban')
+			except:
+				await ctx.send('Failed to softban that user')
+		if punishment == 'Ban':
+			try:
+				await ctx.guild.ban(user, reason='Reached Sufficient Warns')
+			except:
+				await ctx.send('Failed to ban that user')
+
+	@commands.command(name='warnconfig')
+	@commands.has_permissions(manage_guild=True)
+	@commands.bot_has_permissions(embed_links=True, manage_messages=True)
+	async def _config(self, ctx):
+		guild_id = str(ctx.guild.id)
+		emojis = ['1⃣', '2⃣', '3⃣', '4⃣', '5⃣']
+		async def wait_for_reaction():
+			def check(reaction, user):
+				return user == ctx.author
+			try:
+				reaction, user = await self.bot.wait_for('reaction_add', timeout=60.0, check=check)
+			except asyncio.TimeoutError:
+				await ctx.send('Timeout Error')
+			else:
+				return str(reaction.emoji)
+		def emoji(index):
+			return emojis[index - 1]
+		def default():
+			e = discord.Embed(color=colors.fate())
+			e.set_author(name='Warn Config', icon_url=ctx.author.avatar_url)
+			e.description = \
+				f'{emoji(1)} : View Config\n' \
+				f'{emoji(2)} : Edit Config\n' \
+				f'{emoji(3)} : Cancel\n'
+			return e
+		complete = False
+		msg = await ctx.send(embed=default())
+		while not complete:
+			await msg.edit(embed=default())
+			await msg.clear_reactions()
+			await msg.add_reaction(emoji(1))
+			await msg.add_reaction(emoji(2))
+			await msg.add_reaction(emoji(3))
+			reaction = await wait_for_reaction()
+			if reaction == emoji(1):
+				await msg.clear_reactions()
+				if guild_id not in self.config:
+					self.config[guild_id] = {}
+				dat = self.config[guild_id]
+				expiring = False
+				if 'expire' in dat:
+					expiring = True
+				punishments = 'None'
+				if 'punishments' in dat:
+					punishments = ''
+					index = 1
+					for punishment in dat['punishments']:
+						punishments += f'**#{index}. `{punishment}`**\n'
+				e = discord.Embed(color=colors.fate())
+				e.set_author(name='Warn Config', icon_url=ctx.author.avatar_url)
+				e.description = f'**Warns Expire: {expiring}\nCustom Punishments:**\n{punishments}'
+				await msg.edit(embed=e)
+				await msg.add_reaction('⏹')
+				await msg.add_reaction('🔄')
+				reaction = await wait_for_reaction()
+				if reaction == '⏹':
+					break
+				if reaction == '🔄':
+					continue
+			if reaction == emoji(2):
+				await msg.clear_reactions()
+				e = discord.Embed(color=colors.fate())
+				e.description = 'Should warns expire after a month?'
+				await msg.edit(embed=e)
+				await msg.add_reaction('✔')
+				await msg.add_reaction('❌')
+				reaction = await wait_for_reaction()
+				if reaction == '✔':
+					if guild_id not in self.config:
+						self.config[guild_id] = {}
+					self.config[guild_id]['expire'] = 'True'
+				await msg.clear_reactions()
+				e = discord.Embed(color=colors.fate())
+				e.description = 'Set custom punishments?'
+				await msg.edit(embed=e)
+				await msg.add_reaction('✔')
+				await msg.add_reaction('❌')
+				reaction = await wait_for_reaction()
+				if reaction == '❌':
+					break
+				else:
+					await msg.clear_reactions()
+					punishments = []
+					def dump():
+						if guild_id not in self.config:
+							self.config[guild_id] = {}
+						self.config[guild_id]['punishments'] = punishments
+					def pos(index):
+						positions = ['1st', '2nd', '3rd', '4th', '4th', '6th', '7th', '8th']
+						return positions[index - 1]
+					index = 1
+					finished = False
+					while not finished:
+						if len(punishments) > 7:
+							dump()
+							break
+						e = discord.Embed(color=colors.fate())
+						e.description = f'**Punishments: {punishments}**\n\n' \
+							f'Set the {pos(index)} punishment:\n' \
+							f'1⃣: None\n2⃣ : Mute\n3⃣ : Kick\n' \
+							f'4⃣ : Softban\n5⃣ : Ban\n'
+						index += 1
+						await msg.edit(embed=e)
+						for emoji in emojis:
+							await msg.add_reaction(emoji)
+						await msg.add_reaction('✔')
+						reaction = await wait_for_reaction()
+						if reaction == '✔':
+							dump()
+							break
+						options = ['None', 'Mute', 'Kick', 'Softban', 'Ban']
+						reaction_index = emojis.index(reaction)
+						punishments.append(options[reaction_index])
+			else:
+				if reaction == emoji(3):
+					break
+			break
+		await ctx.message.delete()
+		await msg.delete()
+		self.save_json()
 
 	@commands.command(name="clearwarns")
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -838,78 +1020,50 @@ class Mod(commands.Cog):
 			if "manage_messages" not in perms:
 				return await ctx.send("You are missing manage server "
 				    "or manage messages permission(s) to run this command")
-		if user.startswith("<@"):
-			user_id = user.replace("<@", "").replace(">", "").replace("!", "")
-			user = ctx.guild.get_member(int(user_id))
-		else:
-			for member in ctx.guild.members:
-				if user.lower() in member.display_name.lower():
-					user = member
-					break
+		user = self.get_user(ctx, user)
 		if user.top_role.position >= ctx.author.top_role.position:
 			return await ctx.send("That user is above your paygrade, take a seat")
 		guild_id = str(ctx.guild.id)
 		user_id = str(user.id)
 		if guild_id not in self.warns:
 			self.warns[guild_id] = {}
-		if user_id not in self.warns[guild_id]:
-			self.warns[guild_id][user_id] = 0
-		self.warns[guild_id][user_id] = 0
+		self.warns[guild_id][user_id] = []
 		await ctx.send(f"Cleared {user.name}'s warn count")
 		self.save_json()
-
-	@commands.command(name="setwarns")
-	@commands.cooldown(1, 5, commands.BucketType.user)
-	@commands.guild_only()
-	async def setwarns(self, ctx, user, count: int):
-		perms = list(perm for perm, value in ctx.author.guild_permissions)
-		if "manage_guild" not in perms:
-			if "manage_messages" not in perms:
-				return await ctx.send("You are missing manage server "
-					"or manage messages permission(s) to run this command")
-		if user.startswith("<@"):
-			user_id = user.replace("<@", "").replace(">", "").replace("!", "")
-			user = ctx.guild.get_member(int(user_id))
-		else:
-			for member in ctx.guild.members:
-				if user.lower() in member.display_name.lower():
-					user = member
-					break
-		if user.top_role.position >= ctx.author.top_role.position:
-			return await ctx.send("That user is above your paygrade, take a seat")
-		guild_id = str(ctx.guild.id)
-		user_id = str(user.id)
-		if guild_id not in self.warns:
-			self.warns[guild_id] = {}
-		if user_id not in self.warns[guild_id]:
-			self.warns[guild_id][user_id] = 0
-		self.warns[guild_id][user_id] = count
-		with open("./data/userdata/mod.json", "w") as outfile:
-			json.dump({"warns": self.warns}, outfile, ensure_ascii=False)
-		await ctx.send(f"Set {user.name}'s warn count to {count}")
 
 	@commands.command(name="warns")
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.guild_only()
-	async def _warns(self, ctx, user=None):
+	async def _warns(self, ctx, *, user=None):
 		if not user:
 			user = ctx.author
 		else:
-			if user.startswith("<@"):
-				user_id = user.replace("<@", "").replace(">", "").replace("!", "")
-				user = ctx.guild.get_member(int(user_id))
-			else:
-				for member in ctx.guild.members:
-					if user.lower() in member.display_name.lower():
-						user = member
-						break
+			user = self.get_user(ctx, user)
 		guild_id = str(ctx.guild.id)
 		user_id = str(user.id)
 		if guild_id not in self.warns:
-			return await ctx.send(0)
+			self.warns[guild_id] = {}
 		if user_id not in self.warns[guild_id]:
-			return await ctx.send(0)
-		await ctx.send(f"**{user.display_name}:** `{self.warns[guild_id][user_id]}`")
+			self.warns[guild_id][user_id] = []
+		warns = 0
+		reasons = ''
+		for reason, time in self.warns[guild_id][user_id]:
+			time = datetime.strptime(time, '%Y-%m-%d %H:%M:%S.%f')
+			if (datetime.now() - time).days > 30:
+				if 'expire' in self.warns[guild_id]:
+					if self.warns[guild_id]['expire'] == 'True':
+						index = self.warns[guild_id][user_id].index([reason, time])
+						self.warns[guild_id][user_id].pop(index)
+						continue
+			warns += 1
+			reasons += f'\n• `{reason}`'
+		e = discord.Embed(color=colors.fate())
+		url = self.bot.user.avatar_url
+		if user.avatar_url:
+			url = user.avatar_url
+		e.set_author(name=f'{user.name}\'s Warns', icon_url=url)
+		e.description = f'**Total Warns:** [`{warns}`]' + reasons
+		await ctx.send(embed=e)
 
 def setup(bot):
 	bot.add_cog(Mod(bot))

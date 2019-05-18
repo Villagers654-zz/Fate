@@ -70,18 +70,18 @@ class ErrorHandler(commands.Cog):
 		e.set_author(name=f"| Fatal Error | {ctx.command}", icon_url=ctx.author.avatar_url)
 		e.set_thumbnail(url=ctx.guild.icon_url)
 		e.add_field(name="◈ Error ◈", value=r, inline=False)
-		message = await self.bot.get_channel(549192817097048080).send(embed=e)
+		message = await self.bot.get_channel(577661392098820106).send(embed=e)
 		await message.add_reaction("✔")
 
 	@commands.Cog.listener()
 	async def on_raw_reaction_add(self, data):
 		if not self.bot.get_user(data.user_id).bot:
-			if data.guild_id == config.server("id"):
+			if data.channel_id == 577661392098820106:
 				if str(data.emoji) == "✔":
 					channel = self.bot.get_channel(data.channel_id)
 					msg = await channel.fetch_message(data.message_id)
 					for embed in msg.embeds:
-						await self.bot.get_channel(566849811588972565).send("Error Dismissed", embed=embed)
+						await self.bot.get_channel(577661461543780382).send("Error Dismissed", embed=embed)
 					await msg.delete()
 
 def setup(bot):

@@ -1,18 +1,21 @@
 from discord.ext import commands
 from utils import config, colors
 from termcolor import cprint
+from datetime import datetime
+from os.path import isfile
 import traceback
-import datetime
 import discord
 import asyncio
 import random
 import json
 import time
-import os
 
 # ~== Core ==~
 
 def get_stats():
+	if not isfile('./data/stats.json'):
+		with open('./data/stats.json', 'w') as f:
+			json.dump({'commands': []}, f, ensure_ascii=False)
 	with open('./data/stats.json', 'r') as stats:
 		return json.load(stats)
 
@@ -25,6 +28,13 @@ def get_prefix(bot, msg):
 	blocked_users = config['blocked']
 	if msg.author.id in blocked_users:
 		return 'lsimhbiwfefmtalol'
+	if isinstance(msg.author, discord.Member):
+		guild_id = str(msg.guild.id)
+		if guild_id in config['restricted']:
+			if msg.channel.id in config['restricted'][guild_id]['channels']:
+				perms = msg.author.guild_permissions
+				if not perms.administrator and not perms.manage_guild:
+					return 'lsimhbiwfefmtalol'
 	if not msg.guild:
 		return commands.when_mentioned_or(".")(bot, msg)
 	guild_id = str(msg.guild.id)
@@ -80,11 +90,9 @@ async def on_ready():
 	m, s = divmod(time.time() - bot.START_TIME, 60)
 	bot.LOGIN_TIME = s
 	bot.loop.create_task(status_task())
-	cprint(datetime.datetime.now().strftime("%m-%d-%Y %I:%M%p"), 'yellow')
+	cprint(datetime.now().strftime("%m-%d-%Y %I:%M%p"), 'yellow')
 	if error:
 		await bot.get_channel(503902845741957131).send(f"```{error}```")
-	with open('./data/stats.json', 'w') as f:
-		json.dump({'commands': 0}, f, ensure_ascii=False)
 
 @bot.event
 async def on_guild_join(guild: discord.Guild):
@@ -115,7 +123,7 @@ async def on_guild_remove(guild: discord.Guild):
 @bot.event
 async def on_command(ctx):
 	stats = bot.get_stats  # type: dict
-	stats['commands'] += 1
+	stats['commands'].append(str(datetime.now()))
 	with open('./data/stats.json', 'w') as f:
 		json.dump(stats, f, ensure_ascii=False)
 

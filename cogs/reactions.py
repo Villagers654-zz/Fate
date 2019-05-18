@@ -48,7 +48,6 @@ class Reactions(commands.Cog):
 		await ctx.send(file=discord.File(path, filename=os.path.basename(path)), embed=e)
 		await asyncio.sleep(0.5)
 		await ctx.message.delete()
-		self.update_data_usage(path)
 
 	@commands.command(name="junkfood")
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -103,7 +102,7 @@ class Reactions(commands.Cog):
 	@commands.command(name="disgust")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
-	async def _disgust(self, ctx, *, content=""):
+	async def _disgust(self, ctx, content=""):
 		path = os.getcwd() + "/data/images/reactions/disgust/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/disgust/"))
 		e = discord.Embed(color=colors.fate())
 		if content:
@@ -116,7 +115,7 @@ class Reactions(commands.Cog):
 	@commands.command(name="snuggle")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
-	async def _snuggle(self, ctx, *, user: discord.Member):
+	async def _snuggle(self, ctx, user: discord.Member):
 		path = os.getcwd() + "/data/images/reactions/snuggle/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/snuggle/"))
 		e = discord.Embed(color=colors.fate())
 		e.set_author(name=f'{ctx.author.display_name} to {user.display_name}')
@@ -167,7 +166,7 @@ class Reactions(commands.Cog):
 	@commands.command(name="waste")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
-	async def _waste(self, ctx, *, user: discord.Member):
+	async def _waste(self, ctx, user: discord.Member):
 		path = os.getcwd() + "/data/images/reactions/waste/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/waste/"))
 		e = discord.Embed(color=colors.fate())
 		e.set_author(name=f"◈ {ctx.author.display_name} to {user.display_name} ◈", icon_url=ctx.author.avatar_url)
@@ -231,7 +230,7 @@ class Reactions(commands.Cog):
 	@commands.command(name="bite")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
-	async def _bite(self, ctx, *, user: discord.Member):
+	async def _bite(self, ctx, user: discord.Member):
 		path = os.getcwd() + "/data/images/reactions/bite/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/bite/"))
 		e = discord.Embed(color=colors.fate())
 		e.set_author(name=f"◈ {ctx.author.display_name} bites {user.display_name}: ◈", icon_url=ctx.author.avatar_url)
@@ -269,7 +268,7 @@ class Reactions(commands.Cog):
 	@commands.command(name="slap")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
-	async def _slap(self, ctx, *, user: discord.Member):
+	async def _slap(self, ctx, user: discord.Member):
 		path = os.getcwd() + "/data/images/reactions/slap/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/slap/"))
 		e = discord.Embed(color=colors.fate())
 		e.set_author(name=f"◈ {ctx.author.display_name} slaps {user.display_name} ◈", icon_url=ctx.author.avatar_url)
@@ -293,10 +292,10 @@ class Reactions(commands.Cog):
 	@commands.command(name="kill")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
-	async def _kill(self, ctx, *, user: discord.Member):
+	async def _kill(self, ctx, user: discord.Member):
 		path = os.getcwd() + "/data/images/reactions/kill/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/kill/"))
 		e = discord.Embed(color=colors.fate())
-		e.set_author(name=f"◈ {ctx.author.display_name} to {user.display_name} ◈", icon_url=ctx.author.avatar_url)
+		e.set_author(name=f"◈ {ctx.author.display_name} kills {user.display_name} ◈", icon_url=ctx.author.avatar_url)
 		e.set_image(url="attachment://" + os.path.basename(path))
 		await ctx.send(file=discord.File(path, filename=os.path.basename(path)), embed=e)
 		await asyncio.sleep(0.5)
@@ -305,7 +304,7 @@ class Reactions(commands.Cog):
 	@commands.command(name="hug")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
-	async def _hug(self, ctx, *, user: discord.Member):
+	async def _hug(self, ctx, user: discord.Member):
 		path = os.getcwd() + "/data/images/reactions/hug/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/hug/"))
 		e = discord.Embed(color=colors.fate())
 		e.set_author(name=f"◈ {ctx.author.display_name} hugs {user.display_name} ◈", icon_url=ctx.author.avatar_url)

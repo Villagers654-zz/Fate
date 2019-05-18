@@ -118,11 +118,6 @@ class Owner(commands.Cog):
 						self.statsmessage = msg.id
 						with open("./data/userdata/config/stats.json", "w") as outfile:
 							json.dump({"statschannel": self.statschannel, "statsmessage": self.statsmessage}, outfile, ensure_ascii=False)
-				async for msg in statschannel.history(limit=3):
-					stats_id = "{}".format(self.statsmessage)
-					msg_id = "{}".format(msg.id)
-					if stats_id not in msg_id:
-						await msg.delete()
 				await asyncio.sleep(60)
 			except AttributeError:
 				print(AttributeError)

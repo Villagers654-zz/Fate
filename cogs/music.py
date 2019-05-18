@@ -63,8 +63,6 @@ class Music(commands.Cog):
     @commands.bot_has_permissions(embed_links=True, manage_messages=True)
     async def _play(self, ctx, *, query):
         """ Lists the first 10 search results from a given query. """
-        if not query.startswith('ytsearch:') and not query.startswith('scsearch:'):
-            query = 'ytsearch:' + query
         if 'youtu.be' in query or 'http' in query:
             player = self.bot.lavalink.players.get(ctx.guild.id)
             query = query.strip('<>')
@@ -92,6 +90,8 @@ class Music(commands.Cog):
             if not player.is_playing:
                 await player.play()
             return await ctx.message.delete()
+        if not query.startswith('ytsearch:') and not query.startswith('scsearch:'):
+            query = 'ytsearch:' + query
         results = await self.bot.lavalink.get_tracks(query)
         if not results or not results['tracks']:
             await ctx.send('Nothing found', delete_after=20)

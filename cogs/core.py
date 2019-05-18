@@ -190,7 +190,7 @@ class Core(commands.Cog):
 	@commands.Cog.listener()
 	async def on_message(self, msg: discord.Message):
 		if isinstance(msg.channel, discord.DMChannel):
-			channel = self.bot.get_channel(552828495244558381)
+			channel = self.bot.get_channel(577661489154883584)
 			if msg.attachments:
 				for attachment in msg.attachments:
 					if msg.author.id == self.bot.user.id:

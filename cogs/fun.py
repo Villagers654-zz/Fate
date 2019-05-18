@@ -72,7 +72,7 @@ class Fun(commands.Cog):
 
 	@commands.command(name='magik')
 	async def magik(self, ctx, user: discord.Member=None):
-		if user.name == 'Luck':
+		if user.name == 'Luck' or user.id == self.bot.user.id:
 			return await ctx.send('Next time i ban you')
 		if os.path.exists('magik.png'):
 			os.system('rm magik.png')

@@ -1,6 +1,8 @@
 from discord.ext import commands
+from os.path import isfile
 from utils import colors
 import discord
+import asyncio
 import json
 
 class Config(commands.Cog):
@@ -81,26 +83,29 @@ class Config(commands.Cog):
 			return "inactive"
 
 	@commands.command(name="config")
+	@commands.guild_only()
+	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.bot_has_permissions(embed_links=True)
 	async def _config(self, ctx):
-		guild_id = str(ctx.guild.id)
-		e = discord.Embed(color=colors.fate())
-		e.set_author(name="| 💎 Server Config 💎", icon_url=ctx.guild.owner.avatar_url)
-		e.set_thumbnail(url=ctx.guild.icon_url)
-		e.description = f"**Prefix:** [`{self.prefix(guild_id)}`]\n"
-		module_config =  f"**Restore Roles:** [`{self.restore_roles(guild_id)}`]\n" \
-			f"**Chat Filter:** [`{self.chatfilter(guild_id)}`]\n" \
-			f"**Anti Spam:** [`{self.anti_spam(guild_id)}`]\n" \
-			f"**Anti Raid:** [`{self.anti_raid(guild_id)}`]\n" \
-			f"**Self Roles:** [`{self.selfroles(guild_id)}`]\n" \
-			f"**Auto Role:** [`{self.autorole(guild_id)}`]\n" \
-			f"**Welcome:** [`{self.welcome(guild_id)}`]\n" \
-			f"**Farewell:** [`{self.farewell(guild_id)}`]\n" \
-			f"**Chatbot:** [`{self.chatbot(guild_id)}`]\n" \
-			f"**Logger:** [`{self.logger(guild_id)}`]\n" \
-			f"**Lock:** [`{self.lock(guild_id)}`]"
-		e.add_field(name="◈ Modules ◈", value=module_config)
-		await ctx.send(embed=e)
+		if not ctx.invoked_subcommand:
+			guild_id = str(ctx.guild.id)
+			e = discord.Embed(color=colors.fate())
+			e.set_author(name="| 💎 Server Config 💎", icon_url=ctx.guild.owner.avatar_url)
+			e.set_thumbnail(url=ctx.guild.icon_url)
+			e.description = f"**Prefix:** [`{self.prefix(guild_id)}`]\n"
+			module_config =  f"**Restore Roles:** [`{self.restore_roles(guild_id)}`]\n" \
+				f"**Chat Filter:** [`{self.chatfilter(guild_id)}`]\n" \
+				f"**Anti Spam:** [`{self.anti_spam(guild_id)}`]\n" \
+				f"**Anti Raid:** [`{self.anti_raid(guild_id)}`]\n" \
+				f"**Self Roles:** [`{self.selfroles(guild_id)}`]\n" \
+				f"**Auto Role:** [`{self.autorole(guild_id)}`]\n" \
+				f"**Welcome:** [`{self.welcome(guild_id)}`]\n" \
+				f"**Farewell:** [`{self.farewell(guild_id)}`]\n" \
+				f"**Chatbot:** [`{self.chatbot(guild_id)}`]\n" \
+				f"**Logger:** [`{self.logger(guild_id)}`]\n" \
+				f"**Lock:** [`{self.lock(guild_id)}`]"
+			e.add_field(name="◈ Modules ◈", value=module_config)
+			await ctx.send(embed=e)
 
 def setup(bot):
 	bot.add_cog(Config(bot))
