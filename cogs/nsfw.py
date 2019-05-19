@@ -19,6 +19,7 @@ class NSFW(commands.Cog):
 	@commands.is_nsfw()
 	async def _gel(self, ctx, *, search_term):
 		blacklist = ['loli', 'shota']
+		search_term = search_term.replace(' ', '_')
 		for x in blacklist:
 			if x in search_term:
 				return await ctx.send('that tag is blacklisted')
@@ -27,7 +28,7 @@ class NSFW(commands.Cog):
 			    f"&q=index&tags={search_term}&json=1&limit=100&pid={randint(1, 3)}")
 			dat = json.loads(r.content)
 			e = discord.Embed(color=colors.random())
-			e.set_image(url=dat[randint(1, 100)]['file_url'])
+			e.set_image(url=dat[randint(1, len(dat))]['file_url'])
 			await ctx.send(embed=e)
 		except:
 			await ctx.send("error")
