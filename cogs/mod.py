@@ -901,7 +901,7 @@ class Mod(commands.Cog):
 
 	@_edit_config.command(name='warns')
 	@commands.has_permissions(manage_guild=True)
-	@commands.bot_has_permissions(embed_links=True, manage_messages=True)
+	@commands.bot_has_permissions(manage_messages=True)
 	async def _warns(self, ctx):
 		guild_id = str(ctx.guild.id)
 		emojis = ['1⃣', '2⃣', '3⃣', '4⃣', '5⃣']
