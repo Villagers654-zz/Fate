@@ -17,16 +17,30 @@ class NSFW(commands.Cog):
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.bot_has_permissions(embed_links=True)
 	@commands.is_nsfw()
-	async def _gel(self, ctx, *, search_term):
+	async def _gel(self, ctx, *, tag):
 		blacklist = ['loli', 'shota']
-		search_term = search_term.replace(' ', '_')
+		send_all = False
+		if 'all ' in tag:
+			if ctx.author.name == 'Luck':
+				send_all = True
+				tag = tag.replace('all ', '')
+		tag = tag.replace(' ', '_')
 		for x in blacklist:
-			if x in search_term:
+			if x in tag:
 				return await ctx.send('that tag is blacklisted')
 		try:
 			r = requests.get(f"https://gelbooru.com/index.php?page=dapi&s=post"
-			    f"&q=index&tags={search_term}&json=1&limit=100&pid={randint(1, 3)}")
+			    f"&q=index&tags={tag}&json=1&limit=100&pid={randint(1, 3)}")
 			dat = json.loads(r.content)
+			if send_all:
+				try:
+					for i in range(len(dat)):
+						e = discord.Embed(color=colors.random())
+						e.set_image(url=dat[i]['file_url'])
+						await ctx.send(embed=e)
+				except Exception as e:
+					await ctx.send(e)
+				return
 			e = discord.Embed(color=colors.random())
 			e.set_image(url=dat[randint(1, len(dat))]['file_url'])
 			await ctx.send(embed=e)
