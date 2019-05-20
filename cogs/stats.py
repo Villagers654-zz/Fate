@@ -25,11 +25,11 @@ class Owner(commands.Cog):
 		with open("./data/userdata/xp.json", "r") as f:
 			return json.load(f)
 
-	def global_data(self):
-		return self.get()["global"]
+	def monthly_global_data(self):
+		return self.get()["monthly_global"]
 
-	def guilds_data(self):
-		return self.get()["guilded"]
+	def monthly_guilds_data(self):
+		return self.get()["monthly_guilded"]
 
 	def luck(ctx):
 		return ctx.message.author.id == 264838866480005122
@@ -70,18 +70,24 @@ class Owner(commands.Cog):
 		while True:
 			try:
 				channel = self.bot.get_channel(self.statschannel)
+				guild = channel.guild
+				guild_id = str(guild.id)
 				e = discord.Embed(title="", color=0x4A0E50)
 				e.description = "💎 Official 4B4T Server 💎"
+
+				xp = {}
+				for user in list(self.monthly_guilds_data()[guild_id]):
+					xp[user] = len(self.monthly_guilds_data()[guild_id][user])
 				leaderboard = ""
 				rank = 1
-				for user_id, xp in (sorted(self.guilds_data()[str(channel.guild.id)].items(), key=lambda kv: kv[1], reverse=True))[:8]:
+				for user_id, xp in (sorted(xp.items(), key=lambda kv: kv[1], reverse=True))[:15]:
 					name = "INVALID-USER"
 					user = self.bot.get_user(int(user_id))
 					if isinstance(user, discord.User):
 						name = user.name
 					level = str(xp / 750)
 					level = level[:level.find(".")]
-					leaderboard += "‎**‎#{}.** ‎`‎{}`: ‎{} | {}\n".format(rank, name, level, xp)
+					leaderboard += f'**#{rank}.** `{name}`: {level} | {xp}\n'
 					rank += 1
 				f = psutil.Process(os.getpid())
 				try:
@@ -94,7 +100,7 @@ class Owner(commands.Cog):
 					cpufreqmax = "unavailable"
 				e.set_thumbnail(url=channel.guild.icon_url)
 				e.set_author(name=f'~~~====🥂🍸🍷Stats🍷🍸🥂====~~~')
-				e.add_field(name="◈ Discord ◈", value=f'__**Founder**__: FrequencyX4\n__**Members**__: {channel.guild.member_count}', inline=False)
+				e.add_field(name="◈ Discord ◈", value=f'__**Owner**__: {channel.guild.owner}\n__**Members**__: {channel.guild.member_count}', inline=False)
 				e.add_field(name="Leaderboard", value=leaderboard, inline=False)
 				e.add_field(name="◈ Memory ◈",
 					value=f"__**Storage**__: [{p.bytes2human(psutil.disk_usage('/').used)}/{p.bytes2human(psutil.disk_usage('/').total)}]\n"
