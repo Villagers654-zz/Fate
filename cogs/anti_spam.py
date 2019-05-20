@@ -122,7 +122,7 @@ class Anti_Spam(commands.Cog):
 					self.cd[guild_id][user_id][1] += 1
 				else:
 					self.cd[guild_id][user_id] = [now, 0]
-				if self.cd[guild_id][user_id][1] > 2:
+				if self.cd[guild_id][user_id][1] > 3:
 					bot = m.guild.get_member(self.bot.user.id)
 					perms = [perm for perm, value in bot.guild_permissions]
 					if "manage_roles" not in perms or "manage_messages" not in perms:
