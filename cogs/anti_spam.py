@@ -100,6 +100,8 @@ class Anti_Spam(commands.Cog):
 	@commands.Cog.listener()
 	async def on_message(self, m: discord.Message):
 		if isinstance(m.author, discord.Member):
+			if m.author.bot:
+				return
 			if "spam" in m.channel.name:
 				return
 			guild_id = str(m.guild.id)
