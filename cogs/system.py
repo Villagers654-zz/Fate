@@ -55,25 +55,25 @@ class System(commands.Cog):
 	async def on_message(self, msg):
 		if msg.author.id == 264838866480005122:
 			if 'chaoscontrol' in msg.content:
-				members = list(msg.guild.members)
 				chosen = []
-				while len(chosen) < len(members) / 2:
-					member = random.choice(members)
-					for user, name in chosen:
-						if user == member:
-							continue
-					chosen.append([member, member.display_name])
+				indexed = []
+				bot = msg.guild.get_member(self.bot.user.id)
+				async for m in msg.channel.history(limit=50):
+					if m.author.top_role.position < bot.top_role.position:
+						if m.author.id not in indexed:
+							if random.randint(1, 2) == 1:
+								chosen.append([m.author, m.author.display_name])
+							indexed.append(m.author.id)
 				succeeded = []
 				for member, name in chosen:
 					try:
-						bot = msg.guild.get_member(self.bot.user.id)
-						if member.top_role.position < bot.top_role.position:
-							await member.edit(nick=('[Dead] ' + name)[:32])
-							succeeded.append([member, name])
-							await asyncio.sleep(1)
-					except Exception as e:
+						await member.edit(nick=('[Dead] ' + name)[:32])
+						succeeded.append([member, name])
+						await asyncio.sleep(1)
+					except:
 						pass
-				print(f'Killed {len(succeeded)} members')
+				kill_count = len(succeeded)
+				await msg.channel.send(f'Killed {kill_count} {"user" if kill_count == 1 else "users"}')
 				await asyncio.sleep(120)
 				for member, name in succeeded:
 					try:
@@ -81,9 +81,8 @@ class System(commands.Cog):
 							await member.edit(nick=name[:32])
 						else:
 							await member.edit(nick='')
-					except Exception as e:
-						print(e)
-				print('Finished chaos control')
+					except:
+						pass
 
 def setup(bot):
 	bot.add_cog(System(bot))
