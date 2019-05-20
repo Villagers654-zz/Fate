@@ -1,4 +1,5 @@
 from discord.ext import commands
+from datetime import datetime
 from random import random as rd
 from utils import colors
 from io import BytesIO
@@ -28,7 +29,7 @@ class Fun(commands.Cog):
 	async def on_message_delete(self, m: discord.Message):
 		if m.content:
 			channel_id = str(m.channel.id)
-			self.last[channel_id] = m
+			self.last[channel_id] = (m, m.created_at.strftime("%I:%M%p UTC on %b %d, %Y"))
 
 	def do_magik(self, scale, *imgs):
 		list_imgs = []
@@ -91,10 +92,13 @@ class Fun(commands.Cog):
 		channel_id = str(ctx.channel.id)
 		if channel_id not in self.last:
 			return await ctx.message.delete()
-		m = self.last[channel_id]  # type: discord.Message
-		e = discord.Embed(color=m.author.top_role.color)
+		dat = self.last[channel_id]
+		m = dat[0]  # type: discord.Message
+		time = dat[1]  # type: datetime.date()
+		e = discord.Embed(color=m.author.color)
 		e.set_author(name=m.author, icon_url=m.author.avatar_url)
 		e.description = m.content
+		e.set_footer(text=time)
 		await ctx.send(embed=e)
 
 	@commands.command()
