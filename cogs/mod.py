@@ -17,7 +17,6 @@ class Mod(commands.Cog):
 		self.warns = {}
 		self.roles = {}
 		self.timers = {}
-		self.config = {}
 		if isfile("./data/userdata/mod.json"):
 			with open("./data/userdata/mod.json", "r") as infile:
 				dat = json.load(infile)
@@ -27,12 +26,10 @@ class Mod(commands.Cog):
 					self.roles = dat["roles"]
 				if "timers" in dat:
 					self.timers = dat["timers"]
-				if "warn_config" in dat:
-					self.config = dat["warn_config"]
 
 	def save_json(self):
 		with open("./data/userdata/mod.json", "w") as outfile:
-			json.dump({"warns": self.warns, "roles": self.roles, "timers": self.timers, 'warn_config': self.config}, outfile, ensure_ascii=False)
+			json.dump({"warns": self.warns, "roles": self.roles, "timers": self.timers}, outfile, ensure_ascii=False)
 
 	def save_config(self, config):
 		with open('./data/config.json', 'w') as f:
@@ -781,10 +778,14 @@ class Mod(commands.Cog):
 			reason = "unspecified"
 		guild_id = str(ctx.guild.id)
 		user_id = str(user.id)
-		punishments = ['None', 'Mute', 'Kick', 'Softban', 'Ban']
-		if guild_id in self.config:
-			if 'punishments' in self.config[guild_id]:
-				punishments = self.config[guild_id]['punishments']
+		punishments = ['None', 'None', 'Mute', 'Kick', 'Softban', 'Ban']
+		config = self.bot.get_config  # type: dict
+		if 'warns' not in config:
+			config['warns'] = {}
+			self.save_config(config)
+		if guild_id in config['warns']:
+			if 'punishments' in config['warns'][guild_id]:
+				punishments = config['warns'][guild_id]['punishments']
 		if guild_id not in self.warns:
 			self.warns[guild_id] = {}
 		if user_id not in self.warns[guild_id]:
@@ -800,6 +801,7 @@ class Mod(commands.Cog):
 					if self.warns[guild_id]['expire'] == 'True':
 						index = self.warns[guild_id][user_id].index([reason, time])
 						self.warns[guild_id][user_id].pop(index)
+						self.save_config(config)
 						continue
 			warns += 1
 		self.save_json()
@@ -889,136 +891,6 @@ class Mod(commands.Cog):
 				await ctx.guild.ban(user, reason='Reached Sufficient Warns')
 			except:
 				await ctx.send('Failed to ban that user')
-
-	@commands.group(name='editconfig')
-	@commands.cooldown(1, 3, commands.BucketType.user)
-	@commands.bot_has_permissions(embed_links=True)
-	async def _edit_config(self, ctx):
-		if not ctx.invoked_subcommand:
-			e = discord.Embed(color=colors.fate())
-			e.description = '.editconfig warns'
-			await ctx.send(embed=e)
-
-	@_edit_config.command(name='warns')
-	@commands.has_permissions(manage_guild=True)
-	@commands.bot_has_permissions(manage_messages=True)
-	async def _warns(self, ctx):
-		guild_id = str(ctx.guild.id)
-		emojis = ['1⃣', '2⃣', '3⃣', '4⃣', '5⃣']
-		async def wait_for_reaction():
-			def check(reaction, user):
-				return user == ctx.author
-			try:
-				reaction, user = await self.bot.wait_for('reaction_add', timeout=60.0, check=check)
-			except asyncio.TimeoutError:
-				await ctx.send('Timeout Error')
-			else:
-				return str(reaction.emoji)
-		def emoji(index):
-			return emojis[index - 1]
-		def default():
-			e = discord.Embed(color=colors.fate())
-			e.set_author(name='Warn Config', icon_url=ctx.author.avatar_url)
-			e.description = \
-				f'{emoji(1)} : View Config\n' \
-				f'{emoji(2)} : Edit Config\n' \
-				f'{emoji(3)} : Cancel\n'
-			return e
-		complete = False
-		msg = await ctx.send(embed=default())
-		while not complete:
-			await msg.edit(embed=default())
-			await msg.clear_reactions()
-			await msg.add_reaction(emoji(1))
-			await msg.add_reaction(emoji(2))
-			await msg.add_reaction(emoji(3))
-			reaction = await wait_for_reaction()
-			if reaction == emoji(1):
-				await msg.clear_reactions()
-				if guild_id not in self.config:
-					self.config[guild_id] = {}
-				dat = self.config[guild_id]
-				expiring = False
-				if 'expire' in dat:
-					expiring = True
-				punishments = 'None'
-				if 'punishments' in dat:
-					punishments = ''
-					index = 1
-					for punishment in dat['punishments']:
-						punishments += f'**#{index}. `{punishment}`**\n'
-				e = discord.Embed(color=colors.fate())
-				e.set_author(name='Warn Config', icon_url=ctx.author.avatar_url)
-				e.description = f'**Warns Expire: {expiring}\nCustom Punishments:**\n{punishments}'
-				await msg.edit(embed=e)
-				await msg.add_reaction('⏹')
-				await msg.add_reaction('🔄')
-				reaction = await wait_for_reaction()
-				if reaction == '⏹':
-					break
-				if reaction == '🔄':
-					continue
-			if reaction == emoji(2):
-				await msg.clear_reactions()
-				e = discord.Embed(color=colors.fate())
-				e.description = 'Should warns expire after a month?'
-				await msg.edit(embed=e)
-				await msg.add_reaction('✔')
-				await msg.add_reaction('❌')
-				reaction = await wait_for_reaction()
-				if reaction == '✔':
-					if guild_id not in self.config:
-						self.config[guild_id] = {}
-					self.config[guild_id]['expire'] = 'True'
-				await msg.clear_reactions()
-				e = discord.Embed(color=colors.fate())
-				e.description = 'Set custom punishments?'
-				await msg.edit(embed=e)
-				await msg.add_reaction('✔')
-				await msg.add_reaction('❌')
-				reaction = await wait_for_reaction()
-				if reaction == '❌':
-					break
-				else:
-					await msg.clear_reactions()
-					punishments = []
-					def dump():
-						if guild_id not in self.config:
-							self.config[guild_id] = {}
-						self.config[guild_id]['punishments'] = punishments
-					def pos(index):
-						positions = ['1st', '2nd', '3rd', '4th', '4th', '6th', '7th', '8th']
-						return positions[index - 1]
-					index = 1
-					finished = False
-					while not finished:
-						if len(punishments) > 7:
-							dump()
-							break
-						e = discord.Embed(color=colors.fate())
-						e.description = f'**Punishments: {punishments}**\n\n' \
-							f'Set the {pos(index)} punishment:\n' \
-							f'1⃣: None\n2⃣ : Mute\n3⃣ : Kick\n' \
-							f'4⃣ : Softban\n5⃣ : Ban\n'
-						index += 1
-						await msg.edit(embed=e)
-						for emoji in emojis:
-							await msg.add_reaction(emoji)
-						await msg.add_reaction('✔')
-						reaction = await wait_for_reaction()
-						if reaction == '✔':
-							dump()
-							break
-						options = ['None', 'Mute', 'Kick', 'Softban', 'Ban']
-						reaction_index = emojis.index(reaction)
-						punishments.append(options[reaction_index])
-			else:
-				if reaction == emoji(3):
-					break
-			break
-		await ctx.message.delete()
-		await msg.delete()
-		self.save_json()
 
 	@commands.command(name="clearwarns")
 	@commands.cooldown(1, 5, commands.BucketType.user)
