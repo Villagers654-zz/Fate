@@ -67,7 +67,7 @@ class System(commands.Cog):
 				succeeded = []
 				for member, name in chosen:
 					try:
-						await member.edit(nick=('[Dead] ' + name)[:32])
+						await member.edit(nick=('[Snapped] ' + name)[:32])
 						succeeded.append([member, name])
 						await asyncio.sleep(1)
 					except:
