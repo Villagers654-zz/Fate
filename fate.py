@@ -20,16 +20,23 @@ def get_stats():
 		return json.load(stats)
 
 def get_config():
+	if not isfile('./data/config.json'):
+		with open('./data/config.json', 'w') as f:
+			json.dump({}, f, ensure_ascii=False)
 	with open('./data/config.json', 'r') as config:
 		return json.load(config)
 
 def get_prefix(bot, msg):
 	config = get_config()  # type: dict
+	if 'blocked' not in config:
+		config['blocked'] = {}
 	blocked_users = config['blocked']
 	if msg.author.id in blocked_users:
 		return 'lsimhbiwfefmtalol'
 	if isinstance(msg.author, discord.Member):
 		guild_id = str(msg.guild.id)
+		if 'restricted' not in config:
+			config['restricted'] = {}
 		if guild_id in config['restricted']:
 			if msg.channel.id in config['restricted'][guild_id]['channels']:
 				perms = msg.author.guild_permissions
@@ -38,6 +45,8 @@ def get_prefix(bot, msg):
 	if not msg.guild:
 		return commands.when_mentioned_or(".")(bot, msg)
 	guild_id = str(msg.guild.id)
+	if 'prefix' not in config:
+		config['prefix']= {}
 	prefixes = config['prefix']
 	if guild_id not in prefixes:
 		return "."
@@ -45,7 +54,7 @@ def get_prefix(bot, msg):
 
 files = ['error_handler', 'config', 'menus', 'core', 'music', 'mod', 'welcome', 'farewell', 'notes', 'archive', 'coffeeshop', 'custom',
          'actions', 'reactions', 'responses', 'textart', 'fun', 'math', 'dev', '4b4t', 'readme', 'reload', 'embeds', 'warning', 'profiles',
-         'clean_rythm', 'utility', 'psutil', 'rules', 'duel_chat', 'selfroles', 'lock', 'audit', 'cookies', 'team', 'stats',
+         'clean_rythm', 'utility', 'psutil', 'rules', 'duel_chat', 'selfroles', 'lock', 'audit', 'cookies', 'team',
          'emojis', 'logger', 'autorole', 'changelog', 'restore_roles', 'chatbot', 'anti_spam', 'anti_raid', 'chatfilter', 'nsfw', 'leaderboards',
          'chatlock', 'rainbow', 'vc_log', 'system', 'user']
 

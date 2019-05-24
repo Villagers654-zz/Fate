@@ -91,10 +91,6 @@ class Core(commands.Cog):
 		e.set_author(name=f"Bots Latency", icon_url=self.bot.user.avatar_url)
 		e.set_thumbnail(url=img)
 		e.description = f"**Message Trip:** `{int(ping)}ms`\n**Websocket Heartbeat:** `{api}ms`"
-		before = monotonic()
-		await message.edit(embed=e)
-		ping = (monotonic() - before) * 1000
-		e.description = f"**Message Trip:** `{int(ping)}ms`\n**Websocket Heartbeat:** `{api}ms`"
 		await message.edit(embed=e)
 
 	@commands.command(name="devping")

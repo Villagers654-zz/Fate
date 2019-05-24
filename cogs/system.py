@@ -1,12 +1,14 @@
 from discord.ext import commands
-from utils import checks
+from utils import checks, colors
 import discord
 import asyncio
 import random
+import json
 
 class System(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
+		self.dir = './data/stats.json'
 		self.output_log = ''
 		self.error_log = ''
 
@@ -35,6 +37,16 @@ class System(commands.Cog):
 				except:
 					pass
 				await asyncio.sleep(5)
+
+	def get_stats(self):
+		with open('./data/stats.json', 'r') as f:
+			return json.load(f)
+
+	async def stats_task(self):
+		while True:
+			channel = self.bot.get_channel(577661440442236931)
+			msg = await channel.fetch_message(580270755212689420)
+			e = discord.Embed(color=colors.fate())
 
 	@commands.command(name='save')
 	@commands.check(checks.luck)

@@ -108,9 +108,9 @@ class Config(commands.Cog):
 				f"**Chatbot:** [`{self.chatbot(guild_id)}`]\n" \
 				f"**Logger:** [`{self.logger(guild_id)}`]\n" \
 				f"**Lock:** [`{self.lock(guild_id)}`]"
-			e.add_field(name="◈ Modules ◈", value=module_config)
+			e.add_field(name="◈ Modules ◈", value=module_config, inline=False)
 			subcommands = '.config warns'
-			e.add_field(name='◈ Editable Configs ◈', value=subcommands)
+			e.add_field(name='◈ Editable Configs ◈', value=subcommands, inline=False)
 			await ctx.send(embed=e)
 
 	@_config.command(name='warns')

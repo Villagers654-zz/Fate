@@ -2,7 +2,6 @@ from utils import bytes2human as p
 from discord.ext import commands
 from datetime import datetime
 from os.path import isfile
-import traceback
 import discord
 import asyncio
 import psutil
@@ -74,7 +73,6 @@ class Owner(commands.Cog):
 				guild_id = str(guild.id)
 				e = discord.Embed(title="", color=0x4A0E50)
 				e.description = "💎 Official 4B4T Server 💎"
-
 				xp = {}
 				for user in list(self.monthly_guilds_data()[guild_id]):
 					xp[user] = len(self.monthly_guilds_data()[guild_id][user])
@@ -85,9 +83,7 @@ class Owner(commands.Cog):
 					user = self.bot.get_user(int(user_id))
 					if isinstance(user, discord.User):
 						name = user.name
-					level = str(xp / 750)
-					level = level[:level.find(".")]
-					leaderboard += f'**#{rank}.** `{name}`: {level} | {xp}\n'
+					leaderboard += f'**#{rank}.** `{name}`: {xp}\n'
 					rank += 1
 				f = psutil.Process(os.getpid())
 				try:
@@ -124,10 +120,9 @@ class Owner(commands.Cog):
 						self.statsmessage = msg.id
 						with open("./data/userdata/config/stats.json", "w") as outfile:
 							json.dump({"statschannel": self.statschannel, "statsmessage": self.statsmessage}, outfile, ensure_ascii=False)
-				await asyncio.sleep(60)
 			except AttributeError:
 				print(AttributeError)
-				await asyncio.sleep(60)
+			await asyncio.sleep(1500)
 
 	@commands.Cog.listener()
 	async def on_ready(self):
