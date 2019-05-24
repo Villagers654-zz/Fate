@@ -1,5 +1,7 @@
 from utils import checks, colors, ssh, config
 from discord.ext import commands
+from zipfile import ZipFile
+from time import monotonic
 import subprocess
 import discord
 import asyncio
@@ -9,6 +11,14 @@ class Backup(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.backup = False
+
+	def get_all_file_paths(self, directory):
+		file_paths = []
+		for root, directories, files in os.walk(directory):
+			for filename in files:
+				filepath = os.path.join(root, filename)
+				file_paths.append(filepath)
+		return file_paths
 
 	@commands.command(name="backup")
 	@commands.check(checks.luck)
@@ -42,13 +52,15 @@ class Backup(commands.Cog):
 	async def backup_task(self):
 		while True:
 			await asyncio.sleep(129600)
-			p = subprocess.Popen("ls", stdout=subprocess.PIPE, shell=True)
-			(output, err) = p.communicate()
-			if "Backup.zip" in str(output):
-				os.system("rm Backup.zip")
-			os.system("zip -r Backup.zip /home/luck/FateZero")
-			ssh.upload("luck", "Backup.zip", "/home/luck/Backup.zip")
-			await self.bot.get_channel(config.server("log")).send("Ran scheduled backup successfully")
+			before = monotonic()
+			if os.path.isfile('Backup.zip'):
+				os.remove('Backup.zip')
+			file_paths = self.get_all_file_paths(os.getcwd())
+			with ZipFile('Backup.zip', 'w') as zip:
+				for file in file_paths:
+					zip.write(file)
+			ping = (monotonic() - before) * 1000
+			await self.bot.get_channel(config.server("log")).send(f'Ran Scheduled Backup: {ping}')
 
 	@commands.Cog.listener()
 	async def on_ready(self):
