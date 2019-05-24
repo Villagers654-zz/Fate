@@ -17,7 +17,6 @@ class Minecraft(commands.Cog):
 				if "motds" in dat and "old_motds" in dat:
 					self.motds = dat["motds"]
 					self.old_motds = dat["old_motds"]
-		self.channel = self.bot.get_channel(580567603899269145)
 
 	def save(self):
 		with open("./data/4b4t/motds.json", "w") as outfile:
@@ -65,7 +64,8 @@ class Minecraft(commands.Cog):
 		e.set_author(name=ctx.author, icon_url=ctx.author.avatar_url)
 		e.set_thumbnail(url=ctx.guild.icon_url)
 		e.description = motd
-		msg = await self.channel.send(embed=e)
+		channel = self.bot.get_channel(580567603899269145)
+		msg = await channel.send(embed=e)
 		await msg.add_reaction('✔')
 		await msg.add_reaction('❌')
 
@@ -118,8 +118,9 @@ class Minecraft(commands.Cog):
 	@commands.Cog.listener()
 	async def on_raw_reaction_add(self, data):
 		if not self.bot.get_user(data.user_id).bot:
-			if data.channel_id == self.channel.id:
-				msg = await self.channel.fetch_message(data.message_id)
+			channel = self.bot.get_channel(580567603899269145)
+			if data.channel_id == channel.id:
+				msg = await channel.fetch_message(data.message_id)
 				motd = msg.embeds[0].description
 				if str(data.emoji) == "✔":
 					if all(m for m in self.motds if motd.lower() not in m.lower()):
