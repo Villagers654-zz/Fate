@@ -30,8 +30,7 @@ def get_prefix(bot, msg):
 	config = get_config()  # type: dict
 	if 'blocked' not in config:
 		config['blocked'] = {}
-	blocked_users = config['blocked']
-	if msg.author.id in blocked_users:
+	if msg.author.id in config['blocked']:
 		return 'lsimhbiwfefmtalol'
 	if isinstance(msg.author, discord.Member):
 		guild_id = str(msg.guild.id)
