@@ -4,6 +4,7 @@ import lavalink
 import discord
 import asyncio
 import math
+import json
 import re
 
 time_rx = re.compile('[0-9]+')
@@ -12,6 +13,7 @@ url_rx = re.compile('https?:\/\/(?:www\.)?.+')  # noqa: W605
 class Music(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.map = []
         if not hasattr(bot, 'lavalink'):
             lavalink.Client(bot=bot, password='youshallnotpass', loop=bot.loop, ws_port=2333, rest_port=2333)
             self.bot.lavalink.register_hook(self._track_hook)
@@ -56,6 +58,9 @@ class Music(commands.Cog):
                         player.queue.clear()
                         if player.is_connected:
                             await player.disconnect()
+                        if channel.guild.id in self.bot.voice_calls:
+                            index = self.bot.voice_calls.index(channel.guild.id)
+                            self.bot.voice_calls.pop(index)
 
     @commands.command(name="play")
     @commands.cooldown(1, 3, commands.BucketType.user)
@@ -499,6 +504,9 @@ class Music(commands.Cog):
         player.queue.clear()
         await player.disconnect()
         await ctx.send('*⃣ | Disconnected.', delete_after=20)
+        if ctx.guild.id in self.bot.voice_calls:
+            index = self.bot.voice_calls.index(ctx.guild.id)
+            self.bot.voice_calls.pop(index)
         await asyncio.sleep(20)
         await ctx.message.delete()
 
@@ -521,6 +529,7 @@ class Music(commands.Cog):
                 return await ctx.message.delete()
             player.store('channel', ctx.channel.id)
             await player.connect(ctx.author.voice.channel.id)
+            self.bot.voice_calls.append(ctx.guild.id)
         else:
             if player.connected_channel.id != ctx.author.voice.channel.id:
                 await ctx.send('Join my voice channel!', delete_after=20)

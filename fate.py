@@ -64,6 +64,7 @@ bot.remove_command('help')
 bot.errorcount = 0
 bot.get_stats = get_stats()
 bot.get_config = get_config()
+bot.voice_calls = []
 error = False
 
 async def status_task():
