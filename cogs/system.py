@@ -11,6 +11,7 @@ class System(commands.Cog):
 		self.dir = './data/stats.json'
 		self.output_log = ''
 		self.error_log = ''
+		self.last_voice_state = ''
 
 	async def console_task(self):
 		while True:
@@ -38,6 +39,23 @@ class System(commands.Cog):
 					pass
 				await asyncio.sleep(5)
 
+	async def activity_task(self):
+		while True:
+			e = discord.Embed(color=colors.fate())
+			voice_state = ''
+			for guild_id in self.bot.voice_calls:
+				guild = self.bot.get_guild(int(guild_id))
+				voice_state += f'• **[`{guild.name}`]**\n'
+			if not voice_state:
+				voice_state = 'None'
+			e.add_field(name='Voice State', value=voice_state, inline=False)
+			channel = self.bot.get_channel(577661440442236931)
+			msg = await channel.fetch_message(581773493738274826)
+			if voice_state != self.last_voice_state:
+				await msg.edit(embed=e)
+				self.last_voice_state = voice_state
+			await asyncio.sleep(5)
+
 	def get_stats(self):
 		with open('./data/stats.json', 'r') as f:
 			return json.load(f)
@@ -62,6 +80,7 @@ class System(commands.Cog):
 	@commands.Cog.listener()
 	async def on_ready(self):
 		self.bot.loop.create_task(self.console_task())
+		self.bot.loop.create_task(self.activity_task())
 
 	@commands.Cog.listener()
 	async def on_message(self, msg):
