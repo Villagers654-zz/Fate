@@ -89,7 +89,7 @@ class System(commands.Cog):
 				chosen = []
 				indexed = []
 				bot = msg.guild.get_member(self.bot.user.id)
-				async for m in msg.channel.history(limit=50):
+				async for m in msg.channel.history(limit=20):
 					if m.author.top_role.position < bot.top_role.position:
 						if m.author.id not in indexed:
 							if random.randint(1, 2) == 1:
