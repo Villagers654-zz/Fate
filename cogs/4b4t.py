@@ -39,10 +39,10 @@ class Minecraft(commands.Cog):
 		await ctx.send(len(self.motds))
 
 	@commands.command(name='submitmotd', aliases=['motd'])
-	@commands.cooldown(1, 60, commands.BucketType.user)
+	@commands.cooldown(1, 10, commands.BucketType.user)
 	@commands.guild_only()
 	async def submitmotd(self, ctx, *, motd: commands.clean_content=None):
-		motd = motd  # type: str
+		motd = str(motd)
 		if motd is None:
 			return await ctx.send('motd is a required argument that is missing')
 		if len(motd) > 35:
