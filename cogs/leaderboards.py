@@ -86,11 +86,14 @@ class Leaderboards(commands.Cog):
 						del self.monthly_guilds_data[guild_id][user_id][str(msg_id)]
 		for guild in self.bot.guilds:
 			if guild.unavailable:
-				return
-		for user_id in list(self.global_data.keys()):
+				return 'Discord Outage'
+		msg_list = list(self.global_data.keys())
+		vc_list = list(self.gvclb.keys())
+		for user_id in list(set(msg_list) | set(vc_list)):
 			user = self.bot.get_user(int(user_id))
 			if not isinstance(user, discord.User):
-				del self.global_data[user_id]
+				if user_id in self.global_data:
+					del self.global_data[user_id]
 				for guild_id in list(self.guilds_data.keys()):
 					if user_id in self.guilds_data[guild_id]:
 						del self.guilds_data[guild_id][user_id]
