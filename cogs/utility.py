@@ -9,6 +9,7 @@ class Utility(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.find = {}
+		self.afk = {}
 
 	@commands.command()
 	async def channelinfo(self, ctx, channel=None):
@@ -248,6 +249,33 @@ class Utility(commands.Cog):
 		for channel in ctx.guild.channels:
 			channels += channel.name + "\n"
 		await ctx.send(channels)
+
+	@commands.command(name='afk')
+	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.guild_only()
+	@commands.bot_has_permissions(embed_links=True)
+	async def afk(self, ctx, *, reason='unspecified'):
+		e = discord.Embed(color=colors.fate())
+		e.set_author(name='You are now afk', icon_url=ctx.author.avatar_url)
+		await ctx.send(embed=e, delete_after=5)
+		self.afk[str(ctx.author.id)] = reason
+		await asyncio.sleep(5)
+		await ctx.message.delete()
+
+	@commands.Cog.listener()
+	async def on_message(self, msg):
+		user_id = str(msg.author.id)
+		if user_id in self.afk:
+			del self.afk[user_id]
+			return await msg.channel.send(f'Removed your afk', delete_after=5)
+		for user in msg.mentions:
+			user_id = str(user.id)
+			if user_id in self.afk:
+				user = self.bot.get_user(int(user_id))
+				e = discord.Embed(color=colors.fate())
+				e.set_author(name=f'{user.display_name} is AFK', icon_url=user.avatar_url)
+				e.description = f'**Reason:** {self.afk[user_id]}'
+				await msg.channel.send(embed=e, delete_after=10)
 
 def setup(bot):
 	bot.add_cog(Utility(bot))
