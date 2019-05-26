@@ -37,6 +37,28 @@ class Leaderboards(commands.Cog):
 					self.vclb = dat["vclb"]
 					self.gvclb = dat["gvclb"]
 
+	def get_user(self, ctx, user):
+		if user.startswith("<@"):
+			for char in list(user):
+				if char not in list('1234567890'):
+					user = user.replace(str(char), '')
+			return ctx.guild.get_member(int(user))
+		else:
+			user = user.lower()
+			for member in ctx.guild.members:
+				if user == member.name.lower():
+					return member
+			for member in ctx.guild.members:
+				if user == member.display_name.lower():
+					return member
+			for member in ctx.guild.members:
+				if user in member.name.lower():
+					return member
+			for member in ctx.guild.members:
+				if user in member.display_name.lower():
+					return member
+		return None
+
 	async def xp_dump_task(self):
 		while True:
 			try:
@@ -44,14 +66,13 @@ class Leaderboards(commands.Cog):
 					json.dump({"global": self.global_data, "guilded": self.guilds_data, "monthly_global": self.monthly_global_data,
 				               "monthly_guilded": self.monthly_guilds_data, "vclb": self.vclb, "gvclb": self.gvclb},
 					          outfile, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
-				await asyncio.sleep(60)
 			except Exception as e:
 				try:
 					log = self.bot.get_channel(501871950260469790)
 					await log.send(f'Error saving xp: {e}')
 				except:
 					pass
-				await asyncio.sleep(60)
+			await asyncio.sleep(60)
 
 	def msg_footer(self):
 		return random.choice(["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready",
@@ -108,6 +129,40 @@ class Leaderboards(commands.Cog):
 					if user_id in self.vclb[guild_id]:
 						del self.vclb[guild_id][user_id]
 		return str(round((monotonic() - before) * 1000)) + 'ms'
+
+	@commands.command(name='rank')
+	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.guild_only()
+	@commands.bot_has_permissions(embed_links=True)
+	async def rank(self, ctx, *, user=None):
+		results = await self.run_xp_cleanup()
+		if user:
+			user = self.get_user(ctx, user)
+			if not isinstance(user, discord.Member):
+				return await ctx.send('User not found')
+		else:
+			user = ctx.author
+		guild_id = str(ctx.guild.id)
+		user_id = str(user.id)
+		guild_rank = 0
+		for id, xp in (sorted(self.guilds_data[guild_id].items(), key=lambda kv: kv[1], reverse=True)):
+			guild_rank += 1
+			if user_id == id:
+				break
+		xp = self.guilds_data[guild_id][user_id]
+		level = str(xp / 750)
+		level = level[:level.find('.')]
+		e = discord.Embed(color=0x4A0E50)
+		icon_url = self.bot.user.avatar_url
+		if user.avatar_url:
+			icon_url = user.avatar_url
+		else:
+			if ctx.guild.icon_url:
+				icon_url = ctx.guild.icon_url
+		e.set_author(name=user.display_name, icon_url=icon_url)
+		e.description = f'__**Rank:**__ [`{guild_rank}`] __**Level:**__ [`{level}`] __**XP:**__ [`{xp}`]'
+		e.set_footer(text=self.msg_footer().replace('[result]', f'XP Cleanup: {results}'))
+		await ctx.send(embed=e)
 
 	@commands.command(name="leaderboard", aliases=["lb"])
 	@commands.cooldown(1, 10, commands.BucketType.channel)
