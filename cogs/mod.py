@@ -147,7 +147,7 @@ class Mod(commands.Cog):
 			del self.timers[key]
 		await ctx.message.add_reaction("👍")
 
-	@commands.command(name='modlogs')
+	@commands.command(name='modlogs', aliases=['actions'])
 	@commands.guild_only()
 	@commands.bot_has_permissions(embed_links=True)
 	async def mod_logs(self, ctx, *, user=None):
@@ -1080,7 +1080,7 @@ class Mod(commands.Cog):
 			except:
 				await ctx.send('Failed to ban that user')
 
-	@commands.command(name='removewarn')
+	@commands.command(name='removewarn', aliases=['delwarn'])
 	async def remove_warns(self, ctx, user, *, reason):
 		user = self.get_user(ctx, user)
 		if not isinstance(user, discord.Member):
