@@ -594,25 +594,48 @@ class Mod(commands.Cog):
 	@commands.guild_only()
 	@commands.has_permissions(ban_members=True)
 	@commands.bot_has_permissions(ban_members=True)
-	async def _ban(self, ctx, user:discord.Member, *, reason='unspecified'):
+	async def _ban(self, ctx, user:discord.Member, *, args=None):
 		if user.top_role.position >= ctx.author.top_role.position:
 			return await ctx.send("That user is above your paygrade, take a seat")
 		bot = ctx.guild.get_member(self.bot.user.id)
 		if user.top_role.position >= bot.top_role.position:
 			return await ctx.send('I can\'t ban that user ;-;')
+		timer = None
+		reason = 'unspecified'
+		if args:
+			args = args.split(' ')
+			if args[0][:1].isdigit():
+				timer = args[0]
+				args.pop(0)
+			reason = ' '.join(args)
 		await ctx.guild.ban(user, reason=reason, delete_message_days=0)
 		path = os.getcwd() + "/data/images/reactions/beaned/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/beaned/"))
 		e = discord.Embed(color=colors.fate())
 		e.set_image(url="attachment://" + os.path.basename(path))
-		await ctx.send('◈ {} banned {} ◈'.format(ctx.message.author.display_name, user), file=discord.File(path, filename=os.path.basename(path)), embed=e)
-		await ctx.message.delete()
-		if reason is None:
+		await ctx.send(f'◈ {ctx.author.display_name} banned {user} ◈', file=discord.File(path, filename=os.path.basename(path)), embed=e)
+		try:
+			if timer:
+				for x in list(timer):
+					if x not in "1234567890dhms":
+						return await ctx.send("Invalid character used in timer field")
+				time = timer.replace("m", " minutes").replace("1 minutes", "1 minute")
+				time = time.replace("h", " hours").replace("1 hours", "1 hour")
+				time = time.replace("d", " days").replace("1 days", "1 day")
+				if "d" in str(timer):
+					timer = float(timer.replace("d", "")) * 60 * 60 * 24
+				if "h" in str(timer):
+					timer = float(timer.replace("h", "")) * 60 * 60
+				if "m" in str(timer):
+					timer = float(timer.replace("m", "")) * 60
+				if "s" in str(timer):
+					timer = float(timer.replace("s", ""))
+				if not isinstance(timer, float):
+					return await ctx.send("Invalid character used in timer field")
+				await user.send(f"You've been banned in **{ctx.guild.name}** for {time} by **{ctx.author.name}** for `{reason}`")
+			else:
+				await user.send(f"You've been banned in **{ctx.guild.name}** by **{ctx.author.name}** for `{reason}`")
+		except:
 			pass
-		else:
-			try:
-				await user.send(f"You have been banned from **{ctx.guild.name}** by **{ctx.author.name}** for `{reason}`")
-			except:
-				pass
 		guild_id = str(ctx.guild.id)
 		user_id = str(user.id)
 		if guild_id not in self.log:
@@ -623,6 +646,9 @@ class Mod(commands.Cog):
 			self.log[guild_id][user_id]['ban'] = {}
 		self.log[guild_id][user_id]['ban'][str(datetime.now())] = (ctx.author.id, reason)
 		self.save_json()
+		if timer:
+			await asyncio.sleep(timer)
+			await user.unban(reason='Timed ban')
 
 	@commands.command(name="softban")
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -635,7 +661,7 @@ class Mod(commands.Cog):
 		bot = ctx.guild.get_member(self.bot.user.id)
 		if user.top_role.position >= bot.top_role.position:
 			return await ctx.send('I can\'t kick that user ;-;')
-		await ctx.guild.ban(user, reason=reason, delete_message_days=0)
+		await ctx.guild.ban(user, reason=reason)
 		path = os.getcwd() + "/data/images/reactions/beaned/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/beaned/"))
 		e = discord.Embed(color=colors.fate())
 		e.set_image(url="attachment://" + os.path.basename(path))
