@@ -18,6 +18,7 @@ class Mod(commands.Cog):
 		self.roles = {}
 		self.timers = {}
 		self.mods = {}
+		self.log = {}
 		if isfile("./data/userdata/mod.json"):
 			with open("./data/userdata/mod.json", "r") as infile:
 				dat = json.load(infile)
@@ -29,10 +30,12 @@ class Mod(commands.Cog):
 					self.timers = dat["timers"]
 				if 'mods' in dat:
 					self.mods = dat['mods']
+				if 'log' in dat:
+					self.log = dat['log']
 
 	def save_json(self):
 		with open("./data/userdata/mod.json", "w") as outfile:
-			json.dump({'mods': self.mods, "warns": self.warns, "roles": self.roles, "timers": self.timers}, outfile, ensure_ascii=False)
+			json.dump({'mods': self.mods, "warns": self.warns, "roles": self.roles, "timers": self.timers, 'log': self.log}, outfile, ensure_ascii=False)
 
 	def save_config(self, config):
 		with open('./data/config.json', 'w') as f:
@@ -90,7 +93,7 @@ class Mod(commands.Cog):
 			for member in ctx.guild.members:
 				if user in member.display_name.lower():
 					return member
-		return None
+		return
 
 	@commands.command(name='getuser')
 	async def getuser(self, ctx, user):
@@ -128,6 +131,9 @@ class Mod(commands.Cog):
 		if guild_id in self.mods:
 			del self.mods[guild_id]
 			self.save_json()
+		if guild_id in self.log:
+			del self.log[guild_id]
+			self.save_json()
 		config = self.bot.get_config
 		if guild_id in config['restricted']:
 			del config['restricted'][guild_id]
@@ -140,6 +146,105 @@ class Mod(commands.Cog):
 		for key in keys:
 			del self.timers[key]
 		await ctx.message.add_reaction("👍")
+
+	@commands.command(name='modlogs')
+	@commands.guild_only()
+	@commands.bot_has_permissions(embed_links=True)
+	async def mod_logs(self, ctx, *, user=None):
+		guild_id = str(ctx.guild.id)
+		async def get_user_actions(user_id):
+			user_logs = []
+			target = self.bot.get_user(int(user_id))
+			if not isinstance(target, discord.User):
+				return user_logs
+			for action_type, actions in self.log[guild_id][user_id].items():
+				if action_type == 'warn':
+					for date, value in actions.items():
+						date = datetime.strptime(date, '%Y-%m-%d %H:%M:%S.%f')
+						if date < datetime.now() - timedelta(days=7):
+							del self.log[guild_id][user_id][action_type][date]
+							continue
+						user = value[0]  # type: int
+						user = self.bot.get_user(user)
+						reason = value[1]  # type: str
+						when = (datetime.now() - date).seconds
+						user_logs.append([when, f'**{user}** warned **{target}**, **reason:** `{reason}` [`{round((when / 60) / 60)} hours ago`]\n'])
+				if action_type == 'mute':
+					for date, value in actions.items():
+						date = datetime.strptime(date, '%Y-%m-%d %H:%M:%S.%f')
+						if date < datetime.now() - timedelta(days=7):
+							del self.log[guild_id][user_id][action_type][date]
+							continue
+						user = value[0]  # type: int
+						user = self.bot.get_user(user)
+						timer = value[1]  # type: str
+						when = (datetime.now() - date).seconds
+						user_logs.append([when, f'**{user}** muted **{target}** for `{timer}` [`{round((when / 60) / 60)} hours ago`]\n'])
+				if action_type == 'kick':
+					for date, value in actions.items():
+						date = datetime.strptime(date, '%Y-%m-%d %H:%M:%S.%f')
+						if date < datetime.now() - timedelta(days=7):
+							del self.log[guild_id][user_id][action_type][date]
+							continue
+						user = value[0]  # type: int
+						user = self.bot.get_user(user)
+						reason = value[1]  # type: str
+						when = (datetime.now() - date).seconds
+						user_logs.append([when, f'**{user}** kicked **{target}**, **reason:** `{reason}` [`{round((when / 60) / 60)} hours ago`]\n'])
+				if action_type == 'softban':
+					for date, value in actions.items():
+						date = datetime.strptime(date, '%Y-%m-%d %H:%M:%S.%f')
+						if date < datetime.now() - timedelta(days=7):
+							del self.log[guild_id][user_id][action_type][date]
+							continue
+						user = value[0]  # type: int
+						user = self.bot.get_user(user)
+						reason = value[1]  # type: str
+						when = (datetime.now() - date).seconds
+						user_logs.append([when, f'**{user}** softbanned **{target}**, **reason:** `{reason}` [`{round((when / 60) / 60)} hours ago`]\n'])
+				if action_type == 'ban':
+					for date, value in actions.items():
+						date = datetime.strptime(date, '%Y-%m-%d %H:%M:%S.%f')
+						if date < datetime.now() - timedelta(days=7):
+							del self.log[guild_id][user_id][action_type][date]
+							continue
+						user = value[0]  # type: int
+						user = self.bot.get_user(user)
+						reason = value[1]  # type: str
+						when = (datetime.now() - date).seconds
+						user_logs.append([when, f'**{user}** banned **{target}**, **reason:** `{reason}` [`{round((when / 60) / 60)} hours ago`]\n'])
+			return user_logs
+		if guild_id not in self.log:
+			return await ctx.send('No logs')
+		mod_logs = []
+		if user:
+			user = self.get_user(ctx, user)
+			if not user:
+				return await ctx.send('User not found')
+			user_id = str(user.id)
+			if user_id not in self.log[guild_id]:
+				return await ctx.send('No logs')
+			mod_logs = await get_user_actions(user_id)
+		else:
+			for user_id in self.log[guild_id].keys():
+				logs = await get_user_actions(user_id)
+				for log in logs:
+					mod_logs.append(log)
+		sorted_mod_logs = ''
+		for date, log in (sorted(mod_logs, key=lambda kv: kv[0], reverse=False)):
+			sorted_mod_logs += log
+		e = discord.Embed(color=colors.fate())
+		icon_url = self.bot.user.avatar_url
+		if user:
+			icon_url = user.avatar_url
+		e.set_author(name=f'{"User" if user else "Guild"} Mod Log(s)', icon_url=icon_url)
+		e.set_thumbnail(url=ctx.guild.icon_url)
+		if len(mod_logs) <= 1000:
+			e.description = sorted_mod_logs
+		else:
+			for text_group in [sorted_mod_logs[i:i + 1000] for i in range(0, len(sorted_mod_logs), 1000)][-6:]:
+				e.add_field(name='~', value=text_group)
+		await ctx.send(embed=e)
 
 	@commands.command(name='addmod')
 	@commands.cooldown(1, 3, commands.BucketType.user)
@@ -312,23 +417,6 @@ class Mod(commands.Cog):
 				e.description += changelog
 		await ctx.send(embed=e)
 
-	@commands.command(name="delete")
-	@commands.cooldown(1, 3, commands.BucketType.user)
-	@commands.guild_only()
-	@commands.has_permissions(manage_messages=True)
-	@commands.bot_has_permissions(manage_messages=True)
-	async def delete(self, ctx):
-		try:
-			c = 0
-			async for msg in ctx.channel.history(limit=3):
-				if c == 1:
-					await msg.delete()
-					await ctx.message.delete()
-					break;
-				c += 1
-		except Exception as e:
-			await ctx.send(f'**```ERROR: {type(e).__name__} - {e}```**')
-
 	@commands.command(name="purge")
 	@commands.cooldown(1, 5, commands.BucketType.channel)
 	@commands.guild_only()
@@ -471,7 +559,7 @@ class Mod(commands.Cog):
 	@commands.guild_only()
 	@commands.has_permissions(kick_members=True)
 	@commands.bot_has_permissions(kick_members=True)
-	async def kick(self, ctx, user:discord.Member, *, reason:str=None):
+	async def kick(self, ctx, user:discord.Member, *, reason='unspecified'):
 		if user.top_role.position >= ctx.author.top_role.position:
 			return await ctx.send("That user is above your paygrade, take a seat")
 		bot = ctx.guild.get_member(self.bot.user.id)
@@ -490,13 +578,23 @@ class Mod(commands.Cog):
 				await user.send(f"You have been kicked from **{ctx.guild.name}** by **{ctx.author.name}** for `{reason}`")
 			except Exception as e:
 				pass
+		guild_id = str(ctx.guild.id)
+		user_id = str(user.id)
+		if guild_id not in self.log:
+			self.log[guild_id] = {}
+		if user_id not in self.log[guild_id]:
+			self.log[guild_id][user_id] = {}
+		if 'kick' not in self.log[guild_id][user_id]:
+			self.log[guild_id][user_id]['kick'] = {}
+		self.log[guild_id][user_id]['kick'][str(datetime.now())] = (ctx.author.id, reason)
+		self.save_json()
 
 	@commands.command(name="ban")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.guild_only()
 	@commands.has_permissions(ban_members=True)
 	@commands.bot_has_permissions(ban_members=True)
-	async def _ban(self, ctx, user:discord.Member, *, reason=None):
+	async def _ban(self, ctx, user:discord.Member, *, reason='unspecified'):
 		if user.top_role.position >= ctx.author.top_role.position:
 			return await ctx.send("That user is above your paygrade, take a seat")
 		bot = ctx.guild.get_member(self.bot.user.id)
@@ -515,6 +613,16 @@ class Mod(commands.Cog):
 				await user.send(f"You have been banned from **{ctx.guild.name}** by **{ctx.author.name}** for `{reason}`")
 			except:
 				pass
+		guild_id = str(ctx.guild.id)
+		user_id = str(user.id)
+		if guild_id not in self.log:
+			self.log[guild_id] = {}
+		if user_id not in self.log[guild_id]:
+			self.log[guild_id][user_id] = {}
+		if 'ban' not in self.log[guild_id][user_id]:
+			self.log[guild_id][user_id]['ban'] = {}
+		self.log[guild_id][user_id]['ban'][str(datetime.now())] = (ctx.author.id, reason)
+		self.save_json()
 
 	@commands.command(name="softban")
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -541,41 +649,31 @@ class Mod(commands.Cog):
 			except:
 				pass
 		await user.unban(reason="softban")
-
-	@commands.command(name="bans")
-	@commands.cooldown(1, 5, commands.BucketType.channel)
-	@commands.guild_only()
-	@commands.has_permissions(ban_members=True)
-	@commands.bot_has_permissions(ban_members=True)
-	async def _bans(self, ctx):
-		bans = await ctx.guild.bans()
-		for ban in bans:
-			await ctx.send(f"{ban[0]}, {ban[1].id}")
-
-	@commands.command(name="pin")
-	@commands.cooldown(1, 5, commands.BucketType.channel)
-	@commands.has_permissions(manage_messages=True)
-	@commands.bot_has_permissions(manage_messages=True)
-	async def pin(self, ctx):
-		c = 0
-		async for msg in ctx.channel.history(limit=3):
-			if c == 1:
-				await msg.pin()
-				await ctx.message.delete()
-				break;
-			c += 1
+		guild_id = str(ctx.guild.id)
+		user_id = str(user.id)
+		if guild_id not in self.log:
+			self.log[guild_id] = {}
+		if user_id not in self.log[guild_id]:
+			self.log[guild_id][user_id] = {}
+		if 'softban' not in self.log[guild_id][user_id]:
+			self.log[guild_id][user_id]['softban'] = {}
+		self.log[guild_id][user_id]['softban'][str(datetime.now())] = (ctx.author.id, reason)
+		self.save_json()
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.guild_only()
 	@commands.has_permissions(manage_nicknames=True)
 	@commands.bot_has_permissions(manage_nicknames=True)
-	async def nick(self, ctx, member: discord.Member, *, nick=None):
-		if member.top_role.position >= ctx.author.top_role.position:
+	async def nick(self, ctx, user, *, nick=None):
+		user = self.get_user(ctx, user)
+		if not user:
+			return await ctx.send('User not found')
+		if user.top_role.position >= ctx.author.top_role.position:
 			return await ctx.send("That user is above your paygrade, take a seat")
 		if nick is None:
 			nick = ""
-		await member.edit(nick=nick)
+		await user.edit(nick=nick)
 		await ctx.message.add_reaction('👍')
 
 	@commands.command(name="massnick")
@@ -587,27 +685,21 @@ class Mod(commands.Cog):
 		guild_id = str(ctx.guild.id)
 		if guild_id in self.massnick:
 			if self.massnick[guild_id] is True:
-				return await ctx.send("Please wait until the previous mass-nick is done")
-		failed = ""
-		if nick is None:
-			nick = ""
+				return await ctx.send('Please wait until the previous mass-nick is complete')
+		if not nick:
+			nick = ''
 		self.massnick[guild_id] = True
 		await ctx.message.add_reaction('🖍')
+		count = 0
 		for member in ctx.guild.members:
 			try:
 				await member.edit(nick=nick)
+				count += 1
 				await asyncio.sleep(0.25)
-			except Exception as e:
-				if failed == "":
-					failed = f"**Failed to change the nicks of:**\n{member.name}"
-				else:
-					failed += f", {member.name}"
+			except:
+				pass
 		self.massnick[guild_id] = False
-		await ctx.message.add_reaction('🏁')
-		if failed == "":
-			pass
-		else:
-			await ctx.send(failed)
+		await ctx.send(f'Changed nicks for {count} users')
 
 	@commands.command(name='role')
 	@commands.cooldown(1, 3, commands.BucketType.user)
@@ -616,7 +708,7 @@ class Mod(commands.Cog):
 	@commands.bot_has_permissions(manage_roles=True)
 	async def role(self, ctx, user:commands.clean_content, role:commands.clean_content):
 		user_name = str(user).lower().replace('@', '')
-		user = None  # type: discord.Member
+		user = None
 		for member in ctx.guild.members:
 			if user_name in member.name.lower():
 				user = member
@@ -625,7 +717,7 @@ class Mod(commands.Cog):
 			return await ctx.send('User not found')
 		role_name = str(role).lower().replace('@', '')
 		role_name.replace('+', '').replace('-', '')
-		role = None  # type: discord.Role
+		role = None
 		for guild_role in ctx.guild.roles:
 			if role_name in guild_role.name.lower():
 				role = guild_role
@@ -651,7 +743,7 @@ class Mod(commands.Cog):
 	@commands.bot_has_permissions(manage_roles=True)
 	async def massrole(self, ctx, role: commands.clean_content):
 		target_name = str(role).lower().replace('@', '')
-		role = None  # type: discord.Role
+		role = None
 		for guild_role in ctx.guild.roles:
 			if target_name in guild_role.name.lower():
 				role = guild_role
@@ -700,7 +792,7 @@ class Mod(commands.Cog):
 				return await ctx.send("That user is above your paygrade, take a seat")
 			guild_id = str(ctx.guild.id)
 			user_id = str(user.id)
-			mute_role = None  # type: discord.Role
+			mute_role = None
 			for role in ctx.guild.roles:
 				if role.name.lower() == "muted":
 					mute_role = role
@@ -732,6 +824,13 @@ class Mod(commands.Cog):
 				self.save_json()
 				await user.add_roles(mute_role)
 				await ctx.send(f"Muted {user.display_name}")
+				if guild_id not in self.log:
+					self.log[guild_id] = {}
+				if user_id not in self.log[guild_id]:
+					self.log[guild_id][user_id] = {}
+				if 'mute' not in self.log[guild_id][user_id]:
+					self.log[guild_id][user_id]['mute'] = {}
+				self.log[guild_id][user_id]['mute'][str(datetime.now())] = (ctx.author.id, 'Forever')
 				return await ctx.message.add_reaction("👍")
 			for x in list(timer):
 				if x not in "1234567890dhms":
@@ -761,6 +860,13 @@ class Mod(commands.Cog):
 			if timer is None:
 				return await ctx.send(f"**Muted:** {user.name}")
 			await ctx.send(f"Muted **{user.name}** for {time}")
+			if guild_id not in self.log:
+				self.log[guild_id] = {}
+			if user_id not in self.log[guild_id]:
+				self.log[guild_id][user_id] = {}
+			if 'mute' not in self.log[guild_id][user_id]:
+				self.log[guild_id][user_id]['mute'] = {}
+			self.log[guild_id][user_id]['mute'][str(datetime.now())] = (ctx.author.id, time)
 		self.timers[user_id] = {
 			'action': 'mute',
 			'channel': ctx.channel.id,
@@ -794,7 +900,7 @@ class Mod(commands.Cog):
 			return await ctx.send("That user is above your paygrade, take a seat")
 		guild_id = str(ctx.guild.id)
 		user_id = str(user.id)
-		mute_role = None  # type: discord.Role
+		mute_role = None
 		for role in ctx.guild.roles:
 			if role.name.lower() == "muted":
 				mute_role = role
@@ -909,8 +1015,16 @@ class Mod(commands.Cog):
 			await user.send(f"You've been warned in **{ctx.guild.name}** for `{reason}`")
 		except:
 			pass
+		if guild_id not in self.log:
+			self.log[guild_id] = {}
+		if user_id not in self.log[guild_id]:
+			self.log[guild_id][user_id] = {}
+		if 'warn' not in self.log[guild_id][user_id]:
+			self.log[guild_id][user_id]['warn'] = {}
+		self.log[guild_id][user_id]['warn'][str(datetime.now())] = (ctx.author.id, reason)
+		self.save_json()
 		if punishment == 'Mute':
-			mute_role = None  # type: discord.Role
+			mute_role = None
 			for role in ctx.guild.roles:
 				if role.name.lower() == "muted":
 					mute_role = role
