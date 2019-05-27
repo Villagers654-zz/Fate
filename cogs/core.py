@@ -187,7 +187,7 @@ class Core(commands.Cog):
 					for attachment in msg.attachments:
 						return await webhook.send(username=msg.author.name, avatar_url=msg.author.avatar_url, content=msg.content, file=discord.File(BytesIO(requests.get(attachment.url).content), filename=attachment.filename))
 				if msg.embeds:
-					return await webhook.send(username=msg.author.name, avatar_url=msg.author.avatar_url, embed=msg.embeds[0])
+					return await webhook.send(username=f'{msg.author.name} --> {msg.channel.recipient.name}', avatar_url=msg.author.avatar_url, embed=msg.embeds[0])
 				await webhook.send(username=msg.author.name, avatar_url=msg.author.avatar_url, content=msg.content)
 
 def setup(bot):
