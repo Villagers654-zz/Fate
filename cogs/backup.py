@@ -32,26 +32,23 @@ class Backup(commands.Cog):
 			e.set_thumbnail(url="https://cdn.discordapp.com/attachments/514213558549217330/514345278669848597/8yx98C.gif")
 			e.description = "**Progress:** `0%`\nChecking for previous backup"
 			msg = await ctx.send(embed=e)
-			p = subprocess.Popen("ls", stdout=subprocess.PIPE, shell=True)
-			(output, err) = p.communicate()
-			await msg.edit(embed=e)
-			if "Backup.zip" in str(output):
+			if os.path.isfile('Backup.zip'):
 				e.description = "**Progress:** `25%`\nRemoving previous backup"
 				await msg.edit(embed=e)
-				os.system("rm Backup.zip")
-			e.description = "**Progress:** `50%`\nCompressing files"
+				os.remove('Backup.zip')
+			e.description = '**Indexing files:** `50%`'
 			await msg.edit(embed=e)
-			os.system("zip -r Backup.zip /home/luck/FateZero")
-			e.description = "**Progress:** `75%`\nTransferring Backup"
+			file_paths = self.get_all_file_paths(os.getcwd())
+			e.description = "**Progress:** `75%`\nCompressing files"
 			await msg.edit(embed=e)
-			ssh.upload("luck", "Backup.zip", "/home/luck/Backup.zip")
-			e.description = "**Progress:** `100%`\nBackup complete."
+			before = monotonic()
+			with ZipFile('Backup.zip', 'w') as zip:
+				for file in file_paths:
+					zip.write(file)
+			ping = str(round((monotonic() - before) * 1000)) + 'ms'
+			e.description = f'**Backup Complete:** `{ping}`'
 			await msg.edit(embed=e)
 			self.backup = False
-
-	@commands.command(name='startbackuptask')
-	async def startbackuptask(self, ctx):
-		self.bot.loop.create_task(self.backup_task())
 
 	async def backup_task(self):
 		while True:
@@ -63,7 +60,7 @@ class Backup(commands.Cog):
 			with ZipFile('Backup.zip', 'w') as zip:
 				for file in file_paths:
 					zip.write(file)
-			ping = (monotonic() - before) * 1000
+			ping = round((monotonic() - before) * 1000)
 			await self.bot.get_channel(config.server("log")).send(f'Ran Scheduled Backup: {ping}')
 
 	@commands.Cog.listener()

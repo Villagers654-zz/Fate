@@ -3,7 +3,6 @@ from utils import checks, colors
 import discord
 import asyncio
 import random
-import json
 
 class System(commands.Cog):
 	def __init__(self, bot):
@@ -55,16 +54,6 @@ class System(commands.Cog):
 				await msg.edit(embed=e)
 				self.last_voice_state = voice_state
 			await asyncio.sleep(5)
-
-	def get_stats(self):
-		with open('./data/stats.json', 'r') as f:
-			return json.load(f)
-
-	async def stats_task(self):
-		while True:
-			channel = self.bot.get_channel(577661440442236931)
-			msg = await channel.fetch_message(580270755212689420)
-			e = discord.Embed(color=colors.fate())
 
 	@commands.command(name='save')
 	@commands.check(checks.luck)
