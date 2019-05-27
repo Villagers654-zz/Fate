@@ -4,6 +4,7 @@ from utils import colors
 import discord
 import aiohttp
 import asyncio
+import random
 
 class Utility(commands.Cog):
 	def __init__(self, bot):
@@ -267,15 +268,12 @@ class Utility(commands.Cog):
 		user_id = str(msg.author.id)
 		if user_id in self.afk:
 			del self.afk[user_id]
-			return await msg.channel.send(f'Removed your afk', delete_after=5)
-		for user in msg.mentions:
-			user_id = str(user.id)
-			if user_id in self.afk:
-				user = self.bot.get_user(int(user_id))
-				e = discord.Embed(color=colors.fate())
-				e.set_author(name=f'{user.display_name} is AFK', icon_url=user.avatar_url)
-				e.description = f'**Reason:** {self.afk[user_id]}'
-				await msg.channel.send(embed=e, delete_after=10)
+		else:
+			for user in msg.mentions:
+				user_id = str(user.id)
+				if user_id in self.afk:
+					choice = random.choice(['shh', 'shush', 'stfu cunt', 'nO'])
+					await msg.channel.send(f'{choice} he\'s {self.afk[user_id]}', delete_after=10)
 
 def setup(bot):
 	bot.add_cog(Utility(bot))
