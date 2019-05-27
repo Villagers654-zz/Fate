@@ -598,12 +598,13 @@ class SelfRoles(commands.Cog):
 
 	@commands.Cog.listener()
 	async def on_message_delete(self, m: discord.Message):
-		guild_id = str(m.guild.id)
-		if guild_id in self.message:
-			if self.message[guild_id] == str(m.id):
-				del self.message[guild_id]
-				del self.roles[guild_id]
-				self.save_data()
+		if isinstance(m.guild, discord.Guild):
+			guild_id = str(m.guild.id)
+			if guild_id in self.message:
+				if self.message[guild_id] == str(m.id):
+					del self.message[guild_id]
+					del self.roles[guild_id]
+					self.save_data()
 
 	@commands.Cog.listener()
 	async def on_guild_remove(self, guild):
