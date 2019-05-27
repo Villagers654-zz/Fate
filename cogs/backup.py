@@ -49,6 +49,10 @@ class Backup(commands.Cog):
 			await msg.edit(embed=e)
 			self.backup = False
 
+	@commands.command(name='startbackuptask')
+	async def startbackuptask(self, ctx):
+		self.bot.loop.create_task(self.backup_task())
+
 	async def backup_task(self):
 		while True:
 			await asyncio.sleep(129600)
