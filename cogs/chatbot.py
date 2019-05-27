@@ -284,10 +284,10 @@ class ChatBot(commands.Cog):
 				if len(m.content) is 0:
 					return
 				if user_id not in self.dm_cd:
-					self.cd[user_id] = 0
-				if self.cd[user_id] > time.time():
+					self.dm_cd[user_id] = 0
+				if self.dm_cd[user_id] > time.time():
 					return
-				self.cd[user_id] = time.time() + 2
+				self.dm_cd[user_id] = time.time() + 2
 				if m.content.startswith("."):
 					return
 				keys = m.content.split(" ")
