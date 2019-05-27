@@ -1,3 +1,4 @@
+from discord import Webhook, AsyncWebhookAdapter
 from bs4 import BeautifulSoup as bs
 from discord.ext import commands
 from utils import config, colors, checks
@@ -15,12 +16,6 @@ class Core(commands.Cog):
 	def __init__(self, bot: commands.Bot):
 		self.bot = bot
 		self.last = {}
-		self.dm = ''
-
-	@commands.command(name='who')
-	@commands.check(checks.luck)
-	async def who(self, ctx):
-		await ctx.send(self.dm)
 
 	@commands.command(name="topguilds")
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -186,22 +181,14 @@ class Core(commands.Cog):
 	@commands.Cog.listener()
 	async def on_message(self, msg: discord.Message):
 		if isinstance(msg.channel, discord.DMChannel):
-			channel = self.bot.get_channel(577661489154883584)
-			if msg.attachments:
-				for attachment in msg.attachments:
-					if msg.author.id == self.bot.user.id:
-						return await channel.send(f"__**Fate --> {msg.channel.recipient}:**__ {msg.content}",
-						    file=discord.File(BytesIO(requests.get(attachment.url).content), filename=attachment.filename))
-					return await channel.send(f"__**{msg.author.name}:**__ {msg.content}",
-						file=discord.File(BytesIO(requests.get(attachment.url).content), filename=attachment.filename))
-			if msg.embeds:
-				if msg.author.id == self.bot.user.id:
-					return await channel.send(f"__**Fate --> {msg.channel.recipient}:**__ {msg.content}", embed=msg.embeds[0])
-				return await channel.send(f"__**{msg.channel.recipient}:**__ {msg.content}", embed=msg.embeds[0])
-			if msg.author.id == self.bot.user.id:
-				return await channel.send(f"__**Fate --> {msg.channel.recipient}:**__ {msg.content}")
-			await channel.send(f"__**{msg.author}:**__ {msg.content}")
-			self.dm = msg.author.mention
+			async with aiohttp.ClientSession() as session:
+				webhook = Webhook.from_url('https://discordapp.com/api/webhooks/582660984661868549/QXcjvb0O8v7SUv34o-hxaeR5mi2v5RYVRSVLi-p89VdbNHjxy8v5MP1muARTgulZnQTu', adapter=AsyncWebhookAdapter(session))
+				if msg.attachments:
+					for attachment in msg.attachments:
+						return await webhook.send(username=msg.author.name, avatar_url=msg.author.avatar_url, content=msg.content, file=discord.File(BytesIO(requests.get(attachment.url).content), filename=attachment.filename))
+				if msg.embeds:
+					return await webhook.send(username=msg.author.name, avatar_url=msg.author.avatar_url, embed=msg.embeds[0])
+				await webhook.send(username=msg.author.name, avatar_url=msg.author.avatar_url, content=msg.content)
 
 def setup(bot):
 	bot.add_cog(Core(bot))
