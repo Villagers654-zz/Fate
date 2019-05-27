@@ -165,10 +165,10 @@ class Mod(commands.Cog):
 							del self.log[guild_id][user_id][action_type][date]
 							continue
 						user = value[0]  # type: int
-						user = self.bot.get_user(user)
+						user = self.bot.get_user(user)  # type: discord.User
 						reason = value[1]  # type: str
 						when = (datetime.now() - date).seconds
-						user_logs.append([when, f'**{user}** warned **{target}**, **reason:** `{reason}` [`{round((when / 60) / 60)} hours ago`]\n'])
+						user_logs.append([when, f'✦ **{user.display_name}** warned **{target.display_name}**, **reason:** `{reason}` [`{round((when / 60) / 60)} hours ago`]\n'])
 				if action_type == 'mute':
 					for date, value in actions.items():
 						date = datetime.strptime(date, '%Y-%m-%d %H:%M:%S.%f')
@@ -176,10 +176,10 @@ class Mod(commands.Cog):
 							del self.log[guild_id][user_id][action_type][date]
 							continue
 						user = value[0]  # type: int
-						user = self.bot.get_user(user)
+						user = self.bot.get_user(user)  # type: discord.User
 						timer = value[1]  # type: str
 						when = (datetime.now() - date).seconds
-						user_logs.append([when, f'**{user}** muted **{target}** for `{timer}` [`{round((when / 60) / 60)} hours ago`]\n'])
+						user_logs.append([when, f'✦ **{user.display_name}** muted **{target.display_name}** for `{timer}` [`{round((when / 60) / 60)} hours ago`]\n'])
 				if action_type == 'kick':
 					for date, value in actions.items():
 						date = datetime.strptime(date, '%Y-%m-%d %H:%M:%S.%f')
@@ -187,10 +187,10 @@ class Mod(commands.Cog):
 							del self.log[guild_id][user_id][action_type][date]
 							continue
 						user = value[0]  # type: int
-						user = self.bot.get_user(user)
+						user = self.bot.get_user(user)  # type: discord.User
 						reason = value[1]  # type: str
 						when = (datetime.now() - date).seconds
-						user_logs.append([when, f'**{user}** kicked **{target}**, **reason:** `{reason}` [`{round((when / 60) / 60)} hours ago`]\n'])
+						user_logs.append([when, f'✦ **{user.display_name}** kicked **{target.display_name}**, **reason:** `{reason}` [`{round((when / 60) / 60)} hours ago`]\n'])
 				if action_type == 'softban':
 					for date, value in actions.items():
 						date = datetime.strptime(date, '%Y-%m-%d %H:%M:%S.%f')
@@ -198,10 +198,10 @@ class Mod(commands.Cog):
 							del self.log[guild_id][user_id][action_type][date]
 							continue
 						user = value[0]  # type: int
-						user = self.bot.get_user(user)
+						user = self.bot.get_user(user)  # type: discord.User
 						reason = value[1]  # type: str
 						when = (datetime.now() - date).seconds
-						user_logs.append([when, f'**{user}** softbanned **{target}**, **reason:** `{reason}` [`{round((when / 60) / 60)} hours ago`]\n'])
+						user_logs.append([when, f'✦ **{user.display_name}** softbanned **{target.display_name}**, **reason:** `{reason}` [`{round((when / 60) / 60)} hours ago`]\n'])
 				if action_type == 'ban':
 					for date, value in actions.items():
 						date = datetime.strptime(date, '%Y-%m-%d %H:%M:%S.%f')
@@ -209,10 +209,10 @@ class Mod(commands.Cog):
 							del self.log[guild_id][user_id][action_type][date]
 							continue
 						user = value[0]  # type: int
-						user = self.bot.get_user(user)
+						user = self.bot.get_user(user)  # type: discord.User
 						reason = value[1]  # type: str
 						when = (datetime.now() - date).seconds
-						user_logs.append([when, f'**{user}** banned **{target}**, **reason:** `{reason}` [`{round((when / 60) / 60)} hours ago`]\n'])
+						user_logs.append([when, f'✦ **{user.display_name}** banned **{target.display_name}**, **reason:** `{reason}` [`{round((when / 60) / 60)} hours ago`]\n'])
 			return user_logs
 		if guild_id not in self.log:
 			return await ctx.send('No logs')
@@ -232,6 +232,8 @@ class Mod(commands.Cog):
 					mod_logs.append(log)
 		sorted_mod_logs = ''
 		for date, log in (sorted(mod_logs, key=lambda kv: kv[0], reverse=False)):
+			if len(sorted_mod_logs + log) > 2048:
+				break
 			sorted_mod_logs += log
 		e = discord.Embed(color=colors.fate())
 		icon_url = self.bot.user.avatar_url
@@ -239,11 +241,7 @@ class Mod(commands.Cog):
 			icon_url = user.avatar_url
 		e.set_author(name=f'{"User" if user else "Guild"} Mod Log(s)', icon_url=icon_url)
 		e.set_thumbnail(url=ctx.guild.icon_url)
-		if len(mod_logs) <= 1000:
-			e.description = sorted_mod_logs
-		else:
-			for text_group in [sorted_mod_logs[i:i + 1000] for i in range(0, len(sorted_mod_logs), 1000)][-6:]:
-				e.add_field(name='~', value=text_group)
+		e.description = sorted_mod_logs
 		await ctx.send(embed=e)
 
 	@commands.command(name='addmod')
@@ -986,12 +984,8 @@ class Mod(commands.Cog):
 		user_id = str(user.id)
 		punishments = ['None', 'None', 'Mute', 'Kick', 'Softban', 'Ban']
 		config = self.bot.get_config  # type: dict
-		if 'warns' not in config:
-			config['warns'] = {}
-			self.save_config(config)
-		if guild_id in config['warns']:
-			if 'punishments' in config['warns'][guild_id]:
-				punishments = config['warns'][guild_id]['punishments']
+		if guild_id in config['warns']['punishments']:
+			punishments = config['warns']['punishments'][guild_id]
 		if guild_id not in self.warns:
 			self.warns[guild_id] = {}
 		if user_id not in self.warns[guild_id]:
@@ -1003,12 +997,10 @@ class Mod(commands.Cog):
 		for reason, time in self.warns[guild_id][user_id]:
 			time = datetime.strptime(time, '%Y-%m-%d %H:%M:%S.%f')
 			if (datetime.now() - time).days > 30:
-				if 'expire' in self.warns[guild_id]:
-					if self.warns[guild_id]['expire'] == 'True':
-						index = self.warns[guild_id][user_id].index([reason, time])
-						self.warns[guild_id][user_id].pop(index)
-						self.save_config(config)
-						continue
+				if guild_id in config['warns']['expire']:
+					index = self.warns[guild_id][user_id].index([reason, time])
+					self.warns[guild_id][user_id].pop(index)
+					continue
 			warns += 1
 		self.save_json()
 		if warns > len(punishments):
@@ -1033,7 +1025,7 @@ class Mod(commands.Cog):
 			if punishment == 'None' and next_punishment == 'None':
 				e.description += f'**Reason:** [`{reason}`]'
 			if next_punishment != 'None':
-				e.description += f'\n**Next Punishment:** [`{next_punishment}``]'
+				e.description += f'\n**Next Punishment:** [`{next_punishment}`]'
 		if punishment != 'None' and next_punishment != 'None':
 			e.add_field(name='Reason', value=reason, inline=False)
 		await ctx.send(embed=e)

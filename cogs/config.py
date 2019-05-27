@@ -1,5 +1,4 @@
 from discord.ext import commands
-from os.path import isfile
 from utils import colors
 import discord
 import asyncio
@@ -122,7 +121,13 @@ class Config(commands.Cog):
 		config = self.bot.get_config  # type: dict
 		if 'warns' not in config:
 			config['warns'] = {}
-			self.save_config(config)
+		if 'expire' not in config['warns']:
+			config['warns']['expire'] = []
+		if 'punishments' not in config['warns']:
+			config['warns']['punishments'] = {}
+		self.save_config(config)
+		if guild_id not in config:
+			config['warns'][guild_id] = {}
 		async def wait_for_reaction():
 			def check(reaction, user):
 				return user == ctx.author
@@ -156,15 +161,15 @@ class Config(commands.Cog):
 				config = self.bot.get_config  # type: dict
 				if guild_id not in config['warns']:
 					config['warns'][guild_id] = {}
-				dat = config['warns'][guild_id]
+				dat = config['warns']
 				expiring = False
-				if 'expire' in dat:
+				if guild_id in dat['expire']:
 					expiring = True
 				punishments = 'None'
-				if 'punishments' in dat:
+				if guild_id in dat['punishments']:
 					punishments = ''
 					index = 1
-					for punishment in dat['punishments']:
+					for punishment in dat['punishments'][guild_id]:
 						punishments += f'**#{index}. `{punishment}`**\n'
 				e = discord.Embed(color=colors.fate())
 				e.set_author(name='Warn Config', icon_url=ctx.author.avatar_url)
@@ -185,12 +190,15 @@ class Config(commands.Cog):
 				await msg.add_reaction('✔')
 				await msg.add_reaction('❌')
 				reaction = await wait_for_reaction()
+				config = self.bot.get_config  # type: dict
 				if reaction == '✔':
-					config = self.bot.get_config  # type: dict
-					if guild_id not in config['warns']:
-						config['warns'][guild_id] = {}
-					config['warns'][guild_id]['expire'] = 'True'
-					self.save_config(config)
+					if guild_id not in config['warns']['expire']:
+						config['warns']['expire'].append(guild_id)
+						self.save_config(config)
+				else:
+					if guild_id in config['warns']['expire']:
+						index = config['warns']['expire'].index(ctx.guild.id)
+						config['warns']['expire'].pop(index)
 				await msg.clear_reactions()
 				e = discord.Embed(color=colors.fate())
 				e.description = 'Set custom punishments?'
@@ -199,7 +207,10 @@ class Config(commands.Cog):
 				await msg.add_reaction('❌')
 				reaction = await wait_for_reaction()
 				if reaction == '❌':
-					break
+					config = self.bot.get_config  # type: dict
+					if guild_id in config['warns']['punishments']:
+						del config['warns']['punishments'][guild_id]
+						self.save_config(config)
 				else:
 					await msg.clear_reactions()
 					punishments = []
@@ -207,7 +218,10 @@ class Config(commands.Cog):
 						config = self.bot.get_config  # type: dict
 						if guild_id not in config['warns']:
 							config['warns'][guild_id] = {}
-						config['warns'][guild_id]['punishments'] = punishments
+						if punishments:
+							config['warns']['punishments'][guild_id] = punishments
+						else:
+							config['warns']['punishments'][guild_id] = ['None']
 						self.save_config(config)
 					def pos(index):
 						positions = ['1st', '2nd', '3rd', '4th', '4th', '6th', '7th', '8th']
