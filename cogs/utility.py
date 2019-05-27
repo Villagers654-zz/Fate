@@ -268,6 +268,7 @@ class Utility(commands.Cog):
 		user_id = str(msg.author.id)
 		if user_id in self.afk:
 			del self.afk[user_id]
+			await msg.channel.send('removed your afk', delete_after=3)
 		else:
 			for user in msg.mentions:
 				user_id = str(user.id)
