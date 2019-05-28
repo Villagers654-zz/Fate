@@ -9,7 +9,7 @@ class AvapxianRegime(commands.Cog):
 
 	@commands.command(name="update")
 	@commands.check(checks.luck)
-	async def _update(self, ctx, item):
+	async def updatestuff(self, ctx, item):
 		item = item.lower()
 		ar = self.bot.get_guild(548461409810251776)
 		if item == "info":
@@ -20,7 +20,7 @@ class AvapxianRegime(commands.Cog):
 			e.description = f"■ **[2P2E:](https://discord.gg/XGw58UZ)** play.2p2e.net : 19132\n" \
 				f"■ **[4b4t:](https://discord.gg/BQ23Z2E)** 4b4t.net : 19132\n" \
 				f"-~==🌹🥂🍸🍷Readme🍷🍸🥂🌹==~-\n" \
-				f"■ Welcome blah blah blah\n" \
+				f"■ Welcome To Esr\n" \
 				f"■ ree reeee reeeeeeeeee\n" \
 				f"-~===🌹🥂🍸🍷Roles🍷🍸🥂🌹===~-\n" \
 				f"■ {ar.get_role(548679250430132237).mention} - <a:tother:542643529726296074>\n" \
@@ -28,10 +28,6 @@ class AvapxianRegime(commands.Cog):
 				f"■ {ar.get_role(548679738915422249).mention} - <a:happy_banana:542646975267340298>\n" \
 				f"• **Discord** Admin\n" \
 				f"■ {ar.get_role(548680104574976001).mention} - <a:lolidance:542643279984984069>\n" \
-				f"• Team Guidance\n" \
-				f"■ {ar.get_role(548679352007786515).mention} - \n" \
-				f"• Exclusive Member\n" \
-				f"■ {ar.get_role(548679274895376478).mention} - \n" \
 				f"• Elite Member\n" \
 				f"■ {ar.get_role(548679428767481871).mention} - \n" \
 				f"• Official Member\n" \

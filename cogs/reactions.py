@@ -150,19 +150,6 @@ class Reactions(commands.Cog):
 		await asyncio.sleep(0.5)
 		await ctx.message.delete()
 
-	@commands.command(name="psycho")
-	@commands.cooldown(1, 5, commands.BucketType.user)
-	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
-	async def _psycho(self, ctx, *, content=""):
-		path = os.getcwd() + "/data/images/reactions/psycho/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/psycho/"))
-		e = discord.Embed(color=colors.fate())
-		if content:
-			e.set_author(name=f"{content}", icon_url=ctx.author.avatar_url)
-		e.set_image(url="attachment://" + os.path.basename(path))
-		await ctx.send(file=discord.File(path, filename=os.path.basename(path)), embed=e)
-		await asyncio.sleep(0.5)
-		await ctx.message.delete()
-
 	@commands.command(name="waste")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
