@@ -173,12 +173,10 @@ class Profiles(commands.Cog):
 			self.discord[str(ctx.author.id)] = "None"
 			await ctx.send("Reset your discord servers url")
 		else:
-			if "discord.gg" in url:
-				self.discord[str(ctx.author.id)] = url
-				await ctx.send('Success')
-			else:
-				await ctx.send("That's not a discord link")
-		self.save_profiles()
+			try: url = await self.bot.fetch_invite(url)
+			except: return await ctx.send('Invalid invite')
+			self.discord[str(ctx.author.id)] = url
+			await ctx.send('Success')
 
 	@_set.command(name="website")
 	async def _website(self, ctx, url=None):
