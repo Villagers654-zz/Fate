@@ -1,5 +1,4 @@
 from discord.ext import commands
-from utils import checks, colors
 from os.path import isfile
 import discord
 import asyncio
@@ -22,17 +21,11 @@ class Minecraft(commands.Cog):
 		with open("./data/4b4t/motds.json", "w") as outfile:
 			json.dump({"motds": self.motds, "old_motds": self.old_motds}, outfile, ensure_ascii=False)
 
-	async def motdshuffle(self):
+	async def motd_shuffle_task(self):
 		while True:
-			with open("/home/legit/4b4t/data/server.properties", 'r') as f:
-				get_all = f.readlines()
-			with open("/home/legit/4b4t/data/server.properties", 'w') as f:
-				for i, line in enumerate(get_all, 1):
-					if i == 12:
-						f.writelines(f"motd=4B4T - {random.choice(self.motds)}\n")
-					else:
-						f.writelines(line)
-			await asyncio.sleep(1800)
+			guild = self.bot.get_guild(470961230362837002)
+			await guild.edit(name=f'4B4T - {random.choice(self.motds)}')
+			await asyncio.sleep(1500)
 
 	@commands.command(name="motdcount")
 	async def motdcount(self, ctx):
@@ -87,15 +80,6 @@ class Minecraft(commands.Cog):
 			del self.motds[0]
 			self.save()
 
-	@commands.command(name='sendallmotds')
-	@commands.check(checks.luck)
-	async def sendall(self, ctx):
-		for motd in self.motds:
-			msg = await self.channel.send(embed=discord.Embed(description=motd))
-			await msg.add_reaction('✔')
-			await msg.add_reaction('❌')
-		await ctx.message.delete()
-
 	@commands.command(name='clearduplicates')
 	async def clear_duplicates(self, ctx):
 		motds = []
@@ -105,6 +89,11 @@ class Minecraft(commands.Cog):
 		self.motds = motds
 		self.save()
 		await ctx.send('👍')
+
+	@commands.Cog.listener()
+	async def on_ready(self):
+		await asyncio.sleep(1)
+		self.bot.loop.create_task(self.motd_shuffle_task())
 
 	@commands.Cog.listener()
 	async def on_member_join(self, member: discord.Member):
