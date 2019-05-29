@@ -191,7 +191,9 @@ class Core(commands.Cog):
 						return await webhook.send(username=f'{msg.author.name} --> {msg.channel.recipient.name}', avatar_url=msg.author.avatar_url,  embed=msg.embeds[0])
 					return await webhook.send(username=msg.author.name, avatar_url=msg.author.avatar_url, embed=msg.embeds[0])
 				if msg.author.id == self.bot.user.id:
-					return await webhook.send(username=f'{msg.author.name} --> {msg.channel.recipient.name}', avatar_url=msg.author.avatar_url, content=msg.content)
+					e = discord.Embed(color=colors.fate())
+					e.set_author(name=msg.channel.recipient, icon_url=msg.channel.recipient.avatar_url)
+					return await webhook.send(username=msg.author.name, avatar_url=msg.author.avatar_url, content=msg.content, embed=e)
 				await webhook.send(username=msg.author.name, avatar_url=msg.author.avatar_url, content=msg.content)
 
 def setup(bot):

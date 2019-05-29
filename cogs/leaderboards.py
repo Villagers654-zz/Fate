@@ -67,11 +67,8 @@ class Leaderboards(commands.Cog):
 				               "monthly_guilded": self.monthly_guilds_data, "vclb": self.vclb, "gvclb": self.gvclb},
 					          outfile, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
 			except Exception as e:
-				try:
-					log = self.bot.get_channel(501871950260469790)
-					await log.send(f'Error saving xp: {e}')
-				except:
-					pass
+				try: await self.bot.get_channel(501871950260469790).send(f'Error saving xp: {e}')
+				except: pass
 			await asyncio.sleep(60)
 
 	def msg_footer(self):
