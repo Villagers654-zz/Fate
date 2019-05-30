@@ -420,137 +420,108 @@ class Mod(commands.Cog):
 	@commands.guild_only()
 	@commands.has_permissions(manage_messages=True)
 	@commands.bot_has_permissions(manage_messages=True)
-	async def _purge(self, ctx, amount: int):
-		if amount > 1000:
-			return await ctx.send("You cannot purge more than 1000 messages at a time")
+	async def purge(self, ctx, *args):
+		if not args:
+			e = discord.Embed(color=colors.fate())
+			u = '.purge amount\n' \
+			    '.purge @user amount\n' \
+			    '.purge images amount\n' \
+			    '.purge embeds amount\n' \
+			    '.purge bots amount'
+			e.description = u
+			return await ctx.send(embed=e)
 		channel_id = str(ctx.channel.id)
 		if channel_id in self.purge:
 			return await ctx.send('I\'m already purging')
 		else:
 			self.purge[channel_id] = True
-		try:
-			await ctx.message.channel.purge(before=ctx.message, limit=amount)
-			await ctx.message.delete()
-			await ctx.send(f'{ctx.author.name}, successfully purged {amount} messages', delete_after=5)
-		except Exception as e:
-			await ctx.send(e)
+		if args[0].isdigit():  # no special option used
+			amount = int(args[0])
+			if amount > 1000:
+				del self.purge[channel_id]
+				return await ctx.send("You cannot purge more than 1000 messages at a time")
+			try:
+				await ctx.message.channel.purge(before=ctx.message, limit=amount)
+				await ctx.send(f'{ctx.author.mention}, successfully purged {amount} messages', delete_after=5)
+				return await ctx.message.delete()
+			except Exception as e:
+				await ctx.send(e)
+			finally:
+				del self.purge[channel_id]
+		amount = int(args[1])
+		if ctx.message.mentions:
+			user = ctx.message.mentions[0]
+			if amount > 250:
+				del self.purge[channel_id]
+				return await ctx.send("You cannot purge more than 250 user messages at a time")
+			try:
+				position = 0
+				async for msg in ctx.channel.history(limit=1000):
+					if msg.author.id == user.id:
+						await msg.delete()
+						position += 1
+						if position == amount:
+							break
+				await ctx.send(f'{ctx.author.display_name}, purged {position} messages from {user.display_name}', delete_after=5)
+				return await ctx.message.delete()
+			except Exception as e:
+				await ctx.send(e)
+			finally:
+				del self.purge[channel_id]
+		option = args[0].lower()  # type: str
+		if option == 'image' or option == 'images':
+			if amount > 250:
+				return await ctx.send("You cannot purge more than 250 images at a time")
+			try:
+				position = 0
+				async for msg in ctx.channel.history(limit=1000):
+					if msg.attachments:
+						await msg.delete()
+						position += 1
+						if position == amount:
+							break
+				await ctx.send(f"{ctx.author.mention}, purged {position} images", delete_after=5)
+				return await ctx.message.delete()
+			except Exception as e:
+				await ctx.send(e)
+			finally:
+				del self.purge[channel_id]
+		if option == 'embed' or option == 'embeds':
+			if amount > 250:
+				return await ctx.send("You cannot purge more than 250 embeds at a time")
+			try:
+				position = 0
+				async for msg in ctx.channel.history(limit=1000):
+					if msg.embeds:
+						await msg.delete()
+						position += 1
+						if position == amount:
+							break
+				await ctx.send(f"{ctx.author.mention}, purged {position} embeds", delete_after=5)
+				return await ctx.message.delete()
+			except Exception as e:
+				await ctx.send(e)
+			finally:
+				del self.purge[channel_id]
+		if option == 'bot' or option == 'bots':
+			if amount > 250:
+				return await ctx.send("You cannot purge more than 250 bot messages at a time")
+			try:
+				position = 0
+				async for msg in ctx.channel.history(limit=1000):
+					if msg.author.bot:
+						await msg.delete()
+						position += 1
+						if position == amount:
+							break
+				await ctx.send(f"{ctx.author.mention}, purged {position} bot messages", delete_after=5)
+				return await ctx.message.delete()
+			except Exception as e:
+				await ctx.send(e)
+			finally:
+				del self.purge[channel_id]
+		await ctx.send('Unknown option passed')
 		del self.purge[channel_id]
-
-	@commands.command(name="purge_user", description="Usage: `.purge_user @user amount`")
-	@commands.cooldown(1, 5, commands.BucketType.channel)
-	@commands.guild_only()
-	@commands.has_permissions(manage_messages=True)
-	@commands.bot_has_permissions(manage_messages=True)
-	async def purge_user(self, ctx, user: discord.Member, amount: int):
-		if amount > 250:
-			return await ctx.send("You cannot purge more than 250 user specific at a time")
-		channel_id = str(ctx.channel.id)
-		if channel_id in self.purge:
-			return await ctx.send('I\'m already purging')
-		else:
-			self.purge[channel_id] = True
-		position = 0
-		try:
-			async for msg in ctx.channel.history(limit=1000):
-				if msg.author.id is user.id:
-					await msg.delete()
-					position += 1
-					if position == amount:
-						break
-			await ctx.send(f"{ctx.author.display_name} purged {amount} images", delete_after=5)
-			return await ctx.message.delete()
-		except Exception as e:
-			await ctx.send(e)
-		finally:
-			del self.purge[channel_id]
-		await ctx.send(f'{ctx.author.display_name} purged {position} messages')
-
-	@commands.command(name="purge_images")
-	@commands.cooldown(1, 5, commands.BucketType.channel)
-	@commands.guild_only()
-	@commands.has_permissions(manage_messages=True)
-	@commands.bot_has_permissions(manage_messages=True)
-	async def purge_images(self, ctx, amount: int):
-		if amount > 250:
-			return await ctx.send("You cannot purge more than 250 images at a time")
-		channel_id = str(ctx.channel.id)
-		if channel_id in self.purge:
-			return await ctx.send('I\'m already purging')
-		else:
-			self.purge[channel_id] = True
-		position = 0
-		try:
-			async for msg in ctx.channel.history(limit=1000):
-				if msg.attachments:
-					await msg.delete()
-					position += 1
-					if position == amount:
-						break
-			await ctx.send(f"{ctx.author.display_name}, successfully purged {amount} images", delete_after=5)
-			return await ctx.message.delete()
-		except Exception as e:
-			await ctx.send(e)
-		finally:
-			del self.purge[channel_id]
-		await ctx.send(f'{ctx.author.display_name} purged {position} messages')
-
-	@commands.command(name="purge_embeds")
-	@commands.cooldown(1, 5, commands.BucketType.channel)
-	@commands.guild_only()
-	@commands.has_permissions(manage_messages=True)
-	@commands.bot_has_permissions(manage_messages=True)
-	async def purge_embeds(self, ctx, amount: int):
-		if amount > 250:
-			return await ctx.send("You cannot purge more than 250 embeds at a time")
-		channel_id = str(ctx.channel.id)
-		if channel_id in self.purge:
-			return await ctx.send('I\'m already purging')
-		else:
-			self.purge[channel_id] = True
-		position = 0
-		try:
-			async for msg in ctx.channel.history(limit=1000):
-				if msg.embeds:
-					await msg.delete()
-					position += 1
-					if position == amount:
-						break
-			await ctx.send(f"{ctx.author.display_name}, successfully purged {amount} embeds", delete_after=5)
-			return await ctx.message.delete()
-		except Exception as e:
-			await ctx.send(e)
-		finally:
-			del self.purge[channel_id]
-		await ctx.send(f'{ctx.author.display_name} purged {position} messages')
-
-	@commands.command(name="purge_bots")
-	@commands.cooldown(1, 5, commands.BucketType.channel)
-	@commands.guild_only()
-	@commands.has_permissions(manage_messages=True)
-	@commands.bot_has_permissions(manage_messages=True)
-	async def purge_bots(self, ctx, amount: int):
-		if amount > 250:
-			return await ctx.send("You cannot purge more than 250 bot messages at a time")
-		channel_id = str(ctx.channel.id)
-		if channel_id in self.purge:
-			return await ctx.send('I\'m already purging')
-		else:
-			self.purge[channel_id] = True
-		position = 0
-		try:
-			async for msg in ctx.channel.history(limit=1000):
-				if msg.author.bot:
-					await msg.delete()
-					position += 1
-					if position == amount:
-						break
-			await ctx.send(f"{ctx.author.display_name}, successfully purged {amount} bot messages", delete_after=5)
-			return await ctx.message.delete()
-		except Exception as e:
-			await ctx.send(e)
-		finally:
-			del self.purge[channel_id]
-		await ctx.send(f'{ctx.author.display_name} purged {position} messages')
 
 	@commands.command(name="kick")
 	@commands.cooldown(1, 5, commands.BucketType.user)
