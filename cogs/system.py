@@ -66,6 +66,13 @@ class System(commands.Cog):
 			await asyncio.sleep(5)
 			await ctx.message.delete()
 
+	@commands.command(name='removenick')
+	@commands.check(checks.luck)
+	async def remove_nick(self, ctx):
+		bot = ctx.guild.get_member(self.bot.user.id)
+		await bot.edit(nick='')
+		await ctx.message.delete()
+
 	@commands.Cog.listener()
 	async def on_ready(self):
 		self.bot.loop.create_task(self.console_task())
@@ -103,6 +110,14 @@ class System(commands.Cog):
 							await member.edit(nick='')
 					except:
 						pass
+
+	@commands.Cog.listener()
+	async def on_member_update(self, before, after):
+		if before.id == self.bot.user.id:
+			if before.name == after.name:
+				if before.display_name != after.display_name:
+					bot = before.guild.get_member(self.bot.user.id)
+					await bot.edit(nick='')
 
 def setup(bot):
 	bot.add_cog(System(bot))
