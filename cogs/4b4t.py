@@ -25,7 +25,7 @@ class Minecraft(commands.Cog):
 		while True:
 			guild = self.bot.get_guild(470961230362837002)
 			await guild.edit(name=f'4B4T - {random.choice(self.motds)}')
-			await asyncio.sleep(1500)
+			await asyncio.sleep(3600)
 
 	@commands.command(name="motdcount")
 	async def motdcount(self, ctx):

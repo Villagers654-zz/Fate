@@ -46,6 +46,9 @@ class Mod(commands.Cog):
 			action = self.timers[user_id]['action']
 			if action == 'mute':
 				channel = self.bot.get_channel(self.timers[user_id]['channel'])  # type: discord.TextChannel
+				if not channel:
+					del self.timers[user_id]
+					return
 				user = channel.guild.get_member(self.timers[user_id]['user'])  # type: discord.Member
 				if not user:
 					del self.timers[user_id]
