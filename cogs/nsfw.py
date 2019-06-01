@@ -1,8 +1,10 @@
 from random import randint, choice
 from discord.ext import commands
+from pybooru import Danbooru
 from utils import colors
 import requests
 import discord
+import random
 import json
 
 class NSFW(commands.Cog):
@@ -13,10 +15,28 @@ class NSFW(commands.Cog):
 		with open(f"./data/images/urls/{filename}", "r") as f:
 			return choice(f.readlines())
 
+	@commands.command(name='dan', aliases=['danbooru'])
+	@commands.cooldown(1, 3, commands.BucketType.user)
+	@commands.guild_only()
+	@commands.is_nsfw()
+	@commands.bot_has_permissions(embed_links=True)
+	async def danbooru(self, ctx, *tags):
+		client = Danbooru('danbooru', username='FrequencyX4', api_key='UKnXN9jBTYxrXUZvnk23NJ95')
+		results = client.post_list(limit=100, tags=tags)
+		if not results:
+			return await ctx.send('No results')
+		choice = random.choice(results)
+		e = discord.Embed(color=colors.random())
+		e.set_author(name=f'🔍 {", ".join(tags)}')
+		e.set_image(url=choice['file_url'])
+		e.set_footer(text=choice['created_at'])
+		await ctx.send(embed=e)
+
 	@commands.command(name="gel")
 	@commands.cooldown(1, 3, commands.BucketType.user)
-	@commands.bot_has_permissions(embed_links=True)
+	@commands.guild_only()
 	@commands.is_nsfw()
+	@commands.bot_has_permissions(embed_links=True)
 	async def _gel(self, ctx, *, tag):
 		blacklist = ['loli', 'shota']
 		send_all = False
@@ -49,17 +69,19 @@ class NSFW(commands.Cog):
 
 	@commands.command(name="trap")
 	@commands.cooldown(1, 3, commands.BucketType.user)
-	@commands.bot_has_permissions(embed_links=True)
+	@commands.guild_only()
 	@commands.is_nsfw()
+	@commands.bot_has_permissions(embed_links=True)
 	async def _trap(self, ctx):
 		e = discord.Embed(color=colors.purple())
 		e.set_image(url=self.get("traps.txt"))
 		await ctx.send(embed=e)
 
 	@commands.command(name="yaoi")
-	@commands.bot_has_permissions(embed_links=True)
-	@commands.is_nsfw()
 	@commands.cooldown(1, 3, commands.BucketType.user)
+	@commands.guild_only()
+	@commands.is_nsfw()
+	@commands.bot_has_permissions(embed_links=True)
 	async def _yaoi(self, ctx):
 		e = discord.Embed(color=colors.purple())
 		e.set_image(url=self.get("yaoi.txt"))
