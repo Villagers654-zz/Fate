@@ -395,7 +395,7 @@ class Mod(commands.Cog):
 						position += 1
 						if position == amount:
 							break
-				await ctx.send(f'{ctx.author.display_name}, purged {position} messages from {user.display_name}', delete_after=5)
+				await ctx.send(f'{ctx.author.mention}, purged {position} messages from {user.display_name}', delete_after=5)
 				return await ctx.message.delete()
 			except Exception as e:
 				await ctx.send(e)
