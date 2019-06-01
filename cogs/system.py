@@ -30,13 +30,12 @@ class System(commands.Cog):
 						self.error_log = new_log
 						await output_msg.edit(content=new_log)
 						await channel.send('updated error console', delete_after=5)
-				await asyncio.sleep(5)
 			except Exception as e:
 				try:
 					await self.bot.get_channel(577661461543780382).send(e)
 				except:
 					pass
-				await asyncio.sleep(5)
+			await asyncio.sleep(5)
 
 	async def activity_task(self):
 		while True:
@@ -76,7 +75,6 @@ class System(commands.Cog):
 	@commands.Cog.listener()
 	async def on_ready(self):
 		self.bot.loop.create_task(self.console_task())
-		self.bot.loop.create_task(self.activity_task())
 
 	@commands.Cog.listener()
 	async def on_message(self, msg):
