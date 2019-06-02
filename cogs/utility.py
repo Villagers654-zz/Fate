@@ -12,29 +12,35 @@ class Utility(commands.Cog):
 		self.find = {}
 		self.afk = {}
 
-	@commands.command()
-	async def channelinfo(self, ctx, channel=None):
-		if channel is None:
-			ctx.channel = ctx.channel
-		else:
-			ctx.channel = channel
-		fmt = "%m/%d/%Y"
-		created = datetime.date(ctx.channel.created_at)
-		e=discord.Embed(description="id: {}".format(ctx.channel.id), color=0x0000ff)
-		e.set_author(name="{}:".format(ctx.channel.name), icon_url=ctx.author.avatar_url)
+	@commands.command(name='channelinfo', aliases=['cinfo'])
+	@commands.cooldown(1, 3, commands.BucketType.user)
+	@commands.guild_only()
+	@commands.bot_has_permissions(embed_links=True)
+	async def channelinfo(self, ctx, channel: discord.TextChannel=None):
+		if not channel:
+			channel = ctx.channel
+		e = discord.Embed(description=f'ID: {channel.id}', color=0x0000ff)
+		e.set_author(name=f'{channel.name}:', icon_url=ctx.author.avatar_url)
 		e.set_thumbnail(url=ctx.guild.icon_url)
-		e.add_field(name="◈ Main ◈", value="• Category: {}\n• Slowmode: {}".format(ctx.channel.category, ctx.channel.slowmode_delay), inline=False)
-		e.add_field(name="◈ Topic ◈", value=ctx.channel.topic, inline=False)
-		e.add_field(name="◈ Created ◈", value=created.strftime(fmt), inline=False)
+		e.add_field(name="◈ Main ◈", value=f'• Category: {channel.category}\n• Slowmode: {channel.slowmode_delay}', inline=True)
+		if channel.topic:
+			e.add_field(name="◈ Topic ◈", value=channel.topic, inline=True)
+		e.add_field(name="◈ Created ◈", value=datetime.date(channel.created_at).strftime("%m/%d/%Y"), inline=True)
 		await ctx.send(embed=e)
 
 	@commands.command()
+	@commands.cooldown(1, 3, commands.BucketType.user)
+	@commands.guild_only()
+	@commands.bot_has_permissions(embed_links=True)
 	async def servericon(self, ctx):
 		e=discord.Embed(color=0x80b0ff)
 		e.set_image(url=ctx.guild.icon_url)
 		await ctx.send(embed=e)
 
-	@commands.command()
+	@commands.command(name='serverinfo', aliases=['sinfo'])
+	@commands.cooldown(1, 3, commands.BucketType.user)
+	@commands.guild_only()
+	@commands.bot_has_permissions(embed_links=True)
 	async def serverinfo(self, ctx):
 		fmt = "%m/%d/%Y"
 		created = datetime.date(ctx.guild.created_at)
@@ -46,17 +52,29 @@ class Utility(commands.Cog):
 		e.add_field(name="◈ Created", value=created.strftime(fmt), inline=False)
 		await ctx.send(embed=e)
 
-	@commands.command(name="userinfo", aliases=["stalk"])
-	async def userinfo(self, ctx, *, member: discord.Member=None):
-		if member is None:
-			member = ctx.author
-		perms = ', '.join(perm for perm, value in member.guild_permissions if value)
-		e=discord.Embed(description="id: {}".format(member.id), color=member.color)
-		e.set_author(name="{}:".format(member.name), icon_url=member.avatar_url)
-		e.set_thumbnail(url=member.avatar_url)
-		e.add_field(name="◈ Main ◈", value="• Nickname [{}]\n• Activity [{}]\n• Status [{}]\n• role [{}]".format(member.nick, member.activity, member.status, member.top_role), inline=False)
-		e.add_field(name="◈ Perms ◈", value="```{}```".format(perms), inline=False)
-		e.add_field(name="◈ Created ◈", value=datetime.date(member.created_at).strftime("%m/%d/%Y"), inline=False)
+	@commands.command(name='userinfo', aliases=['uinfo'])
+	@commands.cooldown(1, 3, commands.BucketType.user)
+	@commands.guild_only()
+	@commands.bot_has_permissions(embed_links=True)
+	async def userinfo(self, ctx, *, user: discord.Member=None):
+		if not user:
+			user = ctx.author
+		color = user.color if user.color else colors.fate()
+		icon_url = user.avatar_url if user.avatar_url else self.bot.user.avatar_url
+		e = discord.Embed(color=color)
+		e.set_author(name=user.display_name, icon_url=icon_url)
+		e.set_thumbnail(url=ctx.guild.icon_url)
+		e.description = f'__**ID:**__ {user.id}\n{f"Active On Mobile" if user.is_on_mobile() else ""}'
+		main = f'{f"**• Nickname** [`{user.nick}]" if user.nick else ""}\n' \
+			f'**• Activity** [`{user.activity.name if user.activity else None}`]\n' \
+			f'**• Status** [`{user.status}`]\n' \
+			f'**• Role** [{user.top_role.mention}]'
+		e.add_field(name='◈ Main ◈', value=main, inline=True)
+		notable = ['manage_guild', 'manage_roles', 'manage_channels', 'kick_members', 'ban_members', 'manage_messages']
+		perms = ', '.join(perm for perm, value in user.guild_permissions if value and perm in notable)
+		if perms:
+			e.add_field(name='◈ Perms ◈', value=perms, inline=True)
+		e.add_field(name='◈ Created ◈', value=datetime.date(user.created_at).strftime("%m/%d/%Y"), inline=True)
 		await ctx.send(embed=e)
 
 	@commands.command(name="roleinfo")

