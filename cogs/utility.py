@@ -12,6 +12,37 @@ class Utility(commands.Cog):
 		self.find = {}
 		self.afk = {}
 
+	def get_user(self, ctx, user):
+		if user.startswith("<@"):
+			for char in list(user):
+				if char not in list('1234567890'):
+					user = user.replace(str(char), '')
+			return ctx.guild.get_member(int(user))
+		else:
+			user = user.lower()
+			for member in ctx.guild.members:
+				if user == member.name.lower():
+					return member
+			for member in ctx.guild.members:
+				if user == member.display_name.lower():
+					return member
+			for member in ctx.guild.members:
+				if user in member.name.lower():
+					return member
+			for member in ctx.guild.members:
+				if user in member.display_name.lower():
+					return member
+		return
+
+	@commands.command(name='servericon', aliases=['icon'])
+	@commands.cooldown(1, 3, commands.BucketType.user)
+	@commands.guild_only()
+	@commands.bot_has_permissions(embed_links=True)
+	async def servericon(self, ctx):
+		e=discord.Embed(color=0x80b0ff)
+		e.set_image(url=ctx.guild.icon_url)
+		await ctx.send(embed=e)
+
 	@commands.command(name='channelinfo', aliases=['cinfo'])
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.guild_only()
@@ -26,15 +57,6 @@ class Utility(commands.Cog):
 		if channel.topic:
 			e.add_field(name="◈ Topic ◈", value=channel.topic, inline=True)
 		e.add_field(name="◈ Created ◈", value=datetime.date(channel.created_at).strftime("%m/%d/%Y"), inline=True)
-		await ctx.send(embed=e)
-
-	@commands.command()
-	@commands.cooldown(1, 3, commands.BucketType.user)
-	@commands.guild_only()
-	@commands.bot_has_permissions(embed_links=True)
-	async def servericon(self, ctx):
-		e=discord.Embed(color=0x80b0ff)
-		e.set_image(url=ctx.guild.icon_url)
 		await ctx.send(embed=e)
 
 	@commands.command(name='serverinfo', aliases=['sinfo'])
@@ -56,9 +78,12 @@ class Utility(commands.Cog):
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.guild_only()
 	@commands.bot_has_permissions(embed_links=True)
-	async def userinfo(self, ctx, *, user: discord.Member=None):
+	async def userinfo(self, ctx, *, user=None):
 		if not user:
-			user = ctx.author
+			user = ctx.author.name
+		user = self.get_user(ctx, user)
+		if not isinstance(user, discord.Member):
+			return await ctx.send('User not found')
 		color = user.color if user.color else colors.fate()
 		icon_url = user.avatar_url if user.avatar_url else self.bot.user.avatar_url
 		e = discord.Embed(color=color)
@@ -69,16 +94,19 @@ class Utility(commands.Cog):
 			f'**• Activity** [`{user.activity.name if user.activity else None}`]\n' \
 			f'**• Status** [`{user.status}`]\n' \
 			f'**• Role** [{user.top_role.mention}]'
-		e.add_field(name='◈ Main ◈', value=main, inline=True)
-		notable = ['manage_guild', 'manage_roles', 'manage_channels', 'kick_members', 'ban_members', 'manage_messages']
-		perms = ', '.join(perm for perm, value in user.guild_permissions if value and perm in notable)
+		e.add_field(name='◈ Main ◈', value=main, inline=False)
+		permissions = user.guild_permissions
+		notable = ['view_audit_log', 'manage_roles', 'manage_channels', 'manage_emojis',
+		           'kick_members', 'ban_members', 'manage_messages', 'mention_everyone']
+		perms = ', '.join(perm for perm, value in permissions if value and perm in notable)
+		perms = 'administrator' if permissions.administrator else perms
 		if perms:
-			e.add_field(name='◈ Perms ◈', value=perms, inline=True)
-		e.add_field(name='◈ Created ◈', value=datetime.date(user.created_at).strftime("%m/%d/%Y"), inline=True)
+			e.add_field(name='◈ Perms ◈', value=perms, inline=False)
+		e.add_field(name='◈ Created ◈', value=datetime.date(user.created_at).strftime("%m/%d/%Y"), inline=False)
 		await ctx.send(embed=e)
 
 	@commands.command(name="roleinfo")
-	async def _roleinfo(self, ctx, role_name: commands.clean_content):
+	async def roleinfo(self, ctx, role_name: commands.clean_content):
 		role_name = role_name.replace("@", "").lower()
 		role = None
 		for r in ctx.guild.roles:
@@ -142,7 +170,10 @@ class Utility(commands.Cog):
 			f'**Bots:** [`{bots}`]'
 		await ctx.send(embed=e)
 
-	@commands.command()
+	@commands.command(name='tinyurl')
+	@commands.cooldown(1, 3, commands.BucketType.user)
+	@commands.guild_only()
+	@commands.bot_has_permissions(embed_links=True)
 	async def tinyurl(self, ctx, *, link: str):
 		await ctx.message.delete()
 		url = 'http://tinyurl.com/api-create.php?url=' + link
@@ -156,20 +187,30 @@ class Utility(commands.Cog):
 		emb.set_footer(text='Powered by tinyurl.com', icon_url='http://cr-api.com/static/img/branding/cr-api-logo.png')
 		await ctx.send(embed=emb)
 
-	@commands.command()
-	async def avatar(self, ctx, *, member: discord.Member=None):
-		try:
-			if member is None:
-				member = ctx.author
-			e=discord.Embed(color=0x80b0ff)
-			e.set_image(url=member.avatar_url)
-			await ctx.send("◈ {}'s avatar ◈".format(member), embed=e)
-		except Exception as e:
-			await ctx.send(f'**```ERROR: {type(e).__name__} - {e}```**')
+	@commands.command(name='avatar', aliases=['av'])
+	@commands.cooldown(1, 3, commands.BucketType.user)
+	@commands.guild_only()
+	@commands.bot_has_permissions(embed_links=True)
+	async def avatar(self, ctx, *, user=None):
+		if not user:
+			user = ctx.author.name
+		user = self.get_user(ctx, user)
+		if not isinstance(user, discord.Member):
+			return await ctx.send('User not found')
+		if not user.avatar_url:
+			return await ctx.send(f'{user.display_name} doesn\'t have an avatar')
+		e=discord.Embed(color=0x80b0ff)
+		e.set_image(url=user.avatar_url)
+		await ctx.send(f'◈ {user.display_name}\'s avatar ◈', embed=e)
 
-	@commands.command()
+	@commands.command(name='owner')
+	@commands.cooldown(1, 3, commands.BucketType.user)
+	@commands.guild_only()
+	@commands.bot_has_permissions(embed_links=True)
 	async def owner(self, ctx):
-		await ctx.send(ctx.guild.owner.name)
+		e = discord.Embed(color=colors.fate())
+		e.description = f'**Server Owner:** {ctx.guild.owner.mention}'
+		await ctx.send(embed=e)
 
 	@commands.command()
 	async def topic(self, ctx):
