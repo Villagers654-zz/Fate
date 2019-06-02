@@ -353,7 +353,7 @@ class Mod(commands.Cog):
 	@commands.has_permissions(manage_messages=True)
 	@commands.bot_has_permissions(manage_messages=True)
 	async def purge(self, ctx, *args):
-		if not args or len(args) == 1:
+		def help_embed():
 			e = discord.Embed(color=colors.fate())
 			u = '.purge amount\n' \
 			    '.purge @user amount\n' \
@@ -362,7 +362,9 @@ class Mod(commands.Cog):
 			    '.purge mentions amount\n' \
 			    '.purge bots amount'
 			e.description = u
-			return await ctx.send(embed=e)
+			return e
+		if not args:
+			return await ctx.send(embed=help_embed())
 		channel_id = str(ctx.channel.id)
 		if channel_id in self.purge:
 			return await ctx.send('I\'m already purging')
@@ -381,6 +383,8 @@ class Mod(commands.Cog):
 				await ctx.send(e)
 			finally:
 				del self.purge[channel_id]
+		if len(args) == 1:
+			return await ctx.send(embed=help_embed())
 		amount = int(args[1])
 		if ctx.message.mentions:
 			user = ctx.message.mentions[0]
