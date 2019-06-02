@@ -100,9 +100,7 @@ class Minecraft(commands.Cog):
 		if member.guild.id == 470961230362837002:
 			guild = self.bot.get_guild(470961230362837002)
 			motd = random.choice(self.motds)
-			msg = await guild.edit(name=f"4B4T - {motd}")
-			await msg.add_reaction('✔')
-			await msg.add_reaction('❌')
+			await guild.edit(name=f"4B4T - {motd}")
 
 	@commands.Cog.listener()
 	async def on_raw_reaction_add(self, data):
