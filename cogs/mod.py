@@ -25,8 +25,8 @@ class Mod(commands.Cog):
 					self.warns = dat["warns"]
 				if "roles" in dat:
 					self.roles = dat["roles"]
-				if "timers" in dat:
-					self.timers = dat["timers"]
+				if 'timers' in dat:
+					self.timers = dat['timers']
 				if 'mods' in dat:
 					self.mods = dat['mods']
 
@@ -38,46 +38,53 @@ class Mod(commands.Cog):
 		with open('./data/config.json', 'w') as f:
 			json.dump(config, f, ensure_ascii=False)
 
-	async def start_timer(self, guild_id, user_id, index):
-		await asyncio.sleep(5)
-		dat = self.timers[guild_id][user_id][index]
-		action = dat['action']
-		if action == 'mute':
-			channel = self.bot.get_channel(dat['channel'])  # type: discord.TextChannel
-			if not channel:
-				index = self.timers[guild_id][user_id].index(dat)
-				self.timers[guild_id][user_id].pop(index)
-				return
-			user = channel.guild.get_member(dat[user_id]['user'])  # type: discord.Member
-			if not user:
-				index = self.timers[guild_id][user_id].index(dat)
-				self.timers[guild_id][user_id].pop(index)
-				return
-			end_time = datetime.strptime(dat['end_time'], "%Y-%m-%d %H:%M:%S.%f")  # type: datetime.now()
-			mute_role = channel.guild.get_role(dat['mute_role'])  # type: discord.Role
-			removed_roles = dat['roles']  # type: list
+	async def start_mute_timer(self, guild_id, user_id):
+		dat = self.timers['mute'][guild_id][user_id]
+		channel = self.bot.get_channel(dat['channel'])
+		if not channel:
+			del self.timers['mute'][guild_id][user_id]
+			return
+		user = channel.guild.get_member(dat[user_id]['user'])
+		if not user:
+			del self.timers['mute'][guild_id][user_id]
+			return
+		format = '%Y-%m-%d %H:%M:%S.%f'
+		end_time = datetime.strptime(dat['end_time'], format)
+		mute_role = channel.guild.get_role(dat['mute_role'])
+		removed_roles = dat['roles']  # type: list
+		sleep_time = (end_time - datetime.now()).seconds
+		async def unmute():
+			if mute_role:
+				if mute_role in user.roles:
+					await user.remove_roles(mute_role)
+					await channel.send(f"**Unmuted:** {user.name}")
+			for role_id in removed_roles:
+				role = channel.guild.get_role(role_id)
+				if role:
+					if role not in user.roles:
+						await user.add_roles(role)
+						await asyncio.sleep(0.5)
+		if datetime.now() < end_time:
+			await asyncio.sleep(sleep_time)
+			await unmute()
+		else:
+			await unmute()
+		del self.timers['mute'][guild_id][user_id]
+		self.save_json()
+
+	async def start_ban_timer(self, guild_id, user_id):
+		dat = self.timers['ban'][guild_id][user_id]
+		guild = self.bot.get_guild(int(guild_id))
+		user = self.bot.get_user(dat['user'])
+		format = '%Y-%m-%d %H:%M:%S.%f'
+		end_time = datetime.strptime(dat['end_time'], format)
+		if datetime.now() < end_time:
 			sleep_time = (end_time - datetime.now()).seconds
-			async def unmute():
-				if mute_role:
-					if mute_role in user.roles:
-						await user.remove_roles(mute_role)
-						await channel.send(f"**Unmuted:** {user.name}")
-				for role_id in removed_roles:
-					role = channel.guild.get_role(role_id)
-					if role:
-						if role not in user.roles:
-							await user.add_roles(role)
-							await asyncio.sleep(0.5)
-			if datetime.now() < end_time:
-				await asyncio.sleep(sleep_time)
-				await unmute()
-			else:
-				await unmute()
-			index = self.timers[guild_id][user_id].index(dat)
-			self.timers[guild_id][user_id].pop(index)
-			self.save_json()
-		if action == 'ban':
-			pass
+			await asyncio.sleep(sleep_time)
+			await guild.unban(user)
+		else:
+			await guild.unban(user)
+		del self.timers['ban'][guild_id][user_id]
 
 	def get_user(self, ctx, user):
 		if user.startswith("<@"):
@@ -129,18 +136,24 @@ class Mod(commands.Cog):
 
 	@commands.Cog.listener()
 	async def on_ready(self):
-		for guild_id in list(self.timers.keys()):
-			for user_id in list(self.timers[guild_id].keys()):
-				for timer in self.timers[guild_id][user_id]:
-					await self.bot.get_channel(config.server("log")).send(f"Timer: {guild_id}|{user_id}|", delete_after=3)
+		channel = self.bot.get_channel(config.server('log'))
+		for guild_id in list(self.timers['mute'].keys()):
+			for user_id in list(self.timers['mute'][guild_id].keys()):
+				await channel.send(f"Mute Timer:{guild_id}|{user_id}", delete_after=3)
+		for guild_id in list(self.timers['ban'].keys()):
+			for user_id in list(self.timers['ban'][guild_id].keys()):
+				await channel.send(f'Ban Timer:{guild_id}|{user_id}')
 
 	@commands.Cog.listener()
 	async def on_message(self, m: discord.Message):
 		if isinstance(m.guild, discord.Guild):
-			if m.channel.id == config.server("log"):
-				if m.content.startswith("Timer:"):
-					guild_id, user_id = m.content.replace("Timer: ", "").split('|')
-					await self.start_timer(guild_id, user_id)
+			if m.channel.id == config.server('log'):
+				if m.content.startswith('Mute Timer:'):
+					guild_id, user_id = m.content.replace('Mute Timer:', '').split('|')
+					await self.start_mute_timer(guild_id, user_id)
+				if m.content.startswith('Ban Timer:'):
+					guild_id, user_id = m.content.replace('Ban Timer:', '').split('|')
+					await self.start_ban_timer(guild_id, user_id)
 
 	@commands.Cog.listener()
 	async def on_guild_remove(self, guild):
@@ -151,8 +164,11 @@ class Mod(commands.Cog):
 		if guild_id in self.roles:
 			del self.warns[guild_id]
 			self.save_json()
-		if guild_id in self.timers:
-			del self.timers[guild_id]
+		if guild_id in self.timers['mute']:
+			del self.timers['mute'][guild_id]
+			self.save_json()
+		if guild_id in self.timers['ban']:
+			del self.timers['ban'][guild_id]
 			self.save_json()
 		if guild_id in self.mods:
 			del self.mods[guild_id]
@@ -172,9 +188,75 @@ class Mod(commands.Cog):
 	@commands.command(name='modlogs', aliases=['actions'])
 	@commands.guild_only()
 	@commands.bot_has_permissions(embed_links=True)
-	async def mod_logs(self, ctx, *, user=None):
+	async def mod_logs(self, ctx):
 		guild_id = str(ctx.guild.id)
-
+		if guild_id not in self.timers['mute'] and guild_id not in self.timers['ban']:
+			return await ctx.send('No data')
+		def get_time(end_time):
+			days = (end_time - datetime.now()).days
+			seconds = (end_time - datetime.now()).seconds
+			hours = str(seconds / 60 / 60)
+			hours = int(hours[:hours.find('.')])
+			minutes = str(seconds / 60)
+			minutes = int(minutes[:minutes.find('.')])
+			if days > 0:
+				hours = hours - (days * 24)
+			if hours > 0:
+				minutes = minutes - (hours * 60)
+			return days, hours, minutes, seconds
+		moderations = []
+		if guild_id in self.timers['mute']:
+			for user_id in self.timers['mute'][guild_id].keys():
+				dat = self.timers['mute'][guild_id][user_id]
+				channel = self.bot.get_channel(dat['channel'])
+				if not channel:
+					del self.timers['mute'][guild_id][user_id]
+					return None, None
+				user = channel.guild.get_member(dat['user'])
+				if not user:
+					del self.timers['mute'][guild_id][user_id]
+					return None, None
+				format = '%Y-%m-%d %H:%M:%S.%f'
+				end_time = datetime.strptime(dat['end_time'], format)
+				days, hours, minutes, seconds = get_time(end_time)
+				moderation = f'✦ Mute | {user} | '
+				if days > 0:
+					moderation += f'{days} {"day" if days == 1 else "days"} '
+				if hours > 0:
+					moderation += f'{hours} {"hour" if hours == 1 else "hours"} '
+				if hours > 0 and minutes > 0:
+					moderation += f'and {minutes} {"minute" if minutes == 1 else "minutes"} '
+				else:
+					moderation += f'{minutes} {"minute" if minutes == 1 else "minutes"} '
+				moderation += 'remaining'
+				if moderation:
+					moderations.append([seconds, moderation])
+		if guild_id in self.timers['ban']:
+			for user_id in self.timers['ban'][guild_id].keys():
+				dat = self.timers['ban'][guild_id][user_id]
+				user = self.bot.get_user(dat['user'])
+				format = '%Y-%m-%d %H:%M:%S.%f'
+				end_time = datetime.strptime(dat['end_time'], format)
+				days, hours, minutes, seconds = get_time(end_time)
+				moderation = f'✦ Ban | {user} | '
+				if days > 0:
+					moderation += f'{days} days '
+				if hours > 0:
+					moderation += f'{hours} hours '
+				if hours > 0 and minutes > 0:
+					moderation += f'and {minutes} minutes '
+				else:
+					moderation += f'{minutes} minutes '
+				moderation += 'remaining\n'
+				if moderation:
+					moderations.append([seconds, moderation])
+		mod_log = ''
+		for seconds, moderation in (sorted(moderations, key=lambda kv: kv[0], reverse=True)):
+			mod_log += moderation
+		e = discord.Embed(color=colors.fate())
+		e.set_author(name=f'{ctx.guild.name} Mod Logs')
+		e.description = mod_log
+		await ctx.send(embed=e)
 
 	@commands.command(name='addmod')
 	@commands.cooldown(1, 3, commands.BucketType.user)
@@ -539,22 +621,16 @@ class Mod(commands.Cog):
 		if timer:
 			guild_id = str(ctx.guild.id)
 			user_id = str(user.id)
-			if guild_id not in self.timers:
-				self.timers[guild_id] = {}
-			if user_id not in self.timers[guild_id]:
-				self.timers[guild_id][user_id] = []
-			timer_info = {
-				'action': 'ban',
-				'user': user.id,
-				'author_id': ctx.author.id,
-				'time': str(datetime.now()),
-				'ends_at': str(datetime.now() + timedelta(seconds=timer))
-			}
+			if guild_id not in self.timers['ban']:
+				self.timers['ban'][guild_id] = {}
+			now = datetime.now()
+			timer_info = {'user': user.id, 'time': str(now), 'end_time': str(now + timedelta(seconds=timer))}
+			self.timers['ban'][guild_id][user_id] = timer_info
+			self.save_json()
 			await asyncio.sleep(timer)
-			if timer_info in self.timers[guild_id][user_id]:
+			if user_id in self.timers['ban'][guild_id]:
 				await user.unban(reason='Timed ban')
-				index = self.timers[guild_id][user_id].index(timer_info)
-				self.timers[guild_id][user_id].pop(index)
+				del self.timers['ban'][guild_id][user_id]
 				self.save_json()
 
 	@commands.command(name="softban")
@@ -777,20 +853,17 @@ class Mod(commands.Cog):
 				return await ctx.send(f"**Muted:** {user.name}")
 			await ctx.send(f"Muted **{user.name}** for {time}")
 		timer_info = {
-			'action': 'mute',
 			'channel': ctx.channel.id,
 			'user': user.id,
-			'end_time': str(datetime.now() + timedelta(seconds=timer)),
+			'end_time': str(datetime.now() + timedelta(seconds=round(timer))),
 			'mute_role': mute_role.id,
 			'roles': removed_roles}
-		if guild_id not in self.timers:
-			self.timers[guild_id] = {}
-		if user_id not in self.timers[guild_id]:
-			self.timers[guild_id][user_id] = []
-		self.timers[guild_id][user_id].append(timer_info)
+		if guild_id not in self.timers['mute']:
+			self.timers['mute'][guild_id] = {}
+		self.timers['mute'][guild_id][user_id] = timer_info
 		self.save_json()
 		await asyncio.sleep(timer)
-		if user_id in self.timers[guild_id]:
+		if user_id in self.timers['mute'][guild_id]:
 			if mute_role in user.roles:
 				await user.remove_roles(mute_role)
 				await ctx.send(f"**Unmuted:** {user.name}")
@@ -799,8 +872,7 @@ class Mod(commands.Cog):
 				if role not in user.roles:
 					await user.add_roles(role)
 					await asyncio.sleep(0.5)
-			index = self.timers[guild_id][user_id].index(timer_info)
-			self.timers[guild_id][user_id].pop(index)
+			del self.timers['mute'][guild_id][user_id]
 			self.save_json()
 
 	@commands.command(name="unmute", description="Unblocks users from sending messages")
@@ -837,16 +909,18 @@ class Mod(commands.Cog):
 						await asyncio.sleep(0.5)
 				del self.roles[guild_id][user_id]
 				self.save_json()
-		if user_id in self.timers:
-			channel = self.bot.get_channel(self.timers[user_id]['channel'])  # type: discord.TextChannel
-			removed_roles = self.timers[user_id]['roles']  # type: list
-			for role_id in removed_roles:
-				role = channel.guild.get_role(role_id)
-				if role not in user.roles:
-					await user.add_roles(channel.guild.get_role(role_id))
-					await asyncio.sleep(0.5)
-			del self.timers[user_id]
-			self.save_json()
+		if guild_id in self.timers['mute']:
+			if user_id in self.timers['mute'][guild_id]:
+				dat = self.timers['mute'][guild_id][user_id]
+				channel = self.bot.get_channel(dat['channel'])  # type: discord.TextChannel
+				removed_roles = dat['roles']  # type: list
+				for role_id in removed_roles:
+					role = channel.guild.get_role(role_id)
+					if role not in user.roles:
+						await user.add_roles(channel.guild.get_role(role_id))
+						await asyncio.sleep(0.5)
+				del self.timers['mute'][guild_id][user_id]
+				self.save_json()
 		await ctx.send(f"Unmuted {user.name}")
 
 	@commands.command(name="warn")
