@@ -556,8 +556,25 @@ class Mod(commands.Cog):
 				await ctx.send(e)
 			finally:
 				del self.purge[channel_id]
-		await ctx.send('Unknown option passed')
-		del self.purge[channel_id]
+		phrase = args[0]
+		amount = int(args[1])
+		if amount > 250:
+			return await ctx.send("You cannot purge more than 250 phrases at a time")
+		try:
+			position = 0
+			async for msg in ctx.channel.history(limit=500):
+				if phrase.lower() in msg.content.lower():
+					if msg.id != ctx.message.id:
+						await msg.delete()
+						position += 1
+						if position == amount:
+							break
+			await ctx.send(f"{ctx.author.mention}, purged {position} messages", delete_after=5)
+			return await ctx.message.delete()
+		except Exception as e:
+			await ctx.send(e)
+		finally:
+			del self.purge[channel_id]
 
 	@commands.command(name="kick")
 	@commands.cooldown(1, 5, commands.BucketType.user)
