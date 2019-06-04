@@ -44,7 +44,7 @@ class Mod(commands.Cog):
 		if not channel:
 			del self.timers['mute'][guild_id][user_id]
 			return
-		user = channel.guild.get_member(dat[user_id]['user'])
+		user = channel.guild.get_member(dat['user'])
 		if not user:
 			del self.timers['mute'][guild_id][user_id]
 			return

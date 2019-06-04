@@ -34,6 +34,21 @@ class Utility(commands.Cog):
 					return member
 		return
 
+	def get_role(self, ctx, name):
+		if name.startswith("<@"):
+			for char in list(name):
+				if char not in list('1234567890'):
+					name = name.replace(str(char), '')
+			return ctx.guild.get_member(int(name))
+		else:
+			for role in ctx.guild.roles:
+				if name == role.name.lower():
+					return role
+			for role in ctx.guild.roles:
+				if name in role.name.lower():
+					return role
+			return
+
 	@commands.command(name='servericon', aliases=['icon'])
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.guild_only()
@@ -105,33 +120,31 @@ class Utility(commands.Cog):
 		e.add_field(name='◈ Created ◈', value=datetime.date(user.created_at).strftime("%m/%d/%Y"), inline=False)
 		await ctx.send(embed=e)
 
-	@commands.command(name="roleinfo")
-	async def roleinfo(self, ctx, role_name: commands.clean_content):
-		role_name = role_name.replace("@", "").lower()
-		role = None
-		for r in ctx.guild.roles:
-			if r.name.lower() == role_name:
-				role = r
-		if role is None:
-			for r in ctx.guild.roles:
-				if role_name in r.name.lower():
-					role = r
-		if role is None:
-			return await ctx.send("Role not found")
-		fmt = "%m/%d/%Y"
-		created = datetime.date(role.created_at)
-		perms = ', '.join(perm for perm, value in role.permissions if value)
+	@commands.command(name='roleinfo', aliases=['rinfo'])
+	@commands.cooldown(1, 3, commands.BucketType.user)
+	@commands.guild_only()
+	@commands.bot_has_permissions(manage_roles=True)
+	@commands.bot_has_permissions(embed_links=True)
+	async def roleinfo(self, ctx, *, role):
+		role = self.get_role(ctx, role)
+		if not role:
+			return await ctx.send('Role not found')
+		icon_url = ctx.guild.owner.avatar_url if ctx.guild.owner.avatar_url else self.bot.user.avatar_url
 		e = discord.Embed(color=role.color)
-		e.set_author(name=f"{role.name}:", icon_url=ctx.guild.icon_url)
+		e.set_author(name=f"{role.name}:", icon_url=icon_url)
 		e.set_thumbnail(url=ctx.guild.icon_url)
-		e.description = f"ID: {role.id}"
-		e.add_field(name="◈ Main ◈", value=f"**Members:** [{len(list(role.members))}]\n"
-		f"**Color:** [{role.color}]\n"
-		f"**Mentionable:** [{role.mentionable}]\n"
-		f"**Integrated:** [{role.managed}]\n"
-		f"**Position:** [{role.position}]\n", inline=False)
+		e.description = f'__**ID:**__ {role.id}'
+		e.add_field(name="◈ Main ◈", value=f"**Members:** [{len(role.members)}]\n"
+			f"**Color:** [{role.color}]\n"
+			f"**Mentionable:** [{role.mentionable}]\n"
+			f"**Integrated:** [{role.managed}]\n"
+			f"**Position:** [{role.position}]\n", inline=False)
+		notable = ['view_audit_log', 'manage_roles', 'manage_channels', 'manage_emojis',
+		           'kick_members', 'ban_members', 'manage_messages', 'mention_everyone']
+		perms = ', '.join(perm for perm, value in role.permissions if value and perm in notable)
+		perms = 'administrator' if role.permissions.administrator else perms
 		e.add_field(name="◈ Perms ◈", value=f"```{perms}```", inline=False)
-		e.add_field(name="◈ Created ◈", value=created.strftime(fmt), inline=False)
+		e.add_field(name="◈ Created ◈", value=datetime.date(role.created_at).strftime('%m/%d/%Y'), inline=False)
 		await ctx.send(embed=e)
 
 	@commands.command(name='makepoll', aliases=['mp'])

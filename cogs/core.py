@@ -52,6 +52,8 @@ class Core(commands.Cog):
 		with open("./data/config.json", "r") as f:
 			config = json.load(f)
 		with open("./data/config.json", "w") as f:
+			if 'prefix' not in config:
+				config['prefix'] = {}
 			config['prefix'][guild_id] = prefix
 			json.dump(config, f, ensure_ascii=False)
 		await ctx.send(f"Changed the servers prefix to `{prefix}`")
