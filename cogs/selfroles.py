@@ -94,9 +94,9 @@ class SelfRoles(commands.Cog):
 				self.msgs[guild_id][str(menu.id)] = selfroles
 				self.save_data()
 				break
-			args = reply.content.split(' ')
-			if len(args) != 2:
-				await ctx.send('Too little or too many args')
+			args = reply.content.split(' ', 1)
+			if len(args) == 1:
+				await ctx.send('Not enough args')
 				continue
 			emoji, role = args
 			emoji = get_custom_emojis(emoji)
