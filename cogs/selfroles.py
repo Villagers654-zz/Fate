@@ -142,6 +142,31 @@ class SelfRoles(commands.Cog):
 				await user.add_roles(roles[index])
 
 	@commands.Cog.listener()
+	async def on_raw_reaction_remove(self, payload):
+		guild_id = str(payload.guild_id)
+		if guild_id in self.msgs:
+			msg_id = str(payload.message_id)
+			if msg_id in self.msgs[guild_id]:
+				guild = self.bot.get_guild(payload.guild_id)
+				selfroles = self.msgs[guild_id][msg_id]
+				emojis = []
+				roles = []
+				for emoji, role_id in selfroles:
+					if isinstance(emoji, str):
+						emoji = emoji.replace('<a', '<')
+					emojis.append(emoji)
+					role = guild.get_role(role_id)
+					roles.append(role)
+				emoji = str(payload.emoji)
+				if emoji.isdigit():
+					emoji = self.bot.get_emoji(emoji)
+				else:
+					emoji = f'{emoji}'
+				index = emojis.index(emoji)
+				user = guild.get_member(payload.user_id)
+				await user.remove_roles(roles[index])
+
+	@commands.Cog.listener()
 	async def on_message_delete(self, msg):
 		guild_id = str(msg.guild.id)
 		if guild_id in self.msgs:
