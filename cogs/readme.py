@@ -13,13 +13,13 @@ class Readme(commands.Cog):
 		if not ctx.invoked_subcommand:
 			await ctx.send('Improper subcommand passed')
 
-	@_update.command(name='2b2r')
+	@_update.command(name='2b2t')
 	async def _oof(self, ctx):
 		channel = self.bot.get_channel(579828107863916565)
 		msg = await channel.fetch_message(579873497023643658)
 		e = discord.Embed(color=0x40E0D0)
-		e.set_author(name="💎 Official 2B2R Discord Server 💎")
-		e.description = "■ Server: 2b2r.net : 19132\n■ Full Vanilla Features\n■ Full Anarchy"
+		e.set_author(name="💎 Official 2B2TBE Discord Server 💎")
+		e.description = "■ Server: play.2b2tbe.net : 19132\n■ Full Vanilla Features\n■ Full Anarchy"
 		e.add_field(name="-~===🌹🥂🍸🍷Links🍷🍸🥂🌹===~-", value="■ [Invite](https://google.com) | [Vote](https://google.com) | [Donate](https://google.com)", inline=False)
 		e.add_field(name="-~===🌹🥂🍸🍷Rules🍷🍸🥂🌹===~-", value='■ Channel topics contain most rules\n'
 			'■ First offense results in mute (warning some cases)\n'
