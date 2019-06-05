@@ -18,6 +18,7 @@ class Mod(commands.Cog):
 		self.roles = {}
 		self.timers = {}
 		self.mods = {}
+		self.wipe = []
 		if isfile("./data/userdata/mod.json"):
 			with open("./data/userdata/mod.json", "r") as infile:
 				dat = json.load(infile)
@@ -29,10 +30,12 @@ class Mod(commands.Cog):
 					self.timers = dat['timers']
 				if 'mods' in dat:
 					self.mods = dat['mods']
+				if 'clearwarns' in dat:
+					self.wipe = dat['clearwarns']
 
 	def save_json(self):
 		with open("./data/userdata/mod.json", "w") as outfile:
-			json.dump({'mods': self.mods, "warns": self.warns, "roles": self.roles, "timers": self.timers}, outfile, ensure_ascii=False)
+			json.dump({'mods': self.mods, "warns": self.warns, "roles": self.roles, "timers": self.timers, 'clearwarns': self.wipe}, outfile, ensure_ascii=False)
 
 	def save_config(self, config):
 		with open('./data/config.json', 'w') as f:
@@ -156,6 +159,16 @@ class Mod(commands.Cog):
 					await self.start_ban_timer(guild_id, user_id)
 
 	@commands.Cog.listener()
+	async def on_member_ban(self, member):
+		guild_id = str(member.guild.id)
+		user_id = str(member.id)
+		if guild_id in self.wipe:
+			if guild_id in self.warns:
+				if user_id in self.warns[guild_id]:
+					del self.warns[guild_id][user_id]
+					self.save_json()
+
+	@commands.Cog.listener()
 	async def on_guild_remove(self, guild):
 		guild_id = str(guild.id)
 		if guild_id in self.warns:
@@ -183,6 +196,19 @@ class Mod(commands.Cog):
 	async def cleartimers(self, ctx):
 		self.timers = {}
 		await ctx.message.add_reaction("👍")
+		self.save_json()
+
+	@commands.command(name='clearwarnsonban')
+	@commands.cooldown(1, 3, commands.BucketType.user)
+	@commands.has_permissions(administrator=True)
+	async def clear_warns_on_ban(self, ctx):
+		guild_id = str(ctx.guild.id)
+		if guild_id not in self.wipe:
+			self.wipe.append(guild_id)
+			await ctx.send('I\'ll now wipe warns on ban')
+			return self.save_json()
+		index = self.wipe.index(guild_id)
+		self.wipe.pop(index)
 		self.save_json()
 
 	@commands.command(name='modlogs', aliases=['actions'])
