@@ -96,12 +96,12 @@ class SelfRoles(commands.Cog):
 					return
 				if 'embed' in reply.content.lower():
 					e = discord.Embed(color=colors.fate())
-					e.set_author(name=f'SelfRole Menu: {category}', icon_url='https://cdn.discordapp.com/emojis/513634338487795732.png?v=1')
+					e.set_author(name=f'Self-Role Menu: {category}', icon_url='https://cdn.discordapp.com/emojis/513634338487795732.png?v=1')
 					e.set_thumbnail(url='https://cdn.discordapp.com/attachments/514213558549217330/514345278669848597/8yx98C.gif')
 					e.description = role_menu
 					menu = await ctx.send(embed=e)
 				else:
-					menu = await ctx.send(f'__**SelfRole Menu:**__ **{category}**\n{role_menu}')
+					menu = await ctx.send(f'__**Self-Role Menu:**__ **{category}**\n{role_menu}')
 				await msg.delete()
 				await reply.delete()
 				for emoji, role_id in selfroles:

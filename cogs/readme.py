@@ -19,7 +19,7 @@ class Readme(commands.Cog):
 		msg = await channel.fetch_message(579873497023643658)
 		e = discord.Embed(color=0x40E0D0)
 		e.set_author(name="💎 Official 2B2TBE Discord Server 💎")
-		e.description = "■ Server: play.2b2tbe.net : 19132\n■ Full Vanilla Features\n■ Full Anarchy"
+		e.description = "■ Server: play.2b2t.be : 19132\n■ Full Vanilla Features\n■ Full Anarchy"
 		e.add_field(name="-~===🌹🥂🍸🍷Links🍷🍸🥂🌹===~-", value="■ [Invite](https://google.com) | [Vote](https://google.com) | [Donate](https://google.com)", inline=False)
 		e.add_field(name="-~===🌹🥂🍸🍷Rules🍷🍸🥂🌹===~-", value='■ Channel topics contain most rules\n'
 			'■ First offense results in mute (warning some cases)\n'
