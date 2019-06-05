@@ -9,6 +9,7 @@ class SelfRoles(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.msgs = {}
+		self.single = {}
 		self.path = './data/userdata/selfroles.json'
 		if isfile(self.path):
 			with open(self.path, 'r') as dat:
@@ -18,11 +19,14 @@ class SelfRoles(commands.Cog):
 		with open(self.path, 'w') as f:
 			json.dump(self.msgs, f, ensure_ascii=False)
 
-	@commands.command(name='selfroles', aliases=['selfrole'])
+	@commands.group(name='selfroles', aliases=['selfrole'])
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.guild_only()
+	@commands.has_permissions(manage_roles=True)
 	@commands.bot_has_permissions(embed_links=True, manage_messages=True)
 	async def selfroles(self, ctx):
+		if ctx.invoked_subcommand:
+			return
 		guild_id = str(ctx.guild.id)
 		if guild_id not in self.msgs:
 			self.msgs[guild_id] = {}
@@ -30,7 +34,7 @@ class SelfRoles(commands.Cog):
 			def pred(m):
 				return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
 			try:
-				msg = await self.bot.wait_for('message', check=pred, timeout=30)
+				msg = await self.bot.wait_for('message', check=pred, timeout=60)
 			except asyncio.TimeoutError:
 				await ctx.send('Timeout error')
 				return
@@ -86,11 +90,25 @@ class SelfRoles(commands.Cog):
 				category = ''
 				if 'nothing' not in reply.content.lower():
 					category = reply.content
-				menu = await ctx.send(f'__**Role Menu:**__ {category}\n{role_menu}')
+				msg = await ctx.send('Should i use a normal msg or embed\nReply with "msg" or "embed"')
+				reply = await wait_for_msg()
+				if not reply:
+					return
+				if 'embed' in reply.content.lower():
+					e = discord.Embed(color=colors.fate())
+					e.set_author(name=f'SelfRole Menu: {category}', icon_url='https://cdn.discordapp.com/emojis/513634338487795732.png?v=1')
+					e.set_thumbnail(url='https://cdn.discordapp.com/attachments/514213558549217330/514345278669848597/8yx98C.gif')
+					e.description = role_menu
+					menu = await ctx.send(embed=e)
+				else:
+					menu = await ctx.send(f'__**SelfRole Menu:**__ **{category}**\n{role_menu}')
+				await msg.delete()
+				await reply.delete()
 				for emoji, role_id in selfroles:
 					if isinstance(emoji, int):
 						emoji = self.bot.get_emoji(emoji)
 					await menu.add_reaction(emoji)
+				await ctx.send('Note: you can use `.selfroles limit` to toggle whether or not users can get multiple roles from each menu', delete_after=10)
 				self.msgs[guild_id][str(menu.id)] = selfroles
 				self.save_data()
 				break
@@ -116,6 +134,15 @@ class SelfRoles(commands.Cog):
 			e.description = f'{info}\n\n{role_menu}'
 			await msg.edit(embed=e)
 
+	@selfroles.command(name='limit')
+	async def limit(self, ctx):
+		guild_id = str(ctx.guild.id)
+		if guild_id in self.single:
+			del self.single[guild_id]
+			return await ctx.send('I\'ll now allow multiple reactions')
+		self.single[guild_id] = 'True'
+		await ctx.send('Limited users to 1 reaction per menu')
+
 	@commands.Cog.listener()
 	async def on_raw_reaction_add(self, payload):
 		guild_id = str(payload.guild_id)
@@ -139,7 +166,12 @@ class SelfRoles(commands.Cog):
 					emoji = f'{emoji}'
 				index = emojis.index(emoji)
 				user = guild.get_member(payload.user_id)
-				await user.add_roles(roles[index])
+				if guild_id in self.single:
+					for role in user.roles:
+						if role in roles:
+							await user.remove_roles(role)
+				role = roles[index]
+				await user.add_roles(role)
 
 	@commands.Cog.listener()
 	async def on_raw_reaction_remove(self, payload):
