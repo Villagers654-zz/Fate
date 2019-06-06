@@ -61,7 +61,9 @@ class SelfRoles(commands.Cog):
 				for char in list(m):
 					try: int(char)
 					except: m = m.replace(char, '')
-				return self.bot.get_emoji(int(m))
+				try: m = self.bot.get_emoji(int(m))
+				except: m = None
+				return m
 		e = discord.Embed(color=colors.fate())
 		info = 'Send the reaction emoji and role name per role\n'
 		info += 'Example: `🎁 Partnership Pings`\n'

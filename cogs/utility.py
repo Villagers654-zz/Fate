@@ -327,7 +327,7 @@ class Utility(commands.Cog):
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.guild_only()
 	@commands.bot_has_permissions(embed_links=True)
-	async def afk(self, ctx, *, reason='unspecified'):
+	async def afk(self, ctx, *, reason='afk'):
 		e = discord.Embed(color=colors.fate())
 		e.set_author(name='You are now afk', icon_url=ctx.author.avatar_url)
 		await ctx.send(embed=e, delete_after=5)
@@ -345,7 +345,8 @@ class Utility(commands.Cog):
 			for user in msg.mentions:
 				user_id = str(user.id)
 				if user_id in self.afk:
-					choice = random.choice(['shh', 'shush', 'stfu cunt', 'nO'])
+					replies = ['shh', 'shush', 'shush child', 'stfu cunt', 'nO']
+					choice = random.choice(replies)
 					await msg.channel.send(f'{choice} he\'s {self.afk[user_id]}', delete_after=10)
 
 def setup(bot):
