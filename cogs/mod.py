@@ -838,6 +838,14 @@ class Mod(commands.Cog):
 			for role in ctx.guild.roles:
 				if role.name.lower() == "muted":
 					mute_role = role
+					for channel in ctx.guild.text_channels:
+						if mute_role not in channel.overwrites:
+							await channel.set_permissions(mute_role, send_messages=False)
+							await asyncio.sleep(0.5)
+					for channel in ctx.guild.voice_channels:
+						if mute_role not in channel.overwrites:
+							await channel.set_permissions(mute_role, speak=False)
+							await asyncio.sleep(0.5)
 			if not mute_role:
 				bot = discord.utils.get(ctx.guild.members, id=self.bot.user.id)
 				perms = [perm for perm, value in bot.guild_permissions if value]
