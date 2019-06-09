@@ -115,6 +115,7 @@ class Mod(commands.Cog):
 		time = timer.replace("m", " minutes").replace("1 minutes", "1 minute")
 		time = time.replace("h", " hours").replace("1 hours", "1 hour")
 		time = time.replace("d", " days").replace("1 days", "1 day")
+		time = time.replace('s', 'seconds').replace('1 seconds', '1 second')
 		if "d" in str(timer):
 			try: timer = float(timer.replace("d", "")) * 60 * 60 * 24
 			except Exception as e: return (time, e)
@@ -127,7 +128,7 @@ class Mod(commands.Cog):
 		if "s" in str(timer):
 			try: timer = float(timer.replace("s", ""))
 			except Exception as e: return (time, e)
-		return (time, timer)
+		return (timer, time)
 
 	@commands.command(name='getuser')
 	async def getuser(self, ctx, user):
@@ -467,7 +468,8 @@ class Mod(commands.Cog):
 			    '.purge @user amount\n' \
 			    '.purge images amount\n' \
 			    '.purge embeds amount\n' \
-			    '.purge mentions amount\n' \
+			    '.purge mentions amount' \
+			    '.purge users amount\n' \
 			    '.purge bots amount'
 			e.description = u
 			return e
@@ -548,6 +550,23 @@ class Mod(commands.Cog):
 				await ctx.send(e)
 			finally:
 				del self.purge[channel_id]
+		if option == 'user' or option == 'users':
+			if amount > 250:
+				return await ctx.send("You cannot purge more than 250 user messages at a time")
+			try:
+				position = 0
+				async for msg in ctx.channel.history(limit=500):
+					if not msg.author.bot:
+						await msg.delete()
+						position += 1
+						if position == amount:
+							break
+				await ctx.send(f"{ctx.author.mention}, purged {position} user messages", delete_after=5)
+				return await ctx.message.delete()
+			except Exception as e:
+				await ctx.send(e)
+			finally:
+				del self.purge[channel_id]
 		if option == 'bot' or option == 'bots':
 			if amount > 250:
 				return await ctx.send("You cannot purge more than 250 bot messages at a time")
@@ -602,119 +621,96 @@ class Mod(commands.Cog):
 		finally:
 			del self.purge[channel_id]
 
-	@commands.command(name="kick")
+	@commands.command(name='kick')
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.guild_only()
 	@commands.has_permissions(kick_members=True)
-	@commands.bot_has_permissions(kick_members=True)
+	@commands.bot_has_permissions(embed_links=True, kick_members=True)
 	async def kick(self, ctx, user:discord.Member, *, reason='unspecified'):
 		if user.top_role.position >= ctx.author.top_role.position:
 			return await ctx.send("That user is above your paygrade, take a seat")
-		bot = ctx.guild.get_member(self.bot.user.id)
-		if user.top_role.position >= bot.top_role.position:
+		if user.top_role.position >= ctx.guild.me.top_role.position:
 			return await ctx.send('I can\'t kick that user ;-;')
-		await ctx.guild.kick(user, reason=reason)
+		await user.kick(reason=reason)
 		path = os.getcwd() + "/data/images/reactions/beaned/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/beaned/"))
 		e = discord.Embed(color=0x80b0ff)
 		e.set_image(url="attachment://" + os.path.basename(path))
-		await ctx.send('◈ {} kicked {} ◈'.format(ctx.message.author.display_name, user), file=discord.File(path, filename=os.path.basename(path)), embed=e)
+		file = discord.File(path, filename=os.path.basename(path))
+		await ctx.send(f'◈ {ctx.message.author.display_name} kicked {user} ◈', file=file, embed=e)
 		await ctx.message.delete()
-		if reason is None:
-			pass
-		else:
-			try:
-				await user.send(f"You have been kicked from **{ctx.guild.name}** by **{ctx.author.name}** for `{reason}`")
-			except Exception as e:
-				pass
+		try: await user.send(f"You have been kicked from **{ctx.guild.name}** by **{ctx.author.name}** for `{reason}`")
+		except: pass
 
-	@commands.command(name="ban")
+	@commands.command(name='ban')
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.guild_only()
 	@commands.has_permissions(ban_members=True)
 	@commands.bot_has_permissions(ban_members=True)
-	async def _ban(self, ctx, user:discord.Member, *, args=None):
+	async def _ban(self, ctx, user:discord.Member, *, reason='unspecified reasons'):
 		if user.top_role.position >= ctx.author.top_role.position:
-			return await ctx.send("That user is above your paygrade, take a seat")
-		bot = ctx.guild.get_member(self.bot.user.id)
-		if user.top_role.position >= bot.top_role.position:
+			return await ctx.send('That user is above your paygrade, take a seat')
+		if user.top_role.position >= ctx.guild.me.top_role.position:
 			return await ctx.send('I can\'t ban that user ;-;')
-		timer = None
-		reason = 'unspecified'
-		if args:
-			args = args.split(' ')
-			if args[0][:1].isdigit():
-				timer = args[0]
-				args.pop(0)
-			reason = ' '.join(args)
 		await ctx.guild.ban(user, reason=reason, delete_message_days=0)
 		path = os.getcwd() + "/data/images/reactions/beaned/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/beaned/"))
 		e = discord.Embed(color=colors.fate())
-		e.set_image(url="attachment://" + os.path.basename(path))
-		await ctx.send(f'◈ {ctx.author.display_name} banned {user} ◈', file=discord.File(path, filename=os.path.basename(path)), embed=e)
-		try:
-			if timer:
-				time, timer = self.convert_arg_to_timer(timer)
-				if not isinstance(timer, float):
-					return await ctx.send("Invalid character used in timer field")
-				await user.send(f"You've been banned in **{ctx.guild.name}** for {time} by **{ctx.author.name}** for `{reason}`")
-			else:
-				await user.send(f"You've been banned in **{ctx.guild.name}** by **{ctx.author.name}** for `{reason}`")
-		except:
-			pass
-		if timer:
-			guild_id = str(ctx.guild.id)
-			user_id = str(user.id)
-			if guild_id not in self.timers['ban']:
-				self.timers['ban'][guild_id] = {}
-			now = datetime.now()
-			timer_info = {'user': user.id, 'time': str(now), 'end_time': str(now + timedelta(seconds=timer))}
-			self.timers['ban'][guild_id][user_id] = timer_info
-			self.save_json()
-			await asyncio.sleep(timer)
-			if user_id in self.timers['ban'][guild_id]:
-				await user.unban(reason='Timed ban')
-				del self.timers['ban'][guild_id][user_id]
-				self.save_json()
+		e.set_image(url='attachment://' + os.path.basename(path))
+		file = discord.File(path, filename=os.path.basename(path))
+		await ctx.send(f'◈ {ctx.author.display_name} banned {user} ◈', file=file, embed=e)
+		try: await user.send(f'You\'ve been banned in **{ctx.guild.name}** by **{ctx.author.name}** for {reason}')
+		except: pass
 
-	@commands.command(name="softban")
+	@commands.command(name='softban', aliases=['tempban'])
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.guild_only()
 	@commands.has_permissions(ban_members=True)
-	@commands.bot_has_permissions(ban_members=True)
-	async def _softban(self, ctx, user:discord.Member, *, reason=None):
+	@commands.bot_has_permissions(embed_links=True, manage_messages=True, ban_members=True)
+	async def _softban(self, ctx, user: discord.Member, timer='0s', *, reason='unspecified reasons'):
 		if user.top_role.position >= ctx.author.top_role.position:
 			return await ctx.send("That user is above your paygrade, take a seat")
-		bot = ctx.guild.get_member(self.bot.user.id)
-		if user.top_role.position >= bot.top_role.position:
+		if user.top_role.position >= ctx.guild.me.top_role.position:
 			return await ctx.send('I can\'t kick that user ;-;')
-		await ctx.guild.ban(user, reason=reason)
+		await user.ban(reason=reason)
 		path = os.getcwd() + "/data/images/reactions/beaned/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/beaned/"))
+		file = discord.File(path, filename=os.path.basename(path))
 		e = discord.Embed(color=colors.fate())
-		e.set_image(url="attachment://" + os.path.basename(path))
-		await ctx.send('◈ {} banned {} ◈'.format(ctx.message.author.display_name, user), file=discord.File(path, filename=os.path.basename(path)), embed=e)
+		e.set_image(url='attachment://' + os.path.basename(path))
+		await ctx.send(f'◈ {ctx.author.display_name} banned {user} ◈', file=file, embed=e)
 		await ctx.message.delete()
-		if reason is None:
-			pass
-		else:
-			try:
-				await user.send(f"You have been soft-banned from **{ctx.guild.name}** by **{ctx.author.name}** for `{reason}`")
-			except:
-				pass
-		await user.unban(reason="softban")
+		timer, time = self.convert_arg_to_timer(timer)
+		try: await user.send(f'You\'ve been banned from **{ctx.guild.name}** by **{ctx.author.name}** for `{reason}` for {time}')
+		except: pass
+		if not isinstance(timer, float):
+			return await ctx.send('Invalid character used in timer field\nYou\'ll have to manually unban this user')
+		guild_id = str(ctx.guild.id)
+		user_id = str(user.id)
+		if guild_id not in self.timers['ban']:
+			self.timers['ban'][guild_id] = {}
+		now = datetime.now()
+		timer_info = {'user': user.id, 'time': str(now), 'end_time': str(now + timedelta(seconds=timer))}
+		self.timers['ban'][guild_id][user_id] = timer_info
+		self.save_json()
+		await asyncio.sleep(timer)
+		if user_id in self.timers['ban'][guild_id]:
+			try: await user.unban(reason='softban')
+			except Exception as e: await ctx.send(f'Failed to unban {user.name}: {e}')
+			else: await ctx.send(f'**Unbanned {user}**')
+			del self.timers['ban'][guild_id][user_id]
+			self.save_json()
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.guild_only()
 	@commands.has_permissions(manage_nicknames=True)
 	@commands.bot_has_permissions(manage_nicknames=True)
-	async def nick(self, ctx, user, *, nick=None):
+	async def nick(self, ctx, user, *, nick=''):
 		user = self.get_user(ctx, user)
 		if not user:
 			return await ctx.send('User not found')
 		if user.top_role.position >= ctx.author.top_role.position:
-			return await ctx.send("That user is above your paygrade, take a seat")
-		if nick is None:
-			nick = ""
+			return await ctx.send('That user is above your paygrade, take a seat')
+		if user.top_role.position >= ctx.guild.me.top_role.position:
+			return await ctx.send('I can\'t edit that users nick ;-;')
 		await user.edit(nick=nick)
 		await ctx.message.add_reaction('👍')
 
@@ -878,17 +874,7 @@ class Mod(commands.Cog):
 			for x in list(timer):
 				if x not in "1234567890dhms":
 					return await ctx.send("Invalid character used in timer field")
-			time = timer.replace("m", " minutes").replace("1 minutes", "1 minute")
-			time = time.replace("h", " hours").replace("1 hours", "1 hour")
-			time = time.replace("d", " days").replace("1 days", "1 day")
-			if "d" in str(timer):
-				timer = float(timer.replace("d", "")) * 60 * 60 * 24
-			if "h" in str(timer):
-				timer = float(timer.replace("h", "")) * 60 * 60
-			if "m" in str(timer):
-				timer = float(timer.replace("m", "")) * 60
-			if "s" in str(timer):
-				timer = float(timer.replace("s", ""))
+			timer, time = self.convert_arg_to_timer(timer)
 			if not isinstance(timer, float):
 				return await ctx.send("Invalid character used in timer field")
 			removed_roles = []
