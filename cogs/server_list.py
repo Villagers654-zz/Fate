@@ -37,14 +37,10 @@ class ServerList(commands.Cog):
 				values = []
 				for invite_url in invites:
 					code = discord.utils.resolve_invite(invite_url)
-					try:
-						invite = await self.bot.fetch_invite(code)
-					except:
-						self.del_invite(invite_url)
-						continue
+					try: invite = await self.bot.fetch_invite(code)
+					except: self.del_invite(invite_url); continue
 					if isinstance(invite.guild, discord.PartialInviteGuild):
-						self.del_invite(invite_url)
-						continue
+						self.del_invite(invite_url); continue
 					values.append(f'• [{invite.guild.name}]({invite.url})\n')
 				value = ''
 				for invite in sorted(values, key=lambda kv: len(kv[0])):
