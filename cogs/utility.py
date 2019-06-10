@@ -1,3 +1,4 @@
+from utils.utils import bytes2human
 from discord.ext import commands
 from datetime import datetime
 from utils import colors
@@ -81,12 +82,26 @@ class Utility(commands.Cog):
 	async def serverinfo(self, ctx):
 		fmt = "%m/%d/%Y"
 		created = datetime.date(ctx.guild.created_at)
-		e=discord.Embed(description="id: {0}\nOwner: {1}".format(ctx.guild.id, ctx.guild.owner.name), color=0x0000ff)
-		e.set_author(name="{0}:".format(ctx.guild.name), icon_url=ctx.guild.owner.avatar_url)
+		e=discord.Embed(color=0x0000ff)
+		e.description = f'id: {ctx.guild.id}\nOwner: {ctx.guild.owner}'
+		e.set_author(name=f'{ctx.guild.name}:', icon_url=ctx.guild.owner.avatar_url)
 		e.set_thumbnail(url=ctx.guild.icon_url)
-		e.add_field(name="◈ Main", value="• AFK Timeout [{}]\n• Region [{}]\n• Members [{}]".format(ctx.guild.afk_timeout, ctx.guild.region, ctx.guild.member_count), inline=False)
-		e.add_field(name="◈ Security", value="• Explicit Content Filter: [{0}]\n• Verification Level: [{1}]\n• 2FA Level: [{2}]".format(ctx.guild.explicit_content_filter, ctx.guild.verification_level, ctx.guild.mfa_level), inline=False)
-		e.add_field(name="◈ Created", value=created.strftime(fmt), inline=False)
+		main = f'• AFK Timeout [`{ctx.guild.afk_timeout}`]\n' \
+			f'• Region [`{ctx.guild.region}`]\n' \
+			f'• Members [`{ctx.guild.member_count}`]'
+		e.add_field(name='◈ Main ◈', value=main, inline=False)
+		security = f'• Explicit Content Filter: [`{ctx.guild.explicit_content_filter}`]\n' \
+			f'• Verification Level: [`{ctx.guild.verification_level}`]\n' \
+			f'• 2FA Level: [`{ctx.guild.mfa_level}`]'
+		e.add_field(name='◈ Security ◈', value=security, inline=False)
+		if ctx.guild.premium_tier:
+			perks = f'• Boost Level [`{ctx.guild.premium_tier}`]\n' \
+				f'• Total Boosts [`{len(ctx.guild.premium_subscribers)}`]\n' \
+				f'• Max Emoji\'s [`{ctx.guild.emoji_limit}`]\n' \
+				f'• Max Bitrate [`{bytes2human(ctx.guild.bitrate_limit).replace(".0", "")}`]\n' \
+				f'• Max Filesize [`{bytes2human(ctx.guild.filesize_limit).replace(".0", "")}`]'
+			e.add_field(name='◈ Perks ◈', value=perks, inline=False)
+		e.add_field(name='◈ Created ◈', value=created.strftime(fmt), inline=False)
 		await ctx.send(embed=e)
 
 	@commands.command(name='userinfo', aliases=['uinfo'])
