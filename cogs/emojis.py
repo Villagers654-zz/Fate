@@ -1,11 +1,10 @@
 from discord.ext import commands
-from utils import colors, utils
+from utils import colors
 from io import BytesIO
 from PIL import Image
 import requests
 import discord
 import asyncio
-import os
 
 class Emojis(commands.Cog):
 	def __init__(self, bot):
@@ -28,6 +27,14 @@ class Emojis(commands.Cog):
 	@commands.has_permissions(manage_emojis=True)
 	@commands.bot_has_permissions(manage_emojis=True)
 	async def addemoji(self, ctx, *, emoji_name=None):
+		def cleanup(text):
+			text = text[:text.find('.')]
+			chars = list('abcdefghijklmnopqrstuvwxyz')
+			clean = ''
+			for char in list(text):
+				if char in chars:
+					clean += char
+			return clean
 		if not ctx.message.attachments:
 			return await ctx.send('You forgot to attach an image')
 		multiple = False
@@ -44,7 +51,7 @@ class Emojis(commands.Cog):
 			while uploaded is False:
 				attempts += 1
 				try:
-					name = utils.Text.cleanup(emoji_name)
+					name = cleanup(emoji_name)
 					image = requests.get(attachment.url).content
 					await ctx.guild.create_custom_emoji(name=name, image=image, reason=ctx.author.name)
 					await ctx.send(f"Added `{emoji_name}` to emotes")
@@ -54,7 +61,7 @@ class Emojis(commands.Cog):
 						img = Image.open(BytesIO(requests.get(attachment.url).content))
 						img = img.resize((512, 512), Image.BICUBIC)
 						img.save(attachment.filename)
-						name = utils.Text.cleanup(emoji_name)
+						name = cleanup(emoji_name)
 						await ctx.guild.create_custom_emoji(name=name, image=discord.File(attachment.filename), reason=ctx.author.name)
 						await ctx.send(f"Resized and added `{emoji_name}` to emotes")
 						break
