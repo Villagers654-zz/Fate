@@ -1,12 +1,10 @@
 import datetime
 import discord
 import asyncio
-import json
 import time
-import os
 
 def bytes2human(n):
-	symbols = ('kb', 'mb', 'gb', 'tb', 'pb', 'E', 'Z', 'Y')
+	symbols = ('KB', 'MB', 'GB', 'TB', 'PB', 'E', 'Z', 'Y')
 	prefix = {}
 	for i, s in enumerate(symbols):
 		prefix[s] = 1 << (i + 1) * 10

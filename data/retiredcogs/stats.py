@@ -1,4 +1,4 @@
-from utils import bytes2human as p
+from utils import bytes2human as p, checks
 from discord.ext import commands
 from datetime import datetime
 import discord
@@ -46,10 +46,6 @@ class Stats(commands.Cog):
 					leaderboard += f'**#{rank}.** `{name}`: {xp}\n'
 					rank += 1
 				f = psutil.Process(os.getpid())
-				try: cpufreqcurrent = p.bytes2human(psutil.cpu_freq().current)
-				except: cpufreqcurrent = "unavailable"
-				try: cpufreqmax = p.bytes2human(psutil.cpu_freq().max)
-				except: cpufreqmax = "unavailable"
 				e.set_thumbnail(url=channel.guild.icon_url)
 				e.set_author(name=f'~~~====🥂🍸🍷Stats🍷🍸🥂====~~~')
 				e.add_field(name="◈ Discord ◈", value=f'__**Owner**__: {channel.guild.owner}\n__**Members**__: {channel.guild.member_count}', inline=False)
@@ -58,8 +54,7 @@ class Stats(commands.Cog):
 					f"__**Storage**__: [{p.bytes2human(psutil.disk_usage('/').used)}/{p.bytes2human(psutil.disk_usage('/').total)}]\n"
 					f"__**RAM**__: **Global**: {p.bytes2human(psutil.virtual_memory().used)} **Bot**: {p.bytes2human(f.memory_full_info().rss)}\n"
 					f"__**CPU**__: **Global**: {psutil.cpu_percent()}% **Bot**: {f.cpu_percent()}%\n"
-					f"__**CPU Per Core**__: {[round(i) for i in psutil.cpu_percent(percpu=True)]}\n"
-					f"__**CPU Frequency**__: [{cpufreqcurrent}/{cpufreqmax}]")
+					f"__**CPU Per Core**__: {[round(i) for i in psutil.cpu_percent(percpu=True)]}\n")
 				fmt = "%m-%d-%Y %I:%M%p"
 				time = datetime.now()
 				time = time.strftime(fmt)
@@ -69,12 +64,18 @@ class Stats(commands.Cog):
 						if msg.author.id == self.bot.user.id:
 							config['message'] = msg; break
 						await msg.delete()
-					config['message'] = await channel.send(embed=discord.Embed())
+					if not config['message']:
+						config['message'] = await channel.send(embed=discord.Embed())
 				msg = config['message']
 				await msg.edit(embed=e)
 			except AttributeError:
 				print(AttributeError)
 			await asyncio.sleep(1500)
+
+	@commands.command(name='start-stats')
+	@commands.check(checks.luck)
+	async def start_stats_task(self, ctx):
+		self.bot.loop.create_task(self.stats_task())
 
 	@commands.Cog.listener()
 	async def on_ready(self):
