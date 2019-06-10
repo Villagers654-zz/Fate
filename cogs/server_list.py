@@ -41,9 +41,10 @@ class ServerList(commands.Cog):
 					except: self.del_invite(invite_url); continue
 					if isinstance(invite.guild, discord.PartialInviteGuild):
 						self.del_invite(invite_url); continue
-					values.append(f'• [{invite.guild.name}]({invite.url})\n')
+					value = f'• [{invite.guild.name}]({invite.url})\n'
+					values.append([value, len(value)])
 				value = ''
-				for invite in sorted(values, key=lambda kv: len(kv[0])):
+				for invite, size in sorted(values, key=lambda kv: kv[1], reverse=True):
 					value += invite
 				e.add_field(name=f'◈ {category} ◈', value=value, inline=False)
 			await ctx.send(embed=e)
@@ -55,7 +56,7 @@ class ServerList(commands.Cog):
 		try: invite = await self.bot.fetch_invite(code)
 		except: return await ctx.send('I can\'t use an invalid or temporary invite')
 		if isinstance(invite.guild, discord.PartialInviteGuild):
-			return await ctx.send('Sorry, I gotta be apart of the guild')
+			return await ctx.send('Sorry, I gotta be apart of the server')
 		if category not in self.servers:
 			self.servers[category] = []
 		self.servers[category].append(invite.url)
@@ -70,6 +71,19 @@ class ServerList(commands.Cog):
 		del self.servers[category]
 		await ctx.send(f'Deleted the category \'{category}\'')
 		self.save_data()
+
+	@_serverlist.command(name='remove', aliases=['del'])
+	@commands.check(checks.luck)
+	async def _remove(self, ctx, invite):
+		for category, invites in list(self.servers.items()):
+			if invite in invites:
+				index = invites.index(invite)
+				self.servers[category].pop(index)
+				if len(self.servers[category]) == 0:
+					del self.servers[category]
+				await ctx.send(f'Removed {invite}')
+				return self.save_data()
+		await ctx.send('Unknown invite')
 
 def setup(bot):
 	bot.add_cog(ServerList(bot))
