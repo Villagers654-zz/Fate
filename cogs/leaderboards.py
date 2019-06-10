@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from discord.ext import commands
-from utils import checks
+from utils import checks, colors
 from os.path import isfile
 from PIL import ImageDraw
 from PIL import ImageFont
@@ -36,6 +36,19 @@ class Leaderboards(commands.Cog):
 					self.monthly_guilds_data = dat["monthly_guilded"]
 					self.vclb = dat["vclb"]
 					self.gvclb = dat["gvclb"]
+		self.toggle = []
+		self.role_rewards = {}
+		if isfile('./data/userdata/rolerewards.json'):
+			with open('./data/userdata/rolerewards.json', 'r') as f:
+				dat = json.load(f)
+				if 'role_rewards' in dat:
+					self.role_rewards = dat['role_rewards']
+				if 'toggle' in dat:
+					self.toggle = dat['toggle']
+
+	def save_data(self):
+		with open('./data/userdata/rolerewards.json', 'w') as f:
+			json.dump({'toggle': self.toggle, 'role_rewards': self.role_rewards}, f, ensure_ascii=False)
 
 	def get_user(self, ctx, user):
 		if user.startswith("<@"):
@@ -58,6 +71,49 @@ class Leaderboards(commands.Cog):
 				if user in member.display_name.lower():
 					return member
 		return None
+
+	async def get_role(self, ctx, name):
+		if name.startswith("<@"):
+			for char in list(name):
+				if char not in list('1234567890'):
+					name = name.replace(str(char), '')
+			return ctx.guild.get_member(int(name))
+		else:
+			roles = []
+			for role in ctx.guild.roles:
+				if name == role.name.lower():
+					roles.append(role)
+			if not roles:
+				for role in ctx.guild.roles:
+					if name in role.name.lower():
+						roles.append(role)
+			if roles:
+				if len(roles) == 1:
+					return roles[0]
+				index = 1
+				role_list = ''
+				for role in roles:
+					role_list += f'{index} : {role.mention}\n'
+					index += 1
+				e = discord.Embed(color=colors.fate(), description=role_list)
+				e.set_author(name='Multiple Roles Found')
+				e.set_footer(text='Reply with the correct role number')
+				embed = await ctx.send(embed=e)
+				def pred(m):
+					return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+				try:
+					msg = await self.bot.wait_for('message', check=pred, timeout=60)
+				except asyncio.TimeoutError:
+					await ctx.send('Timeout error', delete_after=5)
+					return await embed.delete()
+				else:
+					try: role = int(msg.content)
+					except: return await ctx.send('Invalid response')
+					if role > len(roles):
+						return await ctx.send('Invalid response')
+					await embed.delete()
+					await msg.delete()
+					return roles[role - 1]
 
 	async def xp_dump_task(self):
 		while True:
@@ -472,6 +528,93 @@ class Leaderboards(commands.Cog):
 		await ctx.send(file=discord.File('./data/images/backgrounds/results/galaxy.png',
 		    filename=os.path.basename('/data/images/backgrounds/results/galaxy.png')), embed=e)
 
+	@commands.command(name='rolerewards', aliases=['rolereward'])
+	@commands.cooldown(2, 5, commands.BucketType.user)
+	@commands.guild_only()
+	@commands.has_permissions(manage_roles=True)
+	@commands.bot_has_permissions(embed_links=True, manage_messages=True, manage_roles=True)
+	async def rolerewards(self, ctx, *args):
+		if not args:
+			e = discord.Embed(color=colors.fate())
+			u = '.rolerewards enable\n' \
+			    '.rolerewards disable\n' \
+			    '.rolerewards level rolename\n' \
+			    '.rolerewards remove rolename\n' \
+			    '.rolerewards config'
+			e.description = u
+			return await ctx.send(embed=e)
+		guild_id = str(ctx.guild.id)
+		if guild_id not in self.role_rewards:
+			self.role_rewards[guild_id] = {}
+		if args[0] == 'enable':
+			if guild_id in self.toggle:
+				return await ctx.send('Role rewards are already enabled')
+			self.toggle.append(guild_id)
+			await ctx.send('Enabled role rewards')
+			return self.save_data()
+		if args[0] == 'disable':
+			if guild_id not in self.toggle:
+				return await ctx.send('Role rewards isn\'t enabled')
+			index = self.toggle.index(guild_id)
+			self.toggle.pop(index)
+			await ctx.send('Disabled role rewards')
+			return self.save_data()
+		if args[0].isdigit():
+			if not len(args) > 1:
+				return await ctx.send('Role name is a required argument that is missing')
+			role = await self.get_role(ctx, args[1].replace('`', ''))
+			if not isinstance(role, discord.Role):
+				return await ctx.send('Role not found')
+			await ctx.send('Should this role be allowed to stack?\nReply with "yes", "no", or anything else to cancel')
+			def pred(m):
+				return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+			try:
+				msg = await self.bot.wait_for('message', check=pred, timeout=60)
+			except asyncio.TimeoutError:
+				return await ctx.send('Timeout error')
+			else:
+				msg.content = msg.content.lower()
+				if 'yes' not in msg.content and 'no' not in msg.content:
+					return await ctx.send('Canceled')
+				if 'yes' in msg.content.lower():
+					stacking = True
+				else:
+					stacking = False
+				self.role_rewards[guild_id][args[0]] = {'role': role.id, 'stacking': str(stacking)}
+				await ctx.send(f'Added {role.name}.')
+				return self.save_data()
+		if args[0] == 'remove':
+			if guild_id not in self.role_rewards:
+				return await ctx.send('This server currently doesn\'t have any roles added')
+			if not len(args) > 1:
+				return await ctx.send('Role name is a required argument that is missing')
+			role = await self.get_role(ctx, args[1].replace('`', ''))
+			if not isinstance(role, discord.Role):
+				return await ctx.send('Role not found')
+			for level, dat in list(self.role_rewards[guild_id].items()):
+				if dat['role'] == role.id:
+					del self.role_rewards[guild_id][level]
+					await ctx.send(f'Removed {role.name}')
+					return self.save_data()
+			return await ctx.send('Role not in dat')
+		if args[0] == 'config':
+			if guild_id not in self.role_rewards:
+				return await ctx.send('This server currently doesn\'t have any roles added')
+			role_rewards = ''
+			for level, dat in list(self.role_rewards[guild_id].items()):
+				role = ctx.guild.get_role(dat['role'])
+				if not role:
+					del self.role_rewards[guild_id][level]
+					self.save_data()
+					continue
+				role_rewards += f'{role.mention} - level {level}\n'
+			if not role_rewards:
+				return await ctx.send('No configured roles')
+			e = discord.Embed(color=colors.fate())
+			e.description = role_rewards
+			return await ctx.send(embed=e)
+		await ctx.send('Unknown option passed')
+
 	@commands.command(name='giv')
 	@commands.check(checks.luck)
 	async def giv(self, ctx, user: discord.Member, seconds: int):
@@ -560,11 +703,53 @@ class Leaderboards(commands.Cog):
 					if author_id not in self.monthly_guilds_data[guild_id]:
 						self.monthly_guilds_data[guild_id][author_id] = {}
 
+					xp = self.guilds_data[guild_id][user_id]
+					level = str(xp / 750)
+					previous_level = level[:level.find('.')]
+
 					self.global_data[author_id] += 1
 					self.guilds_data[guild_id][author_id] += 1
 					self.monthly_global_data[author_id][msg_id] = time()
 					self.monthly_guilds_data[guild_id][author_id][msg_id] = time()
 					self.cd[author_id] = time() + 10
+
+					xp = self.guilds_data[guild_id][user_id]
+					level = str(xp / 750)
+					new_level = level[:level.find('.')]
+
+					if previous_level != new_level:
+						if guild_id in self.toggle:
+							for level, dat in list(self.role_rewards[guild_id].items()):
+								if int(level) < int(new_level):
+									if bool(dat['stacking']):
+										role = m.guild.get_role(dat['role'])
+										if role not in m.author.roles:
+											try: await m.author.add_roles(role)
+											except: return await m.channel.send('Failed to give you your role rewards')
+							if new_level in self.role_rewards[guild_id]:
+								stacking = bool(self.role_rewards[guild_id][new_level]['stacking'])
+								if not stacking:
+									for level, dat in list(self.role_rewards[guild_id].items()):
+										if not bool(dat['stacking']):
+											role = m.guild.get_role(dat['role'])
+											if not isinstance(role, discord.Role):
+												del self.role_rewards[guild_id][level]
+												self.save_data()
+												continue
+											if role in m.author.roles:
+												try: await m.author.remove_roles(role)
+												except: return await m.channel.send('Failed to give you your role reward')
+								role_id = self.role_rewards[guild_id][new_level]['role']
+								role = m.guild.get_role(role_id)
+								if not isinstance(role, discord.Role):
+									del self.role_rewards[guild_id][new_level]
+									return self.save_data()
+								try: await m.author.add_roles(role)
+								except: return await m.channel.send('Failed to give you your role reward')
+								e = discord.Embed(color=colors.fate())
+								e.description = f'Congratulations {m.author.mention}, you unlocked {role.mention}'
+								try: await m.channel.send(embed=e)
+								except: await m.channel.send(f'Congratulations {m.author.mention}, you unlocked {role.name}')
 
 	@commands.Cog.listener()
 	async def on_voice_state_update(self, user, before, after):
