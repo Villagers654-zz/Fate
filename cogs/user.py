@@ -28,6 +28,8 @@ class User(commands.Cog):
 	@commands.check(checks.luck)
 	async def block(self, ctx, user: discord.Member):
 		config = self.get_config()  # type: dict
+		if 'blocked' not in config:
+			config['blocked'] = []
 		config['blocked'].append(user.id)
 		self.update_config(config)
 		await ctx.send(f'Blocked {user}')
