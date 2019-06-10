@@ -61,7 +61,7 @@ class Backup(commands.Cog):
 				for file in file_paths:
 					zip.write(file)
 			ping = round((monotonic() - before) * 1000)
-			await self.bot.get_channel(config.server("log")).send(f'Ran Scheduled Backup: {ping}')
+			await self.bot.get_channel(config.server("log")).send(f'Ran Scheduled Backup: {ping}ms')
 
 	@commands.Cog.listener()
 	async def on_ready(self):
