@@ -111,7 +111,7 @@ class Mod(commands.Cog):
 					return member
 		return
 
-	async def convert_arg_to_timer(self, timer):
+	def convert_arg_to_timer(self, timer):
 		time = timer.replace("m", " minutes").replace("1 minutes", "1 minute")
 		time = time.replace("h", " hours").replace("1 hours", "1 hour")
 		time = time.replace("d", " days").replace("1 days", "1 day")
