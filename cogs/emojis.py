@@ -5,6 +5,7 @@ from PIL import Image
 import requests
 import discord
 import asyncio
+import os
 
 class Emojis(commands.Cog):
 	def __init__(self, bot):
@@ -59,11 +60,14 @@ class Emojis(commands.Cog):
 				except Exception as e:
 					if '256 kb' in str(e):
 						img = Image.open(BytesIO(requests.get(attachment.url).content))
-						img = img.resize((512, 512), Image.BICUBIC)
+						img = img.resize((450, 450), Image.BICUBIC)
 						img.save(attachment.filename)
 						name = cleanup(emoji_name)
-						await ctx.guild.create_custom_emoji(name=name, image=discord.File(attachment.filename), reason=ctx.author.name)
+						with open(attachment.filename, 'rb') as image:
+							image = image.read()
+						await ctx.guild.create_custom_emoji(name=name, image=image, reason=ctx.author.name)
 						await ctx.send(f"Resized and added `{emoji_name}` to emotes")
+						os.remove(attachment.filename)
 						break
 					if attempts > 3:
 						await ctx.send(e)
