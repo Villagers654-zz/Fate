@@ -51,7 +51,7 @@ class Emojis(commands.Cog):
 					break
 				except Exception as e:
 					if '256 kb' in str(e):
-						img = Image.open(BytesIO(requests.get(attachment.url).content)).convert("RGBA")
+						img = Image.open(BytesIO(requests.get(attachment.url).content))
 						img = img.resize((512, 512), Image.BICUBIC)
 						img.save(attachment.filename)
 						name = utils.Text.cleanup(emoji_name)
