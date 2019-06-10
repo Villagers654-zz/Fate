@@ -39,7 +39,7 @@ class Menus(commands.Cog):
 					return await ctx.send(cmd.description)
 			return await ctx.send("Either the command wasn't found or it has no help message")
 		e = discord.Embed(title="~~~====🥂🍸🍷Help🍷🍸🥂====~~~", color=0x80b0ff)
-		e.add_field(name="◈ Core ◈", value="`leaderboard` `gleaderboard` `ggleaderboard` `mleaderboard` `gmleaderboard` `vcleaderboard` `gvcleaderboard` `changelog` `partners` `discords` `servers` `restrict` `unrestrict` `restricted` `config` `prefix` `invite` `realms` `ping` `info` `say`", inline=False)
+		e.add_field(name="◈ Core ◈", value="`leaderboard` `gleaderboard` `ggleaderboard` `mleaderboard` `gmleaderboard` `vcleaderboard` `gvcleaderboard` `changelog` `partners` `servers` `restrict` `unrestrict` `restricted` `config` `prefix` `invite` `realms` `ping` `info` `say`", inline=False)
 		e.add_field(name="◈ Responses ◈", value="`@Fate` `hello` `ree` `kys` `gm` `gn`", inline=False)
 		e.add_field(name="◈ Music ◈", value="`play` `playnow` `playat` `find` `stop` `skip` `previous` `repeat` `pause` `resume` `volume` `queue` `remove` `shuffle` `dc` `np`", inline=False)
 		e.add_field(name="◈ Utility ◈", value="`membercount` `channelinfo` `servericon` `serverinfo` `userinfo` `makepoll` `welcome` `farewell` `logger` `color` `emoji` `addemoji` `stealemoji` `rename_emoji` `delemoji` `owner` `avatar` `topic` `timer` `note` `quicknote` `notes` `wiki` `find` `afk` `ud` `id`", inline=False)
@@ -90,32 +90,6 @@ class Menus(commands.Cog):
 		e.add_field(name="◈ Uptime ◈", value="Uptime: {} Hours {} Minutes {} seconds".format(int(h), int(m), int(s)))
 		e.set_footer(text=f"Powered by Python {platform.python_version()} and Discord.py {discord.__version__}", icon_url="https://cdn.discordapp.com/attachments/501871950260469790/567779834533773315/RPrw70n.png")
 		msg = await ctx.send(file=discord.File(path, filename=os.path.basename(path)), embed=e)
-		await self.wait_for_dismissal(ctx, msg)
-
-	@commands.command(name="discords")
-	@commands.cooldown(1, 5, commands.BucketType.channel)
-	@commands.bot_has_permissions(embed_links=True)
-	async def discords(self, ctx):
-		e=discord.Embed(title="~~~====🥂🍸🍷Discords🍷🍸🥂====~~~", color=0x80b0ff)
-		games = '[2p2e - 2pocket2edition](https://discord.gg/y4V4T84)\n' \
-				'[PUBG / MC Hangout](https://discord.gg/a6zVWav)\n' \
-		        '[4B4T (Minecraft)](https://discord.gg/BQ23Z2E)\n' \
-		        '[2B2T §pawn](https://discord.gg/jByKWTF)\n' \
-				'[MC Fun](https://discord.gg/zjrTPKQ)'
-		misc = '[Exousía Supreme Regime](https://discord.gg/Xn5ZRjk)\n' \
-		       '[Bridge of Anarchism](https://discord.gg/WN9F82d)\n' \
-		       '[Tothers Hotel](https://discord.gg/XshWswg)'
-		e.add_field(name="• Games", value=games, inline=False)
-		e.add_field(name="• Misc", value=misc, inline=False)
-		await ctx.send(embed=e)
-
-	@commands.command(name="servers")
-	@commands.cooldown(1, 5, commands.BucketType.channel)
-	@commands.bot_has_permissions(embed_links=True)
-	async def servers(self, ctx):
-		e=discord.Embed(title="~~~====🥂🍸🍷Servers🍷🍸🥂====~~~", color=0x80b0ff)
-		e.add_field(name="• Anarchy", value="• 4b4t.net : 19132", inline=False)
-		msg = await ctx.send(embed=e)
 		await self.wait_for_dismissal(ctx, msg)
 
 	@commands.command(name="realms")
