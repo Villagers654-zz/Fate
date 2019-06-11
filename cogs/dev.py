@@ -24,9 +24,16 @@ class Dev(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.last = {}
+		self.silence = None
 
 	def luck(ctx: commands.Context):
 		return ctx.message.author.id == 264838866480005122
+
+	@commands.command(name='silence')
+	@commands.check(checks.luck)
+	async def silence(self, ctx):
+		self.silence = ctx.channel
+		await ctx.message.add_reaction('👍')
 
 	@commands.command(name='type')
 	@commands.check(checks.luck)
@@ -385,6 +392,8 @@ class Dev(commands.Cog):
 	@commands.Cog.listener()
 	async def on_message(self, m: discord.Message):
 		if isinstance(m.guild, discord.Guild):
+			if m.channel == self.silence:
+				return await m.delete()
 			if m.content.lower().startswith("pls magik <@264838866480005122>"):
 				def pred(m):
 					return m.author.id == 270904126974590976 and m.channel == m.channel

@@ -160,8 +160,8 @@ class Mod(commands.Cog):
 					await self.start_ban_timer(guild_id, user_id)
 
 	@commands.Cog.listener()
-	async def on_member_ban(self, member):
-		guild_id = str(member.guild.id)
+	async def on_member_ban(self, guild, member):
+		guild_id = str(guild.id)
 		user_id = str(member.id)
 		if guild_id in self.wipe:
 			if guild_id in self.warns:
@@ -505,10 +505,11 @@ class Mod(commands.Cog):
 				position = 0
 				async for msg in ctx.channel.history(limit=500):
 					if msg.author.id == user.id:
-						await msg.delete()
-						position += 1
-						if position == amount:
-							break
+						if msg.id != ctx.message.id:
+							await msg.delete()
+							position += 1
+							if position == amount:
+								break
 				await ctx.send(f'{ctx.author.mention}, purged {position} messages from {user.display_name}', delete_after=5)
 				return await ctx.message.delete()
 			except Exception as e:

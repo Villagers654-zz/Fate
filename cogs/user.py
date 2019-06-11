@@ -26,7 +26,14 @@ class User(commands.Cog):
 
 	@commands.command(name='block')
 	@commands.check(checks.luck)
-	async def block(self, ctx, user: discord.Member):
+	async def block(self, ctx, user):
+		if ctx.message.mentions:
+			user = ctx.message.mentions[0]
+		else:
+			if user.isdigit():
+				user = self.bot.get_user(int(user))
+			else:
+				return await ctx.send('user not found')
 		config = self.get_config()  # type: dict
 		if 'blocked' not in config:
 			config['blocked'] = []
@@ -36,7 +43,14 @@ class User(commands.Cog):
 
 	@commands.command(name='unblock')
 	@commands.check(checks.luck)
-	async def unblock(self, ctx, user: discord.Member):
+	async def unblock(self, ctx, user):
+		if ctx.message.mentions:
+			user = ctx.message.mentions[0]
+		else:
+			if user.isdigit():
+				user = self.bot.get_user(int(user))
+			else:
+				return await ctx.send('user not found')
 		config = self.get_config()  # type: dict
 		index = config['blocked'].index(user.id)
 		config['blocked'].pop(index)

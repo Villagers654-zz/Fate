@@ -119,6 +119,16 @@ class Leaderboards(commands.Cog):
 					await msg.delete()
 					return roles[role - 1]
 
+	def get_level_info(self, total_xp):
+		level = 0; level_xp = 0
+		level_end_xp = round(250 * (level + 1) * 1.21)
+		for xp in range(total_xp):
+			if xp > 250 * (level + 1) * 1.21:
+				level_xp = round(250 * (level + 1) * 1.21)
+				level += 1
+				level_end_xp = round(250 * (level + 1) * 1.21)
+		return {'level': level, 'base_xp': level_xp, 'max_xp': level_end_xp}
+
 	async def xp_dump_task(self):
 		while True:
 			try:
@@ -187,56 +197,7 @@ class Leaderboards(commands.Cog):
 						del self.vclb[guild_id][user_id]
 		return str(round((monotonic() - before) * 1000)) + 'ms'
 
-	async def stats_task(self):
-		while True:
-			try:
-				channel = self.bot.get_channel(config['channel_id'])
-				if not isinstance(channel, discord.TextChannel):
-					print('4B4T Stats: channel not found'); break
-				guild = channel.guild
-				guild_id = str(guild.id)
-				e = discord.Embed(title="", color=0x4A0E50)
-				e.description = "💎 Official 4B4T Server 💎"
-				xp = {}
-				for user_id in list(self.monthly_guilds_data[guild_id].keys()):
-					xp[user_id] = len(self.monthly_guilds_data[guild_id][user_id].keys())
-				leaderboard = ""
-				rank = 1
-				for user_id, xp in (sorted(xp.items(), key=lambda kv: kv[1], reverse=True))[:15]:
-					name = "INVALID-USER"
-					user = guild.get_member(int(user_id))
-					if isinstance(user, discord.Member):
-						name = user.display_name
-					leaderboard += f'**#{rank}.** `{name}`: {xp}\n'
-					rank += 1
-				f = psutil.Process(os.getpid())
-				e.set_thumbnail(url=channel.guild.icon_url)
-				e.set_author(name=f'~~~====🥂🍸🍷Stats🍷🍸🥂====~~~')
-				e.add_field(name="◈ Discord ◈", value=f'__**Owner**__: {channel.guild.owner}\n__**Members**__: {channel.guild.member_count}', inline=False)
-				e.add_field(name="Leaderboard", value=leaderboard, inline=False)
-				e.add_field(name="◈ Memory ◈", value=
-					f"__**Storage**__: [{bytes2human(psutil.disk_usage('/').used)}/{bytes2human(psutil.disk_usage('/').total)}]\n"
-					f"__**RAM**__: **Global**: {bytes2human(psutil.virtual_memory().used)} **Bot**: {bytes2human(f.memory_full_info().rss)}\n"
-					f"__**CPU**__: **Global**: {psutil.cpu_percent()}% **Bot**: {f.cpu_percent()}%\n"
-					f"__**CPU Per Core**__: {[round(i) for i in psutil.cpu_percent(percpu=True)]}\n")
-				fmt = "%m-%d-%Y %I:%M%p"
-				time = datetime.now()
-				time = time.strftime(fmt)
-				e.set_footer(text=f'Last Updated: {time}')
-				if not config['message']:
-					async for msg in channel.history(limit=5):
-						if msg.author.id == self.bot.user.id:
-							config['message'] = msg; break
-						await msg.delete()
-					if not config['message']:
-						config['message'] = await channel.send(embed=discord.Embed())
-				msg = config['message']
-				await msg.edit(embed=e)
-			except AttributeError:
-				print(AttributeError)
-			await asyncio.sleep(1500)
-
-	@commands.command(name='rank')
+	@commands.command(name='rank', aliases=['xp'])
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.guild_only()
 	@commands.bot_has_permissions(embed_links=True)
@@ -256,8 +217,10 @@ class Leaderboards(commands.Cog):
 			if user_id == id:
 				break
 		xp = self.guilds_data[guild_id][user_id]
-		level = str(xp / 750)
-		level = level[:level.find('.')]
+		dat = self.get_level_info(xp)
+		level = dat['level']
+		base_xp = dat['base_xp']
+		max_xp = dat['max_xp']
 		e = discord.Embed(color=0x4A0E50)
 		icon_url = self.bot.user.avatar_url
 		if user.avatar_url:
@@ -266,7 +229,8 @@ class Leaderboards(commands.Cog):
 			if ctx.guild.icon_url:
 				icon_url = ctx.guild.icon_url
 		e.set_author(name=user.display_name, icon_url=icon_url)
-		e.description = f'__**Rank:**__ [`{guild_rank}`] __**Level:**__ [`{level}`] __**XP:**__ [`{xp}`]'
+		e.description = f'__**Rank:**__ [`{guild_rank}`] __**Level:**__ [`{level}`] __**XP:**__ [`{xp - base_xp}/{max_xp - base_xp}`]\n' \
+			f'__**Total XP:**__ [`{xp}`] __**Required:**__ [`{max_xp - xp}`]\n'
 		e.set_footer(text=self.msg_footer().replace('[result]', f'XP Cleanup: {results}'))
 		await ctx.send(embed=e)
 
@@ -284,8 +248,7 @@ class Leaderboards(commands.Cog):
 			user = self.bot.get_user(int(user_id))
 			if isinstance(user, discord.User):
 				name = user.name
-			level = str(xp / 750)
-			level = level[:level.find(".")]
+			level = self.get_level_info(xp)['level']
 			e.description += f'**#{rank}.** `{name}`: {level} | {xp}\n'
 			rank += 1
 		if ctx.guild.icon_url:
@@ -603,6 +566,8 @@ class Leaderboards(commands.Cog):
 			if guild_id in self.toggle:
 				return await ctx.send('Role rewards are already enabled')
 			self.toggle.append(guild_id)
+			if guild_id not in self.role_rewards:
+				self.role_rewards[guild_id] = {}
 			await ctx.send('Enabled role rewards')
 			return self.save_data()
 		if args[0] == 'disable':
@@ -670,27 +635,24 @@ class Leaderboards(commands.Cog):
 
 	@commands.command(name='giv')
 	@commands.check(checks.luck)
-	async def giv(self, ctx, user: discord.Member, seconds: int):
+	async def giv(self, ctx, user: discord.Member, xp: int):
 		guild_id = str(ctx.guild.id)
 		user_id = str(user.id)
-		self.vclb[guild_id][user_id] += seconds
-		self.gvclb[user_id] += seconds
+		self.guilds_data[guild_id][user_id] += xp
 		await ctx.send('👍')
 
 	@commands.command(name='take')
 	@commands.check(checks.luck)
-	async def take(self, ctx, user: discord.Member, seconds: int):
+	async def take(self, ctx, user: discord.Member, xp: int):
 		guild_id = str(ctx.guild.id)
 		user_id = str(user.id)
-		self.vclb[guild_id][user_id] -= seconds
-		self.gvclb[user_id] -= seconds
+		self.guilds_data[guild_id][user_id] -= xp
 		await ctx.send('👍')
 
 	@commands.Cog.listener()
 	async def on_ready(self):
 		await asyncio.sleep(1)
 		self.bot.loop.create_task(self.xp_dump_task())
-		self.bot.loop.create_task(self.stats_task())
 		results = await self.run_xp_cleanup()
 		print(f'XP Cleanup: {results}')
 
@@ -764,9 +726,7 @@ class Leaderboards(commands.Cog):
 					if author_id not in self.monthly_guilds_data[guild_id]:
 						self.monthly_guilds_data[guild_id][author_id] = {}
 
-					xp = self.guilds_data[guild_id][user_id]
-					level = str(xp / 750)
-					previous_level = level[:level.find('.')]
+					previous_level = str(self.get_level_info(self.guilds_data[guild_id][user_id])['level'])
 
 					self.global_data[author_id] += 1
 					self.guilds_data[guild_id][author_id] += 1
@@ -774,9 +734,7 @@ class Leaderboards(commands.Cog):
 					self.monthly_guilds_data[guild_id][author_id][msg_id] = time()
 					self.cd[author_id] = time() + 10
 
-					xp = self.guilds_data[guild_id][user_id]
-					level = str(xp / 750)
-					new_level = level[:level.find('.')]
+					new_level = str(self.get_level_info(self.guilds_data[guild_id][user_id])['level'])
 
 					if previous_level != new_level:
 						if guild_id in self.toggle:
