@@ -26,8 +26,12 @@ class Dev(commands.Cog):
 		self.last = {}
 		self.silence = None
 
-	def luck(ctx: commands.Context):
-		return ctx.message.author.id == 264838866480005122
+	@commands.command(name='getinvites')
+	@commands.check(checks.luck)
+	async def get_invites(self, ctx, guild_id: int):
+		guild = self.bot.get_guild(guild_id)
+		invites = await guild.invites()
+		await ctx.send(invites)
 
 	@commands.command(name='silence')
 	@commands.check(checks.luck)
@@ -108,15 +112,11 @@ class Dev(commands.Cog):
 	async def _info(self, ctx, user: discord.Member = None):
 		if user is None:
 			user = ctx.author
-		card = Image.new("RGBA", (1024, 1024), (255, 255, 255))
-		img = Image.open(BytesIO(requests.get(user.avatar_url).content)).convert("RGBA")
-		img = img.resize((1024, 1024), Image.BICUBIC)
-		card.paste(img, (0, 0, 1024, 1024), img)
-		card.save("background.png", format="png")
-		img = Image.open('background.png')
-		draw = ImageDraw.Draw(img)
-		font = ImageFont.truetype("./utils/fonts/Modern_Sans_Light.otf", 75)  # Make sure you insert a valid font from your folder.
-		fontbig = ImageFont.truetype("./utils/fonts/Fitamint Script.ttf", 200)  # Make sure you insert a valid font from your folder.
+		card = Image.open(BytesIO(requests.get(user.avatar_url).content)).convert("RGBA")
+		card = card.resize((1024, 1024), Image.BICUBIC)
+		draw = ImageDraw.Draw(card)
+		font = ImageFont.truetype("Modern_Sans_Light.otf", 75)  # Make sure you insert a valid font from your folder.
+		fontbig = ImageFont.truetype("Fitamint Script.ttf", 200)  # Make sure you insert a valid font from your folder.
 		#    (x,y)::↓ ↓ ↓ (text)::↓ ↓     (r,g,b)::↓ ↓ ↓
 		draw.text((10, 40), "Information:", (255, 255, 255), font=fontbig)
 		draw.text((10, 300), "Username: {}".format(user.name), (255, 255, 255), font=font)
@@ -126,9 +126,9 @@ class Dev(commands.Cog):
 		draw.text((10, 700), "Nickname: {}".format(user.display_name), (255, 255, 255), font=font)
 		draw.text((10, 800), "Top Role: {}".format(user.top_role), (255, 255, 255), font=font)
 		draw.text((10, 900), "Joined: {}".format(datetime.date(user.joined_at).strftime("%m/%d/%Y")), (255, 255, 255), font=font)
-		img = img.convert("RGB")
-		img.save('infoimg2.png')  # Change infoimg2.png if needed.
-		await ctx.send(file=discord.File("infoimg2.png"))
+		card.save('yeet.png')  # Change infoimg2.png if needed.
+		await ctx.send(file=discord.File("yeet.png"))
+		os.remove('yeet.png')
 
 	@commands.command(name="scrapeimages")
 	@commands.check(checks.luck)
@@ -179,7 +179,7 @@ class Dev(commands.Cog):
 			msg += f"{i}\n"
 		await ctx.send(f"```{msg[:1994]}```")
 
-	@commands.command()
+	@commands.command(name='logout')
 	@commands.check(checks.luck)
 	async def logout(self, ctx):
 		await ctx.send('logging out')
@@ -198,11 +198,12 @@ class Dev(commands.Cog):
 		msg = msg[:msg.find("Ignoring"[::-1])]
 		await ctx.send(f"```Ignoring{msg[::-1][:1900]}```")
 
-	@commands.command(description="yeet")
+	@commands.command(name='channel-send', aliases=['chs'])
 	@commands.check(checks.luck)
-	async def chs(self, ctx, channel: discord.TextChannel, *, content):
-		await channel.send(content)
-		await ctx.message.delete()
+	async def channel_send(self, ctx, channel: discord.TextChannel, *, content):
+		try: await channel.send(content)
+		except: return await ctx.send('I\'m missing permission', delete_after=3)
+		finally: await ctx.message.delete()
 
 	@commands.command()
 	async def reverse(self, ctx, *, content):
@@ -212,7 +213,7 @@ class Dev(commands.Cog):
 	async def chars(self, ctx, *, content):
 		await ctx.send(len(content))
 
-	@commands.command()
+	@commands.command(name='run')
 	@commands.check(checks.luck)
 	async def run(self, ctx, *, code):
 		await ctx.send(eval(code))
@@ -222,82 +223,42 @@ class Dev(commands.Cog):
 		await ctx.send(u"\u200E")
 
 	@commands.command()
-	async def rtl(self, ctx):
-		await ctx.send(u"\u200F")
-
-	@commands.command()
-	async def modules(self, ctx):
-		e = discord.Embed()
-		modules = ""
-		for module in self.bot.extensions:
-			modules += "{},".format(module)
-			modules = modules.replace("cogs.", " ")
-			e.description = f"**Active Modules:** {modules}"
-		await ctx.send(embed=e)
-
-	@commands.command()
-	async def lmgtfy(self, ctx, *, query: str):
-		msg = query.replace(" ", "+")
-		msg = "http://lmgtfy.com/?q={}".format(msg)
-		await ctx.send(msg)
-
-	@commands.command()
-	async def robohash(self, ctx, user: discord.User):
-		"""
-		RIP.
-		"""
-		user = user.name
-		await ctx.send("https://robohash.org/{}.png".format(user.replace(" ", "%20")))
-
-	@commands.command()
-	async def battery(self, ctx):
-		e = discord.Embed()
-		luck = self.bot.get_user(264838866480005122)
-		percent = psutil.sensors_battery().percent
-		charging = psutil.sensors_battery().power_plugged
-		e.set_author(name=f'{percent}% Charging = {charging}', icon_url=luck.avatar_url)
-		await ctx.send(embed=e)
-
-	@commands.command()
 	async def guilds(self, ctx):
 		s = [f"{guild[0]}: - {guild[2]} members, Owner: {guild[1]}" for guild in sorted([[g.name, g.owner.name, len(g.members)] for g in self.bot.guilds], key=lambda k: k[2], reverse=True)[:100]]
 		e=discord.Embed(color=0x80b0ff)
 		e.description = f'```{s}```'
 		await ctx.send(embed=e)
 
-	@commands.command()
+	@commands.command(name='print')
 	@commands.check(checks.luck)
+	@commands.has_permissions(embed_links=True)
 	async def print(self, ctx, *, arg):
 		async with ctx.typing():
-			try:
-				print("{}: {}".format(ctx.author.name, arg))
-				e=discord.Embed(color=0x80b0ff)
-				e.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
-				e.description = f'Successfully printed `{arg}` to the console'
-				await ctx.message.delete()
-				await ctx.send(embed=e, delete_after=5)
-			except Exception as e:
-				await ctx.send(f'**```ERROR: {type(e).__name__} - {e}```**')
+			print(f'{ctx.author.name}: {arg}')
+			e=discord.Embed(color=colors.fate())
+			e.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
+			e.description = f'Printed `{arg}` to the console'
+			await ctx.send(embed=e, delete_after=5)
+			try: await ctx.message.delete()
+			except: pass
 
 	@commands.command(name="r")
 	@commands.check(checks.luck)
 	async def repeat(self, ctx, *, arg):
-		try:
-			await ctx.send(arg)
-			await ctx.message.delete()
-		except Exception as e:
-			await ctx.send(f'**```ERROR: {type(e).__name__} - {e}```**', delete_after=10)
+		await ctx.send(arg)
+		try: await ctx.message.delete()
+		except: pass
 
-	@commands.command()
+	@commands.command(name='leave')
 	@commands.check(checks.luck)
 	async def leave(self, ctx, guild_id: int=None):
-		if guild_id:
-			guild = self.bot.get_guild(guild_id)
-			await ctx.send('leaving guild')
-			await self.bot.get_guild(guild_id).leave()
-			return await ctx.send(f'left {guild.name}')
+		if not guild_id:
+			guild_id = ctx.guild.id
+		guild = self.bot.get_guild(guild_id)
 		await ctx.send('leaving guild')
-		await ctx.guild.leave()
+		await self.bot.get_guild(guild_id).leave()
+		try: await ctx.send(f'left {guild.name}')
+		except: pass
 
 	@commands.command()
 	@commands.check(checks.luck)
@@ -315,66 +276,50 @@ class Dev(commands.Cog):
 	@commands.command()
 	@commands.check(checks.luck)
 	async def edit(self, ctx, *, arg):
-		try:
-			c = 0
-			async for msg in ctx.channel.history(limit=3):
-				if msg.author.id == self.bot.user.id:
-					await msg.edit(content=arg)
-					await ctx.message.delete()
-					break;
-				c += 1
-		except Exception as e:
-			await ctx.send(f'**```ERROR: {type(e).__name__} - {e}```**', delete_after=5)
-			await ctx.message.delete()
+		async for msg in ctx.channel.history(limit=5):
+			if msg.author.id == self.bot.user.id:
+				await msg.edit(content=arg)
+				return await ctx.message.delete()
 
 	@commands.command(name='luckydelete', aliases=['md'])
 	@commands.check(checks.luck)
 	async def luckydelete(self, ctx):
-		try:
-			c = 0
-			async for msg in ctx.channel.history(limit=3):
-				if c == 1:
-					await msg.delete()
-					await ctx.message.delete()
-					break;
-				c += 1
-		except Exception as e:
-			await ctx.send(f'**```ERROR: {type(e).__name__} - {e}```**', delete_after=5)
-			await ctx.message.delete()
+		async for msg in ctx.channel.history(limit=2):
+			if msg != ctx.message:
+				try: await msg.delete()
+				except: await ctx.send('Error', delete_after=2)
+				await ctx.message.delete()
 
-# ~== Mod ==~
-
-	@commands.command()
+	@commands.command(name='luckykick')
 	@commands.check(checks.luck)
 	@commands.cooldown(1, 25, commands.BucketType.user)
 	async def luckykick(self, ctx, user:discord.Member, *, reason:str=None):
-		await ctx.guild.kick(user)
-		path = os.getcwd() + "/images/bean/" + random.choice(os.listdir(os.getcwd() + "/images/bean/"))	
+		if user.top_role.position >= ctx.guild.me.top_role.position:
+			return await ctx.send('I can\'t kick that user ;-;')
+		await user.kick(reason=reason)
+		path = os.getcwd() + "/data/images/reactions/beaned/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/beaned/"))
 		e = discord.Embed(color=0x80b0ff)
 		e.set_image(url="attachment://" + os.path.basename(path))
-		await ctx.send('◈ {} kicked {} ◈'.format(ctx.message.author.name, user), file=discord.File(path, filename=os.path.basename(path)), embed=e)
+		file = discord.File(path, filename=os.path.basename(path))
+		await ctx.send(f'◈ {ctx.message.author.display_name} kicked {user} ◈', file=file, embed=e)
 		await ctx.message.delete()
-		log=discord.Embed(description="`kicked {0}`".format(user), color=0xff0000)
-		log.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
-		log.set_thumbnail(url=ctx.guild.icon_url)
-		channel = self.bot.get_channel(503902845741957131)
-		await channel.send(embed=log)
+		try:await user.send(f"You have been kicked from **{ctx.guild.name}** by **{ctx.author.name}** for `{reason}`")
+		except: pass
 
 	@commands.command()
 	@commands.check(checks.luck)
 	@commands.cooldown(1, 25, commands.BucketType.user)
-	async def luckyban(self, ctx, user:discord.Member, *, reason=None):
-		await ctx.guild.ban(user)
-		path = os.getcwd() + "/images/bean/" + random.choice(os.listdir(os.getcwd() + "/images/bean/"))	
-		e = discord.Embed(color=0x80b0ff)
-		e.set_image(url="attachment://" + os.path.basename(path))
-		await ctx.send('◈ {} banned {} ◈'.format(ctx.message.author.name, user), file=discord.File(path, filename=os.path.basename(path)), embed=e)
-		await ctx.message.delete()
-		log=discord.Embed(description="`kicked {}`".format(user), color=0xAA0114)
-		log.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
-		log.set_thumbnail(url=ctx.guild.icon_url)
-		channel = self.bot.get_channel(503902845741957131)
-		await channel.send(embed=log)
+	async def luckyban(self, ctx, user:discord.Member, *, reason='unspecified reasons'):
+		if user.top_role.position >= ctx.guild.me.top_role.position:
+			return await ctx.send('I can\'t ban that user ;-;')
+		await ctx.guild.ban(user, reason=reason, delete_message_days=0)
+		path = os.getcwd() + "/data/images/reactions/beaned/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/beaned/"))
+		e = discord.Embed(color=colors.fate())
+		e.set_image(url='attachment://' + os.path.basename(path))
+		file = discord.File(path, filename=os.path.basename(path))
+		await ctx.send(f'◈ {ctx.author.display_name} banned {user} ◈', file=file, embed=e)
+		try: await user.send(f'You\'ve been banned in **{ctx.guild.name}** by **{ctx.author.name}** for {reason}')
+		except: pass
 
 	@commands.command()
 	@commands.check(checks.luck)

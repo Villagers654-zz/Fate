@@ -32,7 +32,7 @@ class AvapxianRegime(commands.Cog):
 				f"■ {ar.get_role(548679428767481871).mention} - \n" \
 				f"• Official Member\n" \
 				f"■ {ar.get_role(549467413016739843).mention} - \n" \
-				f"• Ally of ER\n" \
+				f"• Ally of ESR\n" \
 				f"-~===🌹🥂🍸🍷Rules🍷🍸🥂🌹===~-\n" \
 				f"■ No being fucking retarded\n" \
 				f"-~===🌹🥂🍸🍷Misc🍷🍸🥂🌹===~-\n"

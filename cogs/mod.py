@@ -112,10 +112,10 @@ class Mod(commands.Cog):
 		return
 
 	def convert_arg_to_timer(self, timer):
-		time = timer.replace("m", " minutes").replace("1 minutes", "1 minute")
+		time = timer.replace('s', 'seconds').replace('1 seconds', '1 second')
+		time = time.replace("m", " minutes").replace("1 minutes", "1 minute")
 		time = time.replace("h", " hours").replace("1 hours", "1 hour")
 		time = time.replace("d", " days").replace("1 days", "1 day")
-		time = time.replace('s', 'seconds').replace('1 seconds', '1 second')
 		if "d" in str(timer):
 			try: timer = float(timer.replace("d", "")) * 60 * 60 * 24
 			except Exception as e: return (time, e)
@@ -486,7 +486,7 @@ class Mod(commands.Cog):
 				del self.purge[channel_id]
 				return await ctx.send("You cannot purge more than 1000 messages at a time")
 			try:
-				await ctx.message.channel.purge(before=ctx.message, limit=amount)
+				await ctx.message.channel.purge(limit=amount, before=ctx.message)
 				await ctx.send(f'{ctx.author.mention}, successfully purged {amount} messages', delete_after=5)
 				return await ctx.message.delete()
 			except Exception as e:
@@ -502,15 +502,8 @@ class Mod(commands.Cog):
 				del self.purge[channel_id]
 				return await ctx.send("You cannot purge more than 250 user messages at a time")
 			try:
-				position = 0
-				async for msg in ctx.channel.history(limit=500):
-					if msg.author.id == user.id:
-						if msg.id != ctx.message.id:
-							await msg.delete()
-							position += 1
-							if position == amount:
-								break
-				await ctx.send(f'{ctx.author.mention}, purged {position} messages from {user.display_name}', delete_after=5)
+				await ctx.channel.purge(limit=amount, before=ctx.message, check=lambda m: m.author == ctx.author)
+				await ctx.send(f'{ctx.author.mention}, purged {amount} messages from {user.display_name}', delete_after=5)
 				return await ctx.message.delete()
 			except Exception as e:
 				await ctx.send(e)
@@ -521,14 +514,8 @@ class Mod(commands.Cog):
 			if amount > 250:
 				return await ctx.send("You cannot purge more than 250 images at a time")
 			try:
-				position = 0
-				async for msg in ctx.channel.history(limit=500):
-					if msg.attachments:
-						await msg.delete()
-						position += 1
-						if position == amount:
-							break
-				await ctx.send(f"{ctx.author.mention}, purged {position} images", delete_after=5)
+				await ctx.channel.purge(limit=amount, before=ctx.message, check=lambda m: len(m.attachments) > 0)
+				await ctx.send(f"{ctx.author.mention}, purged {amount} images", delete_after=5)
 				return await ctx.message.delete()
 			except Exception as e:
 				await ctx.send(e)
@@ -538,14 +525,8 @@ class Mod(commands.Cog):
 			if amount > 250:
 				return await ctx.send("You cannot purge more than 250 embeds at a time")
 			try:
-				position = 0
-				async for msg in ctx.channel.history(limit=500):
-					if msg.embeds:
-						await msg.delete()
-						position += 1
-						if position == amount:
-							break
-				await ctx.send(f"{ctx.author.mention}, purged {position} embeds", delete_after=5)
+				await ctx.channel.purge(limit=amount, before=ctx.message, check=lambda m: len(m.embeds) > 0)
+				await ctx.send(f"{ctx.author.mention}, purged {amount} embeds", delete_after=5)
 				return await ctx.message.delete()
 			except Exception as e:
 				await ctx.send(e)
@@ -555,14 +536,8 @@ class Mod(commands.Cog):
 			if amount > 250:
 				return await ctx.send("You cannot purge more than 250 user messages at a time")
 			try:
-				position = 0
-				async for msg in ctx.channel.history(limit=500):
-					if not msg.author.bot:
-						await msg.delete()
-						position += 1
-						if position == amount:
-							break
-				await ctx.send(f"{ctx.author.mention}, purged {position} user messages", delete_after=5)
+				await ctx.channel.purge(limit=amount, before=ctx.message, check=lambda m: m.author.bot is False)
+				await ctx.send(f"{ctx.author.mention}, purged {amount} user messages", delete_after=5)
 				return await ctx.message.delete()
 			except Exception as e:
 				await ctx.send(e)
@@ -572,14 +547,8 @@ class Mod(commands.Cog):
 			if amount > 250:
 				return await ctx.send("You cannot purge more than 250 bot messages at a time")
 			try:
-				position = 0
-				async for msg in ctx.channel.history(limit=500):
-					if msg.author.bot:
-						await msg.delete()
-						position += 1
-						if position == amount:
-							break
-				await ctx.send(f"{ctx.author.mention}, purged {position} bot messages", delete_after=5)
+				await ctx.channel.purge(limit=amount, before=ctx.message, check=lambda m: m.author.bot is True)
+				await ctx.send(f"{ctx.author.mention}, purged {amount} bot messages", delete_after=5)
 				return await ctx.message.delete()
 			except Exception as e:
 				await ctx.send(e)
@@ -589,14 +558,8 @@ class Mod(commands.Cog):
 			if amount > 250:
 				return await ctx.send("You cannot purge more than 250 mentions at a time")
 			try:
-				position = 0
-				async for msg in ctx.channel.history(limit=500):
-					if msg.mentions:
-						await msg.delete()
-						position += 1
-						if position == amount:
-							break
-				await ctx.send(f"{ctx.author.mention}, purged {position} mentions", delete_after=5)
+				await ctx.channel.purge(limit=amount, before=ctx.message, check=lambda m: len(m.mentions) > 0)
+				await ctx.send(f"{ctx.author.mention}, purged {amount} mentions", delete_after=5)
 				return await ctx.message.delete()
 			except Exception as e:
 				await ctx.send(e)
@@ -607,15 +570,8 @@ class Mod(commands.Cog):
 		if amount > 250:
 			return await ctx.send("You cannot purge more than 250 phrases at a time")
 		try:
-			position = 0
-			async for msg in ctx.channel.history(limit=500):
-				if phrase.lower() in msg.content.lower():
-					if msg.id != ctx.message.id:
-						await msg.delete()
-						position += 1
-						if position == amount:
-							break
-			await ctx.send(f"{ctx.author.mention}, purged {position} messages", delete_after=5)
+			await ctx.channel.purge(limit=amount, before=ctx.message, check=lambda m: phrase.lower() in m.content.lower())
+			await ctx.send(f"{ctx.author.mention}, purged {amount} messages", delete_after=5)
 			return await ctx.message.delete()
 		except Exception as e:
 			await ctx.send(e)
