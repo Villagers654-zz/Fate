@@ -6,7 +6,9 @@ from time import time, monotonic
 from os.path import isfile
 from PIL import ImageDraw
 from PIL import ImageFont
+from io import BytesIO
 from PIL import Image
+import requests
 import discord
 import asyncio
 import random
@@ -197,17 +199,12 @@ class Leaderboards(commands.Cog):
 						del self.vclb[guild_id][user_id]
 		return str(round((monotonic() - before) * 1000)) + 'ms'
 
-	@commands.command(name='rank', aliases=['xp'])
+	@commands.command(name='rank', aliases=['level', 'xp'])
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.guild_only()
-	@commands.bot_has_permissions(embed_links=True)
-	async def rank(self, ctx, *, user=None):
-		results = await self.run_xp_cleanup()
-		if user:
-			user = self.get_user(ctx, user)
-			if not isinstance(user, discord.Member):
-				return await ctx.send('User not found')
-		else:
+	@commands.bot_has_permissions(attach_files=True)
+	async def rank_card(self, ctx, user: discord.Member=None):
+		if not user:
 			user = ctx.author
 		guild_id = str(ctx.guild.id)
 		user_id = str(user.id)
@@ -221,18 +218,40 @@ class Leaderboards(commands.Cog):
 		level = dat['level']
 		base_xp = dat['base_xp']
 		max_xp = dat['max_xp']
-		e = discord.Embed(color=0x4A0E50)
-		icon_url = self.bot.user.avatar_url
-		if user.avatar_url:
-			icon_url = user.avatar_url
-		else:
-			if ctx.guild.icon_url:
-				icon_url = ctx.guild.icon_url
-		e.set_author(name=user.display_name, icon_url=icon_url)
-		e.description = f'__**Rank:**__ [`{guild_rank}`] __**Level:**__ [`{level}`] __**XP:**__ [`{xp - base_xp}/{max_xp - base_xp}`]\n' \
-			f'__**Total XP:**__ [`{xp}`] __**Required:**__ [`{max_xp - xp}`]\n'
-		e.set_footer(text=self.msg_footer().replace('[result]', f'XP Cleanup: {results}'))
-		await ctx.send(embed=e)
+		length = ((100 * ((xp - base_xp) / (max_xp - base_xp))) * 1024) / 100
+		ranking = f'Rank: [{guild_rank}] Level: [{level}] XP: [{xp - base_xp}/{max_xp - base_xp}]\n\n' \
+			f'Total XP: [{xp}] Required: [{max_xp - xp}]\n'
+		def font(size):
+			return ImageFont.truetype("./utils/fonts/Modern_Sans_Light.otf", size)
+		def add_corners(im, rad):
+			circle = Image.new('L', (rad * 2, rad * 2), 0)
+			draw = ImageDraw.Draw(circle)
+			draw.ellipse((0, 0, rad * 2, rad * 2), fill=255)
+			alpha = Image.new('L', im.size, 255)
+			w, h = im.size
+			alpha.paste(circle.crop((0, 0, rad, rad)), (0, 0))
+			alpha.paste(circle.crop((0, rad, rad, rad * 2)), (0, h - rad))
+			alpha.paste(circle.crop((rad, 0, rad * 2, rad)), (w - rad, 0))
+			alpha.paste(circle.crop((rad, rad, rad * 2, rad * 2)), (w - rad, h - rad))
+			im.putalpha(alpha)
+			return im
+		color = tuple(int(str(user.color).lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
+		card = Image.new('RGBA', (1024, 256), color)
+		gradient = Image.new('L', (1, 255))
+		for y in range(255):
+			gradient.putpixel((0, 254 - y), y)
+		alpha = gradient.resize(card.size)
+		card.putalpha(alpha)
+		avatar = Image.open(BytesIO(requests.get(user.avatar_url).content)).convert('RGBA')
+		avatar = add_corners(avatar.resize((175, 175), Image.BICUBIC), 87)
+		card.paste(avatar, (42, 42), avatar)
+		draw = ImageDraw.Draw(card)
+		draw.text((250, 65), ranking, (255, 255, 255), font=font(50))
+		draw.line((0, 250, length, 250), fill=(255, 255, 255), width=10)
+		draw.ellipse((42, 42, 218, 218), outline='black', width=6)
+		card.save('rank.png', 'png')
+		await ctx.send(file=discord.File('rank.png'))
+		os.remove('rank.png')
 
 	@commands.command(name="leaderboard", aliases=["lb"])
 	@commands.cooldown(1, 10, commands.BucketType.channel)
@@ -745,6 +764,10 @@ class Leaderboards(commands.Cog):
 										if role not in m.author.roles:
 											try: await m.author.add_roles(role)
 											except: return await m.channel.send('Failed to give you your role rewards')
+											e = discord.Embed(color=colors.fate())
+											e.description = f'Congratulations {m.author.mention}, you already unlocked {role.mention}, but here you go anyways'
+											try: await m.channel.send(embed=e)
+											except: await m.channel.send(f'Congratulations {m.author.mention}, you already unlocked {role.name}, but here you go anyways')
 							if new_level in self.role_rewards[guild_id]:
 								stacking = bool(self.role_rewards[guild_id][new_level]['stacking'])
 								if not stacking:
