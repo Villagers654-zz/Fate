@@ -45,7 +45,7 @@ class Config(commands.Cog):
 
 	def selfroles(self, id):
 		with open("./data/userdata/selfroles.json", "r") as f:
-			if id in json.load(f)["message"]:
+			if id in json.load(f):
 				return "active"
 			return "inactive"
 

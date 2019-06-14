@@ -5,11 +5,6 @@ class Embeds(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 
-	def luck(ctx):
-		return ctx.message.author.id == 264838866480005122
-
-# ~== Main ==~
-
 	@commands.command()
 	async def embed(self, ctx, *, arg):
 		try:
@@ -76,4 +71,4 @@ class Embeds(commands.Cog):
 			await ctx.send(f'**```ERROR: {type(e).__name__} - {e}```**')
 
 def setup(bot):
-    bot.add_cog(embedsclass(bot))
+	bot.add_cog(Embeds(bot))

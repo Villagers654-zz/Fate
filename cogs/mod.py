@@ -486,8 +486,8 @@ class Mod(commands.Cog):
 				del self.purge[channel_id]
 				return await ctx.send("You cannot purge more than 1000 messages at a time")
 			try:
-				await ctx.message.channel.purge(limit=amount, before=ctx.message)
-				await ctx.send(f'{ctx.author.mention}, successfully purged {amount} messages', delete_after=5)
+				msgs = await ctx.message.channel.purge(limit=amount, before=ctx.message)
+				await ctx.send(f'{ctx.author.mention}, successfully purged {len(msgs)} messages', delete_after=5)
 				return await ctx.message.delete()
 			except Exception as e:
 				await ctx.send(e)
@@ -502,8 +502,10 @@ class Mod(commands.Cog):
 				del self.purge[channel_id]
 				return await ctx.send("You cannot purge more than 250 user messages at a time")
 			try:
-				await ctx.channel.purge(limit=amount, before=ctx.message, check=lambda m: m.author == ctx.author)
-				await ctx.send(f'{ctx.author.mention}, purged {amount} messages from {user.display_name}', delete_after=5)
+				msgs = await ctx.channel.purge(limit=amount, before=ctx.message, check=lambda m: m.author == ctx.author)
+				await ctx.send(f'{ctx.author.mention}, purged {len(msgs)} messages from {user.display_name}', delete_after=5)
+				if len(msgs) == 0:
+					await ctx.send('"amount" is the amount of messages to search through, not delete', delete_after=10)
 				return await ctx.message.delete()
 			except Exception as e:
 				await ctx.send(e)
@@ -514,8 +516,10 @@ class Mod(commands.Cog):
 			if amount > 250:
 				return await ctx.send("You cannot purge more than 250 images at a time")
 			try:
-				await ctx.channel.purge(limit=amount, before=ctx.message, check=lambda m: len(m.attachments) > 0)
-				await ctx.send(f"{ctx.author.mention}, purged {amount} images", delete_after=5)
+				msgs = await ctx.channel.purge(limit=amount, before=ctx.message, check=lambda m: len(m.attachments) > 0)
+				await ctx.send(f"{ctx.author.mention}, purged {len(msgs)} images", delete_after=5)
+				if len(msgs) == 0:
+					await ctx.send('"amount" is the amount of messages to search through, not delete', delete_after=10)
 				return await ctx.message.delete()
 			except Exception as e:
 				await ctx.send(e)
@@ -525,8 +529,10 @@ class Mod(commands.Cog):
 			if amount > 250:
 				return await ctx.send("You cannot purge more than 250 embeds at a time")
 			try:
-				await ctx.channel.purge(limit=amount, before=ctx.message, check=lambda m: len(m.embeds) > 0)
-				await ctx.send(f"{ctx.author.mention}, purged {amount} embeds", delete_after=5)
+				msgs = await ctx.channel.purge(limit=amount, before=ctx.message, check=lambda m: len(m.embeds) > 0)
+				await ctx.send(f"{ctx.author.mention}, purged {len(msgs)} embeds", delete_after=5)
+				if len(msgs) == 0:
+					await ctx.send('"amount" is the amount of messages to search through, not delete', delete_after=10)
 				return await ctx.message.delete()
 			except Exception as e:
 				await ctx.send(e)
@@ -536,8 +542,10 @@ class Mod(commands.Cog):
 			if amount > 250:
 				return await ctx.send("You cannot purge more than 250 user messages at a time")
 			try:
-				await ctx.channel.purge(limit=amount, before=ctx.message, check=lambda m: m.author.bot is False)
-				await ctx.send(f"{ctx.author.mention}, purged {amount} user messages", delete_after=5)
+				msgs = await ctx.channel.purge(limit=amount, before=ctx.message, check=lambda m: m.author.bot is False)
+				await ctx.send(f"{ctx.author.mention}, purged {len(msgs)} user messages", delete_after=5)
+				if len(msgs) == 0:
+					await ctx.send('"amount" is the amount of messages to search through, not delete', delete_after=10)
 				return await ctx.message.delete()
 			except Exception as e:
 				await ctx.send(e)
@@ -547,8 +555,10 @@ class Mod(commands.Cog):
 			if amount > 250:
 				return await ctx.send("You cannot purge more than 250 bot messages at a time")
 			try:
-				await ctx.channel.purge(limit=amount, before=ctx.message, check=lambda m: m.author.bot is True)
-				await ctx.send(f"{ctx.author.mention}, purged {amount} bot messages", delete_after=5)
+				msgs = await ctx.channel.purge(limit=amount, before=ctx.message, check=lambda m: m.author.bot is True)
+				await ctx.send(f"{ctx.author.mention}, purged {len(msgs)} bot messages", delete_after=5)
+				if len(msgs) == 0:
+					await ctx.send('"amount" is the amount of messages to search through, not delete', delete_after=10)
 				return await ctx.message.delete()
 			except Exception as e:
 				await ctx.send(e)
@@ -558,8 +568,10 @@ class Mod(commands.Cog):
 			if amount > 250:
 				return await ctx.send("You cannot purge more than 250 mentions at a time")
 			try:
-				await ctx.channel.purge(limit=amount, before=ctx.message, check=lambda m: len(m.mentions) > 0)
-				await ctx.send(f"{ctx.author.mention}, purged {amount} mentions", delete_after=5)
+				msgs = await ctx.channel.purge(limit=amount, before=ctx.message, check=lambda m: len(m.mentions) > 0)
+				await ctx.send(f"{ctx.author.mention}, purged {len(msgs)} mentions", delete_after=5)
+				if len(msgs) == 0:
+					await ctx.send('"amount" is the amount of messages to search through, not delete', delete_after=10)
 				return await ctx.message.delete()
 			except Exception as e:
 				await ctx.send(e)
@@ -570,8 +582,10 @@ class Mod(commands.Cog):
 		if amount > 250:
 			return await ctx.send("You cannot purge more than 250 phrases at a time")
 		try:
-			await ctx.channel.purge(limit=amount, before=ctx.message, check=lambda m: phrase.lower() in m.content.lower())
-			await ctx.send(f"{ctx.author.mention}, purged {amount} messages", delete_after=5)
+			msgs = await ctx.channel.purge(limit=amount, before=ctx.message, check=lambda m: phrase.lower() in m.content.lower())
+			await ctx.send(f"{ctx.author.mention}, purged {len(msgs)} messages", delete_after=5)
+			if len(msgs) == 0:
+				await ctx.send('"amount" is the amount of messages to search through, not delete', delete_after=10)
 			return await ctx.message.delete()
 		except Exception as e:
 			await ctx.send(e)
@@ -654,6 +668,34 @@ class Mod(commands.Cog):
 			else: await ctx.send(f'**Unbanned {user}**')
 			del self.timers['ban'][guild_id][user_id]
 			self.save_json()
+
+	@commands.command(name='bans')
+	@commands.cooldown(1, 10, commands.BucketType.channel)
+	@commands.guild_only()
+	@commands.bot_has_permissions(embed_links=True, ban_members=True)
+	async def bans(self, ctx):
+		bans = await ctx.guild.bans()
+		ban_list = ''
+		e = discord.Embed(color=colors.fate())
+		icon_url = self.bot.user.avatar_url
+		if ctx.guild.owner.avatar_url:
+			icon_url = ctx.guild.owner.avatar_url
+		e.set_author(name=f'{ctx.guild.name} bans', icon_url=icon_url)
+		e.set_thumbnail(url=ctx.guild.icon_url)
+		for BanEntry in bans:
+			user = BanEntry.user  # type: discord.User
+			reason = BanEntry.reason  # type: str
+			reason = reason if reason != "Unspecified" else 'unspecified reasons'
+			ban_list += f'__**{user}:**__, **reason:** [`{reason}`]\n'
+		ban_list = [ban_list[i:i + 1000] for i in range(0, len(ban_list), 1000)]
+		if len(ban_list) > 7:
+			ban_list = ban_list[:7]
+			e.set_footer(text='Character Limit Reached')
+		for i in range(len(ban_list)):
+			if i == 0:
+				e.description = ban_list[i]; continue
+			e.add_field(name='~', value=ban_list[i])
+		await ctx.send(embed=e)
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)

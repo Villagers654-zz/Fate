@@ -73,6 +73,7 @@ class SelfRoles(commands.Cog):
 		await ctx.message.delete()
 		selfroles = []
 		role_menu = ''
+		role_menu_mentions = ''
 		completed = False
 		while not completed:
 			reply = await wait_for_msg()
@@ -97,11 +98,21 @@ class SelfRoles(commands.Cog):
 				if not reply:
 					return
 				if 'embed' in reply.content.lower():
+					m = await ctx.send('Should I use role names or role mentions?\nReply with "names" or "mentions"')
+					r = await wait_for_msg()
+					if not r:
+						return
+					if 'name' in r.content.lower():
+						menu = role_menu
+					else:
+						menu = role_menu_mentions
 					e = discord.Embed(color=colors.fate())
 					e.set_author(name=f'Self-Role Menu: {category}', icon_url='https://cdn.discordapp.com/emojis/513634338487795732.png?v=1')
 					e.set_thumbnail(url='https://cdn.discordapp.com/attachments/514213558549217330/514345278669848597/8yx98C.gif')
-					e.description = role_menu
+					e.description = menu
 					menu = await ctx.send(embed=e)
+					await m.delete()
+					await r.delete()
 				else:
 					menu = await ctx.send(f'__**Self-Role Menu:**__ **{category}**\n{role_menu}')
 				await msg.delete()
@@ -133,6 +144,7 @@ class SelfRoles(commands.Cog):
 				emoji_id = emoji.id
 			selfroles.append([emoji_id, role.id])
 			role_menu += f'{emoji} : {role.name}\n\n'
+			role_menu_mentions += f'{emoji} : {role.mention}\n\n'
 			e.description = f'{info}\n\n{role_menu}'
 			await msg.edit(embed=e)
 

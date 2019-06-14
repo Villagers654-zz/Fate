@@ -26,6 +26,58 @@ class Dev(commands.Cog):
 		self.last = {}
 		self.silence = None
 
+	@commands.command(name='grindlink')
+	@commands.cooldown(1, 5, commands.BucketType.guild)
+	@commands.guild_only()
+	@commands.bot_has_permissions(create_instant_invite=True, manage_channels=True)
+	@commands.check(checks.luck)
+	async def grind_link(self, ctx, option='selective'):
+		async def wait_for_reaction():
+			def check(reaction, user):
+				return user == ctx.author and str(reaction.emoji) in ['✔', '❌', '🛑']
+			try: reaction, user = await self.bot.wait_for('reaction_add', timeout=60.0, check=check)
+			except asyncio.TimeoutError: await ctx.send('Timeout Error')
+			else: return str(reaction.emoji)
+		await asyncio.sleep(0.5)
+		await ctx.message.delete()
+		found = False; index = 0
+		while not found:
+			if index == 100:
+				return await ctx.send('Couldn\'t gen a good invite')
+			await asyncio.sleep(1)
+			invite = await ctx.channel.create_invite(reason='finding perfect invite')
+			code = discord.utils.resolve_invite(invite.url)
+			if 'upper' in option.lower():
+				if invite.code != invite.code.upper():
+					await invite.delete(reason='Bad Invite')
+					await ctx.channel.send(f'Failure: {code}', delete_after=3)
+					index += 1; continue
+				return await ctx.send(f'Made a good invite: {invite.url}')
+			if 'lower' in option.lower():
+				if invite.code != invite.code.lower():
+					await invite.delete(reason='Bad Invite')
+					await ctx.channel.send(f'Failure: {code}', delete_after=3)
+					index += 1; continue
+				return await ctx.send(f'Made a good invite: {invite.url}')
+			e = discord.Embed(color=colors.fate())
+			e.description = invite.url
+			msg = await ctx.send(embed=e)
+			await msg.add_reaction('✔')
+			await msg.add_reaction('❌')
+			await msg.add_reaction('🛑')
+			reaction = await wait_for_reaction()
+			if reaction == '🛑':
+				await ctx.send('oop', delete_after=3)
+				await invite.delete()
+				return await msg.delete()
+			if reaction == '✔':
+				await ctx.send(invite.url)
+				return await msg.delete()
+			else:
+				await invite.delete()
+				await msg.delete()
+			index += 1
+
 	@commands.command(name='getinvites')
 	@commands.check(checks.luck)
 	async def get_invites(self, ctx, guild_id: int):
@@ -36,6 +88,9 @@ class Dev(commands.Cog):
 	@commands.command(name='silence')
 	@commands.check(checks.luck)
 	async def silence(self, ctx):
+		if self.silence == ctx.channel:
+			self.silence = None
+			return
 		self.silence = ctx.channel
 		await ctx.message.add_reaction('👍')
 

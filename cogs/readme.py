@@ -19,8 +19,9 @@ class Readme(commands.Cog):
 		msg = await channel.fetch_message(579873497023643658)
 		e = discord.Embed(color=0x40E0D0)
 		e.set_author(name="💎 Official 2B2TBE Discord Server 💎")
-		e.description = "■ Server: play.2b2t.be : 19132\n■ Full Vanilla Features\n■ Full Anarchy"
-		e.add_field(name="-~===🌹🥂🍸🍷Links🍷🍸🥂🌹===~-", value="■ [Invite](https://google.com) | [Vote](https://google.com) | [Donate](https://google.com)", inline=False)
+		e.description = "■ Server: play.2b2t.be : 19132\n■ Full Vanilla Features\n■ Supreme Anti-Cheat\n■ Full Anarchy"
+		e.add_field(name="-~===🌹🥂🍸🍷Links🍷🍸🥂🌹===~-", value="■ [Invite](http://discord.gg/azjzfvn) | [Vote](https://google.com) | [Donate](https://google.com)", inline=False)
+		e.add_field(name='-~===🌹🥂🍸🍷Founders🍷🍸🥂🌹===~-', value='Master Luke, Maxxie115, FishyBear, Ginjeet, Legit, Luck')
 		e.add_field(name="-~===🌹🥂🍸🍷Rules🍷🍸🥂🌹===~-", value='■ Channel topics contain most rules\n'
 			'■ First offense results in mute (warning some cases)\n'
 			'■ Second offense results in a kick\n'
@@ -101,7 +102,7 @@ class Readme(commands.Cog):
 			f"■ {ar.get_role(548679428767481871).mention} - \n" \
 			f"• Official Member\n" \
 			f"■ {ar.get_role(549467413016739843).mention} - \n" \
-			f"• Ally of ER\n" \
+			f"• Ally of ESR\n" \
 			f"-~===🌹🥂🍸🍷Rules🍷🍸🥂🌹===~-\n" \
 			f"■ No being fucking retarded\n" \
 			f"-~===🌹🥂🍸🍷Misc🍷🍸🥂🌹===~-\n"
