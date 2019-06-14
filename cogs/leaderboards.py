@@ -291,8 +291,7 @@ class Leaderboards(commands.Cog):
 			user = self.bot.get_user(int(user_id))
 			if isinstance(user, discord.User):
 				name = user.name
-			level = str(xp / 750)
-			level = level[:level.find(".")]
+			level = self.get_level_info(xp)['level']
 			e.description += f'**#{rank}.** `{name}`: {level} | {xp}\n'
 			rank += 1
 		e.set_thumbnail(url='https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png')
@@ -309,12 +308,11 @@ class Leaderboards(commands.Cog):
 		e.description = ""
 		rank = 1
 		for guild_id, xp in (sorted({i:sum(x.values()) for i, x in self.guilds_data.items()}.items(), key=lambda kv: kv[1], reverse=True))[:8]:
-			name = "INVALID-GUILD"
 			guild = self.bot.get_guild(int(guild_id))
-			if isinstance(guild, discord.Guild):
-				name = guild.name
-			else:
+			if not isinstance(guild, discord.Guild):
 				del self.guilds_data[guild_id]
+				continue
+			name = guild.name
 			e.description += f'**#{rank}.** `{name}`: {xp}\n'
 			rank += 1
 		if ctx.guild.icon_url:
@@ -341,8 +339,7 @@ class Leaderboards(commands.Cog):
 			user = self.bot.get_user(int(user_id))
 			if isinstance(user, discord.User):
 				name = user.name
-			level = str(xp / 750)
-			level = level[:level.find(".")]
+			level = self.get_level_info(xp)['level']
 			e.description += f'**#{rank}.** `{name}`: {level} | {xp}\n'
 			rank += 1
 		if ctx.guild.icon_url:
@@ -369,8 +366,7 @@ class Leaderboards(commands.Cog):
 			user = self.bot.get_user(int(user_id))
 			if isinstance(user, discord.User):
 				name = user.name
-			level = str(xp / 750)
-			level = level[:level.find(".")]
+			level = self.get_level_info(xp)['level']
 			e.description += f'**#{rank}.** `{name}`: {level} | {xp}\n'
 			rank += 1
 		e.set_thumbnail(url='https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png')
@@ -435,8 +431,7 @@ class Leaderboards(commands.Cog):
 			user = self.bot.get_user(int(user_id))
 			if isinstance(user, discord.User):
 				name = user.name
-			level = str(xp / 750)
-			level = level[:level.find(".")]
+			level = self.get_level_info(xp)['level']
 			leaderboard += f'**#{rank}.** `{name}`: {level} | {xp}\n'
 		e.description = leaderboard
 		gleaderboard = ''
@@ -446,8 +441,7 @@ class Leaderboards(commands.Cog):
 			user = self.bot.get_user(int(user_id))
 			if isinstance(user, discord.User):
 				name = user.name
-			level = str(xp / 750)
-			level = level[:level.find(".")]
+			level = self.get_level_info(xp)['level']
 			gleaderboard += f'**#{rank}.** `{name}`: {level} | {xp}\n'
 			rank += 1
 		e.add_field(name='Global Leaderboard', value=gleaderboard, inline=False)
@@ -474,8 +468,7 @@ class Leaderboards(commands.Cog):
 			user = self.bot.get_user(int(user_id))
 			if isinstance(user, discord.User):
 				name = user.name
-			level = str(xp / 750)
-			level = level[:level.find(".")]
+			level = self.get_level_info(xp)['level']
 			mleaderboard += f'**#{rank}.** `{name}`: {level} | {xp}\n'
 			rank += 1
 		e.add_field(name='Monthly Leaderboard', value=mleaderboard, inline=False)
@@ -489,8 +482,7 @@ class Leaderboards(commands.Cog):
 			user = self.bot.get_user(int(user_id))
 			if isinstance(user, discord.User):
 				name = user.name
-			level = str(xp / 750)
-			level = level[:level.find(".")]
+			level = self.get_level_info(xp)['level']
 			gmleaderboard += f'**#{rank}.** `{name}`: {level} | {xp}\n'
 			rank += 1
 		e.add_field(name='Global Monthly Leaderboard', value=gmleaderboard, inline=False)
