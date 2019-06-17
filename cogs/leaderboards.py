@@ -1,20 +1,22 @@
-from datetime import datetime, timedelta
-from utils.utils import bytes2human
-from discord.ext import commands
-from utils import checks, colors
-from time import time, monotonic
 from os.path import isfile
-from PIL import ImageDraw
-from PIL import ImageFont
-from io import BytesIO
-from PIL import Image
-import requests
-import discord
+import json
 import asyncio
 import random
-import psutil
-import json
+import requests
+from time import time, monotonic
+from datetime import datetime, timedelta
 import os
+from math import sqrt
+
+from discord.ext import commands
+import discord
+from PIL import ImageDraw
+from PIL import ImageFont
+from PIL import Image
+from io import BytesIO
+from sympy import Symbol, solve, log
+
+from utils import checks, colors
 
 config = {'channel_id': 510410941809033216, 'message': None}
 
@@ -121,15 +123,38 @@ class Leaderboards(commands.Cog):
 					await msg.delete()
 					return roles[role - 1]
 
-	def get_level_info(self, total_xp):
-		level = 0; level_xp = 0
-		level_end_xp = round(250 * (level + 1) * 1.21)
+	def calc_lvl(self, total_xp):
+		def x(level):
+			x = 1
+			for i in range(level):
+				if x >= 5:
+					x += 0.0625
+					continue
+				x += 0.125
+			return x
+
+		level = 0; levels = [[0, 250]]
+		lvl_up = 1; previous = 250
+		difference = 0; progress = 0
 		for xp in range(total_xp):
-			if xp > 250 * (level + 1) * 1.21:
-				level_xp = round(250 * (level + 1) * 1.21)
+			requirement = 0
+			for lvl, xp_req in levels:
+				requirement += xp_req
+			if xp > requirement:
 				level += 1
-				level_end_xp = round(250 * (level + 1) * 1.21)
-		return {'level': level, 'base_xp': level_xp, 'max_xp': level_end_xp}
+				levels.append([level, 250 * x(level)])
+				lvl_up = 250 * x(level + 1)
+				previous = 250 * x(level - 1)
+				difference = round(lvl_up - previous)
+			progress = xp - (requirement - previous)
+
+		return {
+			'level': round(level),
+			'level_up': round(lvl_up),
+			'previous': round(previous),
+			'difference': round(difference),
+			'xp': round(progress)
+		}
 
 	async def xp_dump_task(self):
 		while True:
@@ -199,7 +224,12 @@ class Leaderboards(commands.Cog):
 						del self.vclb[guild_id][user_id]
 		return str(round((monotonic() - before) * 1000)) + 'ms'
 
-	@commands.command(name='rank', aliases=['level', 'xp'])
+	@commands.command(name='level')
+	async def level(self, ctx):
+		total_xp = self.guilds_data[str(ctx.guild.id)][str(ctx.author.id)]
+		await ctx.send(self.get_level_info(total_xp))
+
+	@commands.command(name='rank', aliases=['xp'])
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.guild_only()
 	@commands.bot_has_permissions(attach_files=True)
@@ -213,13 +243,14 @@ class Leaderboards(commands.Cog):
 			guild_rank += 1
 			if user_id == id:
 				break
-		xp = self.guilds_data[guild_id][user_id]
-		dat = self.get_level_info(xp)
+		total_xp = self.guilds_data[guild_id][user_id]
+		dat = self.calc_lvl(total_xp)
 		level = dat['level']
-		base_xp = dat['base_xp']
-		max_xp = dat['max_xp']
+		base_xp = dat['previous']
+		max_xp = dat['level_up']
+		xp = dat['xp']
 		length = ((100 * ((xp - base_xp) / (max_xp - base_xp))) * 1024) / 100
-		ranking = f'Rank: [{guild_rank}] Level: [{level}] XP: [{xp - base_xp}/{max_xp - base_xp}]\n\n' \
+		ranking = f'Rank: [{guild_rank}] Level: [{level}] XP: [{xp}/{max_xp}]\n\n' \
 			f'Total XP: [{xp}] Required: [{max_xp - xp}]\n'
 		def font(size):
 			return ImageFont.truetype("./utils/fonts/Modern_Sans_Light.otf", size)
@@ -267,7 +298,7 @@ class Leaderboards(commands.Cog):
 			user = self.bot.get_user(int(user_id))
 			if isinstance(user, discord.User):
 				name = user.name
-			level = self.get_level_info(xp)['level']
+			level = self.calc_lvl(xp)['level']
 			e.description += f'**#{rank}.** `{name}`: {level} | {xp}\n'
 			rank += 1
 		if ctx.guild.icon_url:
@@ -291,7 +322,7 @@ class Leaderboards(commands.Cog):
 			user = self.bot.get_user(int(user_id))
 			if isinstance(user, discord.User):
 				name = user.name
-			level = self.get_level_info(xp)['level']
+			level = self.calc_lvl(xp)['level']
 			e.description += f'**#{rank}.** `{name}`: {level} | {xp}\n'
 			rank += 1
 		e.set_thumbnail(url='https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png')
@@ -339,7 +370,7 @@ class Leaderboards(commands.Cog):
 			user = self.bot.get_user(int(user_id))
 			if isinstance(user, discord.User):
 				name = user.name
-			level = self.get_level_info(xp)['level']
+			level = self.calc_lvl(xp)['level']
 			e.description += f'**#{rank}.** `{name}`: {level} | {xp}\n'
 			rank += 1
 		if ctx.guild.icon_url:
@@ -366,7 +397,7 @@ class Leaderboards(commands.Cog):
 			user = self.bot.get_user(int(user_id))
 			if isinstance(user, discord.User):
 				name = user.name
-			level = self.get_level_info(xp)['level']
+			level = self.calc_lvl(xp)['level']
 			e.description += f'**#{rank}.** `{name}`: {level} | {xp}\n'
 			rank += 1
 		e.set_thumbnail(url='https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png')
@@ -431,7 +462,7 @@ class Leaderboards(commands.Cog):
 			user = self.bot.get_user(int(user_id))
 			if isinstance(user, discord.User):
 				name = user.name
-			level = self.get_level_info(xp)['level']
+			level = self.calc_lvl(xp)['level']
 			leaderboard += f'**#{rank}.** `{name}`: {level} | {xp}\n'
 		e.description = leaderboard
 		gleaderboard = ''
@@ -441,7 +472,7 @@ class Leaderboards(commands.Cog):
 			user = self.bot.get_user(int(user_id))
 			if isinstance(user, discord.User):
 				name = user.name
-			level = self.get_level_info(xp)['level']
+			level = self.calc_lvl(xp)['level']
 			gleaderboard += f'**#{rank}.** `{name}`: {level} | {xp}\n'
 			rank += 1
 		e.add_field(name='Global Leaderboard', value=gleaderboard, inline=False)
@@ -468,7 +499,7 @@ class Leaderboards(commands.Cog):
 			user = self.bot.get_user(int(user_id))
 			if isinstance(user, discord.User):
 				name = user.name
-			level = self.get_level_info(xp)['level']
+			level = self.calc_lvl(xp)['level']
 			mleaderboard += f'**#{rank}.** `{name}`: {level} | {xp}\n'
 			rank += 1
 		e.add_field(name='Monthly Leaderboard', value=mleaderboard, inline=False)
@@ -482,7 +513,7 @@ class Leaderboards(commands.Cog):
 			user = self.bot.get_user(int(user_id))
 			if isinstance(user, discord.User):
 				name = user.name
-			level = self.get_level_info(xp)['level']
+			level = self.calc_lvl(xp)['level']
 			gmleaderboard += f'**#{rank}.** `{name}`: {level} | {xp}\n'
 			rank += 1
 		e.add_field(name='Global Monthly Leaderboard', value=gmleaderboard, inline=False)
@@ -583,7 +614,7 @@ class Leaderboards(commands.Cog):
 			return self.save_data()
 		if args[0] == 'disable':
 			if guild_id not in self.toggle:
-				return await ctx.send('Role rewards isn\'t enabled')
+				return await ctx.send('Role rewards aren\'t enabled')
 			index = self.toggle.index(guild_id)
 			self.toggle.pop(index)
 			await ctx.send('Disabled role rewards')
@@ -737,7 +768,7 @@ class Leaderboards(commands.Cog):
 					if author_id not in self.monthly_guilds_data[guild_id]:
 						self.monthly_guilds_data[guild_id][author_id] = {}
 
-					previous_level = str(self.get_level_info(self.guilds_data[guild_id][user_id])['level'])
+					previous_level = str(self.calc_lvl(self.guilds_data[guild_id][user_id])['level'])
 
 					self.global_data[author_id] += 1
 					self.guilds_data[guild_id][author_id] += 1
@@ -745,7 +776,7 @@ class Leaderboards(commands.Cog):
 					self.monthly_guilds_data[guild_id][author_id][msg_id] = time()
 					self.cd[author_id] = time() + 10
 
-					new_level = str(self.get_level_info(self.guilds_data[guild_id][user_id])['level'])
+					new_level = str(self.calc_lvl(self.guilds_data[guild_id][user_id])['level'])
 
 					if previous_level != new_level:
 						if guild_id in self.toggle:

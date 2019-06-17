@@ -112,10 +112,16 @@ class Mod(commands.Cog):
 		return
 
 	def convert_arg_to_timer(self, timer):
-		time = timer.replace('s', 'seconds').replace('1 seconds', '1 second')
-		time = time.replace("m", " minutes").replace("1 minutes", "1 minute")
-		time = time.replace("h", " hours").replace("1 hours", "1 hour")
-		time = time.replace("d", " days").replace("1 days", "1 day")
+		if 'd' in timer:
+			time = timer.replace("d", " days").replace("1 days", "1 day")
+		else:
+			if 'h' in timer:
+				time = timer.replace("h", " hours").replace("1 hours", "1 hour")
+			else:
+				if 'm' in timer:
+					time = timer.replace("m", " minutes").replace("1 minutes", "1 minute")
+				else:
+					time = timer.replace('s', 'seconds').replace('1 seconds', '1 second')
 		if "d" in str(timer):
 			try: timer = float(timer.replace("d", "")) * 60 * 60 * 24
 			except Exception as e: return (time, e)
@@ -829,6 +835,7 @@ class Mod(commands.Cog):
 				return await ctx.send("That user is above your paygrade, take a seat")
 			guild_id = str(ctx.guild.id)
 			user_id = str(user.id)
+
 			mute_role = None
 			for role in ctx.guild.roles:
 				if role.name.lower() == "muted":
@@ -842,10 +849,9 @@ class Mod(commands.Cog):
 							await channel.set_permissions(mute_role, speak=False)
 							await asyncio.sleep(0.5)
 			if not mute_role:
-				bot = discord.utils.get(ctx.guild.members, id=self.bot.user.id)
-				perms = [perm for perm, value in bot.guild_permissions if value]
-				if "manage_channels" not in perms:
-					return await ctx.send("No muted role found, and I'm missing manage_channel permissions to set one up")
+				perms = [perm for perm, value in ctx.guild.me.guild_permissions if value]
+				if 'manage_channels' not in perms:
+					return await ctx.send('No muted role found, and I\'m missing manage_channel permissions to set one up')
 				mute_role = await ctx.guild.create_role(name="Muted", color=discord.Color(colors.black()))
 				for channel in ctx.guild.text_channels:
 					await channel.set_permissions(mute_role, send_messages=False)
@@ -854,46 +860,48 @@ class Mod(commands.Cog):
 					await channel.set_permissions(mute_role, speak=False)
 					await asyncio.sleep(0.5)
 			if mute_role in user.roles:
-				return await ctx.send(f"{user.display_name} is already muted")
+				return await ctx.send(f'{user.display_name} is already muted')
 			if not timer:
 				if guild_id not in self.roles:
 					self.roles[guild_id] = {}
 				self.roles[guild_id][user_id] = []
-				for role in user.roles:
+				await user.add_roles(mute_role)
+				await ctx.send(f'Muted {user.display_name}')
+				await ctx.message.add_reaction('👍')
+				for role in [role for role in sorted(user.roles, reverse=True) if role is not mute_role]:
 					try:
 						await user.remove_roles(role)
 						self.roles[guild_id][user_id].append(role.id)
-						await asyncio.sleep(0.5)
+						await asyncio.sleep(1)
 					except:
 						pass
-				self.save_json()
-				await user.add_roles(mute_role)
-				await ctx.send(f"Muted {user.display_name}")
-				return await ctx.message.add_reaction("👍")
+				return self.save_json()
 			for x in list(timer):
-				if x not in "1234567890dhms":
+				if x not in '1234567890dhms':
 					return await ctx.send("Invalid character used in timer field")
 			timer, time = self.convert_arg_to_timer(timer)
 			if not isinstance(timer, float):
 				return await ctx.send("Invalid character used in timer field")
+			await user.add_roles(mute_role)
+			if not timer:
+				await ctx.send(f"**Muted:** {user.name}")
+			else:
+				await ctx.send(f"Muted **{user.name}** for {time}")
 			removed_roles = []
-			for role in user.roles:
+			for role in [role for role in sorted(user.roles, reverse=True) if role is not mute_role]:
 				try:
 					await user.remove_roles(role)
 					removed_roles.append(role.id)
 					await asyncio.sleep(0.5)
 				except:
 					pass
-			await user.add_roles(mute_role)
-			if timer is None:
-				return await ctx.send(f"**Muted:** {user.name}")
-			await ctx.send(f"Muted **{user.name}** for {time}")
 		timer_info = {
 			'channel': ctx.channel.id,
 			'user': user.id,
 			'end_time': str(datetime.now() + timedelta(seconds=round(timer))),
 			'mute_role': mute_role.id,
-			'roles': removed_roles}
+			'roles': removed_roles
+		}
 		if guild_id not in self.timers['mute']:
 			self.timers['mute'][guild_id] = {}
 		self.timers['mute'][guild_id][user_id] = timer_info

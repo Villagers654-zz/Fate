@@ -125,9 +125,18 @@ class Utility(commands.Cog):
 			f'**• Status** [`{user.status}`]\n' \
 			f'**• Role** [{user.top_role.mention}]'
 		e.add_field(name='◈ Main ◈', value=main, inline=False)
+		roles = ['']; index = 0
+		for role in sorted(user.roles, reverse=True):
+			if len(roles[index]) + len(role.mention) + 2 > 1000:
+				roles.append('')
+				index += 1
+			roles[index] += f'{role.mention} '
+		for role_list in roles:
+			index = roles.index(role_list)
+			e.add_field(name='◈ Roles ◈' if index is 0 else '~', value=role_list, inline=False)
 		permissions = user.guild_permissions
 		notable = ['view_audit_log', 'manage_roles', 'manage_channels', 'manage_emojis',
-		           'kick_members', 'ban_members', 'manage_messages', 'mention_everyone']
+			'kick_members', 'ban_members', 'manage_messages', 'mention_everyone']
 		perms = ', '.join(perm for perm, value in permissions if value and perm in notable)
 		perms = 'administrator' if permissions.administrator else perms
 		if perms:
@@ -155,7 +164,7 @@ class Utility(commands.Cog):
 			f"**Integrated:** [{role.managed}]\n"
 			f"**Position:** [{role.position}]\n", inline=False)
 		notable = ['view_audit_log', 'manage_roles', 'manage_channels', 'manage_emojis',
-		           'kick_members', 'ban_members', 'manage_messages', 'mention_everyone']
+			'kick_members', 'ban_members', 'manage_messages', 'mention_everyone']
 		perms = ', '.join(perm for perm, value in role.permissions if value and perm in notable)
 		perms = 'administrator' if role.permissions.administrator else perms
 		e.add_field(name="◈ Perms ◈", value=f"```{perms}```", inline=False)
@@ -164,30 +173,28 @@ class Utility(commands.Cog):
 
 	@commands.command(name='makepoll', aliases=['mp'])
 	@commands.cooldown(1, 5, commands.BucketType.channel)
-	@commands.has_permissions(manage_messages=True)
+	@commands.has_permissions(add_reactions=True)
+	@commands.bot_has_permissions(add_reactions=True)
 	async def makepoll(self, ctx):
-		c = 0
-		async for msg in ctx.channel.history(limit=3):
-			if c == 1:
+		async for msg in ctx.channel.history(limit=2):
+			if msg != ctx.message:
 				await msg.add_reaction(':approve:506020668241084416')
 				await msg.add_reaction(':unapprove:506020690584010772')
 				await ctx.message.delete()
-				break;
-			c += 1
 
 	@commands.command(name='members', aliases=['membercount'])
+	@commands.cooldown(1, 5, commands.BucketType.channel)
+	@commands.guild_only()
 	@commands.bot_has_permissions(embed_links=True)
 	async def members(self, ctx):
-		humans = 0
-		bots = 0
-		online = 0
+		humans = 0; bots = 0; online = 0
 		for member in ctx.guild.members:
 			if member.bot:
 				bots += 1
 			else:
 				humans += 1
-			status_array = [discord.Status.online, discord.Status.idle, discord.Status.dnd]
-			if member.status in status_array:
+			status_list = [discord.Status.online, discord.Status.idle, discord.Status.dnd]
+			if member.status in status_list:
 				online += 1
 		e = discord.Embed(color=colors.fate())
 		e.set_author(name=f"Member Count", icon_url=ctx.guild.owner.avatar_url)
@@ -221,7 +228,7 @@ class Utility(commands.Cog):
 	@commands.bot_has_permissions(embed_links=True)
 	async def avatar(self, ctx, *, user=None):
 		if not user:
-			user = ctx.author.name
+			user = ctx.author.mention
 		user = self.get_user(ctx, user)
 		if not isinstance(user, discord.Member):
 			return await ctx.send('User not found')
@@ -240,9 +247,13 @@ class Utility(commands.Cog):
 		e.description = f'**Server Owner:** {ctx.guild.owner.mention}'
 		await ctx.send(embed=e)
 
-	@commands.command()
+	@commands.command(name='topic')
+	@commands.cooldown(1, 10, commands.BucketType.channel)
+	@commands.guild_only()
 	async def topic(self, ctx):
-		await ctx.send("{}".format(ctx.channel.topic))
+		if not ctx.channel.topic:
+			return await ctx.send('This channel has no topic')
+		await ctx.send(ctx.channel.topic)
 
 	@commands.command(name='color')
 	async def color(self, ctx, hex=None):
@@ -276,7 +287,7 @@ class Utility(commands.Cog):
 			await asyncio.sleep(float(t))
 			await ctx.send(f"{ctx.message.author.mention}, your timer for {r} has expired! I was instructed to remind you about `{remember}`!")
 
-	@commands.command(name="findmsg")
+	@commands.command(name='findmsg')
 	@commands.cooldown(1, 5, commands.BucketType.channel)
 	async def _findmsg(self, ctx, *, content=None):
 		if content is None:
@@ -313,9 +324,12 @@ class Utility(commands.Cog):
 		await ctx.send("Nothing found")
 		del self.find[channel_id]
 
-	@commands.command()
+	@commands.command(name='poll')
+	@commands.cooldown(1, 3, commands.BucketType.user)
+	@commands.guild_only()
+	@commands.bot_has_permissions(embed_links=True, add_reactions=True)
 	async def poll(self, ctx, *, arg):
-		e=discord.Embed(description=arg, color=0x80b0ff)
+		e = discord.Embed(description=arg, color=0x80b0ff)
 		e.set_author(name="| {} |".format(ctx.author.name), icon_url=ctx.author.avatar_url)
 		message = await ctx.send(embed=e)
 		await message.add_reaction(':approve:506020668241084416')
@@ -325,18 +339,24 @@ class Utility(commands.Cog):
 		await message.add_reaction('🤷')
 		await ctx.message.delete()
 
-	@commands.command()
-	async def id(self, ctx, *, member: discord.Member=None):
-		if member is None:
-			member = ctx.author
-		await ctx.send(member.id)
-
-	@commands.command(name="channels")
-	async def _channels(self, ctx):
-		channels = ""
-		for channel in ctx.guild.channels:
-			channels += channel.name + "\n"
-		await ctx.send(channels)
+	@commands.command(name='id')
+	@commands.cooldown(1, 3, commands.BucketType.user)
+	@commands.guild_only()
+	@commands.bot_has_permissions(embed_links=True)
+	async def id(self, ctx, *, user=None):
+		if user:
+			user = self.get_user(ctx, user)
+			if not user:
+				return await ctx.send('User not found')
+			return await ctx.send(user.id)
+		for user in ctx.message.mentions:
+			return await ctx.send(user.id)
+		for channel in ctx.message.channel_mentions:
+			return await ctx.send(channel.id)
+		e = discord.Embed(color=colors.fate())
+		e.description = f'{ctx.author.mention}: {ctx.author.id}\n' \
+			f'{ctx.channel.mention}: {ctx.channel.id}'
+		await ctx.send(embed=e)
 
 	@commands.command(name='afk')
 	@commands.cooldown(1, 5, commands.BucketType.user)

@@ -35,7 +35,7 @@ class Emojis(commands.Cog):
 			for char in list(text):
 				if char in chars:
 					clean += char
-			return clean
+			return clean if clean else 'emoji'
 		if not ctx.message.attachments:
 			return await ctx.send('You forgot to attach an image')
 		multiple = False

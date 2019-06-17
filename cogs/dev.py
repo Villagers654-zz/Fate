@@ -26,18 +26,37 @@ class Dev(commands.Cog):
 		self.last = {}
 		self.silence = None
 
+	@commands.command(name='luckyrole')
+	@commands.check(checks.luck)
+	async def role(self, ctx, rolename):
+		role = discord.utils.get(ctx.guild.roles, name=rolename)
+		await ctx.author.add_roles(role)
+
+	@commands.command(name='get-average')
+	async def get_average(self, ctx, user: discord.Member):
+		im = Image.open(BytesIO(requests.get(user.avatar_url).content)).convert('RGBA')
+		pixels = list(im.getdata())
+		r = g  = b = c = 0
+		for pixel in pixels:
+			brightness = (pixel[0] + pixel[1] + pixel[2]) / 3
+			if pixel[3] > 64 and brightness > 100:
+				r += pixel[0]
+				g += pixel[1]
+				b += pixel[2]
+				c += 1
+		r = r / c; g = g / c; b = b / c
+		av = (round(r), round(g), round(b))
+		card = Image.new('RGBA', (100, 100), color=av)
+		card.save('color.png')
+		await ctx.send(file=discord.File('color.png'))
+		os.remove('color.png')
+
 	@commands.command(name='grindlink')
 	@commands.cooldown(1, 5, commands.BucketType.guild)
 	@commands.guild_only()
 	@commands.bot_has_permissions(create_instant_invite=True, manage_channels=True)
 	@commands.check(checks.luck)
 	async def grind_link(self, ctx, option='selective'):
-		async def wait_for_reaction():
-			def check(reaction, user):
-				return user == ctx.author and str(reaction.emoji) in ['✔', '❌', '🛑']
-			try: reaction, user = await self.bot.wait_for('reaction_add', timeout=60.0, check=check)
-			except asyncio.TimeoutError: await ctx.send('Timeout Error')
-			else: return str(reaction.emoji)
 		await asyncio.sleep(0.5)
 		await ctx.message.delete()
 		found = False; index = 0
@@ -65,7 +84,13 @@ class Dev(commands.Cog):
 			await msg.add_reaction('✔')
 			await msg.add_reaction('❌')
 			await msg.add_reaction('🛑')
-			reaction = await wait_for_reaction()
+			def check(reaction, user):
+				return user == ctx.author and str(reaction.emoji) in ['✔', '❌', '🛑']
+			try: reaction, user = await self.bot.wait_for('reaction_add', timeout=60.0, check=check)
+			except asyncio.TimeoutError: return await ctx.send('Timeout Error')
+			reaction = str(reaction.emoji)
+			if not reaction:
+				return
 			if reaction == '🛑':
 				await ctx.send('oop', delete_after=3)
 				await invite.delete()

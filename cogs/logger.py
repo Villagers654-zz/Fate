@@ -17,6 +17,7 @@ class Logger(commands.Cog):
 		self.blocked = {}
 		self.typing = {}
 		self.waiting = {}
+		self.invites = {}
 		self.cd = {}
 		if isfile("./data/userdata/logger.json"):
 			with open("./data/userdata/logger.json", "r") as infile:
@@ -281,6 +282,17 @@ class Logger(commands.Cog):
 		    "role_delete, role_update, emoji_update, member_join, member_remove, " \
 		    "member_unban, member_update, ghost_typing]"
 		await ctx.send(embed=e)
+
+	@commands.Cog.listener()
+	async def on_ready(self):
+		for guild in self.bot.guilds:
+			guild_id = str(guild.id)
+			if guild_id in self.channel:
+				if guild_id not in self.invites:
+					self.invites[guild_id] = {}
+				invites = await guild.invites()
+				for invite in invites:
+					self.invites[guild_id][invite.url] = invite.uses
 
 	@commands.Cog.listener()
 	async def on_guild_remove(self, guild):
@@ -1036,6 +1048,19 @@ class Logger(commands.Cog):
 			channel_requirements = await self.channel_check(guild_id)
 			if not channel_requirements:
 				return
+			invites = await m.guild.invites()
+			invite = None  # the invite used to join
+			for invite in invites:
+				if invite.url not in self.invites[guild_id]:
+					if invite.uses > 0:
+						self.invites[guild_id][invite.url] = invite.uses
+						invite = invite
+					else:
+						self.invites[guild_id][invite.url] = invite.uses
+					continue
+				if invite.uses != self.invites[guild_id][invite.url]:
+					self.invites[guild_id][invite.url] = invite.uses
+					invite = invite; break
 			e = discord.Embed(color=colors.green())
 			e.title = "~==🥂🍸🍷Member Joined🍷🍸🥂==~"
 			if m.avatar_url:
@@ -1043,6 +1068,9 @@ class Logger(commands.Cog):
 			e.description = \
 				f"**User:** {m}\n" \
 				f"**ID:** {m.id}\n"
+			if invite:
+				e.description += f'**Invited by:** {invite.inviter}\n' \
+					f'**Invite:** {invite.url}'
 			await channel.send(embed=e)
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 
