@@ -34,10 +34,11 @@ class Anti_Raid(commands.Cog):
 		for perm in required:
 			if perm not in perms:
 				del self.toggle[guild_id]
-				try:
-					await guild.owner.send(f'Disabled anti raid, missing {perm} permissions')
-				except:
-					pass
+				self.save_data()
+				for channel in guild.text_channels:
+					if channel.permissions_for(guild.me).send_messages:
+						await guild.owner.send(f'Disabled anti raid, missing {perm} permissions')
+						break
 				return False
 		return True
 
@@ -102,7 +103,7 @@ class Anti_Raid(commands.Cog):
 			if guild_id not in self.last:
 				self.last[guild_id] = {}
 			self.last[guild_id][user_id] = time()
-			now = int(time() / 15)
+			now = int(time() / 20)
 			if guild_id not in self.join_cd:
 				self.join_cd[guild_id] = [now, 0]
 			if self.join_cd[guild_id][0] == now:
@@ -110,9 +111,10 @@ class Anti_Raid(commands.Cog):
 			else:
 				self.join_cd[guild_id] = [now, 0]
 			if self.join_cd[guild_id][1] > 4:
+				self.locked.append(guild_id)
 				for junkie in list(filter(lambda id: self.last[guild_id][id] > time() - 15, self.last[guild_id].keys())):
 					await m.guild.ban(junkie, reason="raid")
-				self.locked.append(guild_id)
+					await junkie.send(f'**{m.guild.name}** is currently locked due to an attempted raid, you can try rejoining in an hour')
 				await asyncio.sleep(3600)
 				self.locked.pop(self.locked.index(guild_id))
 
