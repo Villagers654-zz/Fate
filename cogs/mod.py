@@ -1,13 +1,19 @@
-from datetime import datetime, timedelta
-from discord.ext import commands
-from utils import colors, config, checks
-from time import monotonic
+"""
+no snooping or get raped like the orphan you are uwu
+"""
+
 from os.path import isfile
-import discord
+import json
+from datetime import datetime, timedelta
+from time import monotonic
 import asyncio
 import random
-import json
 import os
+
+from discord.ext import commands
+import discord
+
+from utils import colors, config, checks, utils
 
 class Mod(commands.Cog):
 	def __init__(self, bot):
@@ -84,34 +90,14 @@ class Mod(commands.Cog):
 		if datetime.now() < end_time:
 			sleep_time = (end_time - datetime.now()).seconds
 			await asyncio.sleep(sleep_time)
-			await guild.unban(user)
+			try: await guild.unban(user)
+			except discord.errors.NotFound: pass
 		else:
-			await guild.unban(user)
+			try: await guild.unban(user)
+			except discord.errors.NotFound: pass
 		del self.timers['ban'][guild_id][user_id]
 
-	def get_user(self, ctx, user):
-		if user.startswith("<@"):
-			for char in list(user):
-				if char not in list('1234567890'):
-					user = user.replace(str(char), '')
-			return ctx.guild.get_member(int(user))
-		else:
-			user = user.lower()
-			for member in ctx.guild.members:
-				if user == member.name.lower():
-					return member
-			for member in ctx.guild.members:
-				if user == member.display_name.lower():
-					return member
-			for member in ctx.guild.members:
-				if user in member.name.lower():
-					return member
-			for member in ctx.guild.members:
-				if user in member.display_name.lower():
-					return member
-		return
-
-	def convert_arg_to_timer(self, timer):
+	def convert_timer(self, timer):
 		if 'd' in timer:
 			time = timer.replace("d", " days").replace("1 days", "1 day")
 		else:
@@ -137,9 +123,10 @@ class Mod(commands.Cog):
 		return (timer, time)
 
 	@commands.command(name='getuser')
+	@commands.cooldown(1, 3, commands.BucketType.user)
 	async def getuser(self, ctx, user):
 		before = monotonic()
-		user = self.get_user(ctx, user)
+		user = utils.get_user(ctx, user)
 		ping = str((monotonic() - before) * 1000)
 		ping = ping[:ping.find('.')]
 		await ctx.send(f'**{user}:** `{ping}ms`')
@@ -252,7 +239,7 @@ class Mod(commands.Cog):
 				format = '%Y-%m-%d %H:%M:%S.%f'
 				end_time = datetime.strptime(dat['end_time'], format)
 				days, hours, minutes, seconds = get_time(end_time)
-				moderation = f'✦ Mute | {user} | '
+				moderation = f'\n✦ Mute | {user} | '
 				if days > 0:
 					moderation += f'{days} {"day" if days == 1 else "days"} '
 				if hours > 0:
@@ -271,7 +258,7 @@ class Mod(commands.Cog):
 				format = '%Y-%m-%d %H:%M:%S.%f'
 				end_time = datetime.strptime(dat['end_time'], format)
 				days, hours, minutes, seconds = get_time(end_time)
-				moderation = f'✦ Ban | {user} | '
+				moderation = f'\n✦ Ban | {user} | '
 				if days > 0:
 					moderation += f'{days} days '
 				if hours > 0:
@@ -297,7 +284,7 @@ class Mod(commands.Cog):
 	@commands.has_permissions(administrator=True)
 	@commands.bot_has_permissions(embed_links=True)
 	async def addmod(self, ctx, *, user):
-		user = self.get_user(ctx, user)
+		user = utils.get_user(ctx, user)
 		if not isinstance(user, discord.Member):
 			return await ctx.send('User not found')
 		if user.top_role.position >= ctx.author.top_role.position:
@@ -319,7 +306,7 @@ class Mod(commands.Cog):
 	@commands.has_permissions(administrator=True)
 	@commands.bot_has_permissions(embed_links=True)
 	async def delmod(self, ctx, *, user):
-		user = self.get_user(ctx, user)
+		user = utils.get_user(ctx, user)
 		if not isinstance(user, discord.Member):
 			return await ctx.send('User not found')
 		if user.top_role.position >= ctx.author.top_role.position:
@@ -476,7 +463,8 @@ class Mod(commands.Cog):
 			    '.purge embeds amount\n' \
 			    '.purge mentions amount' \
 			    '.purge users amount\n' \
-			    '.purge bots amount'
+			    '.purge bots amount\n' \
+			    '.purge word/phrase amount'
 			e.description = u
 			return e
 		if not args:
@@ -492,8 +480,8 @@ class Mod(commands.Cog):
 				del self.purge[channel_id]
 				return await ctx.send("You cannot purge more than 1000 messages at a time")
 			try:
-				msgs = await ctx.message.channel.purge(limit=amount, before=ctx.message)
-				await ctx.send(f'{ctx.author.mention}, successfully purged {len(msgs)} messages', delete_after=5)
+				await ctx.message.channel.purge(limit=amount, before=ctx.message)
+				await ctx.send(f'{ctx.author.mention}, successfully purged {amount} messages', delete_after=5)
 				return await ctx.message.delete()
 			except Exception as e:
 				await ctx.send(e)
@@ -508,10 +496,15 @@ class Mod(commands.Cog):
 				del self.purge[channel_id]
 				return await ctx.send("You cannot purge more than 250 user messages at a time")
 			try:
-				msgs = await ctx.channel.purge(limit=amount, before=ctx.message, check=lambda m: m.author == ctx.author)
-				await ctx.send(f'{ctx.author.mention}, purged {len(msgs)} messages from {user.display_name}', delete_after=5)
-				if len(msgs) == 0:
-					await ctx.send('"amount" is the amount of messages to search through, not delete', delete_after=10)
+				position = 0
+				async for msg in ctx.channel.history(limit=500):
+					if msg.author.id == user.id:
+						if msg.id != ctx.message.id:
+							await msg.delete()
+							position += 1
+							if position == amount:
+								break
+				await ctx.send(f'{ctx.author.mention}, purged {position} messages from {user.display_name}', delete_after=5)
 				return await ctx.message.delete()
 			except Exception as e:
 				await ctx.send(e)
@@ -522,10 +515,14 @@ class Mod(commands.Cog):
 			if amount > 250:
 				return await ctx.send("You cannot purge more than 250 images at a time")
 			try:
-				msgs = await ctx.channel.purge(limit=amount, before=ctx.message, check=lambda m: len(m.attachments) > 0)
-				await ctx.send(f"{ctx.author.mention}, purged {len(msgs)} images", delete_after=5)
-				if len(msgs) == 0:
-					await ctx.send('"amount" is the amount of messages to search through, not delete', delete_after=10)
+				position = 0
+				async for msg in ctx.channel.history(limit=500):
+					if msg.attachments:
+						await msg.delete()
+						position += 1
+						if position == amount:
+							break
+				await ctx.send(f"{ctx.author.mention}, purged {position} images", delete_after=5)
 				return await ctx.message.delete()
 			except Exception as e:
 				await ctx.send(e)
@@ -535,10 +532,14 @@ class Mod(commands.Cog):
 			if amount > 250:
 				return await ctx.send("You cannot purge more than 250 embeds at a time")
 			try:
-				msgs = await ctx.channel.purge(limit=amount, before=ctx.message, check=lambda m: len(m.embeds) > 0)
-				await ctx.send(f"{ctx.author.mention}, purged {len(msgs)} embeds", delete_after=5)
-				if len(msgs) == 0:
-					await ctx.send('"amount" is the amount of messages to search through, not delete', delete_after=10)
+				position = 0
+				async for msg in ctx.channel.history(limit=500):
+					if msg.embeds:
+						await msg.delete()
+						position += 1
+						if position == amount:
+							break
+				await ctx.send(f"{ctx.author.mention}, purged {position} embeds", delete_after=5)
 				return await ctx.message.delete()
 			except Exception as e:
 				await ctx.send(e)
@@ -548,10 +549,14 @@ class Mod(commands.Cog):
 			if amount > 250:
 				return await ctx.send("You cannot purge more than 250 user messages at a time")
 			try:
-				msgs = await ctx.channel.purge(limit=amount, before=ctx.message, check=lambda m: m.author.bot is False)
-				await ctx.send(f"{ctx.author.mention}, purged {len(msgs)} user messages", delete_after=5)
-				if len(msgs) == 0:
-					await ctx.send('"amount" is the amount of messages to search through, not delete', delete_after=10)
+				position = 0
+				async for msg in ctx.channel.history(limit=500):
+					if not msg.author.bot:
+						await msg.delete()
+						position += 1
+						if position == amount:
+							break
+				await ctx.send(f"{ctx.author.mention}, purged {position} user messages", delete_after=5)
 				return await ctx.message.delete()
 			except Exception as e:
 				await ctx.send(e)
@@ -561,10 +566,14 @@ class Mod(commands.Cog):
 			if amount > 250:
 				return await ctx.send("You cannot purge more than 250 bot messages at a time")
 			try:
-				msgs = await ctx.channel.purge(limit=amount, before=ctx.message, check=lambda m: m.author.bot is True)
-				await ctx.send(f"{ctx.author.mention}, purged {len(msgs)} bot messages", delete_after=5)
-				if len(msgs) == 0:
-					await ctx.send('"amount" is the amount of messages to search through, not delete', delete_after=10)
+				position = 0
+				async for msg in ctx.channel.history(limit=500):
+					if msg.author.bot:
+						await msg.delete()
+						position += 1
+						if position == amount:
+							break
+				await ctx.send(f"{ctx.author.mention}, purged {position} bot messages", delete_after=5)
 				return await ctx.message.delete()
 			except Exception as e:
 				await ctx.send(e)
@@ -574,10 +583,14 @@ class Mod(commands.Cog):
 			if amount > 250:
 				return await ctx.send("You cannot purge more than 250 mentions at a time")
 			try:
-				msgs = await ctx.channel.purge(limit=amount, before=ctx.message, check=lambda m: len(m.mentions) > 0)
-				await ctx.send(f"{ctx.author.mention}, purged {len(msgs)} mentions", delete_after=5)
-				if len(msgs) == 0:
-					await ctx.send('"amount" is the amount of messages to search through, not delete', delete_after=10)
+				position = 0
+				async for msg in ctx.channel.history(limit=500):
+					if msg.mentions:
+						await msg.delete()
+						position += 1
+						if position == amount:
+							break
+				await ctx.send(f"{ctx.author.mention}, purged {position} mentions", delete_after=5)
 				return await ctx.message.delete()
 			except Exception as e:
 				await ctx.send(e)
@@ -588,10 +601,15 @@ class Mod(commands.Cog):
 		if amount > 250:
 			return await ctx.send("You cannot purge more than 250 phrases at a time")
 		try:
-			msgs = await ctx.channel.purge(limit=amount, before=ctx.message, check=lambda m: phrase.lower() in m.content.lower())
-			await ctx.send(f"{ctx.author.mention}, purged {len(msgs)} messages", delete_after=5)
-			if len(msgs) == 0:
-				await ctx.send('"amount" is the amount of messages to search through, not delete', delete_after=10)
+			position = 0
+			async for msg in ctx.channel.history(limit=500):
+				if phrase.lower() in msg.content.lower():
+					if msg.id != ctx.message.id:
+						await msg.delete()
+						position += 1
+						if position == amount:
+							break
+			await ctx.send(f"{ctx.author.mention}, purged {position} messages", delete_after=5)
 			return await ctx.message.delete()
 		except Exception as e:
 			await ctx.send(e)
@@ -654,7 +672,7 @@ class Mod(commands.Cog):
 		e.set_image(url='attachment://' + os.path.basename(path))
 		await ctx.send(f'◈ {ctx.author.display_name} banned {user} ◈', file=file, embed=e)
 		await ctx.message.delete()
-		timer, time = self.convert_arg_to_timer(timer)
+		timer, time = self.convert_timer(timer)
 		try: await user.send(f'You\'ve been banned from **{ctx.guild.name}** by **{ctx.author.name}** for `{reason}` for {time}')
 		except: pass
 		if not isinstance(timer, float):
@@ -709,7 +727,7 @@ class Mod(commands.Cog):
 	@commands.has_permissions(manage_nicknames=True)
 	@commands.bot_has_permissions(manage_nicknames=True)
 	async def nick(self, ctx, user, *, nick=''):
-		user = self.get_user(ctx, user)
+		user = utils.get_user(ctx, user)
 		if not user:
 			return await ctx.send('User not found')
 		if user.top_role.position >= ctx.author.top_role.position:
@@ -835,7 +853,6 @@ class Mod(commands.Cog):
 				return await ctx.send("That user is above your paygrade, take a seat")
 			guild_id = str(ctx.guild.id)
 			user_id = str(user.id)
-
 			mute_role = None
 			for role in ctx.guild.roles:
 				if role.name.lower() == "muted":
@@ -879,7 +896,7 @@ class Mod(commands.Cog):
 			for x in list(timer):
 				if x not in '1234567890dhms':
 					return await ctx.send("Invalid character used in timer field")
-			timer, time = self.convert_arg_to_timer(timer)
+			timer, time = self.convert_timer(timer)
 			if not isinstance(timer, float):
 				return await ctx.send("Invalid character used in timer field")
 			await user.add_roles(mute_role)
@@ -972,7 +989,7 @@ class Mod(commands.Cog):
 	@commands.guild_only()
 	@commands.bot_has_permissions(manage_roles=True)
 	async def _warn(self, ctx, user, *, reason=None):
-		user = self.get_user(ctx, user)
+		user = utils.get_user(ctx, user)
 		if not isinstance(user, discord.Member):
 			return await ctx.send("User not found")
 		guild_id = str(ctx.guild.id)
@@ -1105,17 +1122,19 @@ class Mod(commands.Cog):
 				await ctx.send('Failed to ban that user')
 
 	@commands.command(name='removewarn', aliases=['delwarn'])
+	@commands.cooldown(1, 3, commands.BucketType.user)
+	@commands.guild_only()
+	@commands.bot_has_permissions(embed_links=True)
 	async def remove_warns(self, ctx, user, *, reason):
-		user = self.get_user(ctx, user)
+		user = utils.get_user(ctx, user)
 		if not isinstance(user, discord.Member):
 			return await ctx.send("User not found")
 		guild_id = str(ctx.guild.id)
 		if guild_id not in self.mods:
 			self.mods[guild_id] = []
 		if user.id not in self.mods[guild_id]:
-			perms = list(perm for perm, value in ctx.author.guild_permissions)
-			if "manage_guild" not in perms:
-				if "manage_messages" not in perms:
+			perms = [perm for perm, value in ctx.author.guild_permissions]
+			if "manage_guild" not in perms and "manage_messages" not in perms:
 					return await ctx.send("You are missing manage server "
 						"or manage messages permission(s) to run this command")
 		if user.top_role.position >= ctx.author.top_role.position:
@@ -1154,7 +1173,7 @@ class Mod(commands.Cog):
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.guild_only()
 	async def clearwarns(self, ctx, *, user):
-		user = self.get_user(ctx, user)
+		user = utils.get_user(ctx, user)
 		if not isinstance(user, discord.Member):
 			return await ctx.send("User not found")
 		guild_id = str(ctx.guild.id)
@@ -1179,11 +1198,12 @@ class Mod(commands.Cog):
 	@commands.command(name="warns")
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.guild_only()
+	@commands.bot_has_permissions(embed_links=True)
 	async def _warns(self, ctx, *, user=None):
 		if not user:
 			user = ctx.author
 		else:
-			user = self.get_user(ctx, user)
+			user = utils.get_user(ctx, user)
 		guild_id = str(ctx.guild.id)
 		user_id = str(user.id)
 		if guild_id not in self.warns:
