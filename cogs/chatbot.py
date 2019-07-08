@@ -270,7 +270,7 @@ class ChatBot(commands.Cog):
 							try:
 								async with m.channel.typing():
 									await asyncio.sleep(1)
-								await m.channel.send(choice)
+								await m.channel.send(choice.replace('568977264910532618', ''))
 							except:
 								pass
 		else:
