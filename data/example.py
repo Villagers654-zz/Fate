@@ -1,32 +1,21 @@
 from discord.ext import commands
-from os.path import isfile
-import json
+import discord
 
-class Mute:
+class Example:
 	def __init__(self, bot):
 		self.bot = bot
-		self.xp = {}
-		self.xp_path = './data/xp.json'
-		if isfile(self.xp_path):
-			with open(self.xp_path, 'r') as f:
-				dat = json.load(f)
-				if 'stuff' in dat:
-					self.xp = dat['stuff']
-		self.bio = {}
-		self.path = './data/profiles.json'
-		if isfile(self.path):
-			with open(self.path, 'r') as f:
-				dat = json.load(f)
-				if 'bio' in dat:
-					self.bio = dat['bio']
+		self.last = {}
 
-	def save_xp(self):
-		with open(self.xp_path, 'w') as f:
-			json.dump(self.xp, f, ensure_ascii=False)
+	@commands.command(name='snipe')
+	async def snipe(self, ctx):
+		if ctx.channel.id not in self.last:
+			return await ctx.send('nothing to snipe')
+		msg = self.last[ctx.channel.id]  # type: discord.Message
+		await ctx.send(msg.content)
 
-	def save_profiles(self):
-		with open(self.path, 'w') as f:
-			json.dump({'bio': self.bio}, f, ensure_ascii=False)
+	@commands.Cog.listener()
+	async def on_message_delete(self, msg):
+		self.last[msg.channel.id] = msg
 
 def setup(bot):
-	bot.add_cog(Mute(bot))
+	bot.add_cog(Example(bot))
