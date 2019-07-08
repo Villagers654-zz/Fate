@@ -55,7 +55,7 @@ files = ['error_handler', 'config', 'menus', 'core', 'music', 'mod', 'welcome', 
          'actions', 'reactions', 'responses', 'textart', 'fun', 'math', 'dev', '4b4t', 'readme', 'reload', 'embeds', 'warning', 'profiles',
          'clean_rythm', 'utility', 'psutil', 'rules', 'duel_chat', 'selfroles', 'lock', 'audit', 'cookies', 'backup', 'stats', 'server_list',
          'emojis', 'logger', 'autorole', 'changelog', 'restore_roles', 'chatbot', 'anti_spam', 'anti_raid', 'chatfilter', 'nsfw', 'leaderboards',
-         'chatlock', 'rainbow', 'vc_log', 'system', 'user']
+         'chatlock', 'rainbow', 'vc_log', 'system', 'user', 'limiter', 'dm_channel', 'factions']
 
 description = '''Fate[Zero]: Personal Bot'''
 bot = commands.Bot(command_prefix=get_prefix, case_insensitive=True, max_messages=16000)
@@ -65,6 +65,7 @@ bot.errorcount = 0
 bot.get_stats = get_stats()
 bot.get_config = get_config()
 bot.voice_calls = []
+bot.files = files
 error = False
 
 async def status_task():
@@ -171,4 +172,4 @@ if __name__ == '__main__':
 	cprint(f"Logging into discord..", "blue")
 m, s = divmod(time.time() - bot.START_TIME, 60)
 bot.LOAD_TIME = s
-bot.run(config.tokens("fatezero"))
+bot.run(config.tokens('fatezero'))
