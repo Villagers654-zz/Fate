@@ -47,7 +47,7 @@ class Utility(commands.Cog):
 	@commands.Cog.listener()
 	async def on_message(self, m:discord.Message):
 		if isinstance(m.guild, discord.Guild):
-			listed = ["!help", "!play", "!skip", "!np", "!lyrics", "!queue", "!q", "!clear", "!remove", "!repeat", "!dc", "!disconnect",
+			listed = ["!help", "!play", "!p", "!skip", "!np", "!lyrics", "!queue", "!q", "!clear", "!remove", "!repeat", "!dc", "!disconnect",
 			          "!pause", "!resume"]
 			if str(m.guild.id) not in self.identifier:
 				pass
@@ -59,7 +59,7 @@ class Utility(commands.Cog):
 							await m.delete()
 						m.content = m.content.lower()
 						for i in listed:
-							if m.content.startswith(i):
+							if m.content.startswith('!'):
 								if m.content.startswith("!play"):
 									await asyncio.sleep(1)
 									return await m.delete()
