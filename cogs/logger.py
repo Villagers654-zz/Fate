@@ -675,14 +675,6 @@ class Logger(commands.Cog):
 			if not guild_requirements:
 				return
 			user = None  # type: discord.Member
-			async for entry in before.guild.audit_logs(after=self.past(2), action=discord.AuditLogAction.channel_update, limit=1):
-				user = entry.user
-			async for entry in before.guild.audit_logs(after=self.past(2), action=discord.AuditLogAction.overwrite_create, limit=1):
-				user = entry.user
-			async for entry in before.guild.audit_logs(after=self.past(2), action=discord.AuditLogAction.overwrite_delete, limit=1):
-				user = entry.user
-			async for entry in before.guild.audit_logs(after=self.past(2), action=discord.AuditLogAction.overwrite_update, limit=1):
-				user = entry.user
 			channel = self.bot.get_channel(self.channel[guild_id])
 			channel_requirements = await self.channel_check(guild_id)
 			if not channel_requirements:
@@ -692,19 +684,26 @@ class Logger(commands.Cog):
 			if user:
 				if user.avatar_url:
 					e.set_thumbnail(url=user.avatar_url)
-			e.description = \
-				f"**Channel:** {after.mention}\n" \
-				f"**Updated by:** {user.mention if user else '`unknown`'}"
 			changed = False
 			if before.name != after.name:
+				async for entry in channel.guild.audit_logs(action=discord.AuditLogAction.channel_update, limit=1):
+					user = entry.user
 				changed = True
 				e.add_field(name="◈ Name ◈", value=f"**Before:** {before.name}\n"
 					f"**After:** {after.name}", inline=False)
 			if before.category != after.category:
+				async for entry in channel.guild.audit_logs(action=discord.AuditLogAction.channel_update, limit=1):
+					user = entry.user
 				changed = True
 				e.add_field(name="◈ Category ◈", value=f"**Before:** {before.category}\n"
 					f"**After:** {after.category}", inline=False)
 			if before.overwrites != after.overwrites:
+				async for entry in channel.guild.audit_logs(action=discord.AuditLogAction.overwrite_create, after=self.past(2), limit=1):
+					user = entry.user
+				async for entry in channel.guild.audit_logs(action=discord.AuditLogAction.overwrite_update, after=self.past(2), limit=1):
+					user = entry.user
+				async for entry in channel.guild.audit_logs(action=discord.AuditLogAction.overwrite_delete, after=self.past(2), limit=1):
+					user = entry.user
 				changed = True
 				updated_overwrites = ""
 				valueless_overwrites = []
@@ -730,6 +729,8 @@ class Logger(commands.Cog):
 								if value != after_perms[perm]:
 									updated_overwrites += f"\n□ {perm}: {after_perms[perm]}"
 				e.add_field(name="◈ Overwrites ◈", value=updated_overwrites, inline=False)
+			e.description = f"**Channel:** {after.mention}\n" \
+				f"**Updated by:** {user.mention if user else '`unknown`'}"
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 			if changed:
 				await channel.send(embed=e)
@@ -1048,6 +1049,8 @@ class Logger(commands.Cog):
 			channel_requirements = await self.channel_check(guild_id)
 			if not channel_requirements:
 				return
+			if guild_id not in self.invites:
+				self.invites[guild_id] = {}
 			invites = await m.guild.invites()
 			invite = None  # the invite used to join
 			for invite in invites:
@@ -1070,7 +1073,7 @@ class Logger(commands.Cog):
 				f"**ID:** {m.id}\n"
 			if invite:
 				e.description += f'**Invited by:** {invite.inviter}\n' \
-					f'**Invite:** {invite.url}'
+					f'**Invite:** [{invite.code}]({invite.url})'
 			await channel.send(embed=e)
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 
