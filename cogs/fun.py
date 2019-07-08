@@ -302,15 +302,10 @@ class Fun(commands.Cog):
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def rate(self, ctx):
-		c = 0
 		async for msg in ctx.channel.history(limit=3):
-			if c == 1:
+			if msg.id != ctx.message.id:
 				await msg.add_reaction(random.choice(['1⃣', '2⃣', '3⃣', '4⃣', '5⃣', '6⃣', '7⃣', '8⃣', '9⃣']))
-				await msg.add_reaction(':slash:506089603783196672')
-				await msg.add_reaction('🔟')
-				await ctx.message.delete()
-				break;
-			c += 1
+				return await ctx.message.delete()
 
 	@commands.command()
 	@commands.cooldown(1, 5, commands.BucketType.user)
