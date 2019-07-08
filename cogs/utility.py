@@ -1,11 +1,17 @@
 from utils.utils import bytes2human
 from discord.ext import commands
 from datetime import datetime
-from utils import colors
-import discord
 import aiohttp
 import asyncio
 import random
+from io import BytesIO
+import requests
+
+import discord
+from PIL import Image
+from colormap import rgb2hex
+
+from utils import colors, utils
 
 class Utility(commands.Cog):
 	def __init__(self, bot):
@@ -13,42 +19,21 @@ class Utility(commands.Cog):
 		self.find = {}
 		self.afk = {}
 
-	def get_user(self, ctx, user):
-		if user.startswith("<@"):
-			for char in list(user):
-				if char not in list('1234567890'):
-					user = user.replace(str(char), '')
-			return ctx.guild.get_member(int(user))
-		else:
-			user = user.lower()
-			for member in ctx.guild.members:
-				if user == member.name.lower():
-					return member
-			for member in ctx.guild.members:
-				if user == member.display_name.lower():
-					return member
-			for member in ctx.guild.members:
-				if user in member.name.lower():
-					return member
-			for member in ctx.guild.members:
-				if user in member.display_name.lower():
-					return member
-		return
-
-	def get_role(self, ctx, name):
-		if name.startswith("<@"):
-			for char in list(name):
-				if char not in list('1234567890'):
-					name = name.replace(str(char), '')
-			return ctx.guild.get_member(int(name))
-		else:
-			for role in ctx.guild.roles:
-				if name == role.name.lower():
-					return role
-			for role in ctx.guild.roles:
-				if name in role.name.lower():
-					return role
-			return
+	def avg_color(self, url):
+		if not url:
+			return colors.fate()
+		im = Image.open(BytesIO(requests.get(url).content)).convert('RGBA')
+		pixels = list(im.getdata())
+		r = g = b = c = 0
+		for pixel in pixels:
+			brightness = (pixel[0] + pixel[1] + pixel[2]) / 3
+			if pixel[3] > 64 and brightness > 100:
+				r += pixel[0]
+				g += pixel[1]
+				b += pixel[2]
+				c += 1
+		r = r / c; g = g / c; b = b / c
+		return eval('0x' + rgb2hex(round(r), round(g), round(b)).replace('#', ''))
 
 	@commands.command(name='servericon', aliases=['icon'])
 	@commands.cooldown(1, 3, commands.BucketType.user)
@@ -80,9 +65,7 @@ class Utility(commands.Cog):
 	@commands.guild_only()
 	@commands.bot_has_permissions(embed_links=True)
 	async def serverinfo(self, ctx):
-		fmt = "%m/%d/%Y"
-		created = datetime.date(ctx.guild.created_at)
-		e=discord.Embed(color=0x0000ff)
+		e = discord.Embed(color=self.avg_color(ctx.guild.icon_url))
 		e.description = f'id: {ctx.guild.id}\nOwner: {ctx.guild.owner}'
 		e.set_author(name=f'{ctx.guild.name}:', icon_url=ctx.guild.owner.avatar_url)
 		e.set_thumbnail(url=ctx.guild.icon_url)
@@ -101,7 +84,8 @@ class Utility(commands.Cog):
 				f'• Max Bitrate [`{bytes2human(ctx.guild.bitrate_limit).replace(".0", "")}`]\n' \
 				f'• Max Filesize [`{bytes2human(ctx.guild.filesize_limit).replace(".0", "")}`]'
 			e.add_field(name='◈ Perks ◈', value=perks, inline=False)
-		e.add_field(name='◈ Created ◈', value=created.strftime(fmt), inline=False)
+		created = datetime.date(ctx.guild.created_at)
+		e.add_field(name='◈ Created ◈', value=created.strftime('%m/%d/%Y'), inline=False)
 		await ctx.send(embed=e)
 
 	@commands.command(name='userinfo', aliases=['uinfo'])
@@ -110,17 +94,16 @@ class Utility(commands.Cog):
 	@commands.bot_has_permissions(embed_links=True)
 	async def userinfo(self, ctx, *, user=None):
 		if not user:
-			user = ctx.author.name
-		user = self.get_user(ctx, user)
+			user = ctx.author.mention
+		user = utils.get_user(ctx, user)
 		if not isinstance(user, discord.Member):
 			return await ctx.send('User not found')
-		color = user.color if user.color else colors.fate()
 		icon_url = user.avatar_url if user.avatar_url else self.bot.user.avatar_url
-		e = discord.Embed(color=color)
+		e = discord.Embed(color=self.avg_color(user.avatar_url))
 		e.set_author(name=user.display_name, icon_url=icon_url)
 		e.set_thumbnail(url=ctx.guild.icon_url)
 		e.description = f'__**ID:**__ {user.id}\n{f"Active On Mobile" if user.is_on_mobile() else ""}'
-		main = f'{f"**• Nickname** [`{user.nick}]" if user.nick else ""}\n' \
+		main = f'{f"**• Nickname** [`{user.nick}`]" if user.nick else ""}\n' \
 			f'**• Activity** [`{user.activity.name if user.activity else None}`]\n' \
 			f'**• Status** [`{user.status}`]\n' \
 			f'**• Role** [{user.top_role.mention}]'
@@ -133,7 +116,7 @@ class Utility(commands.Cog):
 			roles[index] += f'{role.mention} '
 		for role_list in roles:
 			index = roles.index(role_list)
-			e.add_field(name='◈ Roles ◈' if index is 0 else '~', value=role_list, inline=False)
+			e.add_field(name=f'◈ Roles ◈ ({len(user.roles)})' if index is 0 else '~', value=role_list, inline=False)
 		permissions = user.guild_permissions
 		notable = ['view_audit_log', 'manage_roles', 'manage_channels', 'manage_emojis',
 			'kick_members', 'ban_members', 'manage_messages', 'mention_everyone']
@@ -150,7 +133,7 @@ class Utility(commands.Cog):
 	@commands.bot_has_permissions(manage_roles=True)
 	@commands.bot_has_permissions(embed_links=True)
 	async def roleinfo(self, ctx, *, role):
-		role = self.get_role(ctx, role)
+		role = await utils.get_role(ctx, role)
 		if not role:
 			return await ctx.send('Role not found')
 		icon_url = ctx.guild.owner.avatar_url if ctx.guild.owner.avatar_url else self.bot.user.avatar_url
@@ -177,10 +160,10 @@ class Utility(commands.Cog):
 	@commands.bot_has_permissions(add_reactions=True)
 	async def makepoll(self, ctx):
 		async for msg in ctx.channel.history(limit=2):
-			if msg != ctx.message:
+			if msg.id != ctx.message.id:
 				await msg.add_reaction(':approve:506020668241084416')
 				await msg.add_reaction(':unapprove:506020690584010772')
-				await ctx.message.delete()
+				return await ctx.message.delete()
 
 	@commands.command(name='members', aliases=['membercount'])
 	@commands.cooldown(1, 5, commands.BucketType.channel)
@@ -229,7 +212,7 @@ class Utility(commands.Cog):
 	async def avatar(self, ctx, *, user=None):
 		if not user:
 			user = ctx.author.mention
-		user = self.get_user(ctx, user)
+		user = utils.get_user(ctx, user)
 		if not isinstance(user, discord.Member):
 			return await ctx.send('User not found')
 		if not user.avatar_url:
@@ -345,7 +328,7 @@ class Utility(commands.Cog):
 	@commands.bot_has_permissions(embed_links=True)
 	async def id(self, ctx, *, user=None):
 		if user:
-			user = self.get_user(ctx, user)
+			user = utils.get_user(ctx, user)
 			if not user:
 				return await ctx.send('User not found')
 			return await ctx.send(user.id)
