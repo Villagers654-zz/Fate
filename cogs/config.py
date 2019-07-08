@@ -85,7 +85,7 @@ class Config(commands.Cog):
 				return "active"
 			return "inactive"
 
-	@commands.group(name="config")
+	@commands.group(name="config", aliases=["conf"])
 	@commands.guild_only()
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.bot_has_permissions(embed_links=True)
