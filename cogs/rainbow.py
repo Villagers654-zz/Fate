@@ -1,100 +1,36 @@
 from discord.ext import commands
 import discord
 import asyncio
+from utils import checks
+from utils.colors import ColorSets
 
 CONFIG = {
-    "USER_ID": 292840109072580618,
-    "GUILDS": {
-        459470568585035778: {
-            "ROLE": "Thats Gross",
-            "COLORS": [
-                "#ff0000",
-                "#ff002a",
-                "#ff0055",
-                "#ff007f",
-                "#ff00aa",
-                "#ff00d4",
-                "#ff00ff",
-                "#d500ff",
-                "#aa00ff",
-                "#8000ff",
-                "#5500ff",
-                "#2b00ff",
-                "#0000ff",
-                "#002aff",
-                "#0055ff",
-                "#007fff",
-                "#00aaff",
-                "#00d4ff",
-                "#00ffff",
-                "#00ffd5",
-                "#00ffaa",
-                "#00ff80",
-                "#00ff55",
-                "#00ff2b",
-                "#00ff00",
-                "#2aff00",
-                "#55ff00",
-                "#7fff00",
-                "#aaff00",
-                "#d4ff00",
-                "#ffff00",
-                "#ffd500",
-                "#ffaa00",
-                "#ff8000",
-                "#ff5500",
-                "#ff2b00",
-            ],
-            "CYCLE_DURATION": 50,
-            "STOP_AFTER_N_SECONDS": 50
-        },
-        548461409810251776: {
-            "ROLE": "Μεγαλύτερος",
-            "COLORS": [
-                "#ff0000",
-                "#ff002a",
-                "#ff0055",
-                "#ff007f",
-                "#ff00aa",
-                "#ff00d4",
-                "#ff00ff",
-                "#d500ff",
-                "#aa00ff",
-                "#8000ff",
-                "#5500ff",
-                "#2b00ff",
-                "#0000ff",
-                "#002aff",
-                "#0055ff",
-                "#007fff",
-                "#00aaff",
-                "#00d4ff",
-                "#00ffff",
-                "#00ffd5",
-                "#00ffaa",
-                "#00ff80",
-                "#00ff55",
-                "#00ff2b",
-                "#00ff00",
-                "#2aff00",
-                "#55ff00",
-                "#7fff00",
-                "#aaff00",
-                "#d4ff00",
-                "#ffff00",
-                "#ffd500",
-                "#ffaa00",
-                "#ff8000",
-                "#ff5500",
-                "#ff2b00",
-            ],
-            "CYCLE_DURATION": 50,
-            "STOP_AFTER_N_SECONDS": 50
+    264838866480005122: {
+        'GUILDS': {
+            579823772547153958: {
+                'TOGGLE': False,
+                'ROLE': '◈𝓛𝓾𝓬𝓴 ◈',
+                'COLORS': ColorSets().rainbow(),
+                'CYCLE_DURATION': 50,
+                'STOP_AFTER_N_SECONDS': 50
+            }
+        }
+    },
+    292840109072580618: {
+        'GUILDS': {
+            548461409810251776: {
+                'TOGGLE': True,
+                'ROLE': 'Μεγαλύτερος',
+                'COLORS': ColorSets().rainbow(),
+                'CYCLE_DURATION': 50,
+                'STOP_AFTER_N_SECONDS': 50
+            }
         }
     }
 }
 
-class HopefulNoDiscordAPIRapeRainbowRoleCog(commands.Cog):
+
+class Rainbow(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.cycling = False
@@ -136,20 +72,34 @@ class HopefulNoDiscordAPIRapeRainbowRoleCog(commands.Cog):
             print(e)
             self.cycling = False
 
+    @commands.command(name='rainbowembed', aliases=['rembed'])
+    @commands.check(checks.luck)
+    async def rainbow_embed(self, ctx, text):
+        e = discord.Embed()
+        e.description = text
+        msg = await ctx.send(embed=e)
+        await ctx.message.delete()
+        colors = ColorSets().rainbow()
+        for color in colors:
+            e.colour = discord.Color(int(color.replace("#", "0x"), 0))
+            await msg.edit(embed=e)
+            await asyncio.sleep(1)
+
     @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
-        if message.author.id == CONFIG["USER_ID"] and not self.cycling:
-            if message.guild.id in CONFIG["GUILDS"].keys():
-                conf = CONFIG["GUILDS"][message.guild.id]
-                self.bot.loop.create_task(
-                    self.cycle_colors(
-                        message.guild.id,
-                        conf["ROLE"],
-                        conf["COLORS"],
-                        conf["CYCLE_DURATION"],
-                        conf["STOP_AFTER_N_SECONDS"]
+    async def on_message(self, msg: discord.Message):
+        if msg.author.id in CONFIG and not self.cycling:
+            if msg.guild.id in CONFIG[msg.author.id]["GUILDS"].keys():
+                conf = CONFIG[msg.author.id]['GUILDS'][msg.guild.id]
+                if conf['TOGGLE']:
+                    self.bot.loop.create_task(
+                        self.cycle_colors(
+                            msg.guild.id,
+                            conf['ROLE'],
+                            conf['COLORS'],
+                            conf['CYCLE_DURATION'],
+                            conf['STOP_AFTER_N_SECONDS']
+                        )
                     )
-                )
 
 def setup(bot):
-    bot.add_cog(HopefulNoDiscordAPIRapeRainbowRoleCog(bot))
+    bot.add_cog(Rainbow(bot))
