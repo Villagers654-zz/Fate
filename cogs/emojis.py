@@ -29,7 +29,7 @@ class Emojis(commands.Cog):
 	@commands.bot_has_permissions(manage_emojis=True)
 	async def addemoji(self, ctx, *, emoji_name=None):
 		def cleanup(text):
-			text = text[:text.find('.')]
+			text = text[:text.find('.') + 1]
 			chars = list('abcdefghijklmnopqrstuvwxyz')
 			clean = ''
 			for char in list(text):
