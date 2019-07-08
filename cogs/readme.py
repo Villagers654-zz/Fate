@@ -18,10 +18,16 @@ class Readme(commands.Cog):
 		channel = self.bot.get_channel(579828107863916565)
 		msg = await channel.fetch_message(579873497023643658)
 		e = discord.Embed(color=0x40E0D0)
-		e.set_author(name="💎 Official 2B2TBE Discord Server 💎")
-		e.description = "■ Server: play.2b2t.be : 19132\n■ Full Vanilla Features\n■ Supreme Anti-Cheat\n■ Full Anarchy"
-		e.add_field(name="-~===🌹🥂🍸🍷Links🍷🍸🥂🌹===~-", value="■ [Invite](http://discord.gg/azjzfvn) | [Vote](https://google.com) | [Donate](https://google.com)", inline=False)
+		e.set_author(name='💎 Official 2B2TBE Discord Server 💎')
+		e.description = '■ **Bedrock:** IP: `play.2b2t.be` Port: `19132`\n' \
+			'■ **Java:** Address: `play.2b2t.be:19132`\n■ Full Vanilla Features\n■ Built For Bedrock\n■ Cross Platform\n■ True Anarchy'
+		e.add_field(name="-~===🌹🥂🍸🍷Links🍷🍸🥂🌹===~-", value="■ [Invite](http://discord.gg/azjzfvn) | [Vote](https://minecraftservers.org/server/556871) | [Donate](https://google.com) | [Youtube](https://youtube.be/)", inline=False)
 		e.add_field(name='-~===🌹🥂🍸🍷Founders🍷🍸🥂🌹===~-', value='Master Luke, Maxxie115, FishyBear, Ginjeet, Legit, Luck')
+		e.add_field(name='-~===🌹🥂🍸🍷Bio🍷🍸🥂🌹===~-', value='2B2TBE is a Cross Platform Server built upon an Anarchy Society where players can expect absolute freedom.\n'
+			'Upon entering this server, you soon realise how chaotic a world can be where there is no "higher power", the whole game is based around the players that play it, many will come and leave. While others will stay to make history... ')
+		e.add_field(name='-~===🌹🥂🍸🍷Boosting🍷🍸🥂🌹===~-', value='■ Boost the server to give and get perks\n'
+			'■ Perks include and aren\'t limited to: manage msg perms, access to nitro channel, and higher role position\n'
+			'■ Abusing one or more of the perms/rewards will result in it being revoked')
 		e.add_field(name="-~===🌹🥂🍸🍷Rules🍷🍸🥂🌹===~-", value='■ Channel topics contain most rules\n'
 			'■ First offense results in mute (warning some cases)\n'
 			'■ Second offense results in a kick\n'
@@ -32,15 +38,15 @@ class Readme(commands.Cog):
 			'■ Some bot commands can be ignored if they contribute to the chat in a certain manner, for instance, reaction commands are allowed depending on the channel, or if you\'re that special little someone that pushes the rules, no spammy bot commands\n'
 			'■ Things outside of the rules can be deemed punishment worthy', inline=False)
 		e.add_field(name="~==🌹🥂🍸🍷Global Rules🍷🍸🥂🌹==~", value='■ This server abides by discords TOS, therefore breaking the TOS counts as an offense\n'
-		    '■ Leaving to avoid mute results in a higher grade punishment of our choice\n'
+		    '■ No pinging \@everyone, use the proper notification role instead\n'
+			'■ Leaving to avoid mute results in a higher grade punishment of our choice\n'
 			'■ No doxxing (limited to this discord)\n'
-			'■ No pinging roles (this goes for mods too)\n'
 			'■ No gifs / videos / emotes with flashing lights that may trigger epilepsy\n'
 			'■ Be respectful with handling the music bots, (no earrape, no skipping to annoy people, and no skipping inconsideratly)\n'
-			'■ No pestering staff repetitively\n'
 			'■ No useless / annoying pings\n'
+		    '■ No pestering staff\n'
 			'■ No spamming', inline=False)
-		e.add_field(name="-~===🌹🥂🍸🍷Misc🍷🍸🥂🌹===~-", value="Minecraft Version: unknown", inline=False)
+		e.add_field(name="-~===🌹🥂🍸🍷Misc🍷🍸🥂🌹===~-", value="MC VERSION [BEDROCK]: 1.9 - 1.12\nMC VERSION [JAVA]: 1.12 - 1.13\n", inline=False)
 		e.set_thumbnail(url=channel.guild.icon_url)
 		await msg.edit(embed=e)
 		await ctx.message.delete()
@@ -54,23 +60,24 @@ class Readme(commands.Cog):
 			e.set_author(name="💎 Official 4B4T Discord Server 💎")
 			e.description = "■ Server: 4b4t.net : 19132\n■ Full Vanilla Features\n■ Full Anarchy"
 			e.add_field(name="-~===🌹🥂🍸🍷Links🍷🍸🥂🌹===~-", value="■ Invite: discord.gg/BQ23Z2E\n■ Vote: legitanarchy.ml", inline=False)
-			e.add_field(name="-~===🌹🥂🍸🍷Rules🍷🍸🥂🌹===~-", value="""■ Channel topics contain most rules
-■ First offense results in mute (warning some cases)
-■ Second offense results in a kick
-■ Third offense results in ban
-■ Depending on the severity of ones actions lower grade crimes don't have to be punished in strict order and can receive repeated mutes with extended time. 
-■ Amount of time between each offense is taken into notice
-■ Warnings are just warnings, whether or not you receive a warning or mute is entirely up to the mod unless told otherwise by a higher position
-■ Some bot commands can be ignored if they contribute to the chat in a certain manner, for instance, reaction commands are allowed depending on the channel, or if you're that special little someone that pushes the rules, no spammy bot commands
-■ Things outside of the rules can be deemed punishment worthy""", inline=False)
-			e.add_field(name="~==🌹🥂🍸🍷Global Rules🍷🍸🥂🌹==~", value="""■ This server abides by discords TOS, therefore breaking the TOS counts as an offense\n■ Leaving to avoid mute results in a higher grade punishment of our choice
-■ No doxxing (limited to this discord)
-■ No pinging roles (this goes for mods too)
-■ No gifs / videos / emotes with flashing lights that may trigger epilepsy
-■ Be respectful with handling the music bots, (no earrape, no skipping to annoy people, and no skipping inconsideratly)
-■ No pestering staff repetitively
-■ No useless / annoying pings
-■ No spamming""", inline=False)
+			e.add_field(name="-~===🌹🥂🍸🍷Rules🍷🍸🥂🌹===~-", value='■ Channel topics contain most rules\n'
+				'■ First offense results in mute (warning some cases)\n'
+				'■ Second offense results in a kick\n'
+				'■ Third offense results in ban\n'
+				'■ Depending on the severity of ones actions lower grade crimes don\'t have to be punished in strict order and can receive repeated mutes with extended time.\n' \
+				'■ Amount of time between each offense is taken into notice\n'
+				'■ Warnings are just warnings, whether or not you receive a warning or mute is entirely up to the mod unless told otherwise by a higher position\n'
+				'■ Some bot commands can be ignored if they contribute to the chat in a certain manner, for instance, reaction commands are allowed depending on the channel, or if you\'re that special little someone that pushes the rules, no spammy bot commands\n'
+				'■ Things outside of the rules can be deemed punishment worthy', inline=False)
+			e.add_field(name="~==🌹🥂🍸🍷Global Rules🍷🍸🥂🌹==~", value='■ This server abides by discords TOS, therefore breaking the TOS counts as an offense\n'
+				'■ Leaving to avoid mute results in a higher grade punishment of our choice\n'
+				'■ No doxxing (limited to this discord)\n'
+				'■ No pinging roles (this goes for mods too)\n'
+				'■ No gifs / videos / emotes with flashing lights that may trigger epilepsy\n'
+				'■ Be respectful with handling the music bots, (no earrape, no skipping to annoy people, and no skipping inconsideratly)\n'
+				'■ No pestering staff repetitively\n'
+				'■ No useless / annoying pings\n'
+				'■ No spamming', inline=False)
 			e.add_field(name="-~===🌹🥂🍸🍷Misc🍷🍸🥂🌹===~-", value="Minecraft Version: 1.12", inline=False)
 			e.set_thumbnail(url=channel.guild.icon_url)
 			self.bot.unload_extension('cogs.readme')
