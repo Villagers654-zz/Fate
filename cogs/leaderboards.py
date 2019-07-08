@@ -16,7 +16,7 @@ from PIL import Image
 from io import BytesIO
 from sympy import Symbol, solve, log
 
-from utils import checks, colors
+from utils import checks, colors, utils
 
 config = {'channel_id': 510410941809033216, 'message': None}
 
@@ -58,79 +58,14 @@ class Leaderboards(commands.Cog):
 		with open('./data/userdata/rolerewards.json', 'w') as f:
 			json.dump({'toggle': self.toggle, 'role_rewards': self.role_rewards}, f, ensure_ascii=False)
 
-	def get_user(self, ctx, user):
-		if user.startswith("<@"):
-			for char in list(user):
-				if char not in list('1234567890'):
-					user = user.replace(str(char), '')
-			return ctx.guild.get_member(int(user))
-		else:
-			user = user.lower()
-			for member in ctx.guild.members:
-				if user == member.name.lower():
-					return member
-			for member in ctx.guild.members:
-				if user == member.display_name.lower():
-					return member
-			for member in ctx.guild.members:
-				if user in member.name.lower():
-					return member
-			for member in ctx.guild.members:
-				if user in member.display_name.lower():
-					return member
-		return None
-
-	async def get_role(self, ctx, name):
-		if name.startswith("<@"):
-			for char in list(name):
-				if char not in list('1234567890'):
-					name = name.replace(str(char), '')
-			return ctx.guild.get_member(int(name))
-		else:
-			roles = []
-			for role in ctx.guild.roles:
-				if name == role.name.lower():
-					roles.append(role)
-			if not roles:
-				for role in ctx.guild.roles:
-					if name in role.name.lower():
-						roles.append(role)
-			if roles:
-				if len(roles) == 1:
-					return roles[0]
-				index = 1
-				role_list = ''
-				for role in roles:
-					role_list += f'{index} : {role.mention}\n'
-					index += 1
-				e = discord.Embed(color=colors.fate(), description=role_list)
-				e.set_author(name='Multiple Roles Found')
-				e.set_footer(text='Reply with the correct role number')
-				embed = await ctx.send(embed=e)
-				def pred(m):
-					return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
-				try:
-					msg = await self.bot.wait_for('message', check=pred, timeout=60)
-				except asyncio.TimeoutError:
-					await ctx.send('Timeout error', delete_after=5)
-					return await embed.delete()
-				else:
-					try: role = int(msg.content)
-					except: return await ctx.send('Invalid response')
-					if role > len(roles):
-						return await ctx.send('Invalid response')
-					await embed.delete()
-					await msg.delete()
-					return roles[role - 1]
-
 	def calc_lvl(self, total_xp):
 		def x(level):
-			x = 1
+			x = 1; y = 0.125; lmt = 3
 			for i in range(level):
-				if x >= 5:
-					x += 0.0625
-					continue
-				x += 0.125
+				if x >= lmt:
+					y = y / 2
+					lmt += 3
+				x += y
 			return x
 
 		level = 0; levels = [[0, 250]]
@@ -224,12 +159,22 @@ class Leaderboards(commands.Cog):
 						del self.vclb[guild_id][user_id]
 		return str(round((monotonic() - before) * 1000)) + 'ms'
 
-	@commands.command(name='level')
-	async def level(self, ctx):
-		total_xp = self.guilds_data[str(ctx.guild.id)][str(ctx.author.id)]
-		await ctx.send(self.get_level_info(total_xp))
+	async def wait_for_dismissal(self, ctx, msg):
+		def pred(m):
+			return m.channel.id == ctx.channel.id and m.content.lower().startswith('k')
+		try:
+			reply = await self.bot.wait_for('message', check=pred, timeout=25)
+		except asyncio.TimeoutError:
+			pass
+		else:
+			await asyncio.sleep(0.21)
+			await ctx.message.delete()
+			await asyncio.sleep(0.21)
+			await msg.delete()
+			await asyncio.sleep(0.21)
+			await reply.delete()
 
-	@commands.command(name='rank', aliases=['xp'])
+	@commands.command(name='rank', aliases=['level', 'xp'])
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.guild_only()
 	@commands.bot_has_permissions(attach_files=True)
@@ -245,11 +190,9 @@ class Leaderboards(commands.Cog):
 				break
 		total_xp = self.guilds_data[guild_id][user_id]
 		dat = self.calc_lvl(total_xp)
-		level = dat['level']
-		base_xp = dat['previous']
-		max_xp = dat['level_up']
-		xp = dat['xp']
-		length = ((100 * ((xp - base_xp) / (max_xp - base_xp))) * 1024) / 100
+		level = dat['level']; xp = dat['xp']
+		max_xp = 250 if level == 0 else dat['level_up']
+		length = ((100 * (xp / max_xp)) * 1024) / 100
 		ranking = f'Rank: [{guild_rank}] Level: [{level}] XP: [{xp}/{max_xp}]\n\n' \
 			f'Total XP: [{xp}] Required: [{max_xp - xp}]\n'
 		def font(size):
@@ -306,7 +249,8 @@ class Leaderboards(commands.Cog):
 		else:
 			e.set_thumbnail(url=self.bot.user.avatar_url)
 		e.set_footer(text=self.msg_footer().replace('[result]', f'XP Cleanup: {result}'))
-		await ctx.send(embed=e)
+		msg = await ctx.send(embed=e)
+		await self.wait_for_dismissal(ctx, msg)
 
 	@commands.command(name="gleaderboard", aliases=["glb"])
 	@commands.cooldown(1, 10, commands.BucketType.channel)
@@ -327,7 +271,8 @@ class Leaderboards(commands.Cog):
 			rank += 1
 		e.set_thumbnail(url='https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png')
 		e.set_footer(text=self.msg_footer().replace('[result]', f'XP Cleanup: {result}'))
-		await ctx.send(embed=e)
+		msg = await ctx.send(embed=e)
+		await self.wait_for_dismissal(ctx, msg)
 
 	@commands.command(name="ggleaderboard", aliases=["gglb"])
 	@commands.cooldown(1, 10, commands.BucketType.channel)
@@ -351,7 +296,8 @@ class Leaderboards(commands.Cog):
 		else:
 			e.set_thumbnail(url=self.bot.user.avatar_url)
 		e.set_footer(text=self.msg_footer().replace('[result]', f'XP Cleanup: {result}'))
-		await ctx.send(embed=e)
+		msg = await ctx.send(embed=e)
+		await self.wait_for_dismissal(ctx, msg)
 
 	@commands.command(name="mleaderboard", aliases=["mlb"])
 	@commands.cooldown(1, 10, commands.BucketType.channel)
@@ -378,7 +324,8 @@ class Leaderboards(commands.Cog):
 		else:
 			e.set_thumbnail(url=self.bot.user.avatar_url)
 		e.set_footer(text=self.msg_footer().replace('[result]', f'XP Cleanup: {result}'))
-		await ctx.send(embed=e)
+		msg = await ctx.send(embed=e)
+		await self.wait_for_dismissal(ctx, msg)
 
 	@commands.command(name="gmleaderboard", aliases=["gmlb"])
 	@commands.cooldown(1, 10, commands.BucketType.channel)
@@ -402,7 +349,8 @@ class Leaderboards(commands.Cog):
 			rank += 1
 		e.set_thumbnail(url='https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png')
 		e.set_footer(text=self.msg_footer().replace('[result]', f'XP Cleanup: {result}'))
-		await ctx.send(embed=e)
+		msg = await ctx.send(embed=e)
+		await self.wait_for_dismissal(ctx, msg)
 
 	@commands.command(name='vcleaderboard', aliases=['vclb'])
 	@commands.cooldown(1, 10, commands.BucketType.channel)
@@ -426,7 +374,8 @@ class Leaderboards(commands.Cog):
 		else:
 			e.set_thumbnail(url=self.bot.user.avatar_url)
 		e.set_footer(text=self.msg_footer().replace('[result]', f'XP Cleanup: {result}'))
-		await ctx.send(embed=e)
+		msg = await ctx.send(embed=e)
+		await self.wait_for_dismissal(ctx, msg)
 
 	@commands.command(name="gvcleaderboard", aliases=["gvclb"])
 	@commands.cooldown(1, 10, commands.BucketType.channel)
@@ -447,7 +396,8 @@ class Leaderboards(commands.Cog):
 			rank += 1
 		e.set_thumbnail(url="https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png")
 		e.set_footer(text=self.msg_footer().replace('[result]', f'XP Cleanup: {result}'))
-		await ctx.send(embed=e)
+		msg = await ctx.send(embed=e)
+		await self.wait_for_dismissal(ctx, msg)
 
 	@commands.command(name='leaderboards', aliases=['lbs'])
 	async def leaderboards(self, ctx):
@@ -540,7 +490,8 @@ class Leaderboards(commands.Cog):
 			rank += 1
 		e.add_field(name='Global VC Leaderboard', value=gvcleaderboard, inline=False)
 		e.set_footer(text=self.msg_footer().replace('[result]', f'XP Cleanup: {result}'))
-		await ctx.send(embed=e)
+		msg = await ctx.send(embed=e)
+		await self.wait_for_dismissal(ctx, msg)
 
 	@commands.command(name="card")
 	@commands.cooldown(1, 5, commands.BucketType.channel)
@@ -622,7 +573,7 @@ class Leaderboards(commands.Cog):
 		if args[0].isdigit():
 			if not len(args) > 1:
 				return await ctx.send('Role name is a required argument that is missing')
-			role = await self.get_role(ctx, args[1].replace('`', ''))
+			role = await utils.get_role(ctx, args[1].replace('`', ''))
 			if not isinstance(role, discord.Role):
 				return await ctx.send('Role not found')
 			await ctx.send('Should this role be allowed to stack?\nReply with "yes", "no", or anything else to cancel')
@@ -648,7 +599,7 @@ class Leaderboards(commands.Cog):
 				return await ctx.send('This server currently doesn\'t have any roles added')
 			if not len(args) > 1:
 				return await ctx.send('Role name is a required argument that is missing')
-			role = await self.get_role(ctx, args[1].replace('`', ''))
+			role = await utils.get_role(ctx, args[1].replace('`', ''))
 			if not isinstance(role, discord.Role):
 				return await ctx.send('Role not found')
 			for level, dat in list(self.role_rewards[guild_id].items()):
