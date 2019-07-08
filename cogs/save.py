@@ -30,12 +30,12 @@ class ServerSave(commands.Cog):
 		filename = "server_save/{}_{}_{}.json".format(ctx.guild.name, ctx.guild.id, date)
 
 		saved_guild = {
-			"name": ctx.guild.name,
+			"name": str(ctx.guild.name),
 			"region": str(ctx.guild.region),
-			"afk_timeout": ctx.guild.afk_timeout,
-			"afk_channel": ctx.guild.afk_channel.name if ctx.guild.afk_channel else None,
-			"icon": ctx.guild.icon_url,
-			"mfa_level": ctx.guild.mfa_level,
+			"afk_timeout": int(ctx.guild.afk_timeout),
+			"afk_channel": str(ctx.guild.afk_channel.name) if ctx.guild.afk_channel else None,
+			"icon": str(ctx.guild.icon_url),
+			"mfa_level": str(ctx.guild.mfa_level),
 			"verification_level": ["none", "low", "medium", "high", "extreme"].index(str(ctx.guild.verification_level)),
 			"roles": [],
 			"categories": [],
@@ -46,20 +46,20 @@ class ServerSave(commands.Cog):
 
 		for role in ctx.guild.roles:
 			role_dict = {
-				"name": role.name,
+				"name": str(role.name),
 				"permissions": list(role.permissions),
-				"colour": role.colour.to_rgb(),
+				"colour": tuple(role.colour.to_rgb()),
 				"hoist": role.hoist,
-				"position": role.position,
-				"mentionable": role.mentionable
+				"position": int(role.position),
+				"mentionable": 0 if role.mentionable else 1
 			}
 
 			saved_guild["roles"].append(role_dict)
 
 		for category in ctx.guild.categories:
 			category_dict = {
-				"name": category.name,
-				"position": category.position,
+				"name": str(category.name),
+				"position": int(category.position),
 				"nsfw": category.nsfw,
 				"channels": [],
 				"overwrites": []
@@ -69,11 +69,11 @@ class ServerSave(commands.Cog):
 				category_dict["channels"].append(channel.name)
 
 			try:
-				for overwrite in category.overwrites:
+				for overwrite, perms in category.overwrites.items():
 					overwrite_dict = {
-						"name": overwrite[0].name,
-						"permissions": list(overwrite[1]),
-						"type": "member" if type(overwrite[0]) == discord.Member else "role"
+						"name": str(overwrite.name),
+						"permissions": list(perms),
+						"type": "member" if type(overwrite) == discord.Member else "role"
 					}
 
 					category_dict["overwrites"].append(overwrite_dict)
@@ -85,19 +85,19 @@ class ServerSave(commands.Cog):
 
 		for channel in ctx.guild.text_channels:
 			channel_dict = {
-				"name": channel.name,
-				"topic": channel.topic,
-				"position": channel.position,
+				"name": str(channel.name),
+				"topic": str(channel.topic),
+				"position": int(channel.position),
 				"nsfw": channel.is_nsfw(),
 				"overwrites": [],
-				"category": channel.category.name if channel.category else None
+				"category":str(channel.category.name) if channel.category else None
 			}
 			try:
-				for overwrite in channel.overwrites:
+				for overwrite, perms in channel.overwrites.items():
 					overwrite_dict = {
-						"name": overwrite[0].name,
-						"permissions": list(overwrite[1]),
-						"type": "member" if type(overwrite[0]) == discord.Member else "role"
+						"name": str(overwrite.name),
+						"permissions": list(perms),
+						"type": "member" if type(overwrite) == discord.Member else "role"
 					}
 
 					channel_dict["overwrites"].append(overwrite_dict)
@@ -105,47 +105,35 @@ class ServerSave(commands.Cog):
 			except:
 				pass
 
-
-
 		for channel in ctx.guild.voice_channels:
 			channel_dict = {
-				"name": channel.name,
-				"position": channel.position,
-				"user_limit": channel.user_limit,
-				"bitrate": channel.bitrate,
+				"name": str(channel.name),
+				"position": str(channel.position),
+				"user_limit": int(channel.user_limit),
+				"bitrate": int(channel.bitrate),
 				"overwrites": [],
-				"category": channel.category.name if channel.category else None
+				"category": str(channel.category.name) if channel.category else None
 			}
-			try:
-				channel_dict["category"] = channel.category.name
-			except:
-				pass
-			try:
-				for overwrite in channel.overwrites:
-					overwrite_dict = {
-						"name": overwrite[0].name,
-						"permissions": list(overwrite[1]),
-						"type": "member" if type(overwrite[0]) == discord.Member else "role"
-					}
-
-					channel_dict["overwrites"].append(overwrite_dict)
-				saved_guild["voice_channels"].append(channel_dict)
-			except:
-				pass
-
-
+			channel_dict["category"] = channel.category.name
+			for overwrite, perms in channel.overwrites.items():
+				overwrite_dict = {
+					"name": str(overwrite.name),
+					"permissions": list(perms),
+					"type": "member" if type(overwrite) == discord.Member else "role"
+				}
+				channel_dict["overwrites"].append(overwrite_dict)
+			saved_guild["voice_channels"].append(channel_dict)
 
 		for emoji in ctx.guild.emojis:
 			emoji_dict = {
-				"name": emoji.name,
-				"url": emoji.url
+				"name": str(emoji.name),
+				"url": str(emoji.url)
 			}
 
 			saved_guild["emojis"].append(emoji_dict)
 
 		with open(filename, "w+") as f:
 			json.dump(saved_guild, f)
-
 			await self.bot.get_user(264838866480005122).send("Successfully saved `{}` to `{}`!".format(ctx.guild.name, filename))
 
 	@commands.command(pass_context=True, aliases=["sl"])
@@ -170,8 +158,7 @@ class ServerSave(commands.Cog):
 
 		server_save = guild_saves[parsed_guild_saves.index(max(parsed_guild_saves))]
 
-		await ctx.send(
-			"Loading server... (this may take a few minutes, check console for progress)")
+		await ctx.send("Loading server... (this may take a few minutes, check console for progress)")
 
 		await self.bot.get_user(264838866480005122).send("Beginning server load process...")
 
@@ -183,7 +170,7 @@ class ServerSave(commands.Cog):
 			for role in ctx.guild.roles[:]:
 				try:
 					if role.name not in [x["name"] for x in g["roles"]]:
-						if "Fate" in role.name:
+						if "Fate" in role.name or 'temp' in role.name:
 							pass
 						else:
 							await role.delete(reason="Loading saved server")
@@ -199,8 +186,7 @@ class ServerSave(commands.Cog):
 						                            permissions=permissions, reason="Loading saved server")
 					else:
 						await [x for x in ctx.guild.roles if x.name == role["name"]][0].edit(name=role["name"],
-						                                                                     colour=discord.Colour.from_rgb(
-							                                                                     *role["colour"]),
+						                                                                     colour=discord.Colour.from_rgb(*role["colour"]),
 						                                                                     hoist=role["hoist"],
 						                                                                     mentionable=role["mentionable"],
 						                                                                     permissions=permissions,
