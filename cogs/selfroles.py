@@ -93,6 +93,16 @@ class SelfRoles(commands.Cog):
 				category = ''
 				if 'nothing' not in reply.content.lower():
 					category = reply.content
+				msg = await ctx.send(f'Should I allow users to add multiple reactions?\nReply with "yes" or "no"')
+				reply = await wait_for_msg()
+				if not reply:
+					return
+				if 'yes' in reply.content.lower():
+					toggle = 'multi'
+				else:
+					toggle = 'single'
+				await msg.delete()
+				await reply.delete()
 				msg = await ctx.send('Should i use a normal msg or embed\nReply with "msg" or "embed"')
 				reply = await wait_for_msg()
 				if not reply:
@@ -121,8 +131,7 @@ class SelfRoles(commands.Cog):
 					if isinstance(emoji, int):
 						emoji = self.bot.get_emoji(emoji)
 					await menu.add_reaction(emoji)
-				await ctx.send('Note: you can use `.selfroles limit` to toggle whether or not users can get multiple roles from each menu', delete_after=10)
-				self.msgs[guild_id][str(menu.id)] = selfroles
+				self.msgs[guild_id][str(menu.id)] = [selfroles, toggle]
 				self.save_data()
 				break
 			args = reply.content.split(' ', 1)
@@ -164,7 +173,9 @@ class SelfRoles(commands.Cog):
 			msg_id = str(payload.message_id)
 			if msg_id in self.msgs[guild_id]:
 				guild = self.bot.get_guild(payload.guild_id)
-				selfroles = self.msgs[guild_id][msg_id]
+				channel = self.bot.get_channel(payload.channel_id)
+				msg = await channel.fetch_message(msg_id)
+				selfroles, toggle = self.msgs[guild_id][msg_id]
 				emojis = []
 				roles = []
 				for emoji, role_id in selfroles:
@@ -179,13 +190,17 @@ class SelfRoles(commands.Cog):
 				else:
 					emoji = f'{emoji}'
 				index = emojis.index(emoji)
-				user = guild.get_member(payload.user_id)
-				if guild_id in self.single:
-					for role in user.roles:
-						if role in roles:
-							await user.remove_roles(role)
+				target = guild.get_member(payload.user_id)
 				role = roles[index]
-				await user.add_roles(role)
+				if toggle == 'single':
+					await target.remove_roles(*roles)
+					for reaction in msg.reactions:
+						users = await reaction.users().flatten()
+						for user in users:
+							if user.id == payload.user_id:
+								if str(reaction.emoji) != str(payload.emoji):
+									await reaction.remove(user)
+				await target.add_roles(role)
 
 	@commands.Cog.listener()
 	async def on_raw_reaction_remove(self, payload):
@@ -194,7 +209,7 @@ class SelfRoles(commands.Cog):
 			msg_id = str(payload.message_id)
 			if msg_id in self.msgs[guild_id]:
 				guild = self.bot.get_guild(payload.guild_id)
-				selfroles = self.msgs[guild_id][msg_id]
+				selfroles = self.msgs[guild_id][msg_id][0]
 				emojis = []
 				roles = []
 				for emoji, role_id in selfroles:
@@ -229,12 +244,6 @@ class SelfRoles(commands.Cog):
 		if guild_id in self.single:
 			del self.single[guild_id]
 			self.save_data()
-
-	@commands.command(name='delselfkeys')
-	async def delselfkeys(self, ctx, guild_id):
-		del self.msgs[guild_id]
-		await ctx.send('done')
-		self.save_data()
 
 def setup(bot):
 	bot.add_cog(SelfRoles(bot))
