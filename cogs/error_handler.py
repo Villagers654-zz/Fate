@@ -1,5 +1,5 @@
 from discord.ext import commands
-from utils import colors, config, utils
+from utils import colors
 from time import time
 import subprocess
 import traceback
