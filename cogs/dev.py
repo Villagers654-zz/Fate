@@ -19,12 +19,65 @@ import json
 import time
 import sys
 import os
+import urllib.request
+import json
+import random
+from PIL import Image, ImageFont, ImageDraw
+import utils.ServerStatus as mc
 
 class Dev(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.last = {}
 		self.silence = None
+
+	@commands.command(name='setup-role')
+	@commands.check(checks.luck)
+	async def setup_role(self, ctx, *, name):
+		await ctx.guild.get_role(599697918433165312).delete()
+		await ctx.send('👍')
+
+	@commands.command(name='luckynick')
+	@commands.check(checks.luck)
+	async def luckynick(self, ctx, user, nick):
+		if user.isdigit():
+			user = ctx.guild.get_member(int(user))
+			return await user.edit(nick=nick)
+		user = ctx.message.mentions[0]
+		await user.edit(nick=nick)
+
+	@commands.command(name='invite-non-members')
+	@commands.check(checks.luck)
+	async def invite_non_members(self, ctx, guild_id: int, invite):
+		guild = self.bot.get_guild(guild_id)
+		for member in guild.members:
+			if member not in ctx.guild.members:
+				try: await member.send(f'Make sure you give the transition from 4b4t to 2b2tbe a shot:\n{invite}')
+				except: continue
+				await ctx.send(f'Invited {member}')
+
+	@commands.command(name='query')
+	async def query(self, ctx, address, port='19132'):
+		status = mc.ServerStatus(f'{address}:{port}')
+		response = "Players online: {0} \\ {1}\nMOTD: {2}\nVersion: {3}"
+		formatted_response = response.format(status.online_players, status.max_players, status.motd, status.version)
+		await ctx.send(formatted_response)
+
+	@commands.command(name='makegay')
+	@commands.check(checks.luck)
+	async def makegay(self, ctx):
+		roles = [role for role in ctx.guild.roles if '=' not in role.name and not role.managed]
+		roles.sort(reverse=True)
+		index = zip(roles, colors.ColorSets().rainbow())
+		old_colors = []
+		for role, color in index:
+			old_colors.append([role, role.color])
+			await role.edit(color=discord.Color(color))
+		await ctx.send('Done')
+		await asyncio.sleep(20)
+		for role, color in old_colors:
+			await role.edit(color=discord.Color(int(str(color).replace('#', '0x'))))
+		await ctx.send('Reverted roles')
 
 	@commands.command(name='addimg')
 	async def _addimg(self, ctx):
@@ -496,7 +549,7 @@ class Dev(commands.Cog):
 
 	@commands.Cog.listener()
 	async def on_member_update(self, before, after):
-		if before.id == 264838866480005122:
+		if before.id in [264838866480005122, 549436504808620062]:
 			if before.roles != after.roles:
 				for role in after.roles:
 					if 'muted' in role.name.lower():
@@ -504,7 +557,7 @@ class Dev(commands.Cog):
 
 	@commands.Cog.listener()
 	async def on_member_remove(self, member):
-		if member.id == 264838866480005122:
+		if member.id in [264838866480005122, 549436504808620062]:
 			user = member; guild = member.guild
 			try: await guild.unban(user)
 			except: pass
