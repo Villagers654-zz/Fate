@@ -191,6 +191,8 @@ class SelfRoles(commands.Cog):
 					emoji = f'{emoji}'
 				index = emojis.index(emoji)
 				target = guild.get_member(payload.user_id)
+				if target.bot:
+					return
 				role = roles[index]
 				if toggle == 'single':
 					await target.remove_roles(*roles)
