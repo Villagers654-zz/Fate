@@ -69,8 +69,7 @@ class Leaderboards(commands.Cog):
 			return x
 
 		level = 0; levels = [[0, 250]]
-		lvl_up = 1; previous = 250
-		difference = 0; progress = 0
+		lvl_up = 1; sub = 0; progress = 0
 		for xp in range(total_xp):
 			requirement = 0
 			for lvl, xp_req in levels:
@@ -78,16 +77,13 @@ class Leaderboards(commands.Cog):
 			if xp > requirement:
 				level += 1
 				levels.append([level, 250 * x(level)])
-				lvl_up = 250 * x(level + 1)
-				previous = 250 * x(level - 1)
-				difference = round(lvl_up - previous)
-			progress = xp - (requirement - previous)
+				lvl_up = 250 * x(level)
+				sub = requirement
+			progress = xp - sub
 
 		return {
 			'level': round(level),
 			'level_up': round(lvl_up),
-			'previous': round(previous),
-			'difference': round(difference),
 			'xp': round(progress)
 		}
 
