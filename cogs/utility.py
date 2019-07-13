@@ -150,7 +150,7 @@ class Utility(commands.Cog):
 			'kick_members', 'ban_members', 'manage_messages', 'mention_everyone']
 		perms = ', '.join(perm for perm, value in role.permissions if value and perm in notable)
 		perms = 'administrator' if role.permissions.administrator else perms
-		e.add_field(name="◈ Perms ◈", value=f"```{perms}```", inline=False)
+		e.add_field(name="◈ Perms ◈", value=f"```{perms if perms else 'None'}```", inline=False)
 		e.add_field(name="◈ Created ◈", value=datetime.date(role.created_at).strftime('%m/%d/%Y'), inline=False)
 		await ctx.send(embed=e)
 
