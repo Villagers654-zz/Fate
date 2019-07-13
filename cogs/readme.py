@@ -20,8 +20,8 @@ class Readme(commands.Cog):
 		e = discord.Embed(color=0x40E0D0)
 		e.set_author(name='💎 Official 2B2TBE Discord Server 💎')
 		e.description = '■ **Bedrock:** IP: `play.2b2t.be` Port: `19132`\n' \
-			'■ **Java:** Address: `play.2b2t.be:19132`\n■ Full Vanilla Features\n■ Built For Bedrock\n■ Cross Platform\n■ True Anarchy'
-		e.add_field(name="-~===🌹🥂🍸🍷Links🍷🍸🥂🌹===~-", value="■ [Invite](http://discord.gg/azjzfvn) | [Vote](https://minecraftservers.org/server/556871) | [Donate](https://google.com) | [Youtube](https://youtube.be/)", inline=False)
+			'■ **Java:** Address: `play.2b2t.be:19132`\n■ Full Vanilla Features\n■ Made For Bedrock\n■ Cross Platform\n■ True Anarchy'
+		e.add_field(name="-~===🌹🥂🍸🍷Links🍷🍸🥂🌹===~-", value="■ [Invite](http://discord.gg/azjzfvn) | [Vote](https://minecraftservers.org/server/556871) | [Store](http://2b2tbe.tebex.io/about) | [Youtube](https://youtube.be/)", inline=False)
 		e.add_field(name='-~===🌹🥂🍸🍷Founders🍷🍸🥂🌹===~-', value='Master Luke, Maxxie115, FishyBear, Ginjeet, Legit, Luck')
 		e.add_field(name='-~===🌹🥂🍸🍷Bio🍷🍸🥂🌹===~-', value='2B2TBE is a Cross Platform Server built upon an Anarchy Society where players can expect absolute freedom.\n'
 			'Upon entering this server, you soon realise how chaotic a world can be where there is no "higher power", the whole game is based around the players that play it, many will come and leave. While others will stay to make history... ')
@@ -38,14 +38,15 @@ class Readme(commands.Cog):
 			'■ Some bot commands can be ignored if they contribute to the chat in a certain manner, for instance, reaction commands are allowed depending on the channel, or if you\'re that special little someone that pushes the rules, no spammy bot commands\n'
 			'■ Things outside of the rules can be deemed punishment worthy', inline=False)
 		e.add_field(name="~==🌹🥂🍸🍷Global Rules🍷🍸🥂🌹==~", value='■ This server abides by discords TOS, therefore breaking the TOS counts as an offense\n'
-		    '■ No pinging \@everyone, use the proper notification role instead\n'
+		    '■ No pinging @everyone, use the proper notification role instead\n'
 			'■ Leaving to avoid mute results in a higher grade punishment of our choice\n'
 			'■ No doxxing (limited to this discord)\n'
-			'■ No gifs / videos / emotes with flashing lights that may trigger epilepsy\n'
+			'■ No gifs / videos with flashing lights that may trigger epilepsy\n'
 			'■ Be respectful with handling the music bots, (no earrape, no skipping to annoy people, and no skipping inconsideratly)\n'
+		    '■ No spamming or sending spammy message\n'
+			'■ Only ping roles if you have an appropriate question/problem related to the role\n'
 			'■ No useless / annoying pings\n'
-		    '■ No pestering staff\n'
-			'■ No spamming', inline=False)
+		    '■ No pestering staff', inline=False)
 		e.add_field(name="-~===🌹🥂🍸🍷Misc🍷🍸🥂🌹===~-", value="MC VERSION [BEDROCK]: 1.9 - 1.12\nMC VERSION [JAVA]: 1.12 - 1.13\n", inline=False)
 		e.set_thumbnail(url=channel.guild.icon_url)
 		await msg.edit(embed=e)
