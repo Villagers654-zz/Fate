@@ -145,6 +145,23 @@ class ChatBot(commands.Cog):
 		await ctx.send(f"Removed: {popped}")
 		await ctx.message.delete()
 
+	@_chatbot.command(name='find')
+	async def _find(self, ctx, *, phrase):
+		found = []
+		for item in self.cache['global']:
+			if phrase.lower() in item.lower():
+				found.append(item)
+		e = discord.Embed(color=colors.fate())
+		results = [str(found)[i:i + 1000] for i in range(0, len(str(found)), 1000)]
+		if len(results) > 5:
+			results = results[:5]
+			e.set_footer(text='Character Limit Reached')
+		for i in range(len(results)):
+			if i == 0:
+				e.description = results[i]; continue
+			e.add_field(name='~', value=results[i])
+		await ctx.send(embed=e)
+
 	@commands.command(name="prefixes")
 	async def _prefixes(self, ctx):
 		guild_id = str(ctx.guild.id)

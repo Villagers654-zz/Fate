@@ -18,7 +18,18 @@ class DMChannel(commands.Cog):
 	@commands.command(name='createdm', aliases=['createcleandm'])
 	@commands.check(checks.luck)
 	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_webhooks=True)
-	async def create_dm_channel(self, ctx, *, user):
+	async def create_dm_channel(self, ctx, user, opt=None):
+		if opt:
+			if ctx.message.channel_mentions:
+				channel = ctx.message.channel_mentions[0]
+				self.channel = channel.id
+				self.webhook = await channel.create_webhook(name='dm')
+			else:
+				channel = self.bot.get_channel(int(user))
+				self.webhook = await channel.create_webhook(name='dm')
+				self.channel = channel.id
+			self.user = ctx.author; self.clean = False
+			return await ctx.send('👍')
 		if ctx.message.mentions:
 			user = ctx.message.mentions[0]
 		else:

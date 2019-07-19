@@ -85,6 +85,8 @@ class Factions(commands.Cog):
 
 	def get_members(self, ctx, faction):
 		guild_id = str(ctx.guild.id); members = []; counter = 0; ids = []
+		if self.factions[guild_id][faction]['owner'] not in self.factions[guild_id][faction]['members']:
+			self.factions[guild_id][faction]['members'].append(self.factions[guild_id][faction]['owner'])
 		for member_id in self.factions[guild_id][faction]['members']:
 			member = ctx.guild.get_member(member_id)
 			if not isinstance(member, discord.Member) or member not in ctx.guild.members or member.id in ids:
@@ -301,11 +303,12 @@ class Factions(commands.Cog):
 		if guild_id not in self.factions:
 			self.factions[guild_id] = {}
 		for faction, dat in self.factions[guild_id].items():
-			faction_name = name.lower()
-			if faction_name == faction.lower():
-				return await ctx.send('That names already taken')
-			if ctx.author.id in dat['members']:
-				return await ctx.send('You\'re already in a faction')
+			if faction != 'category':
+				faction_name = name.lower()
+				if faction_name == faction.lower():
+					return await ctx.send('That names already taken')
+				if ctx.author.id in dat['members']:
+					return await ctx.send('You\'re already in a faction')
 		self.factions[guild_id][name] = {
 			'owner': ctx.author.id,
 			'co-owners': [],
@@ -315,6 +318,7 @@ class Factions(commands.Cog):
 			'limit': 15,
 			'items': []
 		}
+		self.init(guild_id, name)
 		await self.update_category(guild_id, ctx.author)
 		e = discord.Embed(color=colors.purple())
 		e.set_author(name='Created Your Faction', icon_url=ctx.author.avatar_url)
@@ -460,7 +464,7 @@ class Factions(commands.Cog):
 			return await ctx.send('You need to be owner of the faction to do this')
 		guild_id = str(ctx.guild.id)
 		del self.factions[guild_id][faction]
-		if self.factions[guild_id]['category']:
+		if 'category' in self.factions[guild_id]:
 			category = self.bot.get_channel(self.factions[guild_id]['category'])
 			name = str(faction).lower().replace(' ', '-')
 			channel = discord.utils.get(category.channels, name=name)
@@ -557,14 +561,13 @@ class Factions(commands.Cog):
 			return await ctx.send('You\'re not currently in a faction')
 		guild_id = str(ctx.guild.id)
 		if self.get_owned_faction(ctx.author):
-			if ctx.author.id != self.factions[guild_id][faction]['owner']:
+			if ctx.author.id == self.factions[guild_id][faction]['owner']:
 				return await ctx.send('You can\'t leave a faction you own')
+			index = self.factions[guild_id][faction]['co-owners'].index(ctx.author.id)
+			self.factions[guild_id][faction]['co-owners'].pop(index)
 		index = self.factions[guild_id][faction]['members'].index(ctx.author.id)
 		self.factions[guild_id][faction]['members'].pop(index)
 		self.init(guild_id, faction)
-		if ctx.author.id in self.factions[guild_id][faction]['co-owners']:
-			index = self.factions[guild_id][faction]['co-owners'].index(ctx.author.id)
-			self.factions[guild_id][faction]['co-owners'].pop(index)
 		await self.update_category(guild_id, ctx.author)
 		await ctx.send('✔')
 		self.save_data()
@@ -621,6 +624,36 @@ class Factions(commands.Cog):
 		await asyncio.sleep(60)
 		await ctx.send(f'{ctx.author.mention} your cooldowns up', delete_after=3)
 
+	@_factions.command(name='suicide', aliases=['kms'], category='economy')
+	@commands.cooldown(1, 120, commands.BucketType.user)
+	async def _suicide(self, ctx):
+		faction = self.get_faction(ctx.author)
+		if not faction:
+			return await ctx.send('You need to be in a faction to use this command')
+		guild_id = str(ctx.guild.id)
+		stories = random.randint(1, 8)
+		building = '━━━━━┒\n┓┏┓┏┓┃Oof\n┛┗┛┗┛┃＼O／\n┓┏┓┏┓┃ /\n┛┗┛┗┛┃ノ)'
+		for i in range(stories):
+			building += '\n┓┏┓┏┓┃ \n┛┗┛┗┛┃ '
+		building += '\n┓┏┓┏┓┃\n┃┃┃┃┃┃\n┻┻┻┻┻┻'
+		e = discord.Embed(color=colors.purple())
+		e.set_author(name='You Attempted to Commit Suicide', icon_url=self.get_icon(ctx.author))
+		e.set_thumbnail(url=ctx.guild.icon_url)
+		e.description = F'{building}\n\n'
+		money = random.randint(2, 10)
+		if stories >= 4:
+			e.colour = colors.green()
+			e.description += f'You died and earned your faction ${money}\n' \
+				f'seems that\'s all you\'re worth :c'
+			self.factions[guild_id][faction]['balance'] += money
+		else:
+			e.colour = colors.red()
+			e.description += f'You lived and were sent to \n' \
+				f'get help costing your faction ${money}'
+			self.factions[guild_id][faction]['balance'] -= money
+		await ctx.send(embed=e)
+		self.save_data()
+
 	@_factions.command(name='pay', aliases=['give'])
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	async def _pay(self, ctx, *, args):
@@ -674,16 +707,17 @@ class Factions(commands.Cog):
 		self.factions[guild_id][faction]['balance'] += t['balance']
 		owner = self.bot.get_user(f['owner'])
 		icon_url = owner.avatar_url
-		if f['icon']:
-			icon_url = f['icon']
+		if 'icon' in f:
+			if f['icon']:
+				icon_url = f['icon']
 		del self.factions[guild_id][target]
 		e = discord.Embed(color=colors.purple())
 		e.set_author(name=f'{faction} Annexed {target}', icon_url=icon_url)
 		await ctx.send(embed=e)
 		self.save_data()
 
-	@_factions.command(name='raid', enabled=False)
-	@commands.cooldown(1, 120, commands.BucketType.user)
+	@_factions.command(name='raid')
+	@commands.cooldown(1, 3600, commands.BucketType.user)
 	async def _raid(self, ctx, *, faction):
 		target = self.get_faction_named(ctx, faction)
 		if not target:
@@ -695,7 +729,7 @@ class Factions(commands.Cog):
 		t = self.factions[guild_id][target]
 		f = self.factions[guild_id][faction]
 		chance = 60 if t['balance'] > f['balance'] else 40
-		lmt = (25 * t['balance'] if t['balance'] < f['balance'] else f['balance']) / 100
+		lmt = (5 * t['balance'] if t['balance'] < f['balance'] else f['balance']) / 100
 		pay = random.randint(0, round(lmt))
 		if random.randint(0, 100) < chance:
 			self.factions[guild_id][target]['balance'] -= pay
@@ -805,6 +839,9 @@ class Factions(commands.Cog):
 		factions = []
 		for faction, dat in self.factions[guild_id].items():
 			if faction != 'category':
+				owner = self.bot.get_user(self.factions[guild_id][faction]['owner'])
+				if not isinstance(owner, discord.User):
+					continue
 				balance = dat['balance']
 				self.init(guild_id, faction)
 				for i in range(len(self.land_claims[guild_id][faction].keys())):
@@ -812,9 +849,6 @@ class Factions(commands.Cog):
 				factions.append([faction, balance])
 		for faction, balance in sorted(factions, key=lambda kv: kv[1], reverse=True)[:8]:
 			owner = self.bot.get_user(self.factions[guild_id][faction]['owner'])
-			if not isinstance(owner, discord.User):
-				del self.factions[guild_id][faction]
-				continue
 			if rank == 1:
 				e.set_author(name='Faction Leaderboard', icon_url=owner.avatar_url)
 			e.description += f'#{rank}. {faction} - ${balance}\n'

@@ -72,13 +72,13 @@ async def status_task():
 		motds = ['FBI OPEN UP', 'YEET to DELETE', 'Pole-Man', '♡Juice wrld♡', 'Mad cuz Bad', 'Quest for Cake', 'Gone Sexual']
 		stages = ['Serendipity', 'Euphoria', 'Singularity', 'Epiphany']
 		for i in range(len(stages)):
-			await bot.change_presence(activity=discord.Game(name=f'{stages[i]} | use .help'))
+			await bot.change_presence(status=discord.Status.online, activity=discord.Game(name=f'{stages[i]} | use .help'))
 			await asyncio.sleep(15)
-			await bot.change_presence(activity=discord.Game(name=f'{stages[i]} | {len(bot.users)} users'))
+			await bot.change_presence(status=discord.Status.idle, activity=discord.Game(name=f'{stages[i]} | {len(bot.users)} users'))
 			await asyncio.sleep(15)
-			await bot.change_presence(activity=discord.Game(name=f'{stages[i]} | {len(bot.guilds)} servers'))
+			await bot.change_presence(status=discord.Status.dnd, activity=discord.Game(name=f'{stages[i]} | {len(bot.guilds)} servers'))
 			await asyncio.sleep(15)
-			await bot.change_presence(activity=discord.Game(name=f'{stages[i]} | {random.choice(motds)}'))
+			await bot.change_presence(status=discord.Status.online, activity=discord.Game(name=f'{stages[i]} | {random.choice(motds)}'))
 			await asyncio.sleep(15)
 
 @bot.event

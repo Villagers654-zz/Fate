@@ -40,8 +40,10 @@ class Leaderboards(commands.Cog):
 				if "global" in dat and "guilded" in dat:
 					self.global_data = dat["global"]
 					self.guilds_data = dat["guilded"]
-					self.monthly_global_data = dat["monthly_global"]
-					self.monthly_guilds_data = dat["monthly_guilded"]
+					if 'monthly_global' in dat:
+						self.monthly_global_data = dat["monthly_global"]
+					if 'monthly_guilded' in dat:
+						self.monthly_guilds_data = dat["monthly_guilded"]
 					self.vclb = dat["vclb"]
 					self.gvclb = dat["gvclb"]
 		self.toggle = []

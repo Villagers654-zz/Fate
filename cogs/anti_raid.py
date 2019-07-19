@@ -171,6 +171,23 @@ class Anti_Raid(commands.Cog):
 								pass
 
 	@commands.Cog.listener()
+	async def on_guild_update(self, before, after):
+		guild_id = str(before.id); guild = after
+		if guild_id in self.toggle:
+			if before.name != after.name:
+				required_permission = await self.ensure_permissions(guild)
+				if not required_permission:
+					return
+				if 'discord.gg' in guild.name or 'discord,gg' in guild.name:
+					async for entry in guild.audit_logs(limit=1, action=discord.AuditLogAction.guild_update):
+						try:
+							await guild.ban(entry.user, reason='Attempted Raid')
+						except:
+							try: await guild.owner.send(f'Failed to ban {entry.user} for attempting a raid')
+							except: pass
+						await guild.edit(name=before.name)
+
+	@commands.Cog.listener()
 	async def on_guild_remove(self, guild):
 		guild_id = str(guild.id)
 		if guild_id in self.toggle:

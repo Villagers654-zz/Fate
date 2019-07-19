@@ -712,8 +712,8 @@ class Mod(commands.Cog):
 			reason = reason if reason != "Unspecified" else 'unspecified reasons'
 			ban_list += f'__**{user}:**__, **reason:** [`{reason}`]\n'
 		ban_list = [ban_list[i:i + 1000] for i in range(0, len(ban_list), 1000)]
-		if len(ban_list) > 7:
-			ban_list = ban_list[:7]
+		if len(ban_list) > 5:
+			ban_list = ban_list[:5]
 			e.set_footer(text='Character Limit Reached')
 		for i in range(len(ban_list)):
 			if i == 0:
