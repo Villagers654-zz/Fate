@@ -6,7 +6,7 @@ import discord
 import asyncio
 import json
 
-class Anti_Spam(commands.Cog):
+class AntiSpam(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.toggle = {}
@@ -237,4 +237,4 @@ class Anti_Spam(commands.Cog):
 			self.save_data()
 
 def setup(bot):
-	bot.add_cog(Anti_Spam(bot))
+	bot.add_cog(AntiSpam(bot))
