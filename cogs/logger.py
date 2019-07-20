@@ -108,7 +108,7 @@ class Logger(commands.Cog):
 				if not channel_access:
 					return False
 			else:
-				if not channel.permissions_for(bot).send_messages:
+				if not channel.permissions_for(bot).send_messages or not channel.permissions_for(bot).read_messages:
 					channel_access = await self.wait_for_access(guild_id)
 					if not channel_access:
 						return False
