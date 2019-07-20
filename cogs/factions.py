@@ -196,11 +196,15 @@ class Factions(commands.Cog):
 					for overwrite in base.overwrites.keys():
 						if isinstance(overwrite, discord.Member):
 							if overwrite.id not in self.factions[guild_id][faction]['members']:
-								if overwrite.id != self.bot.user.id:
-									name = str(faction).lower().replace(' ', '-')
-									channel = discord.utils.get(category.channels, name=name)
-									await channel.set_permissions(overwrite, overwrite=None)
-				for overwrite in base.overwrites.keys():
+								if overwrite.id != self.bot.user.id and overwrite.id != base.guild.roles[0].id:
+									await base.set_permissions(overwrite, overwrite=None)
+				if base.guild.roles[0] not in base.overwrites:
+					await base.set_permissions(base.guild.roles[0], read_messages=False)
+				for overwrite, perms in base.overwrites.items():
+					if overwrite.id == base.guild.roles[0].id:
+						if perms.read_messages is True or perms.read_messages is None:
+							await base.set_permissions(overwrite, read_messages=False)
+							continue
 					if overwrite.id not in self.factions[guild_id][faction]['members']:
 						if isinstance(overwrite, discord.Member):
 							if overwrite.bot:
@@ -1018,17 +1022,6 @@ class Factions(commands.Cog):
 		if not faction:
 			return await ctx.send('Faction not found')
 		del self.land_claims[str(ctx.guild.id)][faction][str(channel.id)]
-
-	@_factions.command(name='reset')
-	@commands.check(checks.luck)
-	async def reset(self, ctx):
-		guild_id = str(ctx.guild.id)
-		f = self.factions[guild_id]['Casa Nostra']
-		for member_id in f['members']:
-			if member_id != f['owner']:
-				index = f['members'].index(member_id)
-				self.factions[guild_id]['Casa Nostra'].pop(index)
-				self.save_data()
 
 	@commands.Cog.listener()
 	async def on_message(self, msg: discord.Message):
