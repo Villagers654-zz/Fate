@@ -186,7 +186,10 @@ class Leaderboards(commands.Cog):
 			guild_rank += 1
 			if user_id == id:
 				break
-		total_xp = self.guilds_data[guild_id][user_id]
+		if user_id not in self.guilds_data[guild_id]:
+			total_xp = 0
+		else:
+			total_xp = self.guilds_data[guild_id][user_id]
 		dat = self.calc_lvl(total_xp)
 		level = dat['level']; xp = dat['xp']
 		max_xp = 250 if level == 0 else dat['level_up']
