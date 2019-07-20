@@ -1102,7 +1102,8 @@ class Mod(commands.Cog):
 			if mute_role in user.roles:
 				await user.remove_roles(mute_role)
 				await ctx.send(f"**Unmuted:** {user.name}")
-			del self.timers[user_id]
+			if user_id in self.timers:
+				del self.timers[user_id]
 			self.save_json()
 		if punishment == 'Kick':
 			try:
