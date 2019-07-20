@@ -237,15 +237,5 @@ class SelfRoles(commands.Cog):
 				del self.msgs[guild_id][str(msg.id)]
 				self.save_data()
 
-	@commands.Cog.listener()
-	async def on_guild_remove(self, guild):
-		guild_id = str(guild.id)
-		if guild_id in self.msgs:
-			del self.msgs[guild_id]
-			self.save_data()
-		if guild_id in self.single:
-			del self.single[guild_id]
-			self.save_data()
-
 def setup(bot):
 	bot.add_cog(SelfRoles(bot))
