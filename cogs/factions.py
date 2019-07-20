@@ -183,6 +183,10 @@ class Factions(commands.Cog):
 							continue
 						await base.set_permissions(member, read_messages=True)
 				base = discord.utils.get(category.channels, name=name)
+				if not base:
+					if 'channel' in self.factions[guild_id][faction]:
+						base = self.bot.get_channel(self.factions[guild_id][faction]['channel'])
+				if not base: return
 				if 'channel' not in self.factions[guild_id][faction]:
 					self.factions[guild_id][faction]['channel'] = base.id
 				if base.id != self.factions[guild_id][faction]['channel']:
@@ -619,7 +623,9 @@ class Factions(commands.Cog):
 		if not faction:
 			return await ctx.send('You need to be in a faction to use this command')
 		guild_id = str(ctx.guild.id)
-		paycheck = random.randint(10, 25)
+		paycheck = random.randint(10, 20)
+		if 'work-upgrade' in self.factions[guild_id][faction]['items']:
+			paycheck = random.randint(15, 25)
 		self.factions[guild_id][faction]['balance'] += paycheck
 		e = discord.Embed(color=colors.purple())
 		e.description = f'You earned {faction} ${paycheck}'
@@ -721,7 +727,7 @@ class Factions(commands.Cog):
 		self.save_data()
 
 	@_factions.command(name='raid')
-	@commands.cooldown(1, 3600, commands.BucketType.user)
+	@commands.cooldown(1, 120, commands.BucketType.user)
 	async def _raid(self, ctx, *, faction):
 		target = self.get_faction_named(ctx, faction)
 		if not target:
@@ -732,7 +738,7 @@ class Factions(commands.Cog):
 		guild_id = str(ctx.guild.id)
 		t = self.factions[guild_id][target]
 		f = self.factions[guild_id][faction]
-		chance = 60 if t['balance'] > f['balance'] else 40
+		chance = 60 if f['balance'] > t['balance'] else 40
 		lmt = (5 * t['balance'] if t['balance'] < f['balance'] else f['balance']) / 100
 		pay = random.randint(0, round(lmt))
 		if random.randint(0, 100) < chance:
