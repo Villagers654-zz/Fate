@@ -49,7 +49,8 @@ class Emojis(commands.Cog):
 			await ctx.guild.create_custom_emoji(name=name, image=img, roles=roles, reason=reason)
 			await msg.edit(content=f'{msg.content}\nAdded {name} successfully')
 		except AttributeError as e:
-			await msg.edit(content=f'{msg.content}\nFailed to add {name}: [`{e}`]')
+			if msg: await msg.edit(content=f'{msg.content}\nFailed to add {name}: [`{e}`]')
+			else: await ctx.send(f'Failed to add {name}: [`{e}`]')
 		else:
 			if msg: await msg.edit(content=f'{msg.content}\nAdded {emoji} - {name}')
 			else: await ctx.send(f'Added {emoji} - {name}')
