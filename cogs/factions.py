@@ -720,7 +720,8 @@ class Factions(commands.Cog):
 		if 'icon' in f:
 			if f['icon']:
 				icon_url = f['icon']
-		del self.factions[guild_id][target]
+		try: del self.factions[guild_id][target]
+		except: pass
 		e = discord.Embed(color=colors.purple())
 		e.set_author(name=f'{faction} Annexed {target}', icon_url=icon_url)
 		await ctx.send(embed=e)
