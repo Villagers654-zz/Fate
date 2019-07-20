@@ -48,11 +48,11 @@ async def get_role(ctx, name):
 	else:
 		roles = []
 		for role in ctx.guild.roles:
-			if name == role.name.lower():
+			if name.lower() == role.name.lower():
 				roles.append(role)
 		if not roles:
 			for role in ctx.guild.roles:
-				if name in role.name.lower():
+				if name.lower() in role.name.lower():
 					roles.append(role)
 		if roles:
 			if len(roles) == 1:
