@@ -1,10 +1,8 @@
 .idea/
 __pycache__/
 *.exe
-/data/clipboard.txt/
-/data/config/*
-/data/images/*
-/data/userdata/*
-/data/misc/*
+*.json
+*.sh
+/data/*
 /cogs/avapxian_regime
 /utils/*
