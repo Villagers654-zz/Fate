@@ -746,12 +746,12 @@ class Factions(commands.Cog):
 			self.factions[guild_id][target]['balance'] -= pay
 			self.factions[guild_id][faction]['balance'] += pay
 			e = discord.Embed(color=colors.green())
-			e.description = f'You raided {target} and gained ${pay}'
+			e.description = f'{faction} raided {target} and gained ${pay}'
 		else:
 			self.factions[guild_id][target]['balance'] += pay
 			self.factions[guild_id][faction]['balance'] -= pay
 			e = discord.Embed(color=colors.red())
-			e.description = f'You attempted to raid {target} and lost ${pay}'
+			e.description = f'{faction} attempted to raid {target} and lost ${pay}'
 		await ctx.send(embed=e)
 		self.save_data()
 
