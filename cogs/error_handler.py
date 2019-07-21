@@ -64,8 +64,9 @@ class ErrorHandler(commands.Cog):
 			msg += f"{i}\n"
 		msg = msg[::-1]
 		msg = msg[:msg.find("Ignoring"[::-1])]
-		r = f"```Ignoring{msg[::-1]}```"[-1000:]
+		r = f"```Ignoring{msg[::-1][-1980:]}```"
 		e = discord.Embed(color=colors.red())
+		e.description = ctx.message.content
 		e.set_author(name=f"| Fatal Error | {ctx.command}", icon_url=ctx.author.avatar_url)
 		e.set_thumbnail(url=ctx.guild.icon_url)
 		e.add_field(name="◈ Error ◈", value=r, inline=False)
