@@ -252,7 +252,7 @@ class Utility(commands.Cog):
 			e.set_author(name=f"#{color}", icon_url=ctx.author.avatar_url)
 			await ctx.send(embed=e)
 
-	@commands.command(name="timer", pass_context=True, aliases=['reminder', 'alarm'])
+	@commands.command(name="timer", pass_context=True, aliases=['reminder', 'alarm'], enabled=False)
 	async def _timer(self, ctx, time, *, remember: commands.clean_content = ""):
 		if "d" in time:
 			t = int(time.replace("d", "")) * 60 * 60 * 24
