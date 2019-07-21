@@ -65,7 +65,8 @@ class Utility(commands.Cog):
 	@commands.guild_only()
 	@commands.bot_has_permissions(embed_links=True)
 	async def serverinfo(self, ctx):
-		e = discord.Embed(color=self.avg_color(ctx.guild.icon_url))
+		try: e = discord.Embed(color=self.avg_color(ctx.guild.icon_url))
+		except ZeroDivisionError: e = discord.Embed(color=colors.fate())
 		e.description = f'id: {ctx.guild.id}\nOwner: {ctx.guild.owner}'
 		e.set_author(name=f'{ctx.guild.name}:', icon_url=ctx.guild.owner.avatar_url)
 		e.set_thumbnail(url=ctx.guild.icon_url)
@@ -99,7 +100,8 @@ class Utility(commands.Cog):
 		if not isinstance(user, discord.Member):
 			return await ctx.send('User not found')
 		icon_url = user.avatar_url if user.avatar_url else self.bot.user.avatar_url
-		e = discord.Embed(color=self.avg_color(user.avatar_url))
+		try: e = discord.Embed(color=self.avg_color(user.avatar_url))
+		except ZeroDivisionError: e = discord.Embed(color=user.top_role.color)
 		e.set_author(name=user.display_name, icon_url=icon_url)
 		e.set_thumbnail(url=ctx.guild.icon_url)
 		e.description = f'__**ID:**__ {user.id}\n{f"Active On Mobile" if user.is_on_mobile() else ""}'
