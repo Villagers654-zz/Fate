@@ -1020,11 +1020,11 @@ class Mod(commands.Cog):
 			self.warns[guild_id][user_id] = []
 		self.warns[guild_id][user_id].append([reason, str(datetime.now())])
 		warns = 0
-		for reason, time in self.warns[guild_id][user_id]:
+		for reason, time in self.warns[guild_id][user_id].items():
 			time = datetime.strptime(time, '%Y-%m-%d %H:%M:%S.%f')
 			if (datetime.now() - time).days > 30:
 				if guild_id in config['warns']['expire']:
-					index = self.warns[guild_id][user_id].index([reason, time])
+					index = self.warns[guild_id][user_id].index([reason, str(time)])
 					self.warns[guild_id][user_id].pop(index)
 					continue
 			warns += 1
