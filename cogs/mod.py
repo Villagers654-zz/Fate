@@ -1201,10 +1201,10 @@ class Mod(commands.Cog):
 	@commands.guild_only()
 	@commands.bot_has_permissions(embed_links=True)
 	async def _warns(self, ctx, *, user=None):
+		if not user: user = ctx.author
+		else: user = utils.get_user(ctx, user)
 		if not user:
-			user = ctx.author
-		else:
-			user = utils.get_user(ctx, user)
+			return await ctx.send('User not found')
 		guild_id = str(ctx.guild.id)
 		user_id = str(user.id)
 		if guild_id not in self.warns:
