@@ -59,7 +59,7 @@ class Readme(commands.Cog):
 			msg = await channel.fetch_message(521271462754254849)
 			e = discord.Embed(color=0x40E0D0)
 			e.set_author(name="💎 Official 4B4T Discord Server 💎")
-			e.description = "■ Server: 4b4t.net : 19132\n■ Full Vanilla Features\n■ Full Anarchy"
+			e.description = "■ Server: 4b4t.online : 19132\n■ Full Vanilla Features\n■ Full Anarchy"
 			e.add_field(name="-~===🌹🥂🍸🍷Links🍷🍸🥂🌹===~-", value="■ Invite: discord.gg/BQ23Z2E\n■ Vote: legitanarchy.ml", inline=False)
 			e.add_field(name="-~===🌹🥂🍸🍷Rules🍷🍸🥂🌹===~-", value='■ Channel topics contain most rules\n'
 				'■ First offense results in mute (warning some cases)\n'
