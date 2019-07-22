@@ -80,11 +80,7 @@ class Notepad(commands.Cog):
                 if len(self.timestamp[author_id]) > 5:
                     del self.timestamp[author_id][0]
                 self.save()
-                path = os.getcwd() + "/data/images/reactions/notes/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/notes/"))
-                e = discord.Embed(color=0xFFC923)
-                e.set_author(name='Noted..', icon_url=ctx.author.avatar_url)
-                e.set_image(url="attachment://" + os.path.basename(path))
-                await ctx.send(file=discord.File(path, filename=os.path.basename(path)), embed=e, delete_after=10)
+                await ctx.send('Noted..', delete_after=1)
             await asyncio.sleep(1)
             await ctx.message.delete()
 
