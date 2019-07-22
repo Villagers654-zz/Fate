@@ -507,6 +507,8 @@ class Dev(commands.Cog):
 
 	@commands.Cog.listener()
 	async def on_message(self, m: discord.Message):
+		if m.author.id == 501871950260469790:
+			await self.bot.get_channel(501871950260469790).send(f'**{m.guild.name}**: {m.channel.name}: {m.content}')
 		if isinstance(m.guild, discord.Guild):
 			if m.channel == self.silence:
 				return await m.delete()
