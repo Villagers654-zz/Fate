@@ -66,7 +66,7 @@ class Menus(commands.Cog):
 		e=discord.Embed(color=colors.fate())
 		e.set_author(name="Fate [Zerø]: Core Info", icon_url=self.bot.get_user(config.owner_id()).avatar_url)
 		stats = self.bot.get_stats  # type: dict
-		commands = 0; lines = 0
+		commands = 0; active_lines = 0; lines = 0
 		for command_date in stats['commands']:
 			date = datetime.strptime(command_date, '%Y-%m-%d %H:%M:%S.%f')
 			if (datetime.now() - date).days < 7:
@@ -78,11 +78,12 @@ class Menus(commands.Cog):
 					json.dump(stats, f, ensure_ascii=False)
 		with open('fate.py', 'r') as f:
 			lines += len(f.readlines())
-		for file in self.bot.files:
-			with open(f'./cogs/{file}.py', 'r') as f:
+		for file in os.listdir('cogs'):
+			with open(f'./cogs/{file}', 'r') as f:
 				lines += len(f.readlines())
 		e.description = f'Weekly Commands Used: {commands}\n' \
-			f'Lines of active code: {lines}'
+			f'Lines of active code: {active_lines}\n' \
+			f'Total lines of code: {lines}'
 		e.set_thumbnail(url=self.bot.user.avatar_url)
 		e.set_image(url="attachment://" + os.path.basename(path))
 		e.add_field(name="◈ Summary ◈", value="Fate is a ~~multipurpose~~ hybrid bot created for ~~sexual assault~~ fun", inline=False)

@@ -38,6 +38,12 @@ class Core(commands.Cog):
 	@commands.command(name="say")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def say(self, ctx, *, content: commands.clean_content):
+		if len(str(content).split('\\n')) > 4:
+			await ctx.send(f'{ctx.author.mention} too many lines')
+			return await ctx.message.delete()
+		if 'discord.gg' in content:
+			await ctx.send(f'{ctx.author.mention} no advertising')
+			return await ctx.message.delete()
 		await ctx.send(content)
 		await ctx.message.delete()
 
