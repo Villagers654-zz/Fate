@@ -96,6 +96,13 @@ class Minecraft(commands.Cog):
 		self.bot.loop.create_task(self.motd_shuffle_task())
 
 	@commands.Cog.listener()
+	async def on_member_join(self, member: discord.Member):
+		if member.guild.id == 470961230362837002:
+			guild = self.bot.get_guild(470961230362837002)
+			motd = random.choice(self.motds)
+			await guild.edit(name=f"4B4T - {motd}")
+
+	@commands.Cog.listener()
 	async def on_raw_reaction_add(self, data):
 		if not self.bot.get_user(data.user_id).bot:
 			channel = self.bot.get_channel(580567603899269145)
