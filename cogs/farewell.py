@@ -176,18 +176,5 @@ class Farewell(commands.Cog):
 						del self.toggle[guild_id]
 						self.save_data()
 
-	@commands.Cog.listener()
-	async def on_guild_remove(self, guild):
-		guild_id = str(guild.id)
-		if guild_id in self.toggle:
-			del self.toggle[guild_id]
-		if guild_id in self.channel:
-			del self.channel[guild_id]
-		if guild_id in self.useimages:
-			del self.useimages[guild_id]
-		if guild_id in self.format:
-			del self.format[guild_id]
-		self.save_data()
-
 def setup(bot):
 	bot.add_cog(Farewell(bot))

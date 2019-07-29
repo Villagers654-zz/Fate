@@ -162,29 +162,6 @@ class Mod(commands.Cog):
 					del self.warns[guild_id][user_id]
 					self.save_json()
 
-	@commands.Cog.listener()
-	async def on_guild_remove(self, guild):
-		guild_id = str(guild.id)
-		if guild_id in self.warns:
-			del self.warns[guild_id]
-			self.save_json()
-		if guild_id in self.roles:
-			del self.warns[guild_id]
-			self.save_json()
-		if guild_id in self.timers['mute']:
-			del self.timers['mute'][guild_id]
-			self.save_json()
-		if guild_id in self.timers['ban']:
-			del self.timers['ban'][guild_id]
-			self.save_json()
-		if guild_id in self.mods:
-			del self.mods[guild_id]
-			self.save_json()
-		config = self.bot.get_config
-		if guild_id in config['restricted']:
-			del config['restricted'][guild_id]
-			self.save_config(config)
-
 	@commands.command(name="cleartimers")
 	@commands.check(checks.luck)
 	async def cleartimers(self, ctx):

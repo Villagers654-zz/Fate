@@ -137,12 +137,5 @@ class Utility(commands.Cog):
 								print('msg passed')
 						print('ran through all images')
 
-	@commands.Cog.listener()
-	async def on_guild_remove(self, guild):
-		guild_id = str(guild.id)
-		if guild_id in self.images:
-			del self.images[guild_id]
-			self.save_data()
-
 def setup(bot):
 	bot.add_cog(Utility(bot))

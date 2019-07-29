@@ -175,203 +175,59 @@ class ChatBot(commands.Cog):
 		await ctx.message.delete()
 
 	@commands.Cog.listener()
-	async def on_message(self, m: discord.Message):
-		if isinstance(m.guild, discord.Guild):
-			if m.content.startswith("<@506735111543193601>"):
-				m.content = m.content.replace("<@506735111543193601>", m.author.mention)
-			if m.content.startswith(self.bot.user.mention):
-				return
-			for mention in m.mentions:
-				m.content = m.content.replace(str(mention), str(self.bot.user.mention))
-			for mention in m.role_mentions:
-				m.content = m.content.replace(str(mention), str(self.bot.user.mention))
-			if not m.author.bot:
-				guild_id = str(m.guild.id)
-				if "help" in m.content[:8]:
-					def pred(m):
-						return m.channel.id == m.channel.id and m.author.bot is True
-					try:
-						await self.bot.wait_for('message', check=pred, timeout=2)
-					except asyncio.TimeoutError:
-						return
-					else:
-						if guild_id not in self.prefixes:
-							self.prefixes[guild_id] = []
-						if m.content[:m.content.find("help")] not in self.prefixes[guild_id]:
-							self.prefixes[guild_id].append(m.content[:m.content.find("help")])
-						return
-				blocked = ["http", "discord.gg", "discord,gg", "py", "js", "python", "javascript", "`"]
-				for i in blocked:
-					if i in m.content.lower():
-						return
-				if guild_id in self.toggle:
-					if m.channel.id == self.toggle[guild_id]:
-						if len(m.content) is 0:
-							return
-						if guild_id not in self.cd:
-							self.cd[guild_id] = 0
-						if self.cd[guild_id] > time.time():
-							return
-						self.cd[guild_id] = time.time() + 2
-						if guild_id in self.prefixes:
-							for prefix in self.prefixes[guild_id]:
-								if m.content.startswith(prefix):
-									return
-						if m.content.startswith("."):
-							return
-						keys = m.content.split(" ")
-						key = random.choice(keys)
-						if "the" in keys:
-							key = keys[keys.index("the") + 1]
-						if "if" in keys:
-							key = keys[keys.index("if") + 2]
-						cache = self.cache["global"]
-						if self.dir[guild_id] == "guilded":
-							if guild_id not in self.cache:
-								self.cache[guild_id] = []
-							cache = self.cache[guild_id]
-							if m.content not in cache:
-								self.cache[guild_id].append(m.content)
-								self.cache["global"].append(m.content)
-								self.save_data()
-						else:
-							if m.content not in cache:
-								self.cache["global"].append(m.content)
-								self.save_data()
-						if len(keys) < 4:
-							if random.randint(1, 10) > 8:
-								async with m.channel.typing():
-									search = ''
-									m.content = m.content.lower()
-									m.content = m.content.replace(str(self.bot.user.mention), '')
-									m.content = m.content.replace('fate', '')
-									for char in list(m.content):
-										if char.lower() in list('abcdefghijklmnopqrstuvwxyz '):
-											search += char
-									search = search.replace(' i ', 'you').replace(' my ', 'your')
-									search = search.replace('dont', '')
-									apikey = "LIWIXISVM3A7"
-									lmt = 4
-									r = requests.get("https://api.tenor.com/v1/anonid?key=%s" % apikey)
-									if r.status_code == 200:
-										anon_id = json.loads(r.content)["anon_id"]
-									else:
-										anon_id = ""
-									r = requests.get("https://api.tenor.com/v1/search?q=%s&key=%s&limit=%s&anon_id=%s" % (search, apikey, lmt, anon_id))
-									if r.status_code == 200:
-										try:
-											dat = json.loads(r.content)
-											e = discord.Embed()
-											e.set_image(url=dat['results'][random.randint(0, len(dat['results']) - 1)]['media'][0]['gif']['url'])
-											return await m.channel.send(embed=e)
-										except Exception as e:
-											return
-									else:
-										return
-						matches = []
-						found = False
-						for msg in cache:
-							if key in msg:
-								matches.append(msg)
-								found = True
-						if found:
-							choice = random.choice(matches)
-							name = m.author.mention
-							choice = choice.replace(str(self.bot.user.mention), str(m.author.mention))
-							if choice.lower() == m.content.lower():
-								return
-							choice = choice.replace('Fate', name).replace('fate', name)
-							for mention in m.channel_mentions:
-								channel = random.choice(list(m.guild.text_channels))
-								choice = choice.replace(str(mention), channel.mention)
-							try:
-								async with m.channel.typing():
-									await asyncio.sleep(1)
-								await m.channel.send(choice.replace('568977264910532618', ''))
-							except:
-								pass
-		else:
-			if not m.author.bot:
-				found = False
-				user_id = str(m.author.id)
-				blocked = ["http", "discord.gg", "discord,gg", "py", "js", "python", "javascript", "`"]
-				for i in blocked:
-					if i in m.content.lower():
-						return
-				if len(m.content) is 0:
-					return
-				if user_id not in self.dm_cd:
-					self.dm_cd[user_id] = 0
-				if self.dm_cd[user_id] > time.time():
-					return
-				self.dm_cd[user_id] = time.time() + 2
-				if m.content.startswith("."):
-					return
-				keys = m.content.split(" ")
-				key = random.choice(keys)
-				if "the" in keys:
-					key = keys[keys.index("the") + 1]
-				if "if" in keys:
-					key = keys[keys.index("if") + 2]
+	async def on_message(self, msg: discord.Message):
+		"""Tries to respond with related message"""
+		if isinstance(msg.guild, discord.Guild) and not msg.author.bot:
+			guild_id = str(msg.guild.id)
+			def get_matches(key) -> list:
+				"""Returns a list of related messages"""
 				cache = self.cache["global"]
-				if m.content not in cache:
-					self.cache["global"].append(m.content)
-					self.save_data()
-				if len(keys) < 4:
-					if random.randint(1, 10) > 9:
-						async with m.channel.typing():
-							apikey = "LIWIXISVM3A7"
-							lmt = 4
-							r = requests.get("https://api.tenor.com/v1/anonid?key=%s" % apikey)
-							if r.status_code == 200:
-								anon_id = json.loads(r.content)["anon_id"]
-							else:
-								anon_id = ""
-							r = requests.get("https://api.tenor.com/v1/search?q=%s&key=%s&limit=%s&anon_id=%s" % (m.content, apikey, lmt, anon_id))
-							if r.status_code == 200:
-								try:
-									dat = json.loads(r.content)
-									e = discord.Embed()
-									e.set_image(url=dat['results'][random.randint(0, len(dat['results']) - 1)]['media'][0]['gif']['url'])
-									return await m.channel.send(embed=e)
-								except Exception as e:
-									return
-							else:
-								return
-				matches = []
-				for msg in cache:
-					if key in msg:
-						matches.append(msg)
-						found = True
-				if found:
-					choice = random.choice(matches)
-					name = m.author.mention
-					choice = choice.replace(str(self.bot.user.mention), str(m.author.mention))
-					if choice.lower() == m.content.lower():
-						return
-					choice = choice.replace('Fate', name).replace('fate', name)
-					try:
-						async with m.channel.typing():
-							await asyncio.sleep(1)
-						await m.channel.send(choice)
-					except:
-						pass
-
-	@commands.Cog.listener()
-	async def on_guild_remove(self, guild):
-		guild_id = str(guild.id)
-		if guild_id in self.toggle:
-			del self.toggle[guild_id]
-			self.save_data()
-		if guild_id in self.cache:
-			del self.cache[guild_id]
-			self.save_data()
-		if guild_id in self.prefixes:
-			del self.prefixes[guild_id]
-			self.save_data()
-		if guild_id in self.dir:
-			del self.dir[guild_id]
-			self.save_data()
+				if self.dir[guild_id] == "guilded":
+					if guild_id not in self.cache:
+						self.cache[guild_id] = []
+					cache = self.cache[guild_id]
+				return [m for m in cache if key in m and m != msg.content]
+			blocked = ["http", "discord.gg", "discord,gg", "py", "js", "python", "javascript", "`"]
+			if not all(phrase for phrase in blocked if phrase not in msg.content): return
+			if guild_id not in self.toggle: return
+			if msg.channel.id != self.toggle[guild_id]: return
+			if guild_id not in self.cd: self.cd[guild_id] = 0
+			if self.cd[guild_id] > time.time(): return
+			self.cd[guild_id] = time.time() + 2
+			try: await self.bot.wait_for('message', check=lambda x: x.author.bot, timeout=1)
+			except asyncio.TimeoutError: pass
+			else: self.cd[guild_id] = time.time(); return
+			async with msg.channel.typing():
+				if guild_id not in self.cache:
+					self.cache[guild_id] = []
+				cache = self.cache[guild_id]
+				bot_mention = str(self.bot.user.mention)
+				if not msg.content.startswith(bot_mention):
+					for mention in msg.mentions:
+						msg.content = msg.content.replace(str(mention), bot_mention)
+					for mention in msg.role_mentions:
+						msg.content = msg.content.replace(str(mention), bot_mention)
+					if msg.content not in cache:
+						self.cache[guild_id].append(msg.content)
+						self.cache["global"].append(msg.content)
+						self.save_data()
+					choice = None; index = 0
+					while not choice:  # runs a max of 10 times with a different key to get a match
+						if index == 10: return
+						keys = msg.content.split(' '); key = random.choice(keys)
+						matches = get_matches(key)
+						if len(matches) > 0:
+							choice = random.choice(matches)
+						index += 1
+					name = msg.author.mention; choice = choice.lower()
+					choice = choice.replace(bot_mention, name).replace('fate', name)
+					for mention in msg.role_mentions:
+						choice = choice.replace(str(mention), str(mention.name))
+					for mention in msg.channel_mentions:
+						channel = random.choice(list(msg.guild.text_channels))
+						choice = choice.replace(str(mention), channel.mention)
+					await asyncio.sleep(0.5)
+					await msg.channel.send(choice)
 
 def setup(bot):
 	bot.add_cog(ChatBot(bot))

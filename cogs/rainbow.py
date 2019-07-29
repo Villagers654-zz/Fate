@@ -13,6 +13,24 @@ CONFIG = {
                 'COLORS': ColorSets().rainbow(),
                 'CYCLE_DURATION': 50,
                 'STOP_AFTER_N_SECONDS': 50
+            },
+            598386553894600705: {
+                'TOGGLE': True,
+                'ROLE': '🍀𝓛𝓾𝓬𝓴 🍀',
+                'COLORS': ColorSets().rainbow(),
+                'CYCLE_DURATION': 50,
+                'STOP_AFTER_N_SECONDS': 50
+            },
+        }
+    },
+    598386553894600705: {
+        'GUILDS': {
+            579823772547153958: {
+                'TOGGLE': True,
+                'ROLE': '◈𝓛𝓾𝓬𝓴 ◈',
+                'COLORS': ColorSets().rainbow(),
+                'CYCLE_DURATION': 50,
+                'STOP_AFTER_N_SECONDS': 50
             }
         }
     },
@@ -63,7 +81,7 @@ class Rainbow(commands.Cog):
                         if index >= len(colors):
                             index = 0
 
-                        await role.edit(color=discord.Color(int(color.replace("#", "0x"), 0)))
+                        await role.edit(color=discord.Color(int(str(color).replace("#", "0x"), 0)))
 
                         await asyncio.sleep(1)  # the loop is every 1 sec
                     await role.edit(color=original)  # revert to original

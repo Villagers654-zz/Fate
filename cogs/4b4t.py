@@ -98,9 +98,13 @@ class Minecraft(commands.Cog):
 	@commands.Cog.listener()
 	async def on_member_join(self, member: discord.Member):
 		if member.guild.id == 470961230362837002:
-			guild = self.bot.get_guild(470961230362837002)
-			motd = random.choice(self.motds)
-			await guild.edit(name=f"4B4T - {motd}")
+			try:
+				await member.send('4B4T is closing ~~(dead)~~, '
+				    'try out one of the other servers:\n'
+				    'http://discord.gg/KJ9TruQ\n')
+				await member.ban(reason='Transfer')
+			except:
+				pass
 
 	@commands.Cog.listener()
 	async def on_raw_reaction_add(self, data):

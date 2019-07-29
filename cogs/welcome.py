@@ -245,7 +245,7 @@ class Welcome(commands.Cog):
 			complete = False
 			await ctx.send('Send the image(s) you\'d like to use\nReply with "done" when finished')
 			while complete is False:
-				msg = utils.Bot(self.bot).wait_for_msg(ctx)  # type: discord.Message
+				msg = await utils.Bot(self.bot).wait_for_msg(ctx)  # type: discord.Message
 				if msg:
 					if msg.content:
 						if "done" in msg.content.lower():
@@ -342,25 +342,6 @@ class Welcome(commands.Cog):
 						self.save_data()
 					else:
 						pass
-
-	@commands.Cog.listener()
-	async def on_guild_remove(self, guild):
-		guild_id = str(guild.id)
-		is_changed = False
-		if guild_id in self.toggle:
-			del self.toggle[guild_id]
-			is_changed = True
-		if guild_id in self.channel:
-			del self.channel[guild_id]
-			is_changed = True
-		if guild_id in self.useimages:
-			del self.useimages[guild_id]
-			is_changed = True
-		if guild_id in self.format:
-			del self.format[guild_id]
-			is_changed = True
-		if is_changed:
-			self.save_data()
 
 def setup(bot):
 	bot.add_cog(Welcome(bot))

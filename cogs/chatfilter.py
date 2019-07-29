@@ -125,14 +125,5 @@ class ChatFilter(commands.Cog):
 									await asyncio.sleep(0.5)
 									await after.delete()
 
-	@commands.Cog.listener()
-	async def on_guild_remove(self, guild):
-		guild_id = str(guild.id)
-		if guild_id in self.toggle:
-			del self.toggle[guild_id]
-		if guild_id in self.blacklist:
-			del self.blacklist[guild_id]
-		self.save_data()
-
 def setup(bot):
 	bot.add_cog(ChatFilter(bot))

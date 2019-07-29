@@ -20,6 +20,7 @@ class Utility(commands.Cog):
 		self.afk = {}
 
 	def avg_color(self, url):
+		"""Gets an image and returns the average color"""
 		if not url:
 			return colors.fate()
 		im = Image.open(BytesIO(requests.get(url).content)).convert('RGBA')
@@ -27,7 +28,7 @@ class Utility(commands.Cog):
 		r = g = b = c = 0
 		for pixel in pixels:
 			brightness = (pixel[0] + pixel[1] + pixel[2]) / 3
-			if pixel[3] > 64 and brightness > 100:
+			if pixel[3] > 64 and brightness > 80:
 				r += pixel[0]
 				g += pixel[1]
 				b += pixel[2]
@@ -35,29 +36,119 @@ class Utility(commands.Cog):
 		r = r / c; g = g / c; b = b / c
 		return eval('0x' + rgb2hex(round(r), round(g), round(b)).replace('#', ''))
 
-	@commands.command(name='servericon', aliases=['icon'])
+	@commands.command(name='info', cog='utility')
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.guild_only()
 	@commands.bot_has_permissions(embed_links=True)
-	async def servericon(self, ctx):
-		e=discord.Embed(color=0x80b0ff)
-		e.set_image(url=ctx.guild.icon_url)
-		await ctx.send(embed=e)
-
-	@commands.command(name='channelinfo', aliases=['cinfo'])
-	@commands.cooldown(1, 3, commands.BucketType.user)
-	@commands.guild_only()
-	@commands.bot_has_permissions(embed_links=True)
-	async def channelinfo(self, ctx, channel: discord.TextChannel=None):
-		if not channel:
-			channel = ctx.channel
-		e = discord.Embed(description=f'ID: {channel.id}', color=0x0000ff)
-		e.set_author(name=f'{channel.name}:', icon_url=ctx.author.avatar_url)
+	async def info(self, ctx, target=None):
+		"""Returns information for invites, users, roles & channels"""
+		if not target:  # basic info from all categories
+			user = ctx.author; channel = ctx.channel; role = ctx.author.top_role
+			e = discord.Embed(color=colors.fate())
+			e.set_author(name=f'General Information', icon_url=ctx.author.avatar_url)
+			e.set_thumbnail(url=ctx.guild.icon_url)
+			server_info = f'**• Owner:** [{ctx.guild.owner.mention}]\n' \
+				f'**• ID:** [`{ctx.guild.id}`]\n' \
+				f'**• Member Count:** [`{len(ctx.guild.members)}`]'
+			e.add_field(name='◈ Server ◈', value=server_info, inline=False)
+			user_info = f'{f"**• Nickname** [`{user.nick}`]" if user.nick else ""}\n' \
+				f'**• Activity:** [`{user.activity.name if user.activity else None}`]\n' \
+				f'**• Status:** [`{user.status}`]\n**• Role** [{user.top_role.mention}]'
+			e.add_field(name='◈ User ◈', value=user_info, inline=False)
+			notable = ['view_audit_log', 'manage_roles', 'manage_channels', 'manage_emojis',
+			    'kick_members', 'ban_members', 'manage_messages', 'mention_everyone']
+			perms = ', '.join(perm for perm, value in role.permissions if value and perm in notable)
+			perms = 'administrator' if role.permissions.administrator else perms
+			role_info = f"**• Color:** [`{role.color}`]\n" \
+				f"**• Members:** [`{len(role.members)}`]\n" \
+				f"**• Perms:** [`{perms}`]"
+			e.add_field(name='◈ Role ◈', value=role_info, inline=False)
+			created = datetime.date(channel.created_at)
+			channel_info = f'**• ID:** [`{channel.id}`]\n' \
+				f'**• Member Count** [`{len(channel.members)}`]\n' \
+				f'**• Created:** [`{created.strftime("%m/%d/%Y")}`]'
+			e.add_field(name='◈ Channel ◈', value=channel_info, inline=False)
+			return await ctx.send(embed=e)
+		if 'discord.gg' in target:
+			code = discord.utils.resolve_invite(target)
+			try:
+				invite = await self.bot.fetch_invite(code)
+			except discord.errors.Forbidden:
+				return await ctx.send('Failed to resolve invite url')
+			guild = invite.guild
+			e = discord.Embed(color=colors.fate())
+			e.set_thumbnail(url=guild.splash_url if guild.splash_url else guild.icon_url)
+			e.set_author(name=f'{invite.guild.name}:', icon_url=guild.icon_url)
+			created = datetime.date(guild.created_at)
+			e.description = f'◈ SID: [`{guild.id}`]\n' \
+				f'◈ Member Count: [`{invite.approximate_member_count}`]\n' \
+				f'◈ Online Members: [`{invite.approximate_presence_count}`]\n' \
+				f'◈ Channel: [`#{invite.channel.name}`]\n' \
+				f'◈ CID: [`{invite.channel.id}`]\n' \
+				f'◈ Verification Level: [`{guild.verification_level}`]\n' \
+				f'◈ Created: [`{created.strftime("%m/%d/%Y")}`]'
+			if guild.banner_url:
+				e.set_image(url=guild.banner_url)
+			return await ctx.send(embed=e)
+		if ctx.message.mentions:  # user mentions
+			user = ctx.message.mentions[0]
+			icon_url = user.avatar_url if user.avatar_url else self.bot.user.avatar_url
+			try: e = discord.Embed(color=self.avg_color(user.avatar_url))
+			except ZeroDivisionError: e = discord.Embed(color=user.top_role.color)
+			e.set_author(name=user.display_name, icon_url=icon_url)
+			e.set_thumbnail(url=ctx.guild.icon_url)
+			e.description = f'__**ID:**__ {user.id}\n{f"Active On Mobile" if user.is_on_mobile() else ""}'
+			main = f'{f"**• Nickname** [`{user.nick}`]" if user.nick else ""}\n' \
+				f'**• Activity** [`{user.activity.name if user.activity else None}`]\n' \
+				f'**• Status** [`{user.status}`]\n' \
+				f'**• Role** [{user.top_role.mention}]'
+			e.add_field(name='◈ Main ◈', value=main, inline=False)
+			roles = ['']; index = 0
+			for role in sorted(user.roles, reverse=True):
+				if len(roles[index]) + len(role.mention) + 2 > 1000:
+					roles.append('')
+					index += 1
+				roles[index] += f'{role.mention} '
+			for role_list in roles:
+				index = roles.index(role_list)
+				e.add_field(name=f'◈ Roles ◈ ({len(user.roles)})' if index is 0 else '~', value=role_list, inline=False)
+			permissions = user.guild_permissions
+			notable = ['view_audit_log', 'manage_roles', 'manage_channels', 'manage_emojis',
+				'kick_members', 'ban_members', 'manage_messages', 'mention_everyone']
+			perms = ', '.join(perm for perm, value in permissions if value and perm in notable)
+			perms = 'administrator' if permissions.administrator else perms
+			if perms: e.add_field(name='◈ Perms ◈', value=perms, inline=False)
+			e.add_field(name='◈ Created ◈', value=datetime.date(user.created_at).strftime("%m/%d/%Y"), inline=False)
+			return await ctx.send(embed=e)
+		if ctx.message.channel_mentions:
+			channel = ctx.message.channel_mentions[0]
+			e = discord.Embed(description=f'ID: {channel.id}', color=0x0000ff)
+			e.set_author(name=f'{channel.name}:', icon_url=ctx.author.avatar_url)
+			e.set_thumbnail(url=ctx.guild.icon_url)
+			e.add_field(name="◈ Main ◈", value=f'• Category: {channel.category}\n• Slowmode: {channel.slowmode_delay}', inline=True)
+			if channel.topic:
+				e.add_field(name="◈ Topic ◈", value=channel.topic, inline=True)
+			e.add_field(name="◈ Created ◈", value=datetime.date(channel.created_at).strftime("%m/%d/%Y"), inline=True)
+			return await ctx.send(embed=e)
+		role = await utils.get_role(ctx, target)
+		if not role:
+			return await ctx.send('Target not found')
+		icon_url = ctx.guild.owner.avatar_url if ctx.guild.owner.avatar_url else self.bot.user.avatar_url
+		e = discord.Embed(color=role.color)
+		e.set_author(name=f"{role.name}:", icon_url=icon_url)
 		e.set_thumbnail(url=ctx.guild.icon_url)
-		e.add_field(name="◈ Main ◈", value=f'• Category: {channel.category}\n• Slowmode: {channel.slowmode_delay}', inline=True)
-		if channel.topic:
-			e.add_field(name="◈ Topic ◈", value=channel.topic, inline=True)
-		e.add_field(name="◈ Created ◈", value=datetime.date(channel.created_at).strftime("%m/%d/%Y"), inline=True)
+		e.description = f'__**ID:**__ {role.id}'
+		e.add_field(name="◈ Main ◈", value=f"**Members:** [{len(role.members)}]\n"
+			f"**Color:** [{role.color}]\n"
+			f"**Mentionable:** [{role.mentionable}]\n"
+			f"**Integrated:** [{role.managed}]\n"
+			f"**Position:** [{role.position}]\n", inline=False)
+		notable = ['view_audit_log', 'manage_roles', 'manage_channels', 'manage_emojis',
+		    'kick_members', 'ban_members', 'manage_messages', 'mention_everyone']
+		perms = ', '.join(perm for perm, value in role.permissions if value and perm in notable)
+		perms = 'administrator' if role.permissions.administrator else perms
+		e.add_field(name="◈ Perms ◈", value=f"```{perms if perms else 'None'}```", inline=False)
+		e.add_field(name="◈ Created ◈", value=datetime.date(role.created_at).strftime('%m/%d/%Y'), inline=False)
 		await ctx.send(embed=e)
 
 	@commands.command(name='serverinfo', aliases=['sinfo'])
@@ -89,71 +180,13 @@ class Utility(commands.Cog):
 		e.add_field(name='◈ Created ◈', value=created.strftime('%m/%d/%Y'), inline=False)
 		await ctx.send(embed=e)
 
-	@commands.command(name='userinfo', aliases=['uinfo'])
+	@commands.command(name='servericon', aliases=['icon'])
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.guild_only()
 	@commands.bot_has_permissions(embed_links=True)
-	async def userinfo(self, ctx, *, user=None):
-		if not user:
-			user = ctx.author.mention
-		user = utils.get_user(ctx, user)
-		if not isinstance(user, discord.Member):
-			return await ctx.send('User not found')
-		icon_url = user.avatar_url if user.avatar_url else self.bot.user.avatar_url
-		try: e = discord.Embed(color=self.avg_color(user.avatar_url))
-		except ZeroDivisionError: e = discord.Embed(color=user.top_role.color)
-		e.set_author(name=user.display_name, icon_url=icon_url)
-		e.set_thumbnail(url=ctx.guild.icon_url)
-		e.description = f'__**ID:**__ {user.id}\n{f"Active On Mobile" if user.is_on_mobile() else ""}'
-		main = f'{f"**• Nickname** [`{user.nick}`]" if user.nick else ""}\n' \
-			f'**• Activity** [`{user.activity.name if user.activity else None}`]\n' \
-			f'**• Status** [`{user.status}`]\n' \
-			f'**• Role** [{user.top_role.mention}]'
-		e.add_field(name='◈ Main ◈', value=main, inline=False)
-		roles = ['']; index = 0
-		for role in sorted(user.roles, reverse=True):
-			if len(roles[index]) + len(role.mention) + 2 > 1000:
-				roles.append('')
-				index += 1
-			roles[index] += f'{role.mention} '
-		for role_list in roles:
-			index = roles.index(role_list)
-			e.add_field(name=f'◈ Roles ◈ ({len(user.roles)})' if index is 0 else '~', value=role_list, inline=False)
-		permissions = user.guild_permissions
-		notable = ['view_audit_log', 'manage_roles', 'manage_channels', 'manage_emojis',
-			'kick_members', 'ban_members', 'manage_messages', 'mention_everyone']
-		perms = ', '.join(perm for perm, value in permissions if value and perm in notable)
-		perms = 'administrator' if permissions.administrator else perms
-		if perms:
-			e.add_field(name='◈ Perms ◈', value=perms, inline=False)
-		e.add_field(name='◈ Created ◈', value=datetime.date(user.created_at).strftime("%m/%d/%Y"), inline=False)
-		await ctx.send(embed=e)
-
-	@commands.command(name='roleinfo', aliases=['rinfo'])
-	@commands.cooldown(1, 3, commands.BucketType.user)
-	@commands.guild_only()
-	@commands.bot_has_permissions(manage_roles=True)
-	@commands.bot_has_permissions(embed_links=True)
-	async def roleinfo(self, ctx, *, role):
-		role = await utils.get_role(ctx, role)
-		if not role:
-			return await ctx.send('Role not found')
-		icon_url = ctx.guild.owner.avatar_url if ctx.guild.owner.avatar_url else self.bot.user.avatar_url
-		e = discord.Embed(color=role.color)
-		e.set_author(name=f"{role.name}:", icon_url=icon_url)
-		e.set_thumbnail(url=ctx.guild.icon_url)
-		e.description = f'__**ID:**__ {role.id}'
-		e.add_field(name="◈ Main ◈", value=f"**Members:** [{len(role.members)}]\n"
-			f"**Color:** [{role.color}]\n"
-			f"**Mentionable:** [{role.mentionable}]\n"
-			f"**Integrated:** [{role.managed}]\n"
-			f"**Position:** [{role.position}]\n", inline=False)
-		notable = ['view_audit_log', 'manage_roles', 'manage_channels', 'manage_emojis',
-			'kick_members', 'ban_members', 'manage_messages', 'mention_everyone']
-		perms = ', '.join(perm for perm, value in role.permissions if value and perm in notable)
-		perms = 'administrator' if role.permissions.administrator else perms
-		e.add_field(name="◈ Perms ◈", value=f"```{perms if perms else 'None'}```", inline=False)
-		e.add_field(name="◈ Created ◈", value=datetime.date(role.created_at).strftime('%m/%d/%Y'), inline=False)
+	async def servericon(self, ctx):
+		e=discord.Embed(color=0x80b0ff)
+		e.set_image(url=ctx.guild.icon_url)
 		await ctx.send(embed=e)
 
 	@commands.command(name='makepoll', aliases=['mp'])
@@ -252,7 +285,7 @@ class Utility(commands.Cog):
 			e.set_author(name=f"#{color}", icon_url=ctx.author.avatar_url)
 			await ctx.send(embed=e)
 
-	@commands.command(name="timer", pass_context=True, aliases=['reminder', 'alarm'], enabled=False)
+	@commands.command(name="timer", pass_context=True, aliases=['reminder', 'alarm'])
 	async def _timer(self, ctx, time, *, remember: commands.clean_content = ""):
 		if "d" in time:
 			t = int(time.replace("d", "")) * 60 * 60 * 24
@@ -348,6 +381,8 @@ class Utility(commands.Cog):
 	@commands.guild_only()
 	@commands.bot_has_permissions(embed_links=True)
 	async def afk(self, ctx, *, reason='afk'):
+		if ctx.message.mentions or ctx.message.role_mentions:
+			return await ctx.send('nO')
 		e = discord.Embed(color=colors.fate())
 		e.set_author(name='You are now afk', icon_url=ctx.author.avatar_url)
 		await ctx.send(embed=e, delete_after=5)
@@ -357,6 +392,7 @@ class Utility(commands.Cog):
 
 	@commands.Cog.listener()
 	async def on_message(self, msg):
+		if msg.author.bot: return
 		user_id = str(msg.author.id)
 		if user_id in self.afk:
 			del self.afk[user_id]
@@ -367,7 +403,7 @@ class Utility(commands.Cog):
 				if user_id in self.afk:
 					replies = ['shh', 'shush', 'shush child', 'stfu cunt', 'nO']
 					choice = random.choice(replies)
-					await msg.channel.send(f'{choice} he\'s {self.afk[user_id]}', delete_after=10)
+					await msg.channel.send(f'{choice} he\'s {self.afk[user_id]}')
 
 def setup(bot):
 	bot.add_cog(Utility(bot))

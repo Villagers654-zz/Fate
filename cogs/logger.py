@@ -295,12 +295,6 @@ class Logger(commands.Cog):
 					self.invites[guild_id][invite.url] = invite.uses
 
 	@commands.Cog.listener()
-	async def on_guild_remove(self, guild):
-		guild_id = str(guild.id)
-		if guild_id in self.channel:
-			del self.channel[guild_id]
-
-	@commands.Cog.listener()
 	async def on_typing(self, channel, user, when):
 		if not isinstance(channel, discord.DMChannel):
 			guild_id = str(channel.guild.id)

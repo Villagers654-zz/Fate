@@ -58,12 +58,5 @@ class RestoreRoles(commands.Cog):
 				self.data[guild_id][member_id].append(role.id)
 			self.save_data()
 
-	@commands.Cog.listener()
-	async def on_guild_remove(self, guild):
-		guild_id = str(guild.id)
-		if guild_id in self.data:
-			del self.data[guild_id]
-			self.save_data()
-
 def setup(bot):
 	bot.add_cog(RestoreRoles(bot))

@@ -17,6 +17,7 @@ class ErrorHandler(commands.Cog):
 			return
 		ignored = (commands.CommandNotFound, commands.NoPrivateMessage, discord.errors.NotFound)
 		error = getattr(error, 'original', error)
+		err = str(error)
 		if isinstance(error, ignored):
 			return
 		elif isinstance(error, commands.DisabledCommand):
@@ -37,8 +38,6 @@ class ErrorHandler(commands.Cog):
 		elif isinstance(error, commands.CheckFailure):
 			await ctx.message.add_reaction('⚠')
 			return await ctx.send(error)
-		elif isinstance(error, KeyError):
-			await ctx.send(f"**No Data:** key {error} doesnt exist")
 		elif isinstance(error, discord.errors.Forbidden):
 			bot = ctx.guild.get_member(self.bot.user.id)
 			if ctx.channel.permissions_for(bot).send_messages:
@@ -48,14 +47,13 @@ class ErrorHandler(commands.Cog):
 			try: await ctx.author.send(f"__**{ctx.guild.name}:**__\nERROR: {error}")
 			except: pass
 			return
+		elif isinstance(error, KeyError):
+			err = f'No Data: {error}'
 		print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
 		traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
 		e = discord.Embed(color=colors.red())
-		e.set_author(name=f"| Fatal Error | {ctx.command}", icon_url=ctx.author.avatar_url)
-		e.set_thumbnail(url=ctx.guild.icon_url)
-		e.description = "This has been logged and will be resolved shortly"
-		e.add_field(name="◈ Error ◈", value=str(error)[:2000], inline=False)
-		await ctx.send(error)
+		e.description = f'[{err}](https://www.youtube.com/watch?v=t3otBjVZzT0)'
+		await ctx.send(embed=e)
 		p = subprocess.Popen("cat  /home/luck/.pm2/logs/fate-error.log", stdout=subprocess.PIPE, shell=True)
 		(output, err) = p.communicate()
 		output = str(output).replace("\\t", "    ").replace("b'", "").replace("`", "").split("\\n")
@@ -70,7 +68,12 @@ class ErrorHandler(commands.Cog):
 		e.set_author(name=f"| Fatal Error | {ctx.command}", icon_url=ctx.author.avatar_url)
 		e.set_thumbnail(url=ctx.guild.icon_url)
 		e.add_field(name="◈ Error ◈", value=r, inline=False)
-		message = await self.bot.get_channel(577661392098820106).send(embed=e)
+		channel = self.bot.get_channel(577661392098820106)
+		async for msg in channel.history(limit=1):
+			for embed in msg.embeds:
+				if embed.fields[0].value == e.fields[0].value:
+					return
+		message = await channel.send(embed=e)
 		await message.add_reaction("✔")
 
 	@commands.Cog.listener()

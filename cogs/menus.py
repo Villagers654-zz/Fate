@@ -53,10 +53,10 @@ class Menus(commands.Cog):
 			msg = await ctx.send("Failed to send help menu to dm ❎", embed=e)
 			await self.wait_for_dismissal(ctx, msg)
 
-	@commands.command(name='info', description="Provides information relevant to the bots stats")
+	@commands.command(name='stats', description="Provides information relevant to the bots stats")
 	@commands.cooldown(1, 5, commands.BucketType.channel)
 	@commands.bot_has_permissions(embed_links=True)
-	async def info(self, ctx):
+	async def stats(self, ctx):
 		m, s = divmod(time.time() - self.bot.START_TIME, 60)
 		h, m = divmod(m, 60)
 		guilds = len(list(self.bot.guilds))
@@ -79,8 +79,9 @@ class Menus(commands.Cog):
 		with open('fate.py', 'r') as f:
 			lines += len(f.readlines())
 		for file in os.listdir('cogs'):
-			with open(f'./cogs/{file}', 'r') as f:
-				lines += len(f.readlines())
+			if file.endswith('.py'):
+				with open(f'./cogs/{file}', 'r') as f:
+					lines += len(f.readlines())
 		e.description = f'Weekly Commands Used: {commands}\n' \
 			f'Lines of active code: {active_lines}\n' \
 			f'Total lines of code: {lines}'

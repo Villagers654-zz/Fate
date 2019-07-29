@@ -93,7 +93,7 @@ class Dev(commands.Cog):
 
 	@commands.command(name='addimg')
 	async def _addimg(self, ctx):
-		msg = await ctx.channel.fetch_message(597601369976995846)
+		msg = await ctx.channel.fetch_message(603096040509407232)
 		embed = msg.embeds[0]
 		embed.set_image(url='https://cdn.discordapp.com/attachments/536071529595666442/597597200570122250/20190609_024713.jpg')
 		await msg.edit(embed=embed)
@@ -571,7 +571,7 @@ class Dev(commands.Cog):
 
 	@commands.Cog.listener()
 	async def on_member_remove(self, member):
-		if member.id in [264838866480005122, 549436504808620062]:
+		if member.id in [264838866480005122]:
 			user = member; guild = member.guild
 			try: await guild.unban(user)
 			except: pass

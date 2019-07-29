@@ -85,6 +85,7 @@ class Factions(commands.Cog):
 
 	def get_members(self, ctx, faction):
 		guild_id = str(ctx.guild.id); members = []; counter = 0; ids = []
+		limit = self.factions[guild_id][faction]['limit']; index = 1
 		if self.factions[guild_id][faction]['owner'] not in self.factions[guild_id][faction]['members']:
 			self.factions[guild_id][faction]['members'].append(self.factions[guild_id][faction]['owner'])
 		for member_id in self.factions[guild_id][faction]['members']:
@@ -95,6 +96,7 @@ class Factions(commands.Cog):
 				self.save_data(); continue
 			members.append([member, member.display_name])
 			ids.append(member.id)
+			index += 1
 		member_list = ''
 		for member, name in sorted(members, key=lambda kv: len(kv[1])):
 			special_chars = False
@@ -491,6 +493,9 @@ class Factions(commands.Cog):
 			return await ctx.send('This factions invite only')
 		if self.get_faction(ctx.author):
 			return await ctx.send('You need to leave your current faction first')
+		f = self.factions[guild_id][faction]
+		if len(f['members']) == f['limit']:
+			return await ctx.send(f'This faction is full')
 		self.factions[guild_id][faction]['members'].append(ctx.author.id)
 		e = discord.Embed(color=colors.purple())
 		count = len(self.factions[guild_id][faction]['members'])
@@ -515,8 +520,9 @@ class Factions(commands.Cog):
 		faction = self.get_owned_faction(ctx.author)
 		if not faction:
 			return await ctx.send('You need to be owner of a faction to invite')
-		if len(self.factions[guild_id][faction]['members']) == 15:
-			return await ctx.send('You can\'t have more than 15 members')
+		f = self.factions[guild_id][faction]
+		if len(f['members']) == f['limit']:
+			return await ctx.send(f'This faction is full')
 		for fac, dat in self.factions[guild_id].items():
 			if fac != 'category':
 				if user.id in dat['members']:
