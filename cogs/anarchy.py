@@ -5,24 +5,34 @@ import requests
 from discord.ext import commands
 import discord
 
+
 class Anarchy(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.config = {
 			529705827716825098: {
 				'name': '4B4T',
-				'webhook': 'https://discordapp.com/api/webhooks/602956280445009950/gYlhr2NOw97wfeVqiC0eSi8xu4Qm_h_vTe3Tx8bwfY2_kfGfU40Nl7fRrqpzRuALKinc',
-				'channel': 602953723324399666
+				'webhook': 'https://discordapp.com/api/webhooks/602956280445009950/gYlhr2NOw97wfeVqiC0eSi8xu4Qm_h_vTe3Tx8bwfY2_kfGfU40Nl7fRrqpzRuALKinc'
 			},
 			585778970734231585: {
 				'name': '2B2TBE',
-				'webhook': 'https://discordapp.com/api/webhooks/602956312069931038/T-6cmTfHH9W5Zd7QKeTU3xPyeX_q4XDBqEukwUjMCIS5AWu7FPyefnMp41HhK4p-zKQh',
-				'channel': 602956148659847190
+				'webhook': 'https://discordapp.com/api/webhooks/602956312069931038/T-6cmTfHH9W5Zd7QKeTU3xPyeX_q4XDBqEukwUjMCIS5AWu7FPyefnMp41HhK4p-zKQh'
 			},
 			596177782069788672: {
 				'name': '2B2TMCPE',
-				'webhook': 'https://discordapp.com/api/webhooks/602956230041796705/P1MAyCYUmbZQwxEVIqXht0nB7K45YpT40eNMMufZ4nfj4ouP9uZ60IMftWUnv4DIXE04',
-				'channel': 602953558438182923
+				'webhook': 'https://discordapp.com/api/webhooks/602956230041796705/P1MAyCYUmbZQwxEVIqXht0nB7K45YpT40eNMMufZ4nfj4ouP9uZ60IMftWUnv4DIXE04'
+			},
+			523687931483783168: {
+				'name': '2B2TPE',
+				'webhook': 'https://discordapp.com/api/webhooks/605669469486055424/TczBigg9Oj0ydHQw6Ta4QGkFIlxjfHft63dcxAHCeE5ZX6W8LSvhu6ECpdMlFoTrFnaa'
+			},
+			543896208175923200: {
+				'name': 'ConstantiamPE',
+				'webhook': 'https://discordapp.com/api/webhooks/605829483177574402/uG6wy7XNrzZJyD343Unf8eQ5UVeQfX1fbBBgIRC5OGSxeEiSP28dwysphqVGixSOmg0n'
+			},
+			594374002672271400: {
+				'name': 'ConstantiamPE+',
+				'webhook': 'https://discordapp.com/api/webhooks/605829984707411978/iNM4sSqxNMfAA0ruR1Bz2VzQSFmeMnG14dg1MxDCUR0SsbRK_BFnhRFfc8MYb5dA1EpS'
 			}
 		}
 
