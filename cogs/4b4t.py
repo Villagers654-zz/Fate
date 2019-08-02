@@ -95,7 +95,7 @@ class Minecraft(commands.Cog):
 		await asyncio.sleep(1)
 		self.bot.loop.create_task(self.motd_shuffle_task())
 
-	@commands.Cog.listener()
+
 	async def on_member_join(self, member: discord.Member):
 		if member.guild.id == 470961230362837002:
 			try:
