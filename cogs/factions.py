@@ -810,6 +810,11 @@ class Factions(commands.Cog):
 		if not faction:
 			return await ctx.send('You need to own the faction to use this')
 		self.init(guild_id, faction)
+		await self.update_category(guild_id, ctx.author)
+		if 'category' in self.factions[guild_id]:
+			if 'channel' in self.factions[guild_id][faction]:
+				if channel.id == self.factions[guild_id][faction]['channel']:
+					return await ctx.send('You cant unclaim this channel')
 		if channel_id not in self.land_claims[guild_id][faction]:
 			return await ctx.send('You need to claim this channel in order to unclaim it')
 		await ctx.send(f'Unclaiming this channel will give you $250\n'
@@ -1059,9 +1064,20 @@ class Factions(commands.Cog):
 					category = self.bot.get_channel(self.factions[guild_id]['category'])
 					if msg.channel.category.id == category.id and not msg.author.bot:
 						faction = self.get_faction(msg.author)
+						async def wait_for_bot():
+							def pred(m):
+								return m.channel.id == msg.channel.id and m.author.bot
+							try:
+								m = await self.bot.wait_for('message', check=pred, timeout=1)
+							except asyncio.TimeoutError:
+								pass
+							else:
+								return await m.delete()
 						if not faction:
+							await wait_for_bot()
 							return await msg.delete()
 						if msg.channel.id != self.factions[guild_id][faction]['channel']:
+							await wait_for_bot()
 							await msg.delete()
 
 def setup(bot):
