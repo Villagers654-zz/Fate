@@ -96,8 +96,6 @@ async def on_ready():
 	      '│  ├┘ your day is with the\n'
 	      '└──┘ blood of your enemys')
 	cprint('--------------------------', 'cyan')
-	m, s = divmod(time.time() - bot.START_TIME, 60)
-	bot.LOGIN_TIME = s
 	bot.loop.create_task(status_task())
 	cprint(datetime.now().strftime("%m-%d-%Y %I:%M%p"), 'yellow')
 	if error:
