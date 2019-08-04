@@ -81,7 +81,7 @@ class ChatBot(commands.Cog):
 	async def _disable(self, ctx):
 		guild_id = str(ctx.guild.id)
 		if guild_id not in self.toggle:
-			await ctx.send("Chatbot is not enabled")
+			return await ctx.send("Chatbot is not enabled")
 		del self.toggle[guild_id]
 		self.save_data()
 		await ctx.send("Disabled chatbot")
