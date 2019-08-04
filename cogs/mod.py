@@ -438,7 +438,7 @@ class Mod(commands.Cog):
 			    '.purge @user amount\n' \
 			    '.purge images amount\n' \
 			    '.purge embeds amount\n' \
-			    '.purge mentions amount' \
+			    '.purge mentions amount\n' \
 			    '.purge users amount\n' \
 			    '.purge bots amount\n' \
 			    '.purge word/phrase amount'
