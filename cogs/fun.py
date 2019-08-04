@@ -22,7 +22,7 @@ class Fun(commands.Cog):
 		self.bot = bot
 		self.last = {}
 
-	def luck(ctx):
+	def luck(ctx: commands.Context):
 		return ctx.message.author.id == 264838866480005122
 
 	@commands.Cog.listener()
@@ -325,8 +325,7 @@ class Fun(commands.Cog):
 	@commands.command(name="ask", aliases=["8ball"])
 	async def ask(self, ctx):
 		await ctx.send(random.choice(["Yes", "No", "It's certain", "110% no", "It's uncertain", "Ofc", "I think not m8", "Ig",
-			"Why not ¯\_(ツ)_/¯", "Shut up, homo.", "You only ask because im either fucking less dumb then your stupid "
-			"fucking brain or your desperate for me too obliviously agree", "Ye", "Yep", "Yup", "tHe AnSwEr LiEs WiThIn",
+			"Why not ¯\_(ツ)_/¯", "Ye", "Yep", "Yup", "tHe AnSwEr LiEs WiThIn",
 			"Basically yes^", "Not really", "Well duh", "hell yeah", "hell no"]))
 
 	@commands.command(name="gay")
