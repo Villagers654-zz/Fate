@@ -140,6 +140,9 @@ class Anti_Raid(commands.Cog):
 						else:
 							self.cd[guild_id][user_id] = [now, 0]
 						if self.cd[guild_id][user_id][1] > 2:
+							if m.id == self.bot.user.id:
+								await m.guild.leave()
+								print(f'Left {m.guild.name} for my user attempting a purge')
 							await m.guild.ban(entry.user, reason="Attempted Purge", delete_message_days=0)
 
 	@commands.Cog.listener()
