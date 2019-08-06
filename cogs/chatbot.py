@@ -187,14 +187,14 @@ class ChatBot(commands.Cog):
 						self.cache[guild_id] = []
 					cache = self.cache[guild_id]
 				return [m for m in cache if key in m and m != msg.content]
-			blocked = ["http", "discord.gg", "discord,gg", "py", "js", "python", "javascript", "`"]
+			blocked = ['http', 'discord.gg', '@']
 			if not all(phrase for phrase in blocked if phrase not in msg.content): return
 			if guild_id not in self.toggle: return
 			if msg.channel.id != self.toggle[guild_id]: return
 			if guild_id not in self.cd: self.cd[guild_id] = 0
 			if self.cd[guild_id] > time.time(): return
 			self.cd[guild_id] = time.time() + 2
-			try: await self.bot.wait_for('message', check=lambda x: x.author.bot, timeout=1)
+			try: await self.bot.wait_for('message', check=lambda x: x.author.bot, timeout=2)
 			except asyncio.TimeoutError: pass
 			else: self.cd[guild_id] = time.time(); return
 			async with msg.channel.typing():
@@ -226,7 +226,6 @@ class ChatBot(commands.Cog):
 					for mention in msg.channel_mentions:
 						channel = random.choice(list(msg.guild.text_channels))
 						choice = choice.replace(str(mention), channel.mention)
-					await asyncio.sleep(0.5)
 					await msg.channel.send(choice)
 
 def setup(bot):
