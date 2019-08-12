@@ -3,7 +3,7 @@ import random
 
 def tokens(token):
 	if token is "fatezero":
-		return "NTA2NzM1MTExNTQzMTkzNjAx.DttN1Q.NKRp6wgtqSYurVAKjA1ip133xZ4"
+		return "NTA2NzM1MTExNTQzMTkzNjAx.XUna4Q.gbbglbMazHleH39UU1hOriwd_G4"
 	if token is "4b4t":
 		return "NTExMTQxMzM1ODY1MjI5MzMz.Dz2fVA.Dp6_DfBwPYucYJiRz5anXACzJsg"
 
