@@ -28,6 +28,10 @@ class ChatBot(commands.Cog):
 					self.cache = dat["cache"]
 					self.prefixes = dat["prefixes"]
 					self.dir = dat["dir"]
+		self.blocked = [
+			'http', 'discord.gg', '<@', '<#', '<!', 'fuck', 'bitch', 'gay', 'nig', 'rape', 'loli', 'whore',
+			'cunt', 'nib', 'retard', 'rotard', 'stfu', 'kys', 'kill', 'dick', 'cock', 'pussy'
+		]
 
 	def save_data(self):
 		with open("./data/userdata/chatbot.json", "w") as outfile:
@@ -178,7 +182,7 @@ class ChatBot(commands.Cog):
 	async def on_message(self, msg: discord.Message):
 		"""Tries to respond with related message"""
 		if isinstance(msg.guild, discord.Guild) and not msg.author.bot:
-			guild_id = str(msg.guild.id)
+			guild_id = str(msg.guild.id); blocked = self.blocked
 			def get_matches(key) -> list:
 				"""Returns a list of related messages"""
 				cache = self.cache["global"]
@@ -186,8 +190,7 @@ class ChatBot(commands.Cog):
 					if guild_id not in self.cache:
 						self.cache[guild_id] = []
 					cache = self.cache[guild_id]
-				return [m for m in cache if key in m and m != msg.content]
-			blocked = ['http', 'discord.gg', '@']
+				return [m for m in cache if key in m and m != msg.content and len([x for x in blocked if x in m]) == 0]
 			if not all(phrase for phrase in blocked if phrase not in msg.content): return
 			if guild_id not in self.toggle: return
 			if msg.channel.id != self.toggle[guild_id]: return
