@@ -76,11 +76,12 @@ class Utility(commands.Cog):
 			except discord.errors.Forbidden:
 				return await ctx.send('Failed to resolve invite url')
 			guild = invite.guild
-			e = discord.Embed(color=colors.fate())
+			e = discord.Embed(color=colors.red() if invite.revoked else colors.fate())
 			e.set_thumbnail(url=guild.splash_url if guild.splash_url else guild.icon_url)
 			e.set_author(name=f'{invite.guild.name}:', icon_url=guild.icon_url)
 			created = datetime.date(guild.created_at)
 			e.description = f'◈ SID: [`{guild.id}`]\n' \
+			    f'◈ Inviter: [`{invite.inviter if invite.inviter else "unknown#0000"}`]\n' \
 				f'◈ Member Count: [`{invite.approximate_member_count}`]\n' \
 				f'◈ Online Members: [`{invite.approximate_presence_count}`]\n' \
 				f'◈ Channel: [`#{invite.channel.name}`]\n' \
@@ -89,6 +90,9 @@ class Utility(commands.Cog):
 				f'◈ Created: [`{created.strftime("%m/%d/%Y")}`]'
 			if guild.banner_url:
 				e.set_image(url=guild.banner_url)
+			uses = invite.uses if isinstance(invite.uses, int) else '-'
+			lmt = invite.max_uses if invite.max_uses else '-'
+			e.set_footer(text=f'Uses: [{uses}/{lmt}]')
 			return await ctx.send(embed=e)
 		if ctx.message.mentions:  # user mentions
 			user = ctx.message.mentions[0]
