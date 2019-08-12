@@ -380,6 +380,16 @@ class Utility(commands.Cog):
 			f'{ctx.channel.mention}: {ctx.channel.id}'
 		await ctx.send(embed=e)
 
+	@commands.command(name='estimate-inactives')
+	@commands.cooldown(1, 3, commands.BucketType.user)
+	@commands.guild_only()
+	@commands.bot_has_permissions(kick_members=True)
+	async def estimate_inactives(self, ctx, days: int):
+		inactive_count = await ctx.guild.estimate_pruned_members(days=days)
+		e = discord.Embed(color=colors.fate())
+		e.description = f'Inactive Users: {inactive_count}'
+		await ctx.send(embed=e)
+
 	@commands.command(name='afk')
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.guild_only()
