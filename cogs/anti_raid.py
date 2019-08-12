@@ -83,8 +83,13 @@ class Anti_Raid(commands.Cog):
 
 	@commands.Cog.listener()
 	async def on_member_join(self, m: discord.Member):
-		guild_id = str(m.guild.id)
-		user_id = str(m.id)
+		""" Prevents mass-join raids """
+		guild_id = str(m.guild.id); user_id = str(m.id)
+		rate_limit = 5; member_limit = 100
+		for iteration in range(len(m.guild.members)):
+			if iteration > member_limit:
+				member_limit += 100
+				rate_limit += 5
 		if guild_id in self.toggle:
 			required_permission = await self.ensure_permissions(m.guild)
 			if not required_permission:
@@ -110,7 +115,7 @@ class Anti_Raid(commands.Cog):
 				self.join_cd[guild_id][1] += 1
 			else:
 				self.join_cd[guild_id] = [now, 0]
-			if self.join_cd[guild_id][1] > 4:
+			if self.join_cd[guild_id][1] > rate_limit:
 				self.locked.append(guild_id)
 				for junkie in list(filter(lambda id: self.last[guild_id][id] > time() - 15, self.last[guild_id].keys())):
 					await m.guild.ban(junkie, reason="raid")
