@@ -121,28 +121,28 @@ class Anti_Raid(commands.Cog):
 	@commands.Cog.listener()
 	async def on_member_remove(self, m):
 		guild_id = str(m.guild.id)
-		if guild_id in self.toggle:
-			required_permission = await self.ensure_permissions(m.guild)
-			if not required_permission:
-				return
-			async for entry in m.guild.audit_logs(limit=1):
-				if entry.created_at > datetime.utcnow() - timedelta(seconds=3):
-					actions = [discord.AuditLogAction.kick, discord.AuditLogAction.ban]
-					if entry.action in actions:
-						user_id = str(entry.user.id)
-						now = int(time() / 15)
-						if guild_id not in self.cd:
-							self.cd[guild_id] = {}
-						if user_id not in self.cd[guild_id]:
-							self.cd[guild_id][user_id] = [now, 0]
-						if self.cd[guild_id][user_id][0] == now:
-							self.cd[guild_id][user_id][1] += 1
-						else:
-							self.cd[guild_id][user_id] = [now, 0]
-						if self.cd[guild_id][user_id][1] > 2:
-							if m.id == self.bot.user.id:
-								await m.guild.leave()
-								print(f'Left {m.guild.name} for my user attempting a purge')
+		async for entry in m.guild.audit_logs(limit=1):
+			if entry.created_at > datetime.utcnow() - timedelta(seconds=3):
+				actions = [discord.AuditLogAction.kick, discord.AuditLogAction.ban]
+				if entry.action in actions:
+					user_id = str(entry.user.id)
+					now = int(time() / 15)
+					if guild_id not in self.cd:
+						self.cd[guild_id] = {}
+					if user_id not in self.cd[guild_id]:
+						self.cd[guild_id][user_id] = [now, 0]
+					if self.cd[guild_id][user_id][0] == now:
+						self.cd[guild_id][user_id][1] += 1
+					else:
+						self.cd[guild_id][user_id] = [now, 0]
+					if self.cd[guild_id][user_id][1] > 2:
+						if m.id == self.bot.user.id:
+							await m.guild.leave()
+							print(f'Left {m.guild.name} for my user attempting a purge')
+						if guild_id in self.toggle:
+							required_permission = await self.ensure_permissions(m.guild)
+							if not required_permission:
+								return
 							await m.guild.ban(entry.user, reason="Attempted Purge", delete_message_days=0)
 
 	@commands.Cog.listener()
