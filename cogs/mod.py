@@ -255,7 +255,7 @@ class Mod(commands.Cog):
 		e.description = mod_log
 		await ctx.send(embed=e)
 
-	@commands.command(name='addmod')
+	@commands.command(name='addmod', enabled=False)
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.guild_only()
 	@commands.has_permissions(administrator=True)
@@ -277,7 +277,7 @@ class Mod(commands.Cog):
 		await ctx.send(embed=e)
 		self.save_json()
 
-	@commands.command(name='delmod')
+	@commands.command(name='delmod', enabled=False)
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.guild_only()
 	@commands.has_permissions(administrator=True)
@@ -300,7 +300,7 @@ class Mod(commands.Cog):
 		await ctx.send(embed=e)
 		self.save_json()
 
-	@commands.command(name='mods')
+	@commands.command(name='mods', enabled=False)
 	@commands.cooldown(1, 5, commands.BucketType.channel)
 	@commands.guild_only()
 	@commands.bot_has_permissions(embed_links=True)
@@ -964,20 +964,12 @@ class Mod(commands.Cog):
 	@commands.command(name="warn")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.guild_only()
+	@commands.has_permissions(manage_guild=True)
 	@commands.bot_has_permissions(manage_roles=True)
 	async def _warn(self, ctx, user, *, reason=None):
 		user = utils.get_user(ctx, user)
 		if not isinstance(user, discord.Member):
 			return await ctx.send("User not found")
-		guild_id = str(ctx.guild.id)
-		if guild_id not in self.mods:
-			self.mods[guild_id] = []
-		if user.id not in self.mods[guild_id]:
-			perms = list(perm for perm, value in ctx.author.guild_permissions)
-			if "manage_guild" not in perms:
-				if "manage_messages" not in perms:
-					return await ctx.send("You are missing manage server "
-					    "or manage messages permission(s) to run this command")
 		if user.top_role.position >= ctx.author.top_role.position:
 			return await ctx.send("That user is above your paygrade, take a seat")
 		if user.id == self.bot.user.id:
@@ -1102,19 +1094,12 @@ class Mod(commands.Cog):
 	@commands.command(name='removewarn', aliases=['delwarn'])
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.guild_only()
+	@commands.has_permissions(manage_guild=True)
 	@commands.bot_has_permissions(embed_links=True)
 	async def remove_warns(self, ctx, user, *, reason):
 		user = utils.get_user(ctx, user)
 		if not isinstance(user, discord.Member):
 			return await ctx.send("User not found")
-		guild_id = str(ctx.guild.id)
-		if guild_id not in self.mods:
-			self.mods[guild_id] = []
-		if user.id not in self.mods[guild_id]:
-			perms = [perm for perm, value in ctx.author.guild_permissions]
-			if "manage_guild" not in perms and "manage_messages" not in perms:
-					return await ctx.send("You are missing manage server "
-						"or manage messages permission(s) to run this command")
 		if user.top_role.position >= ctx.author.top_role.position:
 			return await ctx.send("That user is above your paygrade, take a seat")
 		guild_id = str(ctx.guild.id)
@@ -1149,20 +1134,12 @@ class Mod(commands.Cog):
 
 	@commands.command(name="clearwarns")
 	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.has_permissions(manage_guild=True)
 	@commands.guild_only()
 	async def clearwarns(self, ctx, *, user):
 		user = utils.get_user(ctx, user)
 		if not isinstance(user, discord.Member):
 			return await ctx.send("User not found")
-		guild_id = str(ctx.guild.id)
-		if guild_id not in self.mods:
-			self.mods[guild_id] = []
-		if user.id not in self.mods[guild_id]:
-			perms = list(perm for perm, value in ctx.author.guild_permissions)
-			if "manage_guild" not in perms:
-				if "manage_messages" not in perms:
-					return await ctx.send("You are missing manage server "
-						"or manage messages permission(s) to run this command")
 		if user.top_role.position >= ctx.author.top_role.position:
 			return await ctx.send("That user is above your paygrade, take a seat")
 		guild_id = str(ctx.guild.id)
