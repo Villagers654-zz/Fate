@@ -51,6 +51,8 @@ class Factions(commands.Cog):
 				self.factions[guild_id][faction]['access'] = 'private'
 			if 'limit' not in self.factions[guild_id][faction]:
 				self.factions[guild_id][faction]['limit'] = 15
+			if 'items' not in self.factions[guild_id][faction]:
+				self.factions[guild_id][faction]['items'] = []
 
 	def get_faction(self, user: discord.Member):
 		guild_id = str(user.guild.id)
@@ -210,7 +212,7 @@ class Factions(commands.Cog):
 					if overwrite.id == base.guild.roles[0].id:
 						if perms.read_messages is True or perms.read_messages is None:
 							await base.set_permissions(overwrite, read_messages=False)
-							continue
+						continue
 					if overwrite.id not in self.factions[guild_id][faction]['members']:
 						if isinstance(overwrite, discord.Member):
 							if overwrite.bot:
@@ -586,42 +588,6 @@ class Factions(commands.Cog):
 		await ctx.send('✔')
 		self.save_data()
 
-	async def fast_cook(self, ctx):
-		options = ['wine', 'beer', 'soda', 'fries', 'doritos', 'pie',
-			'salt', 'spice', 'tomato', 'burger', 'potato', 'soup']
-		random.shuffle(options)
-		red = options[0]; yellow = options[1]; blue = options[2]
-		msg = await ctx.send(f'❤ `{red}`\n💛 `{yellow}`\n💙 `{blue}`')
-		await asyncio.sleep(1.5)
-		choice = random.choice([('red', red), ('yellow', yellow), ('blue', blue)])
-		await msg.edit(content=f'What was after {choice[0]}')
-		reply = await utils.wait_for_msg(self, ctx)
-		if not reply:
-			return None
-		if reply.content.lower() != choice[1]:
-			return False
-		return True
-
-	async def math_problem(self, ctx):
-		first = random.randint(1, 25)
-		second = random.randint(1, 25)
-		if first < 5 and second < 5:
-			await ctx.send(f'Whats {first} * {second}')
-			result = first * second
-		else:
-			if random.randint(1, 2) == 1 or first < second:
-				await ctx.send(f'Whats {first} + {second}')
-				result = first + second
-			else:
-				await ctx.send(f'Whats {first} - {second}')
-				result = first - second
-		msg = await utils.wait_for_msg(self, ctx)
-		try: reply = int(msg.content)
-		except: return False
-		if reply != result:
-			return False
-		return True
-
 	@_factions.command(name='work')
 	@commands.cooldown(1, 60, commands.BucketType.user)
 	async def _work(self, ctx):
@@ -629,7 +595,8 @@ class Factions(commands.Cog):
 		if not faction:
 			return await ctx.send('You need to be in a faction to use this command')
 		guild_id = str(ctx.guild.id)
-		paycheck = random.randint(10, 20)
+		self.init(guild_id, faction)
+		paycheck = random.randint(15, 25)
 		if 'work-upgrade' in self.factions[guild_id][faction]['items']:
 			paycheck = random.randint(15, 25)
 		self.factions[guild_id][faction]['balance'] += paycheck
