@@ -90,10 +90,6 @@ class Minecraft(commands.Cog):
 		self.save()
 		await ctx.send('👍')
 
-	@commands.Cog.listener()
-	async def on_ready(self):
-		await asyncio.sleep(1)
-		self.bot.loop.create_task(self.motd_shuffle_task())
 
 
 	async def on_member_join(self, member: discord.Member):
