@@ -15,7 +15,7 @@ class RestoreRoles(commands.Cog):
 		with open("./data/userdata/restore_roles.json", "w") as f:
 			json.dump(self.data, f, sort_keys=True, indent=4, separators=(",", ": "))
 
-	def is_guild_owner(ctx):
+	def is_guild_owner(ctx: commands.Context):
 		return ctx.author is ctx.guild.owner
 
 	@commands.command(name="restore_roles")
@@ -41,10 +41,10 @@ class RestoreRoles(commands.Cog):
 			if member_id in self.data[guild_id]:
 				for role_id in self.data[guild_id][member_id]:
 					try:
-						await asyncio.sleep(1)
 						role = member.guild.get_role(role_id)
 						if role:
 							await member.add_roles(role)
+							await asyncio.sleep(1)
 					except:
 						pass
 
