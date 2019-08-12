@@ -177,6 +177,8 @@ class ServerSave(commands.Cog):
 				except Exception as e:
 					pass
 			for role in g["roles"]:
+				if 'Fate' in role.name:
+					continue
 				try:
 					permissions = discord.Permissions()
 					permissions.update(**dict(role["permissions"]))
@@ -200,33 +202,42 @@ class ServerSave(commands.Cog):
 
 		for category in ctx.guild.categories:
 			if category.name not in [x["name"] for x in g["categories"]]:
-				await category.delete(reason="Loading saved server")
+				try:
+					await category.delete(reason="Loading saved server")
+				except:
+					pass
 		for category in g["categories"]:
 			overwrites = []
 			for overwrite in category["overwrites"]:
-				if overwrite["type"] == "role":
-					if overwrite["name"] not in [x.name for x in ctx.guild.roles]:
-						pass
+				try:
+					if overwrite["type"] == "role":
+						if overwrite["name"] not in [x.name for x in ctx.guild.roles]:
+							pass
+						else:
+							role = [x for x in ctx.guild.roles if x.name == overwrite["name"]][0]
+							permissions = discord.PermissionOverwrite()
+							permissions.update(**dict(overwrite["permissions"]))
+							overwrites.append((role, permissions))
 					else:
-						role = [x for x in ctx.guild.roles if x.name == overwrite["name"]][0]
-						permissions = discord.PermissionOverwrite()
-						permissions.update(**dict(overwrite["permissions"]))
-						overwrites.append((role, permissions))
-				else:
-					if overwrite["name"] not in [x.name for x in ctx.guild.members]:
-						pass
-					else:
-						member = [x for x in ctx.guild.members if x.name == overwrite["name"]][0]
-						permissions = discord.PermissionOverwrite()
-						permissions.update(**dict(overwrite["permissions"]))
-						overwrites.append((member, permissions))
+						if overwrite["name"] not in [x.name for x in ctx.guild.members]:
+							pass
+						else:
+							member = [x for x in ctx.guild.members if x.name == overwrite["name"]][0]
+							permissions = discord.PermissionOverwrite()
+							permissions.update(**dict(overwrite["permissions"]))
+							overwrites.append((member, permissions))
+				except:
+					pass
 			if category["name"] in [x.name for x in ctx.guild.categories]:
-				category_obj = [x for x in ctx.guild.categories if x.name == category["name"]][0]
-				await category_obj.edit(name=category["name"], reason="Loading saved server")
-				overwrites_dict = dict(overwrites)
-				for overwrite in overwrites_dict:
-					await category_obj.set_permissions(overwrite, overwrite=overwrites_dict[overwrite],
-					                                   reason="Loading saved server")
+				try:
+					category_obj = [x for x in ctx.guild.categories if x.name == category["name"]][0]
+					await category_obj.edit(name=category["name"], reason="Loading saved server")
+					overwrites_dict = dict(overwrites)
+					for overwrite in overwrites_dict:
+						await category_obj.set_permissions(overwrite, overwrite=overwrites_dict[overwrite],
+						                                   reason="Loading saved server")
+				except:
+					pass
 			else:
 				new_cat = await ctx.guild.create_category(category["name"], overwrites=dict(overwrites),
 				                                          reason="Loading saved server")

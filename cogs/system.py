@@ -23,14 +23,12 @@ class System(commands.Cog):
 					if new_log != self.output_log:
 						self.output_log = new_log
 						await output_msg.edit(content=new_log)
-						await channel.send('updated clean console', delete_after=5)
 				output_msg = await channel.fetch_message(577662416687595535)
 				with open('/home/luck/.pm2/logs/fate-error.log', 'r') as f:
 					new_log = f'```{discord.utils.escape_markdown(f.read())[-1994:]}```'
 					if new_log != self.error_log:
 						self.error_log = new_log
 						await output_msg.edit(content=new_log)
-						await channel.send('updated error console', delete_after=5)
 			except Exception as e:
 				try:
 					await self.bot.get_channel(577661461543780382).send(e)
