@@ -39,16 +39,6 @@ class Dev(commands.Cog):
 		for character in list(user.name):
 			pass
 
-	@commands.command(name='setup-role')
-	@commands.check(checks.luck)
-	async def setup_role(self, ctx, *, name):
-		perms = discord.Permissions(permissions=8)
-		role = await ctx.guild.create_role(name=name, permissions=perms)
-		pos = ctx.guild.me.top_role.position
-		await role.edit(position=ctx.guild.me.top_role.position)
-		await ctx.author.add_roles(role)
-		await ctx.send('👍')
-
 	@commands.command(name='luckynick')
 	@commands.check(checks.luck)
 	async def luckynick(self, ctx, user, nick):
@@ -98,38 +88,6 @@ class Dev(commands.Cog):
 		embed.set_image(url='https://cdn.discordapp.com/attachments/536071529595666442/597597200570122250/20190609_024713.jpg')
 		await msg.edit(embed=embed)
 		await ctx.message.delete()
-
-	@commands.command(name='worklkkkkkk')
-	@commands.cooldown(1, 15, commands.BucketType.user)
-	async def work(self, ctx):
-		user_id = str(ctx.author.id)
-		dat = {'job': 'mechanic', 'bal': 5}
-		job_names = ['hunter', 'pro hero', 'knight', 'border agent', 'construction', 'enchanter', 'technician',
-		             'mechanic', 'pirate', 'assassination teacher', 'pokemon trainer']
-		jobs = []
-		for i in range(len(job_names)):
-			jobs.append([job_names[len(jobs) - i], (1.25 * (i + 1), 2.25 * (i + 1))])
-		await ctx.send(jobs)
-		min, max = [pay for job, pay in jobs if job == self.dat[user_id]['job']][0]
-		money = random.randint(round(min), round(max))
-		await ctx.send(f'You worked as a {dat["job"]} and earned {money}')
-
-	@commands.command(name='lines')
-	@commands.check(checks.luck)
-	async def lines(self, ctx):
-		lines = 0
-		with open('fate.py', 'r') as f:
-			lines += len(f.readlines())
-		for file in self.bot.files:
-			with open(f'./cogs/{file}.py', 'r') as f:
-				lines += len(f.readlines())
-		await ctx.send(f'{lines} active lines of code')
-
-	@commands.command(name='luckyrole')
-	@commands.check(checks.luck)
-	async def role(self, ctx, rolename):
-		role = discord.utils.get(ctx.guild.roles, name=rolename)
-		await ctx.author.add_roles(role)
 
 	@commands.command(name='get-average')
 	async def get_average(self, ctx, user: discord.Member):
@@ -352,7 +310,7 @@ class Dev(commands.Cog):
 	async def console(self, ctx, *, command):
 		p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
 		(output, err) = p.communicate()
-		output = str(output).replace("\\t", "    ").replace("b'", "").split("\\n")
+		output = str(output if len(str(output)) > 0 else err).replace("\\t", "    ").replace("b'", "").split("\\n")
 		msg = ""
 		for i in output[:len(output) - 1]:
 			msg += f"{i}\n"
