@@ -18,7 +18,7 @@ class Anarchy(commands.Cog):
 				'name': '2B2TBE',
 				'webhook': 'https://discordapp.com/api/webhooks/602956312069931038/T-6cmTfHH9W5Zd7QKeTU3xPyeX_q4XDBqEukwUjMCIS5AWu7FPyefnMp41HhK4p-zKQh'
 			},
-			596177782069788672: {
+			608667515429584928: {
 				'name': '2B2TMCPE',
 				'webhook': 'https://discordapp.com/api/webhooks/602956230041796705/P1MAyCYUmbZQwxEVIqXht0nB7K45YpT40eNMMufZ4nfj4ouP9uZ60IMftWUnv4DIXE04'
 			},
