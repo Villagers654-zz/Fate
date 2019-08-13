@@ -977,6 +977,7 @@ class Mod(commands.Cog):
 		if not reason:
 			reason = "unspecified"
 		user_id = str(user.id)
+		guild_id = str(ctx.guild.id)
 		punishments = ['None', 'None', 'Mute', 'Kick', 'Softban', 'Ban']
 		config = self.bot.get_config  # type: dict
 		if guild_id in config['warns']['punishments']:
