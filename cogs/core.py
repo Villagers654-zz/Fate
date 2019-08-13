@@ -1,10 +1,9 @@
 from discord import Webhook, AsyncWebhookAdapter
 from bs4 import BeautifulSoup as bs
 from discord.ext import commands
-from utils import config, colors, checks
+from utils import config, colors
 from time import time, monotonic
 import wikipedia.exceptions
-from os.path import isfile
 from io import BytesIO
 import wikipedia
 import requests
@@ -191,6 +190,7 @@ class Core(commands.Cog):
 		if isinstance(msg.channel, discord.DMChannel):
 			async with aiohttp.ClientSession() as session:
 				webhook = Webhook.from_url('https://discordapp.com/api/webhooks/582660984661868549/QXcjvb0O8v7SUv34o-hxaeR5mi2v5RYVRSVLi-p89VdbNHjxy8v5MP1muARTgulZnQTu', adapter=AsyncWebhookAdapter(session))
+				msg.content = discord.utils.escape_mentions(msg.content)
 				if msg.attachments:
 					for attachment in msg.attachments:
 						return await webhook.send(username=msg.author.name, avatar_url=msg.author.avatar_url, content=msg.content, file=discord.File(BytesIO(requests.get(attachment.url).content), filename=attachment.filename))
