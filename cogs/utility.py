@@ -6,12 +6,17 @@ import asyncio
 import random
 from io import BytesIO
 import requests
+import json
+import os
+import time
+import platform
 
 import discord
 from PIL import Image
 from colormap import rgb2hex
+import psutil
 
-from utils import colors, utils
+from utils import colors, utils, bytes2human as p, config
 
 class Utility(commands.Cog):
 	def __init__(self, bot):
@@ -36,39 +41,71 @@ class Utility(commands.Cog):
 		r = r / c; g = g / c; b = b / c
 		return eval('0x' + rgb2hex(round(r), round(g), round(b)).replace('#', ''))
 
+	async def wait_for_dismissal(self, ctx, msg):
+		def pred(m):
+			return m.channel.id == ctx.channel.id and m.content.lower().startswith('k')
+		try:
+			reply = await self.bot.wait_for('message', check=pred, timeout=25)
+		except asyncio.TimeoutError:
+			pass
+		else:
+			await asyncio.sleep(0.21)
+			await ctx.message.delete()
+			await asyncio.sleep(0.21)
+			await msg.delete()
+			await asyncio.sleep(0.21)
+			await reply.delete()
+
 	@commands.command(name='info', cog='utility')
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.guild_only()
 	@commands.bot_has_permissions(embed_links=True)
 	async def info(self, ctx, target=None):
 		"""Returns information for invites, users, roles & channels"""
-		if not target:  # basic info from all categories
-			user = ctx.author; channel = ctx.channel; role = ctx.author.top_role
+		if not target:  # bot stats/info
+			m, s = divmod(time.time() - self.bot.START_TIME, 60)
+			h, m = divmod(m, 60)
+			guilds = len(list(self.bot.guilds))
+			users = len(list(self.bot.users))
+			path = os.getcwd() + "/data/images/banners/" + random.choice(
+				os.listdir(os.getcwd() + "/data/images/banners/"))
+			bot_pid = psutil.Process(os.getpid())
 			e = discord.Embed(color=colors.fate())
-			e.set_author(name=f'General Information', icon_url=ctx.author.avatar_url)
-			e.set_thumbnail(url=ctx.guild.icon_url)
-			server_info = f'**• Owner:** [{ctx.guild.owner.mention}]\n' \
-				f'**• ID:** [`{ctx.guild.id}`]\n' \
-				f'**• Member Count:** [`{len(ctx.guild.members)}`]'
-			e.add_field(name='◈ Server ◈', value=server_info, inline=False)
-			user_info = f'{f"**• Nickname** [`{user.nick}`]" if user.nick else ""}\n' \
-				f'**• Activity:** [`{user.activity.name if user.activity else None}`]\n' \
-				f'**• Status:** [`{user.status}`]\n**• Role** [{user.top_role.mention}]'
-			e.add_field(name='◈ User ◈', value=user_info, inline=False)
-			notable = ['view_audit_log', 'manage_roles', 'manage_channels', 'manage_emojis',
-			    'kick_members', 'ban_members', 'manage_messages', 'mention_everyone']
-			perms = ', '.join(perm for perm, value in role.permissions if value and perm in notable)
-			perms = 'administrator' if role.permissions.administrator else perms
-			role_info = f"**• Color:** [`{role.color}`]\n" \
-				f"**• Members:** [`{len(role.members)}`]\n" \
-				f"**• Perms:** [`{perms}`]"
-			e.add_field(name='◈ Role ◈', value=role_info, inline=False)
-			created = datetime.date(channel.created_at)
-			channel_info = f'**• ID:** [`{channel.id}`]\n' \
-				f'**• Member Count** [`{len(channel.members)}`]\n' \
-				f'**• Created:** [`{created.strftime("%m/%d/%Y")}`]'
-			e.add_field(name='◈ Channel ◈', value=channel_info, inline=False)
-			return await ctx.send(embed=e)
+			e.set_author(name="Fate [Zerø]: Core Info", icon_url=self.bot.get_user(config.owner_id()).avatar_url)
+			stats = self.bot.get_stats  # type: dict
+			commands = 0;
+			lines = 0
+			for command_date in stats['commands']:
+				date = datetime.strptime(command_date, '%Y-%m-%d %H:%M:%S.%f')
+				if (datetime.now() - date).days < 7:
+					commands += 1
+				else:
+					index = stats['commands'].index(command_date)
+					stats['commands'].pop(index)
+					with open('./data/stats.json', 'w') as f:
+						json.dump(stats, f, ensure_ascii=False)
+			with open('fate.py', 'r') as f:
+				lines += len(f.readlines())
+			for file in os.listdir('cogs'):
+				if file.endswith('.py'):
+					with open(f'./cogs/{file}', 'r') as f:
+						lines += len(f.readlines())
+			e.description = f'Weekly Commands Used: {commands}\n' \
+				f'Total lines of code: {lines}'
+			e.set_thumbnail(url=self.bot.user.avatar_url)
+			e.set_image(url="attachment://" + os.path.basename(path))
+			e.add_field(name="◈ Summary ◈",  value="Fate is a ~~multipurpose~~ hybrid bot created for ~~sexual assault~~ fun", inline=False)
+			e.add_field(name="◈ Statistics ◈", value=f'Commands: [{len(self.bot.commands)}]\nModules: [{len(self.bot.extensions)}]\nServers: [{guilds}]\nUsers: [{users}]')
+			e.add_field(name="◈ Credits ◈", value="• Tothy ~ `rival`\n• Cortex ~ `teacher`\n• Discord.py ~ `existing`")
+			e.add_field(name="◈ Memory ◈", value=
+				f"__**Storage**__: [{p.bytes2human(psutil.disk_usage('/').used)}/{p.bytes2human(psutil.disk_usage('/').total)}]\n"
+				f"__**RAM**__: [{p.bytes2human(psutil.virtual_memory().used)}/{p.bytes2human(psutil.virtual_memory().total)}] ({psutil.virtual_memory().percent}%)\n"
+				f"__**Bot RAM**__: {p.bytes2human(bot_pid.memory_full_info().rss)} ({round(bot_pid.memory_percent())}%)\n"
+				f"__**CPU**__: **Global**: {psutil.cpu_percent()}% **Bot**: {bot_pid.cpu_percent()}%\n")
+			e.add_field(name="◈ Uptime ◈", value="Uptime: {} Hours {} Minutes {} seconds".format(int(h), int(m), int(s)))
+			e.set_footer(text=f"Powered by Python {platform.python_version()} and Discord.py {discord.__version__}", icon_url="https://cdn.discordapp.com/attachments/501871950260469790/567779834533773315/RPrw70n.png")
+			msg = await ctx.send(file=discord.File(path, filename=os.path.basename(path)), embed=e)
+			await self.wait_for_dismissal(ctx, msg)
 		if 'discord.gg' in target:
 			code = discord.utils.resolve_invite(target)
 			try:
@@ -135,7 +172,7 @@ class Utility(commands.Cog):
 			e.add_field(name="◈ Created ◈", value=datetime.date(channel.created_at).strftime("%m/%d/%Y"), inline=True)
 			return await ctx.send(embed=e)
 		role = await utils.get_role(ctx, target)
-		if not role:
+		if not isinstance(role, discord.Role):
 			return await ctx.send('Target not found')
 		icon_url = ctx.guild.owner.avatar_url if ctx.guild.owner.avatar_url else self.bot.user.avatar_url
 		e = discord.Embed(color=role.color)

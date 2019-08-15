@@ -42,7 +42,7 @@ class AntiSpam(commands.Cog):
 				".anti_spam enable\n"
 			    ".anti_spam disable\n"
 				".anti_spam blockchannel\n"
-				".anti_spam unblockchannel", inline=False)
+				".anti_spam unblockchannel\n", inline=False)
 			e.set_footer(text=f"Current Status: {toggle}")
 			await ctx.send(embed=e)
 

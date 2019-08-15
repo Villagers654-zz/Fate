@@ -8,16 +8,16 @@ class Archive(commands.Cog):
 		self.bot = bot
 		self.saving = {}
 
-	@commands.command(name='archive', description="saves x messages from channel history into a txt")
+	@commands.command(name='archive')
 	@commands.has_permissions(manage_messages=True)
 	@commands.cooldown(1, 25, commands.BucketType.channel)
-	async def _archive(self, ctx, amount:int):
+	async def _archive(self, ctx, amount: int):
 		if amount > 1000:
 			if not config.owner(ctx):
-				return await ctx.send('You cannot go over 1000')
+				return await ctx.send('You cannot save more than 1000 messages')
 		self.saving[str(ctx.channel.id)] = "saving"
 		async with ctx.typing():
-			log = ""
+			log = ''
 			async for msg in ctx.channel.history(limit=amount):
 				log = f"{msg.created_at.strftime('%I:%M%p')} | {msg.author.display_name}: {msg.content}\n{log}"
 			with open(f'./data/{ctx.channel.name}.txt', 'w') as f:

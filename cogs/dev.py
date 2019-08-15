@@ -31,14 +31,6 @@ class Dev(commands.Cog):
 		self.last = {}
 		self.silence = None
 
-	@commands.command(name='cycle-name')
-	@commands.cooldown(1, 25, commands.BucketType.user)
-	async def cycle_name(self, ctx, user: discord.Member=None):
-		if not user:
-			user = ctx.author
-		for character in list(user.name):
-			pass
-
 	@commands.command(name='luckynick')
 	@commands.check(checks.luck)
 	async def luckynick(self, ctx, user, nick):

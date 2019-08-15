@@ -173,6 +173,8 @@ class Welcome(commands.Cog):
 		guild_id = str(ctx.guild.id)
 		m = ctx.author
 		channel = ctx.channel
+		if guild_id not in self.format:
+			return await ctx.send('You need to set the welcome msg format first')
 		msg = self.format[guild_id]
 		msg = msg.replace("$MENTION", m.mention).replace("$SERVER", m.guild.name)
 		msg = msg.replace('!user', m.mention).replace('!server', m.guild.name)

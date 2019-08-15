@@ -29,29 +29,39 @@ class Menus(commands.Cog):
 			await asyncio.sleep(0.21)
 			await reply.delete()
 
-	@commands.command(name="help")
+	@commands.group(name="help")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.bot_has_permissions(embed_links=True)
-	async def _help(self, ctx, command=None):
-		if command:
-			for cmd in self.bot.commands:
-				if command == str(cmd):
-					return await ctx.send(cmd.description)
-			return await ctx.send("Either the command wasn't found or it has no help message")
-		e = discord.Embed(title="~~~====🥂🍸🍷Help🍷🍸🥂====~~~", color=0x80b0ff)
-		e.add_field(name="◈ Core ◈", value="`leaderboard` `gleaderboard` `ggleaderboard` `mleaderboard` `gmleaderboard` `vcleaderboard` `gvcleaderboard` `changelog` `partners` `servers` `restrict` `unrestrict` `restricted` `config` `prefix` `invite` `realms` `ping` `info` `say`", inline=False)
-		e.add_field(name="◈ Responses ◈", value="`@Fate` `hello` `ree` `kys` `gm` `gn`", inline=False)
-		e.add_field(name="◈ Music ◈", value="`play` `playnow` `playat` `find` `stop` `skip` `previous` `repeat` `pause` `resume` `volume` `queue` `remove` `shuffle` `dc` `np`", inline=False)
-		e.add_field(name="◈ Utility ◈", value="`membercount` `channelinfo` `servericon` `serverinfo` `userinfo` `makepoll` `welcome` `farewell` `logger` `color` `emoji` `addemoji` `stealemoji` `rename_emoji` `delemoji` `owner` `avatar` `topic` `timer` `note` `quicknote` `notes` `wiki` `find` `afk` `ud` `id`", inline=False)
-		e.add_field(name="◈ Reactions ◈", value="`tenor` `intimidate` `powerup` `observe` `disgust` `admire` `angery` `cuddle` `teasip` `thonk` `shrug` `bite` `yawn` `hide` `wine` `sigh` `kiss` `kill` `slap` `hug` `pat` `cry`", inline=False)
-		e.add_field(name="◈ Mod ◈", value="`modlogs` `addmod` `delmod` `mods` `mute` `unmute` `vcmute` `vcunmute` `warn` `removewarn` `clearwarns` `addrole` `removerole` `restore_roles` `selfroles` `autorole` `limit` `audit` `lock` `lockb` `delete` `purge` `nick` `massnick` `kick` `mute` `ban` `pin`", inline=False)
-		e.add_field(name="◈ Fun ◈", value="`personality` `liedetector` `chatbot` `fancify` `factions` `coffee` `encode` `decode` `choose` `notice` `snipe` `mock` `rate` `roll` `soul` `gay` `sue` `ask` `rps` `rr` `cookie` `shoot` `inject` `slice` `boop` `stab`", inline=False)
-		try:
-			await ctx.author.send(embed=e)
-			await ctx.send("Help menu sent to dm ✅")
-		except:
-			msg = await ctx.send("Failed to send help menu to dm ❎", embed=e)
-			await self.wait_for_dismissal(ctx, msg)
+	async def _help(self, ctx):
+		if not ctx.invoked_subcommand:
+			e = discord.Embed(title="~~~====🥂🍸🍷Help🍷🍸🥂====~~~", color=0x80b0ff)
+			e.add_field(name="◈ Core ◈", value="`leaderboard` `gleaderboard` `ggleaderboard` `mleaderboard` `gmleaderboard` `vcleaderboard` `gvcleaderboard` `changelog` `partners` `servers` `restrict` `unrestrict` `restricted` `config` `prefix` `invite` `realms` `ping` `info` `say`", inline=False)
+			e.add_field(name="◈ Responses ◈", value="`@Fate` `hello` `ree` `kys` `gm` `gn`", inline=False)
+			e.add_field(name="◈ Music ◈", value="`play` `playnow` `playat` `find` `stop` `skip` `previous` `repeat` `pause` `resume` `volume` `queue` `remove` `shuffle` `dc` `np`", inline=False)
+			e.add_field(name="◈ Utility ◈", value="`membercount` `channelinfo` `servericon` `serverinfo` `userinfo` `makepoll` `welcome` `farewell` `logger` `color` `emoji` `addemoji` `stealemoji` `rename_emoji` `delemoji` `owner` `avatar` `topic` `timer` `note` `quicknote` `notes` `wiki` `find` `afk` `ud` `id`", inline=False)
+			e.add_field(name="◈ Reactions ◈", value="`tenor` `intimidate` `powerup` `observe` `disgust` `admire` `angery` `cuddle` `teasip` `thonk` `shrug` `bite` `yawn` `hide` `wine` `sigh` `kiss` `kill` `slap` `hug` `pat` `cry`", inline=False)
+			e.add_field(name="◈ Mod ◈", value="`modlogs` `addmod` `delmod` `mods` `mute` `unmute` `vcmute` `vcunmute` `warn` `removewarn` `clearwarns` `addrole` `removerole` `restore_roles` `selfroles` `autorole` `limit` `audit` `lock` `lockb` `delete` `purge` `nick` `massnick` `kick` `mute` `ban` `pin`", inline=False)
+			e.add_field(name="◈ Fun ◈", value="`personality` `liedetector` `chatbot` `fancify` `factions` `coffee` `encode` `decode` `choose` `notice` `snipe` `mock` `rate` `roll` `soul` `gay` `sue` `ask` `rps` `rr` `cookie` `shoot` `inject` `slice` `boop` `stab`", inline=False)
+			try:
+				await ctx.author.send(embed=e)
+				await ctx.send("Help menu sent to dm ✅")
+			except:
+				msg = await ctx.send("Failed to send help menu to dm ❎", embed=e)
+				await self.wait_for_dismissal(ctx, msg)
+
+	@_help.command(name='archive')
+	async def _archive(self, ctx):
+		e = discord.Embed(color=colors.fate())
+		e.description = 'Saves chat history to a file\n' \
+		    '**Usage:** .archive {amount}'
+		await ctx.send(embed=e)
+
+	@_help.command(name='antispam')
+	async def _antispam(self, ctx):
+		e = discord.Embed(color=colors.fate())
+		e.description = 'Saves chat history to a file\n' \
+		    '**Usage:** .archive {amount}'
+		await ctx.send(embed=e)
 
 	@commands.command(name='stats', description="Provides information relevant to the bots stats")
 	@commands.cooldown(1, 5, commands.BucketType.channel)
@@ -66,7 +76,7 @@ class Menus(commands.Cog):
 		e=discord.Embed(color=colors.fate())
 		e.set_author(name="Fate [Zerø]: Core Info", icon_url=self.bot.get_user(config.owner_id()).avatar_url)
 		stats = self.bot.get_stats  # type: dict
-		commands = 0; active_lines = 0; lines = 0
+		commands = 0; lines = 0
 		for command_date in stats['commands']:
 			date = datetime.strptime(command_date, '%Y-%m-%d %H:%M:%S.%f')
 			if (datetime.now() - date).days < 7:
@@ -83,7 +93,6 @@ class Menus(commands.Cog):
 				with open(f'./cogs/{file}', 'r') as f:
 					lines += len(f.readlines())
 		e.description = f'Weekly Commands Used: {commands}\n' \
-			f'Lines of active code: {active_lines}\n' \
 			f'Total lines of code: {lines}'
 		e.set_thumbnail(url=self.bot.user.avatar_url)
 		e.set_image(url="attachment://" + os.path.basename(path))
