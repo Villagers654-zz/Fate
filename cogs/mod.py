@@ -910,8 +910,10 @@ class Mod(commands.Cog):
 				if role not in user.roles:
 					await user.add_roles(role)
 					await asyncio.sleep(0.5)
-			del self.timers['mute'][guild_id][user_id]
-			self.save_json()
+			if guild_id in self.timers:
+				if user_id in self.timers[guild_id]:
+					del self.timers['mute'][guild_id][user_id]
+					self.save_json()
 
 	@commands.command(name="unmute", description="Unblocks users from sending messages")
 	@commands.cooldown(1, 3, commands.BucketType.user)
