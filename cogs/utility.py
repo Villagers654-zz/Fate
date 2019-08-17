@@ -314,17 +314,29 @@ class Utility(commands.Cog):
 			return await ctx.send('This channel has no topic')
 		await ctx.send(ctx.channel.topic)
 
-	@commands.command(name='color')
-	async def color(self, ctx, hex=None):
-		if hex:
-			hex = hex.replace('#', '')
-			e = discord.Embed(color=eval(f"0x{hex}"))
-			await ctx.send(embed=e)
-		else:
+	@commands.command(name='color', aliases=['setcolor', 'changecolor'])
+	@commands.cooldown(1, 3, commands.BucketType.user)
+	@commands.guild_only()
+	async def color(self, ctx, *args):
+		if len(args) == 0:
 			color = colors.random()
 			e = discord.Embed(color=color)
 			e.set_author(name=f"#{color}", icon_url=ctx.author.avatar_url)
-			await ctx.send(embed=e)
+			return await ctx.send(embed=e)
+		if len(args) == 1:
+			hex = args[0]
+			hex = hex.replace('#', '')
+			e = discord.Embed(color=eval(f"0x{hex}"))
+			return await ctx.send(embed=e)
+		if not ctx.author.guild_permissions.manage_roles:
+			return await ctx.send('You need manage roles permissions to use this')
+		role = await utils.get_role(ctx, args[0])
+		hex = discord.Color(eval('0x' + args[1].replace('#', '')))
+		if role.position >= ctx.author.top_role.position:
+			return await ctx.send('That roles above your paygrade, take a seat')
+		previous_color = role.color
+		await role.edit(color=hex)
+		await ctx.send(f'Changed {role.name}\'s color from {previous_color} to {hex}')
 
 	@commands.command(name="timer", pass_context=True, aliases=['reminder', 'alarm'])
 	async def _timer(self, ctx, time, *, remember: commands.clean_content = ""):
