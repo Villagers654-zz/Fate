@@ -97,6 +97,15 @@ async def wait_for_msg(self, ctx, user=None):
 	else:
 		return msg
 
+def get_seconds(minutes=None, hours=None, days=None):
+	if minutes:
+		return minutes * 60
+	if hours:
+		return hours * 60 * 60
+	if days:
+		return days * 60 * 60 * 24
+	return 0
+
 class Bot:
 	def __init__(self, bot):
 		self.bot = bot

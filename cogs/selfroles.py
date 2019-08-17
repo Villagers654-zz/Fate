@@ -24,7 +24,7 @@ class SelfRoles(commands.Cog):
 	@commands.guild_only()
 	@commands.has_permissions(manage_roles=True)
 	@commands.bot_has_permissions(embed_links=True, manage_messages=True)
-	async def selfroles(self, ctx):
+	async def selfroles(self, ctx, preset=None):
 		if ctx.invoked_subcommand:
 			return
 		guild_id = str(ctx.guild.id)
@@ -64,6 +64,25 @@ class SelfRoles(commands.Cog):
 				try: m = self.bot.get_emoji(int(m))
 				except: m = None
 				return m
+		async def color_preset() -> list:
+			color_set = {
+				'Red': [0xff0000],
+				'Orange': [0xff5a00],
+				'Yellow': [0xffff00],
+				'Green': [0x00ff00],
+				'Cyan': [0x00ffff],
+				'Blue': [0x0000ff],
+				'Purple': [0x9400d3],
+				'Hot Pink': [0xf47fff],
+				'Pink': [0xff9dd1],
+				'Black': [0x030303]
+			}
+			roles = []
+			for role_name, values in color_set.items():
+				emoji, hex = values
+				role = await ctx.guild.create_role(name=role_name, color=discord.Color(hex))
+				roles.append(role)
+			return roles
 		e = discord.Embed(color=colors.fate())
 		info = 'Send the reaction emoji and role name per role\n'
 		info += 'Example: `🎁 Partnership Pings`\n'
@@ -79,7 +98,7 @@ class SelfRoles(commands.Cog):
 			reply = await wait_for_msg()
 			if not reply:
 				return await msg.delete()
-			if 'done' in reply.content.lower():
+			if 'done' in reply.content.lower() or preset:
 				await msg.delete()
 				await reply.delete()
 				if not selfroles:
@@ -165,6 +184,11 @@ class SelfRoles(commands.Cog):
 			return await ctx.send('I\'ll now allow multiple reactions')
 		self.single[guild_id] = 'True'
 		await ctx.send('Limited users to 1 reaction per menu')
+
+	@selfroles.command(name='preset', aliases=['presets'])
+	async def _preset(self, ctx, preset):
+		""" Creates a pre-built selfrole menu """
+
 
 	@commands.Cog.listener()
 	async def on_raw_reaction_add(self, payload):

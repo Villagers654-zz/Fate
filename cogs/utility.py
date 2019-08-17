@@ -105,7 +105,7 @@ class Utility(commands.Cog):
 			e.add_field(name="◈ Uptime ◈", value="Uptime: {} Hours {} Minutes {} seconds".format(int(h), int(m), int(s)))
 			e.set_footer(text=f"Powered by Python {platform.python_version()} and Discord.py {discord.__version__}", icon_url="https://cdn.discordapp.com/attachments/501871950260469790/567779834533773315/RPrw70n.png")
 			msg = await ctx.send(file=discord.File(path, filename=os.path.basename(path)), embed=e)
-			await self.wait_for_dismissal(ctx, msg)
+			return await self.wait_for_dismissal(ctx, msg)
 		if 'discord.gg' in target:
 			code = discord.utils.resolve_invite(target)
 			try:
