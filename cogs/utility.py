@@ -173,7 +173,7 @@ class Utility(commands.Cog):
 			return await ctx.send(embed=e)
 		role = await utils.get_role(ctx, target)
 		if not isinstance(role, discord.Role):
-			return await ctx.send('Target not found')
+			return
 		icon_url = ctx.guild.owner.avatar_url if ctx.guild.owner.avatar_url else self.bot.user.avatar_url
 		e = discord.Embed(color=role.color)
 		e.set_author(name=f"{role.name}:", icon_url=icon_url)
