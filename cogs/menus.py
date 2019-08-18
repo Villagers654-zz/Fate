@@ -47,12 +47,12 @@ class Menus(commands.Cog):
 			owner = self.bot.get_user(config.owner_id())
 			e.set_author(name='~==🥂🍸🍷Help🍷🍸🥂==~', icon_url=owner.avatar_url)
 			e.set_thumbnail(url=self.bot.user.avatar_url)
-			e.description = '◈ Basic Bot Usage`\n' \
-			    '• `using a cmd with no args will send its help menu`' \
-			    '• `{prefix}module enable\n'
+			usage = '• using a cmd with no args will usually send its help menu\n' \
+			    '• try using `.module enable` instead of `.enable module`'
+			e.add_field(name='◈ Basic Bot Usage', value=usage)
 			categories = '• **Core** - `main bot commands`\n' \
 				'• **Mod** - `moderation commands`\n' \
-			    '• **Utility** - `everyday helpful commands`\n' \
+			    '• **Utility** - `helpful commands`\n' \
 			    '• **Fun** - `fun games/commands`\n' \
 			    '• **Music** - `play music in vc :D`'
 			e.add_field(name='◈ Categories', value=categories)
@@ -137,7 +137,7 @@ class Menus(commands.Cog):
 			    '• **quicknote** - `notes something without the gif`\n' \
 			    '• **notes** - `sends your last 5 notes`\n' \
 			    '• **wiki** - `sends information on words/phrases`\n' \
-			    '• **ud** - `sends a definition from urban dictionary`' \
+			    '• **ud** - `sends a definition from urban dictionary`\n' \
 			    '• **find** - `searches msg history for a word/phase`\n' \
 			    '• **afk** - `tells users your\'re afk when mentioned`\n' \
 			    '• **id** - `sends your id & the channels id`'
@@ -210,11 +210,11 @@ class Menus(commands.Cog):
 				index = 0
 			if isinstance(embeds[index], list):
 				if index == len(embeds) - 1:
-					embeds[index][sub_index].set_footer(text='Last Page!')
+					embeds[index][sub_index].set_footer(text='Last Page! More under construction')
 				await msg.edit(embed=embeds[index][sub_index])
 			else:
 				if index == len(embeds) - 1:
-					embeds[index].set_footer(text='Last Page!')
+					embeds[index].set_footer(text='Last Page! More under construction')
 				await msg.edit(embed=embeds[index])
 			await msg.remove_reaction(reaction, ctx.author)
 
