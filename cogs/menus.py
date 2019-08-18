@@ -29,7 +29,196 @@ class Menus(commands.Cog):
 			await asyncio.sleep(0.21)
 			await reply.delete()
 
-	@commands.group(name="help")
+	@commands.command(name='help')
+	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True, manage_messages=True)
+	async def help(self, ctx):
+		async def wait_for_reaction()->list:
+			def check(reaction, user):
+				return user == ctx.author
+			try:
+				reaction, user = await self.bot.wait_for('reaction_add', timeout=60.0, check=check)
+			except asyncio.TimeoutError:
+				return [None, None]
+			else:
+				return [reaction, str(reaction.emoji)]
+		def default():
+			e = discord.Embed(color=colors.fate())
+			owner = self.bot.get_user(config.owner_id())
+			e.set_author(name='~==🥂🍸🍷Help🍷🍸🥂==~', icon_url=owner.avatar_url)
+			e.set_thumbnail(url=self.bot.user.avatar_url)
+			e.description = '◈ Basic Bot Usage`\n' \
+			    '• `using a cmd with no args will send its help menu`' \
+			    '• `{prefix}module enable\n'
+			categories = '• **Core** - `main bot commands`\n' \
+				'• **Mod** - `moderation commands`\n' \
+			    '• **Utility** - `everyday helpful commands`\n' \
+			    '• **Fun** - `fun games/commands`\n' \
+			    '• **Music** - `play music in vc :D`'
+			e.add_field(name='◈ Categories', value=categories)
+			return e
+		def core():
+			e = discord.Embed(color=colors.fate())
+			owner = self.bot.get_user(config.owner_id())
+			e.set_author(name='~==🥂🍸🍷Core🍷🍸🥂==~', icon_url=owner.avatar_url)
+			e.set_thumbnail(url=self.bot.user.avatar_url)
+			e.description = '• **info** `depending on your args it provides information for users/roles/channels & invites`\n' \
+				'• **sinfo** - `sends server info`\n' \
+			    '• **leaderboard** - `servers lvl/xp ranking`\n' \
+			    '• **gleaderboard** - `global lvl/xp ranking`\n' \
+			    '• **ggleaderboard** - `global server ranking`\n' \
+			    '• **mleaderboard** - `monthly server ranking`\n' \
+			    '• **gmleaderboard** - `global monthly ranking`\n' \
+			    '• **vcleaderboard** - `voicecall leaderboard`\n' \
+			    '• **gvcleaderboard** - `global vc leaderboard`\n' \
+			    '• **partners** - `fates partnered bots/servers`\n' \
+			    '• **servers** - `featured server list`\n' \
+			    '• **restrict** - `block ppl/channels from using cmds`\n' \
+			    '• **unrestrict** - `undoes the following^`\n' \
+			    '• **restricted** - `lists restricted channels/users`\n' \
+			    '• **config** - `sends toggles for core modules`\n' \
+			    '• **prefix** - `lets you change the bots prefix`\n' \
+			    '• **links** - `sends invite/support links`\n' \
+			    '• **ping** - `checks the bots latency`\n' \
+			    '• **say** - `says stuff through the bot`'
+			return e
+		def mod():
+			e = discord.Embed(color=colors.fate())
+			owner = self.bot.get_user(config.owner_id())
+			e.set_author(name='~==🥂🍸🍷Mod🍷🍸🥂==~', icon_url=owner.avatar_url)
+			e.set_thumbnail(url=self.bot.user.avatar_url)
+			e.description = '• **modlogs** - `shows active mutes/temp-bans`\n' \
+			    '• **unmute** - `unmutes users so they can talk`\n' \
+			    '• **warn** - `warns users and punishes`\n' \
+			    '• **delwarn** - `removes warns with the provided reason`\n' \
+			    '• **clearwarns** - `resets a users warns\n`' \
+			    '• **config warns** - `set punishments for warn`\n' \
+			    '• **mute** - `mutes users so they can\'t talk`\n' \
+			    '• **kick** - `kicks a user from the server`\n' \
+			    '• **softban** - `bans and unbans a user deleting 7 days of their msg history`\n' \
+			    '• **tempban** - `bans a user for x amount of time\n`' \
+			    '• **ban** `bans a user from the server`\n' \
+			    '• **role** - `adds/removes roles from a user`\n' \
+			    '• **restore_roles** - `gives roles back on re-join`\n' \
+			    '• **selfroles** - `gives roles via reaction menus`\n' \
+				'• **autorole** - `gives users roles on-join`\n' \
+			    '• **limit** - `limit channels to only allow messages with things like images`\n' \
+			    '• **audit** - `tools for searching through the audit log`\n' \
+			    '• **lock** - `kicks users on-join`\n' \
+			    '• **lockb** - `bans users on-join`\n' \
+			    '• **unlock** - `disables any active locks`\n' \
+			    '• **pin** - `pings the msg above`\n' \
+			    '• **purge** - `mass delete messages`\n' \
+			    '• **nick** - `sets a users nickname`\n' \
+			    '• **massnick - `sets every users nickname`\n' \
+			    '• **massrole - `gives everyone a specific role`'
+			return e
+		def utility():
+			e = discord.Embed(color=colors.fate())
+			owner = self.bot.get_user(config.owner_id())
+			e.set_author(name='~==🥂🍸🍷Utility🍷🍸🥂==~', icon_url=owner.avatar_url)
+			e.set_thumbnail(url=self.bot.user.avatar_url)
+			e.description = '• **members** - `sends the servers member count`\n' \
+			    '• **icon** - `sends the servers icon`\n' \
+			    '• **sinfo** - `sends server info`\n' \
+			    '• **poll** - `makes a reaction poll via embed`\n' \
+			    '• **welcome** - `welcomes users on-join`\n' \
+			    '• **farewell** - `gives users a farewell on-leave`\n' \
+			    '• **logger** - `logs actions to a channel`\n' \
+			    '• **color** - `tests a hex or changes a roles color`\n' \
+			    '• **emoji** - `sends an emojis full image`\n' \
+			    '• **addemoji** - `adds emojis from links or files`\n' \
+			    '• **stealemoji** - `steals an emoji from another server`\n' \
+			    '• **delemoji** - `deletes an emoji`\n' \
+			    '• **owner** - `sends the servers owner mention`\n' \
+			    '• **avatar** - `sends your profile picture`\n' \
+			    '• **topic** - `sends the channel topic`\n' \
+			    '• **note** - `saves a note`\n' \
+			    '• **quicknote** - `notes something without the gif`\n' \
+			    '• **notes** - `sends your last 5 notes`\n' \
+			    '• **wiki** - `sends information on words/phrases`\n' \
+			    '• **ud** - `sends a definition from urban dictionary`' \
+			    '• **find** - `searches msg history for a word/phase`\n' \
+			    '• **afk** - `tells users your\'re afk when mentioned`\n' \
+			    '• **id** - `sends your id & the channels id`'
+			return e
+
+		msg = await ctx.send(embed=default())
+		emojis = ['🏡', '⏮', '⏪', '⏩', '⏭']
+		index = 0; sub_index = None
+		embeds = [default(), core(), mod(), utility()]
+		def index_check(index):
+			if index > len(embeds) - 1:
+				index = len(embeds) - 1
+			if index < 0:
+				index = 0
+			return index
+
+		for emoji in emojis:
+			await msg.add_reaction(emoji)
+		while True:
+			reaction, emoji = await wait_for_reaction()
+			if not reaction:
+				return await msg.clear_reactions()
+			if emoji == emojis[0]:  # home
+				index = 0; sub_index = None
+			if emoji == emojis[1]:
+				index -= 1; sub_index = None
+				if isinstance(embeds[index], list):
+					sub_index = 0
+			if emoji == emojis[2]:
+				if isinstance(embeds[index], list):
+					if not isinstance(sub_index, int):
+						sub_index = len(embeds[index]) - 1
+					else:
+						if sub_index == 0:
+							index -= 1; sub_index = None
+							index = index_check(index)
+							if isinstance(embeds[index], list):
+								sub_index = len(embeds[index]) - 1
+						else:
+							sub_index -= 1
+				else:
+					index -= 1
+					if isinstance(embeds[index], list):
+						sub_index = len(embeds[index]) - 1
+			if emoji == emojis[3]:
+				if isinstance(embeds[index], list):
+					if not isinstance(sub_index, int):
+						sub_index = 0
+					else:
+						if sub_index == len(embeds[index]) - 1:
+							index += 1; sub_index = None
+							index = index_check(index)
+							if isinstance(embeds[index], list):
+								sub_index = 0
+						else:
+							sub_index += 1
+				else:
+					index += 1
+					index = index_check(index)
+					if isinstance(embeds[index], list):
+						sub_index = 0
+			if emoji == emojis[4]:
+				index += 1; sub_index = None
+				index = index_check(index)
+				if isinstance(embeds[index], list):
+					sub_index = 0
+			if index > len(embeds) - 1:
+				index = len(embeds) - 1
+			if index < 0:
+				index = 0
+			if isinstance(embeds[index], list):
+				if index == len(embeds) - 1:
+					embeds[index][sub_index].set_footer(text='Last Page!')
+				await msg.edit(embed=embeds[index][sub_index])
+			else:
+				if index == len(embeds) - 1:
+					embeds[index].set_footer(text='Last Page!')
+				await msg.edit(embed=embeds[index])
+			await msg.remove_reaction(reaction, ctx.author)
+
+	@commands.group(name="xhelp")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.bot_has_permissions(embed_links=True)
 	async def _help(self, ctx):
