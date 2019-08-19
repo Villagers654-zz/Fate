@@ -77,10 +77,11 @@ class Emojis(commands.Cog):
 		args = args.split(' '); image_urls = None; roles = []
 		if 'https://' in args[0]:
 			image_urls = args[0]
-			args.pop(0)  # removes the image url from args
+			args.pop(0); args = ['new_emoji'] if not args else args
 		if ctx.message.attachments:
 			image_urls = [(file.filename, file.url) for file in ctx.message.attachments]
-		args = ' '.join(args) if args else args[0]
+		if len(args) > 1: args = ' '.join(args)
+		else: args = args[0]
 		if not image_urls:
 			return await ctx.send('You need to attach a file or provide a url')
 		msg = await ctx.send('Uploading emoji(s)..')
