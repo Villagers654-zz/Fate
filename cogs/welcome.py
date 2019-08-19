@@ -183,15 +183,14 @@ class Welcome(commands.Cog):
 		if guild_id in self.useimages:
 			e = discord.Embed(color=colors.fate())
 			if guild_id in self.images:
-				e.set_image(url=random.choice(self.images[guild_id]))
-				try:
-					await channel.send(msg, embed=e)
-				except discord.errors.Forbidden:
-					del self.useimages[guild_id]
-					del self.images[guild_id]
-					self.save_data()
-				else:
-					pass
+				if self.images[guild_id]:
+					e.set_image(url=random.choice(self.images[guild_id]))
+					try:
+						await channel.send(msg, embed=e)
+					except discord.errors.Forbidden:
+						del self.useimages[guild_id]
+						del self.images[guild_id]
+						self.save_data()
 			else:
 				e.set_image(url="attachment://" + os.path.basename(path))
 				try:
@@ -199,16 +198,12 @@ class Welcome(commands.Cog):
 				except discord.errors.Forbidden:
 					del self.useimages[guild_id]
 					self.save_data()
-				else:
-					pass
 		else:
 			try:
 				await channel.send(msg)
 			except discord.errors.Forbidden:
 				del self.toggle[guild_id]
 				self.save_data()
-			else:
-				pass
 
 	@_welcome.command(name="setchannel")
 	@commands.has_permissions(manage_guild=True)
