@@ -30,8 +30,9 @@ class Menus(commands.Cog):
 			await reply.delete()
 
 	@commands.command(name='help')
-	@commands.cooldown(1, 5, commands.BucketType.user)
-	@commands.bot_has_permissions(embed_links=True, manage_messages=True)
+	@commands.cooldown(1, 60, commands.BucketType.user)
+	@commands.cooldown(1, 3, commands.BucketType.channel)
+	@commands.bot_has_permissions(embed_links=True, add_reactions=True, manage_messages=True)
 	async def help(self, ctx):
 		async def wait_for_reaction()->list:
 			def check(reaction, user):
@@ -91,12 +92,12 @@ class Menus(commands.Cog):
 			    '• **unmute** - `unmutes users so they can talk`\n' \
 			    '• **warn** - `warns users and punishes`\n' \
 			    '• **delwarn** - `removes warns with the provided reason`\n' \
-			    '• **clearwarns** - `resets a users warns\n`' \
+			    '• **clearwarns** - `resets a users warns`\n' \
 			    '• **config warns** - `set punishments for warn`\n' \
 			    '• **mute** - `mutes users so they can\'t talk`\n' \
 			    '• **kick** - `kicks a user from the server`\n' \
 			    '• **softban** - `bans and unbans a user deleting 7 days of their msg history`\n' \
-			    '• **tempban** - `bans a user for x amount of time\n`' \
+			    '• **tempban** - `bans a user for x amount of time`\n' \
 			    '• **ban** `bans a user from the server`\n' \
 			    '• **role** - `adds/removes roles from a user`\n' \
 			    '• **restore_roles** - `gives roles back on re-join`\n' \
@@ -142,11 +143,60 @@ class Menus(commands.Cog):
 			    '• **afk** - `tells users your\'re afk when mentioned`\n' \
 			    '• **id** - `sends your id & the channels id`'
 			return e
+		def fun():
+			e = discord.Embed(color=colors.fate())
+			owner = self.bot.get_user(config.owner_id())
+			e.set_author(name='~==🥂🍸🍷Fun🍷🍸🥂==~', icon_url=owner.avatar_url)
+			e.set_thumbnail(url=self.bot.user.avatar_url)
+			e.description = '• **ld** - `detects if a users lying`\n' \
+			    '• **chatbot** - `bots are ppl too`\n' \
+			    '• **fancify** - `makes text fancy`\n' \
+			    '• **factions** - `work/claim/raid/grow`\n' \
+			    '• **encode** - `encodes a msg in base64`\n' \
+			    '• **decode** - `decodes a msg in base64`\n' \
+			    '• **notice** - `aknowledges depression`\n' \
+				'• **snipe** - `sends the last deleted msg`\n' \
+			    '• **mock** - `mOcKs tExT fOr yOu`\n' \
+			    '• **rate** - `rates the above msg`\n' \
+			    '• **roll** - `sends a number bwteen 1 & 6`\n' \
+			    '• **sue** - `sues the mentioned user`\n' \
+			    '• **ask** - `ask meh stuff ¯\_(ツ)_/¯`\n' \
+			    '• **rps** - `play rock paper scissors`\n' \
+			    '• **cookie** - `giv and eat cookies 🤤`\n' \
+			    '• **shoot** - `shoots a user`\n' \
+			    '• **inject** - `injects a user with \'someth\'`\n' \
+			    '• **slice** - `slices anything up`\n' \
+			    '• **stab** - `stabs a user`\n' \
+			    '• **boop** - `very kinky shit`\n' \
+			    '• **rr** - `play russion roulette`'
+			return e
+		def music():
+			e = discord.Embed(color=colors.fate())
+			owner = self.bot.get_user(config.owner_id())
+			e.set_author(name='~==🥂🍸🍷Music🍷🍸🥂==~', icon_url=owner.avatar_url)
+			e.set_thumbnail(url=self.bot.user.avatar_url)
+			e.description = '• **play** - `searches or plays from url`\n' \
+			    '• **playnow** - `plays immediately ignoring queue`\n' \
+			    '• **playat** - `skips to a position in queue`\n' \
+			    '• **find** - `finds a vid from youtube`\n' \
+			    '• **stop** - `stops playing music`\n' \
+			    '• **skip** - `skips a song`\n' \
+			    '• **previous** - `plays the previous song`\n' \
+			    '• **repeat** - `plays a song on a loop while enabled`\n' \
+			    '• **shuffle** - `shuffles the queue`\n' \
+			    '• **pause** - `pauses the current song`\n' \
+			    '• **resume** - `unpauses the current song`\n' \
+			    '• **volume** - `set the playing volume`\n' \
+			    '• **queue** - `shows upcoming songs`\n' \
+			    '• **remove** - `remove a song from queue`\n' \
+			    '• **dc** - `disconnects from vc`\n' \
+			    '• **np** - `info on the current song`'
+			return e
 
 		msg = await ctx.send(embed=default())
 		emojis = ['🏡', '⏮', '⏪', '⏩', '⏭']
 		index = 0; sub_index = None
-		embeds = [default(), core(), mod(), utility()]
+		embeds = [default(), core(), mod(), utility(), fun(), music()]
 		def index_check(index):
 			if index > len(embeds) - 1:
 				index = len(embeds) - 1
@@ -156,6 +206,7 @@ class Menus(commands.Cog):
 
 		for emoji in emojis:
 			await msg.add_reaction(emoji)
+			await asyncio.sleep(0.5)
 		while True:
 			reaction, emoji = await wait_for_reaction()
 			if not reaction:
@@ -163,7 +214,7 @@ class Menus(commands.Cog):
 			if emoji == emojis[0]:  # home
 				index = 0; sub_index = None
 			if emoji == emojis[1]:
-				index -= 1; sub_index = None
+				index -= 2; sub_index = None
 				if isinstance(embeds[index], list):
 					sub_index = 0
 			if emoji == emojis[2]:
@@ -200,7 +251,7 @@ class Menus(commands.Cog):
 					if isinstance(embeds[index], list):
 						sub_index = 0
 			if emoji == emojis[4]:
-				index += 1; sub_index = None
+				index += 2; sub_index = None
 				index = index_check(index)
 				if isinstance(embeds[index], list):
 					sub_index = 0
@@ -210,11 +261,11 @@ class Menus(commands.Cog):
 				index = 0
 			if isinstance(embeds[index], list):
 				if index == len(embeds) - 1:
-					embeds[index][sub_index].set_footer(text='Last Page! More under construction')
+					embeds[index][sub_index].set_footer(text='Last Page! You\'ve reached the end')
 				await msg.edit(embed=embeds[index][sub_index])
 			else:
 				if index == len(embeds) - 1:
-					embeds[index].set_footer(text='Last Page! More under construction')
+					embeds[index].set_footer(text='Last Page! You\'ve reached the end')
 				await msg.edit(embed=embeds[index])
 			await msg.remove_reaction(reaction, ctx.author)
 
