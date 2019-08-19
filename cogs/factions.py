@@ -604,8 +604,6 @@ class Factions(commands.Cog):
 		e.description = f'You earned {faction} ${paycheck}'
 		await ctx.send(embed=e)
 		self.save_data()
-		await asyncio.sleep(60)
-		await ctx.send(f'{ctx.author.mention} your cooldowns up', delete_after=3)
 
 	@_factions.command(name='suicide', aliases=['kms'], category='economy')
 	@commands.cooldown(1, 120, commands.BucketType.user)
