@@ -287,16 +287,24 @@ class Factions(commands.Cog):
 		if 'icon' in f:
 			if f['icon']:
 				e.set_thumbnail(url=f['icon'])
+		date_string = self.factions[guild_id][faction]['boosts']['anti-raid']
+		date = datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S.%f')
+		anti_raid = "Active" if (datetime.now() - date).days < 1 else "Inactive"
+		date_string = self.factions[guild_id][faction]['boosts']['extra-income']
+		date = datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S.%f')
+		extra_income = "Active" if (datetime.now() - date).seconds / 60 / 60 < 2 else "Inactive"
 		if len(owner.name) > 10:
 			e.description = f'__**Owner:**__ [{owner.name}]\n' \
 				f'__**Balance:**__ [`${f["balance"]}`] ' \
 				f'__**Access:**__ [`{"Public" if f["access"] == "public" else "Invite-Only"}`]\n' \
-				f'__**MemberCount:**__ [`{len(f["members"])}/{f["limit"]}`]'
+				f'__**MemberCount:**__ [`{len(f["members"])}/{f["limit"]}`]\n' \
+				f'\n__**Anti-Raid:**__ [`{anti_raid}`] __**+Income:**__ [`{extra_income}`]'
 		else:
 			e.description = f'__**Owner:**__ [{owner.name}] ' \
 				f'__**Balance:**__ [`${f["balance"]}`]\n' \
 				f'__**Access:**__ [`{"Public" if f["access"] == "public" else "Invite-Only"}`] ' \
-				f'__**Members:**__ [`{len(f["members"])}/{f["limit"]}`]'
+				f'__**Members:**__ [`{len(f["members"])}/{f["limit"]}`]' \
+				f'\n__**Anti-Raid:**__ [`{anti_raid}`] __**+Income:**__ [`{extra_income}`]'
 		members = self.get_members(ctx, faction)
 		e.add_field(name='◈ Members ◈', value=members if members else 'none')
 		claims = self.get_claims(guild_id, faction)
