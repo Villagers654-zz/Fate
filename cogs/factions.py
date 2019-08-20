@@ -33,6 +33,8 @@ class Factions(commands.Cog):
 			'icon': 250,
 			'banner': 500,
 			'5 slots': 250,
+			'anti-raid': 75,
+			'extra-income': 50
 		}
 
 	def save_data(self):
@@ -56,6 +58,11 @@ class Factions(commands.Cog):
 				self.factions[guild_id][faction]['limit'] = 15
 			if 'items' not in self.factions[guild_id][faction]:
 				self.factions[guild_id][faction]['items'] = []
+			if 'boosts' not in self.factions[guild_id][faction]:
+				self.factions[guild_id][faction]['boosts'] = {
+					'anti-raid': None,
+					'extra-income': None
+				}
 
 	def get_faction(self, user: discord.Member):
 		guild_id = str(user.guild.id)
@@ -243,7 +250,8 @@ class Factions(commands.Cog):
 				'.factions seticon {file | url}\n' \
 				'.factions setbanner {file | url}\n' \
 			    '.factions togglenotifs', inline=False)
-			e.add_field(name='◈ Economy ◈', value=f'.faction work\n' \
+			e.add_field(name='◈ Economy ◈', value=f'.faction work\n'
+			    f'.factions balance\n' \
 				'.factions pay {faction} {amount}\n'
 				'.factions raid {faction}\n' \
 				'.factions annex {faction}\n'
@@ -601,7 +609,7 @@ class Factions(commands.Cog):
 			self.notifs.pop(self.notifs.index(user_id))
 		await ctx.message.add_reaction('👍')
 
-	@_factions.command(name='bal')
+	@_factions.command(name='balance', aliases=['bal'])
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def _bal(self, ctx):
 		faction = self.get_faction(ctx.author)
@@ -610,7 +618,7 @@ class Factions(commands.Cog):
 		guild_id = str(ctx.guild.id)
 		self.init(guild_id, faction)
 		e = discord.Embed(color=colors.purple())
-		e.description = str(self.factions[guild_id][faction]['balance'])
+		e.description = f'${self.factions[guild_id][faction]["balance"]}'
 		await ctx.send(embed=e)
 
 	@_factions.command(name='work')
@@ -736,8 +744,21 @@ class Factions(commands.Cog):
 		if not faction:
 			return await ctx.send('You need to be owner of a faction to use this')
 		guild_id = str(ctx.guild.id)
+		self.init(guild_id, faction)
 		t = self.factions[guild_id][target]
 		f = self.factions[guild_id][faction]
+		if t['boosts']['anti-raid'] is not None:
+			date_string = self.factions[guild_id][target]['boosts']['anti-raid']
+			date = datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S.%f')
+			if (datetime.now() - date).days < 1:
+				pay = random.randint(10, 25)
+				self.factions[guild_id][faction]['balance'] -= pay
+				self.factions[guild_id][target]['balance'] += pay
+				e = discord.Embed(color=colors.red())
+				e.description = f'{target} is currently reinforced\n' \
+				    f'your attack failed and you lost ${pay}'
+				await ctx.send(embed=e)
+				return self.save_data()
 		chance = 60 if f['balance'] > t['balance'] else 40
 		lmt = (5 * t['balance'] if t['balance'] < f['balance'] else f['balance']) / 100
 		pay = random.randint(0, round(lmt))
@@ -882,6 +903,9 @@ class Factions(commands.Cog):
 		upgrades = '》+5 member slots\n• $500\n' \
 			'》work upgrade\n• $2500'
 		e.add_field(name='◈ Upgrades ◈', value=upgrades)
+		boosts = '》2h extra-income\n• $50\n' \
+			'》24h anti-raid\n• $75'
+		e.add_field(name='◈ Boosts ◈', value=boosts)
 		e.set_footer(text='Usage: .factions buy item_name', icon_url=self.bot.user.avatar_url)
 		msg = await ctx.send(embed=e)
 		for color in colors.ColorSets().rainbow():
@@ -897,7 +921,7 @@ class Factions(commands.Cog):
 		faction = self.get_owned_faction(ctx.author)
 		if not faction:
 			return await ctx.send('You need to be owner of a faction to use this')
-		item = item_name.lower().replace('+', '')
+		item = item_name.lower().replace('+', '').replace('_', ' ')
 		if item not in self.items.keys():
 			return await ctx.send('Unknown Item')
 		cost = self.items[item]
@@ -920,6 +944,10 @@ class Factions(commands.Cog):
 			self.factions[guild_id][faction]['limit'] += 5
 		if 'work' in item:
 			return await ctx.send('This item isnt available yet')
+		if 'anti-raid' in item:
+			self.factions[guild_id][faction]['boosts']['anti-raid'] = str(datetime.now())
+		if 'extra-income' in item:
+			self.factions[guild_id][faction]['boosts']['extra-income'] = str(datetime.now())
 		self.factions[guild_id][faction]['balance'] -= cost
 		await ctx.send(f'Purchased {item}')
 		self.save_data()
@@ -1048,7 +1076,14 @@ class Factions(commands.Cog):
 							self.counter[guild_id][faction] = 0
 						self.counter[guild_id][faction] += 1
 						if self.counter[guild_id][faction] == 5:
+							self.init(guild_id, faction)
 							pay = random.randint(1, 5)
+							if self.factions[guild_id][faction]['boosts']['extra-income']:
+								date_string = self.factions[guild_id][faction]['boosts']['extra-income']
+								date = datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S.%f')
+								if (datetime.now() - date).seconds / 60 / 60 < 2:
+									pay = random.randint(3, 5)
+									print(f'{faction} got extra from extra-income')
 							self.factions[guild_id][faction]['balance'] += pay
 							self.counter[guild_id][faction] = 0
 							self.save_data()
