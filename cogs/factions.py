@@ -579,7 +579,6 @@ class Factions(commands.Cog):
 			return await ctx.send('This user isn\'t apart of your faction')
 		index = dat['members'].index(user.id)
 		self.factions[guild_id][faction]['members'].pop(index)
-		await self.init(guild_id, ctx.author)
 		await ctx.send(f'Kicked {user.name} from {faction}')
 		return self.save_data()
 
