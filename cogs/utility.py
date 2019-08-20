@@ -264,7 +264,7 @@ class Utility(commands.Cog):
 			f'**Bots:** [`{bots}`]'
 		await ctx.send(embed=e)
 
-	@commands.command(name='permissions', aliases=['perms'])
+	@commands.command(name='permissions', aliases=['perms', 'perm'])
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.guild_only()
 	@commands.bot_has_permissions(manage_roles=True)
