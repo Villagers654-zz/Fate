@@ -217,12 +217,6 @@ class Dev(commands.Cog):
 			e.set_footer(text="Character Limit Reached")
 		await ctx.send(embed=e)
 
-	@commands.command(name="changecolor")
-	@commands.has_permissions(manage_roles=True)
-	async def change_top_role_color(self, ctx, color):
-		await ctx.author.top_role.edit(color=discord.Color(eval(f"0x{color}")))
-		await ctx.message.add_reaction("👍")
-
 	@commands.command(name='resize')
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def resize(self, ctx, url=None):

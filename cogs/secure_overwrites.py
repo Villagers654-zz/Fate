@@ -3,8 +3,7 @@ from utils import config
 
 CONFIG = {
 	579823772547153958: [  # 2B2TBE
-		config.owner_id(),
-		261451679239634944
+		config.owner_id()
 	],
 	502719548739551233: [  # 2B2TBE Staff
 		config.owner_id(),

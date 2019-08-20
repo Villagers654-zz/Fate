@@ -452,11 +452,12 @@ class Mod(commands.Cog):
 		else:
 			self.purge[channel_id] = True
 		if args[0].isdigit():  # no special option used
+			try: amount = int(args[0])
+			except: await ctx.send('Invalid amount')
+			if amount > 1000:
+				del self.purge[channel_id]
+				return await ctx.send("You cannot purge more than 1000 messages at a time")
 			try:
-				amount = int(args[0])
-				if amount > 1000:
-					del self.purge[channel_id]
-					return await ctx.send("You cannot purge more than 1000 messages at a time")
 				await ctx.message.channel.purge(limit=amount, before=ctx.message)
 				await ctx.send(f'{ctx.author.mention}, successfully purged {amount} messages', delete_after=5)
 				return await ctx.message.delete()
@@ -467,7 +468,7 @@ class Mod(commands.Cog):
 		if len(args) == 1:
 			return await ctx.send(embed=help_embed())
 		try: amount = int(args[1])
-		except: return await ctx.send('Invalid arg in the \'amount\' field')
+		except: await ctx.send('Invalid amount')
 		if ctx.message.mentions:
 			user = ctx.message.mentions[0]
 			if amount > 250:

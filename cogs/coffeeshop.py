@@ -15,7 +15,7 @@ class CoffeeShop(commands.Cog):
 		               "• IcedCoffee - 1 slap\n"
 		               "• Mocha -  sum tears```")
 
-	@commands.command()
+	@commands.command(enabled=False)
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def strawberriesandcream(self, ctx):
 		e=discord.Embed(color=0xE5CB90)
@@ -55,7 +55,7 @@ class CoffeeShop(commands.Cog):
 		e.set_image(url=random.choice(["https://cdn.discordapp.com/attachments/501871950260469790/511757901195509770/img48l.jpg", "https://cdn.discordapp.com/attachments/501871950260469790/511757901556351016/Vegan-Iced-Coffee-13.jpg", "https://cdn.discordapp.com/attachments/501871950260469790/511757908829143041/BBYePZZ4TAisolysQWvR_1coffee.jpg"]))
 		await ctx.send(embed=e)
 
-	@commands.command()
+	@commands.command(enabled=False)
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def mocha(self, ctx):
 		cry=discord.Embed(color=0x80b0ff)
