@@ -234,6 +234,9 @@ class Factions(commands.Cog):
 	@commands.bot_has_permissions(embed_links=True)
 	async def _factions(self, ctx):
 		if not ctx.invoked_subcommand:
+			if len(ctx.message.content.split(' ')) > 1:
+				if 'help' not in ctx.message.content.lower():
+					return await ctx.send('Unknown command')
 			e = discord.Embed(color=colors.purple())
 			e.set_author(name='Usage', icon_url=ctx.author.avatar_url)
 			e.set_thumbnail(url=ctx.guild.icon_url)
