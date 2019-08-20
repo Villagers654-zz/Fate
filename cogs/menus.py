@@ -55,7 +55,7 @@ class Menus(commands.Cog):
 				'• **Mod** - `moderation commands`\n' \
 			    '• **Utility** - `helpful commands`\n' \
 			    '• **Fun** - `fun games/commands`\n' \
-			    '• **Music** - `play music in vc :D`'
+			    '• **Music** - `play moosic in vc`'
 			e.add_field(name='◈ Categories', value=categories)
 			return e
 		def core():
@@ -336,7 +336,7 @@ class Menus(commands.Cog):
 			f'Total lines of code: {lines}'
 		e.set_thumbnail(url=self.bot.user.avatar_url)
 		e.set_image(url="attachment://" + os.path.basename(path))
-		e.add_field(name="◈ Summary ◈", value="Fate is a ~~multipurpose~~ hybrid bot created for ~~sexual assault~~ fun", inline=False)
+		e.add_field(name="◈ Summary ◈", value="Fate is a ~~multipurpose~~ hybrid bot created for fun", inline=False)
 		e.add_field(name="◈ Statistics ◈", value=f'Commands: [{len(self.bot.commands)}]\nModules: [{len(self.bot.extensions)}]\nServers: [{guilds}]\nUsers: [{users}]')
 		e.add_field(name="◈ Credits ◈", value="• Tothy ~ `rival`\n• Cortex ~ `teacher`\n• Discord.py ~ `existing`")
 		e.add_field(name="◈ Memory ◈", value=
