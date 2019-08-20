@@ -287,24 +287,32 @@ class Factions(commands.Cog):
 		if 'icon' in f:
 			if f['icon']:
 				e.set_thumbnail(url=f['icon'])
+		a = False; ex = False; indent = '\n'; b = ''; anti_raid = ''; extra_income = ''
+		self.init(guild_id, faction)
 		date_string = self.factions[guild_id][faction]['boosts']['anti-raid']
-		date = datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S.%f')
-		anti_raid = "Active" if (datetime.now() - date).days < 1 else "Inactive"
+		if date_string:
+			date = datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S.%f')
+			anti_raid = "Active" if (datetime.now() - date).days < 1 else "Inactive"
+			if anti_raid == 'Active': a = True
+			anti_raid = f'\n__**Anti-Raid:**__ [`{anti_raid}`] '
 		date_string = self.factions[guild_id][faction]['boosts']['extra-income']
-		date = datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S.%f')
-		extra_income = "Active" if (datetime.now() - date).seconds / 60 / 60 < 2 else "Inactive"
+		if date_string:
+			date = datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S.%f')
+			extra_income = "Active" if (datetime.now() - date).seconds / 60 / 60 < 2 else "Inactive"
+			if extra_income == 'Active': ex = True
+			extra_income = f'__**+Income:**__ [`{extra_income}`]'
 		if len(owner.name) > 10:
 			e.description = f'__**Owner:**__ [{owner.name}]\n' \
 				f'__**Balance:**__ [`${f["balance"]}`] ' \
 				f'__**Access:**__ [`{"Public" if f["access"] == "public" else "Invite-Only"}`]\n' \
 				f'__**MemberCount:**__ [`{len(f["members"])}/{f["limit"]}`]\n' \
-				f'\n__**Anti-Raid:**__ [`{anti_raid}`] __**+Income:**__ [`{extra_income}`]'
+				f'{anti_raid if a else b}{f"{indent if not a else b}{extra_income}" if ex else b}'
 		else:
 			e.description = f'__**Owner:**__ [{owner.name}] ' \
 				f'__**Balance:**__ [`${f["balance"]}`]\n' \
 				f'__**Access:**__ [`{"Public" if f["access"] == "public" else "Invite-Only"}`] ' \
 				f'__**Members:**__ [`{len(f["members"])}/{f["limit"]}`]' \
-				f'\n__**Anti-Raid:**__ [`{anti_raid}`] __**+Income:**__ [`{extra_income}`]'
+				f'{anti_raid if a else b}{f"{indent if not a else b}{extra_income}" if ex else b}'
 		members = self.get_members(ctx, faction)
 		e.add_field(name='◈ Members ◈', value=members if members else 'none')
 		claims = self.get_claims(guild_id, faction)
@@ -1093,7 +1101,6 @@ class Factions(commands.Cog):
 								date = datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S.%f')
 								if (datetime.now() - date).seconds / 60 / 60 < 2:
 									pay = random.randint(3, 5)
-									print(f'{faction} got extra from extra-income')
 							self.factions[guild_id][faction]['balance'] += pay
 							self.counter[guild_id][faction] = 0
 							self.save_data()
