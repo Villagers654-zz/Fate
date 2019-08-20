@@ -16,16 +16,24 @@ class Actions(commands.Cog):
 			if ctx.author.id == 355026215137968129:
 				return await ctx.send('nO')
 			return await ctx.send('*shoots you instead*')
-		await ctx.send("🔫 | pew pew, {} {}, {}".format(user.display_name, random.choice(["has been shot in the head and died instantly", "has been shot in the heart and died quickly and painfully", "has been shot in the arm and is rolling around in agonizing pain", "has been shot in the leg and is now hopping around on one leg like an autist", "has been shot in the dick"]), random.choice(["you really shouldn't let a bot carry a gun :p", "you should let me shoot people more often", "you should let me shoot faggots more often", "this is fun", "poor faggot didn't stand a chance", "he/she definitely deserved it", "poor autist dropped like a fly"])))
+		await ctx.send("🔫 | pew pew, {} {}, {}".format(user.display_name, random.choice(["has been shot in the head and died instantly", "has been shot in the heart and died quickly and painfully", "has been shot in the arm and is rolling around in agonizing pain", "has been shot in the leg and is now hopping around on one leg", "has been shot in the dick"]), random.choice(["you really shouldn't let a bot carry a gun :p", "you should let me shoot people more often", "this is fun", "poor thing didn't stand a chance", "he/she definitely deserved it", "poor thing dropped like a fly"])))
 
 	@commands.command(description="Injects a user with something random")
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	async def inject(self, ctx, user: discord.Member):
+		if user.id == 355026215137968129:
+			if ctx.author.id == 355026215137968129:
+				return await ctx.send('nO')
+			return await ctx.send('*injects you instead*')
 		await ctx.send("💉 | {} {}".format(user, random.choice(["has been injected with AIDS", "has been injected with HIV positive blood", "has been injected with an STD", "has been injected with the cure", "has been injected with Flex Seal", "has been injected with Kool-Aid powder"])))
 
 	@commands.command(description="Slices anything into bits")
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	async def slice(self, ctx, user: discord.Member):
+		if user.id == 355026215137968129:
+			if ctx.author.id == 355026215137968129:
+				return await ctx.send('nO')
+			return await ctx.send('*slices you instead*')
 		await ctx.send("⚔ | {} {}".format(user.display_name, random.choice(["just got sliced up into sushi", "just got sliced up into string cheese"])))
 
 	@commands.command(description="Boops a user")
@@ -43,7 +51,11 @@ class Actions(commands.Cog):
 	@commands.command(description="Stabs a user")
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	async def stab(self, ctx, user: discord.Member):
-		await ctx.send("⚔ | {} {}, {}".format(user.display_name, random.choice(["has been stabbed in the head", "has been stabbed in the shoulder", "has been stabbed in the chest", "has beeb stabbed in the arm", "has been stabbed in the gut", "has been stabbed in the dick", "has been stabbed in the leg", "has been stabbed in the foot"]), random.choice(["you really shouldn't let a bot carry a blade :p", "you should let me stab people more often", "you should let me stab faggots more often", "this is fun", "poor faggot didn't stand a chance", "whatever that **thing** is, it definitely deserved it", "poor autist dropped like a fly"])))
+		if user.id == 355026215137968129:
+			if ctx.author.id == 355026215137968129:
+				return await ctx.send('nO')
+			return await ctx.send('*stabs you instead*')
+		await ctx.send("⚔ | {} {}, {}".format(user.display_name, random.choice(["has been stabbed in the head", "has been stabbed in the shoulder", "has been stabbed in the chest", "has beeb stabbed in the arm", "has been stabbed in the gut", "has been stabbed in the dick", "has been stabbed in the leg", "has been stabbed in the foot"]), random.choice(["you really shouldn't let a bot carry a blade :p", "you should let me stab people more often", "you should let me stab **it** more often", "this is fun", "poor thing didn't stand a chance", "whatever that **thing** is, it definitely deserved it", "poor thing dropped like a fly"])))
 
 	@commands.command(description="You simply die")
 	@commands.cooldown(1, 3, commands.BucketType.user)
