@@ -16,6 +16,7 @@ class Factions(commands.Cog):
 		self.counter = {}
 		self.factions = {}
 		self.land_claims = {}
+		self.notifs = []
 
 		self.dir = './data/userdata/factions.json'
 		if isfile(self.dir):
@@ -25,6 +26,8 @@ class Factions(commands.Cog):
 					self.factions = dat['factions']
 				if 'land_claims' in dat:
 					self.land_claims = dat['land_claims']
+				if 'notifs' in dat:
+					self.notifs = dat['notifs']
 
 		self.items = {
 			'icon': 250,
@@ -34,7 +37,7 @@ class Factions(commands.Cog):
 
 	def save_data(self):
 		with open(self.dir, 'w') as f:
-			json.dump({'factions': self.factions, 'land_claims': self.land_claims}, f, ensure_ascii=False)
+			json.dump({'factions': self.factions, 'land_claims': self.land_claims, 'notifs': self.notifs}, f, ensure_ascii=False)
 
 	def init(self, guild_id: str, faction=None):
 		if guild_id not in self.factions:
@@ -588,6 +591,28 @@ class Factions(commands.Cog):
 		await ctx.send('✔')
 		self.save_data()
 
+	@_factions.command(name='togglenotifs')
+	@commands.cooldown(1, 3, commands.BucketType.user)
+	async def _toggle_notifs(self, ctx):
+		user_id = ctx.author.id
+		if user_id not in self.notifs:
+			self.notifs.append(user_id)
+		else:
+			self.notifs.pop(self.notifs.index(user_id))
+		await ctx.message.add_reaction('👍')
+
+	@_factions.command(name='bal')
+	@commands.cooldown(1, 5, commands.BucketType.user)
+	async def _bal(self, ctx):
+		faction = self.get_faction(ctx.author)
+		if not faction:
+			return await ctx.send('You need to be in a faction to use this command')
+		guild_id = str(ctx.guild.id)
+		self.init(guild_id, faction)
+		e = discord.Embed(color=colors.purple())
+		e.description = str(self.factions[guild_id][faction]['balance'])
+		await ctx.send(embed=e)
+
 	@_factions.command(name='work')
 	@commands.cooldown(1, 60, commands.BucketType.user)
 	async def _work(self, ctx):
@@ -604,6 +629,9 @@ class Factions(commands.Cog):
 		e.description = f'You earned {faction} ${paycheck}'
 		await ctx.send(embed=e)
 		self.save_data()
+		if ctx.author.id in self.notifs:
+			await asyncio.sleep(60)
+			await ctx.send(f'{ctx.author.mention} your cooldowns up', delete_after=10)
 
 	@_factions.command(name='suicide', aliases=['kms'], category='economy')
 	@commands.cooldown(1, 120, commands.BucketType.user)
