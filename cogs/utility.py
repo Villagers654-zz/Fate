@@ -94,7 +94,7 @@ class Utility(commands.Cog):
 				f'Total lines of code: {lines}'
 			e.set_thumbnail(url=self.bot.user.avatar_url)
 			e.set_image(url="attachment://" + os.path.basename(path))
-			e.add_field(name="◈ Summary ◈",  value="Fate is a ~~multipurpose~~ hybrid bot created for ~~sexual assault~~ fun", inline=False)
+			e.add_field(name="◈ Summary ◈",  value="Fate is a ~~multipurpose~~ hybrid bot created for fun", inline=False)
 			e.add_field(name="◈ Statistics ◈", value=f'Commands: [{len(self.bot.commands)}]\nModules: [{len(self.bot.extensions)}]\nServers: [{guilds}]\nUsers: [{users}]')
 			e.add_field(name="◈ Credits ◈", value="• Tothy ~ `rival`\n• Cortex ~ `teacher`\n• Discord.py ~ `existing`")
 			e.add_field(name="◈ Memory ◈", value=
@@ -245,7 +245,7 @@ class Utility(commands.Cog):
 	@commands.cooldown(1, 5, commands.BucketType.channel)
 	@commands.guild_only()
 	@commands.bot_has_permissions(embed_links=True)
-	async def members(self, ctx):
+	async def members(self, ctx, rolename=None):
 		humans = 0; bots = 0; online = 0
 		for member in ctx.guild.members:
 			if member.bot:
@@ -262,6 +262,30 @@ class Utility(commands.Cog):
 			f'**Online:** [`{online}`]\n' \
 			f'**Humans:** [`{humans}`]\n' \
 			f'**Bots:** [`{bots}`]'
+		await ctx.send(embed=e)
+
+	@commands.command(name='permissions', aliases=['perms'])
+	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.guild_only()
+	@commands.bot_has_permissions(manage_roles=True)
+	async def permissions(self, ctx, perm=None):
+		if not perm:
+			await ctx.send('Perms: None')
+		e = discord.Embed(color=colors.fate())
+		e.set_author(name=f'Things with {perm}', icon_url=ctx.author.avatar_url)
+		e.set_thumbnail(url=ctx.guild.icon_url)
+		members = ''
+		for member in ctx.guild.members:
+			if eval(f'member.guild_permissions.{perm}'):
+				members += f'{member.mention}\n'
+		if members:
+			e.add_field(name='Members', value=members[:1000])
+		roles = ''
+		for role in ctx.guild.roles:
+			if eval(f'role.permissions.{perm}'):
+				roles += f'{role.mention}\n'
+		if roles:
+			e.add_field(name='Roles', value=roles[:1000])
 		await ctx.send(embed=e)
 
 	@commands.command(name='tinyurl')

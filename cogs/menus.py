@@ -141,7 +141,8 @@ class Menus(commands.Cog):
 			    '• **ud** - `sends a definition from urban dictionary`\n' \
 			    '• **find** - `searches msg history for a word/phase`\n' \
 			    '• **afk** - `tells users your\'re afk when mentioned`\n' \
-			    '• **id** - `sends your id & the channels id`'
+			    '• **id** - `sends your id & the channels id`\n' \
+			    '• **perms** - `checks what users/roles has a perm`'
 			return e
 		def fun():
 			e = discord.Embed(color=colors.fate())
