@@ -58,6 +58,8 @@ class Factions(commands.Cog):
 				self.factions[guild_id][faction]['limit'] = 15
 			if 'items' not in self.factions[guild_id][faction]:
 				self.factions[guild_id][faction]['items'] = []
+			if 'bio' not in self.factions[guild_id][faction]:
+				self.factions[guild_id][faction]['bio'] = ''
 			if 'boosts' not in self.factions[guild_id][faction]:
 				self.factions[guild_id][faction]['boosts'] = {
 					'anti-raid': None,
@@ -250,6 +252,7 @@ class Factions(commands.Cog):
 				'.factions kick {@user}\n' \
 				'.factions leave\n', inline=False)
 			e.add_field(name='◈ Utils ◈', value=f'.faction privacy\n'
+			    '.factions setbio {your new bio}'
 				'.factions seticon {file | url}\n' \
 				'.factions setbanner {file | url}\n' \
 			    '.factions togglenotifs', inline=False)
@@ -287,32 +290,33 @@ class Factions(commands.Cog):
 		if 'icon' in f:
 			if f['icon']:
 				e.set_thumbnail(url=f['icon'])
-		a = False; ex = False; indent = '\n'; b = ''; anti_raid = ''; extra_income = ''
-		self.init(guild_id, faction)
+		self.init(guild_id, faction); anti_raid = None; extra_income = None; boosts = None; bio = None
 		date_string = self.factions[guild_id][faction]['boosts']['anti-raid']
 		if date_string:
 			date = datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S.%f')
-			anti_raid = "Active" if (datetime.now() - date).days < 1 else "Inactive"
-			if anti_raid == 'Active': a = True
-			anti_raid = f'\n__**Anti-Raid:**__ [`{anti_raid}`] '
+			if (datetime.now() - date).days < 1:
+				anti_raid = f'Anti-Raid '
 		date_string = self.factions[guild_id][faction]['boosts']['extra-income']
 		if date_string:
 			date = datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S.%f')
-			extra_income = "Active" if (datetime.now() - date).seconds / 60 / 60 < 2 else "Inactive"
-			if extra_income == 'Active': ex = True
-			extra_income = f'__**+Income:**__ [`{extra_income}`]'
+			if (datetime.now() - date).seconds / 60 / 60 < 2:
+				extra_income = f'Extra-Income'
+		if anti_raid or extra_income:
+			boosts = f'\n__**Boosts:**__ {anti_raid if anti_raid else ""}{extra_income if extra_income else ""}'
+		if self.factions[guild_id][faction]['bio']:
+			bio = f'\n__**Bio:**__ [`{self.factions[guild_id][faction]["bio"]}`]'
 		if len(owner.name) > 10:
 			e.description = f'__**Owner:**__ [{owner.name}]\n' \
 				f'__**Balance:**__ [`${f["balance"]}`] ' \
 				f'__**Access:**__ [`{"Public" if f["access"] == "public" else "Invite-Only"}`]\n' \
-				f'__**MemberCount:**__ [`{len(f["members"])}/{f["limit"]}`]\n' \
-				f'{anti_raid if a else b}{f"{indent if not a else b}{extra_income}" if ex else b}'
+				f'__**MemberCount:**__ [`{len(f["members"])}/{f["limit"]}`]' \
+				f'{boosts if boosts else ""}{bio if bio else ""}'
 		else:
 			e.description = f'__**Owner:**__ [{owner.name}] ' \
 				f'__**Balance:**__ [`${f["balance"]}`]\n' \
 				f'__**Access:**__ [`{"Public" if f["access"] == "public" else "Invite-Only"}`] ' \
 				f'__**Members:**__ [`{len(f["members"])}/{f["limit"]}`]' \
-				f'{anti_raid if a else b}{f"{indent if not a else b}{extra_income}" if ex else b}'
+				f'{boosts if boosts else ""}{bio if bio else ""}'
 		members = self.get_members(ctx, faction)
 		e.add_field(name='◈ Members ◈', value=members if members else 'none')
 		claims = self.get_claims(guild_id, faction)
@@ -358,7 +362,9 @@ class Factions(commands.Cog):
 			'balance': 0,
 			'access': 'private',
 			'limit': 15,
-			'items': []
+			'items': [],
+			'boosts': [],
+			'bio': ''
 		}
 		self.init(guild_id, name)
 		await self.update_category(guild_id, ctx.author)
@@ -368,6 +374,18 @@ class Factions(commands.Cog):
 		e.description = f'__**Name:**__ [`{name}`]\n' \
 			f'__**Owner:**__ [`{ctx.author.name}`]'
 		await ctx.send(embed=e)
+		self.save_data()
+
+	@_factions.command(name="setbio")
+	@commands.cooldown(1, 3, commands.BucketType.user)
+	async def _setbio(self, ctx, *, bio):
+		faction = self.get_owned_faction(ctx.author)
+		if not faction:
+			return await ctx.send('You need to be owner of a faction to use this')
+		guild_id = str(ctx.guild.id)
+		self.init(guild_id, faction)
+		self.factions[guild_id][faction]['bio'] = bio
+		await ctx.send(f'Set {faction}\'s bio')
 		self.save_data()
 
 	@_factions.command(naem='promote')
@@ -1100,7 +1118,7 @@ class Factions(commands.Cog):
 								date_string = self.factions[guild_id][faction]['boosts']['extra-income']
 								date = datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S.%f')
 								if (datetime.now() - date).seconds / 60 / 60 < 2:
-									pay = random.randint(3, 5)
+									pay = random.randint(3, 7)
 							self.factions[guild_id][faction]['balance'] += pay
 							self.counter[guild_id][faction] = 0
 							self.save_data()
