@@ -424,6 +424,8 @@ class Logger(commands.Cog):
 		if isinstance(m.guild, discord.Guild):
 			guild_id = str(m.guild.id)
 			if guild_id in self.channel:
+				if 'your cooldowns up' in m.content and m.author.bot:
+					return
 				if guild_id in self.blacklist:
 					if "message_delete" in self.blacklist[guild_id]:
 						return
