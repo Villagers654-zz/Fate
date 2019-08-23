@@ -34,7 +34,8 @@ class Factions(commands.Cog):
 			'banner': 500,
 			'5 slots': 250,
 			'anti-raid': 75,
-			'extra-income': 50
+			'extra-income': 50,
+			'land-guard': 100
 		}
 
 	def save_data(self):
@@ -63,8 +64,12 @@ class Factions(commands.Cog):
 			if 'boosts' not in self.factions[guild_id][faction]:
 				self.factions[guild_id][faction]['boosts'] = {
 					'anti-raid': None,
-					'extra-income': None
+					'extra-income': None,
+					'land-guard': None
 				}
+			for x in ['anti-raid', 'extra-income', 'land-guard']:
+				if x not in self.factions[guild_id][faction]['boosts']:
+					self.factions[guild_id][faction]['boosts'][x] = None
 
 	def get_faction(self, user: discord.Member):
 		guild_id = str(user.guild.id)
@@ -290,19 +295,20 @@ class Factions(commands.Cog):
 		if 'icon' in f:
 			if f['icon']:
 				e.set_thumbnail(url=f['icon'])
-		self.init(guild_id, faction); anti_raid = None; extra_income = None; boosts = None; bio = None
-		date_string = self.factions[guild_id][faction]['boosts']['anti-raid']
-		if date_string:
-			date = datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S.%f')
-			if (datetime.now() - date).days < 1:
-				anti_raid = f'Anti-Raid '
-		date_string = self.factions[guild_id][faction]['boosts']['extra-income']
-		if date_string:
-			date = datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S.%f')
-			if (datetime.now() - date).seconds / 60 / 60 < 2:
-				extra_income = f'Extra-Income'
-		if anti_raid or extra_income:
-			boosts = f'\n__**Boosts:**__ {anti_raid if anti_raid else ""}{extra_income if extra_income else ""}'
+		self.init(guild_id, faction); bio = None; active_boosts = ''
+		boosts = self.factions[guild_id][faction]['boosts']
+		for boost, date in boosts.items():
+			date_string = self.factions[guild_id][faction]['boosts'][boost]
+			if date_string:
+				date = datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S.%f')
+				if (datetime.now() - date).days < 1 and boost == 'anti-raid':
+					active_boosts += f'Anti-Raid '; continue
+				if (datetime.now() - date).seconds / 60 / 60 < 2 and boost == 'extra-income':
+					active_boosts += f'Extra-Income '; continue
+				if (datetime.now() - date).seconds / 60 / 60 < 5 and boost == 'land-guard':
+					active_boosts += f'Land-Guard '; continue
+		if active_boosts:
+			active_boosts = f'\n{active_boosts}'
 		if self.factions[guild_id][faction]['bio']:
 			bio = f'\n__**Bio:**__ [`{self.factions[guild_id][faction]["bio"]}`]'
 		if len(owner.name) > 10:
@@ -310,13 +316,13 @@ class Factions(commands.Cog):
 				f'__**Balance:**__ [`${f["balance"]}`] ' \
 				f'__**Access:**__ [`{"Public" if f["access"] == "public" else "Invite-Only"}`]\n' \
 				f'__**MemberCount:**__ [`{len(f["members"])}/{f["limit"]}`]' \
-				f'{boosts if boosts else ""}{bio if bio else ""}'
+				f'{active_boosts if active_boosts else ""}{bio if bio else ""}'
 		else:
 			e.description = f'__**Owner:**__ [{owner.name}] ' \
 				f'__**Balance:**__ [`${f["balance"]}`]\n' \
 				f'__**Access:**__ [`{"Public" if f["access"] == "public" else "Invite-Only"}`] ' \
 				f'__**Members:**__ [`{len(f["members"])}/{f["limit"]}`]' \
-				f'{boosts if boosts else ""}{bio if bio else ""}'
+				f'{active_boosts if active_boosts else ""}{bio if bio else ""}'
 		members = self.get_members(ctx, faction)
 		e.add_field(name='◈ Members ◈', value=members if members else 'none')
 		claims = self.get_claims(guild_id, faction)
@@ -827,6 +833,13 @@ class Factions(commands.Cog):
 		cost = 500; old_claim = None
 		for fac, land_claims in self.land_claims[guild_id].items():
 			if channel_id in land_claims:
+				self.init(guild_id, fac)
+				if self.factions[guild_id][fac]['boosts']['land-guard']:
+					date_string = self.factions[guild_id][fac]['boosts']['land-guard']
+					date = datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S.%f')
+					hours = (datetime.now() - date).seconds / 60 / 60
+					if hours < 5:
+						return await ctx.send(f'This claim is currently guarded, try again in {round(5 - (hours / 60 / 60))} hours')
 				cost += 250; old_claim = fac; break
 		await ctx.send(f'Claiming this channel will cost you ${cost}\n'
 			'Reply with .confirm to purchase')
@@ -940,7 +953,8 @@ class Factions(commands.Cog):
 			'》work upgrade\n• $2500'
 		e.add_field(name='◈ Upgrades ◈', value=upgrades)
 		boosts = '》2h extra-income\n• $50\n' \
-			'》24h anti-raid\n• $75'
+			'》24h anti-raid\n• $75\n' \
+		    '》5h land-guard\n• $100'
 		e.add_field(name='◈ Boosts ◈', value=boosts)
 		e.set_footer(text='Usage: .factions buy item_name', icon_url=self.bot.user.avatar_url)
 		msg = await ctx.send(embed=e)
@@ -984,6 +998,8 @@ class Factions(commands.Cog):
 			self.factions[guild_id][faction]['boosts']['anti-raid'] = str(datetime.now())
 		if 'extra-income' in item:
 			self.factions[guild_id][faction]['boosts']['extra-income'] = str(datetime.now())
+		if 'land-guard' in item:
+			self.factions[guild_id][faction]['boosts']['land-guard'] = str(datetime.now())
 		self.factions[guild_id][faction]['balance'] -= cost
 		await ctx.send(f'Purchased {item}')
 		self.save_data()
