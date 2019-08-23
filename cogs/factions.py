@@ -1,7 +1,7 @@
 from os.path import isfile
 import json
 import random
-from datetime import datetime
+from datetime import datetime, timedelta
 import asyncio
 from discord.ext import commands
 import discord
@@ -146,6 +146,25 @@ class Factions(commands.Cog):
 			claims += f'{channel.mention}\n'
 		return claims
 
+	def get_boosts(self, guild_id, faction):
+		active_boosts = {}
+		boosts = self.factions[guild_id][faction]['boosts']
+		for boost, date in boosts.items():
+			date_string = self.factions[guild_id][faction]['boosts'][boost]
+			if date_string:
+				date = datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S.%f')
+				seconds = (datetime.now() - date).seconds
+				time = (datetime.now() - date).days
+				if time < 1 and boost == 'anti-raid':
+					active_boosts['Anti-Raid'] = utils.get_time(86400 - seconds); continue
+				time = (datetime.now() - date).seconds / 60 / 60
+				if time < 2 and boost == 'extra-income':
+					active_boosts['Extra-Income'] = utils.get_time(7200 - seconds); continue
+				time = (datetime.now() - date).seconds / 60 / 60
+				if time < 5 and boost == 'land-guard':
+					active_boosts['Land-Guard'] = utils.get_time(18000 - seconds); continue
+		return active_boosts
+
 	def get_icon(self, user: discord.Member):
 		guild_id = str(user.guild.id)
 		icon_url = user.avatar_url
@@ -269,6 +288,7 @@ class Factions(commands.Cog):
 				'.factions claim {#channel}\n' \
 				'.factions unclaim {#channel}\n' \
 				'.factions claims\n' \
+			    '.factions boosts\n' \
 				'.factions top', inline=False)
 			await ctx.send(embed=e)
 
@@ -296,18 +316,10 @@ class Factions(commands.Cog):
 			if f['icon']:
 				e.set_thumbnail(url=f['icon'])
 		self.init(guild_id, faction); bio = None; active_boosts = ''
-		boosts = self.factions[guild_id][faction]['boosts']
-		for boost, date in boosts.items():
-			date_string = self.factions[guild_id][faction]['boosts'][boost]
-			if date_string:
-				date = datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S.%f')
-				if (datetime.now() - date).days < 1 and boost == 'anti-raid':
-					active_boosts += f'Anti-Raid '; continue
-				if (datetime.now() - date).seconds / 60 / 60 < 2 and boost == 'extra-income':
-					active_boosts += f'Extra-Income '; continue
-				if (datetime.now() - date).seconds / 60 / 60 < 5 and boost == 'land-guard':
-					active_boosts += f'Land-Guard '; continue
-		if active_boosts:
+		boosts = self.get_boosts(guild_id, faction)
+		if boosts:
+			for boost, time in boosts.items():
+				active_boosts += f'{boost} '
 			active_boosts = f'\n{active_boosts}'
 		if self.factions[guild_id][faction]['bio']:
 			bio = f'\n__**Bio:**__ [`{self.factions[guild_id][faction]["bio"]}`]'
@@ -833,13 +845,10 @@ class Factions(commands.Cog):
 		cost = 500; old_claim = None
 		for fac, land_claims in self.land_claims[guild_id].items():
 			if channel_id in land_claims:
-				self.init(guild_id, fac)
-				if self.factions[guild_id][fac]['boosts']['land-guard']:
-					date_string = self.factions[guild_id][fac]['boosts']['land-guard']
-					date = datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S.%f')
-					hours = (datetime.now() - date).seconds / 60 / 60
-					if hours < 5:
-						return await ctx.send(f'This claim is currently guarded, try again in {round(5 - (hours / 60 / 60))} hours')
+				boosts = self.get_boosts(guild_id, fac)
+				for boost, time in boosts.items():
+					if boost == 'Land-Claims':
+						return await ctx.send(f'This claim is currently guarded, try again in {time} hours')
 				cost += 250; old_claim = fac; break
 		await ctx.send(f'Claiming this channel will cost you ${cost}\n'
 			'Reply with .confirm to purchase')
@@ -909,6 +918,27 @@ class Factions(commands.Cog):
 		e = discord.Embed(color=colors.purple())
 		e.set_author(name=f'{faction} Claims', icon_url=owner.avatar_url)
 		e.description = self.get_claims(guild_id, faction)
+		await ctx.send(embed=e)
+
+	@_factions.command(name='boosts')
+	@commands.cooldown(1, 3, commands.BucketType.user)
+	async def _boosts(self, ctx, *, faction=None):
+		if faction:
+			faction = self.get_faction_named(ctx, faction)
+			if not faction:
+				return await ctx.send('Faction not found')
+		else:
+			faction = self.get_faction(ctx.author)
+			if not faction:
+				return await ctx.send('You\'re not apart of a faction')
+		guild_id = str(ctx.guild.id)
+		self.init(guild_id, faction)
+		e = discord.Embed(color=colors.purple())
+		e.set_author(name=f'{faction}\'s boosts', icon_url=ctx.author.avatar_url)
+		e.set_thumbnail(url=self.get_icon(ctx.author))
+		e.description = ''
+		for boost, time in self.get_boosts(guild_id, faction).items():
+			e.description += f'• {boost} - {time}\n'
 		await ctx.send(embed=e)
 
 	@_factions.command(name='top', aliases=['lb'])
