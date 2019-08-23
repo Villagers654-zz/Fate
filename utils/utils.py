@@ -39,6 +39,21 @@ def get_user(ctx, user):
 				return member
 	return None
 
+def get_time(seconds):
+	result = ''
+	time = str(datetime.timedelta(seconds=seconds))
+	if ',' in time:
+		days = str(time).replace(' days,', '').split(' ')[0]
+		time = time.replace(f'{days} day{"s" if int(days) > 1 else ""}, ', '')
+		result += f'{days} days'
+	hours, minutes, seconds = time.split(':')
+	hours = int(hours); minutes = int(minutes)
+	if hours > 0:
+		result += f'{", " if result else ""}{hours} hour{"s" if hours > 1 else ""}'
+	if minutes > 0:
+		result += f'{", and " if result else ""}{minutes} minute{"s" if minutes > 1 else ""}'
+	return result
+
 async def get_role(ctx, name):
 	if name.startswith("<@"):
 		for char in list(name):
