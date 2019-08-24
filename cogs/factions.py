@@ -684,11 +684,13 @@ class Factions(commands.Cog):
 		guild_id = str(ctx.guild.id)
 		self.init(guild_id, faction)
 		paycheck = random.randint(15, 25)
-		if 'work-upgrade' in self.factions[guild_id][faction]['items']:
-			paycheck = random.randint(15, 25)
 		self.factions[guild_id][faction]['balance'] += paycheck
 		e = discord.Embed(color=colors.purple())
 		e.description = f'You earned {faction} ${paycheck}'
+		if 'Extra-Income' in self.get_boosts(guild_id, faction):
+			bonus = random.randint(1, 10)
+			paycheck += bonus
+			e.set_footer(text=f'With Bonus: ${bonus}', icon_url=self.get_icon(ctx.author))
 		await ctx.send(embed=e)
 		self.save_data()
 		if ctx.author.id in self.notifs:
@@ -979,8 +981,7 @@ class Factions(commands.Cog):
 		e.description = 'Buy upgrades for your faction'
 		vanity = '》Info Icon\n• $250\n》Info Banner\n• $500'
 		e.add_field(name='◈ Vanity ◈', value=vanity)
-		upgrades = '》+5 member slots\n• $500\n' \
-			'》work upgrade\n• $2500'
+		upgrades = '》+5 member slots\n• $500\n'
 		e.add_field(name='◈ Upgrades ◈', value=upgrades)
 		boosts = '》2h extra-income\n• $50\n' \
 			'》24h anti-raid\n• $75\n' \
@@ -1022,8 +1023,6 @@ class Factions(commands.Cog):
 			self.factions[guild_id][faction]['banner'] = ''
 		if 'slots' in item:
 			self.factions[guild_id][faction]['limit'] += 5
-		if 'work' in item:
-			return await ctx.send('This item isnt available yet')
 		if 'anti-raid' in item:
 			self.factions[guild_id][faction]['boosts']['anti-raid'] = str(datetime.now())
 		if 'extra-income' in item:
