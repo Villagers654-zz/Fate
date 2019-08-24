@@ -67,6 +67,8 @@ class Factions(commands.Cog):
 					'extra-income': None,
 					'land-guard': None
 				}
+			if not isinstance(f['boosts'], dict):
+				self.factions[guild_id][faction]['boosts'] = {}
 			for x in ['anti-raid', 'extra-income', 'land-guard']:
 				if x not in self.factions[guild_id][faction]['boosts']:
 					self.factions[guild_id][faction]['boosts'][x] = None
@@ -161,8 +163,8 @@ class Factions(commands.Cog):
 				if time < 2 and boost == 'extra-income':
 					active_boosts['Extra-Income'] = utils.get_time(7200 - seconds); continue
 				time = (datetime.now() - date).seconds / 60 / 60
-				if time < 5 and boost == 'land-guard':
-					active_boosts['Land-Guard'] = utils.get_time(18000 - seconds); continue
+				if time < 8 and boost == 'land-guard':
+					active_boosts['Land-Guard'] = utils.get_time(28800 - seconds); continue
 		return active_boosts
 
 	def get_icon(self, user: discord.Member):
@@ -381,7 +383,7 @@ class Factions(commands.Cog):
 			'access': 'private',
 			'limit': 15,
 			'items': [],
-			'boosts': [],
+			'boosts':{},
 			'bio': ''
 		}
 		self.init(guild_id, name)
@@ -684,13 +686,13 @@ class Factions(commands.Cog):
 		guild_id = str(ctx.guild.id)
 		self.init(guild_id, faction)
 		paycheck = random.randint(15, 25)
-		self.factions[guild_id][faction]['balance'] += paycheck
 		e = discord.Embed(color=colors.purple())
 		e.description = f'You earned {faction} ${paycheck}'
 		if 'Extra-Income' in self.get_boosts(guild_id, faction):
 			bonus = random.randint(1, 10)
 			paycheck += bonus
 			e.set_footer(text=f'With Bonus: ${bonus}', icon_url=self.get_icon(ctx.author))
+		self.factions[guild_id][faction]['balance'] += paycheck
 		await ctx.send(embed=e)
 		self.save_data()
 		if ctx.author.id in self.notifs:
@@ -766,12 +768,17 @@ class Factions(commands.Cog):
 		f = self.factions[guild_id][faction]
 		t = self.factions[guild_id][target]
 		target_owner = self.bot.get_user(t['owner'])
+		if target_owner.id in self.appending:
+			return await ctx.send('This user already has a pending request')
 		await ctx.send(f'{target_owner.mention}, {ctx.author.name} wants to merge factions with him/her as the owner\n'
 		    f'Reply with .confirm to accept the offer')
+		self.appending[target_owner.id] = 'yeet'
 		msg = await utils.wait_for_msg(self, ctx, target_owner)
 		if not msg:
+			del self.appending[target_owner.id]
 			return
 		if '.confirm' not in msg.content.lower():
+			del self.appending[target_owner.id]
 			return await ctx.send('Maybe next time')
 		for member_id in t['members']:
 			self.factions[guild_id][faction]['members'].append(member_id)
@@ -788,6 +795,7 @@ class Factions(commands.Cog):
 		e = discord.Embed(color=colors.purple())
 		e.set_author(name=f'{faction} Annexed {target}', icon_url=icon_url)
 		await ctx.send(embed=e)
+		del self.appending[target_owner.id]
 		self.save_data()
 
 	@_factions.command(name='raid')
@@ -985,7 +993,7 @@ class Factions(commands.Cog):
 		e.add_field(name='◈ Upgrades ◈', value=upgrades)
 		boosts = '》2h extra-income\n• $50\n' \
 			'》24h anti-raid\n• $75\n' \
-		    '》5h land-guard\n• $100'
+		    '》8h land-guard\n• $100'
 		e.add_field(name='◈ Boosts ◈', value=boosts)
 		e.set_footer(text='Usage: .factions buy item_name', icon_url=self.bot.user.avatar_url)
 		msg = await ctx.send(embed=e)
