@@ -269,8 +269,18 @@ class Utility(commands.Cog):
 	@commands.guild_only()
 	@commands.bot_has_permissions(manage_roles=True)
 	async def permissions(self, ctx, perm=None):
+		perms = [
+			'create_instant_invite', 'kick_members', 'ban_members', 'administrator',
+			'manage_channels', 'manage_guild', 'add_reactions', 'view_audit_log',
+			'stream', 'send_tts_messages', 'manage_messages', 'embed_links', 'attach_files',
+			'mention_everyone', 'mute_members', 'deafen_members', 'move_members',
+			'use_voice_activation', 'change_nickname', 'manage_nicknames', 'manage_roles',
+			'manage_webhooks', 'manage_emojis'
+		]
 		if not perm:
-			await ctx.send('Perms: None')
+			await ctx.send(f'Perms: {", ".join(perms)}')
+		if perm.lower() not in perms:
+			return await ctx.send('Unknown perm')
 		e = discord.Embed(color=colors.fate())
 		e.set_author(name=f'Things with {perm}', icon_url=ctx.author.avatar_url)
 		e.set_thumbnail(url=ctx.guild.icon_url)
