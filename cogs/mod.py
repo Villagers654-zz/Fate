@@ -752,7 +752,7 @@ class Mod(commands.Cog):
 	@commands.guild_only()
 	@commands.has_permissions(manage_roles=True)
 	@commands.bot_has_permissions(manage_roles=True)
-	async def role(self, ctx, user:commands.clean_content, role:commands.clean_content):
+	async def role(self, ctx, user:commands.clean_content, *, role:commands.clean_content):
 		user_name = str(user).lower().replace('@', '')
 		user = None
 		for member in ctx.guild.members:
@@ -763,11 +763,7 @@ class Mod(commands.Cog):
 			return await ctx.send('User not found')
 		role_name = str(role).lower().replace('@', '')
 		role_name.replace('+', '').replace('-', '')
-		role = None
-		for guild_role in ctx.guild.roles:
-			if role_name in guild_role.name.lower():
-				role = guild_role
-				break
+		role = await utils.get_role(ctx, role_name)
 		if not role:
 			return await ctx.send('Role not fount')
 		if user.top_role.position >= ctx.author.top_role.position:
