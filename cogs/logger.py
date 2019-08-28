@@ -728,9 +728,9 @@ class Logger(commands.Cog):
 			if before.overwrites != after.overwrites:
 				async for entry in channel.guild.audit_logs(action=discord.AuditLogAction.overwrite_create, after=self.past(2), limit=1):
 					user = entry.user
-				async for entry in channel.guild.audit_logs(action=discord.AuditLogAction.overwrite_update, after=self.past(2), limit=1):
-					user = entry.user
 				async for entry in channel.guild.audit_logs(action=discord.AuditLogAction.overwrite_delete, after=self.past(2), limit=1):
+					user = entry.user
+				async for entry in channel.guild.audit_logs(action=discord.AuditLogAction.overwrite_update, after=self.past(2), limit=1):
 					user = entry.user
 				changed = True
 				updated_overwrites = ""
