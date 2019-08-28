@@ -24,7 +24,7 @@ class SelfRoles(commands.Cog):
 	@commands.guild_only()
 	@commands.has_permissions(manage_roles=True)
 	@commands.bot_has_permissions(embed_links=True, manage_messages=True)
-	async def selfroles(self, ctx, preset=None):
+	async def selfroles(self, ctx):
 		if ctx.invoked_subcommand:
 			return
 		guild_id = str(ctx.guild.id)
@@ -98,7 +98,30 @@ class SelfRoles(commands.Cog):
 			reply = await wait_for_msg()
 			if not reply:
 				return await msg.delete()
-			if 'done' in reply.content.lower() or preset:
+			if 'done' in reply.content.lower() or 'loadpreset' in reply.content:
+				if 'loadpreset' in reply.content:
+					color_set = {
+						'Blood Red': [0xff0000, '🍎'],
+						'Orange': [0xff5b00, '🍊'],
+						'Bright Yellow': [0xffff00, '🍋'],
+						'Dark Yellow': [0xffd800, '💛'],
+						'Light Green': [0x00ff00, '🍐'],
+						'Dark Green': [0x009200, '🍏'],
+						'Light Blue': [0x00ffff, '❄'],
+						'Navy Blue': [0x0089ff, '🗺'],
+						'Dark Blue': [0x0000ff, '🦋'],
+						'Dark Purple': [0x9400d3, '🍇'],
+						'Light Purple': [0xb04eff, '💜'],
+						'Hot Pink': [0xf47fff, '💗'],
+						'Pink': [0xff9dd1, '🌸'],
+						'Black': [0x030303, '🕸'],
+					}
+					for name, value in color_set.items():
+						color, emoji = value
+						role = await ctx.guild.create_role(name=name, colour=discord.Color(color))
+						selfroles.append([emoji, role.id])
+						role_menu += f'{emoji} : {role.name}\n\n'
+						role_menu_mentions += f'{emoji} : {role.mention}\n\n'
 				await msg.delete()
 				await reply.delete()
 				if not selfroles:
@@ -177,7 +200,7 @@ class SelfRoles(commands.Cog):
 			await msg.edit(embed=e)
 
 	@selfroles.command(name='limit')
-	async def limit(self, ctx):
+	async def _limit(self, ctx):
 		guild_id = str(ctx.guild.id)
 		if guild_id in self.single:
 			del self.single[guild_id]
@@ -185,10 +208,22 @@ class SelfRoles(commands.Cog):
 		self.single[guild_id] = 'True'
 		await ctx.send('Limited users to 1 reaction per menu')
 
+	@selfroles.command(name='editmsg')
+	async def _edit_msg(self, ctx, msg_id: int, *, content=''):
+		guild_id = str(ctx.guild.id)
+		if guild_id not in self.msgs:
+			return await ctx.send('This server doesn\'t have any selfrole menus')
+		if str(msg_id) not in self.msgs[guild_id]:
+			return await ctx.send('That msg_id doesn\'t lead to a selfrole menu')
+		try: msg = await ctx.channel.fetch_message(msg_id)
+		except: return await ctx.send('Make sure you\'re using this in the same channel as the msg')
+		await msg.edit(content=content)
+		await ctx.send('👍')
+
 	@selfroles.command(name='preset', aliases=['presets'])
 	async def _preset(self, ctx, preset):
 		""" Creates a pre-built selfrole menu """
-
+		pass
 
 	@commands.Cog.listener()
 	async def on_raw_reaction_add(self, payload):
