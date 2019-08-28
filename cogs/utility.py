@@ -278,7 +278,7 @@ class Utility(commands.Cog):
 			'manage_webhooks', 'manage_emojis'
 		]
 		if not perm:
-			await ctx.send(f'Perms: {", ".join(perms)}')
+			return await ctx.send(f'Perms: {", ".join(perms)}')
 		if perm.lower() not in perms:
 			return await ctx.send('Unknown perm')
 		e = discord.Embed(color=colors.fate())
