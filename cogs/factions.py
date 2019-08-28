@@ -689,9 +689,8 @@ class Factions(commands.Cog):
 		e = discord.Embed(color=colors.purple())
 		e.description = f'You earned {faction} ${paycheck}'
 		if 'Extra-Income' in self.get_boosts(guild_id, faction):
-			bonus = random.randint(1, 10)
-			paycheck += bonus
-			e.set_footer(text=f'With Bonus: ${bonus}', icon_url=self.get_icon(ctx.author))
+			paycheck += 5
+			e.set_footer(text='With Bonus: $5', icon_url=self.get_icon(ctx.author))
 		self.factions[guild_id][faction]['balance'] += paycheck
 		await ctx.send(embed=e)
 		self.save_data()
@@ -857,7 +856,7 @@ class Factions(commands.Cog):
 			if channel_id in land_claims:
 				boosts = self.get_boosts(guild_id, fac)
 				for boost, time in boosts.items():
-					if boost == 'Land-Claims':
+					if boost == 'Land-Guard':
 						return await ctx.send(f'This claim is currently guarded, try again in {time} hours')
 				cost += 250; old_claim = fac; break
 		await ctx.send(f'Claiming this channel will cost you ${cost}\n'
@@ -989,7 +988,7 @@ class Factions(commands.Cog):
 		e.description = 'Buy upgrades for your faction'
 		vanity = '》Info Icon\n• $250\n》Info Banner\n• $500'
 		e.add_field(name='◈ Vanity ◈', value=vanity)
-		upgrades = '》+5 member slots\n• $500\n'
+		upgrades = '》+5 member slots\n• $250\n'
 		e.add_field(name='◈ Upgrades ◈', value=upgrades)
 		boosts = '》2h extra-income\n• $50\n' \
 			'》24h anti-raid\n• $75\n' \
@@ -1011,8 +1010,10 @@ class Factions(commands.Cog):
 		if not faction:
 			return await ctx.send('You need to be owner of a faction to use this')
 		item = item_name.lower().replace('+', '').replace('_', ' ')
-		if item not in self.items.keys():
+		if item not in self.items.keys() and 'slots' not in item:
 			return await ctx.send('Unknown Item')
+		if 'slots' in item:
+			item = '5 slots'
 		cost = self.items[item]
 		guild_id = str(ctx.guild.id)
 		if self.factions[guild_id][faction]['balance'] < cost:
