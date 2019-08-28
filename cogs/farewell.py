@@ -1,3 +1,5 @@
+from datetime import datetime
+import traceback
 from discord.ext import commands
 from os.path import isfile
 from utils import colors
@@ -13,6 +15,7 @@ class Farewell(commands.Cog):
 		self.channel = {}
 		self.useimages = {}
 		self.format = {}
+		self.dynamic = {}
 		if isfile("./data/userdata/farewell.json"):
 			with open("./data/userdata/farewell.json", "r") as f:
 				dat = json.load(f)
@@ -148,6 +151,14 @@ class Farewell(commands.Cog):
 		self.save_data()
 
 	@commands.Cog.listener()
+	async def on_message(self, msg):
+		guild_id = str(msg.guild.id)
+		if guild_id in self.toggle and guild_id in [616048390517686278]:
+			if guild_id not in self.dynamic:
+				self.dynamic[guild_id] = {}
+			self.dynamic[guild_id][str(msg.author.id)] = [msg.channel.id, datetime.now()]
+
+	@commands.Cog.listener()
 	async def on_member_remove(self, m: discord.Member):
 		if isinstance(m.guild, discord.Guild):
 			guild_id = str(m.guild.id)
@@ -171,8 +182,14 @@ class Farewell(commands.Cog):
 						self.save_data()
 				else:
 					try:
+						if guild_id in self.dynamic:
+							if str(m.id) in self.dynamic[guild_id]:
+								if (datetime.now() - self.dynamic[guild_id][str(m.id)][1]).seconds / 60 < 4:
+									return await self.bot.get_channel(self.dynamic[guild_id][str(m.id)][0]).send(msg)
 						await channel.send(msg)
-					except:
+					except Exception as e:
+						print(traceback.format_exc())
+						print('Yeet')
 						del self.toggle[guild_id]
 						self.save_data()
 

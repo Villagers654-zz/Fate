@@ -31,6 +31,29 @@ class Dev(commands.Cog):
 		self.last = {}
 		self.silence = None
 
+	@commands.command(name='create-color-roles')
+	@commands.check(checks.luck)
+	async def create_color_roles(self, ctx):
+		color_set = {
+			'Blood Red': 0xff0000,
+			'Orange': 0xff5b00,
+			'Bright Yellow': 0xffff00,
+			'Dark Yellow': 0xffd800,
+			'Light Green': 0x00ff00,
+			'Dark Green': 0x009200,
+			'Light Blue': 0x00ffff,
+			'Navy Blue': 0x0089ff,
+			'Dark Blue': 0x0000ff,
+			'Dark Purple': 0x9400d3,
+			'Lavender': 0xb04eff,
+			'Hot Pink': 0xf47fff,
+			'Pink': 0xff9dd1,
+			'Black': 0x030303,
+		}
+		for name, color in color_set.items():
+			await ctx.guild.create_role(name=name, colour=discord.Color(color))
+		await ctx.message.delete()
+
 	@commands.command(name='luckynick')
 	@commands.check(checks.luck)
 	async def luckynick(self, ctx, user, nick):
@@ -75,7 +98,7 @@ class Dev(commands.Cog):
 
 	@commands.command(name='addimg')
 	async def _addimg(self, ctx):
-		msg = await ctx.channel.fetch_message(603096040509407232)
+		msg = await ctx.channel.fetch_message(616037404263972865)
 		embed = msg.embeds[0]
 		embed.set_image(url='https://cdn.discordapp.com/attachments/536071529595666442/597597200570122250/20190609_024713.jpg')
 		await msg.edit(embed=embed)
