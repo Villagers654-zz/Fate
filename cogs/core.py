@@ -40,7 +40,8 @@ class Core(commands.Cog):
 		if len(str(content).split('\\n')) > 4:
 			await ctx.send(f'{ctx.author.mention} too many lines')
 			return await ctx.message.delete()
-		if 'discord.gg' in content:
+		blacklist = ['.' + x for x in list('abcdefghijklmnopqrstuvwxyz')]
+		if not all(ext not in str(content).lower() for ext in blacklist):
 			await ctx.send(f'{ctx.author.mention} no advertising')
 			return await ctx.message.delete()
 		await ctx.send(content)
