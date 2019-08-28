@@ -379,7 +379,7 @@ class Leaderboards(commands.Cog):
 
 		emojis = ['🏡', '⏮', '⏪', '⏩', '⏭']
 		index = 0; sub_index = None
-		embeds = [lb(), glb(), mlb(), gmlb(), gglb(), vclb(), gvclb()]
+		embeds = [lb(), vclb(), glb(), gvclb(), mlb(), gmlb(), gglb()]
 		await msg.edit(embed=embeds[0])
 		def index_check(index):
 			if index > len(embeds) - 1:
