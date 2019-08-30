@@ -353,12 +353,20 @@ class Utility(commands.Cog):
 		if len(args) == 1:
 			hex = args[0]
 			hex = hex.replace('#', '')
-			e = discord.Embed(color=eval(f"0x{hex}"))
+			try: e = discord.Embed(color=eval(f"0x{hex}"))
+			except: return await ctx.send('Invalid Hex')
 			return await ctx.send(embed=e)
 		if not ctx.author.guild_permissions.manage_roles:
 			return await ctx.send('You need manage roles permissions to use this')
-		role = await utils.get_role(ctx, args[0])
-		hex = discord.Color(eval('0x' + args[1].replace('#', '')))
+		if '@' in args[0]:
+			target = ''.join(x for x in args[0] if x.isdigit())
+			role = self.bot.get_role(int(target))
+		else:
+			role = await utils.get_role(ctx, args[0])
+		if not role:
+			return await ctx.send('Unknown role')
+		try: hex = discord.Color(eval('0x' + args[1].replace('#', '')))
+		except: return await ctx.send('Invalid Hex')
 		if role.position >= ctx.author.top_role.position:
 			return await ctx.send('That roles above your paygrade, take a seat')
 		previous_color = role.color
