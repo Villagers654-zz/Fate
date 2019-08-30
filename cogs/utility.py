@@ -360,7 +360,7 @@ class Utility(commands.Cog):
 			return await ctx.send('You need manage roles permissions to use this')
 		if '@' in args[0]:
 			target = ''.join(x for x in args[0] if x.isdigit())
-			role = self.bot.get_role(int(target))
+			role = ctx.guild.get_role(int(target))
 		else:
 			role = await utils.get_role(ctx, args[0])
 		if not role:

@@ -15,7 +15,7 @@ CONFIG = {
                 'STOP_AFTER_N_SECONDS': 50
             },
             598386553894600705: {
-                'TOGGLE': True,
+                'TOGGLE': False,
                 'ROLE': '🍀𝓛𝓾𝓬𝓴 🍀',
                 'COLORS': ColorSets().rainbow(),
                 'CYCLE_DURATION': 50,
@@ -26,7 +26,7 @@ CONFIG = {
     598386553894600705: {
         'GUILDS': {
             579823772547153958: {
-                'TOGGLE': True,
+                'TOGGLE': False,
                 'ROLE': '◈𝓛𝓾𝓬𝓴 ◈',
                 'COLORS': ColorSets().rainbow(),
                 'CYCLE_DURATION': 50,
@@ -39,6 +39,13 @@ CONFIG = {
             548461409810251776: {
                 'TOGGLE': True,
                 'ROLE': 'Μεγαλύτερος',
+                'COLORS': ColorSets().rainbow(),
+                'CYCLE_DURATION': 50,
+                'STOP_AFTER_N_SECONDS': 50
+            },
+            616048390517686278: {
+                'TOGGLE': True,
+                'ROLE': 'Rainbow',
                 'COLORS': ColorSets().rainbow(),
                 'CYCLE_DURATION': 50,
                 'STOP_AFTER_N_SECONDS': 50

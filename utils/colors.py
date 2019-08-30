@@ -45,6 +45,23 @@ def white():
 def tan():
 	return 0xffc8b0
 
+def color_roles():
+	return {
+		'Blood Red': 0xff0000,
+		'Orange': 0xff5b00,
+		'Bright Yellow': 0xffff00,
+		'Dark Yellow': 0xffd800,
+		'Light Green': 0x00ff00,
+		'Dark Green': 0x009200,
+		'Light Blue': 0x00ffff,
+		'Dark Blue': 0x0000ff,
+		'Dark Purple': 0x9400d3,
+		'Lavender': 0xdc91ff,
+		'Hot Pink': 0xf47fff,
+		'Pink': 0xff9dd1,
+		'Black': 0x030303,
+	}
+
 class ColorSets:
 
 	def rainbow(self):
