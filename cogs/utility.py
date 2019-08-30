@@ -60,7 +60,7 @@ class Utility(commands.Cog):
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.guild_only()
 	@commands.bot_has_permissions(embed_links=True)
-	async def info(self, ctx, target=None):
+	async def info(self, ctx, *, target=None):
 		"""Returns information for invites, users, roles & channels"""
 		if not target:  # bot stats/info
 			m, s = divmod(time.time() - self.bot.START_TIME, 60)
@@ -268,31 +268,24 @@ class Utility(commands.Cog):
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.guild_only()
 	@commands.bot_has_permissions(manage_roles=True)
-	async def permissions(self, ctx, perm=None):
-		perms = [
-			'create_instant_invite', 'kick_members', 'ban_members', 'administrator',
-			'manage_channels', 'manage_guild', 'add_reactions', 'view_audit_log',
-			'stream', 'send_tts_messages', 'manage_messages', 'embed_links', 'attach_files',
-			'mention_everyone', 'mute_members', 'deafen_members', 'move_members',
-			'use_voice_activation', 'change_nickname', 'manage_nicknames', 'manage_roles',
-			'manage_webhooks', 'manage_emojis'
-		]
-		if not perm:
+	async def permissions(self, ctx, permission=None):
+		perms = [perm[0] for perm in [perm for perm in discord.Permissions()]]
+		if not permission:
 			return await ctx.send(f'Perms: {", ".join(perms)}')
-		if perm.lower() not in perms:
+		if permission.lower() not in perms:
 			return await ctx.send('Unknown perm')
 		e = discord.Embed(color=colors.fate())
-		e.set_author(name=f'Things with {perm}', icon_url=ctx.author.avatar_url)
+		e.set_author(name=f'Things with {permission}', icon_url=ctx.author.avatar_url)
 		e.set_thumbnail(url=ctx.guild.icon_url)
 		members = ''
 		for member in ctx.guild.members:
-			if eval(f'member.guild_permissions.{perm}'):
+			if eval(f'member.guild_permissions.{permission}'):
 				members += f'{member.mention}\n'
 		if members:
 			e.add_field(name='Members', value=members[:1000])
 		roles = ''
 		for role in ctx.guild.roles:
-			if eval(f'role.permissions.{perm}'):
+			if eval(f'role.permissions.{permission}'):
 				roles += f'{role.mention}\n'
 		if roles:
 			e.add_field(name='Roles', value=roles[:1000])
