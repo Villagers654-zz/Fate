@@ -355,6 +355,7 @@ class Utility(commands.Cog):
 			hex = hex.replace('#', '')
 			try: e = discord.Embed(color=eval(f"0x{hex}"))
 			except: return await ctx.send('Invalid Hex')
+			e.description = f'#{hex}'
 			return await ctx.send(embed=e)
 		if not ctx.author.guild_permissions.manage_roles:
 			return await ctx.send('You need manage roles permissions to use this')
