@@ -475,6 +475,27 @@ class Utility(commands.Cog):
 		e.description = f'Inactive Users: {inactive_count}'
 		await ctx.send(embed=e)
 
+	@commands.command(name='create-webhook', aliases=['createwebhook'])
+	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.guild_only()
+	@commands.bot_has_permissions(manage_webhooks=True, embed_links=True, manage_messages=True)
+	async def create_webhook(self, ctx, *, name=None):
+		if not name:
+			await ctx.send('Usage: "`.create-webhook name`"\nYou can attach a file for its avatar')
+		avatar = None
+		if ctx.message.attachments:
+			avatar = await ctx.message.attachments[0].read()
+		webhook = await ctx.channel.create_webhook(name=name, avatar=avatar)
+		e = discord.Embed(color=colors.fate())
+		e.set_author(name=f'Webhook: {webhook.name}', icon_url=webhook.url)
+		e.set_thumbnail(url=ctx.guild.icon_url)
+		e.description = webhook.url
+		try:
+			await ctx.author.send(embed=e)
+			await ctx.send('Sent the webhook url to dm 👍')
+		except:
+			await ctx.send('Failed to dm you the webhook url', embed=e)
+
 	@commands.command(name='afk')
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.guild_only()
