@@ -481,7 +481,7 @@ class Utility(commands.Cog):
 	@commands.bot_has_permissions(manage_webhooks=True, embed_links=True, manage_messages=True)
 	async def create_webhook(self, ctx, *, name=None):
 		if not name:
-			await ctx.send('Usage: "`.create-webhook name`"\nYou can attach a file for its avatar')
+			return await ctx.send('Usage: "`.create-webhook name`"\nYou can attach a file for its avatar')
 		avatar = None
 		if ctx.message.attachments:
 			avatar = await ctx.message.attachments[0].read()
