@@ -57,6 +57,7 @@ class Menus(commands.Cog):
 			    '• **Fun** - `fun games/commands`\n' \
 			    '• **Music** - `play moosic in vc`'
 			e.add_field(name='◈ Categories', value=categories)
+			e.set_footer(text='Use the reactions to navigate', icon_url=self.bot.user.avatar_url)
 			return e
 		def core():
 			e = discord.Embed(color=colors.fate())
@@ -139,10 +140,11 @@ class Menus(commands.Cog):
 			    '• **notes** - `sends your last 5 notes`\n' \
 			    '• **wiki** - `sends information on words/phrases`\n' \
 			    '• **ud** - `sends a definition from urban dictionary`\n' \
-			    '• **find** - `searches msg history for a word/phase`\n' \
+			    '• **findmsg** - `searches msg history for a word/phase`\n' \
 			    '• **afk** - `tells users your\'re afk when mentioned`\n' \
 			    '• **id** - `sends your id & the channels id`\n' \
-			    '• **perms** - `checks what users/roles has a perm`'
+			    '• **perms** - `checks what users/roles has a perm`\n' \
+				'• **create-webhook** - `creates webhooks for mobile`'
 			return e
 		def fun():
 			e = discord.Embed(color=colors.fate())
@@ -261,12 +263,14 @@ class Menus(commands.Cog):
 			if index < 0:
 				index = 0
 			if isinstance(embeds[index], list):
+				embeds[index][sub_index].set_footer(text=f'Page {index + 1}/{len(embeds)}')
 				if index == len(embeds) - 1:
-					embeds[index][sub_index].set_footer(text='Last Page! You\'ve reached the end')
+					embeds[index][sub_index].set_footer(text=f'Last Page! {index + 1}/{len(embeds)}')
 				await msg.edit(embed=embeds[index][sub_index])
 			else:
+				embeds[index].set_footer(text=f'Page {index + 1}/{len(embeds)}')
 				if index == len(embeds) - 1:
-					embeds[index].set_footer(text='Last Page! You\'ve reached the end')
+					embeds[index].set_footer(text=f'Last Page! {index + 1}/{len(embeds)}')
 				await msg.edit(embed=embeds[index])
 			await msg.remove_reaction(reaction, ctx.author)
 
