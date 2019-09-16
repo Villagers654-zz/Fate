@@ -101,7 +101,7 @@ class Menus(commands.Cog):
 			    '• **tempban** - `bans a user for x amount of time`\n' \
 			    '• **ban** `bans a user from the server`\n' \
 			    '• **role** - `adds/removes roles from a user`\n' \
-			    '• **restore_roles** - `gives roles back on re-join`\n' \
+			    '• **restore-roles** - `gives roles back on rejoin`\n' \
 			    '• **selfroles** - `gives roles via reaction menus`\n' \
 				'• **autorole** - `gives users roles on-join`\n' \
 			    '• **limit** - `limit channels to only allow messages with things like images`\n' \
