@@ -16,20 +16,20 @@ class RestoreRoles(commands.Cog):
             with open(self.path, 'r') as f:
                 dat = json.load(f)
                 if 'guilds' in dat:
-                    self.guilds = dat['servers']
+                    self.guilds = dat['guilds']
                 if 'allow_perms' in dat:
                     self.allow_perms = dat['allow_perms']
 
     def save_data(self):
         """ Saves any changes made """
-        with open(self.path, 'w+') as f:
-            json.dump({'guilds': self.guilds, 'allow_perms': self.allow_perms}, f)
+        with open(self.path, 'w') as f:
+            json.dump({'guilds': self.guilds, 'allow_perms': self.allow_perms}, f, ensure_ascii=False)
 
     def disable_module(self, guild_id: str):
         """ Disables the module and resets guild data """
         self.guilds.pop(self.guilds.index(guild_id))
-        if guild_id in self.guilds:
-            del self.guilds[guild_id]
+        if guild_id in self.allow_perms:
+            self.allow_perms.pop(self.allow_perms.index(guild_id))
         self.save_data()
 
     @commands.group(name='restore-roles', aliases=['restore_roles'])
@@ -67,17 +67,18 @@ class RestoreRoles(commands.Cog):
         self.disable_module(guild_id)
         await ctx.send('Disabled Restore-Roles')
 
-    @commands.command(name='allow-perms')
+    @restore_roles.command(name='allow-perms')
     @commands.is_owner()
     @commands.bot_has_permissions(manage_roles=True)
     async def _allow_perms(self, ctx):
         guild_id = str(ctx.guild.id)
         if guild_id in self.allow_perms:
             self.allow_perms.pop(self.allow_perms.index(guild_id))
-            await ctx.send('Disabled Restore-Roles')
+            await ctx.send('Unallowed perms')
         else:
             self.allow_perms.append(guild_id)
-            await ctx.send('Enabled Restore-Roles')
+            await ctx.send('Allowed perms')
+        self.save_data()
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
