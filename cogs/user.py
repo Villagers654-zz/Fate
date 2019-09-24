@@ -1,7 +1,7 @@
 from discord.ext import commands
-from utils import checks
 import discord
 import json
+from utils import colors, checks
 
 class User(commands.Cog):
 	def __init__(self, bot):
@@ -45,17 +45,37 @@ class User(commands.Cog):
 	@commands.check(checks.luck)
 	async def unblock(self, ctx, user):
 		if ctx.message.mentions:
-			user = ctx.message.mentions[0]
+			user_id = ctx.message.mentions[0].id
+		elif user.isdigit():
+			user_id = int(user)
 		else:
-			if user.isdigit():
-				user = self.bot.get_user(int(user))
-			else:
-				return await ctx.send('user not found')
+			return await ctx.send('user not found')
 		config = self.get_config()  # type: dict
-		index = config['blocked'].index(user.id)
+		index = config['blocked'].index(user_id)
 		config['blocked'].pop(index)
 		self.update_config(config)
+		user = self.bot.get_user(user_id)
+		user = user if isinstance(user, discord.User) else user_id
 		await ctx.send(f'Unblocked {user}')
+
+	@commands.command(name='blocked')
+	@commands.check(checks.luck)
+	async def blocked(self, ctx):
+		config = self.get_config()  # type: dict
+		e = discord.Embed(color=colors.fate())
+		e.set_author(name='Blocked Users', icon_url=self.bot.user.avatar_url)
+		e.description = ''
+		uncached = []
+		for user_id in config['blocked']:
+			user = self.bot.get_user(int(user_id))
+			if isinstance(user, discord.User):
+				e.description += f'{user}\n'
+			else:
+				uncached.append(user_id)
+		if uncached:
+			uncached = '\n'.join(uncached) if len(uncached) > 1 else uncached[0]
+			e.add_field(name='Uncached', value=uncached, inline=False)
+		await ctx.send(embed=e)
 
 def setup(bot):
 	bot.add_cog(User(bot))
