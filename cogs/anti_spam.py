@@ -28,7 +28,7 @@ class AntiSpam(commands.Cog):
 		with open("./data/userdata/anti_spam.json", "w") as f:
 			json.dump({"toggle": self.toggle, 'blacklist': self.blacklist}, f)
 
-	@commands.group(name="anti_spam", aliases=["antispam"])
+	@commands.group(name="anti-spam", aliases=["antispam"])
 	@commands.bot_has_permissions(embed_links=True)
 	async def _anti_spam(self, ctx):
 		if not ctx.invoked_subcommand:
@@ -41,8 +41,8 @@ class AntiSpam(commands.Cog):
 			e.add_field(name="Usage", value=
 				".anti_spam enable\n"
 			    ".anti_spam disable\n"
-				".anti_spam blockchannel\n"
-				".anti_spam unblockchannel\n", inline=False)
+				".anti_spam ignore #channel\n"
+				".anti_spam unignore #channel\n", inline=False)
 			e.set_footer(text=f"Current Status: {toggle}")
 			await ctx.send(embed=e)
 
@@ -68,7 +68,7 @@ class AntiSpam(commands.Cog):
 		await ctx.send("Disabled anti spam")
 		self.save_data()
 
-	@_anti_spam.command(name='blockchannel')
+	@_anti_spam.command(name='ignore')
 	@commands.has_permissions(manage_messages=True)
 	async def _block_channel(self, ctx, channel: discord.TextChannel=None):
 		guild_id = str(ctx.guild.id)
@@ -77,21 +77,21 @@ class AntiSpam(commands.Cog):
 		if not channel:
 			channel = ctx.channel
 		if channel.id in self.blacklist[guild_id]:
-			return await ctx.send('This channel is already blocked')
+			return await ctx.send('This channel is already ignored')
 		self.blacklist[guild_id].append(channel.id)
 		await ctx.send('👍')
 		self.save_data()
 
-	@_anti_spam.command(name='unblockchannel')
+	@_anti_spam.command(name='unignore')
 	@commands.has_permissions(manage_messages=True)
 	async def _unblock_channel(self, ctx, channel: discord.TextChannel=None):
 		guild_id = str(ctx.guild.id)
 		if guild_id not in self.blacklist[guild_id]:
-			return await ctx.send('This guild has no blocked channels')
+			return await ctx.send('This server has no ignored channels')
 		if not channel:
 			channel = ctx.channel
 		if channel.id not in self.blacklist[guild_id]:
-			return await ctx.send('This channel isn\'t blocked')
+			return await ctx.send('This channel isn\'t ignored')
 		index = self.blacklist[guild_id].index(channel.id)
 		self.blacklist[guild_id].pop(index)
 		await ctx.send('👍')

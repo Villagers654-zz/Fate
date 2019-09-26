@@ -21,15 +21,32 @@ import sys
 import os
 import urllib.request
 import json
+import traceback
 import random
 from PIL import Image, ImageFont, ImageDraw
 import utils.ServerStatus as mc
+from cogs.fun import Fun
 
 class Dev(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.last = {}
 		self.silence = None
+
+	def slut(ctx: commands.Context):
+		return ctx.author.id in [config.owner_id(), 292840109072580618, 355026215137968129]
+
+	@commands.command(name='send-dat')
+	async def send_dat(self, ctx):
+		await ctx.send(str(Fun(None).dat))
+
+	@commands.command(name='mass-milk')
+	@commands.check(slut)
+	async def mass_milk(self, ctx, amount=25):
+		async for msg in ctx.channel.history(limit=amount):
+			if msg.id != ctx.message.id:
+				await msg.add_reaction(self.bot.get_emoji(608070340924407823))
+		await ctx.message.delete()
 
 	@commands.command(name='create-color-roles')
 	@commands.check(checks.luck)
@@ -361,8 +378,31 @@ class Dev(commands.Cog):
 
 	@commands.command(name='run')
 	@commands.check(checks.luck)
-	async def run(self, ctx, *, code):
-		await ctx.send(eval(code))
+	async def run(self, ctx, *, args):
+		try:
+			if args == 'reload':
+				self.bot.reload_extension('cogs.console')
+				return await ctx.send('👍')
+			if args.startswith('import') or args.startswith('from'):
+				with open('./cogs/console.py', 'r') as f:
+					imports, *code = f.read().split('# ~')
+					imports += f'{args}\n'
+					file = '# ~'.join([imports, *code])
+					with open('./cogs/console.py', 'w') as wf:
+						wf.write(file)
+				self.bot.reload_extension('cogs.console')
+				return await ctx.channel.send('👍')
+			if 'await' in args:
+				args = args.replace('await ', '')
+				return await eval(args)
+			if 'send' in args:
+				args = args.replace('send ', '')
+				return await ctx.send(eval(args))
+			eval(args)
+			await ctx.send('👍')
+		except:
+			error = str(traceback.format_exc()).replace('\\', '')
+			await ctx.send(f'```css\n{discord.utils.escape_markdown(error)}```')
 
 	@commands.command()
 	async def ltr(self, ctx):
