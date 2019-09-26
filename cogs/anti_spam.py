@@ -241,9 +241,9 @@ class AntiSpam(commands.Cog):
 					if role not in after.roles:
 						for role in self.roles[user_id]:
 							await before.add_roles(role)
-							if guild_id in self.status:
-								if user_id in self.status:
-									del self.status[guild_id][user_id]
+						del self.roles[user_id]
+						del self.status[guild_id][user_id]
+						return
 
 def setup(bot):
 	bot.add_cog(AntiSpam(bot))
