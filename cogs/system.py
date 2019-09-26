@@ -128,8 +128,9 @@ class System(commands.Cog):
 		if before.id == self.bot.user.id:
 			if before.name == after.name:
 				if before.display_name != after.display_name:
-					bot = before.guild.get_member(self.bot.user.id)
-					await bot.edit(nick='')
+					if '[' not in after.display_name and '.' not in after.display_name:
+						bot = before.guild.get_member(self.bot.user.id)
+						await bot.edit(nick='')
 
 def setup(bot):
 	bot.add_cog(System(bot))
