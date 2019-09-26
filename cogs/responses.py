@@ -44,7 +44,7 @@ class Responses(commands.Cog):
 				m.content = m.content.lower()
 				# toggleable responses
 				if str(m.guild.id) not in self.responses:
-					self.responses[str(m.guild.id)] = 'enabled'
+					self.responses[str(m.guild.id)] = 'disabled'
 					with open("./data/userdata/config/toggles.json", "w") as outfile:
 						json.dump({"responses": self.responses}, outfile, ensure_ascii=False)
 				if self.responses[str(m.guild.id)] == 'enabled':
