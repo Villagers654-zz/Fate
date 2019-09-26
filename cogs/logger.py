@@ -384,6 +384,36 @@ class Logger(commands.Cog):
 			if before.pinned == after.pinned:
 				guild_id = str(before.guild.id)
 				if guild_id in self.channel:
+					if before.embeds and not after.embeds:
+						if before.channel.id == self.channel[guild_id]:
+							return await after.edit(embed=before.embeds[0])
+						m = before
+						e = discord.Embed(color=colors.purple())
+						e.title = "~==🍸Embed Suppressed🍸==~"
+						if m.author.avatar_url:
+							e.set_thumbnail(url=m.author.avatar_url)
+						e.description = f"**Author:** {m.author.mention}\n" \
+						                f"**Channel:** {m.channel.mention}\n" \
+						                f"[Jump to MSG]({m.jump_url})\n"
+						if m.pinned:
+							e.description += f"\nMsg was pinned"
+						if not m.content:
+							m.content = "`None`"
+						for text_group in [m.content[i:i + 1000] for i in range(0, len(m.content), 1000)]:
+							e.add_field(name="◈ Content ◈", value=text_group, inline=False)
+						if m.attachments:
+							e.add_field(name="◈ Cached Images ◈", value="They may not show")
+						for attachment in m.attachments:
+							e.set_image(url=attachment.proxy_url)
+						footer = f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}"
+						if m.embeds:
+							footer += " | Embed ⇓"
+						channel = self.bot.get_channel(self.channel[guild_id])
+						await channel.send(embed=e)
+						if m.embeds:
+							for embed in m.embeds:
+								await channel.send(embed=embed)
+						return
 					if before.channel.id != self.channel[guild_id]:
 						if guild_id in self.blacklist:
 							if "message_edit" in self.blacklist[guild_id]:
