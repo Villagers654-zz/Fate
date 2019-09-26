@@ -13,6 +13,7 @@ class Console(commands.Cog):
 		if msg.channel.id == console_id:
 			if not msg.content.startswith('.') and not msg.author.bot:
 				msg = await msg.channel.fetch_message(msg.id)
+				msg.content = msg.content.replace('ctx.send', 'msg.channel.send').replace('ctx', 'msg')
 				try:
 					if msg.content == 'reload':
 						self.bot.reload_extension('cogs.console')
@@ -36,7 +37,7 @@ class Console(commands.Cog):
 					await msg.channel.send('👍')
 				except:
 					error = str(traceback.format_exc()).replace('\\', '')
-					if 'EOL' not in error and 'not defined' not in error:
+					if 'EOL' not in error and 'not defined' not in error and '.' in msg.content:
 						await msg.channel.send(f'```css\n{discord.utils.escape_markdown(error)}```')
 
 def setup(bot):
