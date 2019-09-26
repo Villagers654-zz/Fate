@@ -21,7 +21,7 @@ class Config(commands.Cog):
 
 	def restore_roles(self, id):
 		with open("./data/userdata/restore_roles.json", "r") as f:
-			if id in json.load(f):
+			if id in json.load(f)['guilds']:
 				return "active"
 			return "inactive"
 

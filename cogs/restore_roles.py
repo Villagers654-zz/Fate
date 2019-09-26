@@ -89,7 +89,7 @@ class RestoreRoles(commands.Cog):
             if user_id in self.cache[guild_id]:
                 roles = []
                 for role_id in self.cache[guild_id][user_id]:
-                    role = member.guild.guild.get_role(role_id)
+                    role = member.guild.get_role(role_id)
                     if isinstance(role, discord.Role):
                         if role.position < member.guild.me.top_role.position:
                             roles.append(role)
@@ -98,17 +98,17 @@ class RestoreRoles(commands.Cog):
     @commands.Cog.listener()
     async def on_member_remove(self, member):
         """ Saves role id's when a member leaves """
-        guild_id = str(member.guild.id)
-        user_id = str(member.id)
+        guild_id = str(member.guild.id); user_id = str(member.id)
         if guild_id in self.guilds:
-            for role in member.roles:
+            if guild_id not in self.cache:
+                self.cache[guild_id] = {}
+            self.cache[guild_id][user_id] = []
+            def is_modifiable(role):
+                return role.id != member.guild.default_role and role.position < self.bot.user.top_role.position
+            for role in [role for role in member.guilds if is_modifiable(role)]:
                 notable = ['view_audit_log', 'manage_roles', 'manage_channels', 'manage_emojis',
                     'kick_members', 'ban_members', 'manage_messages', 'mention_everyone']
                 if not any(perm in notable for perm in role.permissions) or guild_id in self.allow_perms:
-                    if guild_id not in self.cache:
-                        self.cache[guild_id] = {}
-                    if user_id not in self.cache[guild_id]:
-                        self.cache[guild_id][user_id] = []
                     self.cache[guild_id][user_id].append(role.id)
             self.save_data()
 
