@@ -1,7 +1,7 @@
 from discord import Webhook, AsyncWebhookAdapter
 from bs4 import BeautifulSoup as bs
 from discord.ext import commands
-from utils import config, colors
+from utils import config, colors, utils
 from time import time, monotonic
 import wikipedia.exceptions
 from io import BytesIO
@@ -40,11 +40,7 @@ class Core(commands.Cog):
 		if len(str(content).split('\\n')) > 4:
 			await ctx.send(f'{ctx.author.mention} too many lines')
 			return await ctx.message.delete()
-		blacklist = ['.' + x for x in list('abcdefghijklmnopqrstuvwxyz')]
-		if not all(ext not in str(content).lower() for ext in blacklist):
-			await ctx.send(f'{ctx.author.mention} no advertising')
-			return await ctx.message.delete()
-		await ctx.send(content)
+		await ctx.send(utils.cleanup_msg(ctx.message, content))
 		await ctx.message.delete()
 
 	@commands.command(name="prefix")
