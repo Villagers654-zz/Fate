@@ -1,5 +1,4 @@
 from discord.ext import commands
-from datetime import datetime
 from random import random as rd
 from utils import colors
 from io import BytesIO
@@ -12,24 +11,61 @@ import discord
 import asyncio
 import random
 import base64
-import json
 import os
-
 code = "```py\n{0}\n```"
 
 class Fun(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
-		self.last = {}
+		self.dat = {}
 
-	def luck(ctx: commands.Context):
-		return ctx.message.author.id == 264838866480005122
+	@commands.command(name='snipe')
+	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.guild_only()
+	@commands.bot_has_permissions(embed_links=True)
+	async def snipe(self, ctx):
+		channel_id = ctx.channel.id
+		if channel_id not in self.dat:
+			await ctx.send('Nothing to snipe', delete_after=1)
+			return await ctx.message.delete()
+		if ctx.message.mentions:
+			user_id = ctx.message.mentions[0].id
+			if user_id not in self.dat[channel_id]:
+				await ctx.send('Nothing to snipe', delete_after=1)
+				return await ctx.message.delete()
+			msg, time = self.dat[channel_id][user_id]
+		else:
+			msg, time = self.dat[channel_id]['last']
+		if msg.embeds:
+			await ctx.send(f'{msg.author} at {time}', embed=msg.embeds[0])
+		else:
+			e = discord.Embed(color=msg.author.color)
+			e.set_author(name=msg.author, icon_url=msg.author.avatar_url)
+			e.description = msg.content
+			e.set_footer(text=time)
+			await ctx.send(embed=e)
 
 	@commands.Cog.listener()
 	async def on_message_delete(self, m: discord.Message):
-		if m.content:
-			channel_id = str(m.channel.id)
-			self.last[channel_id] = (m, m.created_at.strftime("%I:%M%p UTC on %b %d, %Y"))
+		if m.content or m.embeds:
+			channel_id = m.channel.id
+			user_id = m.author.id
+			dat = (m, m.created_at.strftime("%I:%M%p UTC on %b %d, %Y"))
+			if channel_id not in self.dat:
+				self.dat[channel_id] = {}
+			self.dat[channel_id]['last'] = dat
+			self.dat[channel_id][user_id] = dat
+
+	@commands.Cog.listener()
+	async def on_message_edit(self, before, after):
+		if before.embeds and not after.embeds:
+			channel_id = before.channel.id
+			user_id = before.author.id
+			dat = (before, before.created_at.strftime("%I:%M%p UTC on %b %d, %Y"))
+			if channel_id not in self.dat:
+				self.dat[channel_id] = {}
+			self.dat[channel_id]['last'] = dat
+			self.dat[channel_id][user_id] = dat
 
 	def do_magik(self, scale, *imgs):
 		list_imgs = []
@@ -84,22 +120,7 @@ class Fun(commands.Cog):
 			return await ctx.send(final)
 		await ctx.send(file=discord.File(final, filename='magik.png'))
 
-	@commands.command(name='snipe')
-	@commands.cooldown(1, 5, commands.BucketType.user)
-	@commands.guild_only()
-	@commands.bot_has_permissions(embed_links=True)
-	async def snipe(self, ctx):
-		channel_id = str(ctx.channel.id)
-		if channel_id not in self.last:
-			return await ctx.message.delete()
-		dat = self.last[channel_id]
-		m = dat[0]  # type: discord.Message
-		time = dat[1]  # type: datetime.date()
-		e = discord.Embed(color=m.author.color)
-		e.set_author(name=m.author, icon_url=m.author.avatar_url)
-		e.description = m.content
-		e.set_footer(text=time)
-		await ctx.send(embed=e)
+
 
 	@commands.command()
 	async def fancify(self, ctx, *, text: str):
