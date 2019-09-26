@@ -1,16 +1,16 @@
-from discord.ext import commands
-from utils import config, colors
-from termcolor import cprint
-from datetime import datetime
+from datetime import datetime, timedelta
 from os.path import isfile
 import traceback
-import discord
 import asyncio
 import random
 import json
-import time
+import subprocess
+from termcolor import cprint
+import discord
+from discord.ext import commands
+from utils import config, colors
 
-# ~== Core ==~
+# //~== Core ==~\\
 
 def get_stats():
 	if not isfile('./data/stats.json'):
@@ -51,45 +51,55 @@ def get_prefix(bot, msg):
 		return "."
 	return prefixes[guild_id]
 
-files = ['error_handler', 'config', 'menus', 'core', 'music', 'mod', 'welcome', 'farewell', 'notes', 'archive', 'coffeeshop', 'custom',
-         'actions', 'reactions', 'responses', 'textart', 'fun', 'dev', '4b4t', 'readme', 'reload', 'embeds', 'warning', 'profiles',
-         'clean_rythm', 'utility', 'psutil', 'rules', 'duel_chat', 'selfroles', 'lock', 'audit', 'cookies', 'backup', 'stats', 'server_list',
-         'emojis', 'logger', 'autorole', 'changelog', 'restore_roles', 'chatbot', 'anti_spam', 'anti_raid', 'chatfilter', 'nsfw', 'leaderboards',
-         'chatlock', 'rainbow', 'vc_log', 'system', 'user', 'limiter', 'dm_channel', 'factions', 'secure_overwrites']
+def total_seconds(now, before):
+	total_seconds = str((now - before).total_seconds())
+	return total_seconds[:total_seconds.find('.') + 2]
 
-description = '''Fate[Zero]: Personal Bot'''
+initial_extensions = ['error_handler', 'config', 'menus', 'core', 'music', 'mod', 'welcome', 'farewell', 'notes', 'archive', 'coffeeshop', 'custom',
+    'actions', 'reactions', 'responses', 'textart', 'fun', 'dev', '4b4t', 'readme', 'reload', 'embeds',
+	'clean_rythm', 'utility', 'psutil', 'rules', 'duel_chat', 'selfroles', 'lock', 'audit', 'cookies', 'backup', 'stats', 'server_list',
+    'emojis', 'logger', 'autorole', 'changelog', 'restore_roles', 'chatbot', 'anti_spam', 'anti_raid', 'chatfilter', 'nsfw', 'leaderboards',
+    'chatlock', 'rainbow', 'vc_log', 'system', 'user', 'limiter', 'dm_channel', 'factions', 'secure_overwrites', 'server_setup']
+
 bot = commands.Bot(command_prefix=get_prefix, case_insensitive=True, max_messages=16000)
-bot.START_TIME = time.time()
 bot.remove_command('help')
-bot.errorcount = 0; bot.files = files
+bot.files = initial_extensions
 bot.get_stats = get_stats()
 bot.get_config = get_config()
 bot.voice_calls = []
-error = False
+login_errors = []
 
 async def status_task():
 	while True:
 		motds = ['FBI OPEN UP', 'YEET to DELETE', 'Pole-Man', '♡Juice wrld♡', 'Mad cuz Bad', 'Quest for Cake', 'Gone Sexual']
 		stages = ['Serendipity', 'Euphoria', 'Singularity', 'Epiphany']
 		for i in range(len(stages)):
-			await bot.change_presence(status=discord.Status.online, activity=discord.Game(name=f'{stages[i]} | use .help'))
+			try:
+				await bot.change_presence(status=discord.Status.online, activity=discord.Game(name=f'{stages[i]} | use .help'))
+				await asyncio.sleep(15)
+				await bot.change_presence(status=discord.Status.idle, activity=discord.Game(name=f'{stages[i]} | {len(bot.users)} users'))
+				await asyncio.sleep(15)
+				await bot.change_presence(status=discord.Status.dnd, activity=discord.Game(name=f'{stages[i]} | {len(bot.guilds)} servers'))
+				await asyncio.sleep(15)
+				await bot.change_presence(status=discord.Status.online, activity=discord.Game(name=f'{stages[i]} | {random.choice(motds)}'))
+			except:
+				pass
 			await asyncio.sleep(15)
-			await bot.change_presence(status=discord.Status.idle, activity=discord.Game(name=f'{stages[i]} | {len(bot.users)} users'))
-			await asyncio.sleep(15)
-			await bot.change_presence(status=discord.Status.dnd, activity=discord.Game(name=f'{stages[i]} | {len(bot.guilds)} servers'))
-			await asyncio.sleep(15)
-			await bot.change_presence(status=discord.Status.online, activity=discord.Game(name=f'{stages[i]} | {random.choice(motds)}'))
-			await asyncio.sleep(15)
+
+# //~== Events ==~\
 
 @bot.event
 async def on_ready():
+	login_time = total_seconds(datetime.now(), login_start_time)
+	total_start_time = total_seconds(datetime.now(), bot.start_time)
 	cprint('--------------------------', 'cyan')
-	print('Logged in as')
-	print(bot.user.name)
-	print(bot.user.id)
-	print(f'Version: {discord.__version__}')
-	print(f'Commands: {len(bot.commands)}')
-	print(f'Errors: {bot.errorcount}')
+	info = f'Logged in as {bot.user}\n'
+	info += f"{bot.user.id}\n"
+	info += f'Version: {discord.__version__}\n'
+	info += f'commands: {len(bot.commands)}\n'
+	info += f'User Count: {len(bot.users)}\n'
+	info += f'Errors: {len(login_errors)}'
+	print(info)
 	cprint('--------------------------', 'cyan')
 	print(' ζξ Welcome back Mikey :)\n'
 	      '┌──┬┐ The best way to start\n'
@@ -98,8 +108,29 @@ async def on_ready():
 	cprint('--------------------------', 'cyan')
 	bot.loop.create_task(status_task())
 	cprint(datetime.now().strftime("%m-%d-%Y %I:%M%p"), 'yellow')
-	if error:
-		await bot.get_channel(503902845741957131).send(f"```{error}```")
+	# notify myself on discord that the bots logged in
+	channel = bot.get_channel(config.server("log"))
+	p = subprocess.Popen("last | head -1", stdout=subprocess.PIPE, shell=True)
+	(output, err) = p.communicate()
+	output = str(output).replace("b'", "'")
+	info = f'```\n--------------------------\n{info}\n--------------------------```'
+	load_times = f'```Time to load files: {load_time} seconds\n' \
+		f'Time to login: {login_time} seconds\n' \
+	    f'Total time taken: {total_start_time} seconds```'
+	e = discord.Embed(color=colors.green())
+	e.set_author(name='Login Notice', icon_url=bot.user.avatar_url)
+	load_msgs = [f'```{load_msg[i:i + 1000]}```' for i in range(0, len(load_msg), 1000)]
+	for i in range(len(load_msgs)):
+		if i == 0:
+			e.description = load_msgs[i]; continue
+		e.add_field(name='~', value=load_msgs[i])
+	e.add_field(name="Loading Info", value=load_times, inline=False)
+	e.add_field(name='Security Check', value=f'```{output}```')
+	e.add_field(name="Welcome", value=info, inline=False)
+	await channel.send(embed=e)
+	if login_errors:
+		for error in login_errors:
+			await channel.send(f'```{str(error)[:2000]}```')
 
 @bot.event
 async def on_guild_join(guild: discord.Guild):
@@ -134,39 +165,29 @@ async def on_command(ctx):
 	with open('./data/stats.json', 'w') as f:
 		json.dump(stats, f, ensure_ascii=False)
 
-# ~== Startup ==~
+# //~== Startup ==~\\
 
+bot.start_time = datetime.now()
 if __name__ == '__main__':
 	cprint("Loading cogs..", "blue")
-	bot.info = ""
-	previous_load_time = 0
-	cog_count = 0
-	loaded_cogs = 0
-	f = None
-	for cog in files:
-		cog_count += 1
+	unloaded_cogs = []; index = 1
+	load_msg = ''
+	for cog in initial_extensions:
+		start_time = datetime.now()
 		try:
 			bot.load_extension("cogs." + cog)
-			loaded_cogs += 1
-			m, s = divmod(time.time() - bot.START_TIME, 60)
-			h, m = divmod(m, 60)
-			cprint(f"{cog_count}. Cog: {cog} - operational - [{str(s - previous_load_time)[:3]}]", "green")
-			bot.info += f"{cog_count}. Cog: {cog} - operational - [{str(s - previous_load_time)[:3]}]\n"
-			previous = float(str(s)[:3])
+			seconds = str((datetime.now() - start_time).total_seconds())
+			seconds = seconds[:seconds.find('.') + 2]
+			cprint(f"{index}. Cog: {cog} - operational - [{seconds}s]", "green")
+			load_msg += f"{index}. Cog: {cog} - operational - [{seconds}s]\n"
+			index += 1
 		except Exception as e:
-			bot.errorcount += 1
-			m, s = divmod(time.time() - bot.START_TIME, 60)
-			h, m = divmod(m, 60)
-			cprint(f"{cog_count}. Cog: {cog} - error - [{str(s - previous_load_time)[:3]}]", "red")
-			bot.info += f"{cog_count}. Cog: {cog} - error - [{str(s - previous_load_time)[:3]}]\n"
-			error = traceback.format_exc()
-			print(traceback.format_exc())
-			previous = float(str(s)[:3])
-	if loaded_cogs == cog_count:
-		cprint(f"Loaded {loaded_cogs}/{cog_count} cogs :)", "magenta")
-	else:
-		cprint(f"Loaded {loaded_cogs}/{cog_count} cogs :(", "magenta")
+			cprint(f"{index}. Cog: {cog} - errored", "red")
+			load_msg += f"{index}. Cog: {cog} - errored\n"
+			login_errors.append(traceback.format_exc())
+	reaction = ':)' if index - 1 == len(initial_extensions) else ':('
+	cprint(f'Loaded {index - 1}/{len(initial_extensions)} cogs {reaction}', "magenta")
 	cprint(f"Logging into discord..", "blue")
-m, s = divmod(time.time() - bot.START_TIME, 60)
-bot.LOAD_TIME = s
+load_time = total_seconds(datetime.now(), bot.start_time)
+login_start_time = datetime.now()
 bot.run(config.tokens('fatezero'))
