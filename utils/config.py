@@ -35,7 +35,7 @@ def server(item):
 	if item is "log":
 		return 577661500802465813
 	if item is "error":
-		return 577661461543780382
+		return 577661500802465813
 
 def color():
 	return 0x80b0ff

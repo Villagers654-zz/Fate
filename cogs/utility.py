@@ -63,8 +63,6 @@ class Utility(commands.Cog):
 	async def info(self, ctx, *, target=None):
 		"""Returns information for invites, users, roles & channels"""
 		if not target:  # bot stats/info
-			m, s = divmod(time.time() - self.bot.START_TIME, 60)
-			h, m = divmod(m, 60)
 			guilds = len(list(self.bot.guilds))
 			users = len(list(self.bot.users))
 			path = os.getcwd() + "/data/images/banners/" + random.choice(
@@ -102,7 +100,8 @@ class Utility(commands.Cog):
 				f"__**RAM**__: [{p.bytes2human(psutil.virtual_memory().used)}/{p.bytes2human(psutil.virtual_memory().total)}] ({psutil.virtual_memory().percent}%)\n"
 				f"__**Bot RAM**__: {p.bytes2human(bot_pid.memory_full_info().rss)} ({round(bot_pid.memory_percent())}%)\n"
 				f"__**CPU**__: **Global**: {psutil.cpu_percent()}% **Bot**: {bot_pid.cpu_percent()}%\n")
-			e.add_field(name="◈ Uptime ◈", value="Uptime: {} Hours {} Minutes {} seconds".format(int(h), int(m), int(s)))
+			uptime = (datetime.now() - self.bot.start_time)
+			e.add_field(name="◈ Uptime ◈", value=f'{uptime.days} days {round(uptime.seconds / 60 / 60)} hours and {round(uptime.seconds / 60)} minutes')
 			e.set_footer(text=f"Powered by Python {platform.python_version()} and Discord.py {discord.__version__}", icon_url="https://cdn.discordapp.com/attachments/501871950260469790/567779834533773315/RPrw70n.png")
 			msg = await ctx.send(file=discord.File(path, filename=os.path.basename(path)), embed=e)
 			return await self.wait_for_dismissal(ctx, msg)
@@ -319,10 +318,10 @@ class Utility(commands.Cog):
 		if not isinstance(user, discord.Member):
 			return await ctx.send('User not found')
 		if not user.avatar_url:
-			return await ctx.send(f'{user.display_name} doesn\'t have an avatar')
+			return await ctx.send(f'{utils.cleanup_msg(ctx.message, user.display_name)} doesn\'t have an avatar')
 		e=discord.Embed(color=0x80b0ff)
 		e.set_image(url=user.avatar_url)
-		await ctx.send(f'◈ {user.display_name}\'s avatar ◈', embed=e)
+		await ctx.send(f'◈ {utils.cleanup_msg(ctx.message, user.display_name)}\'s avatar ◈', embed=e)
 
 	@commands.command(name='owner')
 	@commands.cooldown(1, 3, commands.BucketType.user)
