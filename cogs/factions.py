@@ -158,13 +158,13 @@ class Factions(commands.Cog):
 				seconds = (datetime.now() - date).seconds
 				time = (datetime.now() - date).days
 				if time < 1 and boost == 'anti-raid':
-					active_boosts['Anti-Raid'] = utils.get_time(86400 - seconds); continue
+					active_boosts['Anti-Raid'] = utils.get_time(86400 - seconds)
 				time = (datetime.now() - date).seconds / 60 / 60
 				if time < 2 and boost == 'extra-income':
-					active_boosts['Extra-Income'] = utils.get_time(7200 - seconds); continue
+					active_boosts['Extra-Income'] = utils.get_time(7200 - seconds)
 				time = (datetime.now() - date).seconds / 60 / 60
 				if time < 8 and boost == 'land-guard':
-					active_boosts['Land-Guard'] = utils.get_time(28800 - seconds); continue
+					active_boosts['Land-Guard'] = utils.get_time(28800 - seconds)
 		return active_boosts
 
 	def get_icon(self, user: discord.Member):
@@ -1018,14 +1018,6 @@ class Factions(commands.Cog):
 		guild_id = str(ctx.guild.id)
 		if self.factions[guild_id][faction]['balance'] < cost:
 			return await ctx.send('You don\'t have enough money to purchase this')
-		await ctx.send(f'Buying {item} will cost you ${cost}\n'
-		    f'Reply with .confirm to confirm')
-		msg = await utils.wait_for_msg(self, ctx, ctx.author)
-		if not msg:
-			await ctx.message.delete()
-			return await msg.delete()
-		if '.confirm' not in msg.content.lower():
-			return await ctx.send('Maybe next time ;-;')
 		if item == 'icon':
 			self.factions[guild_id][faction]['icon'] = ''
 		if item == 'banner':
