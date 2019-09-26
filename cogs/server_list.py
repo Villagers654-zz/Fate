@@ -29,10 +29,12 @@ class ServerList(commands.Cog):
 	@commands.bot_has_permissions(embed_links=True)
 	async def _serverlist(self, ctx):
 		if not ctx.invoked_subcommand:
+			e = discord.Embed()
+			e.set_author(name='Fetching Invites', icon_url='https://cdn.discordapp.com/attachments/514213558549217330/514345278669848597/8yx98C.gif')
+			msg = await ctx.send(embed=e)
 			e = discord.Embed(color=colors.fate())
 			e.set_author(name='Server List', icon_url=self.bot.user.avatar_url)
 			e.set_thumbnail(url='https://cdn.discordapp.com/icons/397415086295089155/e31d9034f418c48ba766389ab9bf3d39.webp?size=1024')
-			e.description = ''
 			for category, invites in sorted(list(self.servers.items()), key=lambda kv: len(kv[0]), reverse=True):
 				values = []
 				for invite_url in invites:
@@ -47,7 +49,7 @@ class ServerList(commands.Cog):
 				for invite, size in sorted(values, key=lambda kv: kv[1], reverse=True):
 					value += invite
 				e.add_field(name=f'◈ {category} ◈', value=value, inline=False)
-			await ctx.send(embed=e)
+			await msg.edit(embed=e)
 
 	@_serverlist.command(name='addserver', aliases=['add'])
 	@commands.check(checks.luck)
