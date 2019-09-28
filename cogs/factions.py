@@ -278,7 +278,7 @@ class Factions(commands.Cog):
 				'.factions kick {@user}\n' \
 				'.factions leave\n', inline=False)
 			e.add_field(name='◈ Utils ◈', value=f'.faction privacy\n'
-			    '.factions setbio {your new bio}'
+			    '.factions setbio {your new bio}\n'
 				'.factions seticon {file | url}\n' \
 				'.factions setbanner {file | url}\n' \
 			    '.factions togglenotifs', inline=False)

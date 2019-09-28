@@ -49,7 +49,7 @@ def get_prefix(bot, msg):
 	prefixes = config['prefix']
 	if guild_id not in prefixes:
 		return "."
-	return prefixes[guild_id]
+	return commands.when_mentioned_or(prefixes[guild_id])(bot, msg)
 
 def total_seconds(now, before):
 	total_seconds = str((now - before).total_seconds())
@@ -90,6 +90,8 @@ async def status_task():
 
 @bot.event
 async def on_ready():
+	for server in [guild.id for guild in bot.guilds if guild.unavailable]:
+		print(server)
 	login_time = total_seconds(datetime.now(), login_start_time)
 	total_start_time = total_seconds(datetime.now(), bot.start_time)
 	cprint('--------------------------', 'cyan')
