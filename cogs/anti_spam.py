@@ -16,6 +16,7 @@ class AntiSpam(commands.Cog):
         self.ping_cd = {}
         self.toggle = {}
         self.sensitivity = {}
+        self.blacklist = {}
         self.roles = {}
         self.status = {}
         self.mutes = {}
@@ -28,10 +29,11 @@ class AntiSpam(commands.Cog):
                 dat = json.load(f)
                 self.toggle = dat['toggle']
                 self.sensitivity = dat['sensitivity']
+                self.blacklist = dat['blacklist']
 
     def save_data(self):
         with open(self.path, 'w+') as f:
-            json.dump({'toggle': self.toggle, 'sensitivity': self.sensitivity}, f)
+            json.dump({'toggle': self.toggle, 'sensitivity': self.sensitivity, 'blacklist': self.blacklist}, f)
 
 
     def init(self, guild_id):
@@ -58,7 +60,9 @@ class AntiSpam(commands.Cog):
                 '.anti-spam enable mass-pings\n• prevents mass pinging\n\n' \
                 '.anti-spam enable anti-macro\n• stops users from using macros for bots\n\n' \
                 '.anti-spam disable\n• disables all anti-spam modules\n\n' \
-                '.anti-spam alter-sensitivity\n• alters anti-spam sensitivity'
+                '.anti-spam alter-sensitivity\n• alters anti-spam sensitivity\n\n' \
+                '.anti-spam ignore #channel\n• ignores spam in a channel\n\n' \
+                '.anti-spam unignore #channel\n• no longer ignores a channels spam'
             guild_id = str(ctx.guild.id)
             if guild_id in self.toggle:
                 conf = ''
@@ -127,9 +131,39 @@ class AntiSpam(commands.Cog):
         guild_id = str(ctx.guild.id)
         if self.sensitivity[guild_id] == 'low':
             self.sensitivity[guild_id] = 'high'
-        else:  # sensitivity is high
+        elif self.sensitivity[guild_id] == 'high':
             self.sensitivity[guild_id] = 'low'
         await ctx.send(f'Set the sensitivity to {self.sensitivity[guild_id]}')
+
+
+    @anti_spam.command(name='ignore')
+    @commands.has_permissions(manage_messages=True)
+    async def _ignore(self, ctx, channel: discord.TextChannel = None):
+        guild_id = str(ctx.guild.id)
+        if guild_id not in self.blacklist:
+            self.blacklist[guild_id] = []
+        if not channel:
+            channel = ctx.channel
+        if channel.id in self.blacklist[guild_id]:
+            return await ctx.send('This channel is already ignored')
+        self.blacklist[guild_id].append(channel.id)
+        await ctx.send('👍')
+        self.save_data()
+
+    @anti_spam.command(name='unignore')
+    @commands.has_permissions(manage_messages=True)
+    async def _unignore(self, ctx, channel: discord.TextChannel = None):
+        guild_id = str(ctx.guild.id)
+        if guild_id not in self.blacklist[guild_id]:
+            return await ctx.send('This server has no ignored channels')
+        if not channel:
+            channel = ctx.channel
+        if channel.id not in self.blacklist[guild_id]:
+            return await ctx.send('This channel isn\'t ignored')
+        index = self.blacklist[guild_id].index(channel.id)
+        self.blacklist[guild_id].pop(index)
+        await ctx.send('👍')
+        self.save_data()
 
 
     @commands.Cog.listener()
@@ -140,24 +174,19 @@ class AntiSpam(commands.Cog):
         user_id = str(msg.author.id)
         triggered = False
         if guild_id in self.toggle:
-            async def delete_recent():
-                for msg, msg_time in self.msgs[user_id]:
-                    if msg_time > time() - 10:
-                        try:
-                            await msg.delete()
-                        except:
-                            pass
-
             if self.sensitivity[guild_id] == 'low':
                 sensitivity_level = 3
             else:
                 sensitivity_level = 2
+            if guild_id in self.blacklist:
+                if msg.channel.id in self.blacklist[guild_id]:
+                    return
 
             # msgs to delete if triggered
             if user_id not in self.msgs:
                 self.msgs[user_id] = []
             self.msgs[user_id].append([msg, time()])
-            self.msgs[user_id] = self.msgs[user_id][-10:]
+            self.msgs[user_id] = self.msgs[user_id][-15:]
 
             # rate limit
             now = int(time() / 5)
@@ -175,9 +204,9 @@ class AntiSpam(commands.Cog):
 
             # mass pings
             mentions = [*msg.mentions, *msg.role_mentions]
-            if len(mentions) > sensitivity_level + 3 or msg.guild.default_role in mentions:
-                if msg.guild.default_role in mentions and len(mentions) > 1:
-                    if mentions.count(msg.guild.default_role) > 1:
+            if len(mentions) > sensitivity_level + 1 or msg.guild.default_role in mentions:
+                if msg.guild.default_role in mentions:
+                    if mentions.count(msg.guild.default_role) > 1 or len(mentions) > sensitivity_level + 1:
                         if self.toggle[guild_id]['Mass-Pings']:
                             triggered = True
                 else:
@@ -206,12 +235,15 @@ class AntiSpam(commands.Cog):
                 if "manage_roles" not in perms or "manage_messages" not in perms:
                     if msg.channel.permissions_for(bot).send_messages:
                         del self.toggle[guild_id]
+                        del self.sensitivity[guild_id]
                         await msg.channel.send("Disabled anti spam, missing required permissions")
                         self.save_data()
                     return
+                messages = [m for m, mtime in self.msgs[user_id] if mtime > time() - 15]
+                self.msgs[user_id] = []  # removes deleted messages from the list
                 if msg.author.top_role.position >= bot.top_role.position:
-                    return await delete_recent()
-                await delete_recent()
+                    return await msg.channel.delete_messages(messages)
+                await msg.channel.delete_messages(messages)
                 if "send_messages" not in perms:
                     return
                 async with msg.channel.typing():
@@ -265,6 +297,9 @@ class AntiSpam(commands.Cog):
                     timer = 150 * multiplier
                     timer_str = utils.get_time(timer)
                     await msg.author.add_roles(mute_role)
+                    messages = [m for m, mtime in self.msgs[user_id]]
+                    await msg.channel.delete_messages(messages)
+                    self.msgs[user_id] = []
                     try:
                         await msg.author.send(f"You've been muted for spam in **{msg.guild.name}** for {timer_str}")
                     except:

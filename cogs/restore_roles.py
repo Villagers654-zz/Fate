@@ -104,7 +104,7 @@ class RestoreRoles(commands.Cog):
                 self.cache[guild_id] = {}
             self.cache[guild_id][user_id] = []
             def is_modifiable(role):
-                return role.id != member.guild.default_role and role.position < self.bot.user.top_role.position
+                return role.id != member.guild.default_role and role.position < member.guild.me.top_role.position
             for role in [role for role in member.guild.roles if is_modifiable(role)]:
                 notable = ['view_audit_log', 'manage_roles', 'manage_channels', 'manage_emojis',
                     'kick_members', 'ban_members', 'manage_messages', 'mention_everyone']
