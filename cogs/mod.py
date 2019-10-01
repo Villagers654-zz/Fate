@@ -945,7 +945,7 @@ class Mod(commands.Cog):
 			return await ctx.send(f"{user.display_name} is not muted")
 		await user.remove_roles(mute_role)
 		if guild_id in self.roles:
-			if user_id in self.roles:
+			if user_id in self.roles[guild_id]:
 				for role_id in self.roles[guild_id][user_id]:
 					role = ctx.guild.get_role(role_id)
 					if role not in user.roles:
