@@ -90,8 +90,6 @@ async def status_task():
 
 @bot.event
 async def on_ready():
-	for server in [guild.id for guild in bot.guilds if guild.unavailable]:
-		print(server)
 	login_time = total_seconds(datetime.now(), login_start_time)
 	total_start_time = total_seconds(datetime.now(), bot.start_time)
 	cprint('--------------------------', 'cyan')
