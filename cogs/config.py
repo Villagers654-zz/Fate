@@ -197,7 +197,7 @@ class Config(commands.Cog):
 						self.save_config(config)
 				else:
 					if guild_id in config['warns']['expire']:
-						index = config['warns']['expire'].index(ctx.guild.id)
+						index = config['warns']['expire'].index(guild_id)
 						config['warns']['expire'].pop(index)
 				await msg.clear_reactions()
 				e = discord.Embed(color=colors.fate())
