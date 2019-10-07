@@ -330,6 +330,19 @@ class AntiSpam(commands.Cog):
                         await msg.channel.send(f"Unmuted {msg.author.display_name}")
                     del self.status[guild_id][user_id]
 
+    @commands.Cog.listener()
+    async def on_member_update(self, before, after):
+        guild_id = str(before.guild.id)
+        user_id = str(before.id)
+        if user_id in self.roles:
+            for role in before.roles:
+                if 'muted' in str(role.name).lower():
+                    if role not in after.roles:
+                        for role in self.roles[user_id]:
+                            await before.add_roles(role)
+                        del self.roles[user_id]
+                        del self.status[guild_id][user_id]
+                        return
 
 def setup(bot):
     bot.add_cog(AntiSpam(bot))
