@@ -11,18 +11,22 @@ from utils import colors, utils
 class AntiSpam(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.spam_cd = {}  # sending messages in mass
-        self.macro_cd = {}  # same interval between each msg
-        self.ping_cd = {}  # mass pings
+
+        # cache
+        self.spam_cd = {}
+        self.macro_cd = {}
+        self.ping_cd = {}
         self.dupes = {}
         self.dupez = {}
-        self.toggle = {}
-        self.sensitivity = {}
-        self.blacklist = {}
         self.roles = {}
         self.status = {}
         self.mutes = {}
         self.msgs = {}
+
+        # configs
+        self.toggle = {}
+        self.sensitivity = {}
+        self.blacklist = {}
         self.path = './data/userdata/anti_spam.json'
         if not os.path.isdir('./data'):
             os.mkdir('data')
