@@ -63,16 +63,16 @@ class Utility(commands.Cog):
 	async def info(self, ctx, *, target=None):
 		"""Returns information for invites, users, roles & channels"""
 		if not target:  # bot stats/info
+			e = discord.Embed()
+			e.set_author(name='Collecting Information..', icon_url='https://cdn.discordapp.com/attachments/514213558549217330/514345278669848597/8yx98C.gif')
+			msg = await ctx.send(embed=e)
 			guilds = len(list(self.bot.guilds))
 			users = len(list(self.bot.users))
-			path = os.getcwd() + "/data/images/banners/" + random.choice(
-				os.listdir(os.getcwd() + "/data/images/banners/"))
 			bot_pid = psutil.Process(os.getpid())
 			e = discord.Embed(color=colors.fate())
 			e.set_author(name="Fate [Zerø]: Core Info", icon_url=self.bot.get_user(config.owner_id()).avatar_url)
 			stats = self.bot.get_stats  # type: dict
-			commands = 0;
-			lines = 0
+			commands = 0; lines = 0
 			for command_date in stats['commands']:
 				date = datetime.strptime(command_date, '%Y-%m-%d %H:%M:%S.%f')
 				if (datetime.now() - date).days < 7:
@@ -91,7 +91,7 @@ class Utility(commands.Cog):
 			e.description = f'Weekly Commands Used: {commands}\n' \
 				f'Total lines of code: {lines}'
 			e.set_thumbnail(url=self.bot.user.avatar_url)
-			e.set_image(url="attachment://" + os.path.basename(path))
+			e.set_image(url="https://cdn.discordapp.com/attachments/541520201926311986/630631362847834112/arT9Gz0_d.jpg")
 			e.add_field(name="◈ Summary ◈",  value="Fate is a ~~multipurpose~~ hybrid bot created for fun", inline=False)
 			e.add_field(name="◈ Statistics ◈", value=f'Commands: [{len(self.bot.commands)}]\nModules: [{len(self.bot.extensions)}]\nServers: [{guilds}]\nUsers: [{users}]')
 			e.add_field(name="◈ Credits ◈", value="• Tothy ~ `rival`\n• Cortex ~ `teacher`\n• Discord.py ~ `existing`")
@@ -103,7 +103,7 @@ class Utility(commands.Cog):
 			uptime = (datetime.now() - self.bot.start_time)
 			e.add_field(name="◈ Uptime ◈", value=utils.get_time(round(uptime.total_seconds())))
 			e.set_footer(text=f"Powered by Python {platform.python_version()} and Discord.py {discord.__version__}", icon_url="https://cdn.discordapp.com/attachments/501871950260469790/567779834533773315/RPrw70n.png")
-			msg = await ctx.send(file=discord.File(path, filename=os.path.basename(path)), embed=e)
+			await msg.edit(embed=e)
 			return await self.wait_for_dismissal(ctx, msg)
 		if 'discord.gg' in target:
 			code = discord.utils.resolve_invite(target)

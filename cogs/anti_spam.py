@@ -66,17 +66,17 @@ class AntiSpam(commands.Cog):
                 '**.anti-spam alter-sensitivity**\n`• alters anti-spam sensitivity`\n' \
                 '**.anti-spam ignore #channel**\n`• ignores spam in a channel`\n' \
                 '**.anti-spam unignore #channel**\n`• no longer ignores a channels spam`'
-            modules = '**Rate-Limit:** sending multiple msgs fast\n' \
-                '**Mass-Pings:** mass mentioning users\n' \
-                '**Anti-Macro:** using macros for bots\n' \
-                '**Duplicates:** copying and pasting the same msg'
-            e.add_field(name='Modules', value=modules)
+            modules = '**Rate-Limit:** `sending msgs fast`\n' \
+                '**Mass-Pings:** `mass mentioning users`\n' \
+                '**Anti-Macro:** `using macros for bots`\n' \
+                '**Duplicates:** `copying and pasting`'
+            e.add_field(name='◈ Modules', value=modules, inline=False)
             guild_id = str(ctx.guild.id)
             if guild_id in self.toggle:
                 conf = ''
                 for key, value in self.toggle[guild_id].items():
-                    conf += f'{key}: {"enabled" if value else "disabled"}\n'
-                e.add_field(name='Config', value=conf)
+                    conf += f'**{key}:** `{"enabled" if value else "disabled"}`\n'
+                e.add_field(name='◈ Config', value=conf, inline=False)
             await ctx.send(embed=e)
 
 
@@ -296,7 +296,7 @@ class AntiSpam(commands.Cog):
             self.dupez[channel_id] = self.dupes[channel_id][:10]
             data = [(m, m.content) for m, m_time in self.dupes[channel_id] if m_time > time() - 7 and len(m.content) > 3]
             contents = [x[1] for x in data]
-            duplicates = [m for m in contents if contents.count(m) >= sensitivity_level]
+            duplicates = [m for m in contents if contents.count(m) > sensitivity_level]
             if msg.content in duplicates:
                 data = [(m, m_time) for m, m_time in self.dupez[channel_id] if msg.content == m.content and [m, m_time] in data]
                 for m, m_time in data:

@@ -105,6 +105,7 @@ class Menus(commands.Cog):
 			    '• **selfroles** - `gives roles via reaction menus`\n' \
 				'• **autorole** - `gives users roles on-join`\n' \
 			    '• **limit** - `limit channels to only allow messages with things like images`\n' \
+			    '• **anti-spam** - `mutes users when they spam`\n' \
 			    '• **audit** - `tools for searching through the audit log`\n' \
 			    '• **lock** - `kicks users on-join`\n' \
 			    '• **lockb** - `bans users on-join`\n' \
