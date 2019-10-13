@@ -12,6 +12,7 @@ import asyncio
 import random
 import base64
 import os
+import binascii
 code = "```py\n{0}\n```"
 
 class Fun(commands.Cog):
@@ -120,8 +121,6 @@ class Fun(commands.Cog):
 			return await ctx.send(final)
 		await ctx.send(file=discord.File(final, filename='magik.png'))
 
-
-
 	@commands.command()
 	async def fancify(self, ctx, *, text: str):
 		output = ""
@@ -136,7 +135,7 @@ class Fun(commands.Cog):
 		await ctx.message.delete()
 
 	@commands.command(pass_context=True)
-	async def encode(self, ctx, encoder: int=None, *, message):
+	async def encode(self, ctx, encoder: int, *, message):
 		usage = '`.encode {16, 32, or 64} {message}`'
 		if encoder not in [16, 32, 64]:
 			await ctx.send(usage)
@@ -165,7 +164,10 @@ class Fun(commands.Cog):
 				decode = base64.b64decode(message.encode())
 			else:
 				return await ctx.send(f'Invalid decoder:\n{usage}')
-			await ctx.send(utils.cleanup_msg(str(decode.decode())))
+			try:
+				await ctx.send(utils.cleanup_msg(str(decode.decode())))
+			except binascii.Error:
+				await ctx.send('That\'s not a properly encoded message')
 
 	@commands.command(name="liedetector", aliases=["ld"])
 	@commands.cooldown(1, 5, commands.BucketType.user)
