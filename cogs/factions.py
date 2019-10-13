@@ -324,19 +324,19 @@ class Factions(commands.Cog):
 				active_boosts += f'{boost} '
 			active_boosts = f'\n{active_boosts}'
 		if self.factions[guild_id][faction]['bio']:
-			bio = f'\n__**Bio:**__ [`{self.factions[guild_id][faction]["bio"]}`]'
+			bio = f'\n__**Bio:**__ [`{self.factions[guild_id][faction]["bio"]}`]\n'
 		if len(owner.name) > 10:
 			e.description = f'__**Owner:**__ [{owner.name}]\n' \
 				f'__**Balance:**__ [`${f["balance"]}`] ' \
 				f'__**Access:**__ [`{"Public" if f["access"] == "public" else "Invite-Only"}`]\n' \
 				f'__**MemberCount:**__ [`{len(f["members"])}/{f["limit"]}`]' \
-				f'{active_boosts if active_boosts else ""}{bio if bio else ""}'
+				f'{bio if bio else ""}{active_boosts if active_boosts else ""}'
 		else:
 			e.description = f'__**Owner:**__ [{owner.name}] ' \
 				f'__**Balance:**__ [`${f["balance"]}`]\n' \
 				f'__**Access:**__ [`{"Public" if f["access"] == "public" else "Invite-Only"}`] ' \
 				f'__**Members:**__ [`{len(f["members"])}/{f["limit"]}`]' \
-				f'{active_boosts if active_boosts else ""}{bio if bio else ""}'
+				f'{bio if bio else ""}{active_boosts if active_boosts else ""}'
 		members = self.get_members(ctx, faction)
 		e.add_field(name='◈ Members ◈', value=members if members else 'none')
 		claims = self.get_claims(guild_id, faction)
