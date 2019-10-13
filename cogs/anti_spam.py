@@ -235,10 +235,7 @@ class AntiSpam(commands.Cog):
         user_id = str(msg.author.id)
         triggered = False
         if guild_id in self.toggle:
-            if self.sensitivity[guild_id] == 'low':
-                sensitivity_level = 3
-            else:
-                sensitivity_level = 2
+            sensitivity_level = 3 if self.sensitivity[guild_id] == 'low' else 2
             if guild_id in self.blacklist:
                 if msg.channel.id in self.blacklist[guild_id]:
                     return
@@ -292,24 +289,29 @@ class AntiSpam(commands.Cog):
 
             # duplicate messages
             if channel_id not in self.dupes:
-                self.dupes[channel_id] = []
-                self.dupez[channel_id] = []
-            self.dupes[channel_id].append([msg, time()])
-            self.dupes[channel_id] = self.dupes[channel_id][:10]
-            self.dupez[channel_id].append([msg, time()])
-            self.dupez[channel_id] = self.dupes[channel_id][:10]
-            data = [(m, m.content) for m, m_time in self.dupes[channel_id] if m_time > time() - 7 and len(m.content) > 3]
+                self.dupes[guild_id] = []
+                self.dupez[guild_id] = []
+            self.dupes[guild_id].append([msg, time()])
+            self.dupes[guild_id] = self.dupes[guild_id][:10]
+            self.dupez[guild_id].append([msg, time()])
+            self.dupez[guild_id] = self.dupes[guild_id][:10]
+            data = [(m, m.content) for m, m_time in self.dupes[guild_id] if m_time > time() - 7 and len(m.content) > 3]
             contents = [x[1] for x in data]
             duplicates = [m for m in contents if contents.count(m) > sensitivity_level]
             if msg.content in duplicates:
-                data = [(m, m_time) for m, m_time in self.dupez[channel_id] if msg.content == m.content and [m, m_time] in data]
-                for m, m_time in data:
-                    self.dupez[channel_id].pop(self.dupez[channel_id].index([m, m_time]))
-                    if m in self.msgs[str(m.author.id)]:
-                        self.msgs[user_id].pop(self.msgs[user_id].index(m))
-                await msg.channel.delete_messages([m[1] for m in data])
-                if self.toggle[guild_id]['Duplicates']:
-                    triggered = True
+                def pred(m):
+                    return m.channel.id == msg.channel.id and m.bot
+                try:
+                    msg = await self.bot.wait_for('message', check=pred, timeout=2)
+                except TimeoutError:
+                    data = [(m, m_time) for m, m_time in self.dupez[guild_id] if msg.content == m.content and [m, m_time] in data]
+                    for m, m_time in data:
+                        self.dupez[guild_id].pop(self.dupez[guild_id].index([m, m_time]))
+                        if m in self.msgs[str(m.author.id)]:
+                            self.msgs[user_id].pop(self.msgs[user_id].index(m))
+                    await msg.channel.delete_messages([m[1] for m in data])
+                    if self.toggle[guild_id]['Duplicates']:
+                        triggered = True
 
             if triggered:
                 bot = msg.guild.me
