@@ -1,6 +1,6 @@
 from discord.ext import commands
 from random import random as rd
-from utils import colors
+from utils import colors, utils
 from io import BytesIO
 import PIL
 from PIL import Image
@@ -136,30 +136,36 @@ class Fun(commands.Cog):
 		await ctx.message.delete()
 
 	@commands.command(pass_context=True)
-	async def encode(self, ctx, encoder: int=None, *, message: str=None):
-		if encoder not in {16,32,64}:
-			await ctx.send('**Usage:** `.encode {16, 32, or 64} {message}`')
+	async def encode(self, ctx, encoder: int=None, *, message):
+		usage = '`.encode {16, 32, or 64} {message}`'
+		if encoder not in [16, 32, 64]:
+			await ctx.send(usage)
 		else:
 			if encoder == 16:
 				encode = base64.b16encode(message.encode())
-			if encoder == 32:
+			elif encoder == 32:
 				encode = base64.b32encode(message.encode())
-			if encoder == 64:
+			elif encoder == 64:
 				encode = base64.b64encode(message.encode())
+			else:
+				return await ctx.send(f'Invalid Encoder:\n{usage}')
 			await ctx.send(encode.decode())
 
 	@commands.command(pass_context=True)
-	async def decode(self, ctx, decoder:int=None, *, message:str=None):
+	async def decode(self, ctx, decoder:int=None, *, message):
+		usage = '`.decode {16, 32, or 64} {message}`'
 		if decoder not in {16,32,64}:
-			await ctx.send('**Usage:** `.decode {16, 32, or 64} {message}`')
+			await ctx.send(usage)
 		else:
 			if decoder == 16:
 				decode = base64.b16decode(message.encode())
-			if decoder == 32:
+			elif decoder == 32:
 				decode = base64.b32decode(message.encode())
-			if decoder == 64:
+			elif decoder == 64:
 				decode = base64.b64decode(message.encode())
-			await ctx.send(decode.decode())
+			else:
+				return await ctx.send(f'Invalid decoder:\n{usage}')
+			await ctx.send(utils.cleanup_msg(str(decode.decode())))
 
 	@commands.command(name="liedetector", aliases=["ld"])
 	@commands.cooldown(1, 5, commands.BucketType.user)
