@@ -17,6 +17,7 @@ class Logger(commands.Cog):
 		self.blocked = {}
 		self.typing = {}
 		self.waiting = {}
+		self.queue = {}
 		self.invites = {}
 		self.cd = {}
 		if isfile("./data/userdata/logger.json"):
@@ -47,83 +48,51 @@ class Logger(commands.Cog):
 			del self.cd[guild_id]
 		return self.save_json()
 
-	async def notify_of_termination(self, guild_id):
-		guild = self.bot.get_guild(int(guild_id))
-		bot = guild.get_member(self.bot.user.id)
-		msg = None  # type: discord.Message
-		if guild_id in self.channel:
-			channel = self.bot.get_channel(self.channel[guild_id])
-			if channel.permissions_for(bot).send_messages:
-				msg = await channel.send("Disabled logger, missing required perms")
-		if not msg:
-			for channel in guild.text_channels:
-				if channel.permissions_for(bot).send_messages:
-					await channel.send("Disabled logger, missing required perms")
-					break
-
-	async def wait_for_access(self, guild_id):
-		if guild_id in self.waiting:
-			return False
-		self.waiting[guild_id] = "waiting"
-		guild = self.bot.get_guild(int(guild_id))
-		bot = guild.get_member(self.bot.user.id)
-		channel_access = False
-		loops = 0
-		while channel_access is False:
-			loops += 1
-			await asyncio.sleep(25)
-			channel = self.bot.get_channel(self.channel[guild_id])
-			if channel:
-				loops = 0
-				break
-			else:
-				if loops >= 72:
-					if guild_id in self.channel:
-						await self.notify_of_termination(guild_id)
-					self.wipe_data(guild_id)
-					del self.waiting[guild_id]
-					return False
-		while channel_access is False:
-			loops += 1
-			channel = self.bot.get_channel(self.channel[guild_id])
-			if channel.permissions_for(bot).send_messages:
-				del self.waiting[guild_id]
-				return True
-			else:
-				if loops >= 72:
-					if guild_id in self.channel:
-						await self.notify_of_termination(guild_id)
-					self.wipe_data(guild_id)
-					del self.waiting[guild_id]
-					return False
-			await asyncio.sleep(25)
-
-	async def channel_check(self, guild_id):
-		if guild_id in self.channel:
+	async def ensure_permissions(self, guild_id: str, max_loops=60):
+		async def terminate(guild_id):
+			if guild_id in self.channel:
+				termination_message = 'Disabled logger: missing required perms'
+				guild = self.bot.get_guild(int(guild_id))
+				channels = [c for c in guild.text_channels if 'general' in c.name or 'chat' in c.name]
+				for channel in channels:
+					if channel.permissions_for(guild.me).send_messages:
+						del self.channel[guild_id]
+						return await channel.send(termination_message)
+				try: await guild.owner.send(termination_message)
+				except: pass
+				del self.channel[guild_id]
+		async def check_perms(guild_id):
 			guild = self.bot.get_guild(int(guild_id))
-			bot = guild.get_member(self.bot.user.id)
+			if not isinstance(guild, discord.Guild):
+				return False
+			perms = guild.me.guild_permissions
+			if not perms.view_audit_log:
+				return False
 			channel = self.bot.get_channel(self.channel[guild_id])
-			if not channel:
-				channel_access = await self.wait_for_access(guild_id)
-				if not channel_access:
-					return False
-			else:
-				if not channel.permissions_for(bot).send_messages or not channel.permissions_for(bot).read_messages:
-					channel_access = await self.wait_for_access(guild_id)
-					if not channel_access:
-						return False
+			perms = ['send_messages', 'embed_links', 'external_emojis']
+			if not any(f'eval(channel.permissions_for(guild.me).{perm})' for perm in perms):
+				return False
 			return True
-		return False
-
-	async def ensure_permissions(self, guild_id):
-		guild = self.bot.get_guild(int(guild_id))
-		bot = guild.get_member(self.bot.user.id)
-		perms = bot.guild_permissions
-		if not perms.view_audit_log or not perms.external_emojis or not perms.embed_links:
-			await self.notify_of_termination(guild_id)
-			self.wipe_data(guild_id)
+		async def wait_for_perms(guild_id: str):
+			for iteration in range(max_loops):
+				await asyncio.sleep(60)
+				bot_has_perms = await check_perms(guild_id)
+				if not bot_has_perms:
+					continue
+				return True
+			await terminate(guild_id)
 			return False
-		return True
+
+		result = True
+		if guild_id not in self.channel:
+			return False
+		guild = self.bot.get_guild(int(guild_id))
+		if not isinstance(guild, discord.Guild):
+			result = await wait_for_perms(guild_id)
+		bot_has_perms = await check_perms(guild_id)
+		if not bot_has_perms:
+			result = await wait_for_perms(guild_id)
+		return result
 
 	def past(self, seconds):
 		return datetime.datetime.utcnow() - datetime.timedelta(seconds=seconds)
@@ -338,9 +307,6 @@ class Logger(commands.Cog):
 				guild_requirements = await self.ensure_permissions(guild_id)
 				if not guild_requirements:
 					return
-				channel_requirements = await self.channel_check(guild_id)
-				if not channel_requirements:
-					return
 				if guild_id in self.blocked:
 					if channel.id in self.blocked[guild_id]:
 						return
@@ -431,9 +397,6 @@ class Logger(commands.Cog):
 							guild_requirements = await self.ensure_permissions(guild_id)
 							if not guild_requirements:
 								return
-							channel_requirements = await self.channel_check(guild_id)
-							if not channel_requirements:
-								return
 							channel = self.bot.get_channel(self.channel[guild_id])
 							e = discord.Embed(color=colors.pink())
 							e.title = "~==🍸Msg Edited🍸==~"
@@ -470,9 +433,6 @@ class Logger(commands.Cog):
 					if self.past(2) < entry.created_at:
 						user = entry.user.mention
 				channel = self.bot.get_channel(self.channel[guild_id])
-				channel_requirements = await self.channel_check(guild_id)
-				if not channel_requirements:
-					return
 				if m.channel.id == self.channel[guild_id]:
 					if not m.embeds:
 						e = discord.Embed(color=colors.purple())
@@ -542,8 +502,8 @@ class Logger(commands.Cog):
 			if guild_id not in self.cache:
 				self.cache[guild_id] = []
 			if payload.message_id not in self.cache[guild_id]:
-				channel_requirements = await self.channel_check(guild_id)
-				if not channel_requirements:
+				guild_requirements = await self.ensure_permissions(guild_id)
+				if not guild_requirements:
 					return
 				guild = self.bot.get_guild(payload.guild_id)
 				e = discord.Embed(color=colors.purple())
@@ -574,9 +534,6 @@ class Logger(commands.Cog):
 				if self.past(2) < entry.created_at:
 					user = entry.user.mention
 			channel = self.bot.get_channel(self.channel[guild_id])
-			channel_requirements = await self.channel_check(guild_id)
-			if not channel_requirements:
-				return
 			if m.channel.id == self.channel[guild_id]:
 				for msg in messages:
 					if not msg.embeds:
@@ -640,9 +597,6 @@ class Logger(commands.Cog):
 				async for entry in after.audit_logs(action=discord.AuditLogAction.guild_update, limit=1):
 					user = entry.user.mention
 				channel = self.bot.get_channel(self.channel[guild_id])
-				channel_requirements = await self.channel_check(guild_id)
-				if not channel_requirements:
-					return
 				e = discord.Embed(color=colors.cyan())
 				e.title = "~==🍸Guild Update🍸==~"
 				if before.icon_url:
@@ -668,9 +622,6 @@ class Logger(commands.Cog):
 			async for entry in channel.guild.audit_logs(action=discord.AuditLogAction.channel_create, limit=1):
 				user = entry.user
 			log = self.bot.get_channel(self.channel[guild_id])
-			channel_requirements = await self.channel_check(guild_id)
-			if not channel_requirements:
-				return
 			channel_name = channel.name
 			if isinstance(channel, discord.TextChannel):
 				channel_name = channel.mention
@@ -708,9 +659,6 @@ class Logger(commands.Cog):
 			async for entry in channel.guild.audit_logs(action=discord.AuditLogAction.channel_delete, limit=1):
 				user = entry.user
 			log = self.bot.get_channel(self.channel[guild_id])
-			channel_requirements = await self.channel_check(guild_id)
-			if not channel_requirements:
-				return
 			e = discord.Embed(color=colors.fate())
 			e.title = "~==🍸Channel Deleted🍸==~"
 			if user.avatar_url:
@@ -734,9 +682,6 @@ class Logger(commands.Cog):
 				return
 			user = None  # type: discord.Member
 			channel = self.bot.get_channel(self.channel[guild_id])
-			channel_requirements = await self.channel_check(guild_id)
-			if not channel_requirements:
-				return
 			e = discord.Embed(color=colors.fate())
 			e.title = "~==🍸Channel Updated🍸==~"
 			if user:
@@ -807,9 +752,6 @@ class Logger(commands.Cog):
 			async for entry in role.guild.audit_logs(after=self.past(2), action=discord.AuditLogAction.role_create, limit=1):
 				user = entry.user
 			channel = self.bot.get_channel(self.channel[guild_id])
-			channel_requirements = await self.channel_check(guild_id)
-			if not channel_requirements:
-				return
 			e = discord.Embed(color=colors.blue())
 			e.title = "~==🍸Role Created🍸==~"
 			if user:
@@ -834,9 +776,6 @@ class Logger(commands.Cog):
 			async for entry in role.guild.audit_logs(after=self.past(2), action=discord.AuditLogAction.role_delete, limit=1):
 				user = entry.user
 			channel = self.bot.get_channel(self.channel[guild_id])
-			channel_requirements = await self.channel_check(guild_id)
-			if not channel_requirements:
-				return
 			e = discord.Embed(color=colors.blue())
 			e.title = "~==🍸Role Deleted🍸==~"
 			if user:
@@ -864,9 +803,6 @@ class Logger(commands.Cog):
 				user = entry.user
 			is_changed = False
 			channel = self.bot.get_channel(self.channel[guild_id])
-			channel_requirements = await self.channel_check(guild_id)
-			if not channel_requirements:
-				return
 			e = discord.Embed(color=colors.blue())
 			e.title = "~==🍸Role Updated🍸==~"
 			if before.guild.icon_url:
@@ -1049,9 +985,6 @@ class Logger(commands.Cog):
 				return
 			user = None  # type: discord.Member
 			channel = self.bot.get_channel(self.channel[guild_id])
-			channel_requirements = await self.channel_check(guild_id)
-			if not channel_requirements:
-				return
 			e = discord.Embed(color=colors.yellow())
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 			for emoji in before:
@@ -1104,8 +1037,8 @@ class Logger(commands.Cog):
 				if "member_join" in self.blacklist[guild_id]:
 					return
 			channel = self.bot.get_channel(self.channel[guild_id])
-			channel_requirements = await self.channel_check(guild_id)
-			if not channel_requirements:
+			guild_requirements = await self.ensure_permissions(guild_id)
+			if not guild_requirements:
 				return
 			if guild_id not in self.invites:
 				self.invites[guild_id] = {}
@@ -1146,9 +1079,6 @@ class Logger(commands.Cog):
 			if not guild_requirements:
 				return
 			channel = self.bot.get_channel(self.channel[guild_id])
-			channel_requirements = await self.channel_check(guild_id)
-			if not channel_requirements:
-				return
 			e = discord.Embed(color=colors.red())
 			e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
 			async for entry in m.guild.audit_logs(action=discord.AuditLogAction.kick, limit=1):
@@ -1186,9 +1116,6 @@ class Logger(commands.Cog):
 			async for entry in guild.audit_logs(limit=1, action=discord.AuditLogAction.ban):
 				author = entry.user
 			channel = self.bot.get_channel(self.channel[guild_id])
-			channel_requirements = await self.channel_check(guild_id)
-			if not channel_requirements:
-				return
 			e = discord.Embed(color=colors.red())
 			if user.avatar_url:
 				e.set_thumbnail(url=user.avatar_url)
@@ -1214,9 +1141,6 @@ class Logger(commands.Cog):
 			async for entry in guild.audit_logs(action=discord.AuditLogAction.unban, after=self.past(2), limit=1):
 				author = entry.user
 			channel = self.bot.get_channel(self.channel[guild_id])
-			channel_requirements = await self.channel_check(guild_id)
-			if not channel_requirements:
-				return
 			e = discord.Embed(color=colors.orange())
 			e.title = "~==🍸User Unbanned🍸==~"
 			if user.avatar_url:
@@ -1237,9 +1161,6 @@ class Logger(commands.Cog):
 			if before.name != after.name:
 				return
 			channel = self.bot.get_channel(self.channel[guild_id])
-			channel_requirements = await self.channel_check(guild_id)
-			if not channel_requirements:
-				return
 			e = discord.Embed(color=colors.lime_green())
 			if before.avatar_url:
 				e.set_thumbnail(url=before.avatar_url)
