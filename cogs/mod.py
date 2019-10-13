@@ -765,7 +765,7 @@ class Mod(commands.Cog):
 		role_name.replace('+', '').replace('-', '')
 		role = await utils.get_role(ctx, role_name)
 		if not role:
-			return await ctx.send('Role not fount')
+			return await ctx.send('Role not found')
 		if user.top_role.position >= ctx.author.top_role.position:
 			return await ctx.send('This user is above your paygrade, take a seat')
 		if role.position >= ctx.author.top_role.position:
