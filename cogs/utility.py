@@ -244,24 +244,41 @@ class Utility(commands.Cog):
 	@commands.cooldown(1, 5, commands.BucketType.channel)
 	@commands.guild_only()
 	@commands.bot_has_permissions(embed_links=True)
-	async def members(self, ctx, rolename=None):
-		humans = 0; bots = 0; online = 0
-		for member in ctx.guild.members:
-			if member.bot:
-				bots += 1
+	async def members(self, ctx, *, role=None):
+		if role:  # returns a list of members that have the role
+			if ctx.message.role_mentions:
+				role = ctx.message.role_mentions[0]
 			else:
-				humans += 1
+				role = await utils.get_role(ctx, role)
+				if not isinstance(role, discord.Role):
+					return
+			e = discord.Embed(color=role.color)
+			e.set_author(name=role.name, icon_url=ctx.author.avatar_url)
+			e.set_thumbnail(url=ctx.guild.icon_url)
+			e.description = ''
+			dat = [(m, m.top_role.position) for m in role.members]
+			for member, position in sorted(dat, key=lambda kv: kv[1], reverse=True):
+				new_line = f'• {member.mention}\n'
+				if len(e.description) + len(new_line) > 2000:
+					await ctx.send(embed=e)
+					e.description = ''
+				e.description += new_line
+			if not e.description:
+				e.description = 'This role has no members'
+			return await ctx.send(embed=e)
+		else:  # return the servers member count
 			status_list = [discord.Status.online, discord.Status.idle, discord.Status.dnd]
-			if member.status in status_list:
-				online += 1
-		e = discord.Embed(color=colors.fate())
-		e.set_author(name=f"Member Count", icon_url=ctx.guild.owner.avatar_url)
-		e.set_thumbnail(url=ctx.guild.icon_url)
-		e.description = f'**Total:** [`{ctx.guild.member_count}`]\n' \
-			f'**Online:** [`{online}`]\n' \
-			f'**Humans:** [`{humans}`]\n' \
-			f'**Bots:** [`{bots}`]'
-		await ctx.send(embed=e)
+			humans = len([m for m in ctx.guild.members if not m.bot])
+			bots = len([m for m in ctx.guild.members if m.bot])
+			online = len([m for m in ctx.guild.members if m.status in status_list])
+			e = discord.Embed(color=colors.fate())
+			e.set_author(name=f"Member Count", icon_url=ctx.guild.owner.avatar_url)
+			e.set_thumbnail(url=ctx.guild.icon_url)
+			e.description = f'**Total:** [`{ctx.guild.member_count}`]\n' \
+				f'**Online:** [`{online}`]\n' \
+				f'**Humans:** [`{humans}`]\n' \
+				f'**Bots:** [`{bots}`]'
+			await ctx.send(embed=e)
 
 	@commands.command(name='permissions', aliases=['perms', 'perm'])
 	@commands.cooldown(1, 5, commands.BucketType.user)
