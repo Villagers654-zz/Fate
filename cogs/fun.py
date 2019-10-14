@@ -151,7 +151,7 @@ class Fun(commands.Cog):
 			await ctx.send(encode.decode())
 
 	@commands.command(pass_context=True)
-	async def decode(self, ctx, decoder:int=None, *, message):
+	async def decode(self, ctx, decoder: int, *, message):
 		usage = '`.decode {16, 32, or 64} {message}`'
 		if decoder not in {16,32,64}:
 			await ctx.send(usage)
