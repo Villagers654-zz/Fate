@@ -166,8 +166,8 @@ class Fun(commands.Cog):
 				return await ctx.send(f'Invalid decoder:\n{usage}')
 			try:
 				await ctx.send(utils.cleanup_msg(str(decode.decode())))
-			except binascii.Error:
-				await ctx.send('That\'s not a properly encoded message')
+			except:
+				await ctx.send(f'That\'s not properly encoded in {decoder}')
 
 	@commands.command(name="liedetector", aliases=["ld"])
 	@commands.cooldown(1, 5, commands.BucketType.user)
