@@ -18,7 +18,7 @@ class ServerSetup(commands.Cog):
 	async def sync_roles(self, ctx):
 		""" Makes the permissions of roles match @everyone """
 		perms = ctx.guild.default_role.permissions
-		roles = [r for r in ctx.guild.roles if r.permissions.value != perms.value]
+		roles = [r for r in ctx.guild.roles if r.permissions.value != perms.value and ctx.guild.default_role.id != r.id]
 		for role in sorted(roles, reverse=True):  # highest position to lowest
 			if role.position < ctx.guild.me.top_role.position:
 				await role.edit(permissions=perms)
