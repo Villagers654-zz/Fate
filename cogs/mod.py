@@ -787,9 +787,14 @@ class Mod(commands.Cog):
 		target_name = str(role).lower().replace('@', '')
 		role = None
 		for guild_role in ctx.guild.roles:
-			if target_name in guild_role.name.lower():
+			if target_name == guild_role.name.lower():
 				role = guild_role
 				break
+		if not role:
+			for guild_role in ctx.guild.roles:
+				if target_name in guild_role.name.lower():
+					role = guild_role
+					break
 		if not role:
 			await ctx.send("Role not found")
 		await ctx.message.add_reaction("🖍")
