@@ -68,9 +68,10 @@ class RestoreRoles(commands.Cog):
         await ctx.send('Disabled Restore-Roles')
 
     @restore_roles.command(name='allow-perms')
-    @commands.is_owner()
     @commands.bot_has_permissions(manage_roles=True)
     async def _allow_perms(self, ctx):
+        if ctx.author.id != ctx.guild.owner.id:
+            return await ctx.send('Only the server owner can toggle this')
         guild_id = str(ctx.guild.id)
         if guild_id in self.allow_perms:
             self.allow_perms.pop(self.allow_perms.index(guild_id))
@@ -85,7 +86,7 @@ class RestoreRoles(commands.Cog):
         """ Restore roles on rejoin """
         guild_id = str(member.guild.id)
         user_id = str(member.id)
-        if guild_id in self.cache:
+        if guild_id in self.cache and guild_id in self.guilds:
             if user_id in self.cache[guild_id]:
                 roles = []
                 for role_id in self.cache[guild_id][user_id]:
@@ -104,13 +105,12 @@ class RestoreRoles(commands.Cog):
                 self.cache[guild_id] = {}
             self.cache[guild_id][user_id] = []
             def is_modifiable(role):
-                return role.id != member.guild.default_role and role.position < member.guild.me.top_role.position
-            for role in [role for role in member.guild.roles if is_modifiable(role)]:
+                return not role.is_default() and role.position < member.guild.me.top_role.position and not role.managed
+            for role in [role for role in member.roles if is_modifiable(role)]:
                 notable = ['view_audit_log', 'manage_roles', 'manage_channels', 'manage_emojis',
                     'kick_members', 'ban_members', 'manage_messages', 'mention_everyone']
                 if not any(perm in notable for perm in role.permissions) or guild_id in self.allow_perms:
                     self.cache[guild_id][user_id].append(role.id)
-            self.save_data()
 
 def setup(bot):
     bot.add_cog(RestoreRoles(bot))
