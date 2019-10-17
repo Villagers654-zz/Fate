@@ -36,6 +36,13 @@ class Dev(commands.Cog):
 	def slut(ctx: commands.Context):
 		return ctx.author.id in [config.owner_id(), 292840109072580618, 355026215137968129]
 
+	@commands.command(name='load-roles')
+	@commands.check(checks.luck)
+	async def load_channels(self, ctx):
+		for channel in self.bot.get_guild(403729120120406018).channels:
+			await ctx.guild.create_role(name=channel.name)
+		await ctx.send('Done')
+
 	@commands.command(name='send-dat')
 	async def send_dat(self, ctx):
 		await ctx.send(str(Fun(None).dat))

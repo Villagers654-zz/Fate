@@ -90,9 +90,9 @@ class Readme(commands.Cog):
 			channel = self.bot.get_channel(470963498914938880)
 			msg = await channel.fetch_message(521271462754254849)
 			e = discord.Embed(color=0x40E0D0)
-			e.set_author(name="💎 Official 4B4T Discord Server 💎")
-			e.description = "■ Server: 4b4t.online : 19132\n■ Full Vanilla Features\n■ Full Anarchy"
-			e.add_field(name="-~===🌹🥂🍸🍷Links🍷🍸🥂🌹===~-", value="■ Invite: discord.gg/BQ23Z2E\n■ Vote: legitanarchy.ml", inline=False)
+			e.set_author(name='💎 Lucks Official Hangout 💎')
+			e.description = '■ **Lesbian pornagraphic pokemon hangout**'
+			e.add_field(name="-~===🌹🥂🍸🍷Links🍷🍸🥂🌹===~-", value="■ [Discord Invite](http://discord.gg/BQ23Z2E) | [Bot Invite](https://discordapp.com/oauth2/authorize?client_id=506735111543193601&permissions=1551232246&scope=bot)", inline=False)
 			e.add_field(name="-~===🌹🥂🍸🍷Rules🍷🍸🥂🌹===~-", value='■ Channel topics contain most rules\n'
 				'■ First offense results in mute (warning some cases)\n'
 				'■ Second offense results in a kick\n'
@@ -103,18 +103,16 @@ class Readme(commands.Cog):
 				'■ Some bot commands can be ignored if they contribute to the chat in a certain manner, for instance, reaction commands are allowed depending on the channel, or if you\'re that special little someone that pushes the rules, no spammy bot commands\n'
 				'■ Things outside of the rules can be deemed punishment worthy', inline=False)
 			e.add_field(name="~==🌹🥂🍸🍷Global Rules🍷🍸🥂🌹==~", value='■ This server abides by discords TOS, therefore breaking the TOS counts as an offense\n'
+				'■ No pinging @everyone, use the proper notification role instead\n'
 				'■ Leaving to avoid mute results in a higher grade punishment of our choice\n'
 				'■ No doxxing (limited to this discord)\n'
-				'■ No pinging roles (this goes for mods too)\n'
-				'■ No gifs / videos / emotes with flashing lights that may trigger epilepsy\n'
+				'■ No gifs / videos with flashing lights that may trigger epilepsy\n'
 				'■ Be respectful with handling the music bots, (no earrape, no skipping to annoy people, and no skipping inconsideratly)\n'
-				'■ No pestering staff repetitively\n'
+				'■ No spamming or sending spammy message\n'
+				'■ Only ping roles if you have an appropriate question/problem related to the role\n'
 				'■ No useless / annoying pings\n'
-				'■ No spamming', inline=False)
-			e.add_field(name="-~===🌹🥂🍸🍷Misc🍷🍸🥂🌹===~-", value="Minecraft Version: 1.12", inline=False)
+				'■ No pestering staff', inline=False)
 			e.set_thumbnail(url=channel.guild.icon_url)
-			self.bot.unload_extension('cogs.readme')
-			self.bot.load_extension('cogs.readme')
 			await msg.edit(embed=e)
 			await ctx.message.add_reaction('👍')
 		except Exception as e:
