@@ -29,7 +29,7 @@ class Core(commands.Cog):
 			rank += 1
 		await ctx.send(embed=e)
 
-	@commands.command(name="invite", aliases=['links'])
+	@commands.command(name="invite", aliases=['links', 'support'])
 	@commands.cooldown(1, 5, commands.BucketType.channel)
 	async def invite(self, ctx):
 		await ctx.send(embed=config.links())
