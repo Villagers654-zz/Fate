@@ -1,11 +1,11 @@
-from utils import colors, config, checks
+from utils import colors, config, checks, utils
 from discord.ext import commands
 from os.path import isfile
 from PIL import Image
 from PIL import ImageFont
 from PIL import ImageDraw
 from io import BytesIO
-from datetime import datetime
+from datetime import datetime, timedelta
 import subprocess
 import platform
 import requests
@@ -23,6 +23,7 @@ import urllib.request
 import json
 import traceback
 import random
+from ast import literal_eval
 from PIL import Image, ImageFont, ImageDraw
 import utils.ServerStatus as mc
 from cogs.fun import Fun
@@ -299,6 +300,70 @@ class Dev(commands.Cog):
 		card.save('yeet.png')  # Change infoimg2.png if needed.
 		await ctx.send(file=discord.File("yeet.png"))
 		os.remove('yeet.png')
+
+	@commands.command(name='scrape-files')
+	@commands.check(checks.luck)
+	async def scrape_images(self, ctx, *args):
+		""" save image urls from channel history to a txt """
+		kwargs = {key:literal_eval(value) for key, value in [a.split('=') for a in args]}
+		amount = 1000 if 'amount' not in kwargs else kwargs['amount']
+		lmt = kwargs['limit'] if 'limit' in kwargs else None
+		embeds = kwargs['embeds'] if 'embeds' in kwargs else True
+		ignored = []  # member id's to ignore
+		targets = []  # only images from specific users
+		if 'ignored' in kwargs:
+			members = [utils.get_user(ctx, user) for user in kwargs['ignored']]
+			ignored = [m.id for m in members if isinstance(m, discord.Member)]
+		if 'targets' in kwargs:
+			members = [utils.get_user(ctx, user) for user in kwargs['targets']]
+			targets = [m.id for m in members if isinstance(m, discord.Member)]
+		if 'filename' not in kwargs:
+			return await ctx.send('You need to specify a filename')
+		timeframe = None; after = None
+		types = ['days', 'hours', 'minutes', 'seconds']
+		if any(t in kwargs for t in types):
+			timeframe = timedelta()
+		if 'days' in kwargs:
+			timeframe = timeframe + timedelta(days=kwargs['days'])
+		if 'hours' in kwargs:
+			timeframe = timeframe + timedelta(hours=kwargs['hours'])
+		if 'minutes' in kwargs:
+			timeframe = timeframe + timedelta(minutes=kwargs['minutes'])
+		if 'seconds' in kwargs:
+			timeframe = timeframe + timedelta(seconds=kwargs['seconds'])
+		if timeframe:
+			after = datetime.utcnow() - timeframe
+		attachments = []  # type: [discord.Attachment,]
+		index = 0  # amount of images added
+		async for msg in ctx.channel.history(limit=lmt, after=after):
+			if index == amount:
+				break
+			if msg.author.id not in ignored and msg.attachments:
+				if (msg.embeds and embeds) or not msg.embeds:
+					if targets and msg.author.id in targets or not targets:
+						for attachment in msg.attachments:
+							attachments.append(attachment.url)
+							index += 1
+		if 'extensions' in kwargs:
+			attachments = [a for a in attachments if any(ext in a for ext in kwargs['extensions'])]
+		path = os.path.join('./data/images/urls', kwargs['filename'])
+		lines = []
+		if isfile(path):
+			with open(path, 'r') as f:
+				lines = f.readlines()
+		lines = [*lines, *[url for url in attachments if url not in lines]]
+		with open(path, 'w') as f:
+			f.write('\n'.join(lines) if len(lines) > 1 else lines[0])
+		if 'return' in kwargs:
+			if kwargs['return']:
+				await ctx.send(file=discord.File(path))
+			else:
+				await ctx.send('👍')
+		else:
+			await ctx.send('👍')
+		if 'delete_after' in kwargs:
+			if kwargs['delete_after']:
+				os.remove(path)
 
 	@commands.command(name="scrapeimages")
 	@commands.check(checks.luck)

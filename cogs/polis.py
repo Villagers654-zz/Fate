@@ -19,7 +19,7 @@ class Sliders:
 		    '(Disclaimer, we have nothing to do with the actual 2b2t.org server). The servers owned by ' \
 		    'lordliam8 and Maxxie115 that runs on the server software NukkitX. 2b2tmcpe.org is currently ' \
 		    'over 1 year old and has a large and active player base comprised of many Taiwanese and English players.\n' \
-		    '**IP:** __2b2tmcpe.org__ **port:** __19132__ **discord: [here](https://discord.gg/dg7j5JF/)**'
+		    '**IP:** __2b2tmcpe.org__ **port:** __19132__\n**Discord:** [click here](https://discord.gg/dg7j5JF/)'
 		image_urls = [
 			'https://cdn.discordapp.com/attachments/630180017921327115/634189147178795019/Screenshot_20190305-215348_BlockLauncher-1.jpg',
 			'https://cdn.discordapp.com/attachments/630178745403179040/634189168456630272/IMG_2266.PNG',
@@ -30,13 +30,22 @@ class Sliders:
 		e.set_image(url=random.choice(image_urls))
 		return e
 
-	def mars(self):
-		e = discord.Embed(color=colors.orange())
-		e.set_author(name='Mars', icon_url='https://cdn.discordapp.com/avatars/544911653058248734/a_12ff164baa36ae2171358e968d148f4f.gif?size=1024')
-		e.set_thumbnail(url='https://cdn.discordapp.com/icons/610638435711189002/a_4841a26e78005fcf7b36974d0ab7d3eb.gif?size=1024')
-		e.description = 'Unfinished'
+	def luke(self):
+		e = discord.Embed(color=colors.green())
+		e.set_author(name='2B2TPE - Minecraft Anarchy', icon_url='https://cdn.discordapp.com/avatars/451107694934360094/b9b03963ff0eb72a1160412f2e2bfea4.webp?size=1024')
+		e.set_thumbnail(url='https://cdn.discordapp.com/icons/523678393565315077/1224c92145828542ac266dcf8804f70d.webp?size=1024')
+		e.description = '2B2TPE.ORG is an anarchy server based on 2b2t.org. At the moment it has the largest map when ranked with the other servers, ' \
+		    '(over 200gb), and one of the longest running maps of all bedrock anarchy servers, second only to 2p2e\n\n__For IOS, Android, and Windows 10:__\n**IP:** `2b2tPE.org` **Port:** `19132`\n' \
+		    '__For IOS, Android, Windows10, and Java:__\n**IP:** `2b2tPE.org` **Port:** `19153`\n' \
+		    '**Discord:** [click here](https://discord.gg/Ha5wxwd)'
 		return e
 
+	#def mars(self):
+	#	e = discord.Embed(color=colors.orange())
+	#	e.set_author(name='Mars', icon_url='https://cdn.discordapp.com/avatars/544911653058248734/a_12ff164baa36ae2171358e968d148f4f.gif?size=1024')
+	#	e.set_thumbnail(url='https://cdn.discordapp.com/icons/610638435711189002/a_4841a26e78005fcf7b36974d0ab7d3eb.gif?size=1024')
+	#	e.description = 'Unfinished'
+	#	return e
 
 class Polis(commands.Cog):
 	def __init__(self, bot: commands.Bot):
