@@ -783,26 +783,33 @@ class Mod(commands.Cog):
 	@commands.guild_only()
 	@commands.has_permissions(manage_roles=True)
 	@commands.bot_has_permissions(manage_roles=True)
-	async def massrole(self, ctx, role: commands.clean_content):
-		target_name = str(role).lower().replace('@', '')
-		role = None
-		for guild_role in ctx.guild.roles:
-			if target_name == guild_role.name.lower():
-				role = guild_role
-				break
+	async def massrole(self, ctx, *, role):
+		role = await utils.get_role(ctx, role)
 		if not role:
-			for guild_role in ctx.guild.roles:
-				if target_name in guild_role.name.lower():
-					role = guild_role
-					break
-		if not role:
-			await ctx.send("Role not found")
+			return await ctx.send('Role not found')
 		await ctx.message.add_reaction("🖍")
-		for member in ctx.guild.members:
-			bot = ctx.guild.get_member(self.bot.user.id)
-			if member.top_role.position < bot.top_role.position:
+		bot = ctx.guild.get_member(self.bot.user.id)
+		members = [m for m in ctx.guild.members if role not in m.roles and m.top_role.position < bot.top_role.position]
+		msg = await ctx.send(f'Estimated time: {str(len(members)) + " seconds" if len(members) < 60 else utils.get_time(len(members))}')
+		index = 1; counter = 0; total = len(members)
+		for member in members:
+			counter += 1
+			try:
 				await member.add_roles(role)
-				await asyncio.sleep(1)
+			except discord.errors.Forbidden:
+				return await ctx.send('Missing permissions')
+			except discord.errors.NotFound:
+				pass
+			if index == len(members):
+				await msg.edit(content=f'{index}/{len(members)} members updated')
+				break
+			if counter == 10:  # update progress/estimate every 10 members
+				estimate = str(str(total) + " seconds" if total < 60 else utils.get_time(total))
+				await msg.edit(content=f'Estimated time: {estimate}\n{index}/{len(members)} members updated')
+				counter = 0
+			index += 1
+			total -= 1
+			await asyncio.sleep(1)
 		await ctx.message.add_reaction("🏁")
 
 	@commands.command(name="vcmute")
