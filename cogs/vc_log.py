@@ -50,7 +50,7 @@ class VcLog(commands.Cog):
 				return False
 		return True
 
-	@commands.group(name='vclog')
+	@commands.group(name='vc-log', aliases=['vclog'])
 	@commands.guild_only()
 	@commands.bot_has_permissions(embed_links=True)
 	async def _vclog(self, ctx):
@@ -85,13 +85,13 @@ class VcLog(commands.Cog):
 		await ctx.send('Would you like me to delete all non vc-log messages?')
 		msg = await utils.Bot(self.bot).wait_for_msg(ctx)
 		reply = msg.content.lower()
+		self.channel[guild_id] = channel_id
+		channel_access = await self.ensure_permissions(guild_id)
+		if not channel_access:
+			del self.channel[guild_id]
+			del self.keep_clean[guild_id]
+			return await ctx.send('Sry, I\'m missing either manage message(s) or send message(s) permissions in there')
 		if 'yes' in reply or 'sure' in reply or 'yep' in reply or 'ye' in reply:
-			self.channel[guild_id] = channel_id
-			channel_access = await self.ensure_permissions(guild_id)
-			if not channel_access:
-				del self.channel[guild_id]
-				del self.keep_clean[guild_id]
-				return await ctx.send('Sry, I\'m missing either manage message(s) or send message(s) permissions in there')
 			self.keep_clean[guild_id] = 'enabled'
 			await ctx.send('Aight, i\'ll make sure it stays clean .-.')
 		await ctx.send('Enabled VcLog')
