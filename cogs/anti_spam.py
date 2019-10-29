@@ -288,14 +288,14 @@ class AntiSpam(commands.Cog):
                             triggered = True
 
             # duplicate messages
-            if channel_id not in self.dupes:
+            if guild_id not in self.dupes:
                 self.dupes[guild_id] = []
                 self.dupez[guild_id] = []
             self.dupes[guild_id].append([msg, time()])
             self.dupes[guild_id] = self.dupes[guild_id][:10]
             self.dupez[guild_id].append([msg, time()])
             self.dupez[guild_id] = self.dupes[guild_id][:10]
-            data = [(m, m.content) for m, m_time in self.dupes[guild_id] if m_time > time() - 7 and len(m.content) > 3]
+            data = [(m, m.content) for m, m_time in self.dupes[guild_id] if m_time > time() - 15]
             contents = [x[1] for x in data]
             duplicates = [m for m in contents if contents.count(m) > sensitivity_level]
             if msg.content in duplicates:
@@ -312,6 +312,11 @@ class AntiSpam(commands.Cog):
                     await msg.channel.delete_messages([m[1] for m in data])
                     if self.toggle[guild_id]['Duplicates']:
                         triggered = True
+            lines = msg.content.split('\n')
+            lines = [line for line in lines if len(line) > 0]
+            if any(lines.count(line) > sensitivity_level for line in lines):
+                if self.toggle[guild_id]['Duplicates']:
+                    triggered = True
 
             if triggered:
                 bot = msg.guild.me
