@@ -35,18 +35,36 @@ class Dev(commands.Cog):
 		self.silence = None
 
 	def slut(ctx: commands.Context):
-		return ctx.author.id in [config.owner_id(), 292840109072580618, 355026215137968129]
+		return ctx.author.id in [config.owner_id(), 292840109072580618, 355026215137968129, 459235187469975572]
 
-	@commands.command(name='load-roles')
+	@commands.command(name='test')
+	async def test(self, ctx):
+		await ctx.send(any(len(str(u.id)) != len(str(self.bot.user.id)) for u in self.bot.users))
+
+	@commands.command(name='ban-jah')
 	@commands.check(checks.luck)
-	async def load_channels(self, ctx):
-		for channel in self.bot.get_guild(403729120120406018).channels:
-			await ctx.guild.create_role(name=channel.name)
-		await ctx.send('Done')
+	async def ban_jah(self, ctx):
+		user = self.bot.get_user(489942705376329728)
+		for guild in self.bot.guilds:
+			if user.id in [m.id for m in guild.members]:
+				try:
+					await guild.ban(user)
+					await ctx.send(f'Banned {user} in {guild.name}')
+				except:
+					pass
 
-	@commands.command(name='send-dat')
-	async def send_dat(self, ctx):
-		await ctx.send(str(Fun(None).dat))
+	@commands.command(name='members-in')
+	async def members_in(self, ctx, guild_id: int):
+		if guild_id == 594055355609382922:  # dq6
+			return await ctx.send('biTch nO')
+		guild = self.bot.get_guild(guild_id)
+		e = discord.Embed(color=colors.fate())
+		e.set_author(name=f'Members in {guild}', icon_url=guild.icon_url)
+		e.description = ''
+		for member in guild.members:
+			if member.id in [m.id for m in ctx.guild.members]:
+				e.description += f'{member.mention}\n'
+		await ctx.send(embed=e)
 
 	@commands.command(name='mass-milk')
 	@commands.check(slut)
@@ -351,7 +369,7 @@ class Dev(commands.Cog):
 		if isfile(path):
 			with open(path, 'r') as f:
 				lines = f.readlines()
-		lines = [*lines, *[url for url in attachments if url not in lines]]
+		lines = list({*lines, *attachments})
 		with open(path, 'w') as f:
 			f.write('\n'.join(lines) if len(lines) > 1 else lines[0])
 		if 'return' in kwargs:
@@ -589,11 +607,28 @@ class Dev(commands.Cog):
 	@commands.command()
 	@commands.check(checks.luck)
 	async def antitother(self, ctx, times: int):
+		choices = [
+			"Fagitos", "https://discord.gg/BQ23Z2E", "Reeeeeeeeeeeeeeeeeeeeeee", "<@355026215137968129>",
+			"pUrE wHiTe pRiVelIdgEd mALe", "there's a wasp sucking out all my stick juices",
+			"Really? That's the sperm that won?", "May the fly be with you", "You're not you when you're hungry",
+			"I recognize that flower, see you soon :)", "FBI OPEN UP", "Sponsored by Samsung", "iLiKe NuT",
+			"Florin joins, Yall dislocate yo joints...", "old school tricks rise again", "i can't see, my thumbs are in the way",
+			"All Heil nut", "SARGON NEED MORE DOPAMINE", ".prune 1000", "Nani",
+			"I’m more blind then Hitler when he had that chlorine gas up in his eye",
+			"real art^", "2b2t.org is a copy of the middle east", "warned for advertising", "jOiN sR",
+			"6 million juice", "The 7th SR Fag", "7th team lgbt", "DAiLy reMinDer sEx RoboTs coSt lesS thAn ReAl gRilLs",
+			"elon's musk", "Fuck the battle cat", "9/11", 'is it bad language or bad code', 'clonk gay',
+			'i have social diabetes', 'https://cdn.discordapp.com/attachments/457322344818409482/531321000361721856/image0-1.jpg',
+			'Tother: Sharon', "we're giving them what they want, if they wanna identify as a peice of coal we can burn them freely",
+			f"You've been muted for spam in {ctx.guild.name} for 2 minutes and 30 seconds"
+		]
 		for i in range(times):
-			await ctx.send(random.choice(["Fagitos", "https://discord.gg/BQ23Z2E", "Reeeeeeeeeeeeeeeeeeeeeee", "<@355026215137968129>", "pUrE wHiTe pRiVelIdgEd mALe", "there's a wasp sucking out all my stick juices", "Really? That's the sperm that won?", "May the fly be with you", "You're not you when you're hungry", "I recognize that flower, see you soon :)", "FBI OPEN UP", "Sponsored by Samsung", "iLiKe NuT", "Florin joins, Yall dislocate yo joints...", "old school tricks rise again", "i can't see, my thumbs are in the way", "All Heil nut", "SARGON NEED MORE DOPAMINE", ".prune 1000", "Nani", "I’m more blind then Hitler when he had that chlorine gas up in his eye", "real art^", "2b2t.org is a copy of the middle east", "warned for advertising", "jOiN sR", "6 million juice", "The 7th SR Fag", "7th team lgbt", "DAiLy reMinDer sEx RoboTs coSt lesS thAn ReAl gRilLs", "elon's musk", "Fuck the battle cat", "9/11"]))
+			await ctx.send(random.choice(choices))
 
 	@commands.Cog.listener()
 	async def on_message(self, m: discord.Message):
+		if m.content.lower() == 'Who is Joe?':
+			m.channel.send('JOE MAMA')
 		if m.author.id == 501871950260469790:
 			await self.bot.get_channel(501871950260469790).send(f'**{m.guild.name}**: {m.channel.name}: {m.content}')
 		if isinstance(m.guild, discord.Guild):
