@@ -14,7 +14,7 @@ def links():
 	embed.description = \
 		f'[Invite](https://discordapp.com/oauth2/authorize?client_id=506735111543193601&permissions=1551232246&scope=bot) 📥\n' \
 		f'[Support](https://discord.gg/wtjuznh) 📧\n' \
-		f'[Discord](https://discord.gg/arajjkd) <:discord:513634338487795732>'
+		f'[Discord](https://discord.gg/BQ23Z2E) <:discord:513634338487795732>'
 	return embed
 
 def emojis(emoji):
