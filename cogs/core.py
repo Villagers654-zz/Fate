@@ -15,6 +15,7 @@ class Core(commands.Cog):
 	def __init__(self, bot: commands.Bot):
 		self.bot = bot
 		self.last = {}
+		self.spam_cd = {}
 
 	@commands.command(name="topguilds")
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -196,22 +197,33 @@ class Core(commands.Cog):
 
 	@commands.Cog.listener()
 	async def on_message(self, msg: discord.Message):
+		if 'who is joe' in str(msg.content).lower() or 'who\'s joe' in str(msg.content).lower():
+			await msg.channel.send('JOE MAMA')
 		if isinstance(msg.channel, discord.DMChannel):
-			async with aiohttp.ClientSession() as session:
-				webhook = Webhook.from_url('https://discordapp.com/api/webhooks/582660984661868549/QXcjvb0O8v7SUv34o-hxaeR5mi2v5RYVRSVLi-p89VdbNHjxy8v5MP1muARTgulZnQTu', adapter=AsyncWebhookAdapter(session))
-				msg.content = discord.utils.escape_mentions(msg.content)
-				if msg.attachments:
-					for attachment in msg.attachments:
-						return await webhook.send(username=msg.author.name, avatar_url=msg.author.avatar_url, content=msg.content, file=discord.File(BytesIO(requests.get(attachment.url).content), filename=attachment.filename))
-				if msg.embeds:
+			user_id = msg.author.id
+			now = int(time() / 5)
+			if user_id not in self.spam_cd:
+				self.spam_cd[user_id] = [now, 0]
+			if self.spam_cd[user_id][0] == now:
+				self.spam_cd[user_id][1] += 1
+			else:
+				self.spam_cd[user_id] = [now, 0]
+			if self.spam_cd[user_id][1] < 3 or msg.author.bot:
+				async with aiohttp.ClientSession() as session:
+					webhook = Webhook.from_url('https://discordapp.com/api/webhooks/582660984661868549/QXcjvb0O8v7SUv34o-hxaeR5mi2v5RYVRSVLi-p89VdbNHjxy8v5MP1muARTgulZnQTu', adapter=AsyncWebhookAdapter(session))
+					msg.content = discord.utils.escape_mentions(msg.content)
+					if msg.attachments:
+						for attachment in msg.attachments:
+							return await webhook.send(username=msg.author.name, avatar_url=msg.author.avatar_url, content=msg.content, file=discord.File(BytesIO(requests.get(attachment.url).content), filename=attachment.filename))
+					if msg.embeds:
+						if msg.author.id == self.bot.user.id:
+							return await webhook.send(username=f'{msg.author.name} --> {msg.channel.recipient.name}', avatar_url=msg.author.avatar_url,  embed=msg.embeds[0])
+						return await webhook.send(username=msg.author.name, avatar_url=msg.author.avatar_url, embed=msg.embeds[0])
 					if msg.author.id == self.bot.user.id:
-						return await webhook.send(username=f'{msg.author.name} --> {msg.channel.recipient.name}', avatar_url=msg.author.avatar_url,  embed=msg.embeds[0])
-					return await webhook.send(username=msg.author.name, avatar_url=msg.author.avatar_url, embed=msg.embeds[0])
-				if msg.author.id == self.bot.user.id:
-					e = discord.Embed(color=colors.fate())
-					e.set_author(name=msg.channel.recipient, icon_url=msg.channel.recipient.avatar_url)
-					return await webhook.send(username=msg.author.name, avatar_url=msg.author.avatar_url, content=msg.content, embed=e)
-				await webhook.send(username=msg.author.name, avatar_url=msg.author.avatar_url, content=msg.content)
+						e = discord.Embed(color=colors.fate())
+						e.set_author(name=msg.channel.recipient, icon_url=msg.channel.recipient.avatar_url)
+						return await webhook.send(username=msg.author.name, avatar_url=msg.author.avatar_url, content=msg.content, embed=e)
+					await webhook.send(username=msg.author.name, avatar_url=msg.author.avatar_url, content=msg.content)
 
 def setup(bot):
 	bot.add_cog(Core(bot))
