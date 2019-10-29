@@ -27,12 +27,15 @@ class Fun(commands.Cog):
 		""" fetches a random meme from a random meme subreddit """
 		dat = outh.reddit()  # type: dict
 		reddit = praw.Reddit(client_id=dat['client_id'], client_secret=dat['client_secret'], user_agent=dat['user_agent'])
+
 		reddits = ['memes', 'dankmemes', 'MemeEconomy', 'ComedyCemetery']
 		reddit_posts = []  # type: praw.Reddit.submission
+
 		for submission in reddit.subreddit(random.choice(reddits)).hot(limit=25):
 			extensions = ['.png', '.jpg', '.jpeg', '.webp', 'gif']
 			if any(ext in submission.url for ext in extensions):
 				reddit_posts.append(submission)
+
 		post = random.choice(reddit_posts)
 		e = discord.Embed(color=colors.red())
 		e.set_author(name=post.title, icon_url=post.author.icon_img)
