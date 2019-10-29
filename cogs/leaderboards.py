@@ -92,14 +92,16 @@ class Leaderboards(commands.Cog):
 	async def xp_dump_task(self):
 		while True:
 			try:
+				before = monotonic()
 				with open("./data/userdata/xp.json", "w") as outfile:
 					json.dump({"global": self.global_data, "guilded": self.guilds_data, "monthly_global": self.monthly_global_data,
 				               "monthly_guilded": self.monthly_guilds_data, "vclb": self.vclb, "gvclb": self.gvclb},
 					          outfile, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
+				print(f'Saved xp: {round((monotonic() - before) * 1000)}ms')
 			except Exception as e:
 				try: await self.bot.get_channel(501871950260469790).send(f'Error saving xp: {e}')
 				except: pass
-			await asyncio.sleep(60)
+			await asyncio.sleep(3600)
 
 	def msg_footer(self):
 		return random.choice(["Powered by CortexPE", "Powered by Luck", "Powered by Tothy", "Powered by Thready",
