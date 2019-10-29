@@ -495,6 +495,7 @@ class Mod(commands.Cog):
 				await ctx.send(e)
 			finally:
 				del self.purge[channel_id]
+			return
 		option = args[0].lower()  # type: str
 		if option == 'image' or option == 'images':
 			if amount > 250:
@@ -513,6 +514,7 @@ class Mod(commands.Cog):
 				await ctx.send(e)
 			finally:
 				del self.purge[channel_id]
+			return
 		if option == 'embed' or option == 'embeds':
 			if amount > 250:
 				return await ctx.send("You cannot purge more than 250 embeds at a time")
@@ -530,6 +532,7 @@ class Mod(commands.Cog):
 				await ctx.send(e)
 			finally:
 				del self.purge[channel_id]
+			return
 		if option == 'user' or option == 'users':
 			if amount > 250:
 				return await ctx.send("You cannot purge more than 250 user messages at a time")
@@ -547,6 +550,7 @@ class Mod(commands.Cog):
 				await ctx.send(e)
 			finally:
 				del self.purge[channel_id]
+			return
 		if option == 'bot' or option == 'bots':
 			if amount > 250:
 				return await ctx.send("You cannot purge more than 250 bot messages at a time")
@@ -564,6 +568,7 @@ class Mod(commands.Cog):
 				await ctx.send(e)
 			finally:
 				del self.purge[channel_id]
+			return
 		if option == 'mention' or option == 'mentions':
 			if amount > 250:
 				return await ctx.send("You cannot purge more than 250 mentions at a time")
@@ -581,6 +586,7 @@ class Mod(commands.Cog):
 				await ctx.send(e)
 			finally:
 				del self.purge[channel_id]
+			return
 		phrase = args[0]
 		amount = int(args[1])
 		if amount > 250:
