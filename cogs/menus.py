@@ -145,14 +145,16 @@ class Menus(commands.Cog):
 			    '• **afk** - `tells users your\'re afk when mentioned`\n' \
 			    '• **id** - `sends your id & the channels id`\n' \
 			    '• **perms** - `checks what users/roles has a perm`\n' \
-				'• **create-webhook** - `creates webhooks for mobile`'
+				'• **create-webhook** - `creates webhooks for mobile`\n' \
+			    '• **vc-log** - `logs vc events to a channel`'
 			return e
 		def fun():
 			e = discord.Embed(color=colors.fate())
 			owner = self.bot.get_user(config.owner_id())
 			e.set_author(name='~==🥂🍸🍷Fun🍷🍸🥂==~', icon_url=owner.avatar_url)
 			e.set_thumbnail(url=self.bot.user.avatar_url)
-			e.description = '• **ld** - `detects if a users lying`\n' \
+			e.description = '• **meme** - `sends a random meme`\n' \
+			    '• **ld** - `detects if a users lying`\n' \
 			    '• **chatbot** - `bots are ppl too`\n' \
 			    '• **fancify** - `makes text fancy`\n' \
 			    '• **factions** - `work/claim/raid/grow`\n' \

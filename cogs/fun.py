@@ -1,6 +1,6 @@
 from discord.ext import commands
 from random import random as rd
-from utils import colors, utils
+from utils import colors, utils, outh
 from io import BytesIO
 import PIL
 from PIL import Image
@@ -11,14 +11,58 @@ import discord
 import asyncio
 import random
 import base64
-import os
-import binascii
+import json
+import praw
 code = "```py\n{0}\n```"
 
 class Fun(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.dat = {}
+
+	@commands.command(name='meme')
+	@commands.cooldown(1, 3, commands.BucketType.channel)
+	@commands.bot_has_permissions(embed_links=True)
+	async def meme(self, ctx):
+		""" fetches a random meme from a random meme subreddit """
+		dat = outh.reddit()  # type: dict
+		reddit = praw.Reddit(client_id=dat['client_id'], client_secret=dat['client_secret'], user_agent=dat['user_agent'])
+		reddits = ['memes', 'dankmemes', 'MemeEconomy', 'ComedyCemetery']
+		reddit_posts = []  # type: praw.Reddit.submission
+		for submission in reddit.subreddit(random.choice(reddits)).hot(limit=25):
+			extensions = ['.png', '.jpg', '.jpeg', '.webp', 'gif']
+			if any(ext in submission.url for ext in extensions):
+				reddit_posts.append(submission)
+		post = random.choice(reddit_posts)
+		e = discord.Embed(color=colors.red())
+		e.set_author(name=post.title, icon_url=post.author.icon_img)
+		e.set_image(url=post.url)
+		e.set_footer(text=f'{post.author.name} | 👍 {post.score} | 💬 {post.num_comments}')
+		await ctx.send(embed=e)
+
+	@commands.command(name="cactus")
+	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
+	async def _tenor(self, ctx):
+		apikey = "LIWIXISVM3A7"
+		lmt = 50
+		r = requests.get("https://api.tenor.com/v1/anonid?key=%s" % apikey)
+		if r.status_code == 200:
+			anon_id = json.loads(r.content)["anon_id"]
+		else:
+			anon_id = ""
+		r = requests.get("https://api.tenor.com/v1/search?q=%s&key=%s&limit=%s&anon_id=%s" % ('cactus', apikey, lmt, anon_id))
+		if r.status_code == 200:
+			try:
+				dat = json.loads(r.content)
+				e = discord.Embed(color=colors.random())
+				e.set_image(url=dat['results'][random.randint(0, len(dat['results']) - 1)]['media'][0]['gif']['url'])
+				await ctx.send(embed=e)
+				await ctx.message.delete()
+			except Exception as e:
+				await ctx.send(e)
+		else:
+			await ctx.send("error")
 
 	@commands.command(name='snipe')
 	@commands.cooldown(1, 5, commands.BucketType.user)
