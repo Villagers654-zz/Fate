@@ -4,6 +4,7 @@ import traceback
 import asyncio
 import random
 import json
+import os
 import subprocess
 from termcolor import cprint
 import discord
@@ -131,6 +132,10 @@ async def on_ready():
 	if login_errors:
 		for error in login_errors:
 			await channel.send(f'```{str(error)[:2000]}```')
+
+@bot.event
+async def on_disconnect():
+	os.system('pm2 restart 0')
 
 @bot.event
 async def on_guild_join(guild: discord.Guild):
