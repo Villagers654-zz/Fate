@@ -14,9 +14,19 @@ class Reactions(commands.Cog):
 		self.webhook = {}
 
 
-	async def send_webhook(self, ctx, reaction, args):
+	async def send_webhook(self, ctx, reaction, args, action=None):
+		if '<@&' in args or '@everyone' in args or '@here' in args:
+			return await ctx.send('biTcH nO')
 		path = os.getcwd() + f"/data/images/reactions/{reaction}/" + random.choice(
 			os.listdir(os.getcwd() + f"/data/images/reactions/{reaction}/"))
+		if action and ctx.message.mentions:
+			if len(args.split()) == 1:
+				args = f'*{action} {args}*'
+			elif args.startswith('<@'):
+				args = args.split()
+				user = args[0]  # type: discord.Member.mention
+				args.pop(0)
+				args = f'*{action} {user}*  {" ".join(args)}'
 		e = discord.Embed(color=colors.fate())
 		e.set_image(url="attachment://" + os.path.basename(path))
 		created_webhook = False
@@ -62,9 +72,7 @@ class Reactions(commands.Cog):
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.bot_has_permissions(attach_files=True, manage_messages=True, manage_webhooks=True)
 	async def snuggle(self, ctx, *, content):
-		if content.startswith('<@') and 'snuggle' not in content:
-			content = f'*snuggles {content}*'
-		await self.send_webhook(ctx, 'snuggle', content)
+		await self.send_webhook(ctx, 'snuggle', content, action='snuggles')
 
 	@commands.command(name="admire")
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -75,8 +83,8 @@ class Reactions(commands.Cog):
 	@commands.command(name="waste")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
-	async def waste(self, ctx, user: discord.Member):
-		await self.send_webhook(ctx, 'waste', user.mention)
+	async def waste(self, ctx, *, args):
+		await self.send_webhook(ctx, 'waste', args, action='wastes')
 
 	@commands.command(name="shrug")
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -99,8 +107,8 @@ class Reactions(commands.Cog):
 	@commands.command(name="bite")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
-	async def bite(self, ctx, user: discord.Member):
-		await self.send_webhook(ctx, 'bite', user.name)
+	async def bite(self, ctx, *, args):
+		await self.send_webhook(ctx, 'bite', args, action='bites')
 
 	@commands.command(name="wine")
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -117,20 +125,20 @@ class Reactions(commands.Cog):
 	@commands.command(name="slap")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
-	async def slap(self, ctx, user: discord.Member):
-		await self.send_webhook(ctx, 'slap', user.mention)
+	async def slap(self, ctx, *, args):
+		await self.send_webhook(ctx, 'slap', args, action='slaps')
 
 	@commands.command(name="kiss")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
-	async def kiss(self, ctx, user: discord.Member):
-		await self.send_webhook(ctx, 'kiss', user.mention)
+	async def kiss(self, ctx, *, args):
+		await self.send_webhook(ctx, 'kiss', args, action='kisses')
 
 	@commands.command(name="kill")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
-	async def kill(self, ctx, user: discord.Member):
-		await self.send_webhook(ctx, 'kill', user.mention)
+	async def kill(self, ctx, *, args):
+		await self.send_webhook(ctx, 'kill', args, action='kills')
 
 	@commands.command(name="teasip", aliases=["tea", "st"])
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -142,9 +150,7 @@ class Reactions(commands.Cog):
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.bot_has_permissions(attach_files=True, manage_messages=True, manage_webhooks=True)
 	async def hug(self, ctx, *, args):
-		if args.startswith('<@') and 'hugs' not in args:
-			args = f'*hugs {args}*'
-		await self.send_webhook(ctx, 'hug', args)
+		await self.send_webhook(ctx, 'hug', args, action='hugs')
 
 	@commands.command(name="cry")
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -155,8 +161,8 @@ class Reactions(commands.Cog):
 	@commands.command(name="pat")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
-	async def pat(self, ctx, user: discord.Member):
-		await self.send_webhook(ctx, 'pat', user.mention)
+	async def pat(self, ctx, *, args):
+		await self.send_webhook(ctx, 'pat', args, action='pats')
 
 	@commands.command(name="homo")
 	@commands.check(checks.luck)
