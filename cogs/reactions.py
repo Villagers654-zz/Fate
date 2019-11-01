@@ -1,6 +1,7 @@
 import aiohttp
 import os
 import random
+import asyncio
 from discord.ext import commands
 from discord import Webhook, AsyncWebhookAdapter
 import discord
@@ -10,6 +11,7 @@ from utils import colors, checks
 class Reactions(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
+		self.webhook = {}
 
 
 	async def send_webhook(self, ctx, reaction, args):
@@ -17,13 +19,19 @@ class Reactions(commands.Cog):
 			os.listdir(os.getcwd() + f"/data/images/reactions/{reaction}/"))
 		e = discord.Embed(color=colors.fate())
 		e.set_image(url="attachment://" + os.path.basename(path))
-		webhook = await ctx.channel.create_webhook(name='Reaction')
+		created_webhook = False
+		if ctx.channel.id not in self.webhook:
+			self.webhook[ctx.channel.id] = await ctx.channel.create_webhook(name='Reaction')
+			created_webhook = True
 		async with aiohttp.ClientSession() as session:
-			webhook = Webhook.from_url(webhook.url, adapter=AsyncWebhookAdapter(session))
+			webhook = Webhook.from_url(self.webhook[ctx.channel.id].url, adapter=AsyncWebhookAdapter(session))
 			await webhook.send(args, username=ctx.author.name, avatar_url=ctx.author.avatar_url,
 			                   file=discord.File(path, filename=os.path.basename(path)), embed=e)
-			await webhook.delete()
 			await ctx.message.delete()
+			if created_webhook:
+				await asyncio.sleep(120)
+				await self.webhook[ctx.channel.id].delete()
+				del self.webhook[ctx.channel.id]
 
 
 	@commands.command(name="intimidate")
