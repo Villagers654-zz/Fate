@@ -40,12 +40,6 @@ class Reactions(commands.Cog):
 	async def intimidate(self, ctx, *, content=None):
 		await self.send_webhook(ctx, 'apple', content)
 
-	@commands.command(name="junkfood")
-	@commands.cooldown(1, 5, commands.BucketType.user)
-	@commands.bot_has_permissions(attach_files=True, manage_messages=True, manage_webhooks=True)
-	async def junkfood(self, ctx, *, content=None):
-		await self.send_webhook(ctx, 'junkfood', content)
-
 	@commands.command(name="powerup")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.bot_has_permissions(attach_files=True, manage_messages=True, manage_webhooks=True)
