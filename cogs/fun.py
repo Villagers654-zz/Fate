@@ -31,7 +31,7 @@ class Fun(commands.Cog):
 		reddits = ['memes', 'dankmemes', 'MemeEconomy', 'ComedyCemetery']
 		reddit_posts = []  # type: praw.Reddit.submission
 
-		for submission in reddit.subreddit(random.choice(reddits)).hot(limit=25):
+		for submission in reddit.subreddit(random.choice(reddits)).hot(limit=100):
 			extensions = ['.png', '.jpg', '.jpeg', '.webp', 'gif']
 			if any(ext in submission.url for ext in extensions):
 				reddit_posts.append(submission)
