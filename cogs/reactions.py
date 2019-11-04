@@ -146,6 +146,12 @@ class Reactions(commands.Cog):
 	async def teasip(self, ctx, *, content=None):
 		await self.send_webhook(ctx, 'tea', content)
 
+	@commands.command(name='lick')
+	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.bot_has_permissions(attach_files=True, manage_messages=True, manage_webhooks=True)
+	async def lick(self, ctx, *, args):
+		await self.send_webhook(ctx, 'lick', args, action='licks')
+
 	@commands.command(name='hug')
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.bot_has_permissions(attach_files=True, manage_messages=True, manage_webhooks=True)
