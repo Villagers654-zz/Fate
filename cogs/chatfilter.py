@@ -22,7 +22,6 @@ class ChatFilter(commands.Cog):
 			json.dump({"toggle": self.toggle, "blacklist": self.blacklist}, f)
 
 	@commands.group(name="chatfilter", description="Deletes messages containing blocked words/phrases")
-	@commands.cooldown(1, 3, commands.BucketType.channel)
 	@commands.bot_has_permissions(embed_links=True)
 	async def _chatfilter(self, ctx):
 		if not ctx.invoked_subcommand:
