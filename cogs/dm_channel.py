@@ -67,7 +67,7 @@ class DMChannel(commands.Cog):
 						async with aiohttp.ClientSession() as session:
 							webhook = Webhook.from_url(self.webhook.url, adapter=AsyncWebhookAdapter(session))
 							if msg.content and msg.attachments:
-								return await webhook.send(msg.content, username=msg.author.name, vatar_url=msg.author.avatar_url, file=discord.File(BytesIO(requests.get(file.url).content), filename=file.filename))
+								return await webhook.send(msg.content, username=msg.author.name, avatar_url=msg.author.avatar_url, file=discord.File(BytesIO(requests.get(file.url).content), filename=file.filename))
 							if msg.attachments:
 								return await webhook.send(username=msg.author.name, avatar_url=msg.author.avatar_url, file=discord.File(BytesIO(requests.get(file.url).content), filename=file.filename))
 							await webhook.send(msg.content, username=msg.author.name, avatar_url=msg.author.avatar_url)
