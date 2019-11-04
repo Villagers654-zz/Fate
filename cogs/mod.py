@@ -608,7 +608,6 @@ class Mod(commands.Cog):
 			del self.purge[channel_id]
 
 	@commands.command(name='kick')
-	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.guild_only()
 	@commands.has_permissions(kick_members=True)
 	@commands.bot_has_permissions(embed_links=True, kick_members=True)
@@ -628,7 +627,6 @@ class Mod(commands.Cog):
 		except: pass
 
 	@commands.command(name='ban')
-	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.guild_only()
 	@commands.has_permissions(ban_members=True)
 	@commands.bot_has_permissions(ban_members=True)
