@@ -330,7 +330,7 @@ class AntiSpam(commands.Cog):
                     return
                 messages = [m for m, mtime in self.msgs[user_id] if mtime > time() - 15]
                 self.msgs[user_id] = []  # removes deleted messages from the list
-                if msg.author.top_role.position >= bot.top_role.position:
+                if msg.author.top_role.position >= bot.top_role.position or msg.author.guild_permissions.administrator:
                     return await msg.channel.delete_messages(messages)
                 await msg.channel.delete_messages(messages)
                 if "send_messages" not in perms:
