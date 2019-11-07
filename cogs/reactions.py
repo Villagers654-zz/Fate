@@ -140,7 +140,7 @@ class Reactions(commands.Cog):
 	async def kill(self, ctx, *, args):
 		await self.send_webhook(ctx, 'kill', args, action='kills')
 
-	@commands.command(name="teasip", aliases=["tea", "st"])
+	@commands.command(name="teasip", aliases=["tea", "st", "siptea"])
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
 	async def teasip(self, ctx, *, content=None):
