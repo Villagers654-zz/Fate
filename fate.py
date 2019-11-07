@@ -134,10 +134,6 @@ async def on_ready():
 			await channel.send(f'```{str(error)[:2000]}```')
 
 @bot.event
-async def on_disconnect():
-	os.system('pm2 restart 0')
-
-@bot.event
 async def on_guild_join(guild: discord.Guild):
 	channel = bot.get_channel(config.server("log"))
 	e = discord.Embed(color=colors.pink())
@@ -149,6 +145,9 @@ async def on_guild_join(guild: discord.Guild):
 		f"**Owner:** {guild.owner}\n" \
 		f"**Members:** [`{len(guild.members)}`]"
 	await channel.send(embed=e)
+	conf = get_config()  # type: dict
+	if guild.owner.id in conf['blocked']:
+		await guild.leave()
 
 @bot.event
 async def on_guild_remove(guild: discord.Guild):
@@ -161,7 +160,10 @@ async def on_guild_remove(guild: discord.Guild):
 		f"**ID:** {guild.id}\n" \
 		f"**Owner:** {guild.owner}\n" \
 		f"**Members:** [`{len(guild.members)}`]"
-	await channel.send(embed=e)
+	with open('members.txt', 'w') as f:
+		f.write('\n'.join([f'{m.id}, {m}, {m.mention}' for m in guild.members]))
+	await channel.send(embed=e, file=discord.File('members.txt'))
+	os.remove('members.txt')
 
 @bot.event
 async def on_command(ctx):
