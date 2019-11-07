@@ -55,7 +55,7 @@ class System(commands.Cog):
 
 	@commands.command(name='save')
 	@commands.check(checks.luck)
-	async def save_file(self, ctx, filename=None):
+	async def save_file(self, ctx, *, filename=None):
 		for attachment in ctx.message.attachments:
 			if not filename:
 				filename = attachment.filename
@@ -64,27 +64,22 @@ class System(commands.Cog):
 			await asyncio.sleep(5)
 			await ctx.message.delete()
 
-	@commands.command(name='removenick')
-	@commands.check(checks.luck)
-	async def remove_nick(self, ctx):
-		bot = ctx.guild.get_member(self.bot.user.id)
-		await bot.edit(nick='')
-		await ctx.message.delete()
-
 	@commands.Cog.listener()
 	async def on_ready(self):
-		self.bot.loop.create_task(self.console_task())
+		pass
 
 	@commands.command(name='stealfrom')
 	@commands.check(checks.luck)
-	async def re(self, ctx, id: int):
-		guild = self.bot.get_guild(id)
+	async def steal_emojis(self, ctx, guild_id: int):
+		guild = self.bot.get_guild(guild_id)
 		for emoji in guild.emojis:
 			e = [e.name for e in ctx.guild.emojis]
 			if emoji.name in e:
 				continue
-			try: await ctx.guild.create_custom_emoji(name=emoji.name, image=requests.get(emoji.url).content, reason="Loaded saved server")
-			except: continue
+			try:
+				await ctx.guild.create_custom_emoji(name=emoji.name, image=requests.get(emoji.url).content, reason="Loaded saved server")
+			except:
+				continue
 			await ctx.send(f'Added {emoji}')
 		await ctx.send('Done')
 
