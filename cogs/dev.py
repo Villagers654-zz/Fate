@@ -23,6 +23,8 @@ import urllib.request
 import json
 import traceback
 import random
+import aiohttp
+from discord import Webhook, AsyncWebhookAdapter
 from ast import literal_eval
 from PIL import Image, ImageFont, ImageDraw
 import utils.ServerStatus as mc
@@ -37,9 +39,31 @@ class Dev(commands.Cog):
 	def slut(ctx: commands.Context):
 		return ctx.author.id in [config.owner_id(), 292840109072580618, 355026215137968129, 459235187469975572]
 
-	@commands.command(name='test')
-	async def test(self, ctx):
-		await ctx.send(any(len(str(u.id)) != len(str(self.bot.user.id)) for u in self.bot.users))
+
+	@commands.command(name='get-mentions')
+	async def get_mentions(self, ctx):
+		await ctx.message.attachments[0].save('members.txt')
+		with open('members.txt', 'r') as f:
+			lines = f.readlines()
+			msg = ''
+			for line in lines:
+				user_id, tag, mention = line.split(', ')
+				if int(user_id) not in [m.id for m in ctx.guild.members]:
+					if len(msg) + len(f'{mention}') > 2000:
+						await ctx.send(msg)
+						msg = ''
+					msg += f'{mention}'
+			await ctx.send(msg)
+
+
+	@commands.command(name='wsay')
+	async def webhook_say(self, ctx, *, args):
+		webhook = await ctx.channel.create_webhook(name='test')
+		async with aiohttp.ClientSession() as session:
+			webhook = Webhook.from_url(webhook.url, adapter=AsyncWebhookAdapter(session))
+			await webhook.send(args, username=ctx.author.name, avatar_url=ctx.author.avatar_url)
+			await webhook.delete()
+		await ctx.message.delete()
 
 	@commands.command(name='ban-jah')
 	@commands.check(checks.luck)

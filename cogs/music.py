@@ -245,7 +245,7 @@ class Music(commands.Cog):
                 player.add(requester=ctx.author.id, track=_track)
         await player.play_now(requester=ctx.author.id, track=track)
         await asyncio.sleep(20)
-        await ctx.messagae.delete()
+        await ctx.message.delete()
 
     @commands.command(name='playat', aliases=['pa'])
     @commands.cooldown(1, 3, commands.BucketType.user)

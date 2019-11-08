@@ -27,8 +27,9 @@ class Custom(commands.Cog):
 			"FitMC made me a personal picture, u mad?", "BarrenDome made me a personal picture, u mad?",
 			"Salc1 made me a personal picture, u mad?", "Heart and Soul is the best song ever made, don't @ Hernie",
 			"PayPal me 5 and I'll give you a kiss", "Family guy is a masterpiece and no one can change my mind",
-			"Heart and Soul is the best song ever made, don't @ Hernie", "Step one, step two, do my dance in this bitch, Got a hunnid some' drums like a band in this bitch"
-			"Mane she keep on bitchin', all that naggin' and shit, Hoe shut the fuck up and jus' gag on this dick"
+			"Heart and Soul is the best song ever made, don't @ Hernie", "Step one, step two, do my dance in this bitch, "
+			"Got a hunnid some' drums like a band in this bitch. Mane she keep on bitchin', all that naggin' and shit, "
+			"Hoe shut the fuck up and jus' gag on this dick"
 		]
 		await ctx.send(random.choice(choices))
 

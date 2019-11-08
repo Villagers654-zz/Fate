@@ -40,12 +40,12 @@ class Sliders:
 		    '**Discord:** [click here](https://discord.gg/Ha5wxwd)'
 		return e
 
-	#def mars(self):
-	#	e = discord.Embed(color=colors.orange())
-	#	e.set_author(name='Mars', icon_url='https://cdn.discordapp.com/avatars/544911653058248734/a_12ff164baa36ae2171358e968d148f4f.gif?size=1024')
-	#	e.set_thumbnail(url='https://cdn.discordapp.com/icons/610638435711189002/a_4841a26e78005fcf7b36974d0ab7d3eb.gif?size=1024')
-	#	e.description = 'Unfinished'
-	#	return e
+	def mars(self):
+		e = discord.Embed(color=colors.orange())
+		e.set_author(name='Mars', icon_url='https://cdn.discordapp.com/avatars/544911653058248734/a_12ff164baa36ae2171358e968d148f4f.gif?size=1024')
+		e.set_thumbnail(url='https://cdn.discordapp.com/icons/610638435711189002/a_4841a26e78005fcf7b36974d0ab7d3eb.gif?size=1024')
+		e.description = 'Come land on Mars, where you can hang out with other Mars enthusiasts and talk games, pets, bots, or anything else, and even start your own fan club!'
+		return e
 
 class Polis(commands.Cog):
 	def __init__(self, bot: commands.Bot):
