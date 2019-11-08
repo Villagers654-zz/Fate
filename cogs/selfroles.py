@@ -254,7 +254,6 @@ class SelfRoles(commands.Cog):
 					return
 				role = roles[index]
 				if toggle == 'single':
-					await target.remove_roles(*roles)
 					for reaction in msg.reactions:
 						users = await reaction.users().flatten()
 						for user in users:
