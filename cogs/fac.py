@@ -39,6 +39,62 @@ class Factions(commands.Cog):
 			json.dump(self.factions, f)
 
 
+	async def get_faction(self, ctx, user=None, name=None):
+		""" fetch a faction or a users faction """
+		def pred(m) -> bool:
+			""" A check for waiting on a message """
+			return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+
+		guild_id = str(ctx.guild.id)
+		if ctx and user:
+			user = utils.get_user(ctx, user)
+			if not user:
+				return None
+			for faction, data in self.factions[guild_id].items():
+				if user.id in data['members']:
+					return faction
+
+		elif ctx and not user:
+			for faction, data in self.factions[guild_id].items():
+				if ctx.author.id in data['members']:
+					return faction
+
+		elif name:
+			factions = [f for f in self.factions[guild_id].keys() if str(f).lower() == str(name).lower()]
+			if not factions:
+				factions = [f for f in self.factions[guild_id].keys() if str(name).lower() in str(f).lower()]
+			if len(factions) > 1:
+				e = discord.Embed(color=cyan())
+				e.description = ''
+				index = 1
+				for faction in factions:
+					owner_id = self.factions[str(ctx.guild.id)][faction]['owner']
+					owner = self.bot.get_user(owner_id)
+					e.description += f'{index}. {faction} - {owner.mention}\n'
+				embed = await ctx.send(embed=e)
+				try:
+					msg = await ctx.bot.wait_for('message', check=pred, timeout=60)
+				except asyncio.TimeoutError:
+					await ctx.send('Timeout error', delete_after=5)
+					await embed.delete()
+					return None
+				else:
+					try:
+						choice = int(msg.content)
+					except:
+						await ctx.send('Invalid response')
+						await embed.delete()
+						return None
+					if choice > len(factions):
+						return await ctx.send('Invalid number')
+					return factions[index - 1]
+			elif len(factions) == 1:
+				return factions[0]
+
+		else:
+			return None
+
+
 	def collect_claims(self, guild_id, faction=None) -> dict:
 		""" Fetches claims for the whole guild or a single faction
 		    for easy use when needing all the claims """
@@ -135,6 +191,12 @@ class Factions(commands.Cog):
 			inline=False
 		)
 		await ctx.send(embed=e)
+
+
+	@commands.command(name='create')
+	async def create(self, ctx, *, name):
+		""" Creates a faction """
+
 
 
 	@commands.Cog.listener()
