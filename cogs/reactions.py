@@ -15,8 +15,9 @@ class Reactions(commands.Cog):
 
 
 	async def send_webhook(self, ctx, reaction, args, action=None):
-		if '<@&' in args or '@everyone' in args or '@here' in args:
-			return await ctx.send('biTcH nO')
+		if args:
+			if '<@&' in args or '@everyone' in args or '@here' in args:
+				return await ctx.send('biTcH nO')
 		path = os.getcwd() + f"/data/images/reactions/{reaction}/" + random.choice(
 			os.listdir(os.getcwd() + f"/data/images/reactions/{reaction}/"))
 		if action and ctx.message.mentions:
