@@ -102,6 +102,7 @@ class AntiSpam(commands.Cog):
             self.save_data()
 
     @_enable.command(name='rate-limit')
+    @commands.has_permissions(manage_messages=True)
     async def _enable_rate_limit(self, ctx):
         guild_id = str(ctx.guild.id)
         if guild_id not in self.toggle:
@@ -111,6 +112,7 @@ class AntiSpam(commands.Cog):
         self.save_data()
 
     @_enable.command(name='mass-pings', aliases=['mass-ping'])
+    @commands.has_permissions(manage_messages=True)
     async def _enable_mass_pings(self, ctx):
         guild_id = str(ctx.guild.id)
         if guild_id not in self.toggle:
@@ -120,6 +122,7 @@ class AntiSpam(commands.Cog):
         self.save_data()
 
     @_enable.command(name='anti-macro')
+    @commands.has_permissions(manage_messages=True)
     async def _enable_anti_macro(self, ctx):
         guild_id = str(ctx.guild.id)
         if guild_id not in self.toggle:
@@ -129,6 +132,7 @@ class AntiSpam(commands.Cog):
         self.save_data()
 
     @_enable.command(name='duplicates')
+    @commands.has_permissions(manage_messages=True)
     async def _enable_duplicates(self, ctx):
         guild_id = str(ctx.guild.id)
         if guild_id not in self.toggle:
@@ -139,6 +143,7 @@ class AntiSpam(commands.Cog):
 
 
     @anti_spam.group(name='disable')
+    @commands.has_permissions(manage_messages=True)
     async def _disable(self, ctx):
         if not ctx.invoked_subcommand:
             guild_id = str(ctx.guild.id)
@@ -150,6 +155,7 @@ class AntiSpam(commands.Cog):
             self.save_data()
 
     @_disable.command(name='rate-limit')
+    @commands.has_permissions(manage_messages=True)
     async def _disable_rate_limit(self, ctx):
         guild_id = str(ctx.guild.id)
         if guild_id not in self.toggle:
@@ -159,6 +165,7 @@ class AntiSpam(commands.Cog):
         self.save_data()
 
     @_disable.command(name='anti-macro')
+    @commands.has_permissions(manage_messages=True)
     async def _disable_anti_macro(self, ctx):
         guild_id = str(ctx.guild.id)
         if guild_id not in self.toggle:
@@ -168,6 +175,7 @@ class AntiSpam(commands.Cog):
         self.save_data()
 
     @_disable.command(name='mass-pings')
+    @commands.has_permissions(manage_messages=True)
     async def _disable_mass_pings(self, ctx):
         guild_id = str(ctx.guild.id)
         if guild_id not in self.toggle:
@@ -177,6 +185,7 @@ class AntiSpam(commands.Cog):
         self.save_data()
 
     @_disable.command(name='duplicates')
+    @commands.has_permissions(manage_messages=True)
     async def _disable_duplicates(self, ctx):
         guild_id = str(ctx.guild.id)
         if guild_id not in self.toggle:
@@ -187,6 +196,7 @@ class AntiSpam(commands.Cog):
 
 
     @anti_spam.command(name='alter-sensitivity')
+    @commands.has_permissions(manage_messages=True)
     async def _alter_sensitivity(self, ctx):
         guild_id = str(ctx.guild.id)
         if self.sensitivity[guild_id] == 'low':
