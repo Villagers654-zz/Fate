@@ -57,7 +57,7 @@ def total_seconds(now, before):
 	return total_seconds[:total_seconds.find('.') + 2]
 
 initial_extensions = ['error_handler', 'config', 'menus', 'core', 'music', 'mod', 'welcome', 'farewell', 'notes', 'archive', 'coffeeshop', 'custom',
-    'actions', 'reactions', 'responses', 'textart', 'fun', 'dev', '4b4t', 'readme', 'reload', 'embeds', 'polis',
+    'actions', 'reactions', 'responses', 'textart', 'fun', 'dev', '4b4t', 'readme', 'reload', 'embeds', 'polis', 'mha',
 	'clean_rythm', 'utility', 'psutil', 'rules', 'duel_chat', 'selfroles', 'lock', 'audit', 'cookies', 'backup', 'stats', 'server_list',
     'emojis', 'logger', 'autorole', 'changelog', 'restore_roles', 'chatbot', 'anti_spam', 'anti_raid', 'chatfilter', 'nsfw', 'leaderboards',
     'chatlock', 'rainbow', 'vc_log', 'system', 'user', 'limiter', 'dm_channel', 'factions', 'secure_overwrites', 'server_setup']
@@ -131,7 +131,7 @@ async def on_ready():
 	await channel.send(embed=e)
 	if login_errors:
 		for error in login_errors:
-			await channel.send(f'```{str(error)[:2000]}```')
+			await channel.send(f'```{str(error)[:1990]}```')
 
 @bot.event
 async def on_guild_join(guild: discord.Guild):
