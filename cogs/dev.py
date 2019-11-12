@@ -39,6 +39,10 @@ class Dev(commands.Cog):
 	def slut(ctx: commands.Context):
 		return ctx.author.id in [config.owner_id(), 292840109072580618, 355026215137968129, 459235187469975572]
 
+	@commands.command(name='test')
+	async def test(self, ctx):
+		await ctx.send([str(e) for e in ctx.guild.emojis if [e.name for e in ctx.guild.emojis].count(e.name) > 1])
+
 
 	@commands.command(name='get-mentions')
 	async def get_mentions(self, ctx):
