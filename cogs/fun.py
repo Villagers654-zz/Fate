@@ -12,6 +12,7 @@ import asyncio
 import random
 import base64
 import json
+import traceback
 import praw
 code = "```py\n{0}\n```"
 
@@ -19,6 +20,58 @@ class Fun(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.dat = {}
+		self.bullying = []
+
+
+	@commands.command(name='bully')
+	@commands.cooldown(1, 5, commands.BucketType.channel)
+	@commands.bot_has_permissions(send_messages=True)
+	async def bully(self, ctx, user: discord.Member):
+		""" Bullies a target user :] """
+
+		def cleanup():
+			""" remove channel from list of active bullying channels """
+			self.bullying.remove(ctx.channel.id)
+
+		if ctx.channel.id in self.bullying:
+			return await ctx.send('I\'m already bullying someone :[')
+		self.bullying.append(ctx.channel.id)
+		await ctx.send('I might as well..')
+
+		try:
+			dat = outh.reddit()  # type: dict
+			reddit = praw.Reddit(client_id=dat['client_id'], client_secret=dat['client_secret'],
+		                     user_agent=dat['user_agent'])
+		except Exception as e:
+			await ctx.send(f'Error With Reddit Credentials\n{e}')
+			return cleanup()
+
+		reddits = ['insults', 'rareinsults']
+		reddit_posts = []  # type: praw.Reddit.submission
+
+		for reddit_page in reddits:
+			try:
+				for submission in reddit.subreddit(reddit_page).hot(limit=250):
+					exts = ['.png', '.jpg', '.jpeg', '.gif']
+					if submission.title and all(ext not in submission.url for ext in exts):
+						reddit_posts.append(submission)
+			except Exception as e:
+				await ctx.send(f'Error Searching r/{reddit_page}\n{e}')
+				print(traceback.format_exc())
+				return cleanup()
+
+		for i in range(5):
+			random.shuffle(reddit_posts)
+		print([r.title for r in reddit_posts])
+		for iteration, submission in enumerate(reddit_posts):
+			await asyncio.sleep(random.randint(10, 25))
+			try:
+				await ctx.send(f'{user.mention} {submission.title}')
+			except:
+				return cleanup()
+			if iteration == 10:
+				return cleanup()
+
 
 	@commands.command(name='meme')
 	@commands.cooldown(1, 3, commands.BucketType.channel)
