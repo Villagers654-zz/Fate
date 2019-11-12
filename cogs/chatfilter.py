@@ -98,6 +98,8 @@ class ChatFilter(commands.Cog):
 			if m.guild.id in self.toggle:
 				if guild_id in self.blacklist:
 					for phrase in self.blacklist[guild_id]:
+						if '\\' not in phrase:
+							m.content = m.content.replace('\\', '')
 						perms = [perm for perm, value in m.author.guild_permissions if value]
 						if "manage_messages" not in perms:
 							if phrase in m.content:
@@ -115,6 +117,8 @@ class ChatFilter(commands.Cog):
 			if before.guild.id in self.toggle:
 				if guild_id in self.blacklist:
 					for phrase in self.blacklist[guild_id]:
+						if '\\' not in phrase:
+							after.content = after.content.replace('\\', '')
 						if "manage_messages" not in list(perm for perm, value in before.author.guild_permissions if value):
 							if phrase.lower() in after.content.lower():
 								await asyncio.sleep(0.5)
