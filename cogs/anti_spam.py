@@ -310,7 +310,7 @@ class AntiSpam(commands.Cog):
             duplicates = [m for m in contents if contents.count(m) > sensitivity_level]
             if msg.content in duplicates:
                 def pred(m):
-                    return m.channel.id == msg.channel.id and m.bot
+                    return m.channel.id == msg.channel.id and m.author.bot
                 try:
                     msg = await self.bot.wait_for('message', check=pred, timeout=2)
                 except TimeoutError:
