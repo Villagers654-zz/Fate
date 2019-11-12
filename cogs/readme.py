@@ -84,13 +84,13 @@ class Readme(commands.Cog):
 		await msg.edit(embed=e)
 		await ctx.message.delete()
 
-	@_update.command(name='4b4t')
-	async def _readme(self, ctx):
+	@_update.command(name='polis')
+	async def _polis(self, ctx):
 		try:
 			channel = self.bot.get_channel(470963498914938880)
 			msg = await channel.fetch_message(521271462754254849)
 			e = discord.Embed(color=0x40E0D0)
-			e.set_author(name='💎 Lucks Official Hangout 💎')
+			e.set_author(name='💎 Polis - Lucks Hangout 💎')
 			e.description = '■ **Lesbian pornagraphic pokemon hangout**'
 			e.add_field(name="-~===🌹🥂🍸🍷Links🍷🍸🥂🌹===~-", value="■ [Discord Invite](http://discord.gg/BQ23Z2E) | [Bot Invite](https://discordapp.com/oauth2/authorize?client_id=506735111543193601&permissions=1551232246&scope=bot)", inline=False)
 			e.add_field(name="-~===🌹🥂🍸🍷Rules🍷🍸🥂🌹===~-", value='■ Channel topics contain most rules\n'
@@ -111,7 +111,8 @@ class Readme(commands.Cog):
 				'■ No spamming or sending spammy message\n'
 				'■ Only ping roles if you have an appropriate question/problem related to the role\n'
 				'■ No useless / annoying pings\n'
-				'■ No pestering staff', inline=False)
+				'■ No pestering staff\n'
+				'■ No using your status to advertise', inline=False)
 			e.set_thumbnail(url=channel.guild.icon_url)
 			await msg.edit(embed=e)
 			await ctx.message.add_reaction('👍')
