@@ -238,7 +238,6 @@ class Leaderboards(commands.Cog):
 		guild_id = str(ctx.guild.id)
 		default = discord.Embed()
 		default.description = 'Collecting Leaderboard Data..'
-		msg = await ctx.send(embed=default)
 		result = await self.run_xp_cleanup()
 		async def wait_for_reaction()->list:
 			def check(reaction, user):
@@ -378,10 +377,40 @@ class Leaderboards(commands.Cog):
 			e.set_thumbnail(url="https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png")
 			e.set_footer(text=self.msg_footer().replace('[result]', f'XP Cleanup: {result}'))
 			return e
+		def ggvclb():
+			e = discord.Embed(color=0x4A0E50)
+			e.title = 'Guilded VC Leaderboard'
+			e.description = ""
+			dat = {}
+			for guild_id in self.vclb.keys():
+				dat[guild_id] = 0
+				for xp in self.vclb[guild_id].values():
+					dat[guild_id] += xp
+			rank = 1
+			for guild_id, xp in (sorted(self.gvclb.items(), key=lambda kv: kv[1], reverse=True))[:15]:
+				name = "INVALID-USER"
+				guild = self.bot.get_guild(int(guild_id))
+				if isinstance(guild, discord.Guild):
+					name = guild.name
+				score = timedelta(seconds=xp)
+				e.description += f'‎**‎#{rank}.** ‎`‎{name}`: ‎{score}\n'
+				rank += 1
+			e.set_thumbnail(url="https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png")
+			e.set_footer(text=self.msg_footer().replace('[result]', f'XP Cleanup: {result}'))
+			return e
 
+		msg = await ctx.send(embed=lb())
+		await msg.add_reaction('🚀')
+		reaction, emoji = await wait_for_reaction()
+		await msg.clear_reactions()
+		if not reaction:
+			return
+		if emoji != '🚀':
+			return
+		await msg.edit(embed=default)
 		emojis = ['🏡', '⏮', '⏪', '⏩', '⏭']
 		index = 0; sub_index = None
-		embeds = [lb(), vclb(), glb(), gvclb(), mlb(), gmlb(), gglb()]
+		embeds = [lb(), vclb(), glb(), gvclb(), mlb(), gmlb(), gglb(), ggvclb()]
 		await msg.edit(embed=embeds[0])
 		def index_check(index):
 			if index > len(embeds) - 1:
