@@ -134,6 +134,12 @@ async def on_ready():
 			await channel.send(f'```{str(error)[:1990]}```')
 
 @bot.event
+async def on_message(msg):
+	if '@everyone' in msg.content or '@here' in msg.content:
+		msg.content = msg.content.replace('@', '!')
+	await bot.process_commands(msg)
+
+@bot.event
 async def on_guild_join(guild: discord.Guild):
 	channel = bot.get_channel(config.server("log"))
 	e = discord.Embed(color=colors.pink())
