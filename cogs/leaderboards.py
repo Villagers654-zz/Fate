@@ -230,7 +230,14 @@ class Leaderboards(commands.Cog):
 		await ctx.send(file=discord.File('rank.png'))
 		os.remove('rank.png')
 
-	@commands.command(name='leaderboard', aliases=['lb', 'xlb'])
+	@commands.command(
+		name='leaderboard',
+		aliases=[
+			'lb', 'mlb', 'vclb', 'glb', 'gmlb', 'gvclb', 'gglb', 'ggvclb',
+			'mleaderboard', 'vcleaderboard', 'gleaderboard', 'gvcleaderboard',
+			'ggleaderboard', 'ggvcleaderboard'
+		]
+	)
 	@commands.cooldown(1, 60, commands.BucketType.user)
 	@commands.cooldown(1, 3, commands.BucketType.channel)
 	@commands.bot_has_permissions(embed_links=True, manage_messages=True, add_reactions=True)
@@ -387,19 +394,46 @@ class Leaderboards(commands.Cog):
 				for xp in self.vclb[guild_id].values():
 					dat[guild_id] += xp
 			rank = 1
-			for guild_id, xp in (sorted(self.gvclb.items(), key=lambda kv: kv[1], reverse=True))[:15]:
-				name = "INVALID-USER"
+			index = 1
+			for guild_id, xp in (sorted(dat.items(), key=lambda kv: kv[1], reverse=True)):
+				name = "INVALID-GUILD"
 				guild = self.bot.get_guild(int(guild_id))
 				if isinstance(guild, discord.Guild):
 					name = guild.name
+				else:
+					continue
 				score = timedelta(seconds=xp)
 				e.description += f'‎**‎#{rank}.** ‎`‎{name}`: ‎{score}\n'
 				rank += 1
+				if index == 15:
+					break
+				index += 1
 			e.set_thumbnail(url="https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png")
 			e.set_footer(text=self.msg_footer().replace('[result]', f'XP Cleanup: {result}'))
 			return e
 
-		msg = await ctx.send(embed=lb())
+		with open('./data/config.json', 'r') as f:
+			config = json.load(f)  # type: dict
+		prefix = '.'  # default prefix
+		if guild_id in config['prefix']:
+			prefix = config['prefix'][guild_id]
+		target = ctx.message.content.split()[0]
+		aliases = [
+			('lb', 'leaderboard'),
+			('mlb', 'mleaderboard'),
+			('vclb', 'vcleaderboard'),
+			('glb', 'gleaderboard'),
+			('gmlb', 'gmleaderboard'),
+			('gvclb', 'gvcleaderboard'),
+			('gglb', 'ggleaderboard'),
+			('ggvclb', 'ggvcleaderboard')
+		]
+		for cmd, alias in aliases:
+			if target == alias:
+				target = cmd
+		cut_length = len(target) - len(prefix)
+		embed = eval(f'{target[-cut_length:]}()')
+		msg = await ctx.send(embed=embed)
 		await msg.add_reaction('🚀')
 		reaction, emoji = await wait_for_reaction()
 		await msg.clear_reactions()
@@ -484,177 +518,177 @@ class Leaderboards(commands.Cog):
 				await msg.edit(embed=embeds[index])
 			await msg.remove_reaction(reaction, ctx.author)
 
-	@commands.command(name="oleaderboard", aliases=["olb"])
-	@commands.cooldown(1, 10, commands.BucketType.channel)
-	@commands.bot_has_permissions(embed_links=True)
-	async def oleaderboard(self, ctx):
-		result = await self.run_xp_cleanup()
-		e = discord.Embed(color=0x4A0E50)
-		e.title = "Leaderboard"
-		e.description = ""
-		rank = 1
-		for user_id, xp in (sorted(self.guilds_data[str(ctx.guild.id)].items(), key=lambda kv: kv[1], reverse=True))[:15]:
-			name = "INVALID-USER"
-			user = self.bot.get_user(int(user_id))
-			if isinstance(user, discord.User):
-				name = user.name
-			level = self.calc_lvl(xp)['level']
-			e.description += f'**#{rank}.** `{name}`: {level} | {xp}\n'
-			rank += 1
-		if ctx.guild.icon_url:
-			e.set_thumbnail(url=ctx.guild.icon_url)
-		else:
-			e.set_thumbnail(url=self.bot.user.avatar_url)
-		e.set_footer(text=self.msg_footer().replace('[result]', f'XP Cleanup: {result}'))
-		msg = await ctx.send(embed=e)
-		await self.wait_for_dismissal(ctx, msg)
-
-	@commands.command(name="gleaderboard", aliases=["glb"])
-	@commands.cooldown(1, 10, commands.BucketType.channel)
-	@commands.bot_has_permissions(embed_links=True)
-	async def gleaderboard(self, ctx):
-		result = await self.run_xp_cleanup()
-		e = discord.Embed(color=0x4A0E50)
-		e.title = 'Global Leaderboard'
-		e.description = ''
-		rank = 1
-		for user_id, xp in (sorted(self.global_data.items(), key=lambda kv: kv[1], reverse=True))[:15]:
-			name = 'INVALID-USER'
-			user = self.bot.get_user(int(user_id))
-			if isinstance(user, discord.User):
-				name = user.name
-			level = self.calc_lvl(xp)['level']
-			e.description += f'**#{rank}.** `{name}`: {level} | {xp}\n'
-			rank += 1
-		e.set_thumbnail(url='https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png')
-		e.set_footer(text=self.msg_footer().replace('[result]', f'XP Cleanup: {result}'))
-		msg = await ctx.send(embed=e)
-		await self.wait_for_dismissal(ctx, msg)
-
-	@commands.command(name="ggleaderboard", aliases=["gglb"])
-	@commands.cooldown(1, 10, commands.BucketType.channel)
-	@commands.bot_has_permissions(embed_links=True)
-	async def ggleaderboard(self, ctx):
-		result = await self.run_xp_cleanup()
-		e = discord.Embed(color=0x4A0E50)
-		e.title = 'Guild Leaderboard'
-		e.description = ""
-		rank = 1
-		for guild_id, xp in (sorted({i:sum(x.values()) for i, x in self.guilds_data.items()}.items(), key=lambda kv: kv[1], reverse=True))[:8]:
-			guild = self.bot.get_guild(int(guild_id))
-			if not isinstance(guild, discord.Guild):
-				del self.guilds_data[guild_id]
-				continue
-			name = guild.name
-			e.description += f'**#{rank}.** `{name}`: {xp}\n'
-			rank += 1
-		if ctx.guild.icon_url:
-			e.set_thumbnail(url=ctx.guild.icon_url)
-		else:
-			e.set_thumbnail(url=self.bot.user.avatar_url)
-		e.set_footer(text=self.msg_footer().replace('[result]', f'XP Cleanup: {result}'))
-		msg = await ctx.send(embed=e)
-		await self.wait_for_dismissal(ctx, msg)
-
-	@commands.command(name="mleaderboard", aliases=["mlb"])
-	@commands.cooldown(1, 10, commands.BucketType.channel)
-	@commands.bot_has_permissions(embed_links=True)
-	async def _mleaderboard(self, ctx):
-		result = await self.run_xp_cleanup()
-		guild_id = str(ctx.guild.id)
-		xp = {}
-		for user in list(self.monthly_guilds_data[guild_id]):
-			xp[user] = len(self.monthly_guilds_data[guild_id][user])
-		e = discord.Embed(title="Monthly Leaderboard", color=0x4A0E50)
-		e.description = ""
-		rank = 1
-		for user_id, xp in (sorted(xp.items(), key=lambda kv: kv[1], reverse=True))[:15]:
-			name = "INVALID-USER"
-			user = self.bot.get_user(int(user_id))
-			if isinstance(user, discord.User):
-				name = user.name
-			level = self.calc_lvl(xp)['level']
-			e.description += f'**#{rank}.** `{name}`: {level} | {xp}\n'
-			rank += 1
-		if ctx.guild.icon_url:
-			e.set_thumbnail(url=ctx.guild.icon_url)
-		else:
-			e.set_thumbnail(url=self.bot.user.avatar_url)
-		e.set_footer(text=self.msg_footer().replace('[result]', f'XP Cleanup: {result}'))
-		msg = await ctx.send(embed=e)
-		await self.wait_for_dismissal(ctx, msg)
-
-	@commands.command(name="gmleaderboard", aliases=["gmlb"])
-	@commands.cooldown(1, 10, commands.BucketType.channel)
-	@commands.bot_has_permissions(embed_links=True)
-	async def _gmleaderboard(self, ctx):
-		result = await self.run_xp_cleanup()
-		xp = {}
-		for user in list(self.monthly_global_data):
-			xp[user] = len(self.monthly_global_data[user])
-		e = discord.Embed(color=0x4A0E50)
-		e.title = 'Global Monthly Leaderboard'
-		e.description = ""
-		rank = 1
-		for user_id, xp in (sorted(xp.items(), key=lambda kv: kv[1], reverse=True))[:15]:
-			name = 'INVALID-USER'
-			user = self.bot.get_user(int(user_id))
-			if isinstance(user, discord.User):
-				name = user.name
-			level = self.calc_lvl(xp)['level']
-			e.description += f'**#{rank}.** `{name}`: {level} | {xp}\n'
-			rank += 1
-		e.set_thumbnail(url='https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png')
-		e.set_footer(text=self.msg_footer().replace('[result]', f'XP Cleanup: {result}'))
-		msg = await ctx.send(embed=e)
-		await self.wait_for_dismissal(ctx, msg)
-
-	@commands.command(name='vcleaderboard', aliases=['vclb'])
-	@commands.cooldown(1, 10, commands.BucketType.channel)
-	@commands.bot_has_permissions(embed_links=True)
-	async def vcleaderboard(self, ctx):
-		result = await self.run_xp_cleanup()
-		e = discord.Embed(color=0x4A0E50)
-		e.title = 'VC Leaderboard'
-		e.description = ""
-		rank = 1
-		for user_id, xp in (sorted(self.vclb[str(ctx.guild.id)].items(), key=lambda kv: kv[1], reverse=True))[:15]:
-			name = "INVALID-USER"
-			user = self.bot.get_user(int(user_id))
-			if isinstance(user, discord.User):
-				name = user.name
-			score = timedelta(seconds=xp)
-			e.description += f'‎**‎#{rank}.** ‎`‎{name}`: ‎{score}\n'
-			rank += 1
-		if ctx.guild.icon_url:
-			e.set_thumbnail(url=ctx.guild.icon_url)
-		else:
-			e.set_thumbnail(url=self.bot.user.avatar_url)
-		e.set_footer(text=self.msg_footer().replace('[result]', f'XP Cleanup: {result}'))
-		msg = await ctx.send(embed=e)
-		await self.wait_for_dismissal(ctx, msg)
-
-	@commands.command(name="gvcleaderboard", aliases=["gvclb"])
-	@commands.cooldown(1, 10, commands.BucketType.channel)
-	@commands.bot_has_permissions(embed_links=True)
-	async def gvcleaderboard(self, ctx):
-		result = await self.run_xp_cleanup()
-		e = discord.Embed(color=0x4A0E50)
-		e.title = 'Global VC Leaderboard'
-		e.description = ""
-		rank = 1
-		for user_id, xp in (sorted(self.gvclb.items(), key=lambda kv: kv[1], reverse=True))[:15]:
-			name = "INVALID-USER"
-			user = self.bot.get_user(int(user_id))
-			if isinstance(user, discord.User):
-				name = user.name
-			score = timedelta(seconds=xp)
-			e.description += f'‎**‎#{rank}.** ‎`‎{name}`: ‎{score}\n'
-			rank += 1
-		e.set_thumbnail(url="https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png")
-		e.set_footer(text=self.msg_footer().replace('[result]', f'XP Cleanup: {result}'))
-		msg = await ctx.send(embed=e)
-		await self.wait_for_dismissal(ctx, msg)
+	#@commands.command(name="oleaderboard", aliases=["olb"])
+	#@commands.cooldown(1, 10, commands.BucketType.channel)
+	#@commands.bot_has_permissions(embed_links=True)
+	#async def oleaderboard(self, ctx):
+	#	result = await self.run_xp_cleanup()
+	#	e = discord.Embed(color=0x4A0E50)
+	#	e.title = "Leaderboard"
+	#	e.description = ""
+	#	rank = 1
+	#	for user_id, xp in (sorted(self.guilds_data[str(ctx.guild.id)].items(), key=lambda kv: kv[1], reverse=True))[:15]:
+	#		name = "INVALID-USER"
+	#		user = self.bot.get_user(int(user_id))
+	#		if isinstance(user, discord.User):
+	#			name = user.name
+	#		level = self.calc_lvl(xp)['level']
+	#		e.description += f'**#{rank}.** `{name}`: {level} | {xp}\n'
+	#		rank += 1
+	#	if ctx.guild.icon_url:
+	#		e.set_thumbnail(url=ctx.guild.icon_url)
+	#	else:
+	#		e.set_thumbnail(url=self.bot.user.avatar_url)
+	#	e.set_footer(text=self.msg_footer().replace('[result]', f'XP Cleanup: {result}'))
+	#	msg = await ctx.send(embed=e)
+	#	await self.wait_for_dismissal(ctx, msg)
+	#
+	#@commands.command(name="gleaderboard", aliases=["glb"])
+	#@commands.cooldown(1, 10, commands.BucketType.channel)
+	#@commands.bot_has_permissions(embed_links=True)
+	#async def gleaderboard(self, ctx):
+	#	result = await self.run_xp_cleanup()
+	#	e = discord.Embed(color=0x4A0E50)
+	#	e.title = 'Global Leaderboard'
+	#	e.description = ''
+	#	rank = 1
+	#	for user_id, xp in (sorted(self.global_data.items(), key=lambda kv: kv[1], reverse=True))[:15]:
+	#		name = 'INVALID-USER'
+	#		user = self.bot.get_user(int(user_id))
+	#		if isinstance(user, discord.User):
+	#			name = user.name
+	#		level = self.calc_lvl(xp)['level']
+	#		e.description += f'**#{rank}.** `{name}`: {level} | {xp}\n'
+	#		rank += 1
+	#	e.set_thumbnail(url='https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png')
+	#	e.set_footer(text=self.msg_footer().replace('[result]', f'XP Cleanup: {result}'))
+	#	msg = await ctx.send(embed=e)
+	#	await self.wait_for_dismissal(ctx, msg)
+	#
+	#@commands.command(name="ggleaderboard", aliases=["gglb"])
+	#@commands.cooldown(1, 10, commands.BucketType.channel)
+	#@commands.bot_has_permissions(embed_links=True)
+	#async def ggleaderboard(self, ctx):
+	#	result = await self.run_xp_cleanup()
+	#	e = discord.Embed(color=0x4A0E50)
+	#	e.title = 'Guild Leaderboard'
+	#	e.description = ""
+	#	rank = 1
+	#	for guild_id, xp in (sorted({i:sum(x.values()) for i, x in self.guilds_data.items()}.items(), key=lambda kv: kv[1], reverse=True))[:8]:
+	#		guild = self.bot.get_guild(int(guild_id))
+	#		if not isinstance(guild, discord.Guild):
+	#			del self.guilds_data[guild_id]
+	#			continue
+	#		name = guild.name
+	#		e.description += f'**#{rank}.** `{name}`: {xp}\n'
+	#		rank += 1
+	#	if ctx.guild.icon_url:
+	#		e.set_thumbnail(url=ctx.guild.icon_url)
+	#	else:
+	#		e.set_thumbnail(url=self.bot.user.avatar_url)
+	#	e.set_footer(text=self.msg_footer().replace('[result]', f'XP Cleanup: {result}'))
+	#	msg = await ctx.send(embed=e)
+	#	await self.wait_for_dismissal(ctx, msg)
+	#
+	#@commands.command(name="mleaderboard", aliases=["mlb"])
+	#@commands.cooldown(1, 10, commands.BucketType.channel)
+	#@commands.bot_has_permissions(embed_links=True)
+	#async def _mleaderboard(self, ctx):
+	#	result = await self.run_xp_cleanup()
+	#	guild_id = str(ctx.guild.id)
+	#	xp = {}
+	#	for user in list(self.monthly_guilds_data[guild_id]):
+	#		xp[user] = len(self.monthly_guilds_data[guild_id][user])
+	#	e = discord.Embed(title="Monthly Leaderboard", color=0x4A0E50)
+	#	e.description = ""
+	#	rank = 1
+	#	for user_id, xp in (sorted(xp.items(), key=lambda kv: kv[1], reverse=True))[:15]:
+	#		name = "INVALID-USER"
+	#		user = self.bot.get_user(int(user_id))
+	#		if isinstance(user, discord.User):
+	#			name = user.name
+	#		level = self.calc_lvl(xp)['level']
+	#		e.description += f'**#{rank}.** `{name}`: {level} | {xp}\n'
+	#		rank += 1
+	#	if ctx.guild.icon_url:
+	#		e.set_thumbnail(url=ctx.guild.icon_url)
+	#	else:
+	#		e.set_thumbnail(url=self.bot.user.avatar_url)
+	#	e.set_footer(text=self.msg_footer().replace('[result]', f'XP Cleanup: {result}'))
+	#	msg = await ctx.send(embed=e)
+	#	await self.wait_for_dismissal(ctx, msg)
+	#
+	#@commands.command(name="gmleaderboard", aliases=["gmlb"])
+	#@commands.cooldown(1, 10, commands.BucketType.channel)
+	#@commands.bot_has_permissions(embed_links=True)
+	#async def _gmleaderboard(self, ctx):
+	#	result = await self.run_xp_cleanup()
+	#	xp = {}
+	#	for user in list(self.monthly_global_data):
+	#		xp[user] = len(self.monthly_global_data[user])
+	#	e = discord.Embed(color=0x4A0E50)
+	#	e.title = 'Global Monthly Leaderboard'
+	#	e.description = ""
+	#	rank = 1
+	#	for user_id, xp in (sorted(xp.items(), key=lambda kv: kv[1], reverse=True))[:15]:
+	#		name = 'INVALID-USER'
+	#		user = self.bot.get_user(int(user_id))
+	#		if isinstance(user, discord.User):
+	#			name = user.name
+	#		level = self.calc_lvl(xp)['level']
+	#		e.description += f'**#{rank}.** `{name}`: {level} | {xp}\n'
+	#		rank += 1
+	#	e.set_thumbnail(url='https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png')
+	#	e.set_footer(text=self.msg_footer().replace('[result]', f'XP Cleanup: {result}'))
+	#	msg = await ctx.send(embed=e)
+	#	await self.wait_for_dismissal(ctx, msg)
+	#
+	#@commands.command(name='vcleaderboard', aliases=['vclb'])
+	#@commands.cooldown(1, 10, commands.BucketType.channel)
+	#@commands.bot_has_permissions(embed_links=True)
+	#async def vcleaderboard(self, ctx):
+	#	result = await self.run_xp_cleanup()
+	#	e = discord.Embed(color=0x4A0E50)
+	#	e.title = 'VC Leaderboard'
+	#	e.description = ""
+	#	rank = 1
+	#	for user_id, xp in (sorted(self.vclb[str(ctx.guild.id)].items(), key=lambda kv: kv[1], reverse=True))[:15]:
+	#		name = "INVALID-USER"
+	#		user = self.bot.get_user(int(user_id))
+	#		if isinstance(user, discord.User):
+	#			name = user.name
+	#		score = timedelta(seconds=xp)
+	#		e.description += f'‎**‎#{rank}.** ‎`‎{name}`: ‎{score}\n'
+	#		rank += 1
+	#	if ctx.guild.icon_url:
+	#		e.set_thumbnail(url=ctx.guild.icon_url)
+	#	else:
+	#		e.set_thumbnail(url=self.bot.user.avatar_url)
+	#	e.set_footer(text=self.msg_footer().replace('[result]', f'XP Cleanup: {result}'))
+	#	msg = await ctx.send(embed=e)
+	#	await self.wait_for_dismissal(ctx, msg)
+	#
+	#@commands.command(name="gvcleaderboard", aliases=["gvclb"])
+	#@commands.cooldown(1, 10, commands.BucketType.channel)
+	#@commands.bot_has_permissions(embed_links=True)
+	#async def gvcleaderboard(self, ctx):
+	#	result = await self.run_xp_cleanup()
+	#	e = discord.Embed(color=0x4A0E50)
+	#	e.title = 'Global VC Leaderboard'
+	#	e.description = ""
+	#	rank = 1
+	#	for user_id, xp in (sorted(self.gvclb.items(), key=lambda kv: kv[1], reverse=True))[:15]:
+	#		name = "INVALID-USER"
+	#		user = self.bot.get_user(int(user_id))
+	#		if isinstance(user, discord.User):
+	#			name = user.name
+	#		score = timedelta(seconds=xp)
+	#		e.description += f'‎**‎#{rank}.** ‎`‎{name}`: ‎{score}\n'
+	#		rank += 1
+	#	e.set_thumbnail(url="https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png")
+	#	e.set_footer(text=self.msg_footer().replace('[result]', f'XP Cleanup: {result}'))
+	#	msg = await ctx.send(embed=e)
+	#	await self.wait_for_dismissal(ctx, msg)
 
 	@commands.command(name='leaderboards', aliases=['lbs'])
 	async def leaderboards(self, ctx):
