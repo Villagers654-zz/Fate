@@ -211,7 +211,7 @@ class Utility(commands.Cog):
 		e.add_field(name='◈ Security ◈', value=security, inline=False)
 		if ctx.guild.premium_tier:
 			perks = f'• Boost Level [`{ctx.guild.premium_tier}`]\n' \
-				f'• Total Boosts [`{len(ctx.guild.premium_subscribers)}`]\n' \
+				f'• Total Boosts [`{ctx.guild.premium_subscription_count}`]\n' \
 				f'• Max Emoji\'s [`{ctx.guild.emoji_limit}`]\n' \
 				f'• Max Bitrate [`{bytes2human(ctx.guild.bitrate_limit).replace(".0", "")}`]\n' \
 				f'• Max Filesize [`{bytes2human(ctx.guild.filesize_limit).replace(".0", "")}`]'
