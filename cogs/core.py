@@ -39,10 +39,11 @@ class Core(commands.Cog):
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.bot_has_permissions(attach_files=True)
 	async def say(self, ctx, *, content: commands.clean_content=None):
-		if len(str(content).split('\\n')) > 4:
+		if len(str(content).split('\n')) > 4:
 			await ctx.send(f'{ctx.author.mention} too many lines')
 			return await ctx.message.delete()
-		content = utils.cleanup_msg(ctx.message, content)
+		if content:
+			content = utils.cleanup_msg(ctx.message, content)
 		if ctx.message.attachments and ctx.channel.is_nsfw():
 			file_data = [(f.filename, BytesIO(requests.get(f.url).content)) for f in ctx.message.attachments]
 			files = [discord.File(file, filename=filename) for filename, file in file_data]
