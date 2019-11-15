@@ -5,6 +5,10 @@ import random
 class Actions(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
+		self.protected = [
+			264838866480005122,  # luck
+			355026215137968129  # tother
+		]
 
 	def luck(ctx):
 		return ctx.message.author.id == 264838866480005122
@@ -12,26 +16,46 @@ class Actions(commands.Cog):
 	@commands.command(description="Shoots a user")
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	async def shoot(self, ctx, user: discord.Member):
-		if user.id == 355026215137968129:
-			if ctx.author.id == 355026215137968129:
+		if user.id in self.protected:
+			if ctx.author.id in self.protected:
 				return await ctx.send('nO')
 			return await ctx.send('*shoots you instead*')
-		await ctx.send("🔫 | pew pew, {} {}, {}".format(user.display_name, random.choice(["has been shot in the head and died instantly", "has been shot in the heart and died quickly and painfully", "has been shot in the arm and is rolling around in agonizing pain", "has been shot in the leg and is now hopping around on one leg", "has been shot in the dick"]), random.choice(["you really shouldn't let a bot carry a gun :p", "you should let me shoot people more often", "this is fun", "poor thing didn't stand a chance", "he/she definitely deserved it", "poor thing dropped like a fly"])))
+		results = [
+			"$user got shot in the head and died instantly",
+			"$user got shot in the heart and died quickly and painfully",
+			"$user got shot in the arm and is rolling around in agonizing pain",
+			"$user got shot in the leg and is now hopping around on one leg",
+			"$user got shot in the dick",
+			"$user pulled his own gun out and shot you first, seems my stage 4 brain cancer is faster than you",
+			"$author shot $user skillfully; piercing $user's heart"
+		]
+		result = random.choice(results).replace('$user', user.display_name).replace('$author', ctx.author.display_name)
+		await ctx.send(f"🔫 | pew pew, {result}")
 
 	@commands.command(description="Injects a user with something random")
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	async def inject(self, ctx, user: discord.Member):
-		if user.id == 355026215137968129:
-			if ctx.author.id == 355026215137968129:
+		if user.id in self.protected:
+			if ctx.author.id in self.protected:
 				return await ctx.send('nO')
 			return await ctx.send('*injects you instead*')
-		await ctx.send("💉 | {} {}".format(user, random.choice(["has been injected with AIDS", "has been injected with HIV positive blood", "has been injected with an STD", "has been injected with the cure", "has been injected with Flex Seal", "has been injected with Kool-Aid powder"])))
+		injections = [
+			"AIDS", "HIV positive blood", "an STD", "the cure", "FLex Seal", "Kool-Aid powder",
+			"soda", "the flu"
+		]
+		choices = [
+			"$user has been injected with $injection", "$user was injected with $injection and died",
+			"injected $injection into $user's dick", "$user was injected with $injection and got autism",
+			"$author tripped and injected himself with $injection"
+		]
+		choice = random.choice(choices).replace('$user', user.display_name).replace('$author', ctx.author.display_name)
+		await ctx.send(f"💉 | {choice.replace('$injection', random.choice(injections))}")
 
 	@commands.command(description="Slices anything into bits")
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	async def slice(self, ctx, user: discord.Member):
-		if user.id == 355026215137968129:
-			if ctx.author.id == 355026215137968129:
+		if user.id in self.protected:
+			if ctx.author.id in self.protected:
 				return await ctx.send('nO')
 			return await ctx.send('*slices you instead*')
 		await ctx.send("⚔ | {} {}".format(user.display_name, random.choice(["just got sliced up into sushi", "just got sliced up into string cheese"])))
@@ -51,8 +75,8 @@ class Actions(commands.Cog):
 	@commands.command(description="Stabs a user")
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	async def stab(self, ctx, user: discord.Member):
-		if user.id == 355026215137968129:
-			if ctx.author.id == 355026215137968129:
+		if user.id in self.protected:
+			if ctx.author.id in self.protected:
 				return await ctx.send('nO')
 			return await ctx.send('*stabs you instead*')
 		await ctx.send("⚔ | {} {}, {}".format(user.display_name, random.choice(["has been stabbed in the head", "has been stabbed in the shoulder", "has been stabbed in the chest", "has beeb stabbed in the arm", "has been stabbed in the gut", "has been stabbed in the dick", "has been stabbed in the leg", "has been stabbed in the foot"]), random.choice(["you really shouldn't let a bot carry a blade :p", "you should let me stab people more often", "you should let me stab **it** more often", "this is fun", "poor thing didn't stand a chance", "whatever that **thing** is, it definitely deserved it", "poor thing dropped like a fly"])))
@@ -71,7 +95,7 @@ class Actions(commands.Cog):
 	@commands.command(name='kms', aliases=['suicide'], description="Textart")
 	@commands.cooldown(1, 5, commands.BucketType.channel)
 	async def kms(self, ctx):
-		if ctx.author.id == 355026215137968129:
+		if ctx.author.id in self.protected:
 			return await ctx.send('nO')
 		await ctx.send("""━━━━━┒
 ┓┏┓┏┓┃Oof
@@ -99,6 +123,7 @@ class Actions(commands.Cog):
 ┓┏┓┏┓┃
 ┃┃┃┃┃┃
 ┻┻┻┻┻┻""")
+
 
 def setup(bot):
 	bot.add_cog(Actions(bot))
