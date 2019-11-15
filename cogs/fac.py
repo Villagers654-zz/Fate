@@ -1,12 +1,17 @@
 """
 Factions Game For Discord.Py
-- Supports discord.py v1.0 - v1.3
+- Supports versions 1.1 - 1.3
+- Create factions, group up, complete work tasks to earn money
+- Raid other factions while they're not guarded
+- Challenge enemys to minigame battles
+- Rank up on the faction leaderboard
 """
 
 import json
 from os import path
 import random
 import asyncio
+from time import time
 
 from discord.ext import commands
 import discord
@@ -45,20 +50,43 @@ class Factions(commands.Cog):
 			self.factions[guild_id] = {}
 
 
-	async def get_users_faction(self, ctx, user=None):
-		""" fetch a users faction by context or partial name """
+	def faction_icon(self, ctx, faction: str)->str:
+		""" returns an icon for the faction """
 		guild_id = str(ctx.guild.id)
-		if ctx and user:
-			user = utils.get_user(ctx, user)
-			if not user:
-				return None
-			for faction, data in self.factions[guild_id].items():
-				if user.id in data['members']:
-					return faction
-		elif ctx and not user:
-			for faction, data in self.factions[guild_id].items():
-				if ctx.author.id in data['members']:
-					return faction
+		if 'icon' in self.factions[guild_id][faction]:
+			if self.factions[guild_id][faction]['icon']:
+				return self.factions[guild_id][faction]['icon']
+		owner_id = self.factions[guild_id][faction]['owner']
+		owner = self.bot.get_user(owner_id)
+		return owner.avatar_url
+
+
+	def get_users_faction(self, ctx, user=None):
+		""" fetch a users faction by context or partial name """
+		if not user:
+			user = ctx.author
+		guild_id = str(ctx.guild.id)
+		user = utils.get_user(ctx, user)
+		if not user:
+			return None
+		for faction, data in self.factions[guild_id].items():
+			if user.id in data['members']:
+				return faction
+		return None
+
+
+	def get_owned_faction(self, ctx, user=None):
+		""" returns a users owned faction if it exists """
+		if not user:
+			user = ctx.author.mention
+		user = utils.get_user(ctx, user)
+		if not user:
+			return
+		guild_id = str(ctx.guild.id)
+		for faction, data in self.factions[guild_id].items:
+			if user.id == data['owner']:
+				return faction
+		return None
 
 
 	def get_faction_named(self, ctx, name):
@@ -110,12 +138,18 @@ class Factions(commands.Cog):
 			claims = {}
 			fac = self.factions[guild_id][faction]
 			for claim in fac['claims']:
+				channel = self.bot.get_channel(int(claim))
+				if not isinstance(channel, discord.TextChannel):
+					self.factions[guild_id]['balance'] += 250
+					self.factions[guild_id][faction]['claims'].remove(claim)
+					continue
 				is_guarded = False
 				if claim in self.boosts['boosts']['land-guard']:
 					is_guarded = True
-				claims[claim] = {
+				claims[int(claim)] = {
 					'faction': faction,
-					'guarded': is_guarded
+					'guarded': is_guarded,
+					'position': channel.position
 				}
 			return claims
 
@@ -246,6 +280,44 @@ class Factions(commands.Cog):
 	@commands.command(name='rename')
 	async def rename(self, ctx, *, name):
 		""" Renames their faction """
+
+
+	@commands.command(name='info')
+	async def info(self, ctx, *, faction=None):
+		""" Bulk information on a faction """
+		if faction:
+			faction = self.get_faction_named(ctx, faction)
+		else:
+			faction = self.get_users_faction(ctx)
+		if not faction:
+			return await ctx.send('Faction not found')
+		pass
+
+
+	@factions.command(name='claims')
+	async def claims(self, ctx, *, faction):
+		""" Returns a factions sorted claims """
+		if faction:
+			faction = self.get_faction_named(ctx, faction)
+		else:
+			faction = self.get_users_faction(ctx)
+		if not faction:
+			return await ctx.send('Faction not found')
+		guild_id = str(ctx.guild.id)
+		e = discord.Embed(color=purple())
+		e.set_author(name=f"{faction}'s claims", icon_url=self.faction_icon(ctx, faction))
+		claims = self.collect_claims(guild_id, faction)
+		claims = {
+			self.bot.get_channel(chnl_id): data for chnl_id, data in claims.items()
+		}
+		for channel, data in sorted(claims.items, reverse=True, key=lambda kv: kv[1]['position']):
+			e.description = f"• {channel.mention} {'- guarded' if data['guarded'] else ''}\n"
+		await ctx.send(embed=e)
+
+
+	@commands.command(name='battle')
+	async def battle(self, ctx, *args):
+		pass
 
 
 	@commands.Cog.listener()
