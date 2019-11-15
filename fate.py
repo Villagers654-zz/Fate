@@ -57,7 +57,7 @@ def total_seconds(now, before):
 	return total_seconds[:total_seconds.find('.') + 2]
 
 initial_extensions = ['error_handler', 'config', 'menus', 'core', 'music', 'mod', 'welcome', 'farewell', 'notes', 'archive', 'coffeeshop', 'custom',
-    'actions', 'reactions', 'responses', 'textart', 'fun', 'dev', '4b4t', 'readme', 'reload', 'embeds', 'polis', 'mha',
+    'actions', 'reactions', 'responses', 'textart', 'fun', 'dev', '4b4t', 'readme', 'reload', 'embeds', 'polis', 'mha', 'apis'
 	'clean_rythm', 'utility', 'psutil', 'rules', 'duel_chat', 'selfroles', 'lock', 'audit', 'cookies', 'backup', 'stats', 'server_list',
     'emojis', 'logger', 'autorole', 'changelog', 'restore_roles', 'chatbot', 'anti_spam', 'anti_raid', 'chatfilter', 'nsfw', 'leaderboards',
     'chatlock', 'rainbow', 'vc_log', 'system', 'user', 'limiter', 'dm_channel', 'factions', 'secure_overwrites', 'server_setup']
