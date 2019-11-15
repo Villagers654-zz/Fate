@@ -119,7 +119,7 @@ class ChatFilter(commands.Cog):
 					for phrase in self.blacklist[guild_id]:
 						if '\\' not in phrase:
 							after.content = after.content.replace('\\', '')
-						perms = [perm for perm, value in m.author.guild_permissions if value]
+						perms = [perm for perm, value in after.author.guild_permissions if value]
 						if "manage_messages" not in perms:
 							if phrase.lower() in after.content.lower():
 								await asyncio.sleep(0.5)
