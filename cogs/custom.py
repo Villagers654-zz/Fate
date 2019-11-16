@@ -62,5 +62,14 @@ class Custom(commands.Cog):
 		e.set_image(url=random.choice(image_urls))
 		await ctx.send(embed=e)
 
+	@commands.command(name='opal')
+	@commands.cooldown(1, 3, commands.BucketType.user)
+	async def opal(self, ctx):
+		with open('./data/images/urls/opal.txt', 'r') as f:
+			image_urls = f.readlines()
+		e = discord.Embed(color=colors.cyan())
+		e.set_image(url=random.choice(image_urls))
+		await ctx.send(embed=e)
+
 def setup(bot):
 	bot.add_cog(Custom(bot))
