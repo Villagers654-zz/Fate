@@ -56,23 +56,8 @@ class Custom(commands.Cog):
 	@commands.command(name='elon', aliases=['elongated', 'elongatedmuskrat'])
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	async def elon(self, ctx):
-		image_urls = [
-			'https://cdn.discordapp.com/attachments/590298335848431626/644538025006596126/JPEG_20191113_210933.jpg',
-			'https://cdn.discordapp.com/attachments/590298335848431626/644649293415841797/Dshp70cU4AAxV0V.png',
-			'https://cdn.discordapp.com/attachments/590298335848431626/644649341482565642/d3e3a4a.png',
-			'https://cdn.discordapp.com/attachments/590298335848431626/644649383421411349/30494ef.png',
-			'https://cdn.discordapp.com/attachments/590298335848431626/644649407412830219/d49154c.jpg',
-			'https://cdn.discordapp.com/attachments/590298335848431626/644649427994411018/d66361d.jpg',
-			'https://cdn.discordapp.com/attachments/590298335848431626/644649464233066496/20e5596a1fcef05a0a4382bb94f40c68.png',
-			'https://cdn.discordapp.com/attachments/590298335848431626/644649646353940500/89ae842.jpg',
-			'https://cdn.discordapp.com/attachments/590298335848431626/644649646353940501/5b57d89.jpg',
-			'https://cdn.discordapp.com/attachments/590298335848431626/644649646970372096/Hk8NISIHG.jpeg',
-			'https://cdn.discordapp.com/attachments/590298335848431626/644649646970372097/f1a71b0.jpg',
-			'https://cdn.discordapp.com/attachments/590298335848431626/644649647893381120/da17e56.jpg',
-			'https://cdn.discordapp.com/attachments/590298335848431626/644649648342040577/f001c78.jpg',
-			'https://cdn.discordapp.com/attachments/590298335848431626/644649648853614603/e734cff.jpg',
-			'https://cdn.discordapp.com/attachments/590298335848431626/644649648853614605/d7a32f6.png'
-		]
+		with open('./data/images/urls/nekos.txt', 'r') as f:
+			image_urls = f.readlines()
 		e = discord.Embed(color=colors.cyan())
 		e.set_image(url=random.choice(image_urls))
 		await ctx.send(embed=e)
