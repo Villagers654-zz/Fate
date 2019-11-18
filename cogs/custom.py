@@ -30,7 +30,7 @@ class Custom(commands.Cog):
 			"PayPal me 5 and I'll give you a kiss", "Family guy is a masterpiece and no one can change my mind",
 			"Heart and Soul is the best song ever made, don't @ Hernie", "Step one, step two, do my dance in this bitch, "
 			"Got a hunnid some' drums like a band in this bitch. Mane she keep on bitchin', all that naggin' and shit, "
-			"Hoe shut the fuck up and jus' gag on this dick"
+			"Hoe shut the fuck up and jus' gag on this dick", "Hernie's address is [redacted]"
 		]
 		await ctx.send(random.choice(choices))
 
