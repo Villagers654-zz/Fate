@@ -1,15 +1,11 @@
 from discord.ext import commands
 from utils import checks, colors
 from os.path import isfile
-from io import BytesIO
-from PIL import Image
-import requests
 import discord
 import asyncio
 import random
 import time
 import json
-import os
 
 class ChatBot(commands.Cog):
 	def __init__(self, bot):
@@ -28,10 +24,7 @@ class ChatBot(commands.Cog):
 					self.cache = dat["cache"]
 					self.prefixes = dat["prefixes"]
 					self.dir = dat["dir"]
-		self.blocked = [
-			'http', 'discord.gg', '<@', '<#', '<!', 'fuck', 'bitch', 'gay', 'nig', 'rape', 'loli', 'whore',
-			'cunt', 'nib', 'retard', 'rotard', 'stfu', 'kys', 'kill', 'dick', 'cock', 'pussy'
-		]
+		self.blocked = []
 
 	def save_data(self):
 		with open("./data/userdata/chatbot.json", "w") as outfile:
@@ -180,6 +173,62 @@ class ChatBot(commands.Cog):
 
 	@commands.Cog.listener()
 	async def on_message(self, msg: discord.Message):
+		""" Tries to respond with related message """
+
+		def get_matches(key) -> list:
+			"""Returns a list of related messages"""
+			cache = self.cache["global"]
+			if self.dir[guild_id] == "guilded":
+				if guild_id not in self.cache:
+					self.cache[guild_id] = []
+				cache = self.cache[guild_id]
+			return [m for m in cache if key in m and m != msg.content]
+
+		if isinstance(msg.guild, discord.Guild) and not msg.author.bot:
+			guild_id = str(msg.guild.id)
+
+			if guild_id not in self.toggle:
+				return
+			if msg.channel.id != self.toggle[guild_id]:
+				return
+			if msg.raw_mentions:
+				return
+			if msg.raw_role_mentions:
+				return
+			if msg.raw_channel_mentions:
+				return
+
+			content = list(str(msg.content).lower())
+			abcs = 'abcdefghijklmnopqrstuvwxyz '
+			if not content[0] in abcs or content[0] in abcs and content[1] not in abcs or (
+					len(msg.content.split()) == 2 and content[3] == ' '):
+				return  # probably a bot command
+
+			if guild_id not in self.cd:
+				self.cd[guild_id] = 0
+			if self.cd[guild_id] > time.time():
+				return
+			self.cd[guild_id] = time.time() + 2
+
+			async with msg.channel.typing():
+				choice = None
+				index = 0
+				while not choice:
+					if index == 10:
+						return
+					key = random.choice(msg.content.split(' '))
+					matches = get_matches(key)
+					if len(matches) > 0:
+						choice = random.choice(matches)
+					index += 1
+				name = msg.author.mention
+				choice = choice.replace('Fate', name).replace('fate', name)
+
+				await asyncio.sleep(1)
+				await msg.channel.send(choice)
+
+
+	async def on_message_old(self, msg: discord.Message):
 		"""Tries to respond with related message"""
 		if isinstance(msg.guild, discord.Guild) and not msg.author.bot:
 			guild_id = str(msg.guild.id); blocked = self.blocked
