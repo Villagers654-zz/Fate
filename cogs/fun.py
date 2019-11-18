@@ -36,7 +36,7 @@ class Fun(commands.Cog):
 		if ctx.channel.id in self.bullying:
 			return await ctx.send('I\'m already bullying someone :[')
 		self.bullying.append(ctx.channel.id)
-		await ctx.send('I might as well..')
+		await ctx.send('I might as well..\nReply with "cancel" to make me stop')
 
 		try:
 			dat = outh.reddit()  # type: dict
@@ -64,9 +64,16 @@ class Fun(commands.Cog):
 			random.shuffle(reddit_posts)
 		print([r.title for r in reddit_posts])
 		for iteration, submission in enumerate(reddit_posts):
-			await asyncio.sleep(random.randint(10, 25))
+			def pred(m):
+				return m.channel.id == ctx.channel.id and 'cancel' in m.content
 			try:
-				await ctx.send(f'{user.mention} {submission.title}')
+				self.bot.wait_for('message', check=pred, timeout=random.randint(10, 25))
+			except asyncio.TimeoutError:
+				pass
+			else:
+				return await ctx.send('👍')
+			try:
+				await ctx.send(f'@{user.display_name} {submission.title}')
 			except:
 				return cleanup()
 			if iteration == 10:
