@@ -99,9 +99,9 @@ class Utility(commands.Cog):
 				f"__**Storage**__: [{p.bytes2human(psutil.disk_usage('/').used)}/{p.bytes2human(psutil.disk_usage('/').total)}]\n"
 				f"__**RAM**__: [{p.bytes2human(psutil.virtual_memory().used)}/{p.bytes2human(psutil.virtual_memory().total)}] ({psutil.virtual_memory().percent}%)\n"
 				f"__**Bot RAM**__: {p.bytes2human(bot_pid.memory_full_info().rss)} ({round(bot_pid.memory_percent())}%)\n"
-				f"__**CPU**__: **Global**: {psutil.cpu_percent()}% **Bot**: {bot_pid.cpu_percent()}%\n")
+				f"__**CPU**__: **Global**: {psutil.cpu_percent()}% **Bot**: {bot_pid.cpu_percent()}%\n", inline=False)
 			uptime = (datetime.now() - self.bot.start_time)
-			e.add_field(name="◈ Uptime ◈", value=utils.get_time(round(uptime.total_seconds())))
+			e.add_field(name="◈ Uptime ◈", value=utils.get_time(round(uptime.total_seconds())), inline=False)
 			e.set_footer(text=f"Powered by Python {platform.python_version()} and Discord.py {discord.__version__}", icon_url="https://cdn.discordapp.com/attachments/501871950260469790/567779834533773315/RPrw70n.png")
 			await msg.edit(embed=e)
 			return await self.wait_for_dismissal(ctx, msg)
