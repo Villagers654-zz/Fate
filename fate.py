@@ -134,6 +134,10 @@ async def on_ready():
 			await channel.send(f'```{str(error)[:1990]}```')
 
 @bot.event
+async def on_disconnect():
+	print('NOTICE: Disconnected from discord')
+
+@bot.event
 async def on_message(msg):
 	if '@everyone' in msg.content or '@here' in msg.content:
 		msg.content = msg.content.replace('@', '!')
