@@ -163,6 +163,18 @@ class Factions(commands.Cog):
 		return global_claims
 
 
+	def get_faction_rankings(self, guild_id):
+		factions = []
+		def get_value(kv):
+			value = kv[1]['balance']
+			for i in range(len(kv[1]['claims'])):
+				value += 500
+			return value
+		for faction, data in sorted(self.factions[guild_id].items(), key=get_value, reverse=True):
+			factions.append([faction, get_value([faction, data])])
+		return factions
+
+
 	def update_income_board(self, guild_id, faction, **kwargs) -> None:
 		for key, value in kwargs.items():
 			self.factions[guild_id][faction]['income'][key] += value
@@ -227,7 +239,9 @@ class Factions(commands.Cog):
 			      f'{p}factions claim #channel\n' \
 			      f'{p}factions unclaim #channel\n' \
 			      f'{p}factions claims\n' \
-			      f'{p}factions boosts\n' \
+			      f'{p}factions boosts\n'
+			      f'{p}factions info\n' \
+			      f'{p}factions members [faction]' \
 			      f'{p}factions top',
 			inline=False
 		)
@@ -250,7 +264,9 @@ class Factions(commands.Cog):
 			'owner': ctx.author.id,
 			'co-owners': [],
 			'members': [],
-			'claims': []
+			'public': True,
+			'claims': [],
+			'bio': None
 		}
 		await ctx.send('Created your faction')
 		self.save_data()
@@ -285,13 +301,49 @@ class Factions(commands.Cog):
 	@commands.command(name='info')
 	async def info(self, ctx, *, faction=None):
 		""" Bulk information on a faction """
+
 		if faction:
 			faction = self.get_faction_named(ctx, faction)
 		else:
 			faction = self.get_users_faction(ctx)
 		if not faction:
-			return await ctx.send('Faction not found')
-		pass
+			return await ctx.send("Faction not found")
+
+		guild_id = str(ctx.guild.id)
+		dat = self.factions[guild_id][faction]  # type: dict
+		owner = self.bot.get_user(dat['owner'])
+		icon_url = self.faction_icon(ctx, faction)
+		rankings = self.get_faction_rankings(guild_id)  # type: list
+		rank = 1
+		for fac, value in rankings:
+			if fac == faction:
+				break
+			rank += 1
+
+		e = discord.Embed(color=purple())
+		e.set_author(name=faction, icon_url=owner.avatar_url)
+		e.set_thumbnail(url=icon_url)
+		e.description = f"Owner: [{owner}]\n" \
+			f"Members: [{len(dat['members'])}] " \
+			f"Public: [{dat['public']}]\n" \
+			f"Bio: [{dat['bio']}]"
+		if 'banner' in dat:
+			if dat['banner']:
+				e.set_image(url=dat['banner'])
+		e.set_footer(text=f"Leaderboard Rank: #{rank}")
+
+		await ctx.send(embed=e)
+
+
+	@factions.command(name='members')
+	async def members(self, ctx, *, faction=None):
+		""" lists a factions members """
+		if faction:
+			faction = self.get_faction_named(ctx, faction)
+		else:
+			faction = self.get_users_faction(ctx)
+		if not faction:
+			return await ctx.send("Faction not found")
 
 
 	@factions.command(name='claims')
@@ -317,7 +369,7 @@ class Factions(commands.Cog):
 
 	@commands.command(name='battle')
 	async def battle(self, ctx, *args):
-		pass
+		""" Battle other factions in games like scrabble """
 
 
 	@commands.Cog.listener()
