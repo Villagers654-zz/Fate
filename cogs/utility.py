@@ -494,6 +494,7 @@ class Utility(commands.Cog):
 	@commands.command(name='create-webhook', aliases=['createwebhook'])
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.guild_only()
+	@commands.has_permissions(manage_webhooks=True)
 	@commands.bot_has_permissions(manage_webhooks=True, embed_links=True, manage_messages=True)
 	async def create_webhook(self, ctx, *, name=None):
 		if not name:
