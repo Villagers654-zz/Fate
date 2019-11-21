@@ -972,7 +972,6 @@ class Leaderboards(commands.Cog):
 						count = await self.subtract_spam_from_monthly(guild_id, user_id)
 						self.global_data[user_id] -= count
 						self.guilds_data[guild_id][user_id] -= count
-						print(f"{m.author} is spamming")
 
 				# anti macro
 				if user_id not in self.macro_cd:
@@ -992,7 +991,6 @@ class Leaderboards(commands.Cog):
 								count = await self.subtract_spam_from_monthly(guild_id, user_id)
 								self.global_data[user_id] -= count
 								self.guilds_data[guild_id][user_id] -= count
-								print(f"{m.author} is using a macro")
 
 				if user_id not in self.cd:
 					self.cd[user_id] = 0
