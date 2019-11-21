@@ -337,12 +337,47 @@ class Logger(commands.Cog):
 					del self.typing[guild_id][user_id]
 
 	@commands.Cog.listener()
-	async def on_message(self, m: discord.Message):
-		if isinstance(m.guild, discord.Guild):
-			guild_id = str(m.guild.id)
+	async def on_message(self, msg: discord.Message):
+		if isinstance(msg.guild, discord.Guild):
+			guild_id = str(msg.guild.id)
 			if guild_id not in self.cache:
 				self.cache[guild_id] = []
-			self.cache[guild_id].append(m.id)
+			self.cache[guild_id].append(msg.id)
+
+			# @everyone and @here event
+			if guild_id in self.channel:
+				mention = None
+				content = str(msg.content).lower()
+				if 'everyone' in content:
+					msg = await msg.channel.fetch_message(msg.id)
+				if 'here' in content:
+					msg = await msg.channel.fetch_message(msg.id)
+				content = str(msg.content).lower()
+				if '@everyone' in content:
+					mention = '@everyone'
+				if '@here' in content:
+					mention = '@here'
+				if mention:
+					guild_requirements = await self.ensure_permissions(guild_id)
+					if not guild_requirements:
+						return
+					e = discord.Embed(color=colors.pink())
+					e.title = f"~==🍸{mention} mentioned🍸==~"
+					e.set_thumbnail(url=msg.author.avatar_url)
+					is_successful = False
+					if msg.author.guild_permissions.administrator:
+						is_successful = True
+					elif msg.author.guild_permissions.mention_everyone and (
+							not msg.channel.permissions_for(msg.author).mention_everyone == False):
+						is_successful = True
+					elif msg.channel.permissions_for(msg.author).mention_everyone:
+						is_successful = True
+					e.description = f"Author: [{msg.author.mention}]" \
+					                f"\nPing Worked: [`{is_successful}`]" \
+					                f"\nChannel: [{msg.channel.mention}]"
+					e.add_field(name='Content', value=msg.content, inline=False)
+					channel = self.bot.get_channel(self.channel[guild_id])
+					await channel.send(embed=e)
 
 	@commands.Cog.listener()
 	async def on_message_edit(self, before, after):
