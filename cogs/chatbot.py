@@ -15,6 +15,7 @@ class ChatBot(commands.Cog):
 		self.prefixes = {}
 		self.dir = {}
 		self.cd = {}
+		self.hell = False
 		self.dm_cd = {}
 		if isfile("./data/userdata/chatbot.json"):
 			with open("./data/userdata/chatbot.json", "r") as infile:
@@ -184,7 +185,31 @@ class ChatBot(commands.Cog):
 				cache = self.cache[guild_id]
 			return [m for m in cache if key in m and m != msg.content]
 
-		if isinstance(msg.guild, discord.Guild) and not msg.author.bot:
+		if '.starthell' in msg.content:
+			self.hell = msg.channel.id
+		if '.stophell' in msg.content:
+			self.hell = False
+		if msg.channel.id == self.hell and msg.author.id != self.bot.user.id:
+			guild_id = str(msg.guild.id)
+
+			async with msg.channel.typing():
+				choice = None
+				index = 0
+				while not choice:
+					if index == 50:
+						return
+					key = random.choice(msg.content.split(' '))
+					matches = get_matches(key)
+					if len(matches) > 0:
+						choice = random.choice(matches)
+					index += 1
+				name = msg.author.mention
+				choice = choice.replace('Fate', name).replace('fate', name)
+
+				await asyncio.sleep(1)
+				return await msg.channel.send(choice)
+
+		if isinstance(msg.guild, discord.Guild) and not msg.author.bot and msg.content:
 			guild_id = str(msg.guild.id)
 
 			if guild_id not in self.toggle:
