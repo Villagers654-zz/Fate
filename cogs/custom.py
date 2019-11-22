@@ -1,6 +1,8 @@
 from discord.ext import commands
 import discord
 import random
+import requests
+import json
 from utils import colors
 
 class Custom(commands.Cog):
@@ -70,6 +72,52 @@ class Custom(commands.Cog):
 		e = discord.Embed(color=colors.cyan())
 		e.set_image(url=random.choice(image_urls))
 		await ctx.send(embed=e)
+
+	@commands.command(name="cactus")
+	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
+	async def _cactus(self, ctx):
+		apikey = "LIWIXISVM3A7"
+		lmt = 50
+		r = requests.get("https://api.tenor.com/v1/anonid?key=%s" % apikey)
+		if r.status_code == 200:
+			anon_id = json.loads(r.content)["anon_id"]
+		else:
+			anon_id = ""
+		r = requests.get("https://api.tenor.com/v1/search?q=%s&key=%s&limit=%s&anon_id=%s" % ('cactus', apikey, lmt, anon_id))
+		if r.status_code == 200:
+			try:
+				dat = json.loads(r.content)
+				e = discord.Embed(color=colors.random())
+				e.set_image(url=dat['results'][random.randint(0, len(dat['results']) - 1)]['media'][0]['gif']['url'])
+				await ctx.send(embed=e)
+			except Exception as e:
+				await ctx.send(e)
+		else:
+			await ctx.send("error")
+
+	@commands.command(name="lion")
+	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
+	async def _lion(self, ctx):
+		apikey = "LIWIXISVM3A7"
+		lmt = 50
+		r = requests.get("https://api.tenor.com/v1/anonid?key=%s" % apikey)
+		if r.status_code == 200:
+			anon_id = json.loads(r.content)["anon_id"]
+		else:
+			anon_id = ""
+		r = requests.get("https://api.tenor.com/v1/search?q=%s&key=%s&limit=%s&anon_id=%s" % ('baby lion', apikey, lmt, anon_id))
+		if r.status_code == 200:
+			try:
+				dat = json.loads(r.content)
+				e = discord.Embed(color=colors.random())
+				e.set_image(url=dat['results'][random.randint(0, len(dat['results']) - 1)]['media'][0]['gif']['url'])
+				await ctx.send(embed=e)
+			except Exception as e:
+				await ctx.send(e)
+		else:
+			await ctx.send("error")
 
 def setup(bot):
 	bot.add_cog(Custom(bot))
