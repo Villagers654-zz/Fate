@@ -345,6 +345,8 @@ class AntiSpam(commands.Cog):
                 await msg.channel.delete_messages(messages)
                 if "send_messages" not in perms:
                     return
+                if msg.guild.id == 632870495653593099:  # darks server
+                    return  # dont mute, just delete spam
                 async with msg.channel.typing():
                     with open("./data/userdata/mod.json", "r") as f:
                         dat = json.load(f)  # type: dict
