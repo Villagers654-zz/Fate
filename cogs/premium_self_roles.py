@@ -43,7 +43,7 @@ class Premium_Self_Roles(commands.Cog):
 		guild = self.bot.get_guild(int(guild_id))
 		e = discord.Embed(color=data['color'])
 		name = data['name']
-		e.set_author(name=f"Self-Role Menu {f'- {name}' if name else ''}", icon_url=guild.owner.icon_url)
+		e.set_author(name=f"Self-Role Menu {f'- {name}' if name else ''}", icon_url=guild.owner.avatar_url)
 		e.set_thumbnail(url='https://cdn.discordapp.com/attachments/514213558549217330/514345278669848597/8yx98C.gif')
 		e.description = ''
 		for role_id, emoji in sorted(data['items'].items(), key=role_position, reverse=True):
@@ -53,6 +53,17 @@ class Premium_Self_Roles(commands.Cog):
 			for i in range(data['indent'] + 1):
 				e.description += '\n'
 		return e
+
+	def get_custom_emojis(self, m):
+		if len(m) == 1:
+			return m
+		else:
+			for char in list(m):
+				try: int(char)
+				except: m = m.replace(char, '')
+			try: m = self.bot.get_emoji(int(m))
+			except: m = None
+			return m
 
 	@commands.command(name='premium-selfroles')
 	@commands.cooldown(2, 5, commands.BucketType.user)
@@ -116,16 +127,6 @@ class Premium_Self_Roles(commands.Cog):
 					await msg.delete()
 					return None
 				return msg
-		def get_custom_emojis(m):
-			if len(m) == 1:
-				return m
-			else:
-				for char in list(m):
-					try: int(char)
-					except: m = m.replace(char, '')
-				try: m = self.bot.get_emoji(int(m))
-				except: m = None
-				return m
 
 		menu = {
 			"name": None,
@@ -214,7 +215,7 @@ class Premium_Self_Roles(commands.Cog):
 				await ctx.send('Not enough args', delete_after=5)
 				continue
 			emoji, role = args
-			emoji = get_custom_emojis(emoji)
+			emoji = self.get_custom_emojis(emoji)
 			if not emoji:
 				await msg.delete()
 				await ctx.send('Emoji not found', delete_after=5)
@@ -294,6 +295,30 @@ class Premium_Self_Roles(commands.Cog):
 		usage = f"{p}add-role msg_id emoji rolename"
 		if not emoji or not role:
 			await ctx.send(usage)
+		guild_id = str(ctx.guild.id)
+		if guild_id not in self.menus:
+			return await ctx.send(f"This guild has no self-role menus")
+		if msg_id not in self.menus[guild_id]:
+			return await ctx.send("That menu doesn't exist")
+		emoji = self.get_custom_emojis(emoji)
+		if not emoji:
+			return await ctx.send('Emoji not found', delete_after=5)
+		role = await utils.get_role(ctx, role)
+		if not role:
+			return await ctx.send('Role not found', delete_after=5)
+		emoji_id = f'{emoji}'
+		if isinstance(emoji, discord.PartialEmoji):
+			emoji_id = emoji.id
+		self.menus[guild_id][msg_id]['items'][str(role.id)] = emoji_id
+		embed = self.build_menu(guild_id, self.menus[guild_id][msg_id])
+		channel = self.bot.get_channel(self.menus[guild_id][msg_id]['channel'])
+		msg = await channel.fetch_message(int(msg_id))
+		await msg.edit(embed=embed)
+		if isinstance(emoji, int):
+			emoji = self.bot.get_emoji(emoji)
+		await msg.add_reaction(emoji)
+		await ctx.send(f"Added {role.name}")
+		self.save_data()
 
 	@commands.command(name='remove-role')
 	@commands.cooldown(2, 5, commands.BucketType.user)
@@ -301,7 +326,30 @@ class Premium_Self_Roles(commands.Cog):
 	@commands.bot_has_permissions(embed_links=True)
 	@commands.has_permissions(manage_roles=True)
 	async def remove_role(self, ctx, msg_id, *, role):
-		pass
+		guild_id = str(ctx.guild.id)
+		if guild_id not in self.menus:
+			return await ctx.send(f"This guild has no self-role menus")
+		if msg_id not in self.menus[guild_id]:
+			return await ctx.send("That menu doesn't exist")
+		role = await utils.get_role(ctx, role)
+		if not role:
+			return await ctx.send("Role not found")
+		if str(role.id) not in self.menus[guild_id][msg_id]['items']:
+			return await ctx.send("That role isn't in the menu")
+		emoji = self.menus[guild_id][msg_id]['items'][str(role.id)]
+		del self.menus[guild_id][msg_id]['items'][str(role.id)]
+		embed = self.build_menu(guild_id, self.menus[guild_id][msg_id])
+		channel = self.bot.get_channel(self.menus[guild_id][msg_id]['channel'])
+		msg = await channel.fetch_message(int(msg_id))
+		await msg.edit(embed=embed)
+		if isinstance(emoji, int):
+			emoji = self.bot.get_emoji(emoji)
+		for reaction in msg.reactions:
+			if str(reaction.emoji) == str(emoji):
+				async for user in reaction.users():
+					await msg.remove_reaction(reaction, user)
+		await ctx.send(f"Removed {role.name}")
+		self.save_data()
 
 	@commands.command(name='set-limit')
 	@commands.cooldown(2, 5, commands.BucketType.user)
