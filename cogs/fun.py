@@ -22,7 +22,6 @@ class Fun(commands.Cog):
 		self.dat = {}
 		self.bullying = []
 
-
 	@commands.command(name='bully')
 	@commands.cooldown(1, 5, commands.BucketType.channel)
 	@commands.bot_has_permissions(send_messages=True)
@@ -65,20 +64,21 @@ class Fun(commands.Cog):
 		print([r.title for r in reddit_posts])
 		for iteration, submission in enumerate(reddit_posts):
 			def pred(m):
-				return m.channel.id == ctx.channel.id and 'cancel' in m.content
+				return m.channel.id == ctx.channel.id and 'cancel' in m.content and not m.author.bot == True
 			try:
-				self.bot.wait_for('message', check=pred, timeout=random.randint(10, 25))
+				msg = await self.bot.wait_for('message', check=pred, timeout=random.randint(10, 25))
 			except asyncio.TimeoutError:
 				pass
 			else:
-				return await ctx.send('👍')
+				if msg:
+					self.bullying.remove(ctx.channel.id)
+					return await ctx.send('👍')
 			try:
-				await ctx.send(f'@{user.display_name} {submission.title}')
+				await ctx.send(f'{submission.title}')
 			except:
 				return cleanup()
 			if iteration == 10:
 				return cleanup()
-
 
 	@commands.command(name='meme')
 	@commands.cooldown(1, 3, commands.BucketType.channel)
@@ -102,30 +102,6 @@ class Fun(commands.Cog):
 		e.set_image(url=post.url)
 		e.set_footer(text=f'{post.author.name} | 👍 {post.score} | 💬 {post.num_comments}')
 		await ctx.send(embed=e)
-
-	@commands.command(name="cactus")
-	@commands.cooldown(1, 5, commands.BucketType.user)
-	@commands.bot_has_permissions(embed_links=True, attach_files=True, manage_messages=True)
-	async def _tenor(self, ctx):
-		apikey = "LIWIXISVM3A7"
-		lmt = 50
-		r = requests.get("https://api.tenor.com/v1/anonid?key=%s" % apikey)
-		if r.status_code == 200:
-			anon_id = json.loads(r.content)["anon_id"]
-		else:
-			anon_id = ""
-		r = requests.get("https://api.tenor.com/v1/search?q=%s&key=%s&limit=%s&anon_id=%s" % ('cactus', apikey, lmt, anon_id))
-		if r.status_code == 200:
-			try:
-				dat = json.loads(r.content)
-				e = discord.Embed(color=colors.random())
-				e.set_image(url=dat['results'][random.randint(0, len(dat['results']) - 1)]['media'][0]['gif']['url'])
-				await ctx.send(embed=e)
-				await ctx.message.delete()
-			except Exception as e:
-				await ctx.send(e)
-		else:
-			await ctx.send("error")
 
 	@commands.command(name='snipe')
 	@commands.cooldown(1, 5, commands.BucketType.user)
