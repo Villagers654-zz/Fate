@@ -375,14 +375,14 @@ class AntiSpam(commands.Cog):
                             await channel.set_permissions(mute_role, send_messages=False)
                         for channel in msg.guild.voice_channels:
                             await channel.set_permissions(mute_role, speak=False)
-                    self.roles[user_id] = []
-                    for role in msg.author.roles:
-                        try:
-                            await msg.author.remove_roles(role)
-                            self.roles[user_id].append(role)
-                            await asyncio.sleep(1)
-                        except:
-                            pass
+                    #self.roles[user_id] = []
+                    #for role in msg.author.roles:
+                    #    try:
+                    #        await msg.author.remove_roles(role)
+                    #        self.roles[user_id].append(role)
+                    #        await asyncio.sleep(1)
+                    #    except:
+                    #        pass
                     multiplier = 0
                     if guild_id not in self.mutes:
                         self.mutes[guild_id] = {}
@@ -421,13 +421,13 @@ class AntiSpam(commands.Cog):
                                     await msg.author.remove_roles(mute_role)
                                 except:
                                     pass
-                        for role in self.roles[user_id]:
-                            if role not in msg.author.roles:
-                                await asyncio.sleep(1)
-                                try:
-                                    await msg.author.add_roles(role)
-                                except:
-                                    pass
+                        #for role in self.roles[user_id]:
+                        #    if role not in msg.author.roles:
+                        #        await asyncio.sleep(1)
+                        #        try:
+                        #            await msg.author.add_roles(role)
+                        #        except:
+                        #            pass
                         await msg.channel.send(f"Unmuted {msg.author.display_name}")
                     del self.status[guild_id][user_id]
 
@@ -439,9 +439,9 @@ class AntiSpam(commands.Cog):
             for role in before.roles:
                 if 'muted' in str(role.name).lower():
                     if role not in after.roles:
-                        for role in self.roles[user_id]:
-                            await before.add_roles(role)
-                        del self.roles[user_id]
+                        #for role in self.roles[user_id]:
+                        #    await before.add_roles(role)
+                        #del self.roles[user_id]
                         del self.status[guild_id][user_id]
                         return
 
