@@ -48,6 +48,8 @@ class Premium_Self_Roles(commands.Cog):
 		e.description = ''
 		for role_id, emoji in sorted(data['items'].items(), key=role_position, reverse=True):
 			role = guild.get_role(int(role_id))
+			if not role:
+				continue
 			role = role.mention if data['mentions'] else role.name
 			e.description += f"{emoji} - {role}"
 			for i in range(data['indent'] + 1):
@@ -255,6 +257,8 @@ class Premium_Self_Roles(commands.Cog):
 			menu['items'][str(role.id)] = emoji_id
 			await msg.delete()
 			await ctx.send(f"Added {role.name}", delete_after=5)
+		await asyncio.sleep(0.5)
+		await msg.delete()
 
 		await instructions.edit(content='Mention the channel I should use\nReply with "cancel" to exit')
 		while True:
@@ -516,6 +520,14 @@ class Premium_Self_Roles(commands.Cog):
 						role = guild.get_role(int(role_id))
 						if role in target.roles:
 							await target.remove_roles(role)
+
+	@commands.Cog.listener()
+	async def on_message_delete(self, msg):
+		guild_id = str(msg.guild.id)
+		if guild_id in self.menus:
+			if str(msg.id) in self.menus[guild_id]:
+				del self.menus[guild_id][str(msg.id)]
+				self.save_data()
 
 def setup(bot):
 	bot.add_cog(Premium_Self_Roles(bot))
