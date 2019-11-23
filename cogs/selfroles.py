@@ -113,6 +113,7 @@ class Premium_Self_Roles(commands.Cog):
 	@commands.bot_has_permissions(embed_links=True)
 	@commands.has_permissions(manage_roles=True)
 	async def update_menu(self, ctx, msg_id):
+		""" Rebuilds a menu """
 		guild_id = str(ctx.guild.id)
 		if guild_id not in self.menus:
 			return await ctx.send("This server has no self-role menus")
@@ -127,6 +128,18 @@ class Premium_Self_Roles(commands.Cog):
 			self.menus[guild_id][msg_id]['channel'] = ctx.channel.id
 			dat['channel'] = ctx.channel.id
 			self.save_data()
+		for role_id, emoji in dat['items'].items():
+			role = ctx.guild.get_role(int(role_id))
+			if not role:
+				emoji = self.menus[guild_id][msg_id]['items'][role_id]
+				del self.menus[guild_id][msg_id]['items'][role_id]
+				msg = await self.edit_menu(guild_id, msg_id)
+				if isinstance(emoji, int):
+					emoji = self.bot.get_emoji(emoji)
+				for reaction in msg.reactions:
+					if str(reaction.emoji) == str(emoji):
+						async for user in reaction.users():
+							await msg.remove_reaction(reaction, user)
 		channel = self.bot.get_channel(dat['channel'])
 		msg = await channel.fetch_message(int(msg_id))
 		embed = self.build_menu(guild_id, dat)
@@ -482,6 +495,8 @@ class Premium_Self_Roles(commands.Cog):
 				channel = self.bot.get_channel(payload.channel_id)
 				msg = await channel.fetch_message(msg_id)
 				target = guild.get_member(payload.user_id)
+				if target.bot:
+					return
 
 				for role_id, emoji in self.menus[guild_id][msg_id]['items'].items():
 
