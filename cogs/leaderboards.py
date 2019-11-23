@@ -1093,7 +1093,6 @@ class Leaderboards(commands.Cog):
 					self.vclb[guild_id][member_id] += seconds
 					self.gvclb[member_id] += seconds
 					del self.cache[cid]['members'][member_id]
-					print(f'Removed {self.bot.get_user(int(member_id)).name} 1')
 			async def run(channel):
 				channel_id = str(channel.id)
 				members, total = get_active_members(channel)
@@ -1105,7 +1104,6 @@ class Leaderboards(commands.Cog):
 							member_id = str(member.id)
 							if member_id not in self.cache[channel_id]['members']:
 								self.cache[channel_id]['members'][member_id] = datetime.now()
-								print(f'Added {self.bot.get_user(int(member_id)).name}')
 			if before.channel and after.channel:
 				if before.channel.id != after.channel.id:
 					channel_id = str(before.channel.id)
@@ -1114,7 +1112,6 @@ class Leaderboards(commands.Cog):
 						self.vclb[guild_id][user_id] += seconds
 						self.gvclb[user_id] += seconds
 						del self.cache[channel_id]['members'][user_id]
-						print(f'Removed {self.bot.get_user(int(user_id)).name} 2')
 					await run(before.channel)
 					await run(after.channel)
 			if not after.channel:
@@ -1124,7 +1121,6 @@ class Leaderboards(commands.Cog):
 					self.vclb[guild_id][user_id] += seconds
 					self.gvclb[user_id] += seconds
 					del self.cache[channel_id]['members'][user_id]
-					print(f'Removed {self.bot.get_user(int(user_id)).name} 3')
 					await run(before.channel)
 			if before.channel is not None:
 				await run(before.channel)
