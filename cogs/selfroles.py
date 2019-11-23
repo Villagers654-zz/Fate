@@ -102,7 +102,7 @@ class Premium_Self_Roles(commands.Cog):
 			      f"\n• **remove-role** - `removes a role from a menu`"
 			      f"\n• **set-limit** - `sets users reaction limit`"
 			      f"\n• **toggle-mentions** - `use role mentions`"
-			      f"\n• **update-menu** - `re-sorts a menu`",
+			      f"\n• **update-menu** - `refreshes a menu`",
 			inline=False
 		)
 		await ctx.send(embed=e)
