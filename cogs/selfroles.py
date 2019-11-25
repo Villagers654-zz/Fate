@@ -72,15 +72,6 @@ class Premium_Self_Roles(commands.Cog):
 		await msg.edit(embed=embed)
 		return msg
 
-	@commands.command(name='convert-selfroles')
-	async def convert_selfroles(self, ctx):
-		for guild_id, msgs in self.menus.items():
-			for msg_id, data in msgs.items():
-				if data['mentions'] == None:
-					self.menus[guild_id][msg_id]['mentions'] = True
-		await ctx.send('Printed result to console')
-
-
 	@commands.command(name='selfroles')
 	@commands.cooldown(2, 5, commands.BucketType.user)
 	@commands.guild_only()
@@ -345,8 +336,6 @@ class Premium_Self_Roles(commands.Cog):
 			return await ctx.send(usage)
 		if msg_id not in self.menus[guild_id]:
 			return await ctx.send("That menu doesn't exist")
-		if not new_name:
-			return await ctx.send(usage)
 		self.menus[guild_id][msg_id]['name'] = new_name
 		await self.edit_menu(guild_id, msg_id)
 		await ctx.send("Set the name 👍")
