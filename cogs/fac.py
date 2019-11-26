@@ -20,6 +20,39 @@ from utils.colors import *
 from utils import utils
 
 
+class MiniGames:
+	def __init__(self, *users):
+		self.users = users
+
+	async def scrabble(self, ctx):
+		""" Randomize the order of letters in a word """
+		def pred(msg):
+			return msg.channel.id == ctx.channel.id and msg.author.id in self.users and (
+				str(msg.content).lower() == word)
+
+		words = []  # stay wholesome uwu
+		word = random.choice(words)
+		scrambled_word = list(str(word).lower())
+		random.shuffle(scrambled_word)
+
+		e = discord.Embed(color=fate())
+		e.description = f"Scrambled word: `{scrambled_word}`"
+		e.set_footer(text="You have 20 seconds..", icon_url=ctx.bot.user.avatar_url)
+		await ctx.send(embed=e)
+
+		try:
+			msg = ctx.bot.wait_for('message', check=pred, timeout=25)
+		except asyncio.TimeoutError:
+			await ctx.send("You failed :/")
+			return None
+		else:
+			if len(self.users) > 1:
+				await ctx.send(f"{msg.author.display_name} won!")
+			else:
+				await ctx.send("You won!")
+			return msg.author
+
+
 class Factions(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
@@ -37,18 +70,15 @@ class Factions(commands.Cog):
 			with open(self.path, 'r') as f:
 				self.factions = json.load(f)  # type: dict
 
-
 	def save_data(self) -> None:
 		""" Saves the current variables """
 		with open(self.path, 'w+') as f:
 			json.dump(self.factions, f)
 
-
 	def init(self, guild_id: str):
 		""" Creates guild dictionary if it doesnt exist """
 		if guild_id not in self.factions:
 			self.factions[guild_id] = {}
-
 
 	def faction_icon(self, ctx, faction: str)->str:
 		""" returns an icon for the faction """
@@ -59,7 +89,6 @@ class Factions(commands.Cog):
 		owner_id = self.factions[guild_id][faction]['owner']
 		owner = self.bot.get_user(owner_id)
 		return owner.avatar_url
-
 
 	def get_users_faction(self, ctx, user=None):
 		""" fetch a users faction by context or partial name """
@@ -74,7 +103,6 @@ class Factions(commands.Cog):
 				return faction
 		return None
 
-
 	def get_owned_faction(self, ctx, user=None):
 		""" returns a users owned faction if it exists """
 		if not user:
@@ -87,7 +115,6 @@ class Factions(commands.Cog):
 			if user.id == data['owner']:
 				return faction
 		return None
-
 
 	def get_faction_named(self, ctx, name):
 		""" gets a faction via partial name """
@@ -129,7 +156,6 @@ class Factions(commands.Cog):
 		else:
 			return None
 
-
 	def collect_claims(self, guild_id, faction=None) -> dict:
 		""" Fetches claims for the whole guild or a single faction
 		    for easy use when needing all the claims """
@@ -162,7 +188,6 @@ class Factions(commands.Cog):
 				global_claims[claim] = data
 		return global_claims
 
-
 	def get_faction_rankings(self, guild_id):
 		factions = []
 		def get_value(kv):
@@ -174,11 +199,9 @@ class Factions(commands.Cog):
 			factions.append([faction, get_value([faction, data])])
 		return factions
 
-
 	def update_income_board(self, guild_id, faction, **kwargs) -> None:
 		for key, value in kwargs.items():
 			self.factions[guild_id][faction]['income'][key] += value
-
 
 	@commands.group(name='fac')
 	@commands.cooldown(2, 5, commands.BucketType.user)
@@ -197,7 +220,6 @@ class Factions(commands.Cog):
 			                'not guarded, challenge enemys to minigame battles, and ' \
 			                'rank up on the faction leaderboard'
 			await ctx.send(embed=e)
-
 
 	@factions.command(name='help', aliases=['commands'])
 	async def _help(self, ctx):
@@ -247,7 +269,6 @@ class Factions(commands.Cog):
 		)
 		await ctx.send(embed=e)
 
-
 	@factions.command(name='create')
 	async def create(self, ctx, *, name):
 		""" Creates a faction """
@@ -271,37 +292,67 @@ class Factions(commands.Cog):
 		await ctx.send('Created your faction')
 		self.save_data()
 
-
 	@factions.command(name='disband')
+	@commands.cooldown(1, 10, commands.BucketType.user)
 	async def disband(self, ctx):
 		""" Deletes the owned faction """
+		def pred(msg):
+			return msg.author.id == ctx.author.id and msg.channel.id == msg.channel.id and (
+				'yes' in msg.content or 'no' in msg.content)
 
+		faction = self.get_owned_faction(ctx)
+		if not faction:
+			return await ctx.send("You need to be owner to use this cmd")
+		guild_id = str(ctx.guild.id)
+		if ctx.author.id != self.factions[guild_id][faction]['owner']:
+			return await ctx.send("You need to be owner to use this cmd")
+
+		instruction = await ctx.send("Are you sure you want to delete your faction?\nReply with 'yes' or 'no'")
+		try:
+			msg = self.bot.wait_for('message', check=pred, timeout=30)
+		except asyncio.TimeoutError:
+			await instruction.delete()
+			return await ctx.message.delete()
+		else:
+			if 'yes' in msg.content.lower():
+				del self.factions[guild_id][faction]
+				await ctx.send("Ok.. deleted your faction")
+				self.save_data()
+			else:
+				await ctx.send("Ok, I won't delet")
 
 	@factions.command(name='join')
 	async def join(self, ctx, *, faction):
 		""" Join a public faction """
-
+		self.faction = self.get_users_faction(ctx)
+		if faction:
+			return await ctx.send("You're already in a faction")
+		faction = self.get_faction_named(ctx, faction)
+		if not faction:
+			return await ctx.send("Faction not found")
+		guild_id = str(ctx.guild.id)
+		if not self.factions[guild_id][faction]['public']:
+			return await ctx.send("Sorry, that factions not public :[")
+		self.factions[guild_id][faction]['members'].append(ctx.author.id)
+		await ctx.send(f"You joined {faction} :D")
+		self.save_data()
 
 	@factions.command(name='invite')
 	async def invite(self, ctx, user: discord.Member):
 		""" Invites a user to a private faction """
-
 
 	@factions.command(name='kick')
 	async def kick(self, ctx, *, user):
 		""" Kicks a user from the faction """
 		user = utils.get_user(ctx, user)
 
-
 	@commands.command(name='rename')
 	async def rename(self, ctx, *, name):
 		""" Renames their faction """
 
-
 	@commands.command(name='info')
 	async def info(self, ctx, *, faction=None):
 		""" Bulk information on a faction """
-
 		if faction:
 			faction = self.get_faction_named(ctx, faction)
 		else:
@@ -324,16 +375,15 @@ class Factions(commands.Cog):
 		e.set_author(name=faction, icon_url=owner.avatar_url)
 		e.set_thumbnail(url=icon_url)
 		e.description = f"Owner: [{owner}]\n" \
-			f"Members: [{len(dat['members'])}] " \
-			f"Public: [{dat['public']}]\n" \
-			f"Bio: [{dat['bio']}]"
+						f"Members: [{len(dat['members'])}] " \
+						f"Public: [{dat['public']}]\n" \
+						f"Bio: [{dat['bio']}]"
 		if 'banner' in dat:
 			if dat['banner']:
 				e.set_image(url=dat['banner'])
 		e.set_footer(text=f"Leaderboard Rank: #{rank}")
 
 		await ctx.send(embed=e)
-
 
 	@factions.command(name='members')
 	async def members(self, ctx, *, faction=None):
@@ -345,6 +395,28 @@ class Factions(commands.Cog):
 		if not faction:
 			return await ctx.send("Faction not found")
 
+		guild_id = str(ctx.guild.id)
+		owner_id = self.factions[guild_id][faction]['owner']
+		owner = self.bot.get_user(owner_id)
+		users = []
+		for user_id in self.factions[guild_id][faction]['members']:
+			user = self.bot.get_user(user_id)
+			if not isinstance(user, discord.User):
+				self.factions[guild_id][faction].remove(user_id)
+				self.save_data()
+				continue
+			income = 0
+			if user_id in self.factions[guild_id][faction]['income']:
+				income = self.factions[guild_id][faction][income][user_id]
+			users.append([user, income])
+
+		e = discord.Embed(color=purple())
+		e.set_author(name=f"{faction}'s members", icon_url=owner.avatar_url)
+		e.set_thumbnail(url=self.faction_icon(ctx, faction))
+		e.description = ''
+		for user, income in users:
+			e.description += f"{user.mention} - ${income}\n"
+		await ctx.send(embed=e)
 
 	@factions.command(name='claims')
 	async def claims(self, ctx, *, faction):
@@ -366,11 +438,9 @@ class Factions(commands.Cog):
 			e.description = f"• {channel.mention} {'- guarded' if data['guarded'] else ''}\n"
 		await ctx.send(embed=e)
 
-
 	@commands.command(name='battle')
 	async def battle(self, ctx, *args):
 		""" Battle other factions in games like scrabble """
-
 
 	@commands.Cog.listener()
 	async def on_message(self, msg):
@@ -384,7 +454,6 @@ class Factions(commands.Cog):
 					pay = random.randint(1, 5)
 					self.factions[guild_id][faction]['balance'] += pay
 					self.update_income_board(guild_id, faction, land_claims=pay)
-
 
 def setup(bot):
 	bot.add_cog(Factions(bot))
