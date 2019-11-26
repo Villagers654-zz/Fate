@@ -20,7 +20,7 @@ import discord
 from utils import colors, utils
 
 
-class Premium_Self_Roles(commands.Cog):
+class SelfRoles(commands.Cog):
 	def __init__(self, bot: commands.Bot):
 		self.bot = bot
 		self.menus = {}
@@ -534,4 +534,4 @@ class Premium_Self_Roles(commands.Cog):
 				self.save_data()
 
 def setup(bot):
-	bot.add_cog(Premium_Self_Roles(bot))
+	bot.add_cog(SelfRoles(bot))
