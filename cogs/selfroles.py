@@ -168,7 +168,7 @@ class SelfRoles(commands.Cog):
 			"mentions": None  # type: bool
 		}
 		instructions = await ctx.send('What should the menu be called\nReply with "cancel" to exit, '
-		                              'or "skip" to use default color')
+		                              'or "skip" to use none')
 		msg = await wait_for_msg()
 		if not msg:
 			return
@@ -176,93 +176,98 @@ class SelfRoles(commands.Cog):
 		await asyncio.sleep(0.5)
 		await msg.delete()
 
-		await instructions.edit(content='What hex color should the menu be\nReply with "cancel" to exit, '
-		                                'or "skip" to use default color')
-		while not menu['color']:
-			msg = await wait_for_msg()
-			if not msg:
-				return
-			if 'skip' in msg.content:
-				menu['color'] = colors.fate()
-				break
-			try:
-				hex = int(f'0x{msg.content}', 0)
-				menu['color'] = hex
-			except:
-				await msg.delete()
-				await ctx.send('Invalid hex', delete_after=5)
-		await asyncio.sleep(0.5)
-		await msg.delete()
+		if 'quick' not in ctx.message.content:
 
-		await instructions.edit(content='How many reactions should users be allowed to add\nReply with '
-		                                '"cancel" to exit, or "skip" to allow infinite')
-		while not menu['limit']:
-			msg = await wait_for_msg()
-			if not msg:
-				return
-			if 'skip' in msg.content:
-				menu['limit'] = None
-				break
-			try:
-				limit = int(msg.content)
-				menu['limit'] = limit
-			except:
-				await msg.delete()
-				await ctx.send('Invalid reply', delete_after=5)
-		await asyncio.sleep(0.5)
-		await msg.delete()
-
-		await instructions.edit(content='Should I use role mentions instead of role names\nReply with "yes" or "no"')
-		while True:
-			msg = await wait_for_msg()
-			if not msg:
-				return
-			msg.content = msg.content.lower()
-			if 'yes' not in msg.content and 'no' not in msg.content:
-				await msg.delete()
-				await ctx.send('Invalid reply', delete_after=5)
-				continue
-			if 'yes' in msg.content:
-				menu['mentions'] = True
-			else:
-				menu['mentions'] = False
-			break
-		await asyncio.sleep(1)
-		await msg.delete()
-
-		await instructions.edit(content='Send the emoji and role-name for each role\n'
-		                                'Reply with "done" when complete or add them later.\n'
-		                                'Reply with "cancel" to exit')
-		while True:
-			msg = await wait_for_msg()
-			if not msg:
-				return
-			if 'done' in msg.content:
-				break
-			args = msg.content.split(' ', 1)
-			if len(args) == 1:
-				await msg.delete()
-				await ctx.send('Not enough args', delete_after=5)
-				continue
-			emoji, role = args
-			emoji = self.get_emojis(emoji)
-			if not emoji:
-				await msg.delete()
-				await ctx.send('Emoji not found', delete_after=5)
-				continue
-			role = await utils.get_role(ctx, role)
-			if not role:
-				await msg.delete()
-				await ctx.send('Role not found', delete_after=5)
-				continue
-			emoji_id = f'{emoji}'
-			if isinstance(emoji, discord.PartialEmoji):
-				emoji_id = emoji.id
-			menu['items'][str(role.id)] = emoji_id
+			await instructions.edit(content='What hex color should the menu be\nReply with "cancel" to exit, '
+			                                'or "skip" to use default color')
+			while not menu['color']:
+				msg = await wait_for_msg()
+				if not msg:
+					return
+				if 'skip' in msg.content:
+					menu['color'] = colors.fate()
+					break
+				try:
+					hex = int(f'0x{msg.content}', 0)
+					menu['color'] = hex
+				except:
+					await msg.delete()
+					await ctx.send('Invalid hex', delete_after=5)
+			await asyncio.sleep(0.5)
 			await msg.delete()
-			await ctx.send(f"Added {role.name}", delete_after=5)
-		await asyncio.sleep(0.5)
-		await msg.delete()
+
+			await instructions.edit(content='How many reactions should users be allowed to add\nReply with '
+			                                '"cancel" to exit, or "skip" to allow infinite')
+			while not menu['limit']:
+				msg = await wait_for_msg()
+				if not msg:
+					return
+				if 'skip' in msg.content:
+					menu['limit'] = None
+					break
+				try:
+					limit = int(msg.content)
+					menu['limit'] = limit
+				except:
+					await msg.delete()
+					await ctx.send('Invalid reply', delete_after=5)
+			await asyncio.sleep(0.5)
+			await msg.delete()
+
+			await instructions.edit(content='Should I use role mentions instead of role names\nReply with "yes" or "no"')
+			while True:
+				msg = await wait_for_msg()
+				if not msg:
+					return
+				msg.content = msg.content.lower()
+				if 'yes' not in msg.content and 'no' not in msg.content:
+					await msg.delete()
+					await ctx.send('Invalid reply', delete_after=5)
+					continue
+				if 'yes' in msg.content:
+					menu['mentions'] = True
+				else:
+					menu['mentions'] = False
+				break
+			await asyncio.sleep(1)
+			await msg.delete()
+
+			await instructions.edit(content='Send the emoji and role-name for each role\n'
+			                                'Reply with "done" when complete or add them later.\n'
+			                                'Reply with "cancel" to exit')
+			while True:
+				msg = await wait_for_msg()
+				if not msg:
+					return
+				if 'done' in msg.content:
+					break
+				args = msg.content.split(' ', 1)
+				if len(args) == 1:
+					await msg.delete()
+					await ctx.send('Not enough args', delete_after=5)
+					continue
+				emoji, role = args
+				emoji = self.get_emojis(emoji)
+				if not emoji:
+					await msg.delete()
+					await ctx.send('Emoji not found', delete_after=5)
+					continue
+				role = await utils.get_role(ctx, role)
+				if not role:
+					await msg.delete()
+					await ctx.send('Role not found', delete_after=5)
+					continue
+				emoji_id = f'{emoji}'
+				if isinstance(emoji, discord.PartialEmoji):
+					emoji_id = emoji.id
+				menu['items'][str(role.id)] = emoji_id
+				await msg.delete()
+				await ctx.send(f"Added {role.name}", delete_after=5)
+			await asyncio.sleep(0.5)
+			await msg.delete()
+		else:
+			menu['color'] = colors.fate()
+			menu['mentions'] = True
 
 		await instructions.edit(content='Mention the channel I should use\nReply with "cancel" to exit')
 		while True:
