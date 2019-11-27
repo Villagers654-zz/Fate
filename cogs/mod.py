@@ -816,6 +816,40 @@ class Mod(commands.Cog):
 			await asyncio.sleep(1)
 		await ctx.message.add_reaction("🏁")
 
+	@commands.command(name="mass-remove-role")
+	@commands.cooldown(1, 25, commands.BucketType.guild)
+	@commands.guild_only()
+	@commands.has_permissions(manage_roles=True)
+	@commands.bot_has_permissions(manage_roles=True)
+	async def mass_remove_role(self, ctx, *, role):
+		role = await utils.get_role(ctx, role)
+		if not role:
+			return await ctx.send('Role not found')
+		await ctx.message.add_reaction("🖍")
+		bot = ctx.guild.get_member(self.bot.user.id)
+		members = [m for m in ctx.guild.members if role in m.roles and m.top_role.position < bot.top_role.position]
+		msg = await ctx.send(f'Estimated time: {str(len(members)) + " seconds" if len(members) < 60 else utils.get_time(len(members))}')
+		index = 1; counter = 0; total = len(members)
+		for member in members:
+			counter += 1
+			try:
+				await member.remove_roles(role)
+			except discord.errors.Forbidden:
+				return await ctx.send('Missing permissions')
+			except discord.errors.NotFound:
+				pass
+			if index == len(members):
+				await msg.edit(content=f'{index}/{len(members)} members updated')
+				break
+			if counter == 10:  # update progress/estimate every 10 members
+				estimate = str(str(total) + " seconds" if total < 60 else utils.get_time(total))
+				await msg.edit(content=f'Estimated time: {estimate}\n{index}/{len(members)} members updated')
+				counter = 0
+			index += 1
+			total -= 1
+			await asyncio.sleep(1)
+		await ctx.message.add_reaction("🏁")
+
 	@commands.command(name="vcmute")
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.guild_only()
