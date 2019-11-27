@@ -65,6 +65,7 @@ class Factions(commands.Cog):
 			'anti-raid': {}
 		}
 		self.game_data = {}
+		self.pending = []
 		self.factions = {}
 		if path.isfile(self.path):
 			with open(self.path, 'r') as f:
@@ -340,17 +341,46 @@ class Factions(commands.Cog):
 	@factions.command(name='invite')
 	async def invite(self, ctx, user: discord.Member):
 		""" Invites a user to a private faction """
+		def pred(msg):
+			return msg.channel.id == ctx.channel.id and msg.author.id == user.id and (
+				'yes' in msg.content and 'no' in msg.content)
+
+		faction = self.get_owned_faction(ctx)
+		if not faction:
+			return await ctx.send("You need to have at least co-owner to use this cmd")
+		users_in_faction = self.get_users_faction(ctx, user)
+		if users_in_faction:
+			return await ctx.send("That users already in a faction :[")
+		if user in self.pending:
+			return await ctx.send("That user already has a pending invite")
+		self.pending.append(user.id)
+
+		request = await ctx.send(f"{user.mention}, {ctx.author.display_name} invited you to join {faction}\n"
+		                         f"Reply with 'yes' to join, or 'no' to reject")
+		try:
+			msg = await self.bot.wait_for('message', check=pred, timeout=60)
+		except asyncio.TimeoutError:
+			await request.edit(content=f"~~{request.content}~~\n\nRequest Expired")
+			await ctx.message.delete()
+		else:
+			if 'yes' in msg.content.lower():
+				self.factions[str(ctx.guild.id)][faction]['members'].append(ctx.author.id)
+				await ctx.send(f"{user.display_name} joined {faction}")
+				self.save_data()
+			else:
+				await ctx.send("Alrighty then :[")
+		self.pending.remove(user.id)
 
 	@factions.command(name='kick')
 	async def kick(self, ctx, *, user):
 		""" Kicks a user from the faction """
 		user = utils.get_user(ctx, user)
 
-	@commands.command(name='rename')
+	@factions.command(name='rename')
 	async def rename(self, ctx, *, name):
 		""" Renames their faction """
 
-	@commands.command(name='info')
+	@factions.command(name='info')
 	async def info(self, ctx, *, faction=None):
 		""" Bulk information on a faction """
 		if faction:
@@ -438,9 +468,34 @@ class Factions(commands.Cog):
 			e.description = f"• {channel.mention} {'- guarded' if data['guarded'] else ''}\n"
 		await ctx.send(embed=e)
 
-	@commands.command(name='battle')
+	@factions.command(name='battle')
 	async def battle(self, ctx, *args):
 		""" Battle other factions in games like scrabble """
+
+	@factions.command(name='work')
+	async def work(self, ctx):
+		""" Get money for your faction """
+		faction = self.get_users_faction(ctx)
+		if not faction:
+			return await ctx.send("You need to be in a faction to use this cmd")
+
+		require_game_completion = True if random.choice(1, 4) == 4 else False
+		g = MiniGames(ctx.author)
+		games = [g.scrabble]
+		if require_game_completion:
+			is_winner = await random.choice(games)(ctx)
+			if not is_winner:
+				return await ctx.send("Maybe next time :[")
+
+		e = discord.Embed(color=purple())
+		pay = random.randint(15, 25)
+		e.description = f"You earned {faction} {pay}"
+		if faction in self.boosts['extra-income']:
+			e.set_footer(text="With Bonus: $5", icon_url=self.faction_icon(ctx, faction))
+			pay += 5
+		self.factions[str(ctx.guild.id)][faction]['balance'] += pay
+		await ctx.send(embed=e)
+		self.save_data()
 
 	@commands.Cog.listener()
 	async def on_message(self, msg):
