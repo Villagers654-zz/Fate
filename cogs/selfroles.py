@@ -119,7 +119,7 @@ class SelfRoles(commands.Cog):
 			self.menus[guild_id][msg_id]['channel'] = ctx.channel.id
 			dat['channel'] = ctx.channel.id
 			self.save_data()
-		for role_id, emoji in dat['items'].items():
+		for role_id, emoji in list(dat['items'].items()):
 			role = ctx.guild.get_role(int(role_id))
 			if not role:
 				emoji = self.menus[guild_id][msg_id]['items'][role_id]
