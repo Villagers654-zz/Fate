@@ -323,22 +323,6 @@ class Factions(commands.Cog):
 
 	@factions.command(name='join')
 	async def join(self, ctx, *, faction):
-		""" Join a public faction """
-		self.faction = self.get_users_faction(ctx)
-		if faction:
-			return await ctx.send("You're already in a faction")
-		faction = self.get_faction_named(ctx, faction)
-		if not faction:
-			return await ctx.send("Faction not found")
-		guild_id = str(ctx.guild.id)
-		if not self.factions[guild_id][faction]['public']:
-			return await ctx.send("Sorry, that factions not public :[")
-		self.factions[guild_id][faction]['members'].append(ctx.author.id)
-		await ctx.send(f"You joined {faction} :D")
-		self.save_data()
-
-	@factions.command(name='join')
-	async def join(self, ctx, *, faction):
 		""" Joins a public faction via name """
 		is_in_faction = self.get_users_faction(ctx)  # type: str
 		if is_in_faction:
