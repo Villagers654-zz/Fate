@@ -116,7 +116,7 @@ class Factions(commands.Cog):
 				return faction
 		return None
 
-	def get_faction_named(self, ctx, name):
+	async def get_faction_named(self, ctx, name):
 		""" gets a faction via partial name """
 		def pred(m) -> bool:
 			""" A check for waiting on a message """
@@ -435,7 +435,7 @@ class Factions(commands.Cog):
 	async def info(self, ctx, *, faction=None):
 		""" Bulk information on a faction """
 		if faction:
-			faction = self.get_faction_named(ctx, faction)
+			faction = await self.get_faction_named(ctx, faction)
 		else:
 			faction = self.get_users_faction(ctx)
 		if not faction:
@@ -470,7 +470,7 @@ class Factions(commands.Cog):
 	async def members(self, ctx, *, faction=None):
 		""" lists a factions members """
 		if faction:
-			faction = self.get_faction_named(ctx, faction)
+			faction = await self.get_faction_named(ctx, faction)
 		else:
 			faction = self.get_users_faction(ctx)
 		if not faction:
@@ -503,7 +503,7 @@ class Factions(commands.Cog):
 	async def claims(self, ctx, *, faction):
 		""" Returns a factions sorted claims """
 		if faction:
-			faction = self.get_faction_named(ctx, faction)
+			faction = await self.get_faction_named(ctx, faction)
 		else:
 			faction = self.get_users_faction(ctx)
 		if not faction:
