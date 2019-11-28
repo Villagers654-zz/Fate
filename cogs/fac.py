@@ -11,7 +11,6 @@ import json
 from os import path
 import random
 import asyncio
-from time import time
 
 from discord.ext import commands
 import discord
@@ -207,7 +206,7 @@ class Factions(commands.Cog):
 	@commands.group(name='fac')
 	@commands.cooldown(2, 5, commands.BucketType.user)
 	@commands.guild_only()
-	@commands.bot_has_permissions(embed_links=True)
+	@commands.bot_has_permissions(send_messages=True, embed_links=True)
 	async def factions(self, ctx):
 		""" Information about the module """
 		if not ctx.invoked_subcommand:
@@ -231,41 +230,41 @@ class Factions(commands.Cog):
 		p = utils.get_prefix(ctx)  # type: str
 		e.add_field(
 			name='◈ Core ◈',
-			value=f'{p}factions create [name]\n'
-			      f'{p}factions rename [name]\n' \
-			      f'{p}factions disband\n' \
-			      f'{p}factions join [faction]\n' \
-			      f'{p}factions invite @user\n'
-			      f'{p}factions promote @user\n'
-			      f'{p}factions demote @user\n' \
-			      f'{p}factions kick @user\n' \
-			      f'{p}factions leave\n',
+			value=f'{p}factions create [name]'
+			      f'\n{p}factions rename [name]'
+			      f'\n{p}factions disband'
+			      f'\n{p}factions join [faction]'
+			      f'\n{p}factions invite @user'
+			      f'\n{p}factions promote @user'
+			      f'\n{p}factions demote @user'
+			      f'\n{p}factions kick @user'
+			      f'\n{p}factions leave',
 			inline=False
 		)
 		e.add_field(
 			name='◈ Utils ◈',
-			value=f'{p}faction privacy\n'
-			      f'{p}factions setbio [your new bio]\n'
-			      f'{p}factions seticon [file | url]\n' \
-			      f'{p}factions setbanner [file | url]\n' \
-			      f'{p}factions togglenotifs',
+			value=f'{p}faction privacy'
+			      f'\n{p}factions setbio [your new bio]'
+			      f'\n{p}factions seticon [file | url]'
+			      f'\n{p}factions setbanner [file | url]'
+			      f'\n{p}factions togglenotifs',
 			inline=False
 		)
 		e.add_field(
 			name='◈ Economy ◈',
-			value=f'{p}faction work\n' \
-			      f'{p}factions balance\n' \
-			      f'{p}factions pay [faction] [amount]\n' \
-			      f'{p}factions raid [faction]\n'
-			      f'{p}factions battle [faction]\n' \
-			      f'{p}factions annex [faction]\n' \
-			      f'{p}factions claim #channel\n' \
-			      f'{p}factions unclaim #channel\n' \
-			      f'{p}factions claims\n' \
-			      f'{p}factions boosts\n'
-			      f'{p}factions info\n' \
-			      f'{p}factions members [faction]' \
-			      f'{p}factions top',
+			value=f'{p}faction work'
+			      f'\n{p}factions balance'
+			      f'\n{p}factions pay [faction] [amount]'
+			      f'\n{p}factions raid [faction]'
+			      f'\n{p}factions battle [faction]'
+			      f'\n{p}factions annex [faction]'
+			      f'\n{p}factions claim #channel'
+			      f'\n{p}factions unclaim #channel'
+			      f'\n{p}factions claims'
+			      f'\n{p}factions boosts'
+			      f'\n{p}factions info'
+			      f'\n{p}factions members [faction]'
+			      f'\n{p}factions top',
 			inline=False
 		)
 		await ctx.send(embed=e)
@@ -338,6 +337,10 @@ class Factions(commands.Cog):
 		await ctx.send(f"You joined {faction} :D")
 		self.save_data()
 
+	@factions.command(name='join')
+	async def join(self, ctx, *, faction):
+		""" Joins a public faction via name """
+
 	@factions.command(name='invite')
 	async def invite(self, ctx, user: discord.Member):
 		""" Invites a user to a private faction """
@@ -371,14 +374,62 @@ class Factions(commands.Cog):
 				await ctx.send("Alrighty then :[")
 		self.pending.remove(user.id)
 
+	@factions.command(name='leave')
+	async def leave(self, ctx):
+		""" Leaves a faction """
+		faction = self.get_users_faction(ctx)
+		if not faction:
+			return await ctx.send("You're not currently in a faction")
+		if self.get_owned_faction(ctx):
+			return await ctx.send("You cannot leave a faction you own, you must "
+			                      "transfer ownership, or disband it")
+		guild_id = str(ctx.guild.id)
+		self.factions[guild_id][faction]['members'].remove(ctx.author.id)
+		if ctx.author.id in self.factions[guild_id]['co-owners']:
+			self.factions[guild_id]['co-owners'].remove(ctx.author.id)
+		await ctx.send('👍')
+		self.save_data()
+
 	@factions.command(name='kick')
 	async def kick(self, ctx, *, user):
 		""" Kicks a user from the faction """
 		user = utils.get_user(ctx, user)
+		if not user:
+			return await ctx.send("User not found")
+		faction = self.get_owned_faction(ctx)
+		if not faction:
+			return await ctx.send("You need to at least be co-owner to use this cmd")
+		users_faction = self.get_users_faction(ctx, user)
+		if not users_faction:
+			return await ctx.send("That users not in a faction")
+		if users_faction != faction:
+			return await ctx.send("That user isn't in your faction :/")
+		guild_id = str(ctx.guild.id)
+		if user.id == self.factions[guild_id][faction]['owner']:
+			return await ctx.send("You cant demote the owner ._.")
+		if user.id in self.factions[guild_id][faction]['co-owners'] and (
+				ctx.author.id != self.factions[guild_id][faction]['owner']):
+			return await ctx.send("Only the owner can demote a co-owner!")
+		self.factions[guild_id][faction]['members'].remove(user.id)
+		if user.id in self.factions[guild_id]['co-owners']:
+			self.factions[guild_id]['co-owners'].remove(user.id)
+		await ctx.send(f"Kicked {user.display_name} from {faction}")
+		self.save_data()
 
 	@factions.command(name='rename')
 	async def rename(self, ctx, *, name):
 		""" Renames their faction """
+		faction = self.get_owned_faction(ctx)
+		if not faction:
+			return await ctx.send("You need to be owner of a faction to use this cmd")
+		guild_id = str(ctx.guild.id)
+		if ctx.author.id != self.factions[guild_id][faction]['owner']:
+			return await ctx.send("You need to be owner of a faction to use this cmd")
+		if str(name).lower() in [str(fac.name).lower() for fac in self.factions[guild_id].keys()]:
+			return await ctx.send("That names already taken")
+		self.factions[guild_id][name] = self.factions[guild_id].pop(faction)
+		await ctx.send(f"Changed your factions name from {faction} to {name}")
+		self.save_data()
 
 	@factions.command(name='info')
 	async def info(self, ctx, *, faction=None):
