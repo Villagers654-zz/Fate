@@ -235,8 +235,8 @@ class Factions(commands.Cog):
 			      f'\n{p}factions disband'
 			      f'\n{p}factions join [faction]'
 			      f'\n{p}factions invite @user'
-			      f'\n{p}factions promote @user'  # incomplete
-			      f'\n{p}factions demote @user'  # incomplete
+			      f'\n{p}factions promote @user'
+			      f'\n{p}factions demote @user'
 			      f'\n{p}factions kick @user'
 			      f'\n{p}factions leave',
 			inline=False
@@ -416,6 +416,41 @@ class Factions(commands.Cog):
 			self.factions[guild_id]['co-owners'].remove(user.id)
 		await ctx.send(f"Kicked {user.display_name} from {faction}")
 		self.save_data()
+
+	@factions.command(name='promote')
+	async def promote(self, ctx, *, user):
+		""" Promotes a faction member to Co-Owner"""
+		user = await utils.get_user(ctx, user)
+		if not user:
+			return await ctx.send("User not found")
+		faction = self.get_owned_faction(ctx)
+		if not faction:
+			return await ctx.send("You need to be owner of a faction to use this cmd")
+		guild_id = str(ctx.guild.id)
+		if ctx.author.id != self.factions[guild_id][faction]['owner']:
+			return await ctx.send("You need to be owner of a faction to use this cmd")
+		if user.id in self.factions[guild_id][faction]['co-owners']:
+			return await ctx.send("That users already co-owner")
+		self.factions[guild_id][faction]['co-owners'].append(user.id)
+		await ctx.send(f"Promoted {user.display_name} to co-owner")
+		self.save_data()
+
+	@factions.command(name='demote')
+	async def demote(self, ctx, *, user):
+		""" Demotes a faction member from Co-Owner """
+		user = await utils.get_user(ctx, user)
+		if not user:
+			return await ctx.send("User not found")
+		faction = self.get_owned_faction(ctx)
+		if not faction:
+			return await ctx.send("You need to be owner of a faction to use this cmd")
+		guild_id = str(ctx.guild.id)
+		if ctx.author.id != self.factions[guild_id][faction]['owner']:
+			return await ctx.send("You need to be owner of a faction to use this cmd")
+		if user.id not in self.factions[guild_id][faction]['co-owners']:
+			return await ctx.send("That users not co-owner")
+		self.factions[guild_id][faction]['co-owners'].remove(user.id)
+		await ctx.send(f"Demoted {user.display_name} from co-owner")
 
 	@factions.command(name='rename')
 	async def rename(self, ctx, *, name):
