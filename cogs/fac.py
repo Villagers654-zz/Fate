@@ -354,7 +354,7 @@ class Factions(commands.Cog):
 		users_in_faction = self.get_users_faction(ctx, user)
 		if users_in_faction:
 			return await ctx.send("That users already in a faction :[")
-		if user in self.pending:
+		if user.id in self.pending:
 			return await ctx.send("That user already has a pending invite")
 		self.pending.append(user.id)
 
