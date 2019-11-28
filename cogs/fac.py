@@ -452,6 +452,10 @@ class Factions(commands.Cog):
 		self.factions[guild_id][faction]['co-owners'].remove(user.id)
 		await ctx.send(f"Demoted {user.display_name} from co-owner")
 
+	@factions.command(name='annex', enabled=False)
+	async def annex(self, ctx, *, faction):
+		""" Merges a faction with another """
+
 	@factions.command(name='rename')
 	async def rename(self, ctx, *, name):
 		""" Renames their faction """
@@ -499,7 +503,6 @@ class Factions(commands.Cog):
 			if dat['banner']:
 				e.set_image(url=dat['banner'])
 		e.set_footer(text=f"Leaderboard Rank: #{rank}")
-
 		await ctx.send(embed=e)
 
 	@factions.command(name='members')
@@ -516,22 +519,29 @@ class Factions(commands.Cog):
 		owner_id = self.factions[guild_id][faction]['owner']
 		owner = self.bot.get_user(owner_id)
 		users = []
+		co_owners = []
 		for user_id in self.factions[guild_id][faction]['members']:
 			user = self.bot.get_user(user_id)
 			if not isinstance(user, discord.User):
 				self.factions[guild_id][faction].remove(user_id)
 				self.save_data()
 				continue
+
 			income = 0
 			if user_id in self.factions[guild_id][faction]['income']:
 				income = self.factions[guild_id][faction][income][user_id]
-			users.append([user, income])
+			if user_id in self.factions[guild_id][faction]['co-owners']:
+				co_owners.append([user, income])
+			else:
+				users.append([user, income])
 
 		e = discord.Embed(color=purple())
 		e.set_author(name=f"{faction}'s members", icon_url=owner.avatar_url)
 		e.set_thumbnail(url=self.faction_icon(ctx, faction))
 		e.description = ''
 		for user, income in users:
+			if user.id in self.factions[guild_id][faction]['co-owners']:
+				e.description += f"Co: "
 			e.description += f"{user.mention} - ${income}\n"
 		await ctx.send(embed=e)
 
@@ -555,9 +565,13 @@ class Factions(commands.Cog):
 			e.description = f"• {channel.mention} {'- guarded' if data['guarded'] else ''}\n"
 		await ctx.send(embed=e)
 
-	@factions.command(name='battle')
+	@factions.command(name='battle', enabled=False)
 	async def battle(self, ctx, *args):
 		""" Battle other factions in games like scrabble """
+
+	@factions.command(name='raid', enabled=False)
+	async def raid(self, ctx, *, faction):
+		""" Starts a raid against another faction """
 
 	@factions.command(name='work')
 	async def work(self, ctx):
@@ -583,6 +597,14 @@ class Factions(commands.Cog):
 		self.factions[str(ctx.guild.id)][faction]['balance'] += pay
 		await ctx.send(embed=e)
 		self.save_data()
+
+	@factions.command(name='balance', aliases=['bal'], enabled=False)
+	async def balance(self, ctx, *, faction=None):
+		""" Sends a factions balance """
+
+	@factions.command(name='pay', enabled=False)
+	async def pay(self, ctx, faction, amount):
+		""" Pays a faction from the author factions balance """
 
 	@commands.Cog.listener()
 	async def on_message(self, msg):
