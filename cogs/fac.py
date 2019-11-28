@@ -16,7 +16,7 @@ from discord.ext import commands
 import discord
 
 from utils.colors import *
-from utils import utils
+from utils import utils, checks
 
 
 class MiniGames:
@@ -203,6 +203,36 @@ class Factions(commands.Cog):
 		for key, value in kwargs.items():
 			self.factions[guild_id][faction]['income'][key] += value
 
+	@commands.command(name='convert-factions')
+	@commands.check(checks.luck)
+	async def convert_factions(self, ctx):
+		new_dict = {}
+		with open('./data/userdata/factions.json', 'r') as f:
+			dat = json.load(f)  # type: dict
+		for guild_id, factions in dat['factions'].items():
+			new_dict[guild_id] = {}
+			for faction, metadata in factions.items():
+				claims = []
+				if guild_id in dat['land_claims']:
+					if faction in dat['land_claims'][guild_id]:
+						claims = [int(k) for k in dat['land_claims'][guild_id][faction].keys()]
+				new_dict[faction] = {
+					"owner": metadata['owner'],
+					"co-owner": metadata['co-owner'],
+					"members": metadata['members'],
+					"balance": metadata['balance'],
+					"claims": claims,
+					"public": True if metadata['access'] == 'public' else False,
+					"limit": metadata['limit'],
+					"bio": metadata['bio'] if metadata['bio'] else None,
+					"income": {}
+				}
+				if 'icon' in metadata:
+					new_dict['icon'] = metadata['icon']
+				if 'banner' in metadata:
+					new_dict['banner'] = metadata['banner']
+		await ctx.send("Conversion Success")
+
 	@commands.group(name='fac')
 	@commands.cooldown(2, 5, commands.BucketType.user)
 	@commands.guild_only()
@@ -285,9 +315,12 @@ class Factions(commands.Cog):
 			'owner': ctx.author.id,
 			'co-owners': [],
 			'members': [],
+			'balance': 0,
+			'limit': 15,
 			'public': True,
 			'claims': [],
-			'bio': None
+			'bio': None,
+			'income': {}
 		}
 		await ctx.send('Created your faction')
 		self.save_data()
