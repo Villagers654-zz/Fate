@@ -235,36 +235,36 @@ class Factions(commands.Cog):
 			      f'\n{p}factions disband'
 			      f'\n{p}factions join [faction]'
 			      f'\n{p}factions invite @user'
-			      f'\n{p}factions promote @user'
-			      f'\n{p}factions demote @user'
+			      f'\n{p}factions promote @user'  # incomplete
+			      f'\n{p}factions demote @user'  # incomplete
 			      f'\n{p}factions kick @user'
 			      f'\n{p}factions leave',
 			inline=False
 		)
 		e.add_field(
 			name='◈ Utils ◈',
-			value=f'{p}faction privacy'
-			      f'\n{p}factions setbio [your new bio]'
-			      f'\n{p}factions seticon [file | url]'
-			      f'\n{p}factions setbanner [file | url]'
-			      f'\n{p}factions togglenotifs',
+			value=f'{p}faction privacy'  # incomplete
+			      f'\n{p}factions setbio [your new bio]'  # incomplete
+			      f'\n{p}factions seticon [file | url]'  # incomplete
+			      f'\n{p}factions setbanner [file | url]'  # incomplete
+			      f'\n{p}factions togglenotifs',  # incomplete
 			inline=False
 		)
 		e.add_field(
 			name='◈ Economy ◈',
 			value=f'{p}faction work'
-			      f'\n{p}factions balance'
-			      f'\n{p}factions pay [faction] [amount]'
-			      f'\n{p}factions raid [faction]'
-			      f'\n{p}factions battle [faction]'
-			      f'\n{p}factions annex [faction]'
-			      f'\n{p}factions claim #channel'
-			      f'\n{p}factions unclaim #channel'
+			      f'\n{p}factions balance'  # incomplete
+			      f'\n{p}factions pay [faction] [amount]'  # incomplete
+			      f'\n{p}factions raid [faction]'  # incomplete
+			      f'\n{p}factions battle [faction]'  # incomplete
+			      f'\n{p}factions annex [faction]'  # incomplete
+			      f'\n{p}factions claim #channel'  # incomplete
+			      f'\n{p}factions unclaim #channel'  # incomplete
 			      f'\n{p}factions claims'
-			      f'\n{p}factions boosts'
+			      f'\n{p}factions boosts'  # incomplete
 			      f'\n{p}factions info'
 			      f'\n{p}factions members [faction]'
-			      f'\n{p}factions top',
+			      f'\n{p}factions top',  # incomplete
 			inline=False
 		)
 		await ctx.send(embed=e)
@@ -340,6 +340,23 @@ class Factions(commands.Cog):
 	@factions.command(name='join')
 	async def join(self, ctx, *, faction):
 		""" Joins a public faction via name """
+		is_in_faction = self.get_users_faction(ctx)  # type: str
+		if is_in_faction:
+			return await ctx.send("You're already in a faction")
+		faction = await self.get_faction_named(ctx, faction)
+		if not faction:
+			return await ctx.send("Couldn't find a faction under that name :[")
+		guild_id = str(ctx.guild.id)
+		if not self.factions[guild_id][faction]['public']:
+			return await ctx.send("That factions not public :[")
+		self.factions[guild_id][faction]['members'].append(ctx.author.id)
+		e = discord.Embed(color=purple())
+		e.set_author(name=faction, icon_url=ctx.author.avatar_url)
+		e.set_thumbnail(url=self.faction_icon(ctx, faction))
+		e.description = f"{ctx.author.display_name} joined\nMember Count: " \
+		                f"[`{len(self.factions[guild_id][faction]['members'])}`]"
+		await ctx.send(embed=e)
+		self.save_data()
 
 	@factions.command(name='invite')
 	async def invite(self, ctx, user: discord.Member):
