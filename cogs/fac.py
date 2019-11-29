@@ -212,26 +212,36 @@ class Factions(commands.Cog):
 		for guild_id, factions in dat['factions'].items():
 			new_dict[guild_id] = {}
 			for faction, metadata in factions.items():
+				if faction == 'category':
+					continue
 				claims = []
 				if guild_id in dat['land_claims']:
 					if faction in dat['land_claims'][guild_id]:
 						claims = [int(k) for k in dat['land_claims'][guild_id][faction].keys()]
 				new_dict[faction] = {
 					"owner": metadata['owner'],
-					"co-owner": metadata['co-owner'],
+					"co-owners": [],
 					"members": metadata['members'],
 					"balance": metadata['balance'],
 					"claims": claims,
-					"public": True if metadata['access'] == 'public' else False,
-					"limit": metadata['limit'],
-					"bio": metadata['bio'] if metadata['bio'] else None,
-					"income": {}
+					"public": True,
+					"limit": 15,
+					"income": {},
+					"bio": None
 				}
+				if 'limit' in metadata:
+					new_dict['limit'] = metadata['limit']
+				if 'access' in metadata:
+					new_dict['public'] = True if metadata['access'] == 'public' else False
+				if 'co-owners' in metadata:
+					new_dict['co-owners'] = metadata['co-owners']
+				if 'bio' in metadata:
+					new_dict['bio'] = metadata['bio'] if metadata['bio'] else None
 				if 'icon' in metadata:
 					new_dict['icon'] = metadata['icon']
 				if 'banner' in metadata:
 					new_dict['banner'] = metadata['banner']
-		await ctx.send("Conversion Success")
+		await ctx.send("Conversion Would Succeed")
 
 	@commands.group(name='fac')
 	@commands.cooldown(2, 5, commands.BucketType.user)
