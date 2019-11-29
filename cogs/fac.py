@@ -114,7 +114,7 @@ class Factions(commands.Cog):
 		if not user:
 			return
 		guild_id = str(ctx.guild.id)
-		for faction, data in self.factions[guild_id].items:
+		for faction, data in self.factions[guild_id].items():
 			if user.id == data['owner']:
 				return faction
 		return None
@@ -511,7 +511,7 @@ class Factions(commands.Cog):
 		guild_id = str(ctx.guild.id)
 		if ctx.author.id != self.factions[guild_id][faction]['owner']:
 			return await ctx.send("You need to be owner of a faction to use this cmd")
-		if str(name).lower() in [str(fac.name).lower() for fac in self.factions[guild_id].keys()]:
+		if str(name).lower() in [str(fac).lower() for fac in self.factions[guild_id].keys()]:
 			return await ctx.send("That names already taken")
 		self.factions[guild_id][name] = self.factions[guild_id].pop(faction)
 		await ctx.send(f"Changed your factions name from {faction} to {name}")
