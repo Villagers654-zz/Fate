@@ -112,7 +112,7 @@ class Emojis(commands.Cog):
 			await emoji.delete(reason=ctx.author.name)
 			await ctx.send(f"Deleted emote `{emoji.name}`")
 
-	@commands.command(name="rename_emoji")
+	@commands.command(name="rename-emoji")
 	@commands.cooldown(1, 5, commands.BucketType.guild)
 	@commands.has_permissions(manage_emojis=True)
 	async def _rename_emoji(self, ctx, emoji: discord.Emoji, name):
