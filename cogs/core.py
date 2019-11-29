@@ -1,15 +1,24 @@
-from discord import Webhook, AsyncWebhookAdapter
+"""
+Core bot functions like:
+Prefix, Invite, and Ping
+"""
+
 from bs4 import BeautifulSoup as bs
-from discord.ext import commands
-from utils import config, colors, utils
-from time import time, monotonic
-import wikipedia.exceptions
-from io import BytesIO
-import wikipedia
-import requests
-import discord
-import aiohttp
 import json
+from io import BytesIO
+import requests
+import aiohttp
+from time import time, monotonic
+
+
+from discord.ext import commands
+import discord
+from discord import Webhook, AsyncWebhookAdapter
+import wikipedia
+import wikipedia.exceptions
+
+from utils import config, colors, utils
+
 
 class Core(commands.Cog):
 	def __init__(self, bot: commands.Bot):
@@ -209,7 +218,7 @@ class Core(commands.Cog):
 				self.spam_cd[user_id][1] += 1
 			else:
 				self.spam_cd[user_id] = [now, 0]
-			if self.spam_cd[user_id][1] < 3 or msg.author.bot:
+			if self.spam_cd[user_id][1] < 2 or msg.author.bot:
 				async with aiohttp.ClientSession() as session:
 					webhook = Webhook.from_url('https://discordapp.com/api/webhooks/582660984661868549/QXcjvb0O8v7SUv34o-hxaeR5mi2v5RYVRSVLi-p89VdbNHjxy8v5MP1muARTgulZnQTu', adapter=AsyncWebhookAdapter(session))
 					msg.content = discord.utils.escape_mentions(msg.content)
