@@ -252,6 +252,8 @@ class Utility(commands.Cog):
 				role = await utils.get_role(ctx, role)
 				if not isinstance(role, discord.Role):
 					return
+			if role.id == ctx.guild.default_role.id:
+				return await ctx.send('biTcH nO')
 			e = discord.Embed(color=role.color)
 			e.set_author(name=role.name, icon_url=ctx.author.avatar_url)
 			e.set_thumbnail(url=ctx.guild.icon_url)
