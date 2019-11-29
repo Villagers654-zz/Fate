@@ -72,6 +72,7 @@ class Factions(commands.Cog):
 
 	def save_data(self) -> None:
 		""" Saves the current variables """
+		return
 		with open(self.path, 'w+') as f:
 			json.dump(self.factions, f)
 
@@ -95,12 +96,14 @@ class Factions(commands.Cog):
 		if not user:
 			user = ctx.author
 		guild_id = str(ctx.guild.id)
-		user = utils.get_user(ctx, user)
+		if not isinstance(user, discord.Member):
+			user = utils.get_user(ctx, user)
 		if not user:
 			return None
-		for faction, data in self.factions[guild_id].items():
-			if user.id in data['members']:
-				return faction
+		if guild_id in self.factions:
+			for faction, data in self.factions[guild_id].items():
+				if user.id in data['members']:
+					return faction
 		return None
 
 	def get_owned_faction(self, ctx, user=None):
@@ -324,7 +327,7 @@ class Factions(commands.Cog):
 		self.factions[guild_id][name] = {
 			'owner': ctx.author.id,
 			'co-owners': [],
-			'members': [],
+			'members': [ctx.author.id],
 			'balance': 0,
 			'limit': 15,
 			'public': True,
@@ -538,10 +541,12 @@ class Factions(commands.Cog):
 		e = discord.Embed(color=purple())
 		e.set_author(name=faction, icon_url=owner.avatar_url)
 		e.set_thumbnail(url=icon_url)
-		e.description = f"Owner: [{owner}]\n" \
-						f"Members: [{len(dat['members'])}] " \
-						f"Public: [{dat['public']}]\n" \
-						f"Bio: [{dat['bio']}]"
+		e.description = f"__**Owner:**__ `{owner}`" \
+						f"\n__**Members:**__ [`{len(dat['members'])}`] " \
+						f"__**Public:**__ [`{dat['public']}`]" \
+						f"\n__**Balance:**__ [`${dat['balance']}`]\n"
+		if dat['bio']:
+			e.description += f"__**Bio:**__ [`{dat['bio']}`]"
 		if 'banner' in dat:
 			if dat['banner']:
 				e.set_image(url=dat['banner'])
