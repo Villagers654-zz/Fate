@@ -15,7 +15,7 @@ import asyncio
 from discord.ext import commands
 import discord
 
-from utils.colors import *
+from utils.colors import purple, cyan, fate
 from utils import utils, checks
 
 
@@ -25,30 +25,28 @@ class MiniGames:
 
 	async def scrabble(self, ctx):
 		""" Randomize the order of letters in a word """
-		def pred(msg):
-			return msg.channel.id == ctx.channel.id and msg.author.id in self.users and (
-				str(msg.content).lower() == word)
+		def pred(m):
+			return m.channel.id == ctx.channel.id and m.author in self.users and (
+				str(m.content).lower() == word)
 
-		words = []  # stay wholesome uwu
+		words = ['whore', 'faggot', 'penis']  # stay wholesome uwu
 		word = random.choice(words)
 		scrambled_word = list(str(word).lower())
 		random.shuffle(scrambled_word)
 
 		e = discord.Embed(color=fate())
-		e.description = f"Scrambled word: `{scrambled_word}`"
+		e.description = f"Scrambled word: `{''.join(scrambled_word)}`"
 		e.set_footer(text="You have 20 seconds..", icon_url=ctx.bot.user.avatar_url)
 		await ctx.send(embed=e)
 
 		try:
-			msg = ctx.bot.wait_for('message', check=pred, timeout=25)
+			msg = await ctx.bot.wait_for('message', check=pred, timeout=25)
 		except asyncio.TimeoutError:
 			await ctx.send("You failed :/")
 			return None
 		else:
 			if len(self.users) > 1:
 				await ctx.send(f"{msg.author.display_name} won!")
-			else:
-				await ctx.send("You won!")
 			return msg.author
 
 
@@ -628,17 +626,16 @@ class Factions(commands.Cog):
 		if not faction:
 			return await ctx.send("You need to be in a faction to use this cmd")
 
-		require_game_completion = True if random.choice(1, 4) == 4 else False
+		require_game_completion = True if random.randint(1, 4) == 4 else False
 		g = MiniGames(ctx.author)
-		games = [g.scrabble]
 		if require_game_completion:
-			is_winner = await random.choice(games)(ctx)
+			is_winner = await g.scrabble(ctx)
 			if not is_winner:
 				return await ctx.send("Maybe next time :[")
 
 		e = discord.Embed(color=purple())
 		pay = random.randint(15, 25)
-		e.description = f"You earned {faction} {pay}"
+		e.description = f"You earned {faction} ${pay}"
 		if faction in self.boosts['extra-income']:
 			e.set_footer(text="With Bonus: $5", icon_url=self.faction_icon(ctx, faction))
 			pay += 5
