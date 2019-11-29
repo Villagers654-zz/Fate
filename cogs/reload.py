@@ -49,7 +49,7 @@ class Reload(commands.Cog):
 			await asyncio.sleep(0.5)
 			await ctx.message.delete()
 
-	@commands.command(name="disable")
+	@commands.command(name="unload")
 	@commands.check(checks.luck)
 	async def _disable(self, ctx, *, module : str):
 		self.bot.unload_extension("cogs." + module)
