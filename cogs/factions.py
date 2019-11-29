@@ -417,7 +417,7 @@ class Factions(commands.Cog):
 		guild_id = str(ctx.guild.id)
 		if 'co-owners' not in self.factions[guild_id][faction]:
 			self.factions[guild_id][faction]['co-owners'] = []
-		if len(self.factions[guild_id][faction]['co-owners']) == 2:
+		if len(self.factions[guild_id][faction]['co-owners']) == 3:
 			return await ctx.send('You can\'t have more than 2 co-owners')
 		if user.id in self.factions[guild_id][faction]['co-owners']:
 			return await ctx.send('This users already a co-owner')
