@@ -113,8 +113,8 @@ class Menus(commands.Cog):
 			    '• **pin** - `pings the msg above`\n' \
 			    '• **purge** - `mass delete messages`\n' \
 			    '• **nick** - `sets a users nickname`\n' \
-			    '• **massnick - `sets every users nickname`\n' \
-			    '• **massrole - `gives everyone a specific role`'
+			    '• **massnick** - `sets every users nickname`\n' \
+			    '• **massrole** - `gives everyone a specific role`'
 			return e
 		def utility():
 			e = discord.Embed(color=colors.fate())
