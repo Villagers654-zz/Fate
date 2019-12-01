@@ -5,18 +5,18 @@ import aiohttp
 import asyncio
 import random
 from io import BytesIO
-import requests
 import json
 import os
 import time
 import platform
+import requests
 
 import discord
 from PIL import Image
 from colormap import rgb2hex
 import psutil
 
-from utils import colors, utils, bytes2human as p, config
+from utils import colors, utils, bytes2human as p, config, checks
 
 class Utility(commands.Cog):
 	def __init__(self, bot):
@@ -514,6 +514,43 @@ class Utility(commands.Cog):
 			await ctx.send('Sent the webhook url to dm 👍')
 		except:
 			await ctx.send('Failed to dm you the webhook url', embed=e)
+
+	@commands.command(name='move', aliases=['mv'])
+	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.guild_only()
+	@checks.command_is_enabled()
+	@commands.has_permissions(administrator=True)
+	@commands.bot_has_permissions(manage_webhooks=True)
+	async def move(self, ctx, amount: int, channel: discord.TextChannel):
+		""" Moves a conversation to another channel """
+		if not channel.permissions_for(ctx.guild.me).read_messages or (
+				not channel.permissions_for(ctx.guild.me).read_message_history or (
+				not channel.permissions_for(ctx.guild.me).send_messages or (
+				not channel.permissions_for(ctx.guild.me).manage_webhooks))):
+			return await ctx.send(f"I'm missing permissions in that channel")
+
+		if ctx.channel.id == channel.id:
+			return await ctx.send("Hey! that's illegal >:(")
+		if amount > 250:
+			return await ctx.send("That's too many :[")
+		cooldown = 1
+		if amount > 50:
+			await ctx.send("That's a lot.. ima do this a lil slow then")
+			cooldown *= cooldown
+
+		webhook = await channel.create_webhook(name='Chat Transfer')
+		msgs = await ctx.channel.history(limit=amount).flatten()
+		await ctx.send("Starting transfer")
+		await channel.send(f"Transferring {amount} messages from {ctx.channel.mention} to here")
+		for msg in msgs[::-1]:
+			avatar = msg.author.avatar_url
+			files = [requests.get(file.url).content for file in msg.attachments]
+			embed = None
+			if msg.embeds:
+				embed = msg.embeds[0]
+			await webhook.send(msg.content, username=msg.author.display_name, avatar_url=avatar, files=files, embed=embed)
+			await asyncio.sleep(cooldown)
+		await ctx.send("transfer complete")
 
 	@commands.command(name='afk')
 	@commands.cooldown(1, 5, commands.BucketType.user)
