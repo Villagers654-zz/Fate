@@ -18,6 +18,22 @@ import psutil
 
 from utils import colors, utils, bytes2human as p, config, checks
 
+
+class SatisfiableChannel(commands.Converter):
+	async def convert(self, ctx, argument):
+		converter = commands.TextChannelConverter()
+		channel = await converter.convert(ctx, argument)
+		if not isinstance(channel, discord.TextChannel):
+			await ctx.send(f'"{argument}" is not a valid channel')
+			return False
+		perms = ['read_messages', 'read_message_history', 'send_messages', 'manage_webhooks']
+		for perm in perms:
+			if not eval(f"channel.permissions_for(ctx.guild.me).{perm}"):
+				await ctx.send(f"I'm missing {perm} permissions in that channel")
+				return False
+		return channel
+
+
 class Utility(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
@@ -518,16 +534,10 @@ class Utility(commands.Cog):
 	@commands.command(name='move', aliases=['mv'])
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.guild_only()
-	@checks.command_is_enabled()
 	@commands.has_permissions(administrator=True)
 	@commands.bot_has_permissions(manage_webhooks=True)
-	async def move(self, ctx, amount: int, channel: discord.TextChannel):
+	async def move(self, ctx, amount: int, channel: SatisfiableChannel()):
 		""" Moves a conversation to another channel """
-		if not channel.permissions_for(ctx.guild.me).read_messages or (
-				not channel.permissions_for(ctx.guild.me).read_message_history or (
-				not channel.permissions_for(ctx.guild.me).send_messages or (
-				not channel.permissions_for(ctx.guild.me).manage_webhooks))):
-			return await ctx.send(f"I'm missing permissions in that channel")
 
 		if ctx.channel.id == channel.id:
 			return await ctx.send("Hey! that's illegal >:(")
@@ -540,19 +550,44 @@ class Utility(commands.Cog):
 
 		webhook = await channel.create_webhook(name='Chat Transfer')
 		msgs = await ctx.channel.history(limit=amount+1).flatten()
-		await ctx.send("Starting transfer")
+		e = discord.Embed(color=colors.fate())
+		e.set_author(name="Starting Transfer", icon_url=ctx.author.avatar_url)
+		e.description = f"0/{len(msgs)}"
+		e.set_footer(text=channel.name)
+		transfer_msg = await ctx.send(embed=e)
+		await ctx.message.delete()
 		await channel.send(f"Transferring {amount} messages from {ctx.channel.mention} to here")
-		for msg in msgs[::-1]:
+
+		index = 1
+		for iteration, msg in enumerate(msgs[::-1]):
 			if ctx.message.id == msg.id:
 				continue
 			avatar = msg.author.avatar_url
-			files = [requests.get(file.url).content for file in msg.attachments]
 			embed = None
 			if msg.embeds:
 				embed = msg.embeds[0]
+
+			files = []; file_paths = []
+			for attachment in msg.attachments:
+				fp = os.path.join('static', attachment.filename)
+				await attachment.save(fp)
+				files.append(discord.File(fp))
+				file_paths.append(fp)
+
 			await webhook.send(msg.content, username=msg.author.display_name, avatar_url=avatar, files=files, embed=embed)
+			for fp in file_paths:
+				os.remove(fp)
+			if index == 5:
+				e.description = f"Progress: {iteration+1}/{len(msgs)}"
+				await transfer_msg.edit(embed=e)
+				index = 1
+			else:
+				index += 1
 			await asyncio.sleep(cooldown)
-		await ctx.send("transfer complete")
+
+		await webhook.delete()
+		e.description = f"{len(msgs)} msgs moved"
+		await transfer_msg.edit(embed=e)
 
 	@commands.command(name='afk')
 	@commands.cooldown(1, 5, commands.BucketType.user)
