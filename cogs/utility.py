@@ -539,10 +539,12 @@ class Utility(commands.Cog):
 			cooldown *= cooldown
 
 		webhook = await channel.create_webhook(name='Chat Transfer')
-		msgs = await ctx.channel.history(limit=amount).flatten()
+		msgs = await ctx.channel.history(limit=amount+1).flatten()
 		await ctx.send("Starting transfer")
 		await channel.send(f"Transferring {amount} messages from {ctx.channel.mention} to here")
 		for msg in msgs[::-1]:
+			if ctx.message.id == msg.id:
+				continue
 			avatar = msg.author.avatar_url
 			files = [requests.get(file.url).content for file in msg.attachments]
 			embed = None
