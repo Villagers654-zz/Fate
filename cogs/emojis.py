@@ -16,6 +16,20 @@ class Emojis(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 
+	def is_blacklisted(self, emoji) -> bool:
+		servers = [470961230362837002, 397415086295089155, 643246907472216064]
+		blacklist = []
+		for server_id in servers:
+			server = self.bot.get_guild(server_id)
+			for emote in server.emojis:
+				blacklist.append(emote.id)
+		if isinstance(emoji, discord.PartialEmoji):
+			return emoji.id in blacklist
+		elif isinstance(emoji, str):
+			return any(str(emoji_id) in emoji for emoji_id in blacklist)
+		else:
+			print('dafuq')
+
 	def cleanup_text(self, text: str):
 		"""cleans text to avoid errors when creating emotes"""
 		if isinstance(text, list):
@@ -86,10 +100,14 @@ class Emojis(commands.Cog):
 			return await ctx.send('You need to attach a file or provide a url')
 		msg = await ctx.send('Uploading emoji(s)..')
 		if not isinstance(image_urls, list):
+			if self.is_blacklisted(image_urls):
+				return await ctx.send('ERR: Invalid Emoji')
 			name = self.cleanup_text(args); img = requests.get(image_urls).content
 			await self.upload_emoji(ctx, name, img, str(ctx.author), roles, msg)
 		else:
 			for filename, url in image_urls:
+				if self.is_blacklisted(url):
+					await msg.edit(content=f"{msg.content}\nERR: {filename} - Invalid Emoji")
 				name = self.cleanup_text(args if args else filename); img = requests.get(url).content
 				await self.upload_emoji(ctx, name, img, str(ctx.author), roles, msg)
 				await asyncio.sleep(1)
@@ -101,6 +119,9 @@ class Emojis(commands.Cog):
 	async def stealemoji(self, ctx, *emoji: discord.PartialEmoji):
 		msg = await ctx.send(f'Uploading emoji(s)..')
 		for emoji in emoji:
+			if self.is_blacklisted(emoji):
+				await msg.edit(content=f"{msg.content}\nERR: {emoji.name} - Invalid Emoji")
+				continue
 			name = emoji.name; img = requests.get(emoji.url).content
 			await self.upload_emoji(ctx, name=name, img=img, reason=str(ctx.author), msg=msg)
 
