@@ -11,6 +11,7 @@ import json
 from os import path
 import random
 import asyncio
+from time import time
 
 from discord.ext import commands
 import discord
@@ -64,6 +65,7 @@ class Factions(commands.Cog):
 		self.game_data = {}
 		self.pending = []
 		self.factions = {}
+		self.cooldowns = {}
 		if path.isfile(self.path):
 			with open(self.path, 'r') as f:
 				self.factions = json.load(f)  # type: dict
@@ -622,9 +624,17 @@ class Factions(commands.Cog):
 	@factions.command(name='work')
 	async def work(self, ctx):
 		""" Get money for your faction """
+		guild_id = str(ctx.guild.id)
 		faction = self.get_users_faction(ctx)
 		if not faction:
 			return await ctx.send("You need to be in a faction to use this cmd")
+
+		if guild_id not in self.cooldowns:
+			self.cooldowns[guild_id] = {}
+		if ctx.author.id in self.cooldowns:
+			remainder = 60 - (time() - self.cooldowns[guild_id][ctx.author.id])
+			return await ctx.send(f"You're on cooldown! You have {remainder}s left")
+		self.cooldowns[guild_id][ctx.author.id] = time()
 
 		require_game_completion = True if random.randint(1, 4) == 4 else False
 		g = MiniGames(ctx.author)
@@ -639,8 +649,9 @@ class Factions(commands.Cog):
 		if faction in self.boosts['extra-income']:
 			e.set_footer(text="With Bonus: $5", icon_url=self.faction_icon(ctx, faction))
 			pay += 5
-		self.factions[str(ctx.guild.id)][faction]['balance'] += pay
+		self.factions[guild_id][faction]['balance'] += pay
 		await ctx.send(embed=e)
+		del self.cooldowns[guild_id][ctx.author.id]
 		self.save_data()
 
 	@factions.command(name='balance', aliases=['bal'], enabled=False)
