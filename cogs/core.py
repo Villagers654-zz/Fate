@@ -10,14 +10,13 @@ import requests
 import aiohttp
 from time import time, monotonic
 
-
 from discord.ext import commands
 import discord
 from discord import Webhook, AsyncWebhookAdapter
 import wikipedia
 import wikipedia.exceptions
 
-from utils import config, colors, utils
+from utils import config, colors, utils, checks
 
 
 class Core(commands.Cog):
@@ -46,6 +45,7 @@ class Core(commands.Cog):
 
 	@commands.command(name="say")
 	@commands.cooldown(1, 5, commands.BucketType.user)
+	@checks.command_is_enabled()
 	@commands.bot_has_permissions(attach_files=True)
 	async def say(self, ctx, *, content: commands.clean_content=None):
 		if len(str(content).split('\n')) > 4:
@@ -82,6 +82,22 @@ class Core(commands.Cog):
 			config['prefix'][guild_id] = prefix
 			json.dump(config, f, ensure_ascii=False)
 		await ctx.send(f"Changed the servers prefix to `{prefix}`")
+
+	@commands.command(name='enable')
+	@commands.cooldown(2, 5, commands.BucketType.user)
+	async def enable(self, ctx, *command):
+		""" Enables a disabled command """
+		await ctx.send('e')
+
+	@commands.command(name='disable')
+	@commands.cooldown(2, 5, commands.BucketType.user)
+	async def disable(self, ctx, *command):
+		""" Disables an enabled command """
+
+	@commands.command(name='disabled')
+	@commands.cooldown(1, 5, commands.BucketType.channel)
+	async def disabled(self, ctx):
+		""" Lists the guilds disabled commands """
 
 	@commands.command(name="ping")
 	@commands.cooldown(1, 5, commands.BucketType.user)
