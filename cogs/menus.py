@@ -50,13 +50,13 @@ class Menus(commands.Cog):
 			e.set_thumbnail(url=self.bot.user.avatar_url)
 			usage = '• using a cmd with no args will usually send its help menu\n' \
 			    '• try using `.module enable` instead of `.enable module`'
-			e.add_field(name='◈ Basic Bot Usage', value=usage)
+			e.add_field(name='◈ Basic Bot Usage', value=usage, inline=False)
 			categories = '• **Core** - `main bot commands`\n' \
 				'• **Mod** - `moderation commands`\n' \
 			    '• **Utility** - `helpful commands`\n' \
 			    '• **Fun** - `fun games/commands`\n' \
 			    '• **Music** - `play moosic in vc`'
-			e.add_field(name='◈ Categories', value=categories)
+			e.add_field(name='◈ Categories', value=categories, inline=False)
 			e.set_footer(text='Use the reactions to navigate', icon_url=self.bot.user.avatar_url)
 			return e
 		def core():
