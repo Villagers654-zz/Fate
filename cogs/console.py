@@ -29,7 +29,10 @@ class Console(commands.Cog):
 						return await msg.channel.send('👍')
 					if 'await' in msg.content:
 						msg.content = msg.content.replace('await ', '')
-						return await eval(msg.content)
+						await eval(msg.content)
+						if not 'msg.channel.send' in msg.content:
+							await msg.channel.send('👍')
+						return
 					if 'send' in msg.content:
 						msg.content = msg.content.replace('send ', '')
 						return await msg.channel.send(eval(msg.content))
