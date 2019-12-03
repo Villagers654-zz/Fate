@@ -551,16 +551,14 @@ class Utility(commands.Cog):
 		webhook = await channel.create_webhook(name='Chat Transfer')
 		msgs = await ctx.channel.history(limit=amount+1).flatten()
 
-		e = discord.Embed(color=colors.fate())
-		e.set_author(name="Transferring Messages", icon_url=ctx.author.avatar_url)
-		e.description = f"0/{amount}"
-		e.set_footer(text=f"To #{channel.name}")
+		e = discord.Embed()
+		e.set_author(name=f"Progress: 0/{amount}", icon_url=ctx.author.avatar_url)
+		e.set_footer(text=f"Moving to #{channel.name}")
 		transfer_msg = await ctx.send(embed=e)
 
-		em = discord.Embed(color=colors.fate())
-		em.set_author(name="Transferring Messages", icon_url=ctx.author.avatar_url)
-		em.description = f'0/{amount}'
-		em.set_footer(text=f"From #{channel.name}")
+		em = discord.Embed()
+		em.set_author(name=f"Progress: 0/{amount}", icon_url=ctx.author.avatar_url)
+		em.set_footer(text=f"Moving from #{channel.name}")
 		channel_msg = await channel.send(embed=em)
 
 		await ctx.message.delete()
@@ -585,8 +583,8 @@ class Utility(commands.Cog):
 			for fp in file_paths:
 				os.remove(fp)
 			if index == 5:
-				e.description = f"Progress: {iteration+1}/{amount}"
-				em.description = f"Progress: {iteration+1}/{amount}"
+				e.set_author(name=f"Progress: {iteration+1}/{amount}", icon_url=ctx.author.avatar_url)
+				em.set_author(name=f"Progress: {iteration+1}/{amount}", icon_url=ctx.author.avatar_url)
 				await transfer_msg.edit(embed=e)
 				await channel_msg.edit(embed=em)
 				index = 1
@@ -596,8 +594,9 @@ class Utility(commands.Cog):
 			await asyncio.sleep(cooldown)
 
 		await webhook.delete()
-		e.description = f"{amount} msgs moved"
-		em.description = f"{amount} msgs moved"
+		result = f"Progress: {amount}/{amount}"
+		e.set_author(name=result, icon_url=ctx.author.avatar_url)
+		em.set_author(name=result, icon_url=ctx.author.avatar_url)
 		await transfer_msg.edit(embed=e)
 		await channel_msg.edit(embed=em)
 
