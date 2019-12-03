@@ -1,16 +1,16 @@
 """
-This modules for viewing and managing emojis
+Module for viewing and managing emojis
 """
 
-from discord.ext import commands
-from utils import colors
-from io import BytesIO
-from PIL import Image
 import requests
 import discord
 import asyncio
-import os
-from utils import utils
+
+from discord.ext import commands
+from PIL import Image
+
+from utils import colors
+
 
 class Emojis(commands.Cog):
 	def __init__(self, bot):
@@ -27,8 +27,6 @@ class Emojis(commands.Cog):
 			return emoji.id in blacklist
 		elif isinstance(emoji, str):
 			return any(str(emoji_id) in emoji for emoji_id in blacklist)
-		else:
-			print('dafuq')
 
 	def cleanup_text(self, text: str):
 		"""cleans text to avoid errors when creating emotes"""
