@@ -7,3 +7,4 @@ __pycache__/
 /cogs/dev.py
 /utils/*
 /utils/outh.py
+/cogs/system.py
