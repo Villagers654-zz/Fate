@@ -678,14 +678,18 @@ class Factions(commands.Cog):
 		if faction in self.boosts['extra-income']:
 			e.set_footer(text="With Bonus: $5", icon_url=self.faction_icon(ctx, faction))
 			pay += 5
+
 		self.factions[guild_id][faction]['balance'] += pay
 		if ctx.author.id in self.factions[guild_id][faction]['income']:
 			self.factions[guild_id][faction]['income'][ctx.author.id] += pay
 		else:
 			self.factions[guild_id][faction]['income'][ctx.author.id] = pay
+
 		await ctx.send(embed=e)
-		del self.cooldowns[guild_id][ctx.author.id]
 		self.save_data()
+
+		await asyncio.sleep(60)
+		del self.cooldowns[guild_id][ctx.author.id]
 
 	@factions.command(name='balance', aliases=['bal'], enabled=False)
 	async def balance(self, ctx, *, faction=None):
