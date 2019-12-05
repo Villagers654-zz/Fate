@@ -143,5 +143,13 @@ class Custom(commands.Cog):
 		]
 		await ctx.send(random.choice(choices))
 
+	@commands.command(name='trash')
+	@commands.cooldown(2, 5, commands.BucketType.user)
+	async def trash(self, ctx):
+		choices = [
+			"the best piece of garbage faggot"
+		]
+		await ctx.send(random.choice(choices))
+
 def setup(bot):
 	bot.add_cog(Custom(bot))
