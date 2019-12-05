@@ -119,5 +119,29 @@ class Custom(commands.Cog):
 		else:
 			await ctx.send("error")
 
+	@commands.command(name='tother')
+	@commands.cooldown(2, 5, commands.BucketType.user)
+	async def tother(self, ctx):
+		choices = [
+			"Fagitos", "https://discord.gg/BQ23Z2E", "Reeeeeeeeeeeeeeeeeeeeeee",
+			"pUrE wHiTe pRiVelIdgEd mALe", "there's a wasp sucking out all my stick juices",
+			"Really? That's the sperm that won?", "May the fly be with you", "You're not you when you're hungry",
+			"I recognize that flower, see you soon :)", "FBI OPEN UP", "Sponsored by Samsung", "iLiKe NuT",
+			"Florin joins, Yall dislocate yo joints...", "old school tricks rise again",
+			"i can't see, my thumbs are in the way",
+			"All Heil nut", "SARGON NEED MORE DOPAMINE", ".prune 1000", "Nani",
+			"I’m more blind then Hitler when he had that chlorine gas up in his eye",
+			"real art^", "2b2t.org is a copy of the middle east", "warned for advertising", "jOiN sR",
+			"6 million juice", "The 7th SR Fag", "7th team lgbt",
+			"DAiLy reMinDer sEx RoboTs coSt lesS thAn ReAl gRilLs",
+			"elon's musk", "Fuck the battle cat", "9/11", 'is it bad language or bad code', 'clonk gay',
+			'i have social diabetes',
+			'https://cdn.discordapp.com/attachments/457322344818409482/531321000361721856/image0-1.jpg',
+			'Tother: Sharon',
+			"we're giving them what they want, if they wanna identify as a peice of coal we can burn them freely",
+			f"You've been muted for spam in {ctx.guild.name} for 2 minutes and 30 seconds"
+		]
+		await ctx.send(random.choice(choices))
+
 def setup(bot):
 	bot.add_cog(Custom(bot))
