@@ -12,6 +12,7 @@ from os import path
 import random
 import asyncio
 from time import time
+from typing import *
 
 from discord.ext import commands
 import discord
@@ -205,6 +206,20 @@ class Factions(commands.Cog):
 	def update_income_board(self, guild_id, faction, **kwargs) -> None:
 		for key, value in kwargs.items():
 			self.factions[guild_id][faction]['income'][key] += value
+
+	async def wait_for_msg(self, ctx, *user):
+		def predicate(m):
+			if 'everyone' in user:
+				return m.channel.id == ctx.channel.id
+			else:
+				return m.author.id in user and m.channel.id == ctx.channel.id
+
+		try:
+			msg = await self.bot.wait_for('message', check=predicate, timeout=60)
+		except asyncio.TimeoutError:
+			return None
+		else:
+			return msg
 
 	@commands.command(name='convert-factions')
 	@commands.check(checks.luck)
@@ -501,6 +516,8 @@ class Factions(commands.Cog):
 	@factions.command(name='annex', enabled=False)
 	async def annex(self, ctx, *, faction):
 		""" Merges a faction with another """
+		# fuck this ;-;
+		# too much work
 
 	@factions.command(name='rename')
 	async def rename(self, ctx, *, name):
@@ -568,7 +585,7 @@ class Factions(commands.Cog):
 		owner = self.bot.get_user(owner_id)
 		users = []
 		co_owners = []
-		for user_id in self.factions[guild_id][faction]['members']:
+		for user_id in self.factions[guild_id][faction]['members']:  # type: int
 			user = self.bot.get_user(user_id)
 			if not isinstance(user, discord.User):
 				self.factions[guild_id][faction].remove(user_id)
@@ -620,6 +637,16 @@ class Factions(commands.Cog):
 	@factions.command(name='raid', enabled=False)
 	async def raid(self, ctx, *, faction):
 		""" Starts a raid against another faction """
+		attacker = self.get_users_faction(ctx)
+		defender = await self.get_faction_named(ctx, faction)
+		if not attacker:
+			return await ctx.send("You need to be in a faction to use this cmd")
+		if not defender:
+			return await ctx.send("Faction not found")
+
+		guild_id = str(ctx.guild.id)
+		await ctx.send(f"a warning idk")
+		msg = await self.wait_for_msg(ctx)
 
 	@factions.command(name='work')
 	async def work(self, ctx):
@@ -650,6 +677,10 @@ class Factions(commands.Cog):
 			e.set_footer(text="With Bonus: $5", icon_url=self.faction_icon(ctx, faction))
 			pay += 5
 		self.factions[guild_id][faction]['balance'] += pay
+		if ctx.author.id in self.factions[guild_id][faction]['income']:
+			self.factions[guild_id][faction]['income'][ctx.author.id] += pay
+		else:
+			self.factions[guild_id][faction]['income'][ctx.author.id] = pay
 		await ctx.send(embed=e)
 		del self.cooldowns[guild_id][ctx.author.id]
 		self.save_data()
