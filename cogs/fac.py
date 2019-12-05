@@ -646,7 +646,9 @@ class Factions(commands.Cog):
 
 		guild_id = str(ctx.guild.id)
 		await ctx.send(f"a warning idk")
-		msg = await self.wait_for_msg(ctx)
+		while True:
+			msg = await self.wait_for_msg(ctx, 'everyone')
+			break
 
 	@factions.command(name='work')
 	async def work(self, ctx):
