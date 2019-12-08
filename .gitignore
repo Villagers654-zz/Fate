@@ -4,7 +4,7 @@ __pycache__/
 *.json
 *.sh
 /data/*
-/cogs/dev.py
+cogs/dev.py
 /utils/*
 /utils/outh.py
-/cogs/system.py
+cogs/system.py
