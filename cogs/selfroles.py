@@ -58,7 +58,7 @@ class SelfRoles(commands.Cog):
 
 	def get_emojis(self, string):
 		""" Gets the custom emoji id or unicode emote """
-		if len(string) == 1:
+		if not any(char.isdigit() for char in list(string)):
 			return string  # unicode emoji
 		string = ''.join(char for char in list(string) if char.isdigit())
 		emoji = self.bot.get_emoji(int(string))
@@ -241,28 +241,29 @@ class SelfRoles(commands.Cog):
 					return
 				if 'done' in msg.content:
 					break
-				args = msg.content.split(' ', 1)
-				if len(args) == 1:
-					await msg.delete()
-					await ctx.send('Not enough args', delete_after=5)
-					continue
-				emoji, role = args
-				emoji = self.get_emojis(emoji)
-				if not emoji:
-					await msg.delete()
-					await ctx.send('Emoji not found', delete_after=5)
-					continue
-				role = await utils.get_role(ctx, role)
-				if not role:
-					await msg.delete()
-					await ctx.send('Role not found', delete_after=5)
-					continue
-				emoji_id = f'{emoji}'
-				if isinstance(emoji, discord.PartialEmoji):
-					emoji_id = emoji.id
-				menu['items'][str(role.id)] = emoji_id
+				for content in msg.content.split('\n'):
+					args = content.split(' ', 1)
+					if len(args) == 1:
+						await msg.delete()
+						await ctx.send('Not enough args', delete_after=5)
+						continue
+					emoji, role = args
+					emoji = self.get_emojis(emoji)
+					if not emoji:
+						await msg.delete()
+						await ctx.send(f'Emoji not found for {role}', delete_after=5)
+						continue
+					role = await utils.get_role(ctx, role)
+					if not role:
+						await msg.delete()
+						await ctx.send('Role not found', delete_after=5)
+						continue
+					emoji_id = f'{emoji}'
+					if isinstance(emoji, discord.PartialEmoji):
+						emoji_id = emoji.id
+					menu['items'][str(role.id)] = emoji_id
+					await ctx.send(f"Added {role.name}", delete_after=5)
 				await msg.delete()
-				await ctx.send(f"Added {role.name}", delete_after=5)
 			await asyncio.sleep(0.5)
 			await msg.delete()
 		else:
