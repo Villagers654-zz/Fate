@@ -74,6 +74,8 @@ class Anti_Raid(commands.Cog):
 	@_anti_raid.command(name="disable")
 	@commands.has_permissions(administrator=True)
 	async def _disable(self, ctx):
+		if ctx.author.id != ctx.guild.owner.id:
+			return await ctx.send('Only the server owner can disable this')
 		guild_id = str(ctx.guild.id)
 		if guild_id not in self.toggle:
 			return await ctx.send("Anti raid is not enabled")
