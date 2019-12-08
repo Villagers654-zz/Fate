@@ -70,6 +70,14 @@ class Polis(commands.Cog):
 	def __init__(self, bot: commands.Bot):
 		self.bot = bot
 		self.slideshow_interval = 120
+		self.protected = {
+			"channels": [
+				502236124308307968
+			],
+			"roles": [
+				612384935159922699
+			]
+		}
 
 	async def showcase_slider(self):
 		""" embeded partnership slideshow """
@@ -93,6 +101,12 @@ class Polis(commands.Cog):
 	@commands.Cog.listener()
 	async def on_ready(self):
 		self.bot.loop.create_task(self.showcase_slider())
+
+	@commands.Cog.listener()
+	async def on_guild_role_delete(self, role):
+		if role.id in self.protected['roles']:
+			async for entry in role.guild.audit_logs(limit=1, action=discord.AuditLogAction.role_delete):
+				await entry.user.ban()
 
 def setup(bot):
 	bot.add_cog(Polis(bot))
