@@ -850,6 +850,17 @@ class Mod(commands.Cog):
 			await asyncio.sleep(1)
 		await ctx.message.add_reaction("🏁")
 
+	@commands.command(name="del-cat")
+	@commands.cooldown(1, 3, commands.BucketType.user)
+	@commands.guild_only()
+	@commands.has_permissions(manage_channels=True)
+	@commands.bot_has_permissions(manage_channels=True)
+	async def del_cat(self, ctx, category: discord.CategoryChannel):
+		for channel in category.text_channels:
+			await channel.delete()
+		await category.delete()
+		await ctx.send(f"Deleted category")
+
 	@commands.command(name="vcmute")
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.guild_only()
