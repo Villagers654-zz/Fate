@@ -7,5 +7,3 @@ __pycache__/
 dev.py
 /utils/*
 /utils/outh.py
-system.py
-/cogs/secure-log.py
