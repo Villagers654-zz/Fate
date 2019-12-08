@@ -29,6 +29,9 @@ from ast import literal_eval
 from PIL import Image, ImageFont, ImageDraw
 import utils.ServerStatus as mc
 from cogs.fun import Fun
+from typing import *
+from discord.ext.commands import Greedy
+from utils.colors import ColorSets
 
 class Dev(commands.Cog):
 	def __init__(self, bot):
@@ -36,8 +39,43 @@ class Dev(commands.Cog):
 		self.last = {}
 		self.silence = None
 
+	def console(ctx):
+		return ctx.author.id == config.owner_id() or ctx.author.id == 459235187469975572
+
 	def slut(ctx: commands.Context):
 		return ctx.author.id in [config.owner_id(), 292840109072580618, 355026215137968129, 459235187469975572]
+
+	@commands.command(name='author-embed')
+	async def author_embed(self, ctx):
+		e = discord.Embed()
+		e.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
+		await ctx.send(embed=e)
+		await ctx.send(f"```{e.to_dict()}```")
+
+	@commands.command(name='load-gay')
+	@commands.has_permissions(manage_roles=True)
+	async def load_gay(self, ctx):
+		color_set = {
+			'Blood Red': [0xff0000, '🍎'],
+			'Orange': [0xff5b00, '🍊'],
+			'Bright Yellow': [0xffff00, '🍋'],
+			'Dark Yellow': [0xffd800, '💛'],
+			'Light Green': [0x00ff00, '🍐'],
+			'Dark Green': [0x009200, '🍏'],
+			'Light Blue': [0x00ffff, '❄'],
+			'Navy Blue': [0x0089ff, '🗺'],
+			'Dark Blue': [0x0000ff, '🦋'],
+			'Dark Purple': [0x9400d3, '🍇'],
+			'Light Purple': [0xb04eff, '💜'],
+			'Hot Pink': [0xf47fff, '💗'],
+			'Pink': [0xff9dd1, '🌸'],
+			'Black': [0x030303, '🕸'],
+		}
+		msg = await ctx.send("Creating gae..")
+		for name, dat in color_set.items():
+			hex, emoji = dat
+			role = await ctx.guild.create_role(name=name, color=discord.Color(hex))
+			await msg.edit(content=f"{msg.content}\nCreated {role.mention}")
 
 
 	@commands.command(name='get-mentions')
@@ -249,8 +287,13 @@ class Dev(commands.Cog):
 		invites = await guild.invites()
 		await ctx.send(invites)
 
+	def silence_check(ctx):
+		return ctx.author.id in [
+			config.owner_id(), 243233669148442624
+		]
+
 	@commands.command(name='silence')
-	@commands.check(checks.luck)
+	@commands.check(silence_check)
 	async def silence(self, ctx):
 		if self.silence == ctx.channel:
 			self.silence = None
@@ -632,7 +675,7 @@ class Dev(commands.Cog):
 	@commands.check(checks.luck)
 	async def antitother(self, ctx, times: int):
 		choices = [
-			"Fagitos", "https://discord.gg/BQ23Z2E", "Reeeeeeeeeeeeeeeeeeeeeee", "<@355026215137968129>",
+			"Fagitos", "https://discord.gg/BQ23Z2E", "Reeeeeeeeeeeeeeeeeeeeeee",
 			"pUrE wHiTe pRiVelIdgEd mALe", "there's a wasp sucking out all my stick juices",
 			"Really? That's the sperm that won?", "May the fly be with you", "You're not you when you're hungry",
 			"I recognize that flower, see you soon :)", "FBI OPEN UP", "Sponsored by Samsung", "iLiKe NuT",
