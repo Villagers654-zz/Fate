@@ -164,6 +164,35 @@ class SecureLog(commands.Cog):
 		""" gets the time 2 seconds ago in utc for audit searching """
 		return datetime.utcnow() - timedelta(seconds=2)
 
+	async def search_audit(self, guild, action: str) -> dict:
+		""" Returns a dictionary of who performed an action """
+		dat = {
+			'user': 'Unknown',
+			'target': 'Unknown',
+			'icon_url': None,
+			'thumbnail_url': None,
+			'reason': None,
+			'extra': None,
+			'changes': None,
+			'before': None,
+			'after': None
+		}
+		if guild.me.guild_permissions.view_audit_log:
+			action = eval('audit.'+action)
+			async for entry in guild.audit_logs(limit=1, action=action):
+				if entry.created_at > self.past():
+					dat['user'] = entry.user.mention
+					if entry.target:
+						dat['target'] = entry.target.mention
+						dat['icon_url'] = entry.target.avatar_url
+					dat['thumbnail_url'] = entry.user.avatar_url
+					dat['reason'] = entry.reason
+					dat['extra'] = entry.extra
+					dat['changes'] = entry.changes
+					dat['before'] = entry.before
+					dat['after'] = entry.after
+		return dat
+
 	def split_into_groups(self, text):
 		return [text[i:i + 1000] for i in range(0, len(text), 1000)]
 
@@ -321,6 +350,20 @@ class SecureLog(commands.Cog):
 					json.dump(em, f, sort_keys=True, indent=4, separators=(',', ': '))
 				self.queue[guild_id].append([(e, path), 'chat'])
 
+			if before.pinned != after.pinned:
+				action = 'Unpinned' if before.pinned else 'Pinned'
+				audit_dat = await self.search_audit(after.guild, 'message_pin')
+				e = discord.Embed(color=cyan())
+				e.set_author(name=f'~==🍸Msg {action}🍸==~', icon_url=after.author.avatar_url)
+				e.set_thumbnail(url=after.author.avatar_url)
+				e.description = f"__**Author:**__ [{after.author.mention}]" \
+				                f"\n__**Channel:**__ [{after.channel.mention}]" \
+				                f"__**Who Pinned:**__ [{audit_dat['user']}]" \
+				                f"\n[Jump to MSG]({after.jump_url})"
+				for text_group in self.split_into_groups(after.content):
+					e.add_field(name="◈ Content", value=text_group, inline=False)
+				self.queue[guild_id].append([e, 'chat'])
+
 	@commands.Cog.listener()
 	async def on_raw_message_edit(self, payload):
 		channel = self.bot.get_channel(int(payload.data['channel_id']))
@@ -454,8 +497,22 @@ class SecureLog(commands.Cog):
 					purged_by = entry.user.mention
 			e.set_author(name=f'~==🍸{len(list(payload.message_ids))} Purged🍸==~', icon_url=icon_url)
 			e.set_thumbnail(url=thumbnail_url)
-			e.description = f"__**Channel:**__ {channel.mention}" \
-			                f"\n__**Purged By:**__ {purged_by}"
+			e.description = f"__**Channel:**__ [{channel.mention}]" \
+			                f"\n__**Purged By:**__ [{purged_by}]"
+			self.queue[guild_id].append([e, 'chat'])
+
+	@commands.Cog.listener()
+	async def on_raw_reaction_clear(self, payload):
+		guild_id = str(payload.guild_id)
+		if guild_id in self.config:
+			channel = self.bot.get_channel(payload.channel_id)
+			msg = await channel.fetch_message(payload.message_id)
+			e = discord.Embed(color=yellow())
+			e.set_author(name='~==🍸 Reactions Cleared🍸==~', icon_url=msg.author.avatar_url)
+			e.set_image(url=msg.author.avatar_url)
+			e.description = f"__**Author:**__ [{msg.author.mention}]" \
+			                f"\n__**Channel:** [{channel.mention}]" \
+			                f"\n[Jump to MSG]({msg.jump_url})"
 			self.queue[guild_id].append([e, 'chat'])
 
 	@commands.Cog.listener()
