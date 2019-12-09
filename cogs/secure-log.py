@@ -10,6 +10,7 @@ from os import path
 import json
 import os
 from datetime import datetime, timedelta
+import requests
 
 from discord.ext import commands
 import discord
@@ -97,11 +98,13 @@ class SecureLog(commands.Cog):
 			log_type = self.config[guild_id]['type']  # type: str
 
 			for embed, channelType in self.queue[guild_id][-175:]:
-				file = None
+				list_obj = [embed, channelType]
+				file_paths = []; files = []
 				if isinstance(embed, tuple):
-					embed, file = embed
-					if not os.path.isfile(file):
-						file = None
+					embed, file_paths = embed
+					if not isinstance(file_paths, list):
+						file_paths = [file_paths]
+					files = [discord.File(file) for file in file_paths if os.path.isfile(file)]
 
 				sent = False
 				while not guild.me.guild_permissions.administrator:
@@ -127,10 +130,12 @@ class SecureLog(commands.Cog):
 					self.save_data()
 
 				if isinstance(category, discord.TextChannel):  # single channel log
-					await category.send(embed=embed, file=discord.File(file) if file else None)
-					if file:
-						os.remove(file)
-						self.queue[guild_id].remove([(embed, file), channelType])
+					await category.send(embed=embed, files=files)
+					if file_paths:
+						for file in file_paths:
+							if os.path.isfile(file):
+								os.remove(file)
+						self.queue[guild_id].remove([(embed, file_paths), channelType])
 					else:
 						self.queue[guild_id].remove([embed, channelType])
 						self.recent_logs[guild_id].append(embed)
@@ -145,10 +150,12 @@ class SecureLog(commands.Cog):
 							)
 							self.config[guild_id]['channels'][Type] = channel.id
 							self.save_data()
-						await channel.send(embed=embed, file=discord.File(file) if file else None)
-						if file:
-							os.remove(file)
-							self.queue[guild_id].remove([(embed, file), channelType])
+						await channel.send(embed=embed, files=files)
+						if file_paths:
+							for file in file_paths:
+								if os.path.isfile(file):
+									os.remove(file)
+							self.queue[guild_id].remove([(embed, file_paths), channelType])
 						else:
 							self.queue[guild_id].remove([embed, channelType])
 						self.recent_logs[guild_id][channelType].append(embed)
@@ -409,7 +416,17 @@ class SecureLog(commands.Cog):
 				e.add_field(name='◈ MSG Content', value=text_group, inline=False)
 			if msg.embeds:
 				e.set_footer(text=' | Embed ⇓')
-			self.queue[guild_id].append([e, 'chat'])
+			if msg.attachments:
+				files = []
+				for attachment in msg.attachments:
+					path = os.path.join('static', attachment.filename)
+					file = requests.get(attachment.proxy_url).content
+					with open(path, 'wb') as f:
+						f.write(file)
+					files.append(path)
+				self.queue[guild_id].append([(e, files), 'chat'])
+			else:
+				self.queue[guild_id].append([e, 'chat'])
 			if msg.embeds:
 				self.queue[guild_id].append([msg.embeds[0], 'chat'])
 
