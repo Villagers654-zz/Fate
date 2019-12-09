@@ -187,8 +187,9 @@ class ChatBridge(commands.Cog):
 
 				files = []; embed = None
 				for attachment in msg.attachments:
-					await attachment.save(attachment.filename)
-					file = discord.File(attachment.filename)
+					path = os.path.join('static', attachment.filename)
+					await attachment.save(path)
+					file = discord.File(path)
 					files.append(file)
 				for embed in msg.embeds:
 					embed = embed
@@ -210,7 +211,7 @@ class ChatBridge(commands.Cog):
 					                   files=files, embed=embed)
 
 				for attachment in msg.attachments:
-					os.remove(attachment.filename)
+					os.remove(os.path.join('static', attachment.filename))
 
 def setup(bot):
 	bot.add_cog(ChatBridge(bot))
