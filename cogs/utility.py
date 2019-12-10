@@ -465,6 +465,22 @@ class Utility(commands.Cog):
 		await ctx.send("Nothing found")
 		del self.find[channel_id]
 
+	@commands.command(name='last-entry')
+	@commands.cooldown(2, 5, commands.BucketType.user)
+	@commands.has_permissions(view_audit_log=True)
+	@commands.bot_has_permissions(view_audit_log=True)
+	async def last_entry(self, ctx, action):
+		""" Gets the last entry for a specific action """
+		action = eval('discord.AuditLogAction.'+action)
+		async for entry in ctx.guild.audit_logs(limit=1, action=action):
+			dat = f"User: {entry.user}" \
+			      f"\nTarget: {entry.target}" \
+			      f"\nReason: {entry.reason}" \
+			      f"\nExtra: {entry.extra}" \
+			      f"\nCreated: {entry.created_at}" \
+			      f"\nChanges: {entry.changes}"
+			await ctx.send(dat)
+
 	@commands.command(name='poll')
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.guild_only()
