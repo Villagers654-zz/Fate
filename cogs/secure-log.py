@@ -544,6 +544,9 @@ class SecureLog(commands.Cog):
 				async for entry in channel.guild.audit_logs(limit=1, action=audit.channel_delete):
 					who = entry.user.mention
 					icon_url = entry.user.avatar_url
+			member_count = 'Unknown'
+			if not isinstance(channel, discord.CategoryChannel):
+				member_count = len(channel.members)
 
 			e = discord.Embed(color=red())
 			e.set_author(name='Channel Deleted', icon_url=icon_url)
@@ -551,7 +554,7 @@ class SecureLog(commands.Cog):
 			e.description = f"__**Channel:**__ [{channel.name}]" \
 			                f"\n__**ID:**__ [{channel.id}]" \
 			                f"\n__**User:**__ [{who if who else 'Unknown'}]" \
-			                f"\n__**Members:**__ [{len(channel.members)}]"
+			                f"\n__**Members:**__ [{member_count}]"
 
 			path = f'./static/members-{channel.id}.txt'
 			members = f"{channel.name} - Member List"
