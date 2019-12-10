@@ -17,7 +17,15 @@ import discord
 from discord import AuditLogAction as audit
 
 from utils.colors import *
-from utils import utils
+from utils import utils, config
+
+
+def is_guild_owner():
+	async def predicate(ctx):
+		return ctx.author.id == ctx.guild.owner.id or (
+			ctx.author.id == config.owner_id())  # for testing
+
+	return commands.check(predicate)
 
 
 class SecureLog(commands.Cog):
@@ -206,6 +214,7 @@ class SecureLog(commands.Cog):
 	@commands.group(name='secure-log')
 	@commands.cooldown(2, 5, commands.BucketType.user)
 	@commands.guild_only()
+	@is_guild_owner()
 	async def secure_log(self, ctx):
 		if not ctx.invoked_subcommand:
 			e = discord.Embed(color=fate())
