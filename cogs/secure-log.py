@@ -135,10 +135,8 @@ class SecureLog(commands.Cog):
 						for file in file_paths:
 							if os.path.isfile(file):
 								os.remove(file)
-						self.queue[guild_id].remove([(embed, file_paths), channelType])
-					else:
-						self.queue[guild_id].remove([embed, channelType])
-						self.recent_logs[guild_id].append(embed)
+					self.queue[guild_id].remove(list_obj)
+					self.recent_logs[guild_id].append(embed)
 
 				for Type, channel_id in self.config[guild_id]['channels'].items():
 					if Type == channelType:
@@ -167,9 +165,9 @@ class SecureLog(commands.Cog):
 
 	def past(self):
 		""" gets the time 2 seconds ago in utc for audit searching """
-		return datetime.utcnow() - timedelta(seconds=2)
+		return datetime.utcnow() - timedelta(seconds=10)
 
-	async def search_audit(self, guild, action: str) -> dict:
+	async def search_audit(self, guild, action) -> dict:
 		""" Returns a dictionary of who performed an action """
 		dat = {
 			'user': 'Unknown',
@@ -183,19 +181,23 @@ class SecureLog(commands.Cog):
 			'after': None
 		}
 		if guild.me.guild_permissions.view_audit_log:
-			action = eval('audit.'+action)
-			async for entry in guild.audit_logs(limit=1, action=action):
-				if entry.created_at > self.past():
-					dat['user'] = entry.user.mention
-					if entry.target:
-						dat['target'] = entry.target.mention
-						dat['icon_url'] = entry.target.avatar_url
-					dat['thumbnail_url'] = entry.user.avatar_url
-					dat['reason'] = entry.reason
-					dat['extra'] = entry.extra
-					dat['changes'] = entry.changes
-					dat['before'] = entry.before
-					dat['after'] = entry.after
+			await asyncio.sleep(0.5)
+			async for entry in guild.audit_logs(limit=1, action=action, after=self.past()):
+				dat['user'] = entry.user.mention
+				if entry.target:
+					dat['target'] = entry.target.mention
+					dat['icon_url'] = entry.target.avatar_url
+				else:
+					dat['icon_url'] = entry.user.avatar_url
+				dat['thumbnail_url'] = entry.user.avatar_url
+				dat['reason'] = entry.reason
+				dat['extra'] = entry.extra
+				dat['changes'] = entry.changes
+				dat['before'] = entry.before
+				dat['after'] = entry.after
+		else:
+			await guild.owner.send(f"I'm missing audit log permissions for secure-log in {guild}\n"
+			                       f"run `.secure-log disable` to stop recieving msgs")
 		return dat
 
 	def split_into_groups(self, text):
@@ -357,7 +359,7 @@ class SecureLog(commands.Cog):
 
 			if before.pinned != after.pinned:
 				action = 'Unpinned' if before.pinned else 'Pinned'
-				audit_dat = await self.search_audit(after.guild, 'message_pin')
+				audit_dat = await self.search_audit(after.guild, audit.message_pin)
 				e = discord.Embed(color=cyan())
 				e.set_author(name=f'~==🍸Msg {action}🍸==~', icon_url=after.author.avatar_url)
 				e.set_thumbnail(url=after.author.avatar_url)
@@ -453,16 +455,17 @@ class SecureLog(commands.Cog):
 			self.queue[guild_id].append([e, 'chat'])
 
 	@commands.Cog.listener()
-	async def on_bulk_message_delete(self, msgs):
-		message = msgs[0]
-		guild_id = str(message.guild.id)
+	async def on_raw_bulk_message_delete(self, payload):
+		guild_id = str(payload.guild_id)
 		if guild_id in self.config:
+			guild = self.bot.get_guild(payload.guild_id)
+			channel = self.bot.get_channel(payload.channel_id)
 			purged_messages = ''
-			for msg in msgs:
+			for msg in payload.cached_messages:
 
 				if msg.embeds:
-					if message.channel.id == self.config[guild_id]['channel']:
-						self.queue[guild_id].append([message.embeds[0], 'sudo'])
+					if msg.channel.id == self.config[guild_id]['channel']:
+						self.queue[guild_id].append([msg.embeds[0], 'sudo'])
 						continue
 					if msg.channel.id in self.config[guild_id]['channels']:
 						await msg.channel.send("OwO what's this", embed=msg.embeds[0])
@@ -472,49 +475,25 @@ class SecureLog(commands.Cog):
 				timestamp = msg.created_at.strftime('%I:%M%p')
 				purged_messages = f"{timestamp} | {msg.author}: {msg.content}\n{purged_messages}"
 
-			if not purged_messages:  # only logs were purged
+			if payload.cached_messages and not purged_messages:  # only logs were purged
 				return
 
-			path = f'./static/purged-messages-{message.channel.id}-{r.randint(0, 9999)}'
+			path = f'./static/purged-messages-{r.randint(0, 9999)}'
 			with open(path, 'w') as f:
 				f.write(purged_messages)
 
 			e = discord.Embed(color=lime_green())
-			icon_url = message.guild.icon_url
-			thumbnail_url = message.guild.icon_url
-			purged_by = 'Unknown'
-			if message.guild.me.guild_permissions.view_audit_log:
-				async for entry in message.guild.audit_logs(limit=1, action=audit.message_bulk_delete, after=self.past()):
-					icon_url = entry.user.avatar_url
-					thumbnail_url = entry.user.avatar_url
-					purged_by = entry.user.mention
-			e.set_author(name=f"~==🍸{len(msgs)} Msgs Purged🍸==~", icon_url=icon_url)
-			e.set_thumbnail(url=thumbnail_url)
-			e.description = f"__**Users Effected:**__ [{len(list(set([msg.author for msg in msgs])))}]" \
-			                f"\n__**Channel:**__ [{message.channel.mention}]" \
-			                f"\n__**Purged By:**__ [{purged_by}]"
+			dat = await self.search_audit(guild, audit.message_bulk_delete)
+			if dat['extra'] and dat['icon_url']:
+				e.set_author(name=f"~==🍸{dat['extra']['count']} Msgs Purged🍸==~", icon_url=dat['icon_url'])
+			else:
+				e.set_author(name=f"~==🍸{len(payload.cached_messages)} Msgs Purged🍸==~")
+			if dat['thumbnail_url']:
+				e.set_thumbnail(url=dat['thumbnail_url'])
+			e.description = f"__**Users Effected:**__ [{len(list(set([msg.author for msg in payload.cached_messages])))}]" \
+			                f"\n__**Channel:**__ [{channel.mention}]" \
+			                f"\n__**Purged By:**__ [{dat['user']}]"
 			self.queue[guild_id].append([(e, path), 'chat'])
-
-	@commands.Cog.listener()
-	async def on_raw_bulk_message_delete(self, payload):
-		guild_id = str(payload.guild_id)
-		if guild_id in self.config and not payload.cached_messages:
-			guild = self.bot.get_guild(payload.guild_id)
-			channel = self.bot.get_channel(payload.channel_id)
-			e = discord.Embed(color=green())
-			icon_url = guild.icon_url
-			thumbnail_url = guild.icon_url
-			purged_by = 'Unknown'
-			if guild.me.guild_permissions.view_audit_log:
-				async for entry in guild.audit_logs(limit=1, action=audit.message_delete, after=self.past()):
-					icon_url = entry.target.avatar_url
-					thumbnail_url = entry.user.avatar_url
-					purged_by = entry.user.mention
-			e.set_author(name=f'~==🍸{len(list(payload.message_ids))} Unknown Msgs Purged🍸==~', icon_url=icon_url)
-			e.set_thumbnail(url=thumbnail_url)
-			e.description = f"__**Channel:**__ [{channel.mention}]" \
-			                f"\n__**Purged By:**__ [{purged_by}]"
-			self.queue[guild_id].append([e, 'chat'])
 
 	@commands.Cog.listener()
 	async def on_raw_reaction_clear(self, payload):
