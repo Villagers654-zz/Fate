@@ -155,9 +155,7 @@ class SecureLog(commands.Cog):
 							for file in file_paths:
 								if os.path.isfile(file):
 									os.remove(file)
-							self.queue[guild_id].remove([(embed, file_paths), channelType])
-						else:
-							self.queue[guild_id].remove([embed, channelType])
+						self.queue[guild_id].remove(list_obj)
 						self.recent_logs[guild_id][channelType].append(embed)
 						break
 
@@ -466,7 +464,7 @@ class SecureLog(commands.Cog):
 					if message.channel.id == self.config[guild_id]['channel']:
 						self.queue[guild_id].append([message.embeds[0], 'sudo'])
 						continue
-					elif msg.channel.id in self.config[guild_id]['channels']:
+					if msg.channel.id in self.config[guild_id]['channels']:
 						await msg.channel.send("OwO what's this", embed=msg.embeds[0])
 						self.queue[guild_id].append([msg.embeds[0], 'sudo'])
 						continue
@@ -477,30 +475,30 @@ class SecureLog(commands.Cog):
 			if not purged_messages:  # only logs were purged
 				return
 
-			path = f'./static/purged-messages-{message.channel.id}-{r.randint(0xffff, 9999)}'
+			path = f'./static/purged-messages-{message.channel.id}-{r.randint(0, 9999)}'
 			with open(path, 'w') as f:
-				json.dump(purged_messages, f, ensure_ascii=False)
+				f.write(purged_messages)
 
 			e = discord.Embed(color=lime_green())
 			icon_url = message.guild.icon_url
 			thumbnail_url = message.guild.icon_url
 			purged_by = 'Unknown'
 			if message.guild.me.guild_permissions.view_audit_log:
-				async for entry in message.guild.audit_logs(limit=1, action=audit.message_delete, after=self.past()):
-					icon_url = entry.target.avatar_url
+				async for entry in message.guild.audit_logs(limit=1, action=audit.message_bulk_delete, after=self.past()):
+					icon_url = entry.user.avatar_url
 					thumbnail_url = entry.user.avatar_url
 					purged_by = entry.user.mention
-			e.set_author(name=f"~==🍸{len(msgs)} Purged🍸==~", icon_url=icon_url)
+			e.set_author(name=f"~==🍸{len(msgs)} Msgs Purged🍸==~", icon_url=icon_url)
 			e.set_thumbnail(url=thumbnail_url)
-			e.description = f"__**Users Effected:**__ {set([msg.author for msg in msgs])}" \
-			                f"\n__**Channel:**__ {message.channel.mention}" \
-			                f"\n__**Purged By:**__ {purged_by}"
+			e.description = f"__**Users Effected:**__ [{len(list(set([msg.author for msg in msgs])))}]" \
+			                f"\n__**Channel:**__ [{message.channel.mention}]" \
+			                f"\n__**Purged By:**__ [{purged_by}]"
 			self.queue[guild_id].append([(e, path), 'chat'])
 
 	@commands.Cog.listener()
 	async def on_raw_bulk_message_delete(self, payload):
 		guild_id = str(payload.guild_id)
-		if guild_id in self.config:
+		if guild_id in self.config and not payload.cached_messages:
 			guild = self.bot.get_guild(payload.guild_id)
 			channel = self.bot.get_channel(payload.channel_id)
 			e = discord.Embed(color=green())
@@ -512,7 +510,7 @@ class SecureLog(commands.Cog):
 					icon_url = entry.target.avatar_url
 					thumbnail_url = entry.user.avatar_url
 					purged_by = entry.user.mention
-			e.set_author(name=f'~==🍸{len(list(payload.message_ids))} Purged🍸==~', icon_url=icon_url)
+			e.set_author(name=f'~==🍸{len(list(payload.message_ids))} Unknown Msgs Purged🍸==~', icon_url=icon_url)
 			e.set_thumbnail(url=thumbnail_url)
 			e.description = f"__**Channel:**__ [{channel.mention}]" \
 			                f"\n__**Purged By:**__ [{purged_by}]"
