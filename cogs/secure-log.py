@@ -310,9 +310,9 @@ class SecureLog(commands.Cog):
 		if guild_id in self.config:
 			mention = None
 			content = str(msg.content).lower()
-			if '@everyone' in content:
+			if '!everyone' in content:
 				mention = '@everyone'
-			if '@here' in content:
+			if '!here' in content:
 				mention = '@here'
 			if mention:
 				msg = await msg.channel.fetch_message(msg.id)
@@ -328,7 +328,7 @@ class SecureLog(commands.Cog):
 				elif msg.channel.permissions_for(msg.author).mention_everyone:
 					is_successful = True
 				e.description = f"Author: [{msg.author.mention}]" \
-				                f"\nPing Worked: [`{is_successful}`]" \
+				                f"\nPing Worked: [{is_successful}]" \
 				                f"\nChannel: [{msg.channel.mention}]"
 				e.add_field(name='Content', value=msg.content, inline=False)
 				self.queue[guild_id].append([e, 'system+'])
@@ -401,14 +401,21 @@ class SecureLog(commands.Cog):
 	async def on_message_delete(self, msg):
 		guild_id = str(msg.guild.id)
 		if guild_id in self.config:
-			if msg.embeds:  # check if the channel is a log
-				if msg.channel.id == self.config[guild_id]['channel']:
+			if msg.embeds and msg.channel.id == self.config[guild_id]['channel'] or (
+					msg.channel.id in [v for v in self.config[guild_id]['channels'].values()]):
+					
+				await msg.channel.send("OwO what's this", embed=msg.embeds[0])
+				if msg.attachments:
+					files = []
+					for attachment in msg.attachments:
+						path = os.path.join('static', attachment.filename)
+						file = requests.get(attachment.proxy_url).content
+						with open(path, 'wb') as f:
+							f.write(file)
+						files.append(path)
+					self.queue[guild_id].append([(msg.embeds[0], files), 'sudo'])
+				else:
 					self.queue[guild_id].append([msg.embeds[0], 'sudo'])
-					return
-				elif msg.channel.id in [v for v in self.config[guild_id]['channels'].values()]:
-					await msg.channel.send("OwO what's this", embed=msg.embeds[0])
-					self.queue[guild_id].append([msg.embeds[0], 'sudo'])
-					return
 
 			e = discord.Embed(color=purple())
 			e.set_author(name='~==🍸Msg Deleted🍸==~', icon_url=msg.author.avatar_url)
