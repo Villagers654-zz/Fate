@@ -417,6 +417,8 @@ class SecureLog(commands.Cog):
 				else:
 					self.queue[guild_id].append([msg.embeds[0], 'sudo'])
 
+				return
+
 			e = discord.Embed(color=purple())
 			e.set_author(name='~==🍸Msg Deleted🍸==~', icon_url=msg.author.avatar_url)
 			thumbnail_url = msg.guild.icon_url
