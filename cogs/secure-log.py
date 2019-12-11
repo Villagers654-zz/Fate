@@ -403,7 +403,7 @@ class SecureLog(commands.Cog):
 		if guild_id in self.config:
 			if msg.embeds and msg.channel.id == self.config[guild_id]['channel'] or (
 					msg.channel.id in [v for v in self.config[guild_id]['channels'].values()]):
-					
+
 				await msg.channel.send("OwO what's this", embed=msg.embeds[0])
 				if msg.attachments:
 					files = []
@@ -581,7 +581,7 @@ class SecureLog(commands.Cog):
 			                f"\n__**Members:**__ [{member_count}]"
 
 			if isinstance(channel, discord.CategoryChannel):
-				self.queue[guild_id].append(e, 'actions')
+				self.queue[guild_id].append([e, 'actions'])
 				return
 
 			path = f'./static/members-{r.randint(1, 9999)}.txt'
