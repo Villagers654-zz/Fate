@@ -434,7 +434,7 @@ class SecureLog(commands.Cog):
 			for text_group in self.split_into_groups(msg.content):
 				e.add_field(name='◈ MSG Content', value=text_group, inline=False)
 			if msg.embeds:
-				e.set_footer(text=' | Embed ⇓')
+				e.set_footer(text='⇓ Embed ⇓')
 			if msg.attachments:
 				files = []
 				for attachment in msg.attachments:
@@ -573,14 +573,19 @@ class SecureLog(commands.Cog):
 			member_count = 'Unknown'
 			if not isinstance(channel, discord.CategoryChannel):
 				member_count = len(channel.members)
+			category = 'None'
+			if channel.category:
+				category = channel.category.name
 
 			e = discord.Embed(color=red())
 			e.set_author(name='~==🍸Channel Deleted🍸==~', icon_url=dat['icon_url'])
 			e.set_thumbnail(url=dat['thumbnail_url'])
 			e.description = f"__**Name:**__ [{channel.name}]" \
+			                f"\n__**Category:**__ [{category}]" \
 			                f"\n__**ID:**__ [{channel.id}]" \
 			                f"\n__**User:**__ [{dat['user']}]" \
-			                f"\n__**Members:**__ [{member_count}]"
+			                f"\n__**Members:**__ [{member_count}]" \
+			                f"\n__**Deleted by:**__ [{dat['user']}]"
 
 			if isinstance(channel, discord.CategoryChannel):
 				self.queue[guild_id].append([e, 'actions'])
@@ -594,6 +599,76 @@ class SecureLog(commands.Cog):
 				f.write(members)
 
 			self.queue[guild_id].append([(e, path), 'actions'])
+
+	@commands.Cog.listener()
+	async def on_guild_channel_update(self, before, after):
+		guild_id = str(after.id)
+		if guild_id in self.config:
+			e = discord.Embed(color=orange())
+			dat = await self.search_audit(after.guild, audit.channel_update)
+			e.set_author(name='~==🍸Channel Updated🍸==~', icon_url=dat['icon_url'])
+			category = 'None, or Changed'
+			if after.category and before.category == after.category:
+				category = after.category.name
+
+			if before.name != after.name:
+				e.description = f"> __**Name Was Updated**__" \
+				                f"\n__**Before:**__ [{before.name}]" \
+				                f"\n__**After:**__ [{after.name}]" \
+				                f"\n__**Mention:**__ [{after.mention}]" \
+				                f"\n__**Category:**__ [{category}]" \
+				                f"\n__**ID:** [`{after.id}`]" \
+				                f"\n__**Changed by:**__ [{dat['user']}]"
+				self.queue[guild_id].append([e, 'updates'])
+
+			if before.position != after.position:
+				e.description = f"> __**Position Was Updated**__" \
+				                f"\n__**Name:**__ [{after.name}]" \
+				                f"\n__**Mention:**__ [{after.mention}]" \
+				                f"\n__**Category:**__ [{category}]" \
+				                f"\n__**ID:**__ [{after.id}]" \
+				                f"\n__**Before:**__ [{before.position}]" \
+				                f"\n__**After:**__ [{after.postion}]\n" \
+				                f"\n__**Changed By:**__ [{dat['user']}]"
+
+				self.queue[guild_id].append([e, 'updates'])
+
+			if before.topic != after.topic:
+				e.description = f"> __**Topic Updated**__" \
+				                f"\n__**Name:**__ [{after.name}]" \
+				                f"\n__**Mention:**__ [{after.mention}]" \
+				                f"\n__**ID:** [{after.id}]" \
+				                f"\n__**Category:**__ [{category}]" \
+				                f"\n__**Changed by:**__ [{dat['user']}]"
+				for text_group in self.split_into_groups(before.topic):
+					e.add_field(name='◈ Before', value=text_group, inline=False)
+				for text_group in self.split_into_groups(after.topic):
+					e.add_field(name='◈ After', value=text_group, inline=False)
+				self.queue[guild_id].append([e, 'updates'])
+
+			if before.category != after.category:
+				e.description = f"> __**Category Changed**__" \
+				                f"\n__**Name:**__ [{after.name}]" \
+				                f"\n__**Mention:**__ [{after.mention}]" \
+				                f"\n__**ID:**__ [{after.id}]" \
+				                f"\nChanged by:** [{dat['user']}]"
+				e.add_field(
+					name='◈ Before',
+					value=f"__**Name:**__ [{before.name}]"
+					      f"\n__**ID:**__ [{before.id}]",
+					inline=False
+				)
+				e.add_field(
+					name='◈ After',
+					value=f"__**Name:**__ [{after.name}]"
+					      f"\n__**ID:**__ [{after.id}]",
+					inline=False
+				)
+				self.queue[guild_id].append([e, 'updates'])
+
+	@commands.Cog.listener()
+	async def on_guild_channel_pins_update(self, before, after):
+		pass
 
 def setup(bot):
 	bot.add_cog(SecureLog(bot))
