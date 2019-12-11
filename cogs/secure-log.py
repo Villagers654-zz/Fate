@@ -602,11 +602,12 @@ class SecureLog(commands.Cog):
 
 	@commands.Cog.listener()
 	async def on_guild_channel_update(self, before, after):
-		guild_id = str(after.id)
+		guild_id = str(after.guild.id)
 		if guild_id in self.config:
 			e = discord.Embed(color=orange())
 			dat = await self.search_audit(after.guild, audit.channel_update)
 			e.set_author(name='~==🍸Channel Updated🍸==~', icon_url=dat['icon_url'])
+			e.set_thumbnail(url=after.guild.icon_url)
 			category = 'None, or Changed'
 			if after.category and before.category == after.category:
 				category = after.category.name
