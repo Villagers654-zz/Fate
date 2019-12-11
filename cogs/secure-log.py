@@ -522,7 +522,7 @@ class SecureLog(commands.Cog):
 			msg = await channel.fetch_message(payload.message_id)
 			e = discord.Embed(color=yellow())
 			e.set_author(name='~==🍸Reactions Cleared🍸==~', icon_url=msg.author.avatar_url)
-			e.set_image(url=msg.author.avatar_url)
+			e.set_thumbnail(url=msg.author.avatar_url)
 			e.description = f"__**Author:**__ [{msg.author.mention}]" \
 			                f"\n__**Channel:** [{channel.mention}]" \
 			                f"\n[Jump to MSG]({msg.jump_url})"
