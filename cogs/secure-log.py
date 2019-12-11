@@ -613,32 +613,31 @@ class SecureLog(commands.Cog):
 				category = after.category.name
 
 			if before.name != after.name:
-				e.description = f"> __**Name Was Updated**__" \
+				e.description = f"> __**Name Changed**__" \
 				                f"\n__**Before:**__ [{before.name}]" \
 				                f"\n__**After:**__ [{after.name}]" \
 				                f"\n__**Mention:**__ [{after.mention}]" \
 				                f"\n__**Category:**__ [{category}]" \
-				                f"\n__**ID:** [`{after.id}`]" \
+				                f"\n__**ID:**__ [`{after.id}`]" \
 				                f"\n__**Changed by:**__ [{dat['user']}]"
 				self.queue[guild_id].append([e, 'updates'])
 
 			if before.position != after.position:
-				e.description = f"> __**Position Was Updated**__" \
+				e.description = f"> __**Position Changed**__" \
 				                f"\n__**Name:**__ [{after.name}]" \
 				                f"\n__**Mention:**__ [{after.mention}]" \
 				                f"\n__**Category:**__ [{category}]" \
 				                f"\n__**ID:**__ [{after.id}]" \
 				                f"\n__**Before:**__ [{before.position}]" \
-				                f"\n__**After:**__ [{after.postion}]\n" \
+				                f"\n__**After:**__ [{after.position}]" \
 				                f"\n__**Changed By:**__ [{dat['user']}]"
-
 				self.queue[guild_id].append([e, 'updates'])
 
 			if before.topic != after.topic:
-				e.description = f"> __**Topic Updated**__" \
+				e.description = f"> __**Topic Changed**__" \
 				                f"\n__**Name:**__ [{after.name}]" \
 				                f"\n__**Mention:**__ [{after.mention}]" \
-				                f"\n__**ID:** [{after.id}]" \
+				                f"\n__**ID:**__ [{after.id}]" \
 				                f"\n__**Category:**__ [{category}]" \
 				                f"\n__**Changed by:**__ [{dat['user']}]"
 				for text_group in self.split_into_groups(before.topic):
@@ -653,15 +652,21 @@ class SecureLog(commands.Cog):
 				                f"\n__**Mention:**__ [{after.mention}]" \
 				                f"\n__**ID:**__ [{after.id}]" \
 				                f"\nChanged by:** [{dat['user']}]"
+				name = 'None'
+				if before.category:
+					name = before.category.name
 				e.add_field(
 					name='◈ Before',
-					value=f"__**Name:**__ [{before.name}]"
+					value=f"__**Name:**__ [{name}]"
 					      f"\n__**ID:**__ [{before.id}]",
 					inline=False
 				)
+				name = 'None'
+				if after.category:
+					name = after.category.name
 				e.add_field(
 					name='◈ After',
-					value=f"__**Name:**__ [{after.name}]"
+					value=f"__**Name:**__ [{name}]"
 					      f"\n__**ID:**__ [{after.id}]",
 					inline=False
 				)
