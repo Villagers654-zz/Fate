@@ -180,8 +180,8 @@ class SecureLog(commands.Cog):
 		dat = {
 			'user': 'Unknown',
 			'target': 'Unknown',
-			'icon_url': None,
-			'thumbnail_url': None,
+			'icon_url': guild.icon_url,
+			'thumbnail_url': guild.icon_url,
 			'reason': None,
 			'extra': None,
 			'changes': None,
@@ -193,8 +193,9 @@ class SecureLog(commands.Cog):
 			async for entry in guild.audit_logs(limit=1, action=action, after=self.past()):
 				dat['user'] = entry.user.mention
 				if entry.target:
-					dat['target'] = entry.target.mention
-					dat['icon_url'] = entry.target.avatar_url
+					if isinstance(entry.target, discord.Member):
+						dat['target'] = entry.target.mention
+						dat['icon_url'] = entry.target.avatar_url
 				else:
 					dat['icon_url'] = entry.user.avatar_url
 				dat['thumbnail_url'] = entry.user.avatar_url
@@ -315,7 +316,7 @@ class SecureLog(commands.Cog):
 				mention = '@here'
 			if mention:
 				msg = await msg.channel.fetch_message(msg.id)
-				e = discord.Embed(color=pink())
+				e = discord.Embed(color=white())
 				e.title = f"~==🍸{mention} mentioned🍸==~"
 				e.set_thumbnail(url=msg.author.avatar_url)
 				is_successful = False
@@ -354,7 +355,7 @@ class SecureLog(commands.Cog):
 						before.channel.id in self.config[guild_id]['channels']):
 					await asyncio.sleep(0.5)  # prevent updating too fast and not showing on the users end
 					return await after.edit(suppress=False)
-				e = discord.Embed(color=purple())
+				e = discord.Embed(color=lime_green())
 				e.set_author(name='~==🍸Embed Hidden🍸==~', icon_url=before.author.avatar_url)
 				e.set_thumbnail(url=before.author.avatar_url)
 				e.description = f"__**Author:**__ [{before.author.mention}]" \
@@ -511,12 +512,33 @@ class SecureLog(commands.Cog):
 			channel = self.bot.get_channel(payload.channel_id)
 			msg = await channel.fetch_message(payload.message_id)
 			e = discord.Embed(color=yellow())
-			e.set_author(name='~==🍸 Reactions Cleared🍸==~', icon_url=msg.author.avatar_url)
+			e.set_author(name='~==🍸Reactions Cleared🍸==~', icon_url=msg.author.avatar_url)
 			e.set_image(url=msg.author.avatar_url)
 			e.description = f"__**Author:**__ [{msg.author.mention}]" \
 			                f"\n__**Channel:** [{channel.mention}]" \
 			                f"\n[Jump to MSG]({msg.jump_url})"
 			self.queue[guild_id].append([e, 'chat'])
+
+	@commands.Cog.listener()
+	async def on_guild_channel_create(self, channel):
+		guild_id = str(channel.guild.id)
+		if guild_id in self.config:
+			e = discord.Embed(color=yellow())
+			dat = await self.search_audit(channel.guild, audit.channel_create)
+			e.set_author(name='~==🍸Channel Created🍸==~', icon_url=dat['icon_url'])
+			e.set_thumbnail(url=dat['thumbnail_url'])
+			member_count = 'Unknown'
+			if not isinstance(channel, discord.CategoryChannel):
+				member_count = len(channel.members)
+			mention = 'None'
+			if isinstance(channel, discord.TextChannel):
+				mention = channel.mention
+			e.description = f"__**Name:**__ [{channel.name}]" \
+			                f"\n__**Mention:**__ [{mention}]" \
+			                f"\n__**ID:**__ [{channel.id}]" \
+			                f"\n__**Creator:**__ [{dat['user']}]" \
+			                f"\nMembers: [{member_count}]"
+			self.queue[guild_id].append([e, 'actions'])
 
 	@commands.Cog.listener()
 	async def on_guild_channel_delete(self, channel):
@@ -538,25 +560,24 @@ class SecureLog(commands.Cog):
 					for embed in self.recent_logs[guild_id][channelType]:
 						self.queue[guild_id].append([embed, channelType])
 
-			icon_url = None
-			who = None
-			if channel.guild.me.guild_permissions.view_audit_log:
-				async for entry in channel.guild.audit_logs(limit=1, action=audit.channel_delete):
-					who = entry.user.mention
-					icon_url = entry.user.avatar_url
+			dat = await self.search_audit(channel.guild, audit.channel_delete)
 			member_count = 'Unknown'
 			if not isinstance(channel, discord.CategoryChannel):
 				member_count = len(channel.members)
 
 			e = discord.Embed(color=red())
-			e.set_author(name='Channel Deleted', icon_url=icon_url)
-			e.set_thumbnail(url=icon_url if icon_url else channel.guild.icon_url)
-			e.description = f"__**Channel:**__ [{channel.name}]" \
+			e.set_author(name='~==🍸Channel Deleted🍸==~', icon_url=dat['icon_url'])
+			e.set_thumbnail(url=dat['thumbnail_url'])
+			e.description = f"__**Name:**__ [{channel.name}]" \
 			                f"\n__**ID:**__ [{channel.id}]" \
-			                f"\n__**User:**__ [{who if who else 'Unknown'}]" \
+			                f"\n__**User:**__ [{dat['user']}]" \
 			                f"\n__**Members:**__ [{member_count}]"
 
-			path = f'./static/members-{channel.id}.txt'
+			if isinstance(channel, discord.CategoryChannel):
+				self.queue[guild_id].append(e, 'actions')
+				return
+
+			path = f'./static/members-{r.randint(1, 9999)}.txt'
 			members = f"{channel.name} - Member List"
 			for member in channel.members:
 				members += f"\n{member.id}, {member.mention}, {member}, {member.display_name}"
