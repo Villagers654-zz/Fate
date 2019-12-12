@@ -187,15 +187,14 @@ class SecureLog(commands.Cog):
 			'changes': None,
 			'before': None,
 			'after': None,
+			'recent': False
 		}
 		if guild.me.guild_permissions.view_audit_log:
-			await asyncio.sleep(0.5)
 			async for entry in guild.audit_logs(limit=1, action=action, after=self.past()):
 				dat['user'] = entry.user.mention
-				if entry.target:
-					if isinstance(entry.target, discord.Member):
-						dat['target'] = entry.target.mention
-						dat['icon_url'] = entry.target.avatar_url
+				if entry.target and isinstance(entry.target, discord.Member):
+					dat['target'] = entry.target.mention
+					dat['icon_url'] = entry.target.avatar_url
 				else:
 					dat['icon_url'] = entry.user.avatar_url
 				dat['thumbnail_url'] = entry.user.avatar_url
@@ -204,7 +203,9 @@ class SecureLog(commands.Cog):
 				dat['changes'] = entry.changes
 				dat['before'] = entry.before
 				dat['after'] = entry.after
-				if entry.created_at < datetime.utcnow() - timedelta(seconds=2):
+				dat['recent'] = True
+				if entry.created_at < datetime.utcnow() - timedelta(seconds=3):
+					dat['recent'] = False
 					if action is audit.message_delete:
 						dat['user'] = "Can't determine"
 						dat['thumbnail_url'] = guild.icon_url
@@ -666,7 +667,50 @@ class SecureLog(commands.Cog):
 				self.queue[guild_id].append([e, 'updates'])
 
 			if before.overwrites != after.overwrites:
-				e.description = f"> 》Overwrites Changed《"
+
+				for i, (obj, permissions) in enumerate(list(before.overwrites.items())):
+					after_objects = [x[0] for x in after.overwrites.items()]
+					if obj not in after_objects:
+						dat = await self.search_audit(after.guild, audit.overwrite_delete)
+						perms = '\n'.join([f"{perm} - {value}" for perm, value in list(permissions) if value])
+						e.add_field(
+							name=f'❌ {obj.name} removed',
+							value=perms if perms else "-had no permissions",
+							inline=False
+						)
+						continue
+
+					after_values = list(list(after.overwrites.items())[after_objects.index(obj)][1])
+					if list(permissions) != after_values:
+						dat = await self.search_audit(after.guild, audit.overwrite_update)
+
+						e.add_field(
+							name=f'<:edited:550291696861315093> {obj.name}',
+							value='\n'.join([
+								f"{perm} - {after_values[iter][1]}" for iter, (perm, value) in enumerate(list(permissions)) if (
+									value != after_values[iter][1])
+							]),
+							inline=False
+						)
+
+				for i, (obj, permissions) in enumerate(after.overwrites.items()):
+					if obj not in [x[0] for x in before.overwrites.items()]:
+						dat = await self.search_audit(after.guild, audit.overwrite_create)
+						perms = '\n'.join([f"{perm} - {value}" for perm, value in list(permissions) if value])
+						e.add_field(
+							name=f'<:plus:548465119462424595> {obj.name}',
+							value=perms if perms else "-has no permissions",
+							inline=False
+						)
+
+				e.set_author(name='~==🍸Channel Updated🍸==~', icon_url=dat['icon_url'])
+				e.description = f"> 》__**Overwrites Changed**__《" \
+				                f"\n__**Name:**__ [{after.name}]" \
+				                f"\n__**Mention:**__ [{after.mention}]" \
+				                f"\n__**ID:**__ [{after.id}]" \
+				                f"\n__**Category:**__ {category}" \
+				                f"\n__**Changed by:**__ {dat['user']}"
+				self.queue[guild_id].append([e, 'updates'])
 
 	@commands.Cog.listener()
 	async def on_guild_channel_pins_update(self, before, after):
