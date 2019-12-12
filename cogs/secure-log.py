@@ -683,7 +683,6 @@ class SecureLog(commands.Cog):
 					after_values = list(list(after.overwrites.items())[after_objects.index(obj)][1])
 					if list(permissions) != after_values:
 						dat = await self.search_audit(after.guild, audit.overwrite_update)
-
 						e.add_field(
 							name=f'<:edited:550291696861315093> {obj.name}',
 							value='\n'.join([
