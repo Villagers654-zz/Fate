@@ -584,8 +584,8 @@ class SecureLog(commands.Cog):
 			e.set_author(name='~==🍸Channel Deleted🍸==~', icon_url=dat['icon_url'])
 			e.set_thumbnail(url=dat['thumbnail_url'])
 			e.description = f"__**Name:**__ [{channel.name}]" \
-			                f"\n__**Category:**__ [{category}]" \
 			                f"\n__**ID:**__ [{channel.id}]" \
+			                f"\n__**Category:**__ [{category}]" \
 			                f"\n__**User:**__ [{dat['user']}]" \
 			                f"\n__**Members:**__ [{member_count}]" \
 			                f"\n__**Deleted by:**__ [{dat['user']}]"
@@ -629,8 +629,8 @@ class SecureLog(commands.Cog):
 				e.description = f"> __**Position Changed**__" \
 				                f"\n__**Name:**__ [{after.name}]" \
 				                f"\n__**Mention:**__ [{after.mention}]" \
-				                f"\n__**Category:**__ [{category}]" \
 				                f"\n__**ID:**__ [{after.id}]" \
+				                f"\n__**Category:**__ [{category}]" \
 				                f"\n__**Before:**__ [{before.position}]" \
 				                f"\n__**After:**__ [{after.position}]" \
 				                f"\n__**Changed By:**__ [{dat['user']}]"
