@@ -524,7 +524,7 @@ class SecureLog(commands.Cog):
 			e.set_author(name='~==🍸Reactions Cleared🍸==~', icon_url=msg.author.avatar_url)
 			e.set_thumbnail(url=msg.author.avatar_url)
 			e.description = f"__**Author:**__ [{msg.author.mention}]" \
-			                f"\n__**Channel:** [{channel.mention}]" \
+			                f"\n__**Channel:**__ [{channel.mention}]" \
 			                f"\n[Jump to MSG]({msg.jump_url})"
 			self.queue[guild_id].append([e, 'chat'])
 
