@@ -186,7 +186,8 @@ class SecureLog(commands.Cog):
 			'extra': None,
 			'changes': None,
 			'before': None,
-			'after': None
+			'after': None,
+			'recent': False
 		}
 		if guild.me.guild_permissions.view_audit_log:
 			await asyncio.sleep(0.5)
@@ -204,6 +205,8 @@ class SecureLog(commands.Cog):
 				dat['changes'] = entry.changes
 				dat['before'] = entry.before
 				dat['after'] = entry.after
+				if entry.created_at > datetime.utcnow() - timedelta(seconds=2):
+					dat['recent'] = True
 		else:
 			await guild.owner.send(f"I'm missing audit log permissions for secure-log in {guild}\n"
 			                       f"run `.secure-log disable` to stop recieving msgs")
