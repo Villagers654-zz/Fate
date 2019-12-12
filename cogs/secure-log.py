@@ -169,7 +169,7 @@ class SecureLog(commands.Cog):
 					# noinspection PyUnboundLocalVariable
 					self.recent_logs[guild_id][channelType] = self.recent_logs[guild_id][channelType][-50:]
 				elif log_type == 'single':
-					self.recent_logs[guild_id] = self.recent_logs[guild_id][-50:]
+					self.recent_logs[guild_id] = self.recent_logs[guild_id][-175:]
 
 	def past(self):
 		""" gets the time 2 seconds ago in utc for audit searching """
@@ -606,7 +606,7 @@ class SecureLog(commands.Cog):
 				category = after.category.name
 
 			if before.name != after.name:
-				e.description = f"> __**Name Changed**__" \
+				e.description = f"> 》__**Name Changed**__《" \
 				                f"\n__**Before:**__ [{before.name}]" \
 				                f"\n__**After:**__ [{after.name}]" \
 				                f"\n__**Mention:**__ [{after.mention}]" \
@@ -616,7 +616,7 @@ class SecureLog(commands.Cog):
 				self.queue[guild_id].append([e, 'updates'])
 
 			if before.position != after.position:
-				e.description = f"> __**Position Changed**__" \
+				e.description = f"> 》__**Position Changed**__《" \
 				                f"\n__**Name:**__ [{after.name}]" \
 				                f"\n__**Mention:**__ [{after.mention}]" \
 				                f"\n__**ID:**__ [{after.id}]" \
@@ -627,7 +627,7 @@ class SecureLog(commands.Cog):
 				self.queue[guild_id].append([e, 'updates'])
 
 			if before.topic != after.topic:
-				e.description = f"> __**Topic Changed**__" \
+				e.description = f"> 》__**Topic Changed**__《" \
 				                f"\n__**Name:**__ [{after.name}]" \
 				                f"\n__**Mention:**__ [{after.mention}]" \
 				                f"\n__**ID:**__ [{after.id}]" \
@@ -640,7 +640,7 @@ class SecureLog(commands.Cog):
 				self.queue[guild_id].append([e, 'updates'])
 
 			if before.category != after.category:
-				e.description = f"> __**Category Changed**__" \
+				e.description = f"> 》__**Category Changed**__《" \
 				                f"\n__**Name:**__ [{after.name}]" \
 				                f"\n__**Mention:**__ [{after.mention}]" \
 				                f"\n__**ID:**__ [{after.id}]" \
@@ -664,6 +664,9 @@ class SecureLog(commands.Cog):
 					inline=False
 				)
 				self.queue[guild_id].append([e, 'updates'])
+
+			if before.overwrites != after.overwrites:
+				e.description = f"> 》Overwrites Changed《"
 
 	@commands.Cog.listener()
 	async def on_guild_channel_pins_update(self, before, after):
