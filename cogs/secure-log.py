@@ -419,6 +419,9 @@ class SecureLog(commands.Cog):
 
 				return
 
+			if msg.author.id == self.bot.user.id and 'your cooldowns up' in msg.content:
+				return  # is from work notifs within the factions module
+
 			e = discord.Embed(color=purple())
 			e.set_author(name='~==🍸Msg Deleted🍸==~', icon_url=msg.author.avatar_url)
 			thumbnail_url = msg.guild.icon_url
