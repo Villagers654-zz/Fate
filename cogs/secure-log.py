@@ -341,7 +341,7 @@ class SecureLog(commands.Cog):
 	@commands.Cog.listener()
 	async def on_message_edit(self, before, after):
 		guild_id = str(before.guild.id)
-		if guild_id in self.config:
+		if guild_id in self.config and not after.author.bot:
 			if before.content != after.content:
 				e = discord.Embed(color=pink())
 				e.set_author(name='~==🍸Msg Edited🍸==~', icon_url=before.author.avatar_url)
