@@ -187,7 +187,6 @@ class SecureLog(commands.Cog):
 			'changes': None,
 			'before': None,
 			'after': None,
-			'recent': False
 		}
 		if guild.me.guild_permissions.view_audit_log:
 			await asyncio.sleep(0.5)
@@ -205,8 +204,10 @@ class SecureLog(commands.Cog):
 				dat['changes'] = entry.changes
 				dat['before'] = entry.before
 				dat['after'] = entry.after
-				if entry.created_at > datetime.utcnow() - timedelta(seconds=2):
-					dat['recent'] = True
+				if entry.created_at < datetime.utcnow() - timedelta(seconds=2):
+					if action is audit.message_delete:
+						dat['user'] = "Can't determine"
+						dat['thumbnail_url'] = guild.icon_url
 		else:
 			await guild.owner.send(f"I'm missing audit log permissions for secure-log in {guild}\n"
 			                       f"run `.secure-log disable` to stop recieving msgs")
@@ -427,16 +428,11 @@ class SecureLog(commands.Cog):
 
 			e = discord.Embed(color=purple())
 			e.set_author(name='~==🍸Msg Deleted🍸==~', icon_url=msg.author.avatar_url)
-			thumbnail_url = msg.guild.icon_url
-			deleted_by = "Unknown"
-			if msg.guild.me.guild_permissions.view_audit_log:
-				async for entry in msg.guild.audit_logs(limit=1, action=audit.message_delete, after=self.past()):
-					thumbnail_url = entry.user.avatar_url
-					deleted_by = entry.user.mention
-			e.set_thumbnail(url=thumbnail_url)
+			dat = await self.search_audit(msg.guild, audit.message_delete)
+			e.set_thumbnail(url=dat['thumbnail_url'])
 			e.description = f"__**Author:**__ {msg.author.mention}" \
 			                f"\n__**Channel:**__ {msg.channel.mention}" \
-			                f"\n__**Deleted by:**__ {deleted_by}"
+			                f"\n__**Deleted by:**__ {dat['user']}"
 			for text_group in self.split_into_groups(msg.content):
 				e.add_field(name='◈ MSG Content', value=text_group, inline=False)
 			if msg.embeds:
@@ -461,22 +457,13 @@ class SecureLog(commands.Cog):
 		if guild_id in self.config and not payload.cached_message:
 			guild = self.bot.get_guild(payload.guild_id)
 			e = discord.Embed(color=purple())
-			user = 'Unknown'
-			icon_url = guild.icon_url
-			thumbnail_url = guild.icon_url
-			deleted_by = 'Unknown'
-			if guild.me.guild_permissions.view_audit_log:
-				async for entry in guild.audit_logs(limit=1, action=audit.message_delete, after=self.past()):
-					user = entry.target.mention
-					icon_url = entry.target.avatar_url
-					thumbnail_url = entry.user.avatar_url
-					deleted_by = entry.user.mention
-			e.set_author(name='Uncached Message Deleted', icon_url=icon_url)
-			e.set_thumbnail(url=thumbnail_url)
-			e.description = f"__**Author:**__ {user}" \
+			dat = await self.search_audit(guild, audit.message_delete)
+			e.set_author(name='Uncached Message Deleted', icon_url=dat['icon_url'])
+			e.set_thumbnail(url=dat['thumbnail_url'])
+			e.description = f"__**Author:**__ {dat['target']}" \
 			                f"\n__**MSG ID:**__ {payload.message_id}" \
 			                f"\n__**Channel:**__ {self.bot.get_channel(payload.channel_id).mention}" \
-			                f"\n__**Deleted By:**__ {deleted_by}"
+			                f"\n__**Deleted By:**__ {dat['user']}"
 			self.queue[guild_id].append([e, 'chat'])
 
 	@commands.Cog.listener()
