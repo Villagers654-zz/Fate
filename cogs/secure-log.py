@@ -668,7 +668,7 @@ class SecureLog(commands.Cog):
 
 			if before.overwrites != after.overwrites:
 
-				for i, (obj, permissions) in enumerate(list(before.overwrites.items())):
+				for obj, permissions in list(before.overwrites.items()):
 					after_objects = [x[0] for x in after.overwrites.items()]
 					if obj not in after_objects:
 						dat = await self.search_audit(after.guild, audit.overwrite_delete)
@@ -692,7 +692,7 @@ class SecureLog(commands.Cog):
 							inline=False
 						)
 
-				for i, (obj, permissions) in enumerate(after.overwrites.items()):
+				for obj, permissions in after.overwrites.items():
 					if obj not in [x[0] for x in before.overwrites.items()]:
 						dat = await self.search_audit(after.guild, audit.overwrite_create)
 						perms = '\n'.join([f"{perm} - {value}" for perm, value in list(permissions) if value])
