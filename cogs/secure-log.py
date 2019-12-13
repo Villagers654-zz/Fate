@@ -191,7 +191,7 @@ class SecureLog(commands.Cog):
 		}
 		if guild.me.guild_permissions.view_audit_log:
 			async for entry in guild.audit_logs(limit=5):
-				if entry.created_at > self.past() and entry.action in actions:
+				if entry.created_at > self.past() and any(entry.action.name == action.name for action in actions):
 					dat['action'] = entry.action
 					dat['user'] = entry.user.mention
 					if entry.target and isinstance(entry.target, discord.Member):
@@ -764,15 +764,28 @@ class SecureLog(commands.Cog):
 
 	@commands.Cog.listener()
 	async def on_webhooks_update(self, channel):
-		guild_id = str(channel.id)
+		guild_id = str(channel.guild.id)
 		if guild_id in self.config:
 			dat = await self.search_audits(
 				channel.guild,
-				audit.overwrite_create,
-				audit.overwrite_delete,
-				audit.overwrite_update
+				audit.webhook_create,
+				audit.webhook_delete,
+				audit.webhook_update
 			)
-			print(dat)
+
+			if dat['action'].name == 'webhook_create':
+				action = 'Created'
+			elif dat['action'].name == 'webhook_delete':
+				action = 'Deleted'
+			else:  # webhook update
+				action = 'Updated'
+
+			e = discord.Embed(color=cyan())
+			e.set_author(name=f'~==🍸Webhook {action}🍸==~', icon_url=dat['icon_url'])
+			e.set_thumbnail(url=dat['thumbnail_url'])
+			e.description = f"\n__**ID:**__ [{dat['target'].id}]" \
+			                f"\n__**Channel:**__ [{channel.mention}]"
+			self.queue[guild_id].append([e, 'misc'])
 
 def setup(bot):
 	bot.add_cog(SecureLog(bot))
