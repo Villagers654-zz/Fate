@@ -254,6 +254,8 @@ class SecureLog(commands.Cog):
 		return dat
 
 	def split_into_groups(self, text):
+		if not text:
+			return text
 		return [text[i:i + 1000] for i in range(0, len(text), 1000)]
 
 	@commands.group(name='secure-log')
