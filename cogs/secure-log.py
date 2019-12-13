@@ -175,6 +175,45 @@ class SecureLog(commands.Cog):
 		""" gets the time 2 seconds ago in utc for audit searching """
 		return datetime.utcnow() - timedelta(seconds=10)
 
+	async def search_audits(self, guild, *actions):
+		""" Returns the latest entry from a list of actions """
+		dat = {
+			'user': 'Unknown',
+			'target': 'Unknown',
+			'icon_url': guild.icon_url,
+			'thumbnail_url': guild.icon_url,
+			'reason': None,
+			'extra': None,
+			'changes': None,
+			'before': None,
+			'after': None,
+			'recent': False
+		}
+		if guild.me.guild_permissions.view_audit_log:
+			async for entry in guild.audit_logs(limit=5):
+				if entry.created_at > self.past() and entry.action in actions:
+					dat['action'] = entry.action
+					dat['user'] = entry.user.mention
+					if entry.target and isinstance(entry.target, discord.Member):
+						dat['target'] = entry.target.mention
+						dat['icon_url'] = entry.target.avatar_url
+					elif entry.target:
+						dat['target'] = entry.target
+					else:
+						dat['icon_url'] = entry.user.avatar_url
+					dat['thumbnail_url'] = entry.user.avatar_url
+					dat['reason'] = entry.reason
+					dat['extra'] = entry.extra
+					dat['changes'] = entry.changes
+					dat['before'] = entry.before
+					dat['after'] = entry.after
+					dat['recent'] = True
+					break
+		else:
+			await guild.owner.send(f"I'm missing audit log permissions for secure-log in {guild}\n"
+			                       f"run `.secure-log disable` to stop recieving msgs")
+		return dat
+
 	async def search_audit(self, guild, action) -> dict:
 		""" Returns a dictionary of who performed an action """
 		dat = {
@@ -712,8 +751,26 @@ class SecureLog(commands.Cog):
 				self.queue[guild_id].append([e, 'updates'])
 
 	@commands.Cog.listener()
-	async def on_guild_channel_pins_update(self, before, after):
-		pass
+	async def on_guild_integrations_update(self, guild):
+		guild_id = str(guild.id)
+		if guild_id in self.config:
+			e = discord.Embed(color=light_gray())
+			e.set_author(name='~==🍸Integrations Update🍸==~', icon_url=guild.owner.avatar_url)
+			e.set_thumbnail(url=guild.icon_url)
+			e.description = "An integration was created, modified, or removed"
+			self.queue[guild_id].append([e, 'system+'])
+
+	@commands.Cog.listener()
+	async def on_webhooks_update(self, channel):
+		guild_id = str(channel.id)
+		if guild_id in self.config:
+			dat = await self.search_audits(
+				channel.guild,
+				audit.overwrite_create,
+				audit.overwrite_delete,
+				audit.overwrite_update
+			)
+			print(dat)
 
 def setup(bot):
 	bot.add_cog(SecureLog(bot))
