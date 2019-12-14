@@ -352,32 +352,33 @@ class SecureLog(commands.Cog):
 	@commands.Cog.listener()
 	async def on_message(self, msg):
 		""" @everyone and @here event """
-		guild_id = str(msg.guild.id)
-		if guild_id in self.config:
-			mention = None
-			content = str(msg.content).lower()
-			if '!everyone' in content:
-				mention = '@everyone'
-			if '!here' in content:
-				mention = '@here'
-			if mention:
-				msg = await msg.channel.fetch_message(msg.id)
-				e = discord.Embed(color=white())
-				e.title = f"~==🍸{mention} mentioned🍸==~"
-				e.set_thumbnail(url=msg.author.avatar_url)
-				is_successful = False
-				if msg.author.guild_permissions.administrator:
-					is_successful = True
-				elif msg.author.guild_permissions.mention_everyone and (
-						not msg.channel.permissions_for(msg.author).mention_everyone == False):
-					is_successful = True
-				elif msg.channel.permissions_for(msg.author).mention_everyone:
-					is_successful = True
-				e.description = f"Author: [{msg.author.mention}]" \
-				                f"\nPing Worked: [{is_successful}]" \
-				                f"\nChannel: [{msg.channel.mention}]"
-				e.add_field(name='Content', value=msg.content, inline=False)
-				self.queue[guild_id].append([e, 'system+'])
+		if isinstance(msg.guild, discord.Guild):
+			guild_id = str(msg.guild.id)
+			if guild_id in self.config:
+				mention = None
+				content = str(msg.content).lower()
+				if '!everyone' in content:
+					mention = '@everyone'
+				if '!here' in content:
+					mention = '@here'
+				if mention:
+					msg = await msg.channel.fetch_message(msg.id)
+					e = discord.Embed(color=white())
+					e.title = f"~==🍸{mention} mentioned🍸==~"
+					e.set_thumbnail(url=msg.author.avatar_url)
+					is_successful = False
+					if msg.author.guild_permissions.administrator:
+						is_successful = True
+					elif msg.author.guild_permissions.mention_everyone and (
+							not msg.channel.permissions_for(msg.author).mention_everyone == False):
+						is_successful = True
+					elif msg.channel.permissions_for(msg.author).mention_everyone:
+						is_successful = True
+					e.description = f"Author: [{msg.author.mention}]" \
+					                f"\nPing Worked: [{is_successful}]" \
+					                f"\nChannel: [{msg.channel.mention}]"
+					e.add_field(name='Content', value=msg.content, inline=False)
+					self.queue[guild_id].append([e, 'system+'])
 
 	@commands.Cog.listener()
 	async def on_message_edit(self, before, after):
