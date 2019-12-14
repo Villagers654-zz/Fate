@@ -570,16 +570,18 @@ class SecureLog(commands.Cog):
 			if before.afk_channel != after.afk_channel:
 				e.description = f"> 》__**AFK Channel Changed**__《" \
 				                f"\n__**Changed by:**__ [{dat['user']}]"
-				e.add_field(
-					name='◈ Before',
-					value=f"__**Name:**__ {before.afk_channel.name}"
-					      f"\n__**ID:**__ {before.afk_channel.id}"
-				)
-				e.add_field(
-					name='◈ After',
-					value=f"__**Name:**__ {after.afk_channel.name}"
-					      f"\n__**ID:**__ {after.afk_channel.id}"
-				)
+				if before.afk_channel:
+					e.add_field(
+						name='◈ Before',
+						value=f"__**Name:**__ {before.afk_channel.name}"
+						      f"\n__**ID:**__ {before.afk_channel.id}"
+					)
+				if after.afk_channel:
+					e.add_field(
+						name='◈ After',
+						value=f"__**Name:**__ {after.afk_channel.name}"
+						      f"\n__**ID:**__ {after.afk_channel.id}"
+					)
 				self.queue[guild_id].append([e, 'updates'])
 			if before.owner != after.owner:
 				e.description = f"> 》__**Owner Changed**__《"
