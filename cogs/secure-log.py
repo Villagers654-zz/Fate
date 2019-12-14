@@ -669,18 +669,19 @@ class SecureLog(commands.Cog):
 				                f"\n__**Changed By:**__ [{dat['user']}]"
 				self.queue[guild_id].append([e, 'updates'])
 
-			if before.topic != after.topic:
-				e.description = f"> 》__**Topic Changed**__《" \
-				                f"\n__**Name:**__ [{after.name}]" \
-				                f"\n__**Mention:**__ [{after.mention}]" \
-				                f"\n__**ID:**__ [{after.id}]" \
-				                f"\n__**Category:**__ [{category}]" \
-				                f"\n__**Changed by:**__ [{dat['user']}]"
-				for text_group in self.split_into_groups(before.topic):
-					e.add_field(name='◈ Before', value=text_group, inline=False)
-				for text_group in self.split_into_groups(after.topic):
-					e.add_field(name='◈ After', value=text_group, inline=False)
-				self.queue[guild_id].append([e, 'updates'])
+			if isinstance(before, discord.TextChannel):
+				if before.topic != after.topic:
+					e.description = f"> 》__**Topic Changed**__《" \
+					                f"\n__**Name:**__ [{after.name}]" \
+					                f"\n__**Mention:**__ [{after.mention}]" \
+					                f"\n__**ID:**__ [{after.id}]" \
+					                f"\n__**Category:**__ [{category}]" \
+					                f"\n__**Changed by:**__ [{dat['user']}]"
+					for text_group in self.split_into_groups(before.topic):
+						e.add_field(name='◈ Before', value=text_group, inline=False)
+					for text_group in self.split_into_groups(after.topic):
+						e.add_field(name='◈ After', value=text_group, inline=False)
+					self.queue[guild_id].append([e, 'updates'])
 
 			if before.category != after.category:
 				e.description = f"> 》__**Category Changed**__《" \
