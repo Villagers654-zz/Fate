@@ -574,13 +574,15 @@ class SecureLog(commands.Cog):
 					e.add_field(
 						name='◈ Before',
 						value=f"__**Name:**__ {before.afk_channel.name}"
-						      f"\n__**ID:**__ {before.afk_channel.id}"
+						      f"\n__**ID:**__ {before.afk_channel.id}",
+						inline=False
 					)
 				if after.afk_channel:
 					e.add_field(
 						name='◈ After',
 						value=f"__**Name:**__ {after.afk_channel.name}"
-						      f"\n__**ID:**__ {after.afk_channel.id}"
+						      f"\n__**ID:**__ {after.afk_channel.id}",
+						inline=False
 					)
 				self.queue[guild_id].append([e, 'updates'])
 			if before.owner != after.owner:
