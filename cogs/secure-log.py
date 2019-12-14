@@ -410,7 +410,7 @@ class SecureLog(commands.Cog):
 		guild_id = str(msg.guild.id)
 		if guild_id in self.config:
 			if msg.embeds and msg.channel.id == self.config[guild_id]['channel'] or (
-					msg.channel.id in [v for v in self.config[guild_id]['channels'].values()]):
+					msg.channel.id in self.config[guild_id]['channels'].values()):
 
 				await msg.channel.send("OwO what's this", embed=msg.embeds[0])
 				if msg.attachments:
