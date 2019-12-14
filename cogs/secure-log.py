@@ -175,7 +175,7 @@ class SecureLog(commands.Cog):
 		""" gets the time 2 seconds ago in utc for audit searching """
 		return datetime.utcnow() - timedelta(seconds=10)
 
-	async def search_audits(self, guild, *actions):
+	async def search_audit(self, guild, *actions):
 		""" Returns the latest entry from a list of actions """
 		dat = {
 			'user': 'Unknown',
@@ -209,45 +209,6 @@ class SecureLog(commands.Cog):
 					dat['after'] = entry.after
 					dat['recent'] = True
 					break
-		else:
-			await guild.owner.send(f"I'm missing audit log permissions for secure-log in {guild}\n"
-			                       f"run `.secure-log disable` to stop recieving msgs")
-		return dat
-
-	async def search_audit(self, guild, action) -> dict:
-		""" Returns a dictionary of who performed an action """
-		dat = {
-			'user': 'Unknown',
-			'target': 'Unknown',
-			'icon_url': guild.icon_url,
-			'thumbnail_url': guild.icon_url,
-			'reason': None,
-			'extra': None,
-			'changes': None,
-			'before': None,
-			'after': None,
-			'recent': False
-		}
-		if guild.me.guild_permissions.view_audit_log:
-			async for entry in guild.audit_logs(limit=1, action=action, after=self.past()):
-				dat['user'] = entry.user.mention
-				if entry.target and isinstance(entry.target, discord.Member):
-					dat['target'] = entry.target.mention
-					dat['icon_url'] = entry.target.avatar_url
-				else:
-					dat['icon_url'] = entry.user.avatar_url
-				dat['thumbnail_url'] = entry.user.avatar_url
-				dat['reason'] = entry.reason
-				dat['extra'] = entry.extra
-				dat['changes'] = entry.changes
-				dat['before'] = entry.before
-				dat['after'] = entry.after
-				dat['recent'] = True
-				if entry.created_at < datetime.utcnow() - timedelta(seconds=3):
-					dat['recent'] = False
-					if action is audit.message_delete:
-						dat['user'] = "Can't determine"
-						dat['thumbnail_url'] = guild.icon_url
 		else:
 			await guild.owner.send(f"I'm missing audit log permissions for secure-log in {guild}\n"
 			                       f"run `.secure-log disable` to stop recieving msgs")
@@ -872,7 +833,7 @@ class SecureLog(commands.Cog):
 	async def on_webhooks_update(self, channel):
 		guild_id = str(channel.guild.id)
 		if guild_id in self.config:
-			dat = await self.search_audits(
+			dat = await self.search_audit(
 				channel.guild,
 				audit.webhook_create,
 				audit.webhook_delete,
