@@ -783,8 +783,21 @@ class SecureLog(commands.Cog):
 			e = discord.Embed(color=cyan())
 			e.set_author(name=f'~==🍸Webhook {action}🍸==~', icon_url=dat['icon_url'])
 			e.set_thumbnail(url=dat['thumbnail_url'])
-			e.description = f"\n__**ID:**__ [{dat['target'].id}]" \
-			                f"\n__**Channel:**__ [{channel.mention}]"
+			e.description = ''
+
+			if action != 'Deleted':
+				webhook = await self.bot.fetch_webhook(dat['target'].id)
+				channel = self.bot.get_channel(webhook.channel_id)
+				e.set_thumbnail(url=webhook.avatar_url)
+				e.description = f"__**Name:**__ [{webhook.name}]" \
+				                f"\n__**Type:**__ [{webhook.type}]"
+
+
+			e.description += f"\n__**ID:**__ [{dat['target'].id}]" \
+			                 f"\n__**Channel:**__ [{channel.mention}]" \
+			                 f"\n__**C-Mention:**__ [{channel.mention}]" \
+			                 f"\n__**{action} by:**__ [{dat['user']}]"
+
 			self.queue[guild_id].append([e, 'misc'])
 
 def setup(bot):
