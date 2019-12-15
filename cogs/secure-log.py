@@ -865,7 +865,7 @@ class SecureLog(commands.Cog):
 
 
 			e.description += f"\n__**ID:**__ [{dat['target'].id}]" \
-			                 f"\n__**Channel:**__ [{channel.mention}]" \
+			                 f"\n__**Channel:**__ [{channel.name}]" \
 			                 f"\n__**C-Mention:**__ [{channel.mention}]" \
 			                 f"\n__**{action} by:**__ [{dat['user']}]"
 
