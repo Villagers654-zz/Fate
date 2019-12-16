@@ -130,10 +130,6 @@ class ChatBridge(commands.Cog):
 		""" Send the msg to the proper location """
 		if isinstance(msg.guild, discord.Guild) and self.category and not str(msg.author).endswith('#0000'):
 
-			for role in msg.author.roles:
-				if 'mute' in role.name.lower():
-					return
-
 			# anti spam
 			author_id = str(msg.author.id)
 			now = int(time() / 5)
@@ -175,7 +171,7 @@ class ChatBridge(commands.Cog):
 					self.bans[id] = [time(), bans]
 				for entry in bans:
 					if entry.user.id == msg.author.id:
-						return await msg.delete()
+						return
 
 				# create new webhook if the old doesn't exits
 				webhooks = await channel.webhooks()
