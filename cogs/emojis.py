@@ -7,6 +7,7 @@ import discord
 import asyncio
 
 from discord.ext import commands
+from discord.ext.commands import Greedy
 from PIL import Image
 
 from utils import colors
@@ -78,6 +79,44 @@ class Emojis(commands.Cog):
 			e.set_image(url=emoji.url)
 			await ctx.send(embed=e)
 			await asyncio.sleep(1)
+
+	@commands.command(name='add-emoji', aliases=['add-emote'])
+	@commands.cooldown(2, 5, commands.BucketType.user)
+	@commands.guild_only()
+	@commands.has_permissions(manage_emojis=True)
+	@commands.bot_has_permissions(manage_emojis=True)
+	async def _add_emoji(
+			self, ctx, custom: Greedy[discord.PartialEmoji],
+			ids: Greedy[int], *args
+	):
+		""" Uploads Emojis Via Various Methods """
+		msg = await ctx.send(f'Uploading emoji(s)..')
+
+		for emoji in custom:
+			if self.is_blacklisted(emoji):
+				await msg.edit(content=f"{msg.content}\nERR: {emoji.name} - Invalid Emoji")
+				continue
+			name = emoji.name; img = requests.get(emoji.url).content
+			await self.upload_emoji(ctx, name=name, img=img, reason=str(ctx.author), msg=msg)
+
+		for emoji_id in ids:
+			emoji = self.bot.get_emoji(emoji_id)
+			if not emoji:
+				await msg.edit(content=f"{msg.content}\n{emoji_id} - Couldn't Fetch")
+				continue
+			img = requests.get(emoji.url).content
+			await self.upload_emoji(ctx, name=str(emoji_id), img=img, reason=str(ctx.author), msg=msg)
+
+		def check(iter):
+			if iter+1 > len(args):
+				return '.'
+			return args[iter+1]
+		mappings = {
+			requests.get(arg).content: check(iter) if '.' not in check(iter) else 'new_emoji'
+				for iter, arg in enumerate(args) if '.' in arg
+		}
+		for img, name in mappings.items():
+			await self.upload_emoji(ctx, name=name, img=img, reason=str(ctx.author), msg=msg)
 
 	@commands.command(name='addemoji', aliases=['addemote'])
 	@commands.cooldown(1, 5, commands.BucketType.guild)
