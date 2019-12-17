@@ -84,7 +84,7 @@ class Mod(commands.Cog):
 	async def start_ban_timer(self, guild_id, user_id):
 		dat = self.timers['ban'][guild_id][user_id]
 		guild = self.bot.get_guild(int(guild_id))
-		user = self.bot.get_user(dat['user'])
+		user = await self.bot.fetch_user(dat['user'])
 		format = '%Y-%m-%d %H:%M:%S.%f'
 		end_time = datetime.strptime(dat['end_time'], format)
 		if datetime.now() < end_time:
