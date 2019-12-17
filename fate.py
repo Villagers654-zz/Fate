@@ -1,14 +1,21 @@
-from datetime import datetime, timedelta
-from os.path import isfile
-import traceback
+"""
+Luck#1574's Discord Bot
+- Supports v1.5
+"""
+
 import asyncio
 import random
+from os.path import isfile
 import json
+import traceback
+from datetime import datetime
 import os
 import subprocess
-from termcolor import cprint
+
 import discord
 from discord.ext import commands
+from termcolor import cprint
+
 from utils import config, colors
 
 # //~== Core ==~\\
@@ -29,27 +36,21 @@ def get_config():
 
 def get_prefix(bot, msg):
 	config = get_config()  # type: dict
-	if 'blocked' not in config:
-		config['blocked'] = {}
-	if msg.author.id in config['blocked']:
-		return 'lsimhbiwfefmtalol'
-	if isinstance(msg.author, discord.Member):
-		guild_id = str(msg.guild.id)
-		if 'restricted' not in config:
-			config['restricted'] = {}
-		if guild_id in config['restricted']:
-			if msg.channel.id in config['restricted'][guild_id]['channels']:
-				perms = msg.author.guild_permissions
-				if not perms.administrator and not perms.manage_guild:
-					return 'lsimhbiwfefmtalol'
+	if 'blocked' in config:
+		if msg.author.id in config['blocked']:
+			return 'lsimhbiwfefmtalol'
 	if not msg.guild:
 		return commands.when_mentioned_or(".")(bot, msg)
 	guild_id = str(msg.guild.id)
+	if guild_id in config['restricted']:
+		if msg.channel.id in config['restricted'][guild_id]['channels'] and (
+				not msg.author.guild_permissions.administrator):
+			return 'lsimhbiwfefmtalol'
 	if 'prefix' not in config:
-		config['prefix']= {}
+		config['prefix'] = {}
 	prefixes = config['prefix']
 	if guild_id not in prefixes:
-		return "."
+		return commands.when_mentioned_or('.')
 	return commands.when_mentioned_or(prefixes[guild_id])(bot, msg)
 
 def total_seconds(now, before):
@@ -76,13 +77,13 @@ async def status_task():
 		stages = ['Serendipity', 'Euphoria', 'Singularity', 'Epiphany']
 		for i in range(len(stages)):
 			try:
+				await bot.change_presence(status=discord.Status.online, activity=discord.Game(name=f'Seeking For The Clock'))
+				await asyncio.sleep(45)
 				await bot.change_presence(status=discord.Status.online, activity=discord.Game(name=f'{stages[i]} | use .help'))
 				await asyncio.sleep(15)
-				await bot.change_presence(status=discord.Status.idle, activity=discord.Game(name=f'{stages[i]} | {len(bot.users)} users'))
+				await bot.change_presence(status=discord.Status.idle, activity=discord.Game(name=f'{stages[i]} | S: {len(bot.guilds)} U: {len(bot.users)}'))
 				await asyncio.sleep(15)
-				await bot.change_presence(status=discord.Status.dnd, activity=discord.Game(name=f'{stages[i]} | {len(bot.guilds)} servers'))
-				await asyncio.sleep(15)
-				await bot.change_presence(status=discord.Status.online, activity=discord.Game(name=f'{stages[i]} | {random.choice(motds)}'))
+				await bot.change_presence(status=discord.Status.dnd, activity=discord.Game(name=f'{stages[i]} | {random.choice(motds)}'))
 			except:
 				pass
 			await asyncio.sleep(15)
