@@ -50,7 +50,7 @@ def get_prefix(bot, msg):
 		config['prefix'] = {}
 	prefixes = config['prefix']
 	if guild_id not in prefixes:
-		return commands.when_mentioned_or('.')
+		return commands.when_mentioned_or('.')(bot, msg)
 	return commands.when_mentioned_or(prefixes[guild_id])(bot, msg)
 
 def total_seconds(now, before):
@@ -81,7 +81,7 @@ async def status_task():
 				await asyncio.sleep(45)
 				await bot.change_presence(status=discord.Status.online, activity=discord.Game(name=f'{stages[i]} | use .help'))
 				await asyncio.sleep(15)
-				await bot.change_presence(status=discord.Status.idle, activity=discord.Game(name=f'{stages[i]} | S: {len(bot.guilds)} U: {len(bot.users)}'))
+				await bot.change_presence(status=discord.Status.idle, activity=discord.Game(name=f'Stats | SVR: {len(bot.guilds)} USR: {len(bot.users)}'))
 				await asyncio.sleep(15)
 				await bot.change_presence(status=discord.Status.dnd, activity=discord.Game(name=f'{stages[i]} | {random.choice(motds)}'))
 			except:
