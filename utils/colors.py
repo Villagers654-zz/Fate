@@ -27,6 +27,9 @@ def green():
 def lime_green():
 	return 0xb8ff00
 
+def dark_green():
+	return 0x006400
+
 def blue():
 	return 0x0000FF
 
@@ -44,6 +47,9 @@ def white():
 
 def tan():
 	return 0xffc8b0
+
+def light_gray():
+	return 0xd3d3d3
 
 def color_roles():
 	return {
