@@ -363,7 +363,7 @@ class SecureLog(commands.Cog):
 						before.channel.id in self.config[guild_id]['channels']):
 					await asyncio.sleep(0.5)  # prevent updating too fast and not showing on the users end
 					return await after.edit(suppress=False)
-				e = discord.Embed(color=lime_green())
+				e = discord.Embed(color=pink())
 				e.set_author(name='~==🍸Embed Hidden🍸==~', icon_url=before.author.avatar_url)
 				e.set_thumbnail(url=before.author.avatar_url)
 				e.description = f"__**Author:**__ [{before.author.mention}]" \
@@ -529,10 +529,15 @@ class SecureLog(commands.Cog):
 	async def on_guild_update(self, before, after):
 		guild_id = str(after.id)
 		if guild_id in self.config:
-			e = discord.Embed(color=green())
 			dat = await self.search_audit(after, audit.guild_update)
-			e.set_author(name='~==🍸Server Updated🍸==~', icon_url=dat['icon_url'])
-			e.set_thumbnail(url=after.icon_url)
+			def create_template_embed():
+				""" Creates a new embed to work with """
+				e = discord.Embed(color=lime_green())
+				e.set_author(name='~==🍸Server Updated🍸==~', icon_url=dat['icon_url'])
+				e.set_thumbnail(url=after.icon_url)
+				return e
+
+			e = create_template_embed()
 			if before.name != after.name:
 				e.description = f"> 》__**Name Changed**__《" \
 				                f"\n__**Changed by:**__ [{dat['user']}]"
@@ -540,6 +545,7 @@ class SecureLog(commands.Cog):
 				e.add_field(name='◈ After', value=after.name, inline=False)
 				self.queue[guild_id].append([e, 'updates'])
 			if before.icon_url != after.icon_url:
+				e = create_template_embed()
 				e.description = f"> 》__**Icon Changed**__《" \
 				                f"\n__**Changed by:**__ [{dat['user']}]"
 				if not before.is_icon_animated() and after.is_icon_animated():
@@ -548,26 +554,32 @@ class SecureLog(commands.Cog):
 					e.description += f'\n__**Icons no longer animated**__'
 				self.queue[guild_id].append([e, 'updates'])
 			if before.banner_url != after.banner_url:
+				e = create_template_embed()
 				e.description = f"> 》__**Banner Changed**__《" \
 				                f"\n__**Changed by:**__ [{dat['user']}]"
 				self.queue[guild_id].append([e, 'updates'])
 			if before.splash_url != after.splash_url:
+				e = create_template_embed()
 				e.description = f"> 》__**Splash Changed**__《" \
 				                f"\n__**Changed by:**__ [{dat['user']}]"
 				self.queue[guild_id].append([e, 'updates'])
 			if before.region != after.region:
-				e.description = f"> 》__**Region Changed**__《" \
+				e = create_template_embed()
+				e.description = f"> 》__**Region Chan" \
+				                f"e = create_template_embed()ged**__《" \
 				                f"\n__**Changed by:**__ [{dat['user']}]"
 				e.add_field(name='◈ Before', value=str(before.region), inline=False)
 				e.add_field(name='◈ After', value=str(after.region), inline=False)
 				self.queue[guild_id].append([e, 'updates'])
 			if before.afk_timeout != after.afk_timeout:
+				e = create_template_embed()
 				e.description = f"> 》__**AFK Timeout Changed**__《" \
 				                f"\n__**Changed by:**__ [{dat['user']}]"
 				e.add_field(name='◈ Before', value=str(before.afk_timeout), inline=False)
 				e.add_field(name='◈ After', value=str(after.afk_timeout), inline=False)
 				self.queue[guild_id].append([e, 'updates'])
 			if before.afk_channel != after.afk_channel:
+				e = create_template_embed()
 				e.description = f"> 》__**AFK Channel Changed**__《" \
 				                f"\n__**Changed by:**__ [{dat['user']}]"
 				if before.afk_channel:
@@ -586,6 +598,7 @@ class SecureLog(commands.Cog):
 					)
 				self.queue[guild_id].append([e, 'updates'])
 			if before.owner != after.owner:
+				e = create_template_embed()
 				e.description = f"> 》__**Owner Changed**__《"
 				e.add_field(
 					name='◈ Before',
@@ -601,6 +614,7 @@ class SecureLog(commands.Cog):
 				)
 				self.queue[guild_id].append([e, 'updates'])
 			if before.features != after.features:
+				e = create_template_embed()
 				e.description = f"> 》__**Features Changed**__《"
 				changes = ''
 				for feature in before.features:
@@ -612,11 +626,13 @@ class SecureLog(commands.Cog):
 				e.add_field(name='◈ Changes', value=changes)
 				self.queue[guild_id].append([e, 'updates'])
 			if before.premium_tier != after.premium_tier:
+				e = create_template_embed()
 				e.description = f"> 》__**Premium Tier Changed**__《" \
 				                f"\n__**Before:**__ [{before.premium_tier}]" \
 				                f"\n__**After:**__ [{after.premium_tier}]"
 				self.queue[guild_id].append([e, 'updates'])
 			if before.premium_subscription_count != after.premium_subscription_count:
+				e = create_template_embed()
 				if after.premium_subscription_count > before.premium_subscription_count:
 					action = 'Boosted'
 				else:
@@ -822,6 +838,19 @@ class SecureLog(commands.Cog):
 				                f"\n__**Category:**__ {category}" \
 				                f"\n__**Changed by:**__ {dat['user']}"
 				self.queue[guild_id].append([e, 'updates'])
+
+	@commands.Cog.listener()
+	async def on_guild_role_create(self, role):
+		guild_id = str(role.guild.id)
+		if guild_id in self.config:
+			dat = await self.search_audit(role.guild, audit.role_create)
+			e = discord.Embed(color=lime_green())
+			e.set_author(name='~==🍸Role Created🍸==~', icon_url=dat['icon_url'])
+			e.description = f"__**Name:**__ [{role.name}]" \
+			                f"\n__**Mention:**__ [{role.mention}]" \
+			                f"\n__**ID:**__ [{role.id}]" \
+			                f"\n__**Created by:**__ [{dat['user']}]"
+			self.queue[guild_id].append([e, 'actions'])
 
 	@commands.Cog.listener()
 	async def on_guild_integrations_update(self, guild):
