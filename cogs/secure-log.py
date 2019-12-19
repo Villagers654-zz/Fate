@@ -846,6 +846,7 @@ class SecureLog(commands.Cog):
 			dat = await self.search_audit(role.guild, audit.role_create)
 			e = discord.Embed(color=lime_green())
 			e.set_author(name='~==🍸Role Created🍸==~', icon_url=dat['icon_url'])
+			e.set_thumbnail(url=dat['thumbnail_url'])
 			e.description = f"__**Name:**__ [{role.name}]" \
 			                f"\n__**Mention:**__ [{role.mention}]" \
 			                f"\n__**ID:**__ [{role.id}]" \
@@ -858,6 +859,8 @@ class SecureLog(commands.Cog):
 		if guild_id in self.config:
 			dat = await self.search_audit(role.guild, audit.role_delete)
 			e = discord.Embed(color=dark_green())
+			e.set_author(name='~==🍸Role Deleted🍸==~', icon_url=dat['icon_url'])
+			e.set_thumbnail(url=dat['thumbnail_url'])
 			e.description = f"__**Name:**__ [{role.name}]" \
 			                f"\n__**Mention:**__ [{role.mention}]" \
 			                f"\n__**ID:**__ [{role.id}]" \
@@ -872,6 +875,22 @@ class SecureLog(commands.Cog):
 				f.write(members)
 
 			self.queue[guild_id].append([(e, path), 'actions'])
+
+	@commands.Cog.listener()
+	async def on_guild_role_update(self, before, after):
+		guild_id = str(after.guild.id)
+		if guild_id in self.config:
+			dat = await self.search_audit(after.guild, audit.role_update)
+			e = discord.Embed(color=green())
+			e.set_author(name='~==🍸Role Updated🍸==~', icon_url=dat['icon_url'])
+			e.set_thumbnail(url=dat['thumbnail_url'])
+
+			if before.name != after.name:
+				e.add_field(
+					name='◈ Name Changed',
+					value=f"",
+					inline=False
+				)
 
 	@commands.Cog.listener()
 	async def on_guild_integrations_update(self, guild):
