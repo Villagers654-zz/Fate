@@ -853,6 +853,27 @@ class SecureLog(commands.Cog):
 			self.queue[guild_id].append([e, 'actions'])
 
 	@commands.Cog.listener()
+	async def on_guild_role_delete(self, role):
+		guild_id = str(role.guild.id)
+		if guild_id in self.config:
+			dat = await self.search_audit(role.guild, audit.role_delete)
+			e = discord.Embed(color=dark_green())
+			e.description = f"__**Name:**__ [{role.name}]" \
+			                f"\n__**Mention:**__ [{role.mention}]" \
+			                f"\n__**ID:**__ [{role.id}]" \
+			                f"\n__**Created by:**__ [{dat['user']}]" \
+			                f"\n__**Members:**__ [{len(role.members)}]"
+
+			path = f'./static/role-members-{r.randint(1, 9999)}.txt'
+			members = f"{role.name} - Member List"
+			for member in role.members:
+				members += f"\n{member.id}, {member.mention}, {member}, {member.display_name}"
+			with open(path, 'w') as f:
+				f.write(members)
+
+			self.queue[guild_id].append([(e, path), 'actions'])
+
+	@commands.Cog.listener()
 	async def on_guild_integrations_update(self, guild):
 		guild_id = str(guild.id)
 		if guild_id in self.config:
