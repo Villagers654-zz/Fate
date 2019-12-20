@@ -147,7 +147,7 @@ class SelfRoles(commands.Cog):
 			def pred(m):
 				return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
 			try:
-				msg = await self.bot.wait_for('message', check=pred, timeout=60)
+				msg = await self.bot.wait_for('message', check=pred, timeout=120)
 			except asyncio.TimeoutError:
 				await instructions.delete()
 				return None
@@ -261,7 +261,6 @@ class SelfRoles(commands.Cog):
 						emoji_id = emoji.id
 					menu['items'][str(role.id)] = emoji_id
 					await ctx.send(f"Added {role.name}", delete_after=5)
-				await msg.delete()
 			await asyncio.sleep(0.5)
 			await msg.delete()
 		else:
