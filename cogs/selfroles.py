@@ -250,12 +250,10 @@ class SelfRoles(commands.Cog):
 					emoji, role = args
 					emoji = self.get_emojis(emoji)
 					if not emoji:
-						await msg.delete()
 						await ctx.send(f'Emoji not found for {role}', delete_after=5)
 						continue
 					role = await utils.get_role(ctx, role)
 					if not role:
-						await msg.delete()
 						await ctx.send('Role not found', delete_after=5)
 						continue
 					emoji_id = f'{emoji}'
