@@ -18,8 +18,10 @@ class Reactions(commands.Cog):
 		if args:
 			if '<@&' in args or '@everyone' in args or '@here' in args:
 				return await ctx.send('biTcH nO')
+
 		path = os.getcwd() + f"/data/images/reactions/{reaction}/" + random.choice(
 			os.listdir(os.getcwd() + f"/data/images/reactions/{reaction}/"))
+
 		if action and ctx.message.mentions:
 			if len(args.split()) == 1:
 				args = f'*{action} {args}*'
@@ -28,16 +30,18 @@ class Reactions(commands.Cog):
 				user = args[0]  # type: discord.Member.mention
 				args.pop(0)
 				args = f'*{action} {user}*  {" ".join(args)}'
-		e = discord.Embed(color=colors.fate())
-		e.set_image(url="attachment://" + os.path.basename(path))
+
 		created_webhook = False
 		if ctx.channel.id not in self.webhook:
 			self.webhook[ctx.channel.id] = await ctx.channel.create_webhook(name='Reaction')
 			created_webhook = True
+
 		async with aiohttp.ClientSession() as session:
 			webhook = Webhook.from_url(self.webhook[ctx.channel.id].url, adapter=AsyncWebhookAdapter(session))
-			await webhook.send(args, username=ctx.author.name, avatar_url=ctx.author.avatar_url,
-			                   file=discord.File(path, filename=os.path.basename(path)), embed=e)
+			await webhook.send(
+				args, username=ctx.author.name, avatar_url=ctx.author.avatar_url,
+				file=discord.File(path, filename=reaction + path[-(len(path) - path.find('.')):])
+			)
 			await ctx.message.delete()
 			if created_webhook:
 				await asyncio.sleep(120)
