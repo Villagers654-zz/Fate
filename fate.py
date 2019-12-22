@@ -73,7 +73,7 @@ login_errors = []
 
 async def status_task():
 	while True:
-		motds = ['FBI OPEN UP', 'YEET to DELETE', 'Pole-Man', '♡Juice wrld♡', 'Mad cuz Bad', 'Quest for Cake', 'Gone Sexual']
+		motds = ['FBI OPEN UP', 'YEET to DELETE', 'Pole-Man', '♡Juice wrld♡', 'Mad cuz Bad', 'Quest for Cake', 'Gone Sexual', '@EPFFORCE#1337 wuz here']
 		stages = ['Serendipity', 'Euphoria', 'Singularity', 'Epiphany']
 		for i in range(len(stages)):
 			try:
