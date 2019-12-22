@@ -209,3 +209,4 @@ if __name__ == '__main__':
 load_time = total_seconds(datetime.now(), bot.start_time)
 login_start_time = datetime.now()
 bot.run(config.tokens('fatezero'))
+# bot.run(config.tokens('fatetwo'))
