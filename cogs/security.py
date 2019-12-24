@@ -110,7 +110,7 @@ class Security(commands.Cog):
 						'channel': None,  # create one if not exists, and uses roles
 						'verification': True,
 						'levels': Union[
-							None, {  # an example - customizable
+							None, {  # an example - customizable - overrides kick/ban/raid channel
 								'1': 'verification',
 								'2': 'mute',
 								'3': 'kick',
