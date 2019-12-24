@@ -5,6 +5,7 @@ __pycache__/
 *.sh
 /data/*
 dev.py
+/utils/*
 /utils/config.py
 /utils/outh.py
 /venv/*
