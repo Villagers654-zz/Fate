@@ -52,8 +52,15 @@ from discord.ext import commands
 class Security(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
-		self.conf = {
-			'guild_id': {
+		self.path = './data/security.json'
+		self.conf = {}
+
+	def save_data(self):
+		with open(self.path, 'w+') as f:
+			json.dump(self.conf, f)
+
+	def init(self, guild_id: str):
+		self.conf[guild_id] = {
 				'anti_spam': {
 					'ignored': [],
 					'rate_limit': {
@@ -117,7 +124,7 @@ class Security(commands.Cog):
 								'4': 'ban'
 							}
 						],
-						'lockdown_duration': 60*60*60,
+						'lockdown_duration': 60 * 60 * 60,
 						'complete_cleanup': True,
 					},
 
@@ -128,7 +135,7 @@ class Security(commands.Cog):
 					'ban': False
 				}
 			}
-		}
+		self.save_data()
 
 
 def setup(bot):
