@@ -16,7 +16,7 @@ import discord
 from discord.ext import commands
 from termcolor import cprint
 
-from utils import config, colors
+from utils import config, outh, colors
 
 # //~== Core ==~\\
 
@@ -208,5 +208,4 @@ if __name__ == '__main__':
 	cprint(f"Logging into discord..", "blue")
 load_time = total_seconds(datetime.now(), bot.start_time)
 login_start_time = datetime.now()
-# bot.run(config.tokens('fatezero'))
-bot.run(config.tokens('fate2'))
+bot.run(outh.tokens('fatezero'))
