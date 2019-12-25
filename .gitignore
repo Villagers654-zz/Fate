@@ -4,7 +4,7 @@ __pycache__/
 *.json
 *.sh
 /data/*
-dev.py
+/cogs/dev.py
 /utils/livechat.py
 /utils/outh.py
 /utils/ServerStatus.py
