@@ -3,6 +3,7 @@ __pycache__/
 *.exe
 *.json
 *.sh
+Backup.zip
 /data/*
 /cogs/dev.py
 /utils/livechat.py
