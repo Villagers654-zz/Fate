@@ -968,10 +968,7 @@ class Leaderboards(commands.Cog):
 					self.spam_cd[guild_id][user_id] = [now, 0]
 				if self.spam_cd[guild_id][user_id][1] > 2:
 					if m.author.id != 264838866480005122:
-						self.cd[user_id] = time() + 600
-						count = await self.subtract_spam_from_monthly(guild_id, user_id)
-						self.global_data[user_id] -= count
-						self.guilds_data[guild_id][user_id] -= count
+						self.cd[user_id] = time() + 60
 
 				# anti macro
 				if user_id not in self.macro_cd:
@@ -987,10 +984,7 @@ class Leaderboards(commands.Cog):
 					if len(intervals) > 2:
 						if all(interval == intervals[0] for interval in intervals):
 							if m.author.id != 264838866480005122:
-								self.cd[user_id] = time() + 600
-								count = await self.subtract_spam_from_monthly(guild_id, user_id)
-								self.global_data[user_id] -= count
-								self.guilds_data[guild_id][user_id] -= count
+								self.cd[user_id] = time() + 60
 
 				if user_id not in self.cd:
 					self.cd[user_id] = 0
