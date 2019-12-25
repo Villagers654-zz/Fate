@@ -5,8 +5,9 @@ __pycache__/
 *.sh
 /data/*
 dev.py
-/utils/*
-/utils/config.py
+/utils/livechat.py
 /utils/outh.py
+/utils/ServerStatus.py
+/utils/ssh.py
 /venv/*
 /venv/
