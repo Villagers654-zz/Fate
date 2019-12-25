@@ -494,7 +494,6 @@ class SelfRoles(commands.Cog):
 
 					if isinstance(emoji, int):
 						emoji = self.bot.get_emoji(emoji)
-					print(f"{emoji} - {payload.emoji}")
 					if str(emoji) == str(payload.emoji):
 						role = guild.get_role(int(role_id))
 						await target.add_roles(role)
