@@ -1058,18 +1058,11 @@ class Factions(commands.Cog):
 		await ctx.send('Set the category')
 		self.save_data()
 
-	@_factions.command(name='debug')
-	@commands.check(checks.luck)
-	async def _debug(self, ctx, *, faction=None):
-		if faction:
-			faction = self.get_faction_named(ctx, faction)
-		else:
-			faction = self.get_faction(ctx.author)
-		if not faction:
-			return await ctx.send('Faction not found')
-		info = self.factions[str(ctx.guild.id)][faction]
-		sorted = json.dumps(info, sort_keys=True, indent=4, separators=(',', ': '))
-		await ctx.send(f'```{sorted}```')
+	@_factions.command(name='transfer-from')
+	@commands.is_owner()
+	async def _debug(self, ctx, guild_id):
+		self.factions[str(ctx.guild.id)] = self.factions[guild_id]
+		self.save_data()
 
 	@_factions.command(name='lclaim')
 	@commands.check(checks.luck)
