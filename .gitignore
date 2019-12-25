@@ -9,5 +9,6 @@ dev.py
 /utils/outh.py
 /utils/ServerStatus.py
 /utils/ssh.py
+/utils/fonts/*
 /venv/*
 /venv/
