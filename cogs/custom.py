@@ -15,13 +15,6 @@ class Custom(commands.Cog):
 	def tm(ctx):
 		return ctx.author.id in [264838866480005122, 355026215137968129]
 
-	async def on_message(self, m: discord.Message):
-		if m.author.id == 452289354296197120:
-			if m.content.startswith("<:thonk"):
-				r = random.randint(1, 4)
-				if r >= 3:
-					await m.delete()
-
 	@commands.command(name='hernie')
 	async def hernie(self, ctx):
 		choices = [
