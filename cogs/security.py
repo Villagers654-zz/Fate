@@ -116,6 +116,10 @@ class Security(commands.Cog):
 						'ban': False,  # disables lockdown channel if enabled
 						'channel': None,  # create one if not exists, and uses roles
 						'verification': True,
+						'lock_overwrites': {
+							'toggle': False,
+							'only_malicious': True
+						},
 						'levels': Union[
 							None, {  # an example - customizable - overrides kick/ban/raid channel
 								'1': 'verification',
