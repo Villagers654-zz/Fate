@@ -39,6 +39,8 @@ Security Dashboard & Commands
 
 + All lock functionality under the same lock so you
   can disable all locks with .unlock for ease of use
+
+this shit needs updated
 """
 
 from os import path
@@ -47,7 +49,28 @@ from time import time, monotonic
 from typing import *
 
 from discord.ext import commands
+import discord
 
+from utils import colors, utils
+
+
+def emoji(Type):
+	if isinstance(Type, bool):
+		if Type:
+			return '<:status_online:659976003334045727>'
+		else:
+			return '<:status_offline:659976011651219462>'
+	if isinstance(Type, str):
+		if any(sensitivity in Type.lower()
+	        for sensitivity in ['high', 'medium', 'low']):
+			if Type == 'high':
+				return '<:status_dnd:596576774364856321>'
+			if Type == 'medium':
+				return '<:status_idle:659976006030983206>'
+			if Type == 'low':
+				return '<:status_online:659976003334045727>'
+		else:
+			return 'wtf m8 im unprepared ;-;'
 
 class Security(commands.Cog):
 	def __init__(self, bot):
@@ -56,6 +79,7 @@ class Security(commands.Cog):
 		self.conf = {}
 
 	def save_data(self):
+		return  # don't wanna save during testing
 		with open(self.path, 'w+') as f:
 			json.dump(self.conf, f)
 
@@ -93,7 +117,8 @@ class Security(commands.Cog):
 						'emoji_limit': None,
 						'custom_emoji_limit': None,
 						'attachment_limit': None,
-						'link_limit': None
+						'link_limit': None,
+						'custom': []
 					}
 				},
 				'anti_raid': {
@@ -120,14 +145,12 @@ class Security(commands.Cog):
 							'toggle': False,
 							'only_malicious': True
 						},
-						'levels': Union[
-							None, {  # an example - customizable - overrides kick/ban/raid channel
+						'levels': {  # an example - customizable - overrides kick/ban/raid channel/verification
 								'1': 'verification',
 								'2': 'mute',
 								'3': 'kick',
 								'4': 'ban'
-							}
-						],
+						},
 						'lockdown_duration': 60 * 60 * 60,
 						'complete_cleanup': True,
 					},
@@ -140,6 +163,52 @@ class Security(commands.Cog):
 				}
 			}
 		self.save_data()
+
+	@commands.group(name='security')
+	@commands.cooldown(2, 5, commands.BucketType.user)
+	@commands.guild_only()
+	@commands.bot_has_permissions(embed_links=True)
+	async def security(self, ctx):
+		""" General overview of security related modules """
+		if not ctx.invoked_subcommand:
+			p = utils.get_prefix(ctx)  # type: str
+			guild_id = str(ctx.guild.id)
+			if guild_id not in self.conf:
+				self.init(guild_id)
+			config = self.conf[guild_id]  # type: dict
+
+			e = discord.Embed(color=colors.purple())
+			e.set_author(name='Basic Security Info', icon_url=ctx.guild.owner.avatar_url)
+			e.set_thumbnail(url=self.bot.user.avatar_url)
+			e.add_field(
+				name='◈ Sub Commands',
+				value=f"{p}**security overview** - `shows more detailed overview`"
+				      f"\n{p}**security module** - `info on a security module`",
+				inline=False
+			)
+			e.add_field(
+				name='◈ Bot',
+				value=f"__**Response Time:**__ {round(self.bot.latency * 1000)}ms",
+				inline=False
+			)
+			conf = config['anti_spam']
+			e.add_field(
+				name='◈ Anti Spam',
+				value=f"__**Rate Limit:**__ {emoji(conf['rate_limit']['toggle'])}"
+				      f"\n__**Anti Macro:**__ {emoji(conf['macro']['toggle'])}"
+				      f"\n__**Mass Ping:**__ {emoji(conf['macro']['toggle'])}"
+				      f"\n__**Duplicates:**__ {emoji(conf['duplicates']['toggle'])}"
+				      f"\n__**Filter:**__ {emoji(any(conf['filter'][key] for key in conf['filter'].keys()))}",
+				inline=False
+			)
+			await ctx.send(embed=e)
+
+	@security.command(name='overview')
+	async def _overview(self, ctx):
+		""" More complex and detailed overview """
+
+
+# events / listeners:
 
 
 def setup(bot):
