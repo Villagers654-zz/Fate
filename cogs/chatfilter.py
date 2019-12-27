@@ -39,7 +39,9 @@ class ChatFilter(commands.Cog):
 			    ".chatfilter add {word/phrase}\n"
 				".chatfilter remove {word/phrase}\n", inline=False)
 			if guild_id in self.blacklist:
-				e.add_field(name="◈ Forbidden Shit ◈", value=self.blacklist[guild_id], inline=False)
+				text = str(self.blacklist[guild_id])
+				for text_group in [text[i:i + 1000] for i in range(0, len(text), 1000)]:
+					e.add_field(name="◈ Forbidden Shit ◈", value=text_group, inline=False)
 			e.set_footer(text=f"Current Status: {toggle}")
 			await ctx.send(embed=e)
 
