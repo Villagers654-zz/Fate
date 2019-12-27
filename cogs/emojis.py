@@ -18,7 +18,7 @@ class Emojis(commands.Cog):
 		self.bot = bot
 
 	def is_blacklisted(self, emoji) -> bool:
-		servers = [470961230362837002, 397415086295089155, 643246907472216064, 650950654491361280]
+		servers = [470961230362837002, 397415086295089155, 650950654491361280]
 		blacklist = []
 		for server_id in servers:
 			server = self.bot.get_guild(server_id)
