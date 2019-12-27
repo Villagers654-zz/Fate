@@ -13,3 +13,5 @@ Backup.zip
 /utils/fonts/*
 /venv/*
 /venv/
+/template_cogs/
+/template_cogs/*

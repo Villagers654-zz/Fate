@@ -109,4 +109,6 @@ class Polis(commands.Cog):
 				await entry.user.ban()
 
 def setup(bot):
+	bot = bot  # type: commands.bot.Bot
 	bot.add_cog(Polis(bot))
+	bot.remove_cog("Polis")

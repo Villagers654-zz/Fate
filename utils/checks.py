@@ -10,7 +10,7 @@ import discord
 
 
 def luck(ctx):
-	return ctx.message.author.id in [264838866480005122, 355026215137968129]
+	return ctx.message.author.id in [264838866480005122, 355026215137968129, 544911653058248734, 611108193275478018]
 
 def command_is_enabled():  # decorator check
 	async def predicate(ctx):
