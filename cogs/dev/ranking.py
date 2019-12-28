@@ -47,8 +47,8 @@ class Ranking(commands.Cog):
 		with open(self.path, 'w') as f:
 			json.dump(self.config, f)
 
-	def init(self, guild_id: str):
-		self.config[guild_id] = {
+	def static(self):
+		return {
 			"min_xp_per_msg": 1,
 			"max_xp_per_msg": 1,
 			"base_level_xp_req": 100,
@@ -57,6 +57,9 @@ class Ranking(commands.Cog):
 				"timeframe": 10
 			}
 		}
+
+	def init(self, guild_id: str):
+		self.config[guild_id] = self.static()
 		self.save_config()
 
 def setup(bot):
