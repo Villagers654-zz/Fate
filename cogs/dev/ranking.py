@@ -53,10 +53,12 @@ class Ranking(commands.Cog):
 			return json.load(f)
 
 	def save_config(self):
+		""" Saves per-server configuration """
 		with open(self.path, 'w') as f:
 			json.dump(self.config, f)
 
 	def static_config(self):
+		""" Default config """
 		return {
 			"min_xp_per_msg": 1,
 			"max_xp_per_msg": 1,
@@ -66,6 +68,7 @@ class Ranking(commands.Cog):
 		}
 
 	def init(self, guild_id: str):
+		""" Saves static config as the guilds initial config """
 		self.config[guild_id] = self.static_config()
 		self.save_config()
 
