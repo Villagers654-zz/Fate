@@ -19,23 +19,24 @@ class Ranking(commands.Cog):
 			'msg', 'monthly_msg', 'vc', 'monthly_vc'
 		]
 
-		if not path.isdir('xp'):
+		if not path.exists('xp'):
 			os.mkdir('xp')
 			for filename in self.globals:
 				with open(path.join('xp', filename) + '.json', 'w') as f:
 					json.dump({}, f, ensure_ascii=False)
 
 		self.msg = self._global('msg')
-		self.monthly_msg = self._global('monthly')
+		self.monthly_msg = self._global('monthly_msg')
 		self.vc = self._global('vc')
 		self.monthly_vc = self._global('monthly_vc')
 
 		self.guilds = {}
 		for directory in os.listdir('xp'):
 			if directory.isdigit():
+				self.guilds[directory] = {}
 				for filename in os.listdir(path.join('xp', directory)):
 					with open(path.join('xp', directory, filename), 'r') as f:
-						self.guilds[filename.replace('.json', '')] = json.load(f)
+						self.guilds[directory][filename.replace('.json', '')] = json.load(f)
 
 		self.msg_cooldown = 10
 		self.cd = {}
@@ -83,16 +84,12 @@ class Ranking(commands.Cog):
 			if guild_id in self.config:
 				conf = self.config[guild_id]
 
-			now = int(time() / conf['timeframe'])
 			if guild_id not in self.cd:
 				self.cd[guild_id] = {}
 			if user_id not in self.cd[guild_id]:
-				self.cd[guild_id][user_id] = [now, 0]
-			if self.cd[guild_id][user_id][0] == now:
-				self.cd[guild_id][user_id][1] += 1
-			else:
-				self.cd[guild_id][user_id] = [now, 0]
-			if self.cd[guild_id][user_id][1] > conf['msgs_within_timeframe']:
+				self.cd[guild_id][user_id] = []
+			msgs = [x for x in self.cd[guild_id][user_id] if float(x) > time() - conf['timeframe']]
+			if len(msgs) < conf['msgs_within_timeframe']:
 
 				if user_id not in self.msg:
 					self.msg[user_id] = 0
@@ -114,12 +111,12 @@ class Ranking(commands.Cog):
 				xp = randint(conf['min_xp_per_msg'], conf['max_xp_per_msg'])
 				self.msg[user_id] += xp
 				self.monthly_msg[user_id][str(time())] = xp
-				self.guilds[guild_id]['msg'] += xp
-				self.guilds[guild_id]['monthly_msg'][str(time)] = xp
+				self.guilds[guild_id]['msg'][user_id] += xp
+				self.guilds[guild_id]['monthly_msg'][user_id][str(time())] = xp
 
 				with open(path.join(guild_path, 'msg.json'), 'w') as f:
 					json.dump(self.guilds[guild_id]['msg'], f, ensure_ascii=False)
-				with open(path.join(guild_path, 'monthly_msg.json', 'w')) as f:
+				with open(path.join(guild_path, 'monthly_msg.json'), 'w') as f:
 					json.dump(self.guilds[guild_id]['monthly_msg'], f, ensure_ascii=False)
 
 				self.counter += 1
@@ -132,7 +129,7 @@ class Ranking(commands.Cog):
 
 				self.backup_counter += 1
 				if self.backup_counter > 25:
-					if not path.isdir(path.join(guild_path, 'backup')):
+					if not path.exists(path.join(guild_path, 'backup')):
 						os.mkdir(path.join(guild_path, 'backup'))
 					for filename in os.listdir(guild_path):
 						if '.' in filename:
