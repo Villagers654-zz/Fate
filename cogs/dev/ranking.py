@@ -43,7 +43,21 @@ class Ranking(commands.Cog):
 				dicts[filename] = json.load(f)
 		return dicts
 
+	def save_config(self):
+		with open(self.path, 'w') as f:
+			json.dump(self.config, f)
 
+	def init(self, guild_id: str):
+		self.config[guild_id] = {
+			"min_xp_per_msg": 1,
+			"max_xp_per_msg": 1,
+			"base_level_xp_req": 100,
+			"cooldown": {
+				"msgs": 1,
+				"timeframe": 10
+			}
+		}
+		self.save_config()
 
 def setup(bot):
 	bot.add_cog(Ranking(bot))
