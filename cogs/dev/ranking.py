@@ -10,6 +10,8 @@ import asyncio
 from discord.ext import commands
 import discord
 
+from utils import colors
+
 
 class Ranking(commands.Cog):
 	def __init__(self, bot):
@@ -137,6 +139,19 @@ class Ranking(commands.Cog):
 								with open(path.join(guild_path, 'backup', filename), 'w') as wf:
 									wf.write(rf.read())
 					self.backup_counter = 0
+
+	@commands.command(name='test-lb')
+	async def test_leaderboard(self, ctx):
+		e = discord.Embed(color=colors.purple())
+		e.set_author(name='Test Leaderboard', icon_url=ctx.author.avatar_url)
+		e.set_thumbnail(url=self.bot.user.avatar_url)
+		e.description = ''
+		rank = 1
+		for user_id, xp in sorted(self.msg, key=lambda kv: kv[1], reverse=True)[:15]:
+			user = await self.bot.fetch_user(int(user_id))
+			e.description += f"**#{rank}.** `{user.name}` - {xp}"
+			rank += 1
+		await ctx.send(embed=e)
 
 def setup(bot):
 	bot.add_cog(Ranking(bot))
