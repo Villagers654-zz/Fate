@@ -124,6 +124,7 @@ class Ranking(commands.Cog):
 						json.dump(self.msg, f, ensure_ascii=False)
 					with open(path.join('xp', 'msg.json'), 'w') as f:
 						json.dump(self.monthly_msg, f, ensure_ascii=True)
+					self.counter = 0
 
 def setup(bot):
 	bot.add_cog(Ranking(bot))
