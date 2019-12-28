@@ -41,6 +41,7 @@ class Ranking(commands.Cog):
 		self.cd = {}
 		self.macro_cd = {}
 		self.counter = 0
+		self.backup_counter = 0
 		self.config = {}
 		if path.isfile(self.path):
 			with open(self.path, 'r') as f:
@@ -125,6 +126,17 @@ class Ranking(commands.Cog):
 					with open(path.join('xp', 'msg.json'), 'w') as f:
 						json.dump(self.monthly_msg, f, ensure_ascii=True)
 					self.counter = 0
+
+				self.backup_counter += 1
+				if self.backup_counter > 25:
+					if not path.isdir(path.join(guild_path, 'backup')):
+						os.mkdir(path.join(guild_path, 'backup'))
+					for filename in os.listdir(guild_path):
+						if '.' in filename:
+							with open(path.join(guild_path, 'filename'), 'r') as rf:
+								with open(path.join(guild_path, 'backup', filename), 'w') as wf:
+									wf.write(rf.read())
+					self.backup_counter = 0
 
 def setup(bot):
 	bot.add_cog(Ranking(bot))
