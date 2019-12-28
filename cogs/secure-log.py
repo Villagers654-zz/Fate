@@ -11,6 +11,7 @@ import json
 import os
 from datetime import datetime, timedelta
 import requests
+import traceback
 
 from discord.ext import commands
 import discord
@@ -137,33 +138,37 @@ class SecureLog(commands.Cog):
 						self.config[guild_id]['channel'] = category.id
 					self.save_data()
 
-				if isinstance(category, discord.TextChannel):  # single channel log
-					await category.send(embed=embed, files=files)
-					if file_paths:
-						for file in file_paths:
-							if os.path.isfile(file):
-								os.remove(file)
-					self.queue[guild_id].remove(list_obj)
-					self.recent_logs[guild_id].append(embed)
-
-				for Type, channel_id in self.config[guild_id]['channels'].items():
-					if Type == channelType:
-						channel = self.bot.get_channel(channel_id)
-						if not channel:
-							channel = await guild.create_text_channel(
-								name=channelType,
-								category=category
-							)
-							self.config[guild_id]['channels'][Type] = channel.id
-							self.save_data()
-						await channel.send(embed=embed, files=files)
+				try:
+					if isinstance(category, discord.TextChannel):  # single channel log
+						await category.send(embed=embed, files=files)
 						if file_paths:
 							for file in file_paths:
 								if os.path.isfile(file):
 									os.remove(file)
 						self.queue[guild_id].remove(list_obj)
-						self.recent_logs[guild_id][channelType].append(embed)
-						break
+						self.recent_logs[guild_id].append(embed)
+
+					for Type, channel_id in self.config[guild_id]['channels'].items():
+						if Type == channelType:
+							channel = self.bot.get_channel(channel_id)
+							if not channel:
+								channel = await guild.create_text_channel(
+									name=channelType,
+									category=category
+								)
+								self.config[guild_id]['channels'][Type] = channel.id
+								self.save_data()
+							await channel.send(embed=embed, files=files)
+							if file_paths:
+								for file in file_paths:
+									if os.path.isfile(file):
+										os.remove(file)
+							self.queue[guild_id].remove(list_obj)
+							self.recent_logs[guild_id][channelType].append(embed)
+							break
+				except Exception as e:
+					err_channel = self.bot.get_channel(577661461543780382)
+					await err_channel.send(f"Secure Log Error\n{str(traceback.format_exc())[-1980:]}")
 
 				if log_type == 'multi':
 					# noinspection PyUnboundLocalVariable
