@@ -1,6 +1,4 @@
-"""
-
-"""
+# Customizable xp ranking system
 
 from os import path
 import os
