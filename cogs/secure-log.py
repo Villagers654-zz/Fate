@@ -86,7 +86,7 @@ class SecureLog(commands.Cog):
 		+ checks guild permissions
 		+ checks channel permissions
 		+ can wait to send logs
-		+ archives the last 50 logs to
+		+ archives the last 50-175 logs to
 		be able to resend if deleted """
 
 		guild = self.bot.get_guild(int(guild_id))
