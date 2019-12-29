@@ -86,6 +86,8 @@ class Ranking(commands.Cog):
 			user_id = str(msg.author.id)
 			guild_path = path.join('xp', 'guilds', guild_id)
 
+			before = monotonic()
+
 			conf = self.static_config()  # type: dict
 			if guild_id in self.config:
 				conf = self.config[guild_id]
@@ -150,6 +152,9 @@ class Ranking(commands.Cog):
 								with open(path.join(guild_path, 'backup', filename), 'w') as wf:
 									wf.write(rf.read())
 					self.backup_counter = 0
+
+			ping = (monotonic() - before) * 1000
+			print(f'Took {round(ping)}ms')
 
 	@commands.command(name='test-lb')
 	async def test_leaderboard(self, ctx):
