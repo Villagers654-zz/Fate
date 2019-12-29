@@ -16,6 +16,7 @@ import traceback
 from discord.ext import commands
 import discord
 from discord import AuditLogAction as audit
+from PIL import Image, ImageDraw, ImageFont
 
 from utils.colors import *
 from utils import utils, config
@@ -650,6 +651,7 @@ class SecureLog(commands.Cog):
 					who = changed[0].mention
 				e.description = f"> 》__**Member {action}**__《" \
 				                f"\n__**Who:**__ [{who}]"
+				self.queue[guild_id].append([e, 'system+'])
 			# mfa_level, verification_level, explicit_content_filter, default_notifications
 			# preferred_locale, large, system_channel, system_channel_flags
 			# Union[emoji_limit, bitrate_limit, filesize_limit]
@@ -887,15 +889,58 @@ class SecureLog(commands.Cog):
 		if guild_id in self.config:
 			dat = await self.search_audit(after.guild, audit.role_update)
 			e = discord.Embed(color=green())
-			e.set_author(name='~==🍸Role Updated🍸==~', icon_url=dat['icon_url'])
+			e.set_author(name='~==🍸Role Updated🍸==~', icon_url=dat['thumbnail_url'])
 			e.set_thumbnail(url=dat['thumbnail_url'])
+			e.description = f"__**Name:**__ {after.name}" \
+			                f"\n__**Mention**__ {after.mention}" \
+			                f"\n__**ID**__ {after.id}" \
+			                f"\n__**Changed by:**__ {dat['user']}"
 
 			if before.name != after.name:
 				e.add_field(
 					name='◈ Name Changed',
-					value=f"",
+					value=f"__**Before:**__ {before.name}"
+					      f"\n__**After:**__ {after.name}",
 					inline=False
 				)
+			if before.color != after.color:
+				def hex_to_rgb(value):
+					value = value.lstrip('#')
+					lv = len(value)
+					return tuple(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
+				def font(size):
+					return ImageFont.truetype("./utils/fonts/Modern_Sans_Light.otf", size)
+
+				before_color = hex_to_rgb(str(before.color))
+				after_color = hex_to_rgb(str(after.color))
+
+				card = Image.new('RGBA', (100, 100), color=after_color)
+				draw = ImageDraw.Draw(card)
+				draw.text((60 - 1, 5), 'After', (0, 0, 0), font=font(13))
+				draw.text((60 + 1, 5), 'After', (0, 0, 0), font=font(13))
+				draw.text((60, 5 - 1), 'After', (0, 0, 0), font=font(13))
+				draw.text((60, 5 + 1), 'After', (0, 0, 0), font=font(13))
+				draw.text((60, 5), 'After', (255, 255, 255), font=font(13))
+
+				box = Image.new('RGBA', (50, 100), color=before_color)
+				draw = ImageDraw.Draw(box)
+				draw.text((5 - 1, 5), 'Before', (0, 0, 0), font=font(13))
+				draw.text((5 + 1, 5), 'Before', (0, 0, 0), font=font(13))
+				draw.text((5, 5 - 1), 'Before', (0, 0, 0), font=font(13))
+				draw.text((5, 5 + 1), 'Before', (0, 0, 0), font=font(13))
+				draw.text((5, 5), 'Before', (255, 255, 255), font=font(13))
+
+				card.paste(box)
+				path = os.getcwd() + f'/static/color-{r.randint(1, 999)}.png'
+				card.save(path)
+
+				e.set_thumbnail(url="attachment://" + os.path.basename(path))
+				e.add_field(
+					name='◈ Color Changed',
+					value=f"__**Before:**__ {before.color}"
+					      f"\n__**After:**__ {after.color}"
+				)
+				self.queue[guild_id].append([(e, path), 'updates'])
 
 	@commands.Cog.listener()
 	async def on_guild_integrations_update(self, guild):
