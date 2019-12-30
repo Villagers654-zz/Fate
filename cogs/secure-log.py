@@ -2,7 +2,7 @@
 Discord.Py v1.5+ Action Logs Module
 + can split up into multiple channels
 + logs can't be deleted or purged by anyone
-- re-creates deleted log channels and resends the last 50 logs
+- re-creates deleted log channels and resends the last x logs
 """
 
 import asyncio
@@ -887,6 +887,7 @@ class SecureLog(commands.Cog):
 	async def on_guild_role_update(self, before, after):
 		guild_id = str(after.guild.id)
 		if guild_id in self.config:
+			path = None
 			dat = await self.search_audit(after.guild, audit.role_update)
 			e = discord.Embed(color=green())
 			e.set_author(name='~==🍸Role Updated🍸==~', icon_url=dat['thumbnail_url'])
@@ -940,7 +941,10 @@ class SecureLog(commands.Cog):
 					value=f"__**Before:**__ {before.color}"
 					      f"\n__**After:**__ {after.color}"
 				)
+			if path:
 				self.queue[guild_id].append([(e, path), 'updates'])
+			else:
+				self.queue[guild_id].append([e, 'updates'])
 
 	@commands.Cog.listener()
 	async def on_guild_integrations_update(self, guild):
