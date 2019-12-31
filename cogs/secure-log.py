@@ -231,24 +231,25 @@ class SecureLog(commands.Cog):
 	@commands.group(name='secure-log')
 	@commands.cooldown(2, 5, commands.BucketType.user)
 	@commands.guild_only()
-	@is_guild_owner()
+	@commands.bot_has_permissions(embed_links=True)
 	async def secure_log(self, ctx):
 		if not ctx.invoked_subcommand:
 			e = discord.Embed(color=fate())
 			e.set_author(name='Multi Channel Log', icon_url=ctx.author.avatar_url)
 			e.set_thumbnail(url=self.bot.user.avatar_url)
-			e.description = ""
+			e.description = "More detailed audit that logs changes to the server and more to a dedicated channel(s)"
 			e.add_field(
 				name='Security',
 				value="Logs can't be deleted by anyone, they aren't purge-able, and it " \
-				      "re-creates deleted log channels and resends the last 50 logs",
+				      "re-creates deleted log channels and resends the last x logs",
 				inline=False
 			)
 			p = utils.get_prefix(ctx)
 			e.add_field(
 				name='◈ Commands',
 				value = f"{p}secure-log enable - `creates a log`"
-				        f"\n{p}secure-log switch - `toggles multi-log`"
+				        f"\n{p}secure-log switch - `toggles multi channel log`"
+				        f"\n{p}secure-log security - `toggles use of security`"
 				        f"\n{p}secure-log disable - `deletes the log`",
 				inline=False
 			)
@@ -256,6 +257,7 @@ class SecureLog(commands.Cog):
 
 	@secure_log.group(name='enable')
 	@commands.has_permissions(administrator=True)
+	@commands.bot_has_permissions(administrator=True)
 	async def _enable(self, ctx):
 		""" Creates a multi-log """
 		guild_id = str(ctx.guild.id)
@@ -265,7 +267,8 @@ class SecureLog(commands.Cog):
 		self.config[guild_id] = {
 			"channel": channel.id,
 			"channels": {},
-			"type": "single"
+			"type": "single",
+			"secure": False
 		}
 		self.bot.loop.create_task(self.start_queue(guild_id))
 		await ctx.send("Enabled Secure-Log")
@@ -273,6 +276,7 @@ class SecureLog(commands.Cog):
 
 	@secure_log.command(name='switch')
 	@commands.has_permissions(administrator=True)
+	@commands.bot_has_permissions(administrator=True)
 	async def _switch(self, ctx):
 		""" Switches a log between multi and single """
 		guild_id = str(ctx.guild.id)
@@ -294,6 +298,19 @@ class SecureLog(commands.Cog):
 			await ctx.send('Enabled Single-Log')
 		self.save_data()
 
+	@secure_log.command(name='toggle-security')
+	@is_guild_owner()
+	@commands.bot_has_permissions(administrator=True)
+	async def _toggle_security(self, ctx):
+		""" Toggles whether or not to keep the log secure """
+		guild_id = str(ctx.guild.id)
+		if self.config[guild_id]['secure']:
+			self.config[guild_id]['secure'] = False
+			await ctx.send('Disabled secure features')
+		else:
+			self.config[guild_id]['secure'] = True
+			await ctx.send('Enabled secure features')
+
 	@secure_log.command(name='disable')
 	@commands.has_permissions(administrator=True)
 	async def _disable(self, ctx):
@@ -301,18 +318,22 @@ class SecureLog(commands.Cog):
 		guild_id = str(ctx.guild.id)
 		if guild_id not in self.config:
 			return await ctx.send("Secure-Log isn't enabled")
+		if self.config[guild_id]['secure']:
+			if ctx.author.id != ctx.guild.owner.id:
+				return await ctx.send("You need to be owner of the server for this")
 		del self.config[guild_id]
 		await ctx.send('Disabled Secure-Log')
 		self.save_data()
 
 	@commands.command(name='start-loop')
 	async def start_loop(self, ctx):
+		""" Restarts a loop that errored and stopped """
 		self.bot.loop.create_task(self.start_queue(str(ctx.guild.id)))
 		await ctx.send('Loop started')
 
 
-
 	""" LISTENERS / EVENTS """  # this will be removed after initial development
+
 
 	@commands.Cog.listener()
 	async def on_ready(self):
@@ -371,7 +392,7 @@ class SecureLog(commands.Cog):
 				if before.channel.id == self.config[guild_id]['channel'] or(  # a message in the log was suppressed
 						before.channel.id in self.config[guild_id]['channels']):
 					await asyncio.sleep(0.5)  # prevent updating too fast and not showing on the users end
-					return await after.edit(suppress=False)
+					return await after.edit(suppress=False, embed=before.embeds[0])
 				e = discord.Embed(color=pink())
 				e.set_author(name='~==🍸Embed Hidden🍸==~', icon_url=before.author.avatar_url)
 				e.set_thumbnail(url=before.author.avatar_url)
@@ -418,23 +439,24 @@ class SecureLog(commands.Cog):
 	async def on_message_delete(self, msg):
 		guild_id = str(msg.guild.id)
 		if guild_id in self.config:
-			if msg.embeds and msg.channel.id == self.config[guild_id]['channel'] or (
-					msg.channel.id in self.config[guild_id]['channels'].values()):
+			if self.config[guild_id]['secure']:
+				if msg.embeds and msg.channel.id == self.config[guild_id]['channel'] or (
+						msg.channel.id in self.config[guild_id]['channels'].values()):
 
-				await msg.channel.send("OwO what's this", embed=msg.embeds[0])
-				if msg.attachments:
-					files = []
-					for attachment in msg.attachments:
-						path = os.path.join('static', attachment.filename)
-						file = requests.get(attachment.proxy_url).content
-						with open(path, 'wb') as f:
-							f.write(file)
-						files.append(path)
-					self.queue[guild_id].append([(msg.embeds[0], files), 'sudo'])
-				else:
-					self.queue[guild_id].append([msg.embeds[0], 'sudo'])
+					await msg.channel.send("OwO what's this", embed=msg.embeds[0])
+					if msg.attachments:
+						files = []
+						for attachment in msg.attachments:
+							path = os.path.join('static', attachment.filename)
+							file = requests.get(attachment.proxy_url).content
+							with open(path, 'wb') as f:
+								f.write(file)
+							files.append(path)
+						self.queue[guild_id].append([(msg.embeds[0], files), 'sudo'])
+					else:
+						self.queue[guild_id].append([msg.embeds[0], 'sudo'])
 
-				return
+					return
 
 			if msg.author.id == self.bot.user.id and 'your cooldowns up' in msg.content:
 				return  # is from work notifs within the factions module
@@ -488,14 +510,15 @@ class SecureLog(commands.Cog):
 			purged_messages = ''
 			for msg in payload.cached_messages:
 
-				if msg.embeds:
-					if msg.channel.id == self.config[guild_id]['channel']:
-						self.queue[guild_id].append([msg.embeds[0], 'sudo'])
-						continue
-					if msg.channel.id in self.config[guild_id]['channels']:
-						await msg.channel.send("OwO what's this", embed=msg.embeds[0])
-						self.queue[guild_id].append([msg.embeds[0], 'sudo'])
-						continue
+				if self.config[guild_id]['secure']:
+					if msg.embeds:
+						if msg.channel.id == self.config[guild_id]['channel']:
+							self.queue[guild_id].append([msg.embeds[0], 'sudo'])
+							continue
+						if msg.channel.id in self.config[guild_id]['channels']:
+							await msg.channel.send("OwO what's this", embed=msg.embeds[0])
+							self.queue[guild_id].append([msg.embeds[0], 'sudo'])
+							continue
 
 				timestamp = msg.created_at.strftime('%I:%M%p')
 				purged_messages = f"{timestamp} | {msg.author}: {msg.content}\n{purged_messages}"
@@ -686,19 +709,20 @@ class SecureLog(commands.Cog):
 		if guild_id in self.config:
 
 			# anti log channel deletion
-			type = self.config[guild_id]['type']
-			if channel.id == self.config[guild_id]['channel']:
-				if type == 'single':
-					for embed in self.recent_logs[guild_id]:
-						self.queue[guild_id].append([embed, 'actions'])
-					return
-				for channelType, embeds in self.recent_logs[guild_id].items():
-					for embed in embeds:
-						self.queue[guild_id].append([embed, channelType])
-			for channelType, channel_id in self.config[guild_id]['channels'].items():
-				if channel_id == channel.id:
-					for embed in self.recent_logs[guild_id][channelType]:
-						self.queue[guild_id].append([embed, channelType])
+			if self.config[guild_id]['secure']:
+				type = self.config[guild_id]['type']
+				if channel.id == self.config[guild_id]['channel']:
+					if type == 'single':
+						for embed in self.recent_logs[guild_id]:
+							self.queue[guild_id].append([embed, 'actions'])
+						return
+					for channelType, embeds in self.recent_logs[guild_id].items():
+						for embed in embeds:
+							self.queue[guild_id].append([embed, channelType])
+				for channelType, channel_id in self.config[guild_id]['channels'].items():
+					if channel_id == channel.id:
+						for embed in self.recent_logs[guild_id][channelType]:
+							self.queue[guild_id].append([embed, channelType])
 
 			dat = await self.search_audit(channel.guild, audit.channel_delete)
 			member_count = 'Unknown'
