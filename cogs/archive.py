@@ -82,13 +82,14 @@ class Archive(commands.Cog):
 
 				with open(join(chnl_path, 'chat-history'), 'w') as f:
 					f.write(chat_history)
+				await ctx.send(f"Archived contents of {channel.mention}")
 
+			await ctx.send('Compressing files')
 			file_paths = []
 			for root, directories, files in os.walk(path):
 				for filename in files:
 					filepath = os.path.join(root, filename)
 					file_paths.append(filepath)
-				return file_paths
 			with ZipFile('Archive.zip', 'w') as zip:
 				for file in file_paths:
 					zip.write(file)
