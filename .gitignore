@@ -3,6 +3,7 @@ __pycache__/
 *.exe
 *.json
 *.sh
+testing.py
 Backup.zip
 /data/*
 /cogs/dev.py
