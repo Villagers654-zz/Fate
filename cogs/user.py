@@ -31,13 +31,14 @@ class User(commands.Cog):
 			user = ctx.message.mentions[0]
 		else:
 			if user.isdigit():
-				user = self.bot.get_user(int(user))
+				user = await self.bot.fetch_user(int(user))
 			else:
 				return await ctx.send('user not found')
 		config = self.get_config()  # type: dict
 		if 'blocked' not in config:
 			config['blocked'] = []
 		config['blocked'].append(user.id)
+		config['blocked'] = list(set(config['blocked']))
 		self.update_config(config)
 		await ctx.send(f'Blocked {user}')
 
@@ -65,16 +66,9 @@ class User(commands.Cog):
 		e = discord.Embed(color=colors.fate())
 		e.set_author(name='Blocked Users', icon_url=self.bot.user.avatar_url)
 		e.description = ''
-		uncached = []
 		for user_id in config['blocked']:
-			user = self.bot.get_user(int(user_id))
-			if isinstance(user, discord.User):
-				e.description += f'{user}\n'
-			else:
-				uncached.append(user_id)
-		if uncached:
-			uncached = '\n'.join(uncached) if len(uncached) > 1 else uncached[0]
-			e.add_field(name='Uncached', value=uncached, inline=False)
+			user = await self.bot.fetch_user(int(user_id))
+			e.add_field(name=str(user), value=str(user_id))
 		await ctx.send(embed=e)
 
 def setup(bot):
