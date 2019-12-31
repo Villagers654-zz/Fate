@@ -12,6 +12,7 @@ import os
 from datetime import datetime, timedelta
 import requests
 import traceback
+from time import time
 
 from discord.ext import commands
 import discord
@@ -58,6 +59,8 @@ class SecureLog(commands.Cog):
 		for guild_id in self.config.keys():
 			queue = bot.loop.create_task(self.start_queue(guild_id))
 			self.queues[guild_id] = queue
+
+		self.role_pos_cd = {}
 
 	def save_data(self):
 		""" Saves local variables """
@@ -905,17 +908,10 @@ class SecureLog(commands.Cog):
 					inline=False
 				)
 			if before.color != after.color:
-				def hex_to_rgb(value):
-					value = value.lstrip('#')
-					lv = len(value)
-					return tuple(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
 				def font(size):
 					return ImageFont.truetype("./utils/fonts/Modern_Sans_Light.otf", size)
 
-				before_color = hex_to_rgb(str(before.color))
-				after_color = hex_to_rgb(str(after.color))
-
-				card = Image.new('RGBA', (100, 100), color=after_color)
+				card = Image.new('RGBA', (100, 100), color=after.color.to_rgb())
 				draw = ImageDraw.Draw(card)
 				draw.text((60 - 1, 5), 'After', (0, 0, 0), font=font(13))
 				draw.text((60 + 1, 5), 'After', (0, 0, 0), font=font(13))
@@ -923,7 +919,7 @@ class SecureLog(commands.Cog):
 				draw.text((60, 5 + 1), 'After', (0, 0, 0), font=font(13))
 				draw.text((60, 5), 'After', (255, 255, 255), font=font(13))
 
-				box = Image.new('RGBA', (50, 100), color=before_color)
+				box = Image.new('RGBA', (50, 100), color=before.color.to_rgb())
 				draw = ImageDraw.Draw(box)
 				draw.text((5 - 1, 5), 'Before', (0, 0, 0), font=font(13))
 				draw.text((5 + 1, 5), 'Before', (0, 0, 0), font=font(13))
@@ -941,10 +937,55 @@ class SecureLog(commands.Cog):
 					value=f"__**Before:**__ {before.color}"
 					      f"\n__**After:**__ {after.color}"
 				)
-			if path:
-				self.queue[guild_id].append([(e, path), 'updates'])
-			else:
-				self.queue[guild_id].append([e, 'updates'])
+			if before.hoist != after.hoist:
+				action = 'is now visible'
+				if after.hoist == False:
+					action = 'is no longer visible'
+				e.description += f"[{action}]"
+			if before.mentionable != after.mentionable:
+				action = 'is now mentionable'
+				if not after.mentionable:
+					action = 'is no longer mentionable'
+				e.description += f"[{action}]"
+
+			if before.position != after.position:
+				before_roles = before.guild.roles
+				before_roles.pop(after.position)
+				before_roles.insert(before.position, before)
+
+				if guild_id not in self.role_pos_cd:
+					self.role_pos_cd[guild_id] = 0
+				if self.role_pos_cd[guild_id] < time() - 2:
+					self.role_pos_cd[guild_id] = time()
+
+					before_above = before_roles[before.position+1].mention
+					before_below = before_roles[before.position-1].mention
+					after_above = after.guild.roles[after.position+1].mention
+					after_below = after.guild.roles[after.position-1].mention
+
+					e.add_field(
+						name='◈ Position Changed',
+						value=f"**》Before** - {before.position}"
+						      f"\n{before_above}"
+						      f"\n{before.mention}"
+						      f"\n{before_below}"
+						      f"\n\n**》After** - {after.position}"
+						      f"\n{after_above}"
+						      f"\n{after.mention}"
+						      f"\n{after_below}",
+						inline=False
+					)
+			if before.permissions != after.permissions:
+				changes = ''
+				for i, (perm, value) in enumerate(iter(before.permissions)):
+					if value != after.permissions[i][1]:
+						changes += f"\n• {perm} {'allowed' if value else 'unallowed'}"
+				e.add_field(name='◈ Permissions Changed', value=changes, inline=False)
+			if e.fields:
+				if path:
+					self.queue[guild_id].append([(e, path), 'updates'])
+				else:
+					self.queue[guild_id].append([e, 'updates'])
 
 	@commands.Cog.listener()
 	async def on_guild_integrations_update(self, guild):
