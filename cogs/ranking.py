@@ -62,8 +62,12 @@ class Ranking(commands.Cog):
 
 	def _global(self, Global) -> dict:
 		""" Returns data for each global leaderboard """
-		with open(path.join('xp','global', Global) + '.json', 'r') as f:
-			return json.load(f)
+		try:
+			with open(path.join('xp', 'global', Global) + '.json', 'r') as f:
+				return json.load(f)
+		except json.JSONDecodeError:
+			with open(path.join('xp', 'global', 'backup', Global + '.json'), 'r') as f:
+				return json.load(f)
 
 	def save_config(self):
 		""" Saves per-server configuration """
@@ -177,12 +181,22 @@ class Ranking(commands.Cog):
 
 				self.backup_counter += 1
 				if self.backup_counter > 25:
+					# per-guild backup
 					if not path.exists(path.join(guild_path, 'backup')):
 						os.mkdir(path.join(guild_path, 'backup'))
 					for filename in os.listdir(guild_path):
 						if '.' in filename:
 							with open(path.join(guild_path, filename), 'r') as rf:
 								with open(path.join(guild_path, 'backup', filename), 'w') as wf:
+									wf.write(rf.read())
+					# global backup
+					backup_path = path.join('xp', 'global', 'backup')
+					if not path.exists(backup_path):
+						os.mkdir(backup_path)
+					for filename in os.listdir(path.join('xp', 'global')):
+						if '.' in filename:
+							with open(path.join('xp', 'global', filename), 'r') as rf:
+								with open(path.join(backup_path, filename), 'w') as wf:
 									wf.write(rf.read())
 					self.backup_counter = 0
 
