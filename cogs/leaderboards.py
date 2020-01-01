@@ -692,6 +692,7 @@ class Leaderboards(commands.Cog):
 
 	@commands.command(name='leaderboards', aliases=['lbs'])
 	async def leaderboards(self, ctx):
+		return await ctx.send('This command is currently disabled, xp is still being collected')
 		result = await self.run_xp_cleanup()
 		e = discord.Embed(color=0x4A0E50)
 		e.set_author(name='Leaderboard')
