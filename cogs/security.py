@@ -157,6 +157,7 @@ class Security(commands.Cog):
 
 				},
 				'lock': {
+					'silence': False,
 					'mute': False,
 					'kick': False,
 					'ban': False
@@ -188,7 +189,7 @@ class Security(commands.Cog):
 			)
 			e.add_field(
 				name='◈ Bot',
-				value=f"__**Response Time:**__ {round(self.bot.latency * 1000)}ms",
+				value=f"__**API Response Time:**__ {round(self.bot.latency * 1000)}ms",
 				inline=False
 			)
 			conf = config['anti_spam']
@@ -199,6 +200,16 @@ class Security(commands.Cog):
 				      f"\n__**Mass Ping:**__ {emoji(conf['macro']['toggle'])}"
 				      f"\n__**Duplicates:**__ {emoji(conf['duplicates']['toggle'])}"
 				      f"\n__**Filter:**__ {emoji(any(conf['filter'][key] for key in conf['filter'].keys()))}",
+				inline=False
+			)
+			conf = config['anti_raid']
+			e.add_field(
+				name='◈ Anti Raid',
+				value=f"__**Mass Join:**__ {emoji(conf['mass_join']['toggle'])}"
+				      f"\n__**Mass Remove:**__ {emoji(conf['mass_remove']['toggle'])}"
+				      f"\n__**Obj to Invite:**__ {emoji(conf['object_to_invite']['toggle'])}"
+				      f"\n__**Perm Transfer:**__ {emoji(conf['perm_transfer']['toggle'])}"
+				      f"\n__**Lockdown:**__ {emoji(conf['lockdown']['toggle'])}",
 				inline=False
 			)
 			await ctx.send(embed=e)
