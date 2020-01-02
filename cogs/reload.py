@@ -48,7 +48,8 @@ class Reload(commands.Cog):
 			e.set_thumbnail(url="https://cdn.discordapp.com/attachments/501871950260469790/513637807680389121/lzbecdmvffggwmxconlk.png")
 			e.set_footer(text=f'{random.choice(["So sorry", "Apologies", "Sucks to be you", "Sorry"])} {random.choice(["dad", "master", "mike", "luck"])}')
 			for cog, error in unsuccessful:
-				e.add_field(name=f"Error - {cog}", value=str(error)[:1000])
+				for text_group in [str(error)[i:i + 990] for i in range(0, len(str(error)), 990)]:
+					e.add_field(name=f"Error - {cog}", value=f'```{discord.utils.escape_markdown(text_group)}```', inline=False)
 		await ctx.send(embed=e)
 
 	@commands.command(name='disable')
