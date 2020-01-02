@@ -1,58 +1,63 @@
-from discord.ext import commands
-from utils import checks, colors
-import discord
 import asyncio
 import random
+import traceback
+
+from discord.ext import commands
+import discord
+
+from utils import checks, colors
+
+
+def has_bot_owner_level_perms():
+	async def predicate(ctx):
+		authorized = checks.luck(ctx)
+		if not authorized:
+			await ctx.send("Sorry, this is an owner only command to load/unload/reload modules")
+			return False
+		return True
+	return commands.check(predicate)
 
 class Reload(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 
-	async def __error(self, ctx, error):
-		await ctx.send(error)
-
-	@commands.command(name="reload", aliases=["relaod"], hidden=True)
-	@commands.check(checks.luck)
-	async def _reload(self, ctx, *, module=""):
-		if not module:
-			for module in self.bot.extensions:
-				self.bot.unload_extension(module)
-				self.bot.load_extension(module)
-			e = discord.Embed(color=colors.fate())
-			e.set_author(name=f'| {ctx.author.name} | 🍪', icon_url=ctx.author.avatar_url)
-			e.set_thumbnail(url="https://cdn.discordapp.com/attachments/501871950260469790/513637799530856469/fzilwhwdxgubnoohgsas.png")
-			e.description = f"reloaded {len(self.bot.extensions)} modules"
-			await ctx.send(embed=e, delete_after=5)
-			await asyncio.sleep(0.5)
-			return await ctx.message.delete()
-		try:
+	@commands.command(name='reload', description='reloads a cog', hidden=True)
+	@has_bot_owner_level_perms()
+	async def reload(self, ctx, *modules: lambda x: x.lower()):
+		if not modules:
+			modules = self.bot.extensions
+		successful = []
+		unsuccessful = []
+		for module in modules:
 			try:
-				self.bot.unload_extension(f'cogs.{module}')
+				try:
+					self.bot.unload_extension(f'cogs.{module}')
+				except:
+					pass
+				self.bot.load_extension(f'cogs.{module}')
+				successful.append(module)
 			except:
-				pass
-			self.bot.load_extension(f'cogs.{module}')
-		except Exception as e:
-			e = discord.Embed(color=colors.fate())
-			e.set_author(name=f'| {ctx.author.name} | {module} | ⚠', icon_url=ctx.author.avatar_url)
-			e.set_thumbnail(
-				url="https://cdn.discordapp.com/attachments/501871950260469790/513637807680389121/lzbecdmvffggwmxconlk.png")
-			e.description = f'{random.choice(["So sorry", "Apologies", "Sucks to be you", "Sorry"])} {random.choice(["dad", "master", "mike", "luck"])}'
-			await ctx.send(embed=e, delete_after=5)
-			await asyncio.sleep(0.5)
-			await ctx.message.delete()
-		else:
-			e = discord.Embed(color=colors.fate())
-			e.set_author(name=f'| {ctx.author.name} | 🍪', icon_url=ctx.author.avatar_url)
-			e.set_thumbnail(url="https://cdn.discordapp.com/attachments/501871950260469790/513637799530856469/fzilwhwdxgubnoohgsas.png")
-			e.description = f'Reloaded {module}'
-			await ctx.send(embed=e, delete_after=5)
-			await asyncio.sleep(0.5)
-			await ctx.message.delete()
+				unsuccessful.append([module, traceback.format_exc()])
+		e = discord.Embed(color=colors.fate())
+		e.set_author(name=f'| {ctx.author.name} | 🍪', icon_url=ctx.author.avatar_url)
+		e.set_thumbnail(url="https://cdn.discordapp.com/attachments/501871950260469790/513637799530856469/fzilwhwdxgubnoohgsas.png")
+		e.description = ''
+		if successful:
+			e.description += f"Reloaded {len(successful)} cogs" if len(successful) > 1 else f"Reloaded {successful[0]}"
+		if unsuccessful:
+			e.set_thumbnail(url="https://cdn.discordapp.com/attachments/501871950260469790/513637807680389121/lzbecdmvffggwmxconlk.png")
+			e.set_footer(text=f'{random.choice(["So sorry", "Apologies", "Sucks to be you", "Sorry"])} {random.choice(["dad", "master", "mike", "luck"])}')
+			for cog, error in unsuccessful:
+				e.add_field(name=f"Error - {cog}", value=str(error)[:1000])
+		await ctx.send(embed=e)
 
-	@commands.command(name="unload")
-	@commands.check(checks.luck)
+	@commands.command(name='disable')
+	@has_bot_owner_level_perms()
 	async def _disable(self, ctx, *, module : str):
-		self.bot.unload_extension("cogs." + module)
+		try:
+			self.bot.unload_extension("cogs." + module)
+		except:
+			return await ctx.send("That module isn't loaded")
 		e = discord.Embed(color=colors.fate())
 		e.set_author(name=f'| {ctx.author.name} | 🍪', icon_url=ctx.author.avatar_url)
 		e.set_thumbnail(url="https://cdn.discordapp.com/attachments/501871950260469790/513637799530856469/fzilwhwdxgubnoohgsas.png")
