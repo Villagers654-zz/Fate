@@ -89,10 +89,10 @@ class Core(commands.Cog):
 		""" Enables a disabled command """
 		await ctx.send('e')
 
-	@commands.command(name='disable')
-	@commands.cooldown(2, 5, commands.BucketType.user)
-	async def disable(self, ctx, *command):
-		""" Disables an enabled command """
+#	@commands.command(name='disable')
+#	@commands.cooldown(2, 5, commands.BucketType.user)
+#	async def disable(self, ctx, *command):
+#		""" Disables an enabled command """
 
 	@commands.command(name='disabled')
 	@commands.cooldown(1, 5, commands.BucketType.channel)
