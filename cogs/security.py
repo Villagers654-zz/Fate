@@ -188,36 +188,33 @@ class Security(commands.Cog):
 				      f"\n{p}**security module** - `info on a security module`",
 				inline=False
 			)
-			#e.add_field(
-			#	name='◈ Bot',
-			#	value=f"__**API Response Time:**__ {round(self.bot.latency * 1000)}ms"
-			#)
 			conf = config['anti_spam']
 			e.add_field(
 				name='◈ Anti Spam',
-				value=f"{emoji(conf['rate_limit']['toggle'])} __**Rate Limit**__"
-				      f"\n{emoji(conf['macro']['toggle'])} __**Anti Macro**__"
-				      f"\n{emoji(conf['macro']['toggle'])} __**Mass Ping**__"
-				      f"\n{emoji(conf['duplicates']['toggle'])} __**Duplicates**__"
-				      f"\n{emoji(any(conf['filter'][key] for key in conf['filter'].keys()))} __**Filter**__"
+				value=f"{emoji(conf['rate_limit']['toggle'])} **Rate Limit**"
+				      f"\n{emoji(conf['macro']['toggle'])} **Anti Macro**"
+				      f"\n{emoji(conf['macro']['toggle'])} **Mass Ping**"
+				      f"\n{emoji(conf['duplicates']['toggle'])} **Duplicates**"
+				      f"\n{emoji(any(conf['filter'][key] for key in conf['filter'].keys()))} **Filter**"
 			)
 			conf = config['anti_raid']
 			e.add_field(
 				name='◈ Anti Raid',
-				value=f"{emoji(conf['mass_join']['toggle'])} __**Mass Join**__ "
-				      f"\n{emoji(conf['mass_remove']['toggle'])} __**Mass Remove**__"
-				      f"\n{emoji(conf['object_to_inv'])} __**Obj to Invite**__"
-				      f"\n{emoji(conf['perm_transfer'])} __**Perm Transfer**__"
-				      f"\n{emoji(conf['lockdown']['toggle'])} __**Lockdown**__"
+				value=f"{emoji(conf['mass_join']['toggle'])} **Mass Join**"
+				      f"\n{emoji(conf['mass_remove']['toggle'])} **Mass Remove**"
+				      f"\n{emoji(conf['object_to_inv'])} **Obj to Invite**"
+				      f"\n{emoji(conf['perm_transfer'])} **Perm Transfer**"
+				      f"\n{emoji(conf['lockdown']['toggle'])} **Lockdown**"
 			)
 			conf = config['lock']
 			e.add_field(
 				name='◈ Lock',
-				value=f"{emoji(conf['silence'])} __**Silence**__"
-				      f"\n{emoji(conf['mute'])} __**Mute**__"
-				      f"\n{emoji(conf['kick'])} __**Kick**__"
-				      f"\n{emoji(conf['ban'])} __**Ban**__"
+				value=f"{emoji(conf['silence'])} **Silence**"
+				      f"\n{emoji(conf['mute'])} **Mute**"
+				      f"\n{emoji(conf['kick'])} **Kick**"
+				      f"\n{emoji(conf['ban'])} **Ban**"
 			)
+			e.set_footer(text=f"API Response Time: {round(self.bot.latency * 1000)}ms")
 			await ctx.send(embed=e)
 
 	@security.command(name='overview')
