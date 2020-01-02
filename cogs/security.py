@@ -194,28 +194,28 @@ class Security(commands.Cog):
 			conf = config['anti_spam']
 			e.add_field(
 				name='◈ Anti Spam',
-				value=f"__**Rate Limit:**__ {emoji(conf['rate_limit']['toggle'])}"
-				      f"\n__**Anti Macro:**__ {emoji(conf['macro']['toggle'])}"
-				      f"\n__**Mass Ping:**__ {emoji(conf['macro']['toggle'])}"
-				      f"\n__**Duplicates:**__ {emoji(conf['duplicates']['toggle'])}"
-				      f"\n__**Filter:**__ {emoji(any(conf['filter'][key] for key in conf['filter'].keys()))}"
+				value=f"{emoji(conf['rate_limit']['toggle'])} __**Rate Limit**__"
+				      f"\n{emoji(conf['macro']['toggle'])} __**Anti Macro**__"
+				      f"\n{emoji(conf['macro']['toggle'])} __**Mass Ping**__"
+				      f"\n{emoji(conf['duplicates']['toggle'])} __**Duplicates**__"
+				      f"\n{emoji(any(conf['filter'][key] for key in conf['filter'].keys()))} __**Filter**__"
 			)
 			conf = config['anti_raid']
 			e.add_field(
 				name='◈ Anti Raid',
-				value=f"__**Mass Join:**__ {emoji(conf['mass_join']['toggle'])}"
-				      f"\n__**Mass Remove:**__ {emoji(conf['mass_remove']['toggle'])}"
-				      f"\n__**Obj to Invite:**__ {emoji(conf['object_to_inv'])}"
-				      f"\n__**Perm Transfer:**__ {emoji(conf['perm_transfer'])}"
-				      f"\n__**Lockdown:**__ {emoji(conf['lockdown']['toggle'])}"
+				value=f"{emoji(conf['mass_join']['toggle'])} __**Mass Join**__ "
+				      f"\n{emoji(conf['mass_remove']['toggle'])} __**Mass Remove**__"
+				      f"\n{emoji(conf['object_to_inv'])} __**Obj to Invite**__"
+				      f"\n{emoji(conf['perm_transfer'])} __**Perm Transfer**__"
+				      f"\n{emoji(conf['lockdown']['toggle'])} __**Lockdown**__"
 			)
 			conf = config['lock']
 			e.add_field(
 				name='◈ Lock',
-				value=f"__**Silence:**__ {emoji(conf['silence'])}"
-				      f"\n__**Mute:**__ {emoji(conf['mute'])}"
-				      f"\n__**Kick:**__ {emoji(conf['kick'])}"
-				      f"\n__**Ban:**__ {emoji(conf['ban'])}"
+				value=f"{emoji(conf['silence'])} __**Silence**__"
+				      f"\n{emoji(conf['mute'])} __**Mute**__"
+				      f"\n{emoji(conf['kick'])} __**Kick**__"
+				      f"\n{emoji(conf['ban'])} __**Ban**__"
 			)
 			await ctx.send(embed=e)
 
