@@ -588,6 +588,24 @@ class Mod(commands.Cog):
 			finally:
 				del self.purge[channel_id]
 			return
+		if option == 'reaction' or option == 'reactions':
+			if amount > 250:
+				return await ctx.send("You cannot purge more than 250 reactions at a time")
+			try:
+				position = 0
+				async for msg in ctx.channel.history(limit=500):
+					if msg.reactions:
+						await msg.clear_reactions()
+						position += 1
+						if position == amount:
+							break
+				await ctx.send(f"{ctx.author.mention}, purged {position} reactions", delete_after=5)
+				return await ctx.message.delete()
+			except Exception as e:
+				await ctx.send(e)
+			finally:
+				del self.purge[channel_id]
+			return
 		phrase = args[0]
 		amount = int(args[1])
 		if amount > 250:
