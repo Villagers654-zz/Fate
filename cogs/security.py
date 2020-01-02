@@ -55,6 +55,7 @@ from utils import colors, utils
 
 
 def emoji(Type):
+	""" returns a status emoji depending on the type """
 	if isinstance(Type, bool):
 		if Type:
 			return '<:status_online:659976003334045727>'
@@ -79,7 +80,7 @@ class Security(commands.Cog):
 		self.conf = {}
 
 	def save_data(self):
-		return  # don't wanna save during testing
+		return  # don't wanna save during testing uwu
 		with open(self.path, 'w+') as f:
 			json.dump(self.conf, f)
 
