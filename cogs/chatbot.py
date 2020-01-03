@@ -1,11 +1,14 @@
-from discord.ext import commands
-from utils import checks, colors
+
 from os.path import isfile
-import discord
-import asyncio
-import random
-import time
 import json
+import asyncio
+import time
+import random
+
+from discord.ext import commands
+import discord
+
+from utils import checks, colors
 
 class ChatBot(commands.Cog):
 	def __init__(self, bot):
