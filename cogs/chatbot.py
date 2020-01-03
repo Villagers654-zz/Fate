@@ -204,10 +204,11 @@ class ChatBot(commands.Cog):
 				return
 
 			content = list(str(msg.content).lower())
-			abcs = 'abcdefghijklmnopqrstuvwxyz '
-			if not content[0] in abcs or content[0] in abcs and content[1] not in abcs or (
-					len(msg.content.split()) == 2 and content[3] == ' '):
-				return  # probably a bot command
+			if len(content) >= 4:
+				abcs = 'abcdefghijklmnopqrstuvwxyz '
+				if not content[0] in abcs or content[0] in abcs and content[1] not in abcs or (
+						len(msg.content.split()) == 2 and content[3] == ' '):
+					return  # probably a bot command
 
 			if guild_id not in self.cd:
 				self.cd[guild_id] = 0
@@ -248,7 +249,11 @@ class ChatBot(commands.Cog):
 						new_prob.append(0)
 
 				if any(x == 1 for x in new_prob) or any(x in choice for x in blacklist):
-					choices = ['👀', 'welp.', "well this isn't healthy", 'm..', 'Seems I have a dirty mind']
+					choices = [
+						'👀', 'welp.', "well this isn't healthy", 'm..', 'Seems I have a dirty mind',
+						'ok..', '🤡', 'wtf', '*sips much needed coffee*', '*butters the floor*',
+						'no u', 'well this sucks', "forget this shit, I'm going back to bot rehab"
+					]
 					return await msg.channel.send(random.choice(choices))
 
 				await msg.channel.send(choice)
