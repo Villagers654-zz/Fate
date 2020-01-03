@@ -7,6 +7,7 @@ import random
 
 from discord.ext import commands
 import discord
+from profanity_check import predict_prob
 
 from utils import checks, colors
 
@@ -184,7 +185,9 @@ class ChatBot(commands.Cog):
 			cache = self.cache["global"]
 			if self.dir[guild_id] == "guilded":
 				cache = self.cache[guild_id]
-			return [m for m in cache if key in m and m != msg.content]
+			return [
+				m for m in cache if key in m and m != msg.content and '@' not in m
+			]
 
 		if isinstance(msg.guild, discord.Guild) and not msg.author.bot and msg.content:
 			guild_id = str(msg.guild.id)
@@ -233,8 +236,22 @@ class ChatBot(commands.Cog):
 			choice = choice.replace('Fate', name).replace('fate', name)
 
 			async with msg.channel.typing():
+				blacklist = ['rape']
+				prob = predict_prob(choice.split('\n'))
+				new_prob = []
+				for i in prob:
+					if i >= 0.2:
+						new_prob.append(1)
+					elif i < 0.2:
+						new_prob.append(0)
+
+				if any(x == 1 for x in new_prob) or any(x in choice for x in blacklist):
+					choices = ['👀', 'welp.', "well this isn't healthy", 'm..', 'Seems I have a dirty mind']
+					return await msg.channel.send(random.choice(choices))
+
 				await asyncio.sleep(1)
 				await msg.channel.send(choice)
 
 def setup(bot):
 	bot.add_cog(ChatBot(bot))
+
