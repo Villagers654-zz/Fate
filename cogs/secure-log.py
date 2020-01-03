@@ -1059,5 +1059,22 @@ class SecureLog(commands.Cog):
 
 			self.queue[guild_id].append([e, 'misc'])
 
+	@commands.Cog.listener()
+	async def on_member_join(self, member):
+		guild_id = str(member.guild.id)
+		if guild_id in self.config:
+			if member.bot:
+				dat = await self.search_audit(member.guild, audit.bot_add)
+				e = discord.Embed(color=light_gray())
+				e.set_author(name='~==🍸Bot Added🍸==~', icon_url=dat['icon_url'])
+				e.set_thumbnail(url=dat['thumbnail_url'])
+				inv = f'https://discordapp.com/oauth2/authorize?client_id={member.id}&permissions=0&scope=bot'
+				e.description = f"__**Name:**__ {member.name}" \
+				                f"\n__**Mention:**__ {member.mention}" \
+				                f"\n__**ID:**__ {member.id}" \
+				                f"\n__**Bot Invite:**__ [here]({inv})" \
+				                f"\n__**Invited By:**__ {dat['user']}"
+				self.queue[guild_id].append([e, 'system+'])
+
 def setup(bot):
 	bot.add_cog(SecureLog(bot))
