@@ -56,14 +56,13 @@ from utils import colors, utils
 
 def emoji(Type):
 	""" returns a status emoji depending on the type """
-	if isinstance(Type, bool):
+	if isinstance(Type, bool) or Type == None:
 		if Type:
 			return '<:status_online:659976003334045727>'
 		else:
 			return '<:status_offline:659976011651219462>'
 	if isinstance(Type, str):
-		if any(sensitivity in Type.lower()
-	        for sensitivity in ['high', 'medium', 'low']):
+		if any(sensitivity in Type.lower() for sensitivity in ['high', 'medium', 'low']):
 			if Type == 'high':
 				return '<:status_dnd:596576774364856321>'
 			if Type == 'medium':
@@ -72,6 +71,8 @@ def emoji(Type):
 				return '<:status_online:659976003334045727>'
 		else:
 			return 'wtf m8 im unprepared ;-;'
+	else:
+		return 'wtf m8 im unprepared ;-;'
 
 class Security(commands.Cog):
 	def __init__(self, bot):
@@ -89,14 +90,14 @@ class Security(commands.Cog):
 				'anti_spam': {
 					'ignored': [],
 					'rate_limit': {
-						'toggle': False,
+						'toggle': True,
 						'message_limit': 3,
 						'timeframe': 5
 					},
 					'macro': {
-						'toggle': False,
+						'toggle': True,
 						'max_time_difference': 1,
-						'last_x_messages': 3
+						'check_last_msgs': 3
 					},
 					'mass_ping': {
 						'toggle': False,
@@ -105,21 +106,21 @@ class Security(commands.Cog):
 						'limit': 3
 					},
 					'duplicates': {
-						'toggle': False,
+						'toggle': True,
 						'repeated_lines': 3,
 						'repeated_messages': 3,
 						'timeframe': 15
 					},
 					'filter': {
-						'invites': False,
+						'invites': True,
 						'zaglo': False,
-						'caps': False,
+						'caps': True,
 						'max_lines': None,
 						'emoji_limit': None,
-						'custom_emoji_limit': None,
+						'custom_emoji_limit': True,
 						'attachment_limit': None,
 						'link_limit': None,
-						'custom': []
+						'custom': ['uwu']
 					}
 				},
 				'anti_raid': {
@@ -220,7 +221,36 @@ class Security(commands.Cog):
 	@security.command(name='overview')
 	async def _overview(self, ctx):
 		""" More complex and detailed overview """
+		guild_id = str(ctx.guild.id)
+		self.init(guild_id)
 
+		e = discord.Embed(color=colors.purple())
+		e.set_author(name='Detailed Security Overview', icon_url=ctx.guild.owner.avatar_url)
+		e.set_thumbnail(url=self.bot.user.avatar_url)
+
+		for key, value in self.conf[guild_id]['anti_spam'].items():
+			if not isinstance(value, dict):
+				channels = '\n'.join([f'{self.bot.get_channel(c).mention}' for c in value])
+				if channels:
+					e.add_field(
+						name=f'◈ Ignored {len(value)}',
+						value=channels if channels else f'{emoji(False)} None'
+					)
+				continue
+			stuffs = []
+			for k, v in value.items():
+				is_toggle = isinstance(v, bool) or v == None
+				if is_toggle:
+					stuff = f"{emoji(v)} {k.replace('_', '-')}"
+				else:
+					stuff = f"{k.replace('_', '-')}**:** {v}"
+				stuffs.append(stuff)
+			e.add_field(
+				name=f'◈ {key.replace("_", " ")}',
+				value='\n'.join(stuffs),
+				inline=False
+			)
+		await ctx.send(embed=e)
 
 # events / listeners:
 
