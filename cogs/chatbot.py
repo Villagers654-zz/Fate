@@ -180,34 +180,32 @@ class ChatBot(commands.Cog):
 			"""Returns a list of related messages"""
 			cache = self.cache["global"]
 			if self.dir[guild_id] == "guilded":
-				if guild_id not in self.cache:
-					self.cache[guild_id] = []
 				cache = self.cache[guild_id]
 			return [m for m in cache if key in m and m != msg.content]
 
-		if '.starthell' in msg.content:
-			self.hell = msg.channel.id
-		if '.stophell' in msg.content:
-			self.hell = False
-		if msg.channel.id == self.hell and msg.author.id != self.bot.user.id:
-			guild_id = str(msg.guild.id)
-
-			async with msg.channel.typing():
-				choice = None
-				index = 0
-				while not choice:
-					if index == 50:
-						return
-					key = random.choice(msg.content.split(' '))
-					matches = get_matches(key)
-					if len(matches) > 0:
-						choice = random.choice(matches)
-					index += 1
-				name = msg.author.mention
-				choice = choice.replace('Fate', name).replace('fate', name)
-
-				await asyncio.sleep(1)
-				return await msg.channel.send(choice)
+		#if '.starthell' in msg.content:
+		#	self.hell = msg.channel.id
+		#if '.stophell' in msg.content:
+		#	self.hell = False
+		#if msg.channel.id == self.hell and msg.author.id != self.bot.user.id:
+		#	guild_id = str(msg.guild.id)
+#
+		#	async with msg.channel.typing():
+		#		choice = None
+		#		index = 0
+		#		while not choice:
+		#			if index == 50:
+		#				return
+		#			key = random.choice(msg.content.split(' '))
+		#			matches = get_matches(key)
+		#			if len(matches) > 0:
+		#				choice = random.choice(matches)
+		#			index += 1
+		#		name = msg.author.mention
+		#		choice = choice.replace('Fate', name).replace('fate', name)
+#
+		#		await asyncio.sleep(1)
+		#		return await msg.channel.send(choice)
 
 		if isinstance(msg.guild, discord.Guild) and not msg.author.bot and msg.content:
 			guild_id = str(msg.guild.id)
@@ -235,20 +233,27 @@ class ChatBot(commands.Cog):
 				return
 			self.cd[guild_id] = time.time() + 2
 
-			async with msg.channel.typing():
-				choice = None
-				index = 0
-				while not choice:
-					if index == 10:
-						return
-					key = random.choice(msg.content.split(' '))
-					matches = get_matches(key)
-					if len(matches) > 0:
-						choice = random.choice(matches)
-					index += 1
-				name = msg.author.mention
-				choice = choice.replace('Fate', name).replace('fate', name)
+			msg = await msg.channel.fetch_message(msg.id)  # get the original content
+			if guild_id not in self.cache:
+				self.cache[guild_id] = []
+			self.cache[guild_id].append(msg.content)
+			self.cache['global'].append(msg.content)
+			self.save_data()
 
+			choice = None
+			index = 0
+			while not choice:
+				if index == 10:
+					return
+				key = random.choice(msg.content.split(' '))
+				matches = get_matches(key)
+				if len(matches) > 0:
+					choice = random.choice(matches)
+				index += 1
+			name = msg.author.mention
+			choice = choice.replace('Fate', name).replace('fate', name)
+
+			async with msg.channel.typing():
 				await asyncio.sleep(1)
 				await msg.channel.send(choice)
 
