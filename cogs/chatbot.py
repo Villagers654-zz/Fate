@@ -236,6 +236,8 @@ class ChatBot(commands.Cog):
 			choice = choice.replace('Fate', name).replace('fate', name)
 
 			async with msg.channel.typing():
+				await asyncio.sleep(1)
+
 				blacklist = ['rape']
 				prob = predict_prob(choice.split('\n'))
 				new_prob = []
@@ -249,7 +251,6 @@ class ChatBot(commands.Cog):
 					choices = ['👀', 'welp.', "well this isn't healthy", 'm..', 'Seems I have a dirty mind']
 					return await msg.channel.send(random.choice(choices))
 
-				await asyncio.sleep(1)
 				await msg.channel.send(choice)
 
 def setup(bot):
