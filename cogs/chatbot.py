@@ -183,30 +183,6 @@ class ChatBot(commands.Cog):
 				cache = self.cache[guild_id]
 			return [m for m in cache if key in m and m != msg.content]
 
-		#if '.starthell' in msg.content:
-		#	self.hell = msg.channel.id
-		#if '.stophell' in msg.content:
-		#	self.hell = False
-		#if msg.channel.id == self.hell and msg.author.id != self.bot.user.id:
-		#	guild_id = str(msg.guild.id)
-#
-		#	async with msg.channel.typing():
-		#		choice = None
-		#		index = 0
-		#		while not choice:
-		#			if index == 50:
-		#				return
-		#			key = random.choice(msg.content.split(' '))
-		#			matches = get_matches(key)
-		#			if len(matches) > 0:
-		#				choice = random.choice(matches)
-		#			index += 1
-		#		name = msg.author.mention
-		#		choice = choice.replace('Fate', name).replace('fate', name)
-#
-		#		await asyncio.sleep(1)
-		#		return await msg.channel.send(choice)
-
 		if isinstance(msg.guild, discord.Guild) and not msg.author.bot and msg.content:
 			guild_id = str(msg.guild.id)
 
@@ -256,59 +232,6 @@ class ChatBot(commands.Cog):
 			async with msg.channel.typing():
 				await asyncio.sleep(1)
 				await msg.channel.send(choice)
-
-
-	async def on_message_old(self, msg: discord.Message):
-		"""Tries to respond with related message"""
-		if isinstance(msg.guild, discord.Guild) and not msg.author.bot:
-			guild_id = str(msg.guild.id); blocked = self.blocked
-			def get_matches(key) -> list:
-				"""Returns a list of related messages"""
-				cache = self.cache["global"]
-				if self.dir[guild_id] == "guilded":
-					if guild_id not in self.cache:
-						self.cache[guild_id] = []
-					cache = self.cache[guild_id]
-				return [m for m in cache if key in m and m != msg.content and len([x for x in blocked if x in m]) == 0]
-			if not all(phrase for phrase in blocked if phrase not in msg.content): return
-			if guild_id not in self.toggle: return
-			if msg.channel.id != self.toggle[guild_id]: return
-			if guild_id not in self.cd: self.cd[guild_id] = 0
-			if self.cd[guild_id] > time.time(): return
-			self.cd[guild_id] = time.time() + 2
-			try: await self.bot.wait_for('message', check=lambda x: x.author.bot, timeout=2)
-			except asyncio.TimeoutError: pass
-			else: self.cd[guild_id] = time.time(); return
-			async with msg.channel.typing():
-				if guild_id not in self.cache:
-					self.cache[guild_id] = []
-				cache = self.cache[guild_id]
-				bot_mention = str(self.bot.user.mention)
-				if not msg.content.startswith(bot_mention):
-					for mention in msg.mentions:
-						msg.content = msg.content.replace(str(mention), bot_mention)
-					for mention in msg.role_mentions:
-						msg.content = msg.content.replace(str(mention), bot_mention)
-					if msg.content not in cache:
-						self.cache[guild_id].append(msg.content)
-						self.cache["global"].append(msg.content)
-						self.save_data()
-					choice = None; index = 0
-					while not choice:  # runs a max of 10 times with a different key to get a match
-						if index == 10: return
-						keys = msg.content.split(' '); key = random.choice(keys)
-						matches = get_matches(key)
-						if len(matches) > 0:
-							choice = random.choice(matches)
-						index += 1
-					name = msg.author.mention; choice = choice.lower()
-					choice = choice.replace(bot_mention, name).replace('fate', name)
-					for mention in msg.role_mentions:
-						choice = choice.replace(str(mention), str(mention.name))
-					for mention in msg.channel_mentions:
-						channel = random.choice(list(msg.guild.text_channels))
-						choice = choice.replace(str(mention), channel.mention)
-					await msg.channel.send(choice)
 
 def setup(bot):
 	bot.add_cog(ChatBot(bot))
