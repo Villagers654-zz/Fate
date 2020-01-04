@@ -243,7 +243,10 @@ class Security(commands.Cog):
 				if is_toggle:
 					stuff = f"{emoji(v)} {k.replace('_', '-')}"
 				else:
-					stuff = f"{emoji(True)} {k.replace('_', '-')}**:** {v}"
+					if key == 'filter':
+						stuff = f"{emoji('medium')} {k.replace('_', '-')}**:** {v}"
+					else:
+						stuff = f"{k.replace('_', '-')}**:** {v}"
 				stuffs.append(stuff)
 			e.add_field(
 				name=f'◈ {key.replace("_", " ")}',
