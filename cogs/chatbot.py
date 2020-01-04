@@ -228,19 +228,12 @@ class ChatBot(commands.Cog):
 			while not choice:
 				if index == 10:
 					return
-				key = random.choice(msg.content.split(' '))
-				matches = get_matches(key)
-				if len(matches) > 0:
-					choice = random.choice(matches)
-				index += 1
-			name = msg.author.mention
-			choice = choice.replace('Fate', name).replace('fate', name)
-
-			async with msg.channel.typing():
-				await asyncio.sleep(1)
 
 				blacklist = ['rape']
-				prob = predict_prob(choice.split('\n'))
+				key = random.choice(msg.content.split())
+				matches = get_matches(key)
+
+				prob = predict_prob(matches)
 				new_prob = []
 				for i in prob:
 					if i >= 0.2:
@@ -248,14 +241,24 @@ class ChatBot(commands.Cog):
 					elif i < 0.2:
 						new_prob.append(0)
 
-				if any(x == 1 for x in new_prob) or any(x in choice for x in blacklist):
-					choices = [
-						'👀', 'welp.', "well this isn't healthy", 'm..', 'Seems I have a dirty mind',
-						'ok..', '🤡', 'wtf', '*sips much needed coffee*', '*butters the floor*',
-						'no u', 'well this sucks', "forget this shit, I'm going back to bot rehab"
-					]
-					return await msg.channel.send(random.choice(choices))
+				matches = [
+					match for i, match in enumerate(matches) if new_prob[i] == 0 and (
+						not any(phrase in str(match).lower() for phrase in blacklist))
+				]
+				if not matches and len(msg.content.split()) == 1:
+					return
+				if len(matches) > 0:
+					choice = random.choice(matches)
+				index += 1
 
+			name = msg.author.mention
+			choice = choice.replace('Fate', name).replace('fate', name)
+
+			async with msg.channel.typing():
+				timer = 0
+				for char in list(choice):
+					timer += 0.2
+				await asyncio.sleep(timer)
 				await msg.channel.send(choice)
 
 def setup(bot):
