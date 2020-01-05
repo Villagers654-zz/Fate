@@ -280,7 +280,7 @@ class Security(commands.Cog):
 		value += f"\n{emoji(conf['macro']['toggle'])} **Macro Detection**" \
 		         f"\n》Safe Time Difference: {conf['macro']['max_time_difference']}+ secs" \
 		         f"\n》Last X Msgs to Check: {conf['macro']['check_last_msgs']}" \
-		         f"\n{emoji(conf['mass_ping']['toggle'])} Mass Pings" \
+		         f"\n{emoji(conf['mass_ping']['toggle'])} **Mass Pings**" \
 		         f"\n》Max User Pings Per Msg: {conf['mass_ping']['per_msg_user_limit']}" \
 		         f"\n》Max Role Pings Per Msg: {conf['mass_ping']['per_msg_role_limit']}" \
 		         f"\n》Max User Pings Mer Min: {conf['mass_ping']['user_pings_per_min']}" \
@@ -289,7 +289,6 @@ class Security(commands.Cog):
 			name='◈ Anti Spam',
 			value=value
 		)
-
 		await ctx.send(embed=e)
 
 # events / listeners:
