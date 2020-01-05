@@ -98,13 +98,18 @@ class Polis(commands.Cog):
 		channel = self.bot.get_channel(470963498914938880)
 		msg = await channel.fetch_message(521271462754254849)
 		e = discord.Embed(color=0x40E0D0)  # cyan
+		e.set_thumbnail(url=channel.guild.icon_url)
 		emoji = random.choice(self.emojis)
 		self.emoji = emoji
-		e.add_field(
-			name='🌹🥂🍸🍷Verification🍷🍸🥂🌹',
-			value=f"React with {emoji} to get access to the server. If you fail you'll be kicked, and the emoji changes every time after you react."
+		verified = [
+			m for m in channel.guild.members if 612384935159922699 in [r.id for r in m.roles]
+		]
+		e.set_author(
+			name=f'{len(verified)} of {channel.guild.member_count} Members Verified',
+			icon_url=self.bot.get_emoji(585566210067005500).url
 		)
-		e.set_thumbnail(url=channel.guild.icon_url)
+		e.description = f"React with {emoji} to get access to the server. If you fail you'll be kicked, " \
+		                f"and the emoji changes every time after you react."
 		with open('./data/misc/rules.txt', 'r') as f:
 			content = f.read()
 		content = content.replace(':status_online:', str(self.bot.get_emoji(659976003334045727)))
