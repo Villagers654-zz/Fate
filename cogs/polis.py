@@ -78,6 +78,10 @@ class Polis(commands.Cog):
 				612384935159922699
 			]
 		}
+		self.emojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣']
+		self.emoji = random.choice(self.emojis)
+		if self.bot.is_ready():
+			bot.loop.create_task(self.update_rules())
 
 	async def showcase_slider(self):
 		""" embeded partnership slideshow """
@@ -90,6 +94,25 @@ class Polis(commands.Cog):
 				await asyncio.sleep(self.slideshow_interval)
 			await asyncio.sleep(1)
 
+	async def update_rules(self):
+		channel = self.bot.get_channel(470963498914938880)
+		msg = await channel.fetch_message(521271462754254849)
+		e = discord.Embed(color=0x40E0D0)  # cyan
+		emoji = random.choice(self.emojis)
+		self.emoji = emoji
+		e.add_field(
+			name='🌹🥂🍸🍷Verification🍷🍸🥂🌹',
+			value=f"React with {emoji} to get access to the server. If you fail you'll be kicked, and the emoji changes every time after you react."
+		)
+		e.set_thumbnail(url=channel.guild.icon_url)
+		with open('./data/misc/rules.txt', 'r') as f:
+			content = f.read()
+		content = content.replace(':status_online:', str(self.bot.get_emoji(659976003334045727)))
+		content = content.replace(':status_idle:', str(self.bot.get_emoji(659976006030983206)))
+		content = content.replace(':status_dnd:', str(self.bot.get_emoji(659976008627388438)))
+		content = content.replace(':status_offline:', str(self.bot.get_emoji(659976011651219462)))
+		return await msg.edit(content=content, embed=e)
+
 	@commands.command(name='start-slider')
 	@commands.check(checks.luck)
 	async def start_slider(self, ctx):
@@ -98,9 +121,39 @@ class Polis(commands.Cog):
 		await asyncio.sleep(3)
 		await ctx.message.delete()
 
+	@commands.command(name='update-readme')
+	async def update_readme(self, ctx):
+		await self.update_rules()
+		await ctx.message.add_reaction('👍')
+
 	@commands.Cog.listener()
 	async def on_ready(self):
 		self.bot.loop.create_task(self.showcase_slider())
+		self.bot.loop.create_task(self.update_rules())
+
+	@commands.Cog.listener()
+	async def on_raw_reaction_add(self, payload):
+		if payload.message_id == 521271462754254849:
+			channel = self.bot.get_channel(payload.channel_id)
+			msg = await channel.fetch_message(payload.message_id)
+			member = channel.guild.get_member(payload.user_id)
+			role = channel.guild.get_role(612384935159922699)
+			if str(payload.emoji) not in self.emojis:
+				await msg.remove_reaction(payload.emoji, member)
+				return await self.update_rules()
+			if str(payload.emoji) != self.emoji:
+				await msg.remove_reaction(payload.emoji, member)
+				if role not in member.roles:
+					await self.update_rules()
+					try:
+						return await member.kick(reason='Failed Human Verification')
+					except:
+						pass
+				return
+			if role not in member.roles:
+				await member.add_roles(role)
+			await msg.remove_reaction(payload.emoji, member)
+			await self.update_rules()
 
 	@commands.Cog.listener()
 	async def on_guild_role_delete(self, role):

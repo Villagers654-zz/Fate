@@ -29,7 +29,7 @@ class Readme(commands.Cog):
 			'■ Depending on the severity of ones actions lower grade crimes don\'t have to be punished in strict order and can receive repeated mutes with extended time.\n' \
 			'■ Amount of time between each offense is taken into notice\n'
 			'■ Warnings are just warnings, whether or not you receive a warning or mute is entirely up to the mod unless told otherwise by a higher position\n'
-			'■ Some bot commands can be ignored if they contribute to the chat in a certain manner, for instance, reaction commands are allowed depending on the channel, or if you\'re that special little someone that pushes the rules, no spammy bot commands\n'
+			'■ Some bot commands can be ignored if they contribute to the chat in a certain manner. For instance; reaction commands are allowed depending on the channel, or if you\'re that special little someone that pushes the rules, no spammy bot commands\n'
 			'■ Things outside of the rules can be deemed punishment worthy', inline=False)
 		e.add_field(name="~==🌹🥂🍸🍷Global Rules🍷🍸🥂🌹==~", value='■ This server abides by discords TOS, therefore breaking the TOS counts as an offense\n'
 		    '■ No pinging @everyone, use the proper notification role instead\n'
@@ -86,38 +86,26 @@ class Readme(commands.Cog):
 
 	@_update.command(name='polis')
 	async def _polis(self, ctx):
-		try:
-			channel = self.bot.get_channel(470963498914938880)
-			msg = await channel.fetch_message(521271462754254849)
-			e = discord.Embed(color=0x40E0D0)
-			e.set_author(name='💎 Polis - Lucks Hangout 💎')
-			e.description = '■ **Lesbian pornagraphic pokemon hangout**'
-			e.add_field(name="-~===🌹🥂🍸🍷Links🍷🍸🥂🌹===~-", value="■ [Discord Invite](http://discord.gg/BQ23Z2E) | [Bot Invite](https://discordapp.com/oauth2/authorize?client_id=506735111543193601&permissions=1551232246&scope=bot)", inline=False)
-			e.add_field(name="-~===🌹🥂🍸🍷Rules🍷🍸🥂🌹===~-", value='■ Channel topics contain most rules\n'
-				'■ First offense results in mute (warning some cases)\n'
-				'■ Second offense results in a kick\n'
-				'■ Third offense results in ban\n'
-				'■ Depending on the severity of ones actions lower grade crimes don\'t have to be punished in strict order and can receive repeated mutes with extended time.\n' \
-				'■ Amount of time between each offense is taken into notice\n'
-				'■ Warnings are just warnings, whether or not you receive a warning or mute is entirely up to the mod unless told otherwise by a higher position\n'
-				'■ Some bot commands can be ignored if they contribute to the chat in a certain manner, for instance, reaction commands are allowed depending on the channel, or if you\'re that special little someone that pushes the rules, no spammy bot commands\n'
-				'■ Things outside of the rules can be deemed punishment worthy', inline=False)
-			e.add_field(name="~==🌹🥂🍸🍷Global Rules🍷🍸🥂🌹==~", value='■ This server abides by discords TOS, therefore breaking the TOS counts as an offense\n'
-				'■ No pinging @everyone, use the proper notification role instead\n'
-				'■ Leaving to avoid mute results in a higher grade punishment of our choice\n'
-				'■ No doxxing (limited to this discord)\n'
-				'■ No gifs / videos with flashing lights that may trigger epilepsy\n'
-				'■ Be respectful with handling the music bots, (no earrape, no skipping to annoy people, and no skipping inconsideratly)\n'
-				'■ No spamming or sending spammy message\n'
-				'■ Only ping roles if you have an appropriate question/problem related to the role\n'
-				'■ No useless / annoying pings\n'
-				'■ No pestering staff\n'
-				'■ No using your status to advertise', inline=False)
-			e.set_thumbnail(url=channel.guild.icon_url)
-			await msg.edit(embed=e)
-			await ctx.message.add_reaction('👍')
-		except Exception as e:
-			await ctx.send(f'update failed```{e}```')
+		channel = self.bot.get_channel(470963498914938880)
+		msg = await channel.fetch_message(521271462754254849)
+		e = discord.Embed(color=0x40E0D0)  # cyan
+		e.set_author(name='💎 Polis - Lucks Hangout 💎')
+		e.description = '■ **Lesbian pornagraphic pokemon hangout**'
+		e.add_field(
+			name="-~===🌹🥂🍸🍷Links🍷🍸🥂🌹===~-",
+			value="■ [Discord Invite](http://discord.gg/BQ23Z2E) | [Bot Invite]"
+			      "(https://discordapp.com/oauth2/authorize?client_id=506735111543193601&permissions=1551232246&scope=bot)",
+			inline=False
+		)
+		e.set_thumbnail(url=channel.guild.icon_url)
+		with open('./data/misc/rules.txt', 'r') as f:
+			content = f.read()
+		content = content.replace(':status_online:', str(self.bot.get_emoji(659976003334045727)))
+		content = content.replace(':status_idle:', str(self.bot.get_emoji(659976006030983206)))
+		content = content.replace(':status_dnd:', str(self.bot.get_emoji(659976008627388438)))
+		content = content.replace(':status_offline:', str(self.bot.get_emoji(659976011651219462)))
+		await msg.edit(content=content, embed=e)
+		await ctx.message.add_reaction('👍')
 
 	@_update.command(name='esr')
 	async def _esr(self, ctx):
