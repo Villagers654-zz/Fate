@@ -7,9 +7,9 @@ import random
 from io import BytesIO
 import json
 import os
-import time
 import platform
 import requests
+import re
 
 import discord
 from PIL import Image
@@ -408,25 +408,39 @@ class Utility(commands.Cog):
 		await role.edit(color=hex)
 		await ctx.send(f'Changed {role.name}\'s color from {previous_color} to {hex}')
 
-	@commands.command(name="timer", pass_context=True, aliases=['reminder', 'alarm'])
-	async def _timer(self, ctx, time, *, remember: commands.clean_content = ""):
-		if "d" in time:
-			t = int(time.replace("d", "")) * 60 * 60 * 24
-		if "h" in time:
-			t = int(time.replace("h", "")) * 60 * 60
-		if "m" in time:
-			t = int(time.replace("m", "")) * 60
-		r = time.replace("m", " minutes").replace("1 minutes", "1 minute")
-		r = r.replace("h", " hours").replace("1 hours", "1 hour")
-		r = r.replace("d", " days").replace("1 days", "1 day")
-		if not remember:
-			await ctx.send(f"{ctx.author.name}, you have set a timer for {r}")
-			await asyncio.sleep(float(t))
-			await ctx.send(f"{ctx.author.name}, your timer for {r} has expired!")
-		else:
-			await ctx.send(f"{ctx.message.author.mention}, I will remind you about `{remember}` in {r}")
-			await asyncio.sleep(float(t))
-			await ctx.send(f"{ctx.message.author.mention}, your timer for {r} has expired! I was instructed to remind you about `{remember}`!")
+	@commands.command(name='reminder', aliases=['timer', 'remindme'])
+	@commands.cooldown(2, 5, commands.BucketType.user)
+	async def timer(self, ctx, *args):
+		p = utils.get_prefix(ctx)
+		usage = f">>> Usage: `{p}reminder [30s|5m|1h|2d]`" \
+		        f"Example: `{p}reminder 1h take out da trash`"
+		timers = []
+		for timer in [re.findall('[0-9]+[smhd]', arg) for arg in args]:
+			timers = [*timers, *timer]
+		args = [arg for arg in args if not any(timer in arg for timer in timers)]
+		if not timers:
+			return await ctx.send(usage)
+		time_to_sleep = [0, []]
+		for timer in timers:
+			raw = ''.join(x for x in list(timer) if x.isdigit())
+			if 'd' in timer:
+				time = int(timer.replace('d', '')) * 60 * 60 * 24
+				repr = 'day'
+			elif 'h' in timer:
+				time = int(timer.replace('h', '')) * 60 * 60
+				repr = 'hour'
+			elif 'm' in timer:
+				time = int(timer.replace('m', '')) * 60
+				repr = 'minute'
+			else:  # 's' in timer
+				time = int(timer.replace('s', ''))
+				repr = 'second'
+			time_to_sleep[0] += time
+			time_to_sleep[1].append(f"{raw} {repr if raw == '1' else repr + 's'}")
+		timer, expanded_timer = time_to_sleep
+		await ctx.send(f"I'll remind you about {' '.join(args)} in {', '.join(expanded_timer)}")
+		await asyncio.sleep(timer)
+		await ctx.send(f"{ctx.author.mention} remember dat thing: {' '.join(args)}")
 
 	@commands.command(name='findmsg')
 	@commands.cooldown(1, 5, commands.BucketType.channel)
