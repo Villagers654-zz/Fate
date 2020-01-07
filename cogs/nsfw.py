@@ -13,7 +13,7 @@ class NSFW(commands.Cog):
 
 	def get(self, filename):
 		with open(f"./data/images/urls/{filename}", "r") as f:
-			return choice(f.readlines())
+			return choice([c for c in f.readlines() if c])
 
 	@commands.command(name='dan', aliases=['danbooru'])
 	@commands.cooldown(1, 3, commands.BucketType.user)
