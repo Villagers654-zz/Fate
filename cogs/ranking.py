@@ -477,6 +477,7 @@ class Ranking(commands.Cog):
 		if guild_id in config['prefix']:
 			prefix = config['prefix'][guild_id]
 		target = ctx.message.content.split()[0]
+		cut_length = len(target) - len(prefix)
 		aliases = [
 			('lb', 'leaderboard'),
 			('mlb', 'mleaderboard'),
@@ -488,9 +489,8 @@ class Ranking(commands.Cog):
 			('ggvclb', 'ggvcleaderboard')
 		]
 		for cmd, alias in aliases:
-			if target == alias:
+			if target[-cut_length:] == alias:
 				target = cmd
-		cut_length = len(target) - len(prefix)
 		embed = eval(f'{target[-cut_length:]}()')
 		msg = await ctx.send(embed=embed)
 		await msg.add_reaction('🚀')
