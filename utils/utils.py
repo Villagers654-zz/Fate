@@ -4,6 +4,12 @@ import discord
 import asyncio
 import time
 
+from discord.ext import commands
+
+
+def default_cooldown():
+	return [2, 5, commands.BucketType.user]
+
 def bytes2human(n):
 	symbols = ('KB', 'MB', 'GB', 'TB', 'PB', 'E', 'Z', 'Y')
 	prefix = {}
