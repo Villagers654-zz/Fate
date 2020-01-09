@@ -3,6 +3,7 @@ A multipurpose discord bot
 ## Getting Started
 ### Installing
 Prerequisites
+- @EPFFORCE#1337
 ```py
 pip install -r requirements.txt
 ```
