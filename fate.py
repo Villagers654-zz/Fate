@@ -35,8 +35,6 @@ def get_config():
 		return json.load(config)
 
 def get_prefix(bot, msg):
-	if msg.author.id == conf.owner_id():
-		return commands.when_mentioned_or('.')(bot, msg)
 	config = get_config()  # type: dict
 	if 'blocked' in config:
 		if msg.author.id in config['blocked']:
@@ -48,6 +46,12 @@ def get_prefix(bot, msg):
 		if msg.channel.id in config['restricted'][guild_id]['channels'] and (
 				not msg.author.guild_permissions.administrator):
 			return 'lsimhbiwfefmtalol'
+	if 'personal_prefix' not in config:
+		print('Doesnt exist '+random.randint(1, 5))
+		config['personal_prefix'] = {}
+	user_id = str(msg.author.id)
+	if user_id in config['personal_prefix']:
+		return commands.when_mentioned_or(config['personal_prefix'][user_id])(bot, msg)
 	if 'prefix' not in config:
 		config['prefix'] = {}
 	prefixes = config['prefix']
@@ -59,23 +63,28 @@ def total_seconds(now, before):
 	total_seconds = str((now - before).total_seconds())
 	return total_seconds[:total_seconds.find('.') + 2]
 
-initial_extensions = ['error_handler', 'config', 'menus', 'core', 'music', 'mod', 'welcome', 'farewell', 'notes', 'archive', 'coffeeshop', 'custom',
-    'actions', 'reactions', 'responses', 'textart', 'fun', 'dev', '4b4t', 'readme', 'reload', 'embeds', 'polis', 'mha', 'apis', 'chatbridges',
-	'clean_rythm', 'utility', 'psutil', 'rules', 'duel_chat', 'selfroles', 'lock', 'audit', 'cookies', 'backup', 'stats', 'server_list',
-    'emojis', 'logger', 'autorole', 'changelog', 'restore_roles', 'chatbot', 'anti_spam', 'anti_raid', 'chatfilter', 'nsfw', 'minecraft',
-    'chatlock', 'rainbow', 'system', 'user', 'limiter', 'dm_channel', 'factions', 'secure_overwrites', 'server_setup', 'secure-log', 'ranking']
+initial_extensions = [
+	'error_handler', 'config', 'menus', 'core', 'music', 'mod', 'welcome', 'farewell', 'notes', 'archive', 'coffeeshop',
+	'custom', 'actions', 'reactions', 'responses', 'textart', 'fun', 'dev', '4b4t', 'readme', 'reload', 'embeds',
+	'polis', 'mha', 'apis', 'chatbridges', 'clean_rythm', 'utility', 'psutil', 'rules', 'duel_chat', 'selfroles',
+	'lock', 'audit', 'cookies', 'backup', 'stats', 'server_list', 'emojis', 'logger', 'autorole', 'changelog',
+	'restore_roles', 'chatbot', 'anti_spam', 'anti_raid', 'chatfilter', 'nsfw', 'minecraft', 'chatlock', 'rainbow',
+	'system', 'user', 'limiter', 'dm_channel', 'factions', 'secure_overwrites', 'server_setup', 'secure-log', 'ranking'
+]
 
-bot = commands.Bot(command_prefix=get_prefix, case_insensitive=True, max_messages=16000)
+bot = commands.AutoShardedBot(command_prefix=get_prefix, case_insensitive=True, max_messages=16000)
 bot.remove_command('help')
 bot.files = initial_extensions
 bot.get_stats = get_stats()
 bot.get_config = get_config()
-bot.voice_calls = []
 login_errors = []
 
 async def status_task():
 	while True:
-		motds = ['FBI OPEN UP', 'YEET to DELETE', 'Pole-Man', '♡Juice wrld♡', 'Mad cuz Bad', 'Quest for Cake', 'Gone Sexual', '@EPFFORCE#1337 wuz here']
+		motds = [
+			'FBI OPEN UP', 'YEET to DELETE', 'Pole-Man', '♡Juice wrld♡', 'Mad cuz Bad', 'Quest for Cake', 'Gone Sexual',
+			'@EPFFORCE#1337 wuz here'
+		]
 		stages = ['Serendipity', 'Euphoria', 'Singularity', 'Epiphany']
 		for i in range(len(stages)):
 			try:
@@ -137,6 +146,10 @@ async def on_ready():
 			await channel.send(f'```{str(error)[:1990]}```')
 
 @bot.event
+async def on_shard_ready(shard_id):
+	print(f'Shard Loaded: {shard_id}')
+
+@bot.event
 async def on_disconnect():
 	print('NOTICE: Disconnected from discord')
 
@@ -147,7 +160,7 @@ async def on_message(msg):
 	await bot.process_commands(msg)
 
 @bot.event
-async def on_guild_join(guild: discord.Guild):
+async def on_guild_join(guild):
 	channel = bot.get_channel(conf.server("log"))
 	e = discord.Embed(color=colors.pink())
 	e.set_author(name="Bot Added to Guild", icon_url=bot.user.avatar_url)
