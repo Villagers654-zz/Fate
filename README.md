@@ -1,2 +1,2 @@
-# Fate
+# Fate - Best Shota Bot
 owo
