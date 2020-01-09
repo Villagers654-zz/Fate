@@ -7,6 +7,55 @@ import random
 import json
 import os
 
+
+def welcome_help():
+	e = discord.Embed(color=colors.tan())
+	e.description = 'Run `.leave` for a list of sub commands'
+	e.add_field(
+		name='.welcome config',
+		value='This basically shows you your current configuration/settings for welcome messages',
+		inline=False
+	)
+	e.add_field(
+		name='.welcome test',
+		value='Send a fake leave message to test your current configuration',
+		inline=False
+	)
+	e.add_field(
+		name='.welcome setchannel',
+		value='Sets the welcome msg channel to the channel you use it in\n'
+		      'You can also use `.welcome setchannel #channel_mention` to set it elsewhere',
+		inline=False
+	)
+	e.add_field(
+		name='.welcome toggleimages',
+		value="Toggles the use of images. If you haven't added any custom ones with `.welcome addimages` "
+		      "then I'll use my own set of images until you add some",
+	)
+	e.add_field(
+		name='.welcome addimages',
+		value="Attach files while using this command to add them, or use the command, send the files, "
+		      "and reply with 'done' whence youve sent them all\nIf you have images added I won't use my own",
+		inline=False
+	)
+	e.add_field(
+		name='.welcome delimages',
+		value="Purges your current set of images",
+		inline=False
+	)
+	e.add_field(
+		name='.welcome listimages',
+		value="Sends you a list of the images you currently have added",
+		inline=False
+	)
+	e.add_field(
+		name='.welcome format',
+		value='Set the format using `.welcome format your_new_format` or run the cmd and send it after',
+		inline=False
+	)
+	return e
+
+
 class Welcome(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
@@ -30,7 +79,7 @@ class Welcome(commands.Cog):
 			json.dump({"toggle": self.toggle, "channel": self.channel, "useimages": self.useimages, "images": self.images,
 			    "format": self.format}, f, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
 
-	@commands.group(name="welcome", description="Welcomes users when they join")
+	@commands.group(name="welcome", usage=welcome_help())
 	@commands.cooldown(1, 3, commands.BucketType.channel)
 	@commands.guild_only()
 	@commands.bot_has_permissions(embed_links=True)

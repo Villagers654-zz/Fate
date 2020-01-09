@@ -30,10 +30,10 @@ class Menus(commands.Cog):
 			await reply.delete()
 
 	@commands.command(name='help')
-	@commands.cooldown(1, 60, commands.BucketType.user)
+	@commands.cooldown(2, 10, commands.BucketType.user)
 	@commands.cooldown(1, 3, commands.BucketType.channel)
 	@commands.bot_has_permissions(embed_links=True, add_reactions=True, manage_messages=True)
-	async def help(self, ctx):
+	async def help(self, ctx, *, args=None):
 		async def wait_for_reaction()->list:
 			def check(reaction, user):
 				return user == ctx.author
@@ -198,6 +198,11 @@ class Menus(commands.Cog):
 			    '• **dc** - `disconnects from vc`\n' \
 			    '• **np** - `info on the current song`'
 			return e
+
+		if args:
+			for cmd in self.bot.commands:
+				if cmd.name.lower() == args.lower():
+					return await ctx.send(embed=cmd.usage)
 
 		msg = await ctx.send(embed=default())
 		emojis = ['🏡', '⏮', '⏪', '⏩', '⏭']
