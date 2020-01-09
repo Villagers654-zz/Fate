@@ -56,11 +56,6 @@ class Music(commands.Cog):
                     channel = self.bot.get_channel(before.channel.id)
                     if get_humans(channel) < 1:
                         player.queue.clear()
-                        if player.is_connected:
-                            await player.disconnect()
-                        if channel.guild.id in self.bot.voice_calls:
-                            index = self.bot.voice_calls.index(channel.guild.id)
-                            self.bot.voice_calls.pop(index)
 
     @commands.command(name="play")
     @commands.cooldown(1, 3, commands.BucketType.user)
@@ -529,7 +524,6 @@ class Music(commands.Cog):
                 return await ctx.message.delete()
             player.store('channel', ctx.channel.id)
             await player.connect(ctx.author.voice.channel.id)
-            self.bot.voice_calls.append(ctx.guild.id)
         else:
             if player.connected_channel.id != ctx.author.voice.channel.id:
                 await ctx.send('Join my voice channel!', delete_after=20)
