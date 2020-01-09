@@ -6,6 +6,7 @@ __pycache__/
 testing.py
 Backup.zip
 /data/*
+/static/*
 /cogs/dev.py
 /utils/livechat.py
 /utils/outh.py
