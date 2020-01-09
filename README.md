@@ -15,3 +15,4 @@ This project is licensed for private, confidential, and only authorized use - se
 ## Acknowledgments
 - [CortexPE - Python Teacher](https://github.com/CortexPE)
 - [Lavalink - For Music Support](https://github.com/Devoxin/Lavalink.py)
+- [2B2T Stats & Information](https://2b2t.dev/)
