@@ -274,13 +274,13 @@ class Security(commands.Cog):
 		for channel_id in conf['ignored']:
 			channel = self.bot.get_channel(channel_id)
 			value += f"\n• {channel.mention}"
-		value += f"\n{emoji(conf['rate_limit']['toggle'])} **Rate Limit**" \
+		value += f"\n\n{emoji(conf['rate_limit']['toggle'])} **Rate Limit**" \
 		         f"\n》Msg Limit: {conf['rate_limit']['message_limit']}" \
 		         f"\n》Within Timeframe Of: {conf['rate_limit']['timeframe']}"
-		value += f"\n{emoji(conf['macro']['toggle'])} **Macro Detection**" \
+		value += f"\n\n{emoji(conf['macro']['toggle'])} **Macro Detection**" \
 		         f"\n》Safe Time Difference: {conf['macro']['max_time_difference']}+ secs" \
 		         f"\n》Last X Msgs to Check: {conf['macro']['check_last_msgs']}" \
-		         f"\n{emoji(conf['mass_ping']['toggle'])} **Mass Pings**" \
+		         f"\n\n{emoji(conf['mass_ping']['toggle'])} **Mass Pings**" \
 		         f"\n》Max User Pings Per Msg: {conf['mass_ping']['per_msg_user_limit']}" \
 		         f"\n》Max Role Pings Per Msg: {conf['mass_ping']['per_msg_role_limit']}" \
 		         f"\n》Max User Pings Mer Min: {conf['mass_ping']['user_pings_per_min']}" \
