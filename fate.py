@@ -42,6 +42,8 @@ def get_prefix(bot, msg):
 	if not msg.guild:
 		return commands.when_mentioned_or(".")(bot, msg)
 	guild_id = str(msg.guild.id)
+	if 'restricted' not in config:
+		config['restricted'] = {}
 	if guild_id in config['restricted']:
 		if msg.channel.id in config['restricted'][guild_id]['channels'] and (
 				not msg.author.guild_permissions.administrator):
