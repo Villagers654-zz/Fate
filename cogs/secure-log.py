@@ -202,7 +202,8 @@ class SecureLog(commands.Cog):
 			async for entry in guild.audit_logs(limit=5):
 				if entry.created_at > self.past() and any(entry.action.name == action.name for action in actions):
 					dat['action'] = entry.action
-					dat['user'] = entry.user.mention
+					if entry.user:
+						dat['user'] = entry.user.mention
 					if entry.target and isinstance(entry.target, discord.Member):
 						dat['target'] = entry.target.mention
 						dat['icon_url'] = entry.target.avatar_url
