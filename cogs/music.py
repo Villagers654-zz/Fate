@@ -499,9 +499,6 @@ class Music(commands.Cog):
         player.queue.clear()
         await player.disconnect()
         await ctx.send('*⃣ | Disconnected.', delete_after=20)
-        if ctx.guild.id in self.bot.voice_calls:
-            index = self.bot.voice_calls.index(ctx.guild.id)
-            self.bot.voice_calls.pop(index)
         await asyncio.sleep(20)
         await ctx.message.delete()
 
