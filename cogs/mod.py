@@ -1079,7 +1079,7 @@ class Mod(commands.Cog):
 			if user_id in self.roles[guild_id]:
 				for role_id in self.roles[guild_id][user_id]:
 					role = ctx.guild.get_role(role_id)
-					if role not in user.roles:
+					if role and role not in user.roles:
 						await user.add_roles(role)
 						await asyncio.sleep(0.5)
 				del self.roles[guild_id][user_id]
@@ -1091,7 +1091,7 @@ class Mod(commands.Cog):
 				removed_roles = dat['roles']  # type: list
 				for role_id in removed_roles:
 					role = channel.guild.get_role(role_id)
-					if role not in user.roles:
+					if role and role not in user.roles:
 						await user.add_roles(channel.guild.get_role(role_id))
 						await asyncio.sleep(0.5)
 				del self.timers['mute'][guild_id][user_id]
