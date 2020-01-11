@@ -47,6 +47,10 @@ class AutoRole(commands.Cog):
 			e.description = ""
 			for role_id in self.roles[guild_id]:
 				role = ctx.guild.get_role(role_id)
+				if not role:
+					self.roles[guild_id].remove(role_id)
+					self.save_data()
+					continue
 				e.description += f"• {role.name}\n"
 			return await ctx.send(embed=e)
 		item = item.replace("@", "").lower()
@@ -85,10 +89,17 @@ class AutoRole(commands.Cog):
 		guild_id = str(m.guild.id)
 		if guild_id in self.roles:
 			for role_id in self.roles[guild_id]:
-				try: await m.add_roles(m.guild.get_role(role_id))
-				except Exception as e:
-					try: await m.guild.owner.send(f"**[AutoRole] Error adding role to user:**\n{e}")
-					except: pass
+				role = m.guild.get_role(role_id)
+				if not role:
+					self.roles[guild_id].remove(role_id)
+					self.save_data()
+					continue
+				if role.position >= m.guild.me.top_role.position:
+					try:
+						await m.guild.owner.send(f"**[AutoRole - {m.guild.name}] Error adding {role.name} to user. Its position is higher than mine")
+					except:
+						pass
+				await m.add_roles(role)
 
 	@commands.Cog.listener()
 	async def on_role_delete(self, role):
