@@ -16,7 +16,7 @@ pip install -r requirements.txt
 - Download  the LavaLink server from https://github.com/Devoxin/Lavalink.py
 - Configure the Lavalink server with the default config   
 If not be sure to adjust the connection settings in [`cogs/music.py`](https://github.com/FrequencyX4/Fate/blob/master/cogs/music.py)
->  Running
+###  Running
 ```py
 python fate.py
 ```
