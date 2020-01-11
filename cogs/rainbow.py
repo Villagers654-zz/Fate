@@ -112,19 +112,20 @@ class Rainbow(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, msg: discord.Message):
-        if msg.author.id in CONFIG and not self.cycling:
-            if msg.guild.id in CONFIG[msg.author.id]["GUILDS"].keys():
-                conf = CONFIG[msg.author.id]['GUILDS'][msg.guild.id]
-                if conf['TOGGLE']:
-                    self.bot.loop.create_task(
-                        self.cycle_colors(
-                            msg.guild.id,
-                            conf['ROLE'],
-                            conf['COLORS'],
-                            conf['CYCLE_DURATION'],
-                            conf['STOP_AFTER_N_SECONDS']
+        if isinstance(msg.guild, discord.Guild):
+            if msg.author.id in CONFIG and not self.cycling:
+                if msg.guild.id in CONFIG[msg.author.id]["GUILDS"].keys():
+                    conf = CONFIG[msg.author.id]['GUILDS'][msg.guild.id]
+                    if conf['TOGGLE']:
+                        self.bot.loop.create_task(
+                            self.cycle_colors(
+                                msg.guild.id,
+                                conf['ROLE'],
+                                conf['COLORS'],
+                                conf['CYCLE_DURATION'],
+                                conf['STOP_AFTER_N_SECONDS']
+                            )
                         )
-                    )
 
 def setup(bot):
     bot.add_cog(Rainbow(bot))
