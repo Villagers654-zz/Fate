@@ -4,21 +4,19 @@ A multipurpose discord bot
 ### Compatibility
 Python 3.6.7 or Higher
 ### Installing
-####Clone the Project
+> Clone the Project
 ```
 git clone https://github.com/FrequencyX4/Fate.git
 ```
-####Prerequisites
+> Prerequisites
 ```py
 pip install -r requirements.txt
 ```
-####Music
-- Download LavaLink Server
-> https://github.com/Devoxin/Lavalink.py
-- Configure Lavalink
-> You'll want to run the lavalink server with default config  
+> Music
+- Download LavaLink Server from https://github.com/Devoxin/Lavalink.py
+- Configure the Lavalink server with the default config   
 If not be sure to adjust the connection settings in [`cogs/music.py`](https://github.com/FrequencyX4/Fate/blob/master/cogs/music.py)
-### Running
+>  Running
 ```py
 python fate.py
 ```
