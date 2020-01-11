@@ -1,17 +1,10 @@
 from discord.ext import commands
 from random import random as rd
 from utils import colors, utils, outh
-from io import BytesIO
-import PIL
-from PIL import Image
-import wand, wand.color, wand.drawing
-import numpy as np
-import requests
 import discord
 import asyncio
 import random
 import base64
-import json
 import traceback
 import praw
 code = "```py\n{0}\n```"
@@ -161,8 +154,14 @@ class Fun(commands.Cog):
 				output += chr(ord(letter) + 119919)
 			elif letter == " ":
 				output += " "
-		await ctx.send(output)
+			else:
+				output += letter
+		webhook = await ctx.channel.create_webhook(name='Fancify')
+		async with aiohttp.ClientSession() as session:
+			webhook = Webhook.from_url(webhook.url, adapter=AsyncWebhookAdapter(session))
+			await webhook.send(output)
 		await ctx.message.delete()
+		await webhook.delete()
 
 	@commands.command(pass_context=True)
 	async def encode(self, ctx, encoder: int, *, message):
