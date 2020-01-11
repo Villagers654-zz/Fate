@@ -977,10 +977,16 @@ class Mod(commands.Cog):
 					return await ctx.send('No muted role found, and I\'m missing manage_channel permissions to set one up')
 				mute_role = await ctx.guild.create_role(name="Muted", color=discord.Color(colors.black()))
 				for channel in ctx.guild.text_channels:
-					await channel.set_permissions(mute_role, send_messages=False)
+					try:
+						await channel.set_permissions(mute_role, send_messages=False)
+					except:
+						await ctx.send(f"Couldn't modify mute role in {channel.mention}s overwrites")
 					await asyncio.sleep(0.5)
 				for channel in ctx.guild.voice_channels:
-					await channel.set_permissions(mute_role, speak=False)
+					try:
+						await channel.set_permissions(mute_role, speak=False)
+					except:
+						await ctx.send(f"Couldn't modify mute role in {channel.name}s overwrites")
 					await asyncio.sleep(0.5)
 			if mute_role in user.roles:
 				return await ctx.send(f'{user.display_name} is already muted')
