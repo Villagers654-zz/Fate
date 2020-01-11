@@ -8,7 +8,7 @@ import json
 import os
 
 
-async def leave_help():
+def leave_help():
 	e = discord.Embed(color=colors.tan())
 	e.description = 'Run `.leave` for a list of sub commands'
 	e.add_field(
