@@ -3,6 +3,7 @@ import discord
 import random
 import requests
 import json
+import os
 from utils import colors
 
 class Custom(commands.Cog):
@@ -143,6 +144,14 @@ class Custom(commands.Cog):
 			"the best piece of garbage faggot"
 		]
 		await ctx.send(random.choice(choices))
+
+	@commands.command(name='orange')
+	@commands.cooldown(2, 5, commands.BucketType.user)
+	@commands.cooldown(3, 5, commands.BucketType.channel)
+	@commands.bot_has_permissions(attach_files=True)
+	async def orange(self, ctx):
+		files = os.listdir('./data/images/custom/orange_emotes')
+		await ctx.send(file=discord.File(f'./data/images/custom/orange_emotes/{random.choice(files)}'))
 
 def setup(bot):
 	bot.add_cog(Custom(bot))
