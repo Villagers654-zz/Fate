@@ -1,13 +1,19 @@
-from discord.ext import commands
-from random import random as rd
-from utils import colors, utils, outh
-import discord
 import asyncio
 import random
 import base64
 import traceback
+import aiohttp
+from random import random as rd
 import praw
+
+from discord.ext import commands
+import discord
+from discord import Webhook, AsyncWebhookAdapter
+
+from utils import colors, utils, outh
+
 code = "```py\n{0}\n```"
+
 
 class Fun(commands.Cog):
 	def __init__(self, bot):
@@ -144,7 +150,9 @@ class Fun(commands.Cog):
 			self.dat[channel_id]['last'] = dat
 			self.dat[channel_id][user_id] = dat
 
-	@commands.command()
+	@commands.command(name='fancify')
+	@commands.cooldown(2, 3, commands.BucketType.channel)
+	@commands.cooldown(2, 5, commands.BucketType.user)
 	async def fancify(self, ctx, *, text: str):
 		output = ""
 		for letter in text:
@@ -156,12 +164,15 @@ class Fun(commands.Cog):
 				output += " "
 			else:
 				output += letter
-		webhook = await ctx.channel.create_webhook(name='Fancify')
-		async with aiohttp.ClientSession() as session:
-			webhook = Webhook.from_url(webhook.url, adapter=AsyncWebhookAdapter(session))
-			await webhook.send(output)
-		await ctx.message.delete()
-		await webhook.delete()
+		if isinstance(ctx.guild, discord.Guild) and ctx.channel.permissions_for(ctx.guild.me).manage_webhooks:
+			webhook = await ctx.channel.create_webhook(name='Fancify')
+			async with aiohttp.ClientSession() as session:
+				webhook = Webhook.from_url(webhook.url, adapter=AsyncWebhookAdapter(session))
+				await webhook.send(output, username=ctx.author.display_name, avatar_url=ctx.author.avatar_url)
+				await webhook.delete()
+			await ctx.message.delete()
+		else:
+			await ctx.send(output)
 
 	@commands.command(pass_context=True)
 	async def encode(self, ctx, encoder: int, *, message):
