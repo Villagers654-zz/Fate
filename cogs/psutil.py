@@ -29,7 +29,7 @@ class Psutil(commands.Cog):
 
 	@commands.command()
 	async def freq(self, ctx):
-		await ctx.send(p.bytes2human(psutil.cpu_freq()))
+		await ctx.send(bytes2human(psutil.cpu_freq()))
 
 	@commands.command()
 	async def pids(self, ctx):
@@ -39,13 +39,9 @@ class Psutil(commands.Cog):
 	async def temp(self, ctx):
 		await ctx.send(psutil.sensors_temperatures(fahrenheit=True))
 
-	@commands.command()
-	async def net(self, ctx):
-		await ctx.send(psutil.net_connections())
-
 	@commands.command(name='ram', aliases=['wam'])
 	async def ram(self, ctx):
-		await ctx.send(f'[{p.bytes2human(psutil.virtual_memory())}, {p.bytes2human(psutil.virtual_memory().total)}]')
+		await ctx.send(f'[{bytes2human(psutil.virtual_memory())}, {p.bytes2human(psutil.virtual_memory().total)}]')
 
 	@commands.command()
 	async def cpu(self, ctx):
