@@ -56,6 +56,7 @@ class ErrorHandler(commands.Cog):
 		traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
 		e = discord.Embed(color=colors.red())
 		e.description = f'[{err}](https://www.youtube.com/watch?v=t3otBjVZzT0)'
+		e.set_footer(text='This error has been logged, and will be fixed soon')
 		await ctx.send(embed=e)
 		p = subprocess.Popen("cat  /home/luck/.pm2/logs/fate-error.log", stdout=subprocess.PIPE, shell=True)
 		(output, err) = p.communicate()
