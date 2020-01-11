@@ -313,7 +313,7 @@ class AntiSpam(commands.Cog):
                     return m.channel.id == msg.channel.id and m.author.bot
                 try:
                     msg = await self.bot.wait_for('message', check=pred, timeout=2)
-                except TimeoutError:
+                except asyncio.TimeoutError:
                     data = [(m, m_time) for m, m_time in self.dupez[guild_id] if msg.content == m.content and [m, m_time] in data]
                     for m, m_time in data:
                         self.dupez[guild_id].pop(self.dupez[guild_id].index([m, m_time]))
