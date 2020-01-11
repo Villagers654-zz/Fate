@@ -347,7 +347,7 @@ class Welcome(commands.Cog):
 			except asyncio.TimeoutError:
 				await ctx.send("Timeout error")
 			else:
-				msg = await self.bot.fetch_message(msg.id)
+				msg = await ctx.channel.fetch_message(msg.id)
 				self.format[guild_id] = msg.content
 		await ctx.send("Set the welcome format 👍")
 		self.save_data()
