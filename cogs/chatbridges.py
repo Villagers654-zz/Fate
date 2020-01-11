@@ -203,8 +203,12 @@ class ChatBridge(commands.Cog):
 
 				async with aiohttp.ClientSession() as session:
 					webhook = Webhook.from_url(webhook_url, adapter=AsyncWebhookAdapter(session))
-					await webhook.send(msg.content, username=msg.author.display_name, avatar_url=msg.author.avatar_url,
-					                   files=files, embed=embed)
+					try:
+						await webhook.send(msg.content, username=msg.author.display_name,
+						                   avatar_url=msg.author.avatar_url, files=files, embed=embed)
+					except discord.errors.HTTPException:
+						await webhook.send(msg.content, username=msg.author.display_name,
+						                   avatar_url=msg.author.avatar_url, embed=embed)
 
 				for attachment in msg.attachments:
 					os.remove(os.path.join('static', attachment.filename))
