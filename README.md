@@ -1,7 +1,13 @@
 # Fate
 A multipurpose discord bot
 ## Getting Started
+### Compatibility
+Python 3.6.7 or Higher
 ### Installing
+Clone the Project
+```
+git clone https://github.com/FrequencyX4/Fate.git
+```
 Prerequisites
 ```py
 pip install -r requirements.txt
