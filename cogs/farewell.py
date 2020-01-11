@@ -79,7 +79,7 @@ class Leave(commands.Cog):
 			json.dump({"toggle": self.toggle, "channel": self.channel, "useimages": self.useimages, "images": self.images,
 			    "format": self.format}, f, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
 
-	@commands.group(name="leave", aliases=['farewell'], help=leave_help())
+	@commands.group(name="leave", aliases=['farewell'], usage=leave_help())
 	@commands.cooldown(1, 3, commands.BucketType.channel)
 	@commands.guild_only()
 	@commands.bot_has_permissions(embed_links=True)
