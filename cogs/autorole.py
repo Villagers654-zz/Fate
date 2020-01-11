@@ -52,6 +52,14 @@ class AutoRole(commands.Cog):
 		item = item.replace("@", "").lower()
 		if guild_id not in self.roles:
 			self.roles[guild_id] = []
+		for role in ctx.message.role_mentions:
+			if role.position > ctx.author.top_role.position:
+				return await ctx.send("That roles above your paygrade, take a seat")
+			if role.id in self.roles[guild_id]:
+				return await ctx.send("That roles already in use")
+			self.roles[guild_id].append(role.id)
+			self.save_data()
+			return await ctx.send(f"Added `{role.name}` to the list of auto roles")
 		for role in ctx.guild.roles:
 			if item == role.name.lower():
 				if role.position > ctx.author.top_role.position:
