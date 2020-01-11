@@ -8,6 +8,7 @@ import discord
 
 from utils import colors, config
 
+
 class ErrorHandler(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
