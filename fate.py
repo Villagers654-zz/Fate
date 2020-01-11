@@ -49,7 +49,6 @@ def get_prefix(bot, msg):
 				not msg.author.guild_permissions.administrator):
 			return 'lsimhbiwfefmtalol'
 	if 'personal_prefix' not in config:
-		print('Doesnt exist '+random.randint(1, 5))
 		config['personal_prefix'] = {}
 	user_id = str(msg.author.id)
 	if user_id in config['personal_prefix']:
