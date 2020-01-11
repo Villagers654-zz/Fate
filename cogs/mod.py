@@ -787,6 +787,8 @@ class Mod(commands.Cog):
 			return await ctx.send('That user is above your paygrade, take a seat')
 		if user.top_role.position >= ctx.guild.me.top_role.position:
 			return await ctx.send('I can\'t edit that users nick ;-;')
+		if len(nick) > 32:
+			return await ctx.send('That nickname is too long! Must be `32` or fewer in length')
 		await user.edit(nick=nick)
 		await ctx.message.add_reaction('👍')
 
