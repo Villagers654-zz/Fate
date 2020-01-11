@@ -150,7 +150,7 @@ class Fun(commands.Cog):
 			self.dat[channel_id]['last'] = dat
 			self.dat[channel_id][user_id] = dat
 
-	@commands.command(name='fancify')
+	@commands.command(name='fancify', aliases=['cursive'])
 	@commands.cooldown(2, 3, commands.BucketType.channel)
 	@commands.cooldown(2, 5, commands.BucketType.user)
 	async def fancify(self, ctx, *, text: str):
