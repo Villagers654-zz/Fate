@@ -204,14 +204,15 @@ class SecureLog(commands.Cog):
 					dat['action'] = entry.action
 					if entry.user:
 						dat['user'] = entry.user.mention
+						dat['thumbnail_url'] = entry.user.avatar_url
 					if entry.target and isinstance(entry.target, discord.Member):
 						dat['target'] = entry.target.mention
 						dat['icon_url'] = entry.target.avatar_url
 					elif entry.target:
 						dat['target'] = entry.target
 					else:
-						dat['icon_url'] = entry.user.avatar_url
-					dat['thumbnail_url'] = entry.user.avatar_url
+						if entry.user:
+							dat['icon_url'] = entry.user.avatar_url
 					dat['reason'] = entry.reason
 					dat['extra'] = entry.extra
 					dat['changes'] = entry.changes
