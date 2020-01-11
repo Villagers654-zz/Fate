@@ -437,54 +437,55 @@ class SecureLog(commands.Cog):
 
 	@commands.Cog.listener()
 	async def on_message_delete(self, msg):
-		guild_id = str(msg.guild.id)
-		if guild_id in self.config:
-			if self.config[guild_id]['secure']:
-				if msg.embeds and msg.channel.id == self.config[guild_id]['channel'] or (
-						msg.channel.id in self.config[guild_id]['channels'].values()):
+		if isinstance(msg.guild, discord.Guild):
+			guild_id = str(msg.guild.id)
+			if guild_id in self.config:
+				if self.config[guild_id]['secure']:
+					if msg.embeds and msg.channel.id == self.config[guild_id]['channel'] or (
+							msg.channel.id in self.config[guild_id]['channels'].values()):
 
-					await msg.channel.send("OwO what's this", embed=msg.embeds[0])
-					if msg.attachments:
-						files = []
-						for attachment in msg.attachments:
-							path = os.path.join('static', attachment.filename)
-							file = requests.get(attachment.proxy_url).content
-							with open(path, 'wb') as f:
-								f.write(file)
-							files.append(path)
-						self.queue[guild_id].append([(msg.embeds[0], files), 'sudo'])
-					else:
-						self.queue[guild_id].append([msg.embeds[0], 'sudo'])
+						await msg.channel.send("OwO what's this", embed=msg.embeds[0])
+						if msg.attachments:
+							files = []
+							for attachment in msg.attachments:
+								path = os.path.join('static', attachment.filename)
+								file = requests.get(attachment.proxy_url).content
+								with open(path, 'wb') as f:
+									f.write(file)
+								files.append(path)
+							self.queue[guild_id].append([(msg.embeds[0], files), 'sudo'])
+						else:
+							self.queue[guild_id].append([msg.embeds[0], 'sudo'])
 
-					return
+						return
 
-			if msg.author.id == self.bot.user.id and 'your cooldowns up' in msg.content:
-				return  # is from work notifs within the factions module
+				if msg.author.id == self.bot.user.id and 'your cooldowns up' in msg.content:
+					return  # is from work notifs within the factions module
 
-			e = discord.Embed(color=purple())
-			e.set_author(name='~==🍸Msg Deleted🍸==~', icon_url=msg.author.avatar_url)
-			dat = await self.search_audit(msg.guild, audit.message_delete)
-			e.set_thumbnail(url=dat['thumbnail_url'])
-			e.description = f"__**Author:**__ {msg.author.mention}" \
-			                f"\n__**Channel:**__ {msg.channel.mention}" \
-			                f"\n__**Deleted by:**__ {dat['user']}"
-			for text_group in self.split_into_groups(msg.content):
-				e.add_field(name='◈ MSG Content', value=text_group, inline=False)
-			if msg.embeds:
-				e.set_footer(text='⇓ Embed ⇓')
-			if msg.attachments:
-				files = []
-				for attachment in msg.attachments:
-					path = os.path.join('static', attachment.filename)
-					file = requests.get(attachment.proxy_url).content
-					with open(path, 'wb') as f:
-						f.write(file)
-					files.append(path)
-				self.queue[guild_id].append([(e, files), 'chat'])
-			else:
-				self.queue[guild_id].append([e, 'chat'])
-			if msg.embeds:
-				self.queue[guild_id].append([msg.embeds[0], 'chat'])
+				e = discord.Embed(color=purple())
+				e.set_author(name='~==🍸Msg Deleted🍸==~', icon_url=msg.author.avatar_url)
+				dat = await self.search_audit(msg.guild, audit.message_delete)
+				e.set_thumbnail(url=dat['thumbnail_url'])
+				e.description = f"__**Author:**__ {msg.author.mention}" \
+				                f"\n__**Channel:**__ {msg.channel.mention}" \
+				                f"\n__**Deleted by:**__ {dat['user']}"
+				for text_group in self.split_into_groups(msg.content):
+					e.add_field(name='◈ MSG Content', value=text_group, inline=False)
+				if msg.embeds:
+					e.set_footer(text='⇓ Embed ⇓')
+				if msg.attachments:
+					files = []
+					for attachment in msg.attachments:
+						path = os.path.join('static', attachment.filename)
+						file = requests.get(attachment.proxy_url).content
+						with open(path, 'wb') as f:
+							f.write(file)
+						files.append(path)
+					self.queue[guild_id].append([(e, files), 'chat'])
+				else:
+					self.queue[guild_id].append([e, 'chat'])
+				if msg.embeds:
+					self.queue[guild_id].append([msg.embeds[0], 'chat'])
 
 	@commands.Cog.listener()
 	async def on_raw_message_delete(self, payload):
