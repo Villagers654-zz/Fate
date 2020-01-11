@@ -83,7 +83,7 @@ class Core(commands.Cog):
 			json.dump(config, f, ensure_ascii=False)
 		await ctx.send(f"Changed the servers prefix to `{prefix}`")
 
-	@commands.command(name='personal-prefix')
+	@commands.command(name='personal-prefix', aliases=['pp'])
 	@commands.cooldown(*utils.default_cooldown())
 	async def personal_prefix(self, ctx, *, prefix):
 		user_id = str(ctx.author.id)
