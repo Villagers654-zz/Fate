@@ -1,10 +1,12 @@
-from discord.ext import commands
-from utils import colors
 from time import time
 import subprocess
 import traceback
-import discord
 import sys
+
+from discord.ext import commands
+import discord
+
+from utils import colors, config
 
 class ErrorHandler(commands.Cog):
 	def __init__(self, bot):
@@ -75,6 +77,12 @@ class ErrorHandler(commands.Cog):
 					return
 		message = await channel.send(embed=e)
 		await message.add_reaction("✔")
+		if ctx.author.id == config.owner_id():
+			e = discord.Embed(color=colors.fate())
+			e.set_author(name=f"Here's the full traceback:", icon_url=ctx.author.avatar_url)
+			e.set_thumbnail(url=self.bot.user.avatar_url)
+			e.description = r
+			await ctx.send(embed=e)
 
 	@commands.Cog.listener()
 	async def on_raw_reaction_add(self, data):
