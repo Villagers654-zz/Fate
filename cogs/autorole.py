@@ -99,7 +99,8 @@ class AutoRole(commands.Cog):
 						await m.guild.owner.send(f"**[AutoRole - {m.guild.name}] Error adding {role.name} to user. Its position is higher than mine")
 					except:
 						pass
-				await m.add_roles(role)
+				else:
+					await m.add_roles(role)
 
 	@commands.Cog.listener()
 	async def on_role_delete(self, role):
