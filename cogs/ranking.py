@@ -420,8 +420,6 @@ class Ranking(commands.Cog):
 
 			if emoji == emojis[1]:
 				index -= 1; sub_index = 0
-				if isinstance(embeds[index], list):
-					sub_index = 0
 
 			if emoji == emojis[2]:
 				if isinstance(embeds[index], list):
@@ -461,8 +459,6 @@ class Ranking(commands.Cog):
 			if emoji == emojis[4]:
 				index += 1; sub_index = 0
 				index = index_check(index)
-				if isinstance(embeds[index], list):
-					sub_index = 0
 
 			if index > len(embeds) - 1:
 				index = len(embeds) - 1
