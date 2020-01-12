@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from discord.ext import commands
 import discord
 
-from utils import colors
+from utils import colors, utils
 
 
 class Ranking(commands.Cog):
@@ -32,6 +32,7 @@ class Ranking(commands.Cog):
 
 		self.msg = self._global('msg')
 		self.monthly_msg = self._global('monthly_msg')
+		self.vc = self._global('vc')
 		self.gvclb = self._global('vc')
 
 		self.guilds = {}
@@ -81,7 +82,8 @@ class Ranking(commands.Cog):
 			"max_xp_per_msg": 1,
 			"base_level_xp_req": 100,
 			"timeframe": 10,
-			"msgs_within_timeframe": 1
+			"msgs_within_timeframe": 1,
+			"base_lvl_req": 250
 		}
 
 	def init(self, guild_id: str):
@@ -287,10 +289,194 @@ class Ranking(commands.Cog):
 			if after.channel is not None:
 				await run(after.channel)
 
+	@commands.command(name='leaderboard', aliases=['lb'])
+	@commands.cooldown(*utils.default_cooldown())
+	@commands.cooldown(1, 2, commands.BucketType.channel)
+	@commands.cooldown(6, 60, commands.BucketType.guild)
+	@commands.guild_only()
+	@commands.bot_has_permissions(embed_links=True, manage_messages=True)
+	async def test_board(self, ctx):
+		""" Refined leaderboard command """
+		async def wait_for_reaction():
+			try:
+				reaction, user = await self.bot.wait_for(
+					'reaction_add', timeout=60.0, check=lambda r, u: u == ctx.author
+				)
+			except asyncio.TimeoutError:
+				return [None, None]
+			else:
+				return [reaction, str(reaction.emoji)]
+
+		def index_check(index):
+			""" Ensures the index isn't too high or too low """
+			if index > len(embeds) - 1:
+				index = len(embeds) - 1
+			if index < 0:
+				index = 0
+			return index
+
+		async def add_emojis_task():
+			""" So the bot can read reactions before all are added """
+			for emoji in emojis:
+				await msg.add_reaction(emoji)
+				await asyncio.sleep(0.5)
+			return
+
+		async def create_embed(name: str, rankings: list, lmt, top_user=None):
+			""" Gen a list of embed leaderboards """
+			icon_url = None
+			thumbnail_url = 'https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png'
+			if top_user:
+				user = self.bot.get_user(int(top_user))
+				if isinstance(user, discord.User):
+					icon_url = user.avatar_url
+				else:
+					guild = self.bot.get_guild(int(top_user))
+					if isinstance(guild, discord.Guild):
+						icon_url = guild.icon_url
+			embeds = []
+			e = discord.Embed(color=0x4A0E50)
+			e.set_author(name=name, icon_url=icon_url)
+			e.set_thumbnail(url=thumbnail_url)
+			e.description = ''
+			rank = 1; index = 0
+			for user_id, xp in rankings:
+				if index == lmt:
+					embeds.append(e)
+					e = discord.Embed(color=0x4A0E50)
+					e.set_author(name=name, icon_url=icon_url)
+					e.set_thumbnail(url=thumbnail_url)
+					e.description = ''
+					index = 0
+				user = self.bot.get_user(int(user_id))
+				if isinstance(user, discord.User):
+					username = str(user)
+				else:
+					guild = self.bot.get_guild(int(user_id))
+					if isinstance(guild, discord.Guild):
+						username = guild.name
+					else:
+						username = 'INVALID'
+				e.description += f"#{rank}. `{username}` - {xp}\n"
+				rank += 1
+				index += 1
+			embeds.append(e)
+
+			return embeds
+
+		embeds = []
+		guild_id = str(ctx.guild.id)
+		leaderboards = {
+			'Msg Leaderboard': self.guilds[guild_id]['msg'],
+			'Vc Leaderboard': {
+				user_id: timedelta(seconds=xp) for user_id, xp in self.guilds[guild_id]['vc'].items()
+			},
+			'Global Msg Leaderboard': self.msg,
+			'Global Vc Leaderboard': {
+				user_id: timedelta(seconds=xp) for user_id, xp in self.vc.items()
+			},
+			'Monthly Msg Leaderboard': {
+				user_id: len(dat.items()) for user_id, dat in self.guilds[guild_id]['monthly_msg'].items()
+			},
+			'Global Monthly Msg Leaderboard': {
+				user_id: len(dat.items()) for user_id, dat in self.monthly_msg.items()
+			},
+			'Server Msg Leaderboard': {
+				guild_id: sum(xp for xp in dat['msg'].values()) for guild_id, dat in self.guilds.items()
+			},
+			'Server Vc Leaderboard': {
+				guild_id: timedelta(
+					seconds=sum([xp for xp in dat['vc'].values()])
+				) for guild_id, dat in self.guilds.items()
+			}
+		}
+		for name, data in leaderboards.items():
+			sorted_data = [
+				(user_id, xp) for user_id, xp in sorted(
+					data.items(), key=lambda kv: kv[1], reverse=True
+				)
+			]
+			ems = await create_embed(
+				name=name,
+				rankings=sorted_data,
+				lmt=15,
+				top_user=sorted_data[0][0]  # user_id
+			)
+			embeds.append(ems)
+
+		emojis = ['🏡', '⏮', '⏪', '⏩', '⏭']
+		index = 0; sub_index = 0
+		embeds[0][0].set_footer(text=f'Leaderboard {index + 1}/{len(embeds)} Page {sub_index + 1}/{len(embeds[index])}')
+		msg = await ctx.send(embed=embeds[0][0])
+
+		self.bot.loop.create_task(add_emojis_task())
+		while True:
+			reaction, emoji = await wait_for_reaction()
+			if not reaction:
+				return await msg.clear_reactions()
+
+			if emoji == emojis[0]:  # home
+				index = 0; sub_index = 0
+
+			if emoji == emojis[1]:
+				index -= 1; sub_index = 0
+				if isinstance(embeds[index], list):
+					sub_index = 0
+
+			if emoji == emojis[2]:
+				if isinstance(embeds[index], list):
+					if not isinstance(sub_index, int):
+						sub_index = len(embeds[index]) - 1
+					else:
+						if sub_index == 0:
+							index -= 1; sub_index = 0
+							index = index_check(index)
+							if isinstance(embeds[index], list):
+								sub_index = len(embeds[index]) - 1
+						else:
+							sub_index -= 1
+				else:
+					index -= 1
+					if isinstance(embeds[index], list):
+						sub_index = len(embeds[index]) - 1
+
+			if emoji == emojis[3]:
+				if isinstance(embeds[index], list):
+					if not isinstance(sub_index, int):
+						sub_index = 0
+					else:
+						if sub_index == len(embeds[index]) - 1:
+							index += 1; sub_index = 0
+							index = index_check(index)
+							if isinstance(embeds[index], list):
+								sub_index = 0
+						else:
+							sub_index += 1
+				else:
+					index += 1
+					index = index_check(index)
+					if isinstance(embeds[index], list):
+						sub_index = 0
+
+			if emoji == emojis[4]:
+				index += 1; sub_index = 0
+				index = index_check(index)
+				if isinstance(embeds[index], list):
+					sub_index = 0
+
+			if index > len(embeds) - 1:
+				index = len(embeds) - 1
+			if index < 0:
+				index = 0
+
+			embeds[index][sub_index].set_footer(text=f'Leaderboard {index + 1}/{len(embeds)} Page {sub_index+1}/{len(embeds[index])}')
+			await msg.edit(embed=embeds[index][sub_index])
+			await msg.remove_reaction(reaction, ctx.author)
+
 	@commands.command(
-		name='leaderboard',
+		name='old-lb',
 		aliases=[
-			'lb', 'mlb', 'vclb', 'glb', 'gmlb', 'gvclb', 'gglb', 'ggvclb',
+			'mlb', 'vclb', 'glb', 'gmlb', 'gvclb', 'gglb', 'ggvclb',
 			'mleaderboard', 'vcleaderboard', 'gleaderboard', 'gvcleaderboard',
 			'ggleaderboard', 'ggvcleaderboard'
 		]
