@@ -295,7 +295,7 @@ class Ranking(commands.Cog):
 	@commands.cooldown(6, 60, commands.BucketType.guild)
 	@commands.guild_only()
 	@commands.bot_has_permissions(embed_links=True, manage_messages=True)
-	async def test_board(self, ctx):
+	async def leaderboard(self, ctx):
 		""" Refined leaderboard command """
 		async def wait_for_reaction():
 			try:
@@ -364,6 +364,12 @@ class Ranking(commands.Cog):
 
 			return embeds
 
+		default = discord.Embed()
+		default.description = 'Collecting Leaderboard Data..'
+		msg = await ctx.send(embed=default)
+		emojis = ['🏡', '⏮', '⏪', '⏩', '⏭']
+		self.bot.loop.create_task(add_emojis_task())
+
 		embeds = []
 		guild_id = str(ctx.guild.id)
 		leaderboards = {
@@ -404,12 +410,10 @@ class Ranking(commands.Cog):
 			)
 			embeds.append(ems)
 
-		emojis = ['🏡', '⏮', '⏪', '⏩', '⏭']
 		index = 0; sub_index = 0
 		embeds[0][0].set_footer(text=f'Leaderboard {index + 1}/{len(embeds)} Page {sub_index + 1}/{len(embeds[index])}')
-		msg = await ctx.send(embed=embeds[0][0])
+		await msg.edit(embed=embeds[0][0])
 
-		self.bot.loop.create_task(add_emojis_task())
 		while True:
 			reaction, emoji = await wait_for_reaction()
 			if not reaction:
@@ -480,7 +484,7 @@ class Ranking(commands.Cog):
 	@commands.cooldown(1, 60, commands.BucketType.user)
 	@commands.cooldown(1, 3, commands.BucketType.channel)
 	@commands.bot_has_permissions(embed_links=True, manage_messages=True, add_reactions=True)
-	async def leaderboard(self, ctx):
+	async def old_leaderboard(self, ctx):
 		guild_id = str(ctx.guild.id)
 		default = discord.Embed()
 		default.description = 'Collecting Leaderboard Data..'
