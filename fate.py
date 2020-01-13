@@ -16,7 +16,7 @@ import discord
 from discord.ext import commands
 from termcolor import cprint
 
-from utils import config as conf, outh, colors
+from utils import config, outh, colors
 
 # //~== Core ==~\\
 
@@ -123,7 +123,7 @@ async def on_ready():
 	bot.loop.create_task(status_task())
 	cprint(datetime.now().strftime("%m-%d-%Y %I:%M%p"), 'yellow')
 	# notify myself on discord that the bots logged in
-	channel = bot.get_channel(conf.server("log"))
+	channel = bot.get_channel(config.server("log"))
 	p = subprocess.Popen("last | head -1", stdout=subprocess.PIPE, shell=True)
 	(output, err) = p.communicate()
 	output = str(output).replace("b'", "'")
@@ -162,7 +162,7 @@ async def on_message(msg):
 
 @bot.event
 async def on_guild_join(guild):
-	channel = bot.get_channel(conf.server("log"))
+	channel = bot.get_channel(config.server("log"))
 	e = discord.Embed(color=colors.pink())
 	e.set_author(name="Bot Added to Guild", icon_url=bot.user.avatar_url)
 	if guild.icon_url:
@@ -178,7 +178,7 @@ async def on_guild_join(guild):
 
 @bot.event
 async def on_guild_remove(guild: discord.Guild):
-	channel = bot.get_channel(conf.server("log"))
+	channel = bot.get_channel(config.server("log"))
 	e = discord.Embed(color=colors.pink())
 	e.set_author(name="Bot Left or Was Removed", icon_url=bot.user.avatar_url)
 	if guild.icon_url:
