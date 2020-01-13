@@ -7,9 +7,12 @@ from time import time, monotonic
 from random import *
 import asyncio
 from datetime import datetime, timedelta
+import requests
+from io import BytesIO
 
 from discord.ext import commands
 import discord
+from PIL import Image, ImageFont, ImageDraw
 
 from utils import colors, utils
 
@@ -18,6 +21,7 @@ class Ranking(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.path = './static/xp.json'
+		self.profile_path = './data/userdata/profiles.json'
 		self.globals = [
 			'msg', 'monthly_msg', 'vc'
 		]
@@ -60,6 +64,14 @@ class Ranking(commands.Cog):
 		if path.isfile(self.path):
 			with open(self.path, 'r') as f:
 				self.config = json.load(f)
+		self.profile = {
+			'264838866480005122': {
+				'background': 'https://cdn.discordapp.com/attachments/632084935506788385/666116544626950145/tumblr_nj4issUQ851u9l7hso1_1280.jpg'
+			}
+		}
+		if path.isfile(self.profile_path):
+			with open(self.profile_path, 'r') as f:
+				self.profile = json.load(f)
 
 	def _global(self, Global) -> dict:
 		""" Returns data for each global leaderboard """
@@ -289,6 +301,140 @@ class Ranking(commands.Cog):
 			if after.channel is not None:
 				await run(after.channel)
 
+	@commands.command(name='profile', aliases=['rank'])
+	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.is_owner()
+	async def profile(self, ctx, user: discord.Member=None):
+		def add_corners(im, rad):
+			circle = Image.new('L', (rad * 2, rad * 2), 0)
+			draw = ImageDraw.Draw(circle)
+			draw.ellipse((0, 0, rad * 2, rad * 2), fill=255)
+			alpha = Image.new('L', im.size, 255)
+			w, h = im.size
+			alpha.paste(circle.crop((0, 0, rad, rad)), (0, 0))
+			alpha.paste(circle.crop((0, rad, rad, rad * 2)), (0, h - rad))
+			alpha.paste(circle.crop((rad, 0, rad * 2, rad)), (w - rad, 0))
+			alpha.paste(circle.crop((rad, rad, rad * 2, rad * 2)), (w - rad, h - rad))
+			im.putalpha(alpha)
+			return im
+		def font(size):
+			return ImageFont.truetype("./utils/fonts/Modern_Sans_Light.otf", size)
+
+		# core
+		path = './static/card.png'
+		if not user:
+			user = ctx.author
+		user_id = str(user.id)
+		guild_id = str(ctx.guild.id)
+
+		# config
+		title = 'Default title UwU OwO'
+		bio = 'No bio currently set'
+		background = None
+		if user_id in self.profile:
+			if 'title' in self.profile[user_id]:
+				title = self.profile[user_id]['title']
+			if 'bio' in self.profile[user_id]:
+				bio = self.profile[user_id]['bio']
+			if 'background' in self.profile[user_id]:
+				background = self.profile[user_id]['background']
+
+		# xp variables
+		guild_rank = 0
+		for id, xp in (sorted(self.guilds[guild_id]['msg'].items(), key=lambda kv: kv[1], reverse=True)):
+			guild_rank += 1
+			if user_id == id:
+				break
+
+		dat = self.calc_lvl(self.guilds[guild_id]['msg'][user_id])
+		level = dat['level']
+		xp = dat['xp']
+		max_xp = 250 if level == 0 else dat['level_up']
+		length = ((100 * (xp / max_xp)) * 1000) / 100
+		total = f'Total: {self.guilds[guild_id]["msg"][user_id]}'
+		required = f'Required: {max_xp - xp}'
+		progress = f'{xp} / {max_xp} xp'
+
+		# pick status icon
+		statuses = {
+			discord.Status.online: 'https://cdn.discordapp.com/emojis/659976003334045727.png?v=1',
+			discord.Status.idle: 'https://cdn.discordapp.com/emojis/659976006030983206.png?v=1',
+			discord.Status.dnd: 'https://cdn.discordapp.com/emojis/659976008627388438.png?v=1',
+			discord.Status.offline: 'https://cdn.discordapp.com/emojis/659976011651219462.png?v=1'
+		}
+		status = statuses[user.status]
+		if user.is_on_mobile():
+			status = 'https://cdn.discordapp.com/attachments/541520201926311986/666182794665263124/1578900748602.png'
+
+		# Prepare the profile card
+		if background:
+			background = Image.open(BytesIO(requests.get(background).content)).convert('RGBA')
+			background = background.resize((1000, 500), Image.BICUBIC)
+
+		url = 'https://cdn.discordapp.com/attachments/632084935506788385/666158201867075585/rank-card.png'
+		card = Image.open(BytesIO(requests.get(url).content))
+		draw = ImageDraw.Draw(card)
+		data = []
+		for r, g, b, c in card.getdata():
+			if c == 0:
+				data.append((r, g, b, c))
+			elif r == 0 and g == 174 and b == 239:  # blue
+				data.append((r, g, b, 100))
+			elif r == 48 and g == 48 and b == 48:  # dark gray
+				data.append((r, g, b, 225))
+			elif r == 218 and g == 218 and b == 218:  # light gray
+				data.append((r, g, b, 150))
+			else:
+				data.append((r, g, b, c))
+		card.putdata(data)
+
+		# user vanity
+		avatar = Image.open(BytesIO(requests.get(user.avatar_url).content)).convert('RGBA')
+		avatar = add_corners(avatar.resize((175, 175), Image.BICUBIC), 87)
+		card.paste(avatar, (75, 85), avatar)
+		draw.ellipse((75, 85, 251, 261), outline='black', width=6)
+
+		status = Image.open(BytesIO(requests.get(status).content)).convert('RGBA')
+		status = status.resize((75, 75), Image.BICUBIC)
+		card.paste(status, (190, 190), status)
+
+		# leveling / ranking
+		draw.text((10, 320), title, (0, 0, 0), font=font(50))
+		groups = []
+		string = ''
+		for word in bio.split():
+			if draw.textsize(string+word+' ', font=font(20))[0] > 600:
+				groups.append(string)
+				string = ''
+			if string:
+				string += ' '
+			string += word
+		groups.append(string)
+		for i, text_group in enumerate(groups[:1]):
+			draw.text((25, 400 + 15*(i+1)), '\n'.join(text_group), (255, 255, 255), font=font(20))
+
+		draw.text((863, 85), f'Rank #{guild_rank}', (255, 255, 255), font=font(27))
+		draw.text((640, 145), f'Lvl. {level}', (0, 0, 0), font=font(100))
+
+		draw.text((785, 260), f'XP Stats', 'white', font=font(40))
+		draw.line((745, 307, 975, 307), fill='black', width=1)
+
+		draw.text((755, 320), progress , 'white', font=font(40))
+		draw.line((725, 373, 975, 373), fill='black', width=1)
+
+		draw.text((745, 386), total, 'white', font=font(40))
+		draw.line((705, 439, 975, 439), 'black', width=1)
+
+		draw.text((735, 452), required, 'white', font=font(40))
+		draw.line((0, 500, length, 500), fill=user.color.to_rgb(), width=10)
+
+		# misc
+		if background:
+			background.paste(card, (0, 0), card)
+			card = background
+		card.save(path, format='png')
+		await ctx.send(f"> **Profile card for {user}**", file=discord.File(path))
+
 	@commands.command(name='leaderboard', aliases=['lb'])
 	@commands.cooldown(*utils.default_cooldown())
 	@commands.cooldown(1, 2, commands.BucketType.channel)
@@ -382,7 +528,7 @@ class Ranking(commands.Cog):
 				user_id: timedelta(seconds=xp) for user_id, xp in self.vc.items()
 			},
 			'Monthly Msg Leaderboard': {
-				user_id: len(dat.items()) for user_id, dat in self.guilds[guild_id]['monthly_msg'].items()
+				user_id: sum(dat.values()) for user_id, dat in self.guilds[guild_id]['monthly_msg'].items()
 			},
 			'Global Monthly Msg Leaderboard': {
 				user_id: len(dat.items()) for user_id, dat in self.monthly_msg.items()
