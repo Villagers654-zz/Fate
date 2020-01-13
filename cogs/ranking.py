@@ -26,7 +26,8 @@ def profile_help():
 	)
 	e.add_field(
 		name='.profile set-background optional-url',
-		value="You can attach a file while using the cmd, or put a link where it says optional-url"
+		value="You can attach a file while using the cmd, or put a link where it says optional-url. "
+		      "If you don't do either, i'll reset your background to default (transparent)"
 	)
 	return e
 
@@ -445,13 +446,15 @@ class Ranking(commands.Cog):
 
 	@profile.command(name='set-background')
 	async def _set_background(self, ctx, url=None):
-		if not url and not ctx.message.attachments:
-			return await ctx.send("You need to attach a file or provide a url when you use this cmd")
-		if not url:
-			url = ctx.message.attachments[0].url
 		user_id = str(ctx.author.id)
 		if user_id not in self.profile:
 			self.profile[user_id] = {}
+		if not url and not ctx.message.attachments:
+			if 'background' not in self.profile[user_id]:
+				return await ctx.send("You don't have a custom background")
+			del self.profile[user_id]['background']
+		if not url:
+			url = ctx.message.attachments[0].url
 		self.profile[user_id]['background'] = url
 		with open(self.profile_path, 'w+') as f:
 			json.dump(self.profile, f)
