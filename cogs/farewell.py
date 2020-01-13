@@ -353,7 +353,7 @@ class Leave(commands.Cog):
 		self.save_data()
 
 	@commands.Cog.listener()
-	async def on_member_join(self, m: discord.Member):
+	async def on_member_leave(self, m: discord.Member):
 		if isinstance(m.guild, discord.Guild):
 			guild_id = str(m.guild.id)
 			if guild_id in self.toggle:
