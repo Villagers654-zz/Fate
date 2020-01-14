@@ -323,9 +323,9 @@ class Ranking(commands.Cog):
 		conf = self.config[str(ctx.guild.id)]
 		e.description = f"• Min XP Per Msg: {conf['min_xp_per_msg']}" \
 		                f"\n• Max XP Per Msg: {conf['max_xp_per_msg']}" \
-		                f"\n• First Lvl XP Req: {conf['first_level_xp_req']}" \
 		                f"\n• Timeframe: {conf['timeframe']}" \
-		                f"\n• Msgs Within Timeframe: {conf['msgs_within_timeframe']}"
+		                f"\n• Msgs Within Timeframe: {conf['msgs_within_timeframe']}" \
+		                f"\n• First Lvl XP Req: {conf['first_level_xp_req']}"
 		p = utils.get_prefix(ctx)
 		e.set_footer(text=f"Use {p}set to adjust these settings")
 		await ctx.send(embed=e)
@@ -351,10 +351,15 @@ class Ranking(commands.Cog):
 			e.add_field(
 				name='XP Stuff',
 				value=f"{p}set min-xp-per-msg [amount]"
+				      f"\n`sets the minimum gained xp per msg`"
 				      f"\n{p}set max-xp-per-msg [amount]"
+				      f"\n`sets the maximum gained xp per msg`"
 				      f"\n{p}set timeframe [amount]"
+				      f"\n`sets the timeframe to allow x messages`"
 				      f"\n{p}set msgs-within-timeframe [amount]"
-				      f"\n{p}set first-lvl-xp-req [amount]",
+				      f"\n`sets the timeframe to allow x messages`"
+				      f"\n{p}set first-lvl-xp-req [amount]"
+				      f"\n`required xp to level up your first time`",
 				inline=False
 			)
 			e.set_footer(text=f"Use {p}xp-config to see xp settings")
