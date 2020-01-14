@@ -112,7 +112,7 @@ class Ranking(commands.Cog):
 		self.config[guild_id] = self.static_config()
 		self.save_config()
 
-	def calc_lvl(self, total_xp):
+	def calc_lvl(self, total_xp, config):
 		def x(level):
 			x = 1; y = 0.125; lmt = 3
 			for i in range(level):
@@ -343,7 +343,6 @@ class Ranking(commands.Cog):
 
 		# config
 		title = 'Use .help profile'
-		bio = 'No bio currently set'
 		background = None
 		if ctx.guild.splash:
 			background = ctx.guild.splash_url
@@ -352,8 +351,6 @@ class Ranking(commands.Cog):
 		if user_id in self.profile:
 			if 'title' in self.profile[user_id]:
 				title = self.profile[user_id]['title']
-			if 'bio' in self.profile[user_id]:
-				bio = self.profile[user_id]['bio']
 			if 'background' in self.profile[user_id]:
 				background = self.profile[user_id]['background']
 
