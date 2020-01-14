@@ -122,7 +122,8 @@ class Ranking(commands.Cog):
 				x += y
 			return x
 
-		level = 0; levels = [[0, 250]]
+		lvl_req = config['first_lvl_xp_req']
+		level = 0; levels = [[0, lvl_req]]
 		lvl_up = 1; sub = 0; progress = 0
 		for xp in range(total_xp):
 			requirement = 0
@@ -130,8 +131,8 @@ class Ranking(commands.Cog):
 				requirement += xp_req
 			if xp > requirement:
 				level += 1
-				levels.append([level, 250 * x(level)])
-				lvl_up = 250 * x(level)
+				levels.append([level, lvl_req * x(level)])
+				lvl_up = lvl_req * x(level)
 				sub = requirement
 			progress = xp - sub
 
@@ -360,7 +361,7 @@ class Ranking(commands.Cog):
 			guild_rank += 1
 			if user_id == id:
 				break
-		dat = self.calc_lvl(self.guilds[guild_id]['msg'][user_id])
+		dat = self.calc_lvl(self.guilds[guild_id]['msg'][user_id], self.config[guild_id])
 		level = dat['level']
 		xp = dat['xp']
 		max_xp = 250 if level == 0 else dat['level_up']
@@ -571,6 +572,7 @@ class Ranking(commands.Cog):
 		e.set_footer(text=f"Use {p}set to adjust these settings")
 		await ctx.send(embed=e)
 
+	@profile.before_invoke
 	@_min_xp_per_msg.before_invoke
 	@_max_xp_per_msg.before_invoke
 	@_first_level_xp_req.before_invoke
