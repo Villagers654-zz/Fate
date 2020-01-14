@@ -20,12 +20,12 @@ from utils import colors, utils
 def profile_help():
 	e = discord.Embed(color=colors.purple())
 	e.add_field(
-		name='.profile set-title your_new_title',
-		value='Changes the title field in your profile',
+		name='.set title your_new_title',
+		value='Changes the title field in your profile card',
 		inline=False
 	)
 	e.add_field(
-		name='.profile set-background optional-url',
+		name='.set background [optional-url]',
 		value="You can attach a file while using the cmd, or put a link where it says optional-url. "
 		      "If you don't do either, i'll reset your background to default (transparent)"
 	)
@@ -311,128 +311,142 @@ class Ranking(commands.Cog):
 			if after.channel is not None:
 				await run(after.channel)
 
-	@commands.group(name='profile', aliases=['rank'], usage=profile_help())
+	@commands.command(name='profile', aliases=['rank'], usage=profile_help())
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def profile(self, ctx):
 		""" Profile / Rank Image Card """
+		def add_corners(im, rad):
+			""" Adds transparent corners to an img """
+			circle = Image.new('L', (rad * 2, rad * 2), 0)
+			draw = ImageDraw.Draw(circle)
+			draw.ellipse((0, 0, rad * 2, rad * 2), fill=255)
+			alpha = Image.new('L', im.size, 255)
+			w, h = im.size
+			alpha.paste(circle.crop((0, 0, rad, rad)), (0, 0))
+			alpha.paste(circle.crop((0, rad, rad, rad * 2)), (0, h - rad))
+			alpha.paste(circle.crop((rad, 0, rad * 2, rad)), (w - rad, 0))
+			alpha.paste(circle.crop((rad, rad, rad * 2, rad * 2)), (w - rad, h - rad))
+			im.putalpha(alpha)
+			return im
+		def font(size):
+			return ImageFont.truetype("./utils/fonts/Modern_Sans_Light.otf", size)
+		# core
+		path = './static/card.png'
+		user = ctx.author
+		if ctx.message.mentions:
+			user = ctx.message.mentions[0]
+		user_id = str(user.id)
+		guild_id = str(ctx.guild.id)
+		# config
+		title = 'Use .help profile'
+		bio = 'No bio currently set'
+		background = None
+		if ctx.guild.splash:
+			background = ctx.guild.splash_url
+		if ctx.guild.banner:
+			background = ctx.guild.banner_url
+		if user_id in self.profile:
+			if 'title' in self.profile[user_id]:
+				title = self.profile[user_id]['title']
+			if 'bio' in self.profile[user_id]:
+				bio = self.profile[user_id]['bio']
+			if 'background' in self.profile[user_id]:
+				background = self.profile[user_id]['background']
+		# xp variables
+		guild_rank = 0
+		for id, xp in (sorted(self.guilds[guild_id]['msg'].items(), key=lambda kv: kv[1], reverse=True)):
+			guild_rank += 1
+			if user_id == id:
+				break
+		dat = self.calc_lvl(self.guilds[guild_id]['msg'][user_id])
+		level = dat['level']
+		xp = dat['xp']
+		max_xp = 250 if level == 0 else dat['level_up']
+		length = ((100 * (xp / max_xp)) * 1000) / 100
+		total = f'Total: {self.guilds[guild_id]["msg"][user_id]}'
+		required = f'Required: {max_xp - xp}'
+		progress = f'{xp} / {max_xp} xp'
+		misc = f'{progress} | {total} | {required}'
+		# pick status icon
+		statuses = {
+			discord.Status.online: 'https://cdn.discordapp.com/emojis/659976003334045727.png?v=1',
+			discord.Status.idle: 'https://cdn.discordapp.com/emojis/659976006030983206.png?v=1',
+			discord.Status.dnd: 'https://cdn.discordapp.com/emojis/659976008627388438.png?v=1',
+			discord.Status.offline: 'https://cdn.discordapp.com/emojis/659976011651219462.png?v=1'
+		}
+		status = statuses[user.status]
+		if user.is_on_mobile():
+			status = 'https://cdn.discordapp.com/attachments/541520201926311986/666182794665263124/1578900748602.png'
+		# Prepare the profile card
+		if background:
+			background = Image.open(BytesIO(requests.get(background).content)).convert('RGBA')
+			background = background.resize((1000, 500), Image.BICUBIC)
+		url = 'https://cdn.discordapp.com/attachments/632084935506788385/666158201867075585/rank-card.png'
+		card = Image.open(BytesIO(requests.get(url).content))
+		draw = ImageDraw.Draw(card)
+		data = []
+		for r, g, b, c in card.getdata():
+			if c == 0:
+				data.append((r, g, b, c))
+			elif r == 0 and g == 174 and b == 239:  # blue
+				data.append((r, g, b, 100))
+			elif r == 48 and g == 48 and b == 48:  # dark gray
+				data.append((r, g, b, 225))
+			elif r == 218 and g == 218 and b == 218:  # light gray
+				data.append((r, g, b, 150))
+			else:
+				data.append((r, g, b, c))
+		card.putdata(data)
+		# user vanity
+		avatar = Image.open(BytesIO(requests.get(user.avatar_url).content)).convert('RGBA')
+		avatar = add_corners(avatar.resize((175, 175), Image.BICUBIC), 87)
+		card.paste(avatar, (75, 85), avatar)
+		draw.ellipse((75, 85, 251, 261), outline='black', width=6)
+		status = Image.open(BytesIO(requests.get(status).content)).convert('RGBA')
+		status = status.resize((75, 75), Image.BICUBIC)
+		card.paste(status, (190, 190), status)
+		# leveling / ranking
+		draw.text((865, 85), f'Rank #{guild_rank}', (255, 255, 255), font=font(30))
+		draw.text((640, 145), f'Lvl. {level}', (0, 0, 0), font=font(100))
+		draw.text((10, 320), title, (0, 0, 0), font=font(50))
+		draw.text((25, 415), misc, (255, 255, 255), font=font(50))
+		draw.line((0, 500, length, 500), fill=user.color.to_rgb(), width=10)
+		# misc
+		if background:
+			background.paste(card, (0, 0), card)
+			card = background
+		card.save(path, format='png')
+		await ctx.send(f"> **Profile card for {user}**", file=discord.File(path))
+
+	@commands.group(name='set')
+	@commands.cooldown(*utils.default_cooldown())
+	@commands.guild_only()
+	async def set(self, ctx):
 		if not ctx.invoked_subcommand:
-			def add_corners(im, rad):
-				""" Adds transparent corners to an img """
-				circle = Image.new('L', (rad * 2, rad * 2), 0)
-				draw = ImageDraw.Draw(circle)
-				draw.ellipse((0, 0, rad * 2, rad * 2), fill=255)
-				alpha = Image.new('L', im.size, 255)
-				w, h = im.size
-				alpha.paste(circle.crop((0, 0, rad, rad)), (0, 0))
-				alpha.paste(circle.crop((0, rad, rad, rad * 2)), (0, h - rad))
-				alpha.paste(circle.crop((rad, 0, rad * 2, rad)), (w - rad, 0))
-				alpha.paste(circle.crop((rad, rad, rad * 2, rad * 2)), (w - rad, h - rad))
-				im.putalpha(alpha)
-				return im
-			def font(size):
-				return ImageFont.truetype("./utils/fonts/Modern_Sans_Light.otf", size)
+			e = discord.Embed(color=colors.fate())
+			p = utils.get_prefix(ctx)  # type: str
+			e.description = "`[]` = your arguments / setting" \
+			                "\nNote: only profile commands work atm"
+			e.add_field(
+				name='Profile Stuff',
+				value=f"{p}set title [new title]"
+				      f"\n`sets the title in your profile`"
+				      f"\n{p}set background [optional_url]"
+				      f"\n`sets your profiles background img`",
+				inline=False
+			)
+			e.add_field(
+				name='XP Stuff',
+				value=f"{p}set min-xp-per-msg [amount]"
+				      f"\n{p}set max-xp-per-msg [amount]"
+				      f"\n{p}set timeframe [amount]"
+				      f"\n{p}set msgs-within-timeframe [amount]"
+				      f"\n{p}set first-lvl-xp-req [amount]",
+				inline=False
+			)
+			await ctx.send(embed=e)
 
-			# core
-			path = './static/card.png'
-			user = ctx.author
-			if ctx.message.mentions:
-				user = ctx.message.mentions[0]
-			user_id = str(user.id)
-			guild_id = str(ctx.guild.id)
-
-			# config
-			title = 'Use .help profile'
-			bio = 'No bio currently set'
-			background = None
-			if ctx.guild.splash:
-				background = ctx.guild.splash_url
-			if ctx.guild.banner:
-				background = ctx.guild.banner_url
-			if user_id in self.profile:
-				if 'title' in self.profile[user_id]:
-					title = self.profile[user_id]['title']
-				if 'bio' in self.profile[user_id]:
-					bio = self.profile[user_id]['bio']
-				if 'background' in self.profile[user_id]:
-					background = self.profile[user_id]['background']
-
-			# xp variables
-			guild_rank = 0
-			for id, xp in (sorted(self.guilds[guild_id]['msg'].items(), key=lambda kv: kv[1], reverse=True)):
-				guild_rank += 1
-				if user_id == id:
-					break
-
-			dat = self.calc_lvl(self.guilds[guild_id]['msg'][user_id])
-			level = dat['level']
-			xp = dat['xp']
-			max_xp = 250 if level == 0 else dat['level_up']
-			length = ((100 * (xp / max_xp)) * 1000) / 100
-
-			total = f'Total: {self.guilds[guild_id]["msg"][user_id]}'
-			required = f'Required: {max_xp - xp}'
-			progress = f'{xp} / {max_xp} xp'
-			misc = f'{progress} | {total} | {required}'
-
-			# pick status icon
-			statuses = {
-				discord.Status.online: 'https://cdn.discordapp.com/emojis/659976003334045727.png?v=1',
-				discord.Status.idle: 'https://cdn.discordapp.com/emojis/659976006030983206.png?v=1',
-				discord.Status.dnd: 'https://cdn.discordapp.com/emojis/659976008627388438.png?v=1',
-				discord.Status.offline: 'https://cdn.discordapp.com/emojis/659976011651219462.png?v=1'
-			}
-			status = statuses[user.status]
-			if user.is_on_mobile():
-				status = 'https://cdn.discordapp.com/attachments/541520201926311986/666182794665263124/1578900748602.png'
-
-			# Prepare the profile card
-			if background:
-				background = Image.open(BytesIO(requests.get(background).content)).convert('RGBA')
-				background = background.resize((1000, 500), Image.BICUBIC)
-
-			url = 'https://cdn.discordapp.com/attachments/632084935506788385/666158201867075585/rank-card.png'
-			card = Image.open(BytesIO(requests.get(url).content))
-			draw = ImageDraw.Draw(card)
-			data = []
-			for r, g, b, c in card.getdata():
-				if c == 0:
-					data.append((r, g, b, c))
-				elif r == 0 and g == 174 and b == 239:  # blue
-					data.append((r, g, b, 100))
-				elif r == 48 and g == 48 and b == 48:  # dark gray
-					data.append((r, g, b, 225))
-				elif r == 218 and g == 218 and b == 218:  # light gray
-					data.append((r, g, b, 150))
-				else:
-					data.append((r, g, b, c))
-			card.putdata(data)
-
-			# user vanity
-			avatar = Image.open(BytesIO(requests.get(user.avatar_url).content)).convert('RGBA')
-			avatar = add_corners(avatar.resize((175, 175), Image.BICUBIC), 87)
-			card.paste(avatar, (75, 85), avatar)
-			draw.ellipse((75, 85, 251, 261), outline='black', width=6)
-
-			status = Image.open(BytesIO(requests.get(status).content)).convert('RGBA')
-			status = status.resize((75, 75), Image.BICUBIC)
-			card.paste(status, (190, 190), status)
-
-			# leveling / ranking
-			draw.text((865, 85), f'Rank #{guild_rank}', (255, 255, 255), font=font(30))
-			draw.text((640, 145), f'Lvl. {level}', (0, 0, 0), font=font(100))
-
-			draw.text((10, 320), title, (0, 0, 0), font=font(50))
-			draw.text((25, 415), misc, (255, 255, 255), font=font(50))
-			draw.line((0, 500, length, 500), fill=user.color.to_rgb(), width=10)
-
-			# misc
-			if background:
-				background.paste(card, (0, 0), card)
-				card = background
-			card.save(path, format='png')
-			await ctx.send(f"> **Profile card for {user}**", file=discord.File(path))
-
-	@profile.command(name='set-title')
+	@set.command(name='title')
 	async def _set_title(self, ctx, *, title):
 		if len(title) > 22:
 			return await ctx.send("There's a character limit is 22!")
@@ -444,7 +458,7 @@ class Ranking(commands.Cog):
 			json.dump(self.profile, f)
 		await ctx.send('Set your title')
 
-	@profile.command(name='set-background')
+	@profile.command(name='background')
 	async def _set_background(self, ctx, url=None):
 		user_id = str(ctx.author.id)
 		if user_id not in self.profile:
