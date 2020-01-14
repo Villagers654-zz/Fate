@@ -34,7 +34,7 @@ def profile_help():
 class Ranking(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
-		self.path = './static/xp.json'
+		self.path = './data/userdata/xp.json'
 		self.profile_path = './data/userdata/profiles.json'
 		self.globals = [
 			'msg', 'monthly_msg', 'vc'
@@ -567,7 +567,7 @@ class Ranking(commands.Cog):
 		conf = self.config[str(ctx.guild.id)]
 		e.description = f"• Min XP Per Msg: {conf['min_xp_per_msg']}" \
 		                f"\n• Max XP Per Msg: {conf['max_xp_per_msg']}" \
-		                f"\n• First Lvl XP Req: {conf['base_level_xp_req']}" \
+		                f"\n• First Lvl XP Req: {conf['first_level_xp_req']}" \
 		                f"\n• Timeframe: {conf['timeframe']}" \
 		                f"\n• Msgs Within Timeframe: {conf['msgs_within_timeframe']}"
 		p = utils.get_prefix(ctx)
