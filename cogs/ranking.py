@@ -102,7 +102,7 @@ class Ranking(commands.Cog):
 		return {
 			"min_xp_per_msg": 1,
 			"max_xp_per_msg": 1,
-			"base_level_xp_req": 100,
+			"first_level_xp_req": 250,
 			"timeframe": 10,
 			"msgs_within_timeframe": 1
 		}
@@ -529,9 +529,9 @@ class Ranking(commands.Cog):
 			await ctx.send(f"I also lowered the minimum xp per msg to {amount}")
 		self.save_config()
 
-	@set.command(name='base-level-xp-req')
+	@set.command(name='first-level-xp-req')
 	@commands.has_permissions(administrator=True)
-	async def _base_level_xp_req(self, ctx, amount: int):
+	async def _first_level_xp_req(self, ctx, amount: int):
 		""" sets the required xp to level up your first time """
 		guild_id = str(ctx.guild.id)
 		self.config[guild_id]['base_level_xp_req'] = amount
@@ -576,7 +576,7 @@ class Ranking(commands.Cog):
 
 	@_min_xp_per_msg.before_invoke
 	@_max_xp_per_msg.before_invoke
-	@_base_level_xp_req.before_invoke
+	@_first_level_xp_req.before_invoke
 	@_timeframe.before_invoke
 	@_msgs_within_timeframe.before_invoke
 	@xp_config.before_invoke
