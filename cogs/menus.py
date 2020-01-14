@@ -82,7 +82,10 @@ class Menus(commands.Cog):
 			    '• **prefix** - `lets you change the bots prefix`\n' \
 			    '• **links** - `sends invite/support links`\n' \
 			    '• **ping** - `checks the bots latency`\n' \
-			    '• **say** - `says stuff through the bot`'
+			    '• **say** - `says stuff through the bot`\n' \
+				'• **profile** - `rank card based on xp`\n' \
+				'• **set** - `configure profiles and xp`\n' \
+			    '• **xp-config** - `overview of current xp config`'
 			return e
 		def mod():
 			e = discord.Embed(color=colors.fate())
