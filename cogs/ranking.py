@@ -458,7 +458,7 @@ class Ranking(commands.Cog):
 			json.dump(self.profile, f)
 		await ctx.send('Set your title')
 
-	@profile.command(name='background')
+	@set.command(name='background')
 	async def _set_background(self, ctx, url=None):
 		user_id = str(ctx.author.id)
 		if user_id not in self.profile:
