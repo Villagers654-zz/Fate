@@ -450,7 +450,7 @@ class Ranking(commands.Cog):
 
 	@set.command(name='title')
 	async def _set_title(self, ctx, *, title):
-		if len(title) > 22:
+		if len(title) > 32:
 			return await ctx.send("There's a character limit is 22!")
 		user_id = str(ctx.author.id)
 		if user_id not in self.profile:
