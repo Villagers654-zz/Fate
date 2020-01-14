@@ -424,6 +424,8 @@ class Ranking(commands.Cog):
 	async def set(self, ctx):
 		if not ctx.invoked_subcommand:
 			e = discord.Embed(color=colors.fate())
+			e.set_author(name='Set Usage', icon_url=ctx.author.avatar_url)
+			e.set_thumbnail(url=self.bot.user.avatar_url)
 			p = utils.get_prefix(ctx)  # type: str
 			e.description = "`[]` = your arguments / setting" \
 			                "\nNote: only profile commands work atm"
