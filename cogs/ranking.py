@@ -104,8 +104,7 @@ class Ranking(commands.Cog):
 			"max_xp_per_msg": 1,
 			"base_level_xp_req": 100,
 			"timeframe": 10,
-			"msgs_within_timeframe": 1,
-			"base_lvl_req": 250
+			"msgs_within_timeframe": 1
 		}
 
 	def init(self, guild_id: str):
@@ -141,6 +140,7 @@ class Ranking(commands.Cog):
 			'level_up': round(lvl_up),
 			'xp': round(progress)
 		}
+
 
 	@commands.Cog.listener()
 	async def on_message(self, msg):
@@ -313,6 +313,8 @@ class Ranking(commands.Cog):
 
 	@commands.command(name='profile', aliases=['rank'], usage=profile_help())
 	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.guild_only()
+	@commands.bot_has_permissions(attach_files=True)
 	async def profile(self, ctx):
 		""" Profile / Rank Image Card """
 		def add_corners(im, rad):
@@ -472,6 +474,7 @@ class Ranking(commands.Cog):
 				      f"\n{p}set first-lvl-xp-req [amount]",
 				inline=False
 			)
+			e.set_footer(text=f"Use {p}xp-config to see xp settings")
 			await ctx.send(embed=e)
 
 	@set.command(name='title')
@@ -501,6 +504,68 @@ class Ranking(commands.Cog):
 		with open(self.profile_path, 'w+') as f:
 			json.dump(self.profile, f)
 		await ctx.send('Set your background image')
+
+	@set.command(name='min-xp-per-msg')
+	@commands.has_permissions(administrator=True)
+	async def _min_xp_per_msg(self, ctx, amount: int):
+		""" sets the minimum gained xp per msg """
+		guild_id = str(ctx.guild.id)
+		self.config[guild_id]['min_xp_per_msg'] = amount
+		await ctx.send(f"Set the minimum xp gained per msg to {amount}")
+		if amount > self.config[guild_id]['max_xp_per_msg']:
+			self.config[guild_id]['max_xp_per_msg'] = amount
+			await ctx.send(f"I also upped the maximum xp per msg to {amount}")
+		self.save_config()
+
+	@set.command(name='max-xp-per-msg')
+	@commands.has_permissions(administrator=True)
+	async def _max_xp_per_msg(self, ctx, amount: int):
+		""" sets the minimum gained xp per msg """
+		guild_id = str(ctx.guild.id)
+		self.config[guild_id]['max_xp_per_msg'] = amount
+		await ctx.send(f"Set the maximum xp gained per msg to {amount}")
+		if amount < self.config[guild_id]['max_xp_per_msg']:
+			self.config[guild_id]['max_xp_per_msg'] = amount
+			await ctx.send(f"I also lowered the minimum xp per msg to {amount}")
+		self.save_config()
+
+	@set.command(name='base-level-xp-req')
+	@commands.has_permissions(administrator=True)
+	async def _base_level_xp_req(self, ctx, amount: int):
+		""" sets the required xp to level up your first time """
+		guild_id = str(ctx.guild.id)
+		self.config[guild_id]['base_level_xp_req'] = amount
+		await ctx.send(f"Set the required xp to level up your first time to {amount}")
+		self.save_config()
+
+	@set.command(name='timeframe')
+	@commands.has_permissions(administrator=True)
+	async def _timeframe(self, ctx, amount: int):
+		""" sets the timeframe to allow x messages """
+		guild_id = str(ctx.guild.id)
+		self.config[guild_id]['timeframe'] = amount
+		await ctx.send(f"Set the timeframe that allows x messages to {amount}")
+		self.save_config()
+
+	@set.command(name='msgs-within-timeframe')
+	@commands.has_permissions(administrator=True)
+	async def _msgs_within_timeframe(self, ctx, amount: int):
+		""" sets the timeframe to allow x messages """
+		guild_id = str(ctx.guild.id)
+		self.config[guild_id]['msgs_within_timeframe'] = amount
+		await ctx.send(f"Set msgs within timeframe limit to {amount}")
+		self.save_config()
+
+	@_min_xp_per_msg.before_invoke
+	@_max_xp_per_msg.before_invoke
+	@_base_level_xp_req.before_invoke
+	@_timeframe.before_invoke
+	@_msgs_within_timeframe.before_invoke
+	async def initiate_config(self, ctx):
+		""" Make sure the guild has a config """
+		guild_id = str(ctx.guild.id)
+		if guild_id not in self.config:
+			self.init(guild_id)
 
 	@commands.command(name='leaderboard', aliases=['lb'])
 	@commands.cooldown(*utils.default_cooldown())
