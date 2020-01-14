@@ -341,7 +341,7 @@ class Ranking(commands.Cog):
 			p = utils.get_prefix(ctx)  # type: str
 			e.description = "`[]` = your arguments / setting"
 			e.add_field(
-				name='Profile Stuff',
+				name='◈ Profile Stuff',
 				value=f"{p}set title [new title]"
 				      f"\n`sets the title in your profile`"
 				      f"\n{p}set background [optional_url]"
@@ -349,16 +349,16 @@ class Ranking(commands.Cog):
 				inline=False
 			)
 			e.add_field(
-				name='XP Stuff',
+				name='◈ XP Stuff',
 				value=f"{p}set min-xp-per-msg [amount]"
 				      f"\n`sets the minimum gained xp per msg`"
-				      f"\n{p}set max-xp-per-msg [amount]"
+				      f"\n\n{p}set max-xp-per-msg [amount]"
 				      f"\n`sets the maximum gained xp per msg`"
-				      f"\n{p}set timeframe [amount]"
+				      f"\n\n{p}set timeframe [amount]"
 				      f"\n`sets the timeframe to allow x messages`"
-				      f"\n{p}set msgs-within-timeframe [amount]"
+				      f"\n\n{p}set msgs-within-timeframe [amount]"
 				      f"\n`sets the timeframe to allow x messages`"
-				      f"\n{p}set first-lvl-xp-req [amount]"
+				      f"\n\n{p}set first-lvl-xp-req [amount]"
 				      f"\n`required xp to level up your first time`",
 				inline=False
 			)
