@@ -413,7 +413,13 @@ class Ranking(commands.Cog):
 		card.paste(status, (190, 190), status)
 
 		# leveling / ranking
-		draw.text((865, 85), f'Rank #{guild_rank}', (255, 255, 255), font=font(30))
+		rank_pos = (865, 85)
+		rank_font = font(30)
+		for i in range(len(str(guild_rank))):
+			if i > 1:
+				rank_pos[1] += 1
+				rank_font -= 5
+		draw.text(rank_pos, f'Rank #{guild_rank}', (255, 255, 255), font=rank_font)
 		draw.text((640, 145), f'Lvl. {level}', (0, 0, 0), font=font(100))
 		draw.text((10, 320), title, (0, 0, 0), font=font(50))
 		draw.text((25, 415), misc, (255, 255, 255), font=font(50))
