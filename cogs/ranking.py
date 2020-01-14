@@ -556,11 +556,30 @@ class Ranking(commands.Cog):
 		await ctx.send(f"Set msgs within timeframe limit to {amount}")
 		self.save_config()
 
+	@commands.command(name='xp-config')
+	@commands.cooldown(*utils.default_cooldown())
+	@commands.bot_has_permissions(embed_links=True)
+	async def xp_config(self, ctx):
+		""" Sends an overview for the current config """
+		e = discord.Embed(color=0x4A0E50)
+		e.set_author(name='XP Configuration', icon_url=ctx.guild.owner.avatar_url)
+		e.set_thumbnail(url=self.bot.user.avatar_url)
+		conf = self.config[str(ctx.guild.id)]
+		e.description = f"• Min XP Per Msg: {conf['min_xp_per_msg']}" \
+		                f"\n• Max XP Per Msg: {conf['max_xp_per_msg']}" \
+		                f"\n• First Lvl XP Req: {conf['base_level_xp_req']}" \
+		                f"\n• Timeframe: {conf['timeframe']}" \
+		                f"\n• Msgs Within Timeframe: {conf['msgs_within_timeframe']}"
+		p = utils.get_prefix(ctx)
+		e.set_footer(text=f"Use {p}set to adjust these settings")
+		await ctx.send(embed=e)
+
 	@_min_xp_per_msg.before_invoke
 	@_max_xp_per_msg.before_invoke
 	@_base_level_xp_req.before_invoke
 	@_timeframe.before_invoke
 	@_msgs_within_timeframe.before_invoke
+	@xp_config.before_invoke
 	async def initiate_config(self, ctx):
 		""" Make sure the guild has a config """
 		guild_id = str(ctx.guild.id)
