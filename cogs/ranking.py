@@ -312,6 +312,133 @@ class Ranking(commands.Cog):
 			if after.channel is not None:
 				await run(after.channel)
 
+	@commands.command(name='xp-config')
+	@commands.cooldown(*utils.default_cooldown())
+	@commands.bot_has_permissions(embed_links=True)
+	async def xp_config(self, ctx):
+		""" Sends an overview for the current config """
+		e = discord.Embed(color=0x4A0E50)
+		e.set_author(name='XP Configuration', icon_url=ctx.guild.owner.avatar_url)
+		e.set_thumbnail(url=self.bot.user.avatar_url)
+		conf = self.config[str(ctx.guild.id)]
+		e.description = f"• Min XP Per Msg: {conf['min_xp_per_msg']}" \
+		                f"\n• Max XP Per Msg: {conf['max_xp_per_msg']}" \
+		                f"\n• First Lvl XP Req: {conf['first_level_xp_req']}" \
+		                f"\n• Timeframe: {conf['timeframe']}" \
+		                f"\n• Msgs Within Timeframe: {conf['msgs_within_timeframe']}"
+		p = utils.get_prefix(ctx)
+		e.set_footer(text=f"Use {p}set to adjust these settings")
+		await ctx.send(embed=e)
+
+	@commands.group(name='set')
+	@commands.cooldown(*utils.default_cooldown())
+	@commands.guild_only()
+	async def set(self, ctx):
+		if not ctx.invoked_subcommand:
+			e = discord.Embed(color=colors.fate())
+			e.set_author(name='Set Usage', icon_url=ctx.author.avatar_url)
+			e.set_thumbnail(url=self.bot.user.avatar_url)
+			p = utils.get_prefix(ctx)  # type: str
+			e.description = "`[]` = your arguments / setting"
+			e.add_field(
+				name='Profile Stuff',
+				value=f"{p}set title [new title]"
+				      f"\n`sets the title in your profile`"
+				      f"\n{p}set background [optional_url]"
+				      f"\n`sets your profiles background img`",
+				inline=False
+			)
+			e.add_field(
+				name='XP Stuff',
+				value=f"{p}set min-xp-per-msg [amount]"
+				      f"\n{p}set max-xp-per-msg [amount]"
+				      f"\n{p}set timeframe [amount]"
+				      f"\n{p}set msgs-within-timeframe [amount]"
+				      f"\n{p}set first-lvl-xp-req [amount]",
+				inline=False
+			)
+			e.set_footer(text=f"Use {p}xp-config to see xp settings")
+			await ctx.send(embed=e)
+
+	@set.command(name='title')
+	async def _set_title(self, ctx, *, title):
+		if len(title) > 32:
+			return await ctx.send("There's a character limit is 22!")
+		user_id = str(ctx.author.id)
+		if user_id not in self.profile:
+			self.profile[user_id] = {}
+		self.profile[user_id]['title'] = title
+		with open(self.profile_path, 'w+') as f:
+			json.dump(self.profile, f)
+		await ctx.send('Set your title')
+
+	@set.command(name='background')
+	async def _set_background(self, ctx, url=None):
+		user_id = str(ctx.author.id)
+		if user_id not in self.profile:
+			self.profile[user_id] = {}
+		if not url and not ctx.message.attachments:
+			if 'background' not in self.profile[user_id]:
+				return await ctx.send("You don't have a custom background")
+			del self.profile[user_id]['background']
+		if not url:
+			url = ctx.message.attachments[0].url
+		self.profile[user_id]['background'] = url
+		with open(self.profile_path, 'w+') as f:
+			json.dump(self.profile, f)
+		await ctx.send('Set your background image')
+
+	@set.command(name='min-xp-per-msg')
+	@commands.has_permissions(administrator=True)
+	async def _min_xp_per_msg(self, ctx, amount: int):
+		""" sets the minimum gained xp per msg """
+		guild_id = str(ctx.guild.id)
+		self.config[guild_id]['min_xp_per_msg'] = amount
+		await ctx.send(f"Set the minimum xp gained per msg to {amount}")
+		if amount > self.config[guild_id]['max_xp_per_msg']:
+			self.config[guild_id]['max_xp_per_msg'] = amount
+			await ctx.send(f"I also upped the maximum xp per msg to {amount}")
+		self.save_config()
+
+	@set.command(name='max-xp-per-msg')
+	@commands.has_permissions(administrator=True)
+	async def _max_xp_per_msg(self, ctx, amount: int):
+		""" sets the minimum gained xp per msg """
+		guild_id = str(ctx.guild.id)
+		self.config[guild_id]['max_xp_per_msg'] = amount
+		await ctx.send(f"Set the maximum xp gained per msg to {amount}")
+		if amount < self.config[guild_id]['max_xp_per_msg']:
+			self.config[guild_id]['max_xp_per_msg'] = amount
+			await ctx.send(f"I also lowered the minimum xp per msg to {amount}")
+		self.save_config()
+
+	@set.command(name='first-level-xp-req')
+	@commands.has_permissions(administrator=True)
+	async def _first_level_xp_req(self, ctx, amount: int):
+		""" sets the required xp to level up your first time """
+		guild_id = str(ctx.guild.id)
+		self.config[guild_id]['base_level_xp_req'] = amount
+		await ctx.send(f"Set the required xp to level up your first time to {amount}")
+		self.save_config()
+
+	@set.command(name='timeframe')
+	@commands.has_permissions(administrator=True)
+	async def _timeframe(self, ctx, amount: int):
+		""" sets the timeframe to allow x messages """
+		guild_id = str(ctx.guild.id)
+		self.config[guild_id]['timeframe'] = amount
+		await ctx.send(f"Set the timeframe that allows x messages to {amount}")
+		self.save_config()
+
+	@set.command(name='msgs-within-timeframe')
+	@commands.has_permissions(administrator=True)
+	async def _msgs_within_timeframe(self, ctx, amount: int):
+		""" sets the timeframe to allow x messages """
+		guild_id = str(ctx.guild.id)
+		self.config[guild_id]['msgs_within_timeframe'] = amount
+		await ctx.send(f"Set msgs within timeframe limit to {amount}")
+		self.save_config()
+
 	@commands.command(name='profile', aliases=['rank'], usage=profile_help())
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.guild_only()
@@ -444,140 +571,13 @@ class Ranking(commands.Cog):
 		card.save(path, format='png')
 		await ctx.send(f"> **Profile card for {user}**", file=discord.File(path))
 
-	@commands.group(name='set')
-	@commands.cooldown(*utils.default_cooldown())
-	@commands.guild_only()
-	async def set(self, ctx):
-		if not ctx.invoked_subcommand:
-			e = discord.Embed(color=colors.fate())
-			e.set_author(name='Set Usage', icon_url=ctx.author.avatar_url)
-			e.set_thumbnail(url=self.bot.user.avatar_url)
-			p = utils.get_prefix(ctx)  # type: str
-			e.description = "`[]` = your arguments / setting"
-			e.add_field(
-				name='Profile Stuff',
-				value=f"{p}set title [new title]"
-				      f"\n`sets the title in your profile`"
-				      f"\n{p}set background [optional_url]"
-				      f"\n`sets your profiles background img`",
-				inline=False
-			)
-			e.add_field(
-				name='XP Stuff',
-				value=f"{p}set min-xp-per-msg [amount]"
-				      f"\n{p}set max-xp-per-msg [amount]"
-				      f"\n{p}set timeframe [amount]"
-				      f"\n{p}set msgs-within-timeframe [amount]"
-				      f"\n{p}set first-lvl-xp-req [amount]",
-				inline=False
-			)
-			e.set_footer(text=f"Use {p}xp-config to see xp settings")
-			await ctx.send(embed=e)
-
-	@set.command(name='title')
-	async def _set_title(self, ctx, *, title):
-		if len(title) > 32:
-			return await ctx.send("There's a character limit is 22!")
-		user_id = str(ctx.author.id)
-		if user_id not in self.profile:
-			self.profile[user_id] = {}
-		self.profile[user_id]['title'] = title
-		with open(self.profile_path, 'w+') as f:
-			json.dump(self.profile, f)
-		await ctx.send('Set your title')
-
-	@set.command(name='background')
-	async def _set_background(self, ctx, url=None):
-		user_id = str(ctx.author.id)
-		if user_id not in self.profile:
-			self.profile[user_id] = {}
-		if not url and not ctx.message.attachments:
-			if 'background' not in self.profile[user_id]:
-				return await ctx.send("You don't have a custom background")
-			del self.profile[user_id]['background']
-		if not url:
-			url = ctx.message.attachments[0].url
-		self.profile[user_id]['background'] = url
-		with open(self.profile_path, 'w+') as f:
-			json.dump(self.profile, f)
-		await ctx.send('Set your background image')
-
-	@set.command(name='min-xp-per-msg')
-	@commands.has_permissions(administrator=True)
-	async def _min_xp_per_msg(self, ctx, amount: int):
-		""" sets the minimum gained xp per msg """
-		guild_id = str(ctx.guild.id)
-		self.config[guild_id]['min_xp_per_msg'] = amount
-		await ctx.send(f"Set the minimum xp gained per msg to {amount}")
-		if amount > self.config[guild_id]['max_xp_per_msg']:
-			self.config[guild_id]['max_xp_per_msg'] = amount
-			await ctx.send(f"I also upped the maximum xp per msg to {amount}")
-		self.save_config()
-
-	@set.command(name='max-xp-per-msg')
-	@commands.has_permissions(administrator=True)
-	async def _max_xp_per_msg(self, ctx, amount: int):
-		""" sets the minimum gained xp per msg """
-		guild_id = str(ctx.guild.id)
-		self.config[guild_id]['max_xp_per_msg'] = amount
-		await ctx.send(f"Set the maximum xp gained per msg to {amount}")
-		if amount < self.config[guild_id]['max_xp_per_msg']:
-			self.config[guild_id]['max_xp_per_msg'] = amount
-			await ctx.send(f"I also lowered the minimum xp per msg to {amount}")
-		self.save_config()
-
-	@set.command(name='first-level-xp-req')
-	@commands.has_permissions(administrator=True)
-	async def _first_level_xp_req(self, ctx, amount: int):
-		""" sets the required xp to level up your first time """
-		guild_id = str(ctx.guild.id)
-		self.config[guild_id]['base_level_xp_req'] = amount
-		await ctx.send(f"Set the required xp to level up your first time to {amount}")
-		self.save_config()
-
-	@set.command(name='timeframe')
-	@commands.has_permissions(administrator=True)
-	async def _timeframe(self, ctx, amount: int):
-		""" sets the timeframe to allow x messages """
-		guild_id = str(ctx.guild.id)
-		self.config[guild_id]['timeframe'] = amount
-		await ctx.send(f"Set the timeframe that allows x messages to {amount}")
-		self.save_config()
-
-	@set.command(name='msgs-within-timeframe')
-	@commands.has_permissions(administrator=True)
-	async def _msgs_within_timeframe(self, ctx, amount: int):
-		""" sets the timeframe to allow x messages """
-		guild_id = str(ctx.guild.id)
-		self.config[guild_id]['msgs_within_timeframe'] = amount
-		await ctx.send(f"Set msgs within timeframe limit to {amount}")
-		self.save_config()
-
-	@commands.command(name='xp-config')
-	@commands.cooldown(*utils.default_cooldown())
-	@commands.bot_has_permissions(embed_links=True)
-	async def xp_config(self, ctx):
-		""" Sends an overview for the current config """
-		e = discord.Embed(color=0x4A0E50)
-		e.set_author(name='XP Configuration', icon_url=ctx.guild.owner.avatar_url)
-		e.set_thumbnail(url=self.bot.user.avatar_url)
-		conf = self.config[str(ctx.guild.id)]
-		e.description = f"• Min XP Per Msg: {conf['min_xp_per_msg']}" \
-		                f"\n• Max XP Per Msg: {conf['max_xp_per_msg']}" \
-		                f"\n• First Lvl XP Req: {conf['first_level_xp_req']}" \
-		                f"\n• Timeframe: {conf['timeframe']}" \
-		                f"\n• Msgs Within Timeframe: {conf['msgs_within_timeframe']}"
-		p = utils.get_prefix(ctx)
-		e.set_footer(text=f"Use {p}set to adjust these settings")
-		await ctx.send(embed=e)
-
-	@profile.before_invoke
 	@_min_xp_per_msg.before_invoke
 	@_max_xp_per_msg.before_invoke
 	@_first_level_xp_req.before_invoke
 	@_timeframe.before_invoke
 	@_msgs_within_timeframe.before_invoke
 	@xp_config.before_invoke
+	@profile.before_invoke
 	async def initiate_config(self, ctx):
 		""" Make sure the guild has a config """
 		guild_id = str(ctx.guild.id)
