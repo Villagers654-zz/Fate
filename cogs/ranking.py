@@ -330,6 +330,7 @@ class Ranking(commands.Cog):
 			return im
 		def font(size):
 			return ImageFont.truetype("./utils/fonts/Modern_Sans_Light.otf", size)
+
 		# core
 		path = './static/card.png'
 		user = ctx.author
@@ -337,6 +338,7 @@ class Ranking(commands.Cog):
 			user = ctx.message.mentions[0]
 		user_id = str(user.id)
 		guild_id = str(ctx.guild.id)
+
 		# config
 		title = 'Use .help profile'
 		bio = 'No bio currently set'
@@ -352,6 +354,7 @@ class Ranking(commands.Cog):
 				bio = self.profile[user_id]['bio']
 			if 'background' in self.profile[user_id]:
 				background = self.profile[user_id]['background']
+
 		# xp variables
 		guild_rank = 0
 		for id, xp in (sorted(self.guilds[guild_id]['msg'].items(), key=lambda kv: kv[1], reverse=True)):
@@ -367,6 +370,7 @@ class Ranking(commands.Cog):
 		required = f'Required: {max_xp - xp}'
 		progress = f'{xp} / {max_xp} xp'
 		misc = f'{progress} | {total} | {required}'
+
 		# pick status icon
 		statuses = {
 			discord.Status.online: 'https://cdn.discordapp.com/emojis/659976003334045727.png?v=1',
@@ -377,6 +381,7 @@ class Ranking(commands.Cog):
 		status = statuses[user.status]
 		if user.is_on_mobile():
 			status = 'https://cdn.discordapp.com/attachments/541520201926311986/666182794665263124/1578900748602.png'
+
 		# Prepare the profile card
 		if background:
 			background = Image.open(BytesIO(requests.get(background).content)).convert('RGBA')
@@ -397,6 +402,7 @@ class Ranking(commands.Cog):
 			else:
 				data.append((r, g, b, c))
 		card.putdata(data)
+
 		# user vanity
 		avatar = Image.open(BytesIO(requests.get(user.avatar_url).content)).convert('RGBA')
 		avatar = add_corners(avatar.resize((175, 175), Image.BICUBIC), 87)
@@ -405,12 +411,14 @@ class Ranking(commands.Cog):
 		status = Image.open(BytesIO(requests.get(status).content)).convert('RGBA')
 		status = status.resize((75, 75), Image.BICUBIC)
 		card.paste(status, (190, 190), status)
+
 		# leveling / ranking
 		draw.text((865, 85), f'Rank #{guild_rank}', (255, 255, 255), font=font(30))
 		draw.text((640, 145), f'Lvl. {level}', (0, 0, 0), font=font(100))
 		draw.text((10, 320), title, (0, 0, 0), font=font(50))
 		draw.text((25, 415), misc, (255, 255, 255), font=font(50))
 		draw.line((0, 500, length, 500), fill=user.color.to_rgb(), width=10)
+
 		# misc
 		if background:
 			background.paste(card, (0, 0), card)
