@@ -122,7 +122,7 @@ class Ranking(commands.Cog):
 				x += y
 			return x
 
-		lvl_req = config['first_lvl_xp_req']
+		lvl_req = config['first_level_xp_req']
 		level = 0; levels = [[0, lvl_req]]
 		lvl_up = 1; sub = 0; progress = 0
 		for xp in range(total_xp):
