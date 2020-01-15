@@ -417,15 +417,6 @@ class Ranking(commands.Cog):
 			await ctx.send(f"I also lowered the minimum xp per msg to {amount}")
 		self.save_config()
 
-	@set.command(name='first-level-xp-req')
-	@commands.has_permissions(administrator=True)
-	async def _first_level_xp_req(self, ctx, amount: int):
-		""" sets the required xp to level up your first time """
-		guild_id = str(ctx.guild.id)
-		self.config[guild_id]['base_level_xp_req'] = amount
-		await ctx.send(f"Set the required xp to level up your first time to {amount}")
-		self.save_config()
-
 	@set.command(name='timeframe')
 	@commands.has_permissions(administrator=True)
 	async def _timeframe(self, ctx, amount: int):
@@ -442,6 +433,15 @@ class Ranking(commands.Cog):
 		guild_id = str(ctx.guild.id)
 		self.config[guild_id]['msgs_within_timeframe'] = amount
 		await ctx.send(f"Set msgs within timeframe limit to {amount}")
+		self.save_config()
+
+	@set.command(name='first-lvl-xp-req')
+	@commands.has_permissions(administrator=True)
+	async def _first_level_xp_req(self, ctx, amount: int):
+		""" sets the required xp to level up your first time """
+		guild_id = str(ctx.guild.id)
+		self.config[guild_id]['first_level_xp_req'] = amount
+		await ctx.send(f"Set the required xp to level up your first time to {amount}")
 		self.save_config()
 
 	@commands.command(name='profile', aliases=['rank'], usage=profile_help())
@@ -493,10 +493,14 @@ class Ranking(commands.Cog):
 			guild_rank += 1
 			if user_id == id:
 				break
-		dat = self.calc_lvl(self.guilds[guild_id]['msg'][user_id], self.config[guild_id])
+		conf = self.config[guild_id]
+		dat = self.calc_lvl(self.guilds[guild_id]['msg'][user_id], conf)
+		min = conf['min_xp_per_msg']
+		max = conf['max_xp_per_msg']
+		base_req = conf['first_level_xp_req']
 		level = dat['level']
 		xp = dat['xp']
-		max_xp = 250 if level == 0 else dat['level_up']
+		max_xp = base_req if level == 0 else dat['level_up']
 		length = ((100 * (xp / max_xp)) * 1000) / 100
 		total = f'Total: {self.guilds[guild_id]["msg"][user_id]}'
 		required = f'Required: {max_xp - xp}'
