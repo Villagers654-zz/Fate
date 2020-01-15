@@ -152,7 +152,6 @@ class Security(commands.Cog):
 						'levels': {  # an example - customizable - overrides kick/ban/raid channel/verification
 								'1': 'verification',
 								'2': 'mute',
-								'3': 'kick',
 								'4': 'ban'
 						},
 						'lockdown_duration': 60 * 60 * 60,
@@ -222,43 +221,6 @@ class Security(commands.Cog):
 
 	@security.command(name='overview')
 	async def _overview(self, ctx):
-		""" More complex and detailed overview """
-		guild_id = str(ctx.guild.id)
-		self.init(guild_id)
-
-		e = discord.Embed(color=colors.purple())
-		e.set_author(name='Detailed Security Overview', icon_url=ctx.guild.owner.avatar_url)
-		e.set_thumbnail(url=self.bot.user.avatar_url)
-
-		for key, value in self.conf[guild_id]['anti_spam'].items():
-			if not isinstance(value, dict):
-				channels = '\n'.join([f'{self.bot.get_channel(c).mention}' for c in value])
-				if channels:
-					e.add_field(
-						name=f'◈ Ignored {len(value)}',
-						value=channels if channels else f'{emoji(False)} None'
-					)
-				continue
-			stuffs = []
-			for k, v in value.items():
-				is_toggle = isinstance(v, bool) or v == None
-				if is_toggle:
-					stuff = f"{emoji(v)} {k.replace('_', '-')}"
-				else:
-					if key == 'filter':
-						stuff = f"{emoji('medium')} {k.replace('_', '-')}**:** {v}"
-					else:
-						stuff = f"{k.replace('_', '-')}**:** {v}"
-				stuffs.append(stuff)
-			e.add_field(
-				name=f'◈ {key.replace("_", " ")}',
-				value='\n'.join(stuffs),
-				inline=False
-			)
-		await ctx.send(embed=e)
-
-	@security.command(name='test')
-	async def _test(self, ctx):
 		guild_id = str(ctx.guild.id)
 		self.init(guild_id)
 		config = self.conf[guild_id]
@@ -274,13 +236,13 @@ class Security(commands.Cog):
 		for channel_id in conf['ignored']:
 			channel = self.bot.get_channel(channel_id)
 			value += f"\n• {channel.mention}"
-		value += f"\n\n{emoji(conf['rate_limit']['toggle'])} **Rate Limit**" \
+		value += f"\n{emoji(conf['rate_limit']['toggle'])} **Rate Limit**" \
 		         f"\n》Msg Limit: {conf['rate_limit']['message_limit']}" \
 		         f"\n》Within Timeframe Of: {conf['rate_limit']['timeframe']}"
-		value += f"\n\n{emoji(conf['macro']['toggle'])} **Macro Detection**" \
+		value += f"\n{emoji(conf['macro']['toggle'])} **Macro Detection**" \
 		         f"\n》Safe Time Difference: {conf['macro']['max_time_difference']}+ secs" \
 		         f"\n》Last X Msgs to Check: {conf['macro']['check_last_msgs']}" \
-		         f"\n\n{emoji(conf['mass_ping']['toggle'])} **Mass Pings**" \
+		         f"\n{emoji(conf['mass_ping']['toggle'])} **Mass Pings**" \
 		         f"\n》Max User Pings Per Msg: {conf['mass_ping']['per_msg_user_limit']}" \
 		         f"\n》Max Role Pings Per Msg: {conf['mass_ping']['per_msg_role_limit']}" \
 		         f"\n》Max User Pings Mer Min: {conf['mass_ping']['user_pings_per_min']}" \
