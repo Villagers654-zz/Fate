@@ -343,23 +343,23 @@ class Ranking(commands.Cog):
 			e.add_field(
 				name='◈ Profile Stuff',
 				value=f"{p}set title [new title]"
-				      f"\n`sets the title in your profile`"
+				      f"\n• `sets the title in your profile`"
 				      f"\n{p}set background [optional_url]"
-				      f"\n`sets your profiles background img`",
+				      f"\n• `sets your profiles background img`",
 				inline=False
 			)
 			e.add_field(
 				name='◈ XP Stuff',
 				value=f"{p}set min-xp-per-msg [amount]"
-				      f"\n`sets the minimum gained xp per msg`"
-				      f"\n\n{p}set max-xp-per-msg [amount]"
-				      f"\n`sets the maximum gained xp per msg`"
-				      f"\n\n{p}set timeframe [amount]"
-				      f"\n`sets the timeframe to allow x messages`"
-				      f"\n\n{p}set msgs-within-timeframe [amount]"
-				      f"\n`sets the timeframe to allow x messages`"
-				      f"\n\n{p}set first-lvl-xp-req [amount]"
-				      f"\n`required xp to level up your first time`",
+				      f"\n• `sets the minimum gained xp per msg`"
+				      f"\n{p}set max-xp-per-msg [amount]"
+				      f"\n• `sets the maximum gained xp per msg`"
+				      f"\n{p}set timeframe [amount]"
+				      f"\n• `sets the timeframe to allow x messages`"
+				      f"\n{p}set msgs-within-timeframe [amount]"
+				      f"\n• `sets the limit of msgs within the timeframe`"
+				      f"\n{p}set first-lvl-xp-req [amount]"
+				      f"\n• `required xp to level up your first time`",
 				inline=False
 			)
 			e.set_footer(text=f"Use {p}xp-config to see xp settings")
@@ -429,7 +429,7 @@ class Ranking(commands.Cog):
 	@set.command(name='msgs-within-timeframe')
 	@commands.has_permissions(administrator=True)
 	async def _msgs_within_timeframe(self, ctx, amount: int):
-		""" sets the timeframe to allow x messages """
+		""" sets the limit of msgs within the timeframe """
 		guild_id = str(ctx.guild.id)
 		self.config[guild_id]['msgs_within_timeframe'] = amount
 		await ctx.send(f"Set msgs within timeframe limit to {amount}")
