@@ -102,7 +102,7 @@ class Ranking(commands.Cog):
 		return {
 			"min_xp_per_msg": 1,
 			"max_xp_per_msg": 1,
-			"first_level_xp_req": 250,
+			"first_lvl_xp_req": 250,
 			"timeframe": 10,
 			"msgs_within_timeframe": 1
 		}
