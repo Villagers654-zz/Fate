@@ -122,7 +122,7 @@ class Ranking(commands.Cog):
 				x += y
 			return x
 
-		lvl_req = config['first_level_xp_req']
+		lvl_req = config['first_lvl_xp_req']
 		level = 0; levels = [[0, lvl_req]]
 		lvl_up = 1; sub = 0; progress = 0
 		for xp in range(total_xp):
@@ -325,7 +325,7 @@ class Ranking(commands.Cog):
 		                f"\n• Max XP Per Msg: {conf['max_xp_per_msg']}" \
 		                f"\n• Timeframe: {conf['timeframe']}" \
 		                f"\n• Msgs Within Timeframe: {conf['msgs_within_timeframe']}" \
-		                f"\n• First Lvl XP Req: {conf['first_level_xp_req']}"
+		                f"\n• First Lvl XP Req: {conf['first_lvl_xp_req']}"
 		p = utils.get_prefix(ctx)
 		e.set_footer(text=f"Use {p}set to adjust these settings")
 		await ctx.send(embed=e)
@@ -440,7 +440,7 @@ class Ranking(commands.Cog):
 	async def _first_level_xp_req(self, ctx, amount: int):
 		""" sets the required xp to level up your first time """
 		guild_id = str(ctx.guild.id)
-		self.config[guild_id]['first_level_xp_req'] = amount
+		self.config[guild_id]['first_lvl_xp_req'] = amount
 		await ctx.send(f"Set the required xp to level up your first time to {amount}")
 		self.save_config()
 
@@ -495,7 +495,7 @@ class Ranking(commands.Cog):
 				break
 		conf = self.config[guild_id]
 		dat = self.calc_lvl(self.guilds[guild_id]['msg'][user_id], conf)
-		base_req = self.config[guild_id]['first_level_xp_req']
+		base_req = self.config[guild_id]['first_lvl_xp_req']
 		level = dat['level']
 		xp = dat['xp']
 		max_xp = base_req if level == 0 else dat['level_up']
@@ -577,19 +577,6 @@ class Ranking(commands.Cog):
 			card = background
 		card.save(path, format='png')
 		await ctx.send(f"> **Profile card for {user}**", file=discord.File(path))
-
-	@_min_xp_per_msg.before_invoke
-	@_max_xp_per_msg.before_invoke
-	@_first_level_xp_req.before_invoke
-	@_timeframe.before_invoke
-	@_msgs_within_timeframe.before_invoke
-	@xp_config.before_invoke
-	@profile.before_invoke
-	async def initiate_config(self, ctx):
-		""" Make sure the guild has a config """
-		guild_id = str(ctx.guild.id)
-		if guild_id not in self.config:
-			self.init(guild_id)
 
 	@commands.command(
 		name='leaderboard',
@@ -804,6 +791,19 @@ class Ranking(commands.Cog):
 			embeds[index][sub_index].set_footer(text=f'Leaderboard {index + 1}/{len(embeds)} Page {sub_index+1}/{len(embeds[index])}')
 			await msg.edit(embed=embeds[index][sub_index])
 			await msg.remove_reaction(reaction, ctx.author)
+
+	@_min_xp_per_msg.before_invoke
+	@_max_xp_per_msg.before_invoke
+	@_first_level_xp_req.before_invoke
+	@_timeframe.before_invoke
+	@_msgs_within_timeframe.before_invoke
+	@xp_config.before_invoke
+	@profile.before_invoke
+	async def initiate_config(self, ctx):
+		""" Make sure the guild has a config """
+		guild_id = str(ctx.guild.id)
+		if guild_id not in self.config:
+			self.init(guild_id)
 
 def setup(bot):
 	bot.add_cog(Ranking(bot))
