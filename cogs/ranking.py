@@ -36,6 +36,7 @@ class Ranking(commands.Cog):
 		self.bot = bot
 		self.path = './data/userdata/xp.json'
 		self.profile_path = './data/userdata/profiles.json'
+		self.log_path = './xp/msg_id_log.json'
 		self.globals = [
 			'msg', 'monthly_msg', 'vc'
 		]
@@ -82,6 +83,10 @@ class Ranking(commands.Cog):
 		if path.isfile(self.profile_path):
 			with open(self.profile_path, 'r') as f:
 				self.profile = json.load(f)
+		self.msg_id_log = {}
+		if path.isfile(self.log_path):
+			with open(self.log_path, 'r') as f:
+				self.msg_id_log = json.load(f)
 
 	def _global(self, Global) -> dict:
 		""" Returns data for each global leaderboard """
@@ -164,8 +169,8 @@ class Ranking(commands.Cog):
 				if user_id not in self.monthly_msg:
 					self.monthly_msg[user_id] = {}
 
-				self.msg[user_id] += xp
-				self.monthly_msg[user_id][str(time())] = xp
+				self.msg[user_id] += 1
+				self.monthly_msg[user_id][str(time())] = 1
 
 				self.counter += 1
 				if self.counter >= 10:
@@ -494,7 +499,10 @@ class Ranking(commands.Cog):
 			if user_id == id:
 				break
 		conf = self.config[guild_id]
-		dat = self.calc_lvl(self.guilds[guild_id]['msg'][user_id], conf)
+		if 'global' in ctx.message.content:
+			dat = self.calc_lvl(self.msg[user_id], self.static_config())
+		else:
+			dat = self.calc_lvl(self.guilds[guild_id]['msg'][user_id], conf)
 		base_req = self.config[guild_id]['first_lvl_xp_req']
 		level = dat['level']
 		xp = dat['xp']
