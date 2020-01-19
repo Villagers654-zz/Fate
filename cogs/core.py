@@ -85,7 +85,7 @@ class Core(commands.Cog):
 
 	@commands.command(name='personal-prefix', aliases=['pp'])
 	@commands.cooldown(*utils.default_cooldown())
-	async def personal_prefix(self, ctx, *, prefix):
+	async def personal_prefix(self, ctx, *, prefix=''):
 		user_id = str(ctx.author.id)
 		with open('./data/config.json', 'r') as f:
 			config = json.load(f)  # type: dict
