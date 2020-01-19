@@ -1,52 +1,16 @@
 """
 Security Dashboard & Commands
-+ Security Command - Detailed Status
-- overview sub-command - simplified status
++ Security Command - Overview / Module Toggles
+- overview sub-command - detailed configs for nerds
 - usage/help sub-command
-
-+ Anti Raid Command
-- multiple types of spam prevention:
-  rate limit, macro, mass ping, duplicates
-- spamming on multiple accounts - organized raid
-- lock the server on mass join
-
-+ Anti Mod Raid - Part Of Anti Raid
-- mass kick and ban
-- mass channel/role delete - light punishment
-- turning things like server name into adverts
-
-+ Raid Alerts - Part Of Anti Raid
-- Make a raid alert role mentionable, mention it,
-  and make it no longer mentionable
-- Send a message to the staff channel
-
-+ Lockdown / Raider Gate -  Part Of Anti Raid
-- when multiple people raid, create a temp channel
-- send instructions on how an admin can unlock in temp channel
-  alongside a reaction verification; which when failed
-  the user/user-bot is banned. Other users have to wait it out
-- create a raider role
-- set overwrites in temp channel for only raider to be able to see or send
-- set overwrites for raider to not see everywhere else but make
-  sure to use category overwrites first in the instance of channel
-  overwrites being sync'd so nothing gets fucked up
-- give any raiders that triggered it the raider role
-- release command with option to ban those with raider role
-
-+ Server Lock
-- kick users on join
-- ban users on join - the lock anti raid will use
-
-+ All lock functionality under the same lock so you
-  can disable all locks with .unlock for ease of use
-
-this shit needs updated
 """
 
 from os import path
 import json
 from time import time, monotonic
 from typing import *
+import asyncio
+from datetime import datetime
 
 from discord.ext import commands
 import discord
@@ -79,11 +43,16 @@ class Security(commands.Cog):
 		self.bot = bot
 		self.path = './data/security.json'
 		self.conf = {}
+		self.spam_cd = {}
+		self.macro_cd = {}
+		self.dupes = {}
+		self.dupez = {}
+		self.msgs = {}
 
 	def save_data(self):
 		return  # don't wanna save during testing uwu
-		with open(self.path, 'w+') as f:
-			json.dump(self.conf, f)
+		#with open(self.path, 'w+') as f:
+		#	json.dump(self.conf, f)
 
 	def init(self, guild_id: str):
 		self.conf[guild_id] = {
@@ -139,7 +108,7 @@ class Security(commands.Cog):
 					},
 					'object_to_inv': False,
 					'perm_transfer': False,
-					'lockdown': {
+					'lockdown': {  # for when multiple people trigger security modules
 						'toggle': False,
 						'kick': False,  # disables lockdown channel if enabled
 						'ban': False,  # disables lockdown channel if enabled
@@ -253,8 +222,100 @@ class Security(commands.Cog):
 		)
 		await ctx.send(embed=e)
 
-# events / listeners:
+	#@commands.Cog.listener()
+	async def on_message(self, msg):
+		""" anti spam related stuff """
+		if isinstance(msg.guild, discord.Guild):
+			guild_id = str(msg.guild.id)
+			if guild_id in self.conf:
+				user_id = str(msg.author.id)
+				sensitivity_level = self.conf[guild_id]['anti_spam']['rate_limit']['message_limit']
+				if msg.channel.id in self.conf[guild_id]['anti_spam']['ignored']:
+					return
 
+				# msgs to delete if triggered
+				if user_id not in self.msgs:
+					self.msgs[user_id] = []
+				self.msgs[user_id].append([msg, time()])
+				self.msgs[user_id] = self.msgs[user_id][-15:]
+
+				# rate limit
+				# needs updated
+				now = int(time() / 5)
+				if guild_id not in self.spam_cd:
+					self.spam_cd[guild_id] = {}
+				if user_id not in self.spam_cd[guild_id]:
+					self.spam_cd[guild_id][user_id] = [now, 0]
+				if self.spam_cd[guild_id][user_id][0] == now:
+					self.spam_cd[guild_id][user_id][1] += 1
+				else:
+					self.spam_cd[guild_id][user_id] = [now, 0]
+				if self.spam_cd[guild_id][user_id][1] > sensitivity_level:
+					if self.conf[guild_id]['anti_spam']['rate_limit']:
+						triggered = True
+
+				# mass pings
+				# needs updated
+				conf = self.conf[guild_id]['anti_spam']['mass_ping']
+				mentions = [*msg.mentions, *msg.role_mentions]
+				if len(mentions) > sensitivity_level + 1 or msg.guild.default_role in mentions:
+					if msg.guild.default_role in mentions:
+						if mentions.count(msg.guild.default_role) > 1 or len(mentions) > sensitivity_level + 1:
+							if self.conf[guild_id]['anti_spam']['mass_ping']:
+								triggered = True
+					else:
+						if self.conf[guild_id]['anti_spam']['mass_ping']:
+							triggered = True
+
+				# anti macro
+				conf = self.conf[guild_id]['anti_spam']['macro']
+				if user_id not in self.macro_cd:
+					self.macro_cd[user_id] = {}
+					self.macro_cd[user_id]['intervals'] = []
+				if 'last' not in self.macro_cd[user_id]:
+					self.macro_cd[user_id]['last'] = datetime.now()
+				else:
+					last = self.macro_cd[user_id]['last']
+					self.macro_cd[user_id]['intervals'].append((datetime.now() - last).seconds)
+					intervals = self.macro_cd[user_id]['intervals']
+					self.macro_cd[user_id]['intervals'] = intervals[-conf['check_last_msgs'] + 1:]
+					if len(intervals) > 2:
+						if all(interval == intervals[0] for interval in intervals):
+							if conf['toggle']:
+								triggered = True
+
+				# duplicates
+				conf = self.conf[guild_id]['anti_spam']['duplicates']
+				if guild_id not in self.dupes:
+					self.dupes[guild_id] = []
+					self.dupez[guild_id] = []
+				self.dupes[guild_id].append([msg, time()])
+				self.dupes[guild_id] = self.dupes[guild_id][:10]
+				self.dupez[guild_id].append([msg, time()])
+				self.dupez[guild_id] = self.dupes[guild_id][:10]
+				data = [(m, m.content) for m, m_time in self.dupes[guild_id] if m_time > time() - conf['timeframe']]
+				contents = [x[1] for x in data]
+				duplicates = [m for m in contents if contents.count(m) > conf['repeated_messages']]
+				if msg.content in duplicates:
+					def pred(m):
+						return m.channel.id == msg.channel.id and m.author.bot
+					try:
+						msg = await self.bot.wait_for('message', check=pred, timeout=2)
+					except asyncio.TimeoutError:
+						data = [(m, m_time) for m, m_time in self.dupez[guild_id] if
+						        msg.content == m.content and [m, m_time] in data]
+						for m, m_time in data:
+							self.dupez[guild_id].pop(self.dupez[guild_id].index([m, m_time]))
+							if m in self.msgs[str(m.author.id)]:
+								self.msgs[user_id].pop(self.msgs[user_id].index(m))
+						await msg.channel.delete_messages([m[1] for m in data])
+						if conf['toggle']:
+							triggered = True
+				lines = msg.content.split('\n')
+				lines = [line for line in lines if len(line) > 0]
+				if any(lines.count(line) > conf['repeated_lines'] for line in lines):
+					if conf['toggle']:
+						triggered = True
 
 def setup(bot):
 	bot.add_cog(Security(bot))
