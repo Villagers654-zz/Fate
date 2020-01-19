@@ -176,7 +176,6 @@ class Reactions(commands.Cog):
 		await self.send_webhook(ctx, 'pat', args, action='pats')
 
 	@commands.command(name="homo")
-	@commands.check(checks.luck)
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def _homo(self, ctx):
 		path = os.getcwd() + "/data/images/reactions/homo/" + random.choice(
@@ -185,7 +184,6 @@ class Reactions(commands.Cog):
 		e.set_image(url="attachment://" + os.path.basename(path))
 		await ctx.message.delete()
 		await ctx.send(file=discord.File(path, filename=os.path.basename(path)), embed=e)
-
 
 def setup(bot):
 	bot.add_cog(Reactions(bot))
