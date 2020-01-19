@@ -230,31 +230,38 @@ class SecureLog(commands.Cog):
 			return text
 		return [text[i:i + 1000] for i in range(0, len(text), 1000)]
 
-	@commands.group(name='secure-log')
+	@commands.group(name='secure-log', aliases=['log'])
 	@commands.cooldown(2, 5, commands.BucketType.user)
 	@commands.guild_only()
 	@commands.bot_has_permissions(embed_links=True)
 	async def secure_log(self, ctx):
 		if not ctx.invoked_subcommand:
 			e = discord.Embed(color=fate())
-			e.set_author(name='Multi Channel Log', icon_url=ctx.author.avatar_url)
+			e.set_author(name='| Action Logger', icon_url=ctx.guild.icon_url)
 			e.set_thumbnail(url=self.bot.user.avatar_url)
-			e.description = "More detailed audit that logs changes to the server and more to a dedicated channel(s)"
+			e.description = "*A more detailed audit log that logs changes to the server and more to ~~a~~ dedicated channel(s)*"
 			e.add_field(
-				name='Security',
-				value="Logs can't be deleted by anyone, they aren't purge-able, and it " \
+				name='◈ Security',
+				value=">>> Logs can't be deleted by anyone, they aren't purge-able, and it "
 				      "re-creates deleted log channels and resends the last x logs",
+				inline=False
+			)
+			e.add_field(
+				name='◈ Multi-Log',
+				value="> Sorts logs into multiple channels within a category like 'chat', 'actions', and 'updates'",
 				inline=False
 			)
 			p = utils.get_prefix(ctx)
 			e.add_field(
 				name='◈ Commands',
-				value = f"{p}secure-log enable - `creates a log`"
-				        f"\n{p}secure-log switch - `toggles multi channel log`"
-				        f"\n{p}secure-log security - `toggles use of security`"
-				        f"\n{p}secure-log disable - `deletes the log`",
+				value = f"{p}log enable - `creates a log`"
+				        f"\n{p}log switch - `toggles multi-log`"
+				        f"\n{p}log security - `toggles security`"
+				        f"\n{p}log disable - `deletes the log`",
 				inline=False
 			)
+			icon_url = 'https://cdn.discordapp.com/attachments/501871950260469790/513637799530856469/fzilwhwdxgubnoohgsas.png'
+			e.set_footer(text="Security and Multi-Log are off by default", icon_url=icon_url)
 			await ctx.send(embed=e)
 
 	@secure_log.group(name='enable')
@@ -300,7 +307,7 @@ class SecureLog(commands.Cog):
 			await ctx.send('Enabled Single-Log')
 		self.save_data()
 
-	@secure_log.command(name='toggle-security')
+	@secure_log.command(name='security')
 	@is_guild_owner()
 	@commands.bot_has_permissions(administrator=True)
 	async def _toggle_security(self, ctx):
@@ -427,6 +434,8 @@ class SecureLog(commands.Cog):
 		guild_id = str(channel.guild.id)
 		if guild_id in self.config and not payload.cached_message:
 			msg = await channel.fetch_message(payload.message_id)
+			if msg.author.bot:
+				return
 			e = discord.Embed(color=pink())
 			e.set_author(name='Uncached Msg Edited', icon_url=msg.author.avatar_url)
 			e.set_thumbnail(url=msg.author.avatar_url)
