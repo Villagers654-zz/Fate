@@ -270,9 +270,12 @@ class SecureLog(commands.Cog):
 			e.add_field(
 				name='◈ Commands',
 				value = f"{p}log enable - `creates a log`"
+				        f"\n{p}log disable - `deletes the log`"
 				        f"\n{p}log switch - `toggles multi-log`"
 				        f"\n{p}log security - `toggles security`"
-				        f"\n{p}log disable - `deletes the log`",
+				        f"\n{p}log ignore #channel - `ignore chat events`"
+				        f"\n{p}log ignore @bot - `ignores bot spam`"
+				        f"\n{p}log config ` `current setup overview`",
 				inline=False
 			)
 			icon_url = 'https://cdn.discordapp.com/attachments/501871950260469790/513637799530856469/fzilwhwdxgubnoohgsas.png'
@@ -292,7 +295,9 @@ class SecureLog(commands.Cog):
 			"channel": channel.id,
 			"channels": {},
 			"type": "single",
-			"secure": False
+			"secure": False,
+			"ignored_channels": [],
+			"ignored_bots": []
 		}
 		self.bot.loop.create_task(self.start_queue(guild_id))
 		await ctx.send("Enabled Secure-Log")
@@ -344,19 +349,84 @@ class SecureLog(commands.Cog):
 			return await ctx.send("Secure-Log isn't enabled")
 		if self.config[guild_id]['secure']:
 			if ctx.author.id != ctx.guild.owner.id:
-				return await ctx.send("You need to be owner of the server for this")
+				return await ctx.send("Due to security settings, only the owner of the server can use this")
 		del self.config[guild_id]
 		await ctx.send('Disabled Secure-Log')
 		self.save_data()
 
-	@commands.command(name='start-loop')
-	async def start_loop(self, ctx):
-		""" Restarts a loop that errored and stopped """
-		self.bot.loop.create_task(self.start_queue(str(ctx.guild.id)))
-		msg = await ctx.send('Loop started')
-		await asyncio.sleep(delay=5)
-		await msg.delete()  # delete 'Loop started' msg
-		await ctx.delete()  # delete '^^PREFIX^^start-loop' cmd
+	@secure_log.command(name='ignore')
+	@commands.has_permissions(administrator=True)
+	async def _ignore(self, ctx):
+		""" ignore channels and/or bots """
+		guild_id = str(ctx.guild.id)
+		if guild_id not in self.config:
+			return await ctx.send("Secure-Log isn't enabled")
+		if self.config[guild_id]['secure'] and ctx.author.id != ctx.guild.owner.id:
+			return await ctx.send("Due to security settings, only the owner of the server can use this")
+		for member in ctx.message.mentions:
+			if member.id in self.config[guild_id]['ignored_bots']:
+				await ctx.send(f"{member.mention} is already ignored")
+			elif not member.bot:
+				await ctx.send(f"{member.mention} is not a bot")
+			else:
+				self.config[guild_id]['ignored_bots'].append(member.id)
+				await ctx.send(f"I'll now ignore chat related events from {member.mention}")
+		for channel in ctx.message.channel_mentions:
+			if channel.id in self.config[guild_id]['ignored_channels']:
+				await ctx.send(f"{channel.mention} is already ignored")
+			else:
+				self.config[guild_id]['ignored_channels'].append(channel.id)
+				await ctx.send(f"I'll now ignore chat related events from {channel.mention}")
+		self.save_data()
+
+	@secure_log.command(name='unignore')
+	@commands.has_permissions(administrator=True)
+	async def _unignore(self, ctx):
+		""" unignore channels and/or bots """
+		guild_id = str(ctx.guild.id)
+		if guild_id not in self.config:
+			return await ctx.send("Secure-Log isn't enabled")
+		if self.config[guild_id]['secure'] and ctx.author.id != ctx.guild.owner.id:
+			return await ctx.send("Due to security settings, only the owner of the server can use this")
+		for member in ctx.message.mentions:
+			if member.id not in self.config[guild_id]['ignored_bots']:
+				await ctx.send(f"{member.mention} isn't ignored")
+			self.config[guild_id]['ignored_bots'].remove(member.id)
+			await ctx.send(f"I'll no longer ignore chat related events from {member.mention}")
+		for channel in ctx.message.channel_mentions:
+			if channel.id not in self.config[guild_id]['ignored_channels']:
+				await ctx.send(f"{channel.mention} isn't ignored")
+			else:
+				self.config[guild_id]['ignored_channels'].remove(channel.id)
+				await ctx.send(f"I'll no longer ignore chat related events from {channel.mention}")
+		self.save_data()
+
+	@secure_log.command(name='config')
+	async def _config(self, ctx):
+		""" sends an overview of the servers current config """
+		guild_id = str(ctx.guild.id)
+		if guild_id not in self.config:
+			return await ctx.send("There's currently no config for this server")
+		e = discord.Embed(color=fate())
+		e.set_author(name="Logger Config", icon_url=ctx.guild.owner.avatar_url)
+		e.set_thumbnail(url=self.bot.user.avatar_url)
+		e.description = f"**Log Type:** {self.config[guild_id]['type']} channel" \
+		                f"\n**Security:** {self.config[guild_id]['secure']}"
+		if self.config[guild_id]['ignored_channels']:
+			channels = []
+			for channel_id in self.config[guild_id]['ignored_channels']:
+				channel = self.bot.get_channel(channel_id)
+				if isinstance(channel, discord.TextChannel):
+					channels.append(channel.mention)
+			e.add_field(name='◈ Ignored Channels', value=', '.join(channels), inline=False)
+		if self.config[guild_id]['ignored_bots']:
+			bots = []
+			for bot_id in self.config[guild_id]['ignored_bots']:
+				bot = ctx.guild.get_member(bot_id)
+				if isinstance(bot, discord.Member):
+					bots.append(bot.mention)
+			e.add_field(name='◈ Ignored Bots', value=', '.join(bots), inline=False)
+		await ctx.send(embed=e)
 
 
 	""" LISTENERS / EVENTS """  # this will be removed after initial development
