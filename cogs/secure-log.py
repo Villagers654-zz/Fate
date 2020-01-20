@@ -822,11 +822,11 @@ class SecureLog(commands.Cog):
 			if isinstance(before, discord.TextChannel):
 				if before.topic != after.topic:
 					e.description = f"> 》__**Topic Changed**__《" \
-					                f"\n__**Name:**__ [{after.name}]" \
-					                f"\n__**Mention:**__ [{after.mention}]" \
-					                f"\n__**ID:**__ [{after.id}]" \
-					                f"\n__**Category:**__ [{category}]" \
-					                f"\n__**Changed by:**__ [{dat['user']}]"
+					                f"\n**Name:** [{after.name}]" \
+					                f"\n**Mention:** [{after.mention}]" \
+					                f"\n**ID:** [{after.id}]" \
+					                f"\n**Category:** [{category}]" \
+					                f"\n**Changed by:** [{dat['user']}]"
 					for text_group in self.split_into_groups(before.topic):
 						e.add_field(name='◈ Before', value=text_group, inline=False)
 					for text_group in self.split_into_groups(after.topic):
@@ -835,17 +835,17 @@ class SecureLog(commands.Cog):
 
 			if before.category != after.category:
 				e.description = f"> 》__**Category Changed**__《" \
-				                f"\n__**Name:**__ [{after.name}]" \
-				                f"\n__**Mention:**__ [{after.mention}]" \
-				                f"\n__**ID:**__ [{after.id}]" \
-				                f"\nChanged by:** [{dat['user']}]"
+				                f"\n**Name:** [{after.name}]" \
+				                f"\n**Mention:** [{after.mention}]" \
+				                f"\n**ID:** [{after.id}]" \
+				                f"\n**Changed by:** [{dat['user']}]"
 				name = 'None'
 				if before.category:
 					name = before.category.name
 				e.add_field(
 					name='◈ Before',
-					value=f"__**Name:**__ [{name}]"
-					      f"\n__**ID:**__ [{before.id}]",
+					value=f"**Name:** [{name}]"
+					      f"\n**ID:** [{before.id}]",
 					inline=False
 				)
 				name = 'None'
@@ -853,8 +853,8 @@ class SecureLog(commands.Cog):
 					name = after.category.name
 				e.add_field(
 					name='◈ After',
-					value=f"__**Name:**__ [{name}]"
-					      f"\n__**ID:**__ [{after.id}]",
+					value=f"**Name:** [{name}]"
+					      f"\n**ID:** [{after.id}]",
 					inline=False
 				)
 				self.queue[guild_id].append([e, 'updates'])
@@ -897,11 +897,11 @@ class SecureLog(commands.Cog):
 
 				e.set_author(name='~==🍸Channel Updated🍸==~', icon_url=dat['icon_url'])
 				e.description = f"> 》__**Overwrites Changed**__《" \
-				                f"\n__**Name:**__ [{after.name}]" \
-				                f"\n__**Mention:**__ [{after.mention}]" \
-				                f"\n__**ID:**__ [{after.id}]" \
-				                f"\n__**Category:**__ {category}" \
-				                f"\n__**Changed by:**__ {dat['user']}"
+				                f"\n**Name:** [{after.name}]" \
+				                f"\n**Mention:** [{after.mention}]" \
+				                f"\n**ID:** [{after.id}]" \
+				                f"\n**Category:** {category}" \
+				                f"\n**Changed by:** {dat['user']}"
 				self.queue[guild_id].append([e, 'updates'])
 
 	@commands.Cog.listener()
@@ -912,10 +912,10 @@ class SecureLog(commands.Cog):
 			e = discord.Embed(color=lime_green())
 			e.set_author(name='~==🍸Role Created🍸==~', icon_url=dat['icon_url'])
 			e.set_thumbnail(url=dat['thumbnail_url'])
-			e.description = f"__**Name:**__ [{role.name}]" \
-			                f"\n__**Mention:**__ [{role.mention}]" \
-			                f"\n__**ID:**__ [{role.id}]" \
-			                f"\n__**Created by:**__ [{dat['user']}]"
+			e.description = f"**Name:** [{role.name}]" \
+			                f"\n**Mention:** [{role.mention}]" \
+			                f"\n**ID:** [{role.id}]" \
+			                f"\n**Created by:** [{dat['user']}]"
 			self.queue[guild_id].append([e, 'actions'])
 
 	@commands.Cog.listener()
@@ -926,11 +926,11 @@ class SecureLog(commands.Cog):
 			e = discord.Embed(color=dark_green())
 			e.set_author(name='~==🍸Role Deleted🍸==~', icon_url=dat['icon_url'])
 			e.set_thumbnail(url=dat['thumbnail_url'])
-			e.description = f"__**Name:**__ [{role.name}]" \
-			                f"\n__**Mention:**__ [{role.mention}]" \
-			                f"\n__**ID:**__ [{role.id}]" \
-			                f"\n__**Created by:**__ [{dat['user']}]" \
-			                f"\n__**Members:**__ [{len(role.members)}]"
+			e.description = f"**Name:** [{role.name}]" \
+			                f"\n**Mention:** [{role.mention}]" \
+			                f"\n**ID:** [{role.id}]" \
+			                f"\n**Created by:** [{dat['user']}]" \
+			                f"\n**Members:** [{len(role.members)}]"
 
 			path = f'./static/role-members-{r.randint(1, 9999)}.txt'
 			members = f"{role.name} - Member List"
@@ -950,16 +950,16 @@ class SecureLog(commands.Cog):
 			e = discord.Embed(color=green())
 			e.set_author(name='~==🍸Role Updated🍸==~', icon_url=dat['thumbnail_url'])
 			e.set_thumbnail(url=dat['thumbnail_url'])
-			e.description = f"__**Name:**__ {after.name}" \
-			                f"\n__**Mention**__ {after.mention}" \
-			                f"\n__**ID**__ {after.id}" \
-			                f"\n__**Changed by:**__ {dat['user']}"
+			e.description = f"**Name:** {after.name}" \
+			                f"\n**Mention** {after.mention}" \
+			                f"\n**ID** {after.id}" \
+			                f"\n**Changed by:** {dat['user']}"
 
 			if before.name != after.name:
 				e.add_field(
 					name='◈ Name Changed',
-					value=f"__**Before:**__ {before.name}"
-					      f"\n__**After:**__ {after.name}",
+					value=f"**Before:** {before.name}"
+					      f"\n**After:** {after.name}",
 					inline=False
 				)
 			if before.color != after.color:
@@ -1079,14 +1079,14 @@ class SecureLog(commands.Cog):
 				webhook = await self.bot.fetch_webhook(dat['target'].id)
 				channel = self.bot.get_channel(webhook.channel_id)
 				e.set_thumbnail(url=webhook.avatar_url)
-				e.description = f"__**Name:**__ [{webhook.name}]" \
-				                f"\n__**Type:**__ [{webhook.type}]"
+				e.description = f"**Name:** [{webhook.name}]" \
+				                f"\n**Type:** [{webhook.type}]"
 
 
-			e.description += f"\n__**ID:**__ [{dat['target'].id}]" \
-			                 f"\n__**Channel:**__ [{channel.name}]" \
-			                 f"\n__**C-Mention:**__ [{channel.mention}]" \
-			                 f"\n__**{action} by:**__ [{dat['user']}]"
+			e.description += f"\n**ID:** [{dat['target'].id}]" \
+			                 f"\n**Channel:** [{channel.name}]" \
+			                 f"\n**C-Mention:** [{channel.mention}]" \
+			                 f"\n**{action} by:** [{dat['user']}]"
 
 			self.queue[guild_id].append([e, 'misc'])
 
@@ -1100,11 +1100,11 @@ class SecureLog(commands.Cog):
 				e.set_author(name='~==🍸Bot Added🍸==~', icon_url=dat['icon_url'])
 				e.set_thumbnail(url=dat['thumbnail_url'])
 				inv = f'https://discordapp.com/oauth2/authorize?client_id={member.id}&permissions=0&scope=bot'
-				e.description = f"__**Name:**__ {member.name}" \
-				                f"\n__**Mention:**__ {member.mention}" \
-				                f"\n__**ID:**__ {member.id}" \
-				                f"\n__**Bot Invite:**__ [here]({inv})" \
-				                f"\n__**Invited By:**__ {dat['user']}"
+				e.description = f"**Name:** {member.name}" \
+				                f"\n**Mention:** {member.mention}" \
+				                f"\n**ID:** {member.id}" \
+				                f"\n**Bot Invite:** [here]({inv})" \
+				                f"\n**Invited By:** {dat['user']}"
 				self.queue[guild_id].append([e, 'system+'])
 				return
 			invites = await member.guild.invites()
