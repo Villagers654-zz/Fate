@@ -428,10 +428,6 @@ class SecureLog(commands.Cog):
 			e.add_field(name='◈ Ignored Bots', value=', '.join(bots), inline=False)
 		await ctx.send(embed=e)
 
-
-	""" LISTENERS / EVENTS """  # this will be removed after initial development
-
-
 	@commands.Cog.listener()
 	async def on_ready(self):
 		for guild_id in self.config.keys():
@@ -463,9 +459,9 @@ class SecureLog(commands.Cog):
 						is_successful = True
 					elif msg.channel.permissions_for(msg.author).mention_everyone:
 						is_successful = True
-					e.description = f"Author: [{msg.author.mention}]" \
-					                f"\nPing Worked: [{is_successful}]" \
-					                f"\nChannel: [{msg.channel.mention}]"
+					e.description = f"Author: {msg.author.mention}" \
+					                f"\nPing Worked: {is_successful}" \
+					                f"\nChannel: {msg.channel.mention}"
 					e.add_field(name='Content', value=m.content, inline=False)
 					self.queue[guild_id].append([e, 'system+'])
 
@@ -482,8 +478,8 @@ class SecureLog(commands.Cog):
 				e = discord.Embed(color=pink())
 				e.set_author(name='~==🍸Msg Edited🍸==~', icon_url=before.author.avatar_url)
 				e.set_thumbnail(url=before.author.avatar_url)
-				e.description = f"__**Author:**__ [{before.author.mention}]" \
-				                f"\n__**Channel:**__ [{before.channel.mention}]" \
+				e.description = f"**Author:** {before.author.mention}" \
+				                f"\n**Channel:** {before.channel.mention}" \
 				                f"\n[Jump to MSG]({before.jump_url})\n"
 				for group in [before.content[i:i + 1000] for i in range(0, len(before.content), 1000)]:
 					e.add_field(name='◈ Before', value=group, inline=False)
@@ -504,8 +500,8 @@ class SecureLog(commands.Cog):
 				e = discord.Embed(color=pink())
 				e.set_author(name='~==🍸Embed Hidden🍸==~', icon_url=before.author.avatar_url)
 				e.set_thumbnail(url=before.author.avatar_url)
-				e.description = f"__**Author:**__ [{before.author.mention}]" \
-				                f"\n__**Channel:**__ [{before.channel.mention}]" \
+				e.description = f"**Author:** {before.author.mention}" \
+				                f"\n**Channel:** {before.channel.mention}" \
 				                f"\n[Jump to MSG]({before.jump_url})\n"
 				em = before.embeds[0].to_dict()
 				path = f'./static/embed-{before.id}.json'
@@ -519,9 +515,9 @@ class SecureLog(commands.Cog):
 				e = discord.Embed(color=cyan())
 				e.set_author(name=f'~==🍸Msg {action}🍸==~', icon_url=after.author.avatar_url)
 				e.set_thumbnail(url=after.author.avatar_url)
-				e.description = f"__**Author:**__ [{after.author.mention}]" \
-				                f"\n__**Channel:**__ [{after.channel.mention}]" \
-				                f"__**Who Pinned:**__ [{audit_dat['user']}]" \
+				e.description = f"**Author:** {after.author.mention}" \
+				                f"\n**Channel:** {after.channel.mention}" \
+				                f"**Who Pinned:** {audit_dat['user']}" \
 				                f"\n[Jump to MSG]({after.jump_url})"
 				for text_group in self.split_into_groups(after.content):
 					e.add_field(name="◈ Content", value=text_group, inline=False)
@@ -540,8 +536,8 @@ class SecureLog(commands.Cog):
 			e = discord.Embed(color=pink())
 			e.set_author(name='Uncached Msg Edited', icon_url=msg.author.avatar_url)
 			e.set_thumbnail(url=msg.author.avatar_url)
-			e.description = f"__**Author:**__ [{msg.author.mention}]" \
-			                f"\n__**Channel:**__ [{channel.mention}]" \
+			e.description = f"**Author:** {msg.author.mention}" \
+			                f"\n**Channel:** {channel.mention}" \
 			                f"\n[Jump to MSG]({msg.jump_url})"
 			for text_group in self.split_into_groups(msg.content):
 				e.add_field(name='◈ Content', value=text_group, inline=False)
@@ -582,9 +578,9 @@ class SecureLog(commands.Cog):
 				e.set_author(name='~==🍸Msg Deleted🍸==~', icon_url=msg.author.avatar_url)
 				dat = await self.search_audit(msg.guild, audit.message_delete)
 				e.set_thumbnail(url=dat['thumbnail_url'])
-				e.description = f"__**Author:**__ {msg.author.mention}" \
-				                f"\n__**Channel:**__ {msg.channel.mention}" \
-				                f"\n__**Deleted by:**__ {dat['user']}"
+				e.description = f"**Author:** {msg.author.mention}" \
+				                f"\n**Channel:** {msg.channel.mention}" \
+				                f"\n**Deleted by:** {dat['user']}"
 				for text_group in self.split_into_groups(msg.content):
 					e.add_field(name='◈ MSG Content', value=text_group, inline=False)
 				if msg.embeds:
@@ -614,10 +610,10 @@ class SecureLog(commands.Cog):
 			dat = await self.search_audit(guild, audit.message_delete)
 			e.set_author(name='Uncached Message Deleted', icon_url=dat['icon_url'])
 			e.set_thumbnail(url=dat['thumbnail_url'])
-			e.description = f"__**Author:**__ {dat['target']}" \
-			                f"\n__**MSG ID:**__ {payload.message_id}" \
-			                f"\n__**Channel:**__ {self.bot.get_channel(payload.channel_id).mention}" \
-			                f"\n__**Deleted By:**__ {dat['user']}"
+			e.description = f"**Author:** {dat['target']}" \
+			                f"\n**MSG ID:** {payload.message_id}" \
+			                f"\n**Channel:** {self.bot.get_channel(payload.channel_id).mention}" \
+			                f"\n**Deleted By:** {dat['user']}"
 			self.queue[guild_id].append([e, 'chat'])
 
 	@commands.Cog.listener()
@@ -657,9 +653,9 @@ class SecureLog(commands.Cog):
 				e.set_author(name=f"~==🍸{len(payload.cached_messages)} Msgs Purged🍸==~")
 			if dat['thumbnail_url']:
 				e.set_thumbnail(url=dat['thumbnail_url'])
-			e.description = f"__**Users Effected:**__ [{len(list(set([msg.author for msg in payload.cached_messages])))}]" \
-			                f"\n__**Channel:**__ [{channel.mention}]" \
-			                f"\n__**Purged By:**__ [{dat['user']}]"
+			e.description = f"**Users Effected:** {len(list(set([msg.author for msg in payload.cached_messages])))}" \
+			                f"\n**Channel:** {channel.mention}" \
+			                f"\n**Purged By:** {dat['user']}"
 			self.queue[guild_id].append([(e, path), 'chat'])
 
 	@commands.Cog.listener()
@@ -675,8 +671,8 @@ class SecureLog(commands.Cog):
 			e = discord.Embed(color=yellow())
 			e.set_author(name='~==🍸Reactions Cleared🍸==~', icon_url=msg.author.avatar_url)
 			e.set_thumbnail(url=msg.author.avatar_url)
-			e.description = f"__**Author:**__ [{msg.author.mention}]" \
-			                f"\n__**Channel:**__ [{channel.mention}]" \
+			e.description = f"**Author:* {msg.author.mention}" \
+			                f"\n**Channel:** {channel.mention}" \
 			                f"\n[Jump to MSG]({msg.jump_url})"
 			self.queue[guild_id].append([e, 'chat'])
 
@@ -695,14 +691,14 @@ class SecureLog(commands.Cog):
 			e = create_template_embed()
 			if before.name != after.name:
 				e.description = f"> 》__**Name Changed**__《" \
-				                f"\n__**Changed by:**__ [{dat['user']}]"
+				                f"\n**Changed by:** {dat['user']}"
 				e.add_field(name='◈ Before', value=before.name, inline=False)
 				e.add_field(name='◈ After', value=after.name, inline=False)
 				self.queue[guild_id].append([e, 'updates'])
 			if before.icon_url != after.icon_url:
 				e = create_template_embed()
 				e.description = f"> 》__**Icon Changed**__《" \
-				                f"\n__**Changed by:**__ [{dat['user']}]"
+				                f"\n**Changed by:** [{dat['user']}]"
 				if not before.is_icon_animated() and after.is_icon_animated():
 					e.description += f"\n__**Icons now animated**__"
 				if not after.is_icon_animated() and before.is_icon_animated():
@@ -711,44 +707,43 @@ class SecureLog(commands.Cog):
 			if before.banner_url != after.banner_url:
 				e = create_template_embed()
 				e.description = f"> 》__**Banner Changed**__《" \
-				                f"\n__**Changed by:**__ [{dat['user']}]"
+				                f"\n**Changed by:** {dat['user']}"
 				self.queue[guild_id].append([e, 'updates'])
 			if before.splash_url != after.splash_url:
 				e = create_template_embed()
 				e.description = f"> 》__**Splash Changed**__《" \
-				                f"\n__**Changed by:**__ [{dat['user']}]"
+				                f"\n**Changed by:** {dat['user']}"
 				self.queue[guild_id].append([e, 'updates'])
 			if before.region != after.region:
 				e = create_template_embed()
-				e.description = f"> 》__**Region Chan" \
-				                f"e = create_template_embed()ged**__《" \
-				                f"\n__**Changed by:**__ [{dat['user']}]"
+				e.description = f"> 》__**Region Changed**__《" \
+				                f"\n**Changed by:** {dat['user']}"
 				e.add_field(name='◈ Before', value=str(before.region), inline=False)
 				e.add_field(name='◈ After', value=str(after.region), inline=False)
 				self.queue[guild_id].append([e, 'updates'])
 			if before.afk_timeout != after.afk_timeout:
 				e = create_template_embed()
 				e.description = f"> 》__**AFK Timeout Changed**__《" \
-				                f"\n__**Changed by:**__ [{dat['user']}]"
+				                f"\n**Changed by:** {dat['user']}"
 				e.add_field(name='◈ Before', value=str(before.afk_timeout), inline=False)
 				e.add_field(name='◈ After', value=str(after.afk_timeout), inline=False)
 				self.queue[guild_id].append([e, 'updates'])
 			if before.afk_channel != after.afk_channel:
 				e = create_template_embed()
 				e.description = f"> 》__**AFK Channel Changed**__《" \
-				                f"\n__**Changed by:**__ [{dat['user']}]"
+				                f"\n**Changed by:** {dat['user']}"
 				if before.afk_channel:
 					e.add_field(
 						name='◈ Before',
-						value=f"__**Name:**__ {before.afk_channel.name}"
-						      f"\n__**ID:**__ {before.afk_channel.id}",
+						value=f"**Name:** {before.afk_channel.name}"
+						      f"\n**ID:** {before.afk_channel.id}",
 						inline=False
 					)
 				if after.afk_channel:
 					e.add_field(
 						name='◈ After',
-						value=f"__**Name:**__ {after.afk_channel.name}"
-						      f"\n__**ID:**__ {after.afk_channel.id}",
+						value=f"**Name:** {after.afk_channel.name}"
+						      f"\n**ID:** {after.afk_channel.id}",
 						inline=False
 					)
 				self.queue[guild_id].append([e, 'updates'])
@@ -757,15 +752,15 @@ class SecureLog(commands.Cog):
 				e.description = f"> 》__**Owner Changed**__《"
 				e.add_field(
 					name='◈ Before',
-					value=f"__**Name:**__ {before.owner.name}"
-					      f"\n__**Mention:**__ {before.owner.mention}"
-					      f"\n__**ID:**__ {before.owner.id}"
+					value=f"**Name:** {before.owner.name}"
+					      f"\n**Mention:** {before.owner.mention}"
+					      f"\n**ID:** {before.owner.id}"
 				)
 				e.add_field(
 					name='◈ After',
-					value=f"__**Name:**__ {after.owner.name}"
-					      f"\n__**Mention:**__ {after.owner.mention}"
-					      f"\n__**ID:**__ {after.owner.id}"
+					value=f"**Name:** {after.owner.name}"
+					      f"\n**Mention:** {after.owner.mention}"
+					      f"\n**ID:** {after.owner.id}"
 				)
 				self.queue[guild_id].append([e, 'updates'])
 			if before.features != after.features:
@@ -783,8 +778,8 @@ class SecureLog(commands.Cog):
 			if before.premium_tier != after.premium_tier:
 				e = create_template_embed()
 				e.description = f"> 》__**Premium Tier Changed**__《" \
-				                f"\n__**Before:**__ [{before.premium_tier}]" \
-				                f"\n__**After:**__ [{after.premium_tier}]"
+				                f"\n**Before:** [{before.premium_tier}]" \
+				                f"\n**After:** [{after.premium_tier}]"
 				self.queue[guild_id].append([e, 'updates'])
 			if before.premium_subscription_count != after.premium_subscription_count:
 				e = create_template_embed()
@@ -798,8 +793,8 @@ class SecureLog(commands.Cog):
 					if not changed:
 						changed = [m for m in after.premium_subscribers if m not in before.premium_subscribers]
 					who = changed[0].mention
-				e.description = f"> 》__**Member {action}**__《" \
-				                f"\n__**Who:**__ [{who}]"
+				e.description = f"> **Member {action}**《" \
+				                f"\n**Who:** [{who}]"
 				self.queue[guild_id].append([e, 'system+'])
 			# mfa_level, verification_level, explicit_content_filter, default_notifications
 			# preferred_locale, large, system_channel, system_channel_flags
@@ -819,11 +814,11 @@ class SecureLog(commands.Cog):
 			mention = 'None'
 			if isinstance(channel, discord.TextChannel):
 				mention = channel.mention
-			e.description = f"__**Name:**__ [{channel.name}]" \
-			                f"\n__**Mention:**__ [{mention}]" \
-			                f"\n__**ID:**__ [{channel.id}]" \
-			                f"\n__**Creator:**__ [{dat['user']}]" \
-			                f"\nMembers: [{member_count}]"
+			e.description = f"**Name:** {channel.name}" \
+			                f"\n**Mention:** {mention}" \
+			                f"\n**ID:** {channel.id}" \
+			                f"\n**Creator:** {dat['user']}" \
+			                f"\n**Members:** {member_count}"
 			self.queue[guild_id].append([e, 'actions'])
 
 	@commands.Cog.listener()
@@ -858,12 +853,12 @@ class SecureLog(commands.Cog):
 			e = discord.Embed(color=red())
 			e.set_author(name='~==🍸Channel Deleted🍸==~', icon_url=dat['icon_url'])
 			e.set_thumbnail(url=dat['thumbnail_url'])
-			e.description = f"__**Name:**__ [{channel.name}]" \
-			                f"\n__**ID:**__ [{channel.id}]" \
-			                f"\n__**Category:**__ [{category}]" \
-			                f"\n__**User:**__ [{dat['user']}]" \
-			                f"\n__**Members:**__ [{member_count}]" \
-			                f"\n__**Deleted by:**__ [{dat['user']}]"
+			e.description = f"**Name:** {channel.name}" \
+			                f"\n**ID:** {channel.id}" \
+			                f"\n**Category:** [{category}" \
+			                f"\n**User:** {dat['user']}" \
+			                f"\n**Members:** {member_count}" \
+			                f"\n**Deleted by:** {dat['user']}"
 
 			if isinstance(channel, discord.CategoryChannel):
 				self.queue[guild_id].append([e, 'actions'])
@@ -892,23 +887,23 @@ class SecureLog(commands.Cog):
 
 			if before.name != after.name:
 				e.description = f"> 》__**Name Changed**__《" \
-				                f"\n__**Before:**__ [{before.name}]" \
-				                f"\n__**After:**__ [{after.name}]" \
-				                f"\n__**Mention:**__ [{after.mention}]" \
-				                f"\n__**Category:**__ [{category}]" \
-				                f"\n__**ID:**__ [`{after.id}`]" \
-				                f"\n__**Changed by:**__ [{dat['user']}]"
+				                f"\n**Before:** {before.name}" \
+				                f"\n**After:** {after.name}" \
+				                f"\n**Mention:** {after.mention}" \
+				                f"\n**Category:** {category}" \
+				                f"\n**ID:** `{after.id}`" \
+				                f"\n**Changed by:** {dat['user']}"
 				self.queue[guild_id].append([e, 'updates'])
 
 			if before.position != after.position:
 				e.description = f"> 》__**Position Changed**__《" \
-				                f"\n__**Name:**__ [{after.name}]" \
-				                f"\n__**Mention:**__ [{after.mention}]" \
-				                f"\n__**ID:**__ [{after.id}]" \
-				                f"\n__**Category:**__ [{category}]" \
-				                f"\n__**Before:**__ [{before.position}]" \
-				                f"\n__**After:**__ [{after.position}]" \
-				                f"\n__**Changed By:**__ [{dat['user']}]"
+				                f"\n**Name:** {after.name}" \
+				                f"\n**Mention:** {after.mention}" \
+				                f"\n**ID:** {after.id}" \
+				                f"\n**Category:** {category}" \
+				                f"\n**Before:** {before.position}" \
+				                f"\n**After:** {after.position}" \
+				                f"\n**Changed By:** {dat['user']}"
 				self.queue[guild_id].append([e, 'updates'])
 
 			if isinstance(before, discord.TextChannel):
@@ -916,11 +911,11 @@ class SecureLog(commands.Cog):
 					if before.id in self.config[guild_id]['ignored_channels']:
 						return
 					e.description = f"> 》__**Topic Changed**__《" \
-					                f"\n**Name:** [{after.name}]" \
-					                f"\n**Mention:** [{after.mention}]" \
-					                f"\n**ID:** [{after.id}]" \
-					                f"\n**Category:** [{category}]" \
-					                f"\n**Changed by:** [{dat['user']}]"
+					                f"\n**Name:** {after.name}" \
+					                f"\n**Mention:** {after.mention}" \
+					                f"\n**ID:** {after.id}" \
+					                f"\n**Category:** {category}" \
+					                f"\n**Changed by:** {dat['user']}"
 					for text_group in self.split_into_groups(before.topic):
 						e.add_field(name='◈ Before', value=text_group, inline=False)
 					for text_group in self.split_into_groups(after.topic):
@@ -929,17 +924,17 @@ class SecureLog(commands.Cog):
 
 			if before.category != after.category:
 				e.description = f"> 》__**Category Changed**__《" \
-				                f"\n**Name:** [{after.name}]" \
-				                f"\n**Mention:** [{after.mention}]" \
-				                f"\n**ID:** [{after.id}]" \
-				                f"\n**Changed by:** [{dat['user']}]"
+				                f"\n**Name:** {after.name}" \
+				                f"\n**Mention:** {after.mention}" \
+				                f"\n**ID:** {after.id}" \
+				                f"\n**Changed by:** {dat['user']}"
 				name = 'None'
 				if before.category:
 					name = before.category.name
 				e.add_field(
 					name='◈ Before',
-					value=f"**Name:** [{name}]"
-					      f"\n**ID:** [{before.id}]",
+					value=f"**Name:** {name}"
+					      f"\n**ID:** {before.id}",
 					inline=False
 				)
 				name = 'None'
@@ -947,8 +942,8 @@ class SecureLog(commands.Cog):
 					name = after.category.name
 				e.add_field(
 					name='◈ After',
-					value=f"**Name:** [{name}]"
-					      f"\n**ID:** [{after.id}]",
+					value=f"**Name:** {name}"
+					      f"\n**ID:** {after.id}",
 					inline=False
 				)
 				self.queue[guild_id].append([e, 'updates'])
