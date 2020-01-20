@@ -1127,11 +1127,11 @@ class SecureLog(commands.Cog):
 				inviter = invite.inviter
 			e.set_author(name='~==🍸Member Joined🍸==~', icon_url=icon_url)
 			e.set_thumbnail(url=member.avatar_url)
-			e.description = f"__**Name:**__ {member.name}" \
-			                f"\n__**Mention:**__ {member.mention}" \
-			                f"\n__**ID:**__ {member.id}" \
-			                f"\n__**Invited by:**__ {inviter}" \
-			                f"\n__**Invite:**__ [{invite.code}]({invite.url})"
+			e.description = f"**Name:** {member.name}" \
+			                f"\n**Mention:** {member.mention}" \
+			                f"\n**ID:** {member.id}" \
+			                f"\n**Invited by:** {inviter}" \
+			                f"\n**Invite:** [{invite.code}]({invite.url})"
 			aliases = list(set([
 				m.display_name for m in [
 					server.get_member(member.id) for server in self.bot.guilds if member in server.members
@@ -1144,6 +1144,36 @@ class SecureLog(commands.Cog):
 					inline=False
 				)
 			self.queue[guild_id].append([e, 'misc'])
+
+	@commands.Cog.listener()
+	async def on_member_remove(self, member):
+		guild_id = str(member.guild.id)
+		if guild_id in self.config:
+			e = discord.Embed(color=red())
+			e.description = f"**Username:** {member}" \
+			                f"\n**Mention:** {member.mention}" \
+			                f"\n**ID:** {member.id}" \
+			                f"\n**Top Role:** {member.top_role.mention}"
+			e.set_thumbnail(url=member.avatar_url)
+			removed = False
+
+			async for entry in member.guild.audit_logs(limit=1, action=audit.kick):
+				if entry.target.id == member.id and entry.created_at > self.past():
+					e.set_author(name='~==🍸Member Kicked🍸==~', icon_url=entry.user.avatar_url)
+					e.description += f"\n**Kicked by:** {entry.user.mention}"
+					self.queue[guild_id].append([e, 'sudo'])
+					removed = True
+
+			async for entry in member.guild.audit_logs(limit=1, action=audit.ban):
+				if entry.target.id == member.id and entry.created_at > self.past():
+					e.set_author(name='~==🍸Member Banned🍸==~', icon_url=entry.user.avatar_url)
+					e.description += f"\n**Banned by:** {entry.user.mention}"
+					self.queue[guild_id].append([e, 'sudo'])
+					removed = True
+
+			if not removed:
+				e.set_author(name='~==🍸Member Left🍸==~', icon_url=member.avatar_url)
+				self.queue[guild_id].append([e, 'misc'])
 
 def setup(bot):
 	bot.add_cog(SecureLog(bot))
