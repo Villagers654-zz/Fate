@@ -913,6 +913,8 @@ class SecureLog(commands.Cog):
 
 			if isinstance(before, discord.TextChannel):
 				if before.topic != after.topic:
+					if before.id in self.config[guild_id]['ignored_channels']:
+						return
 					e.description = f"> 》__**Topic Changed**__《" \
 					                f"\n**Name:** [{after.name}]" \
 					                f"\n**Mention:** [{after.mention}]" \
