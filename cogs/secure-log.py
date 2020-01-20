@@ -452,9 +452,10 @@ class SecureLog(commands.Cog):
 					e.title = f"~==🍸{mention} mentioned🍸==~"
 					e.set_thumbnail(url=msg.author.avatar_url)
 					is_successful = False
-					if msg.author.guild_permissions.administrator:
+					member = msg.guild.get_member(msg.author.id)
+					if member.guild_permissions.administrator:
 						is_successful = True
-					elif msg.author.guild_permissions.mention_everyone and (
+					elif member.guild_permissions.mention_everyone and (
 							not msg.channel.permissions_for(msg.author).mention_everyone == False):
 						is_successful = True
 					elif msg.channel.permissions_for(msg.author).mention_everyone:
