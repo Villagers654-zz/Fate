@@ -303,6 +303,20 @@ class SecureLog(commands.Cog):
 		await ctx.send("Enabled Secure-Log")
 		self.save_data()
 
+	@secure_log.command(name='disable')
+	@commands.has_permissions(administrator=True)
+	async def _disable(self, ctx):
+		""" Deletes a multi-log """
+		guild_id = str(ctx.guild.id)
+		if guild_id not in self.config:
+			return await ctx.send("Secure-Log isn't enabled")
+		if self.config[guild_id]['secure']:
+			if ctx.author.id != ctx.guild.owner.id:
+				return await ctx.send("Due to security settings, only the owner of the server can use this")
+		del self.config[guild_id]
+		await ctx.send('Disabled Secure-Log')
+		self.save_data()
+
 	@secure_log.command(name='switch')
 	@commands.has_permissions(administrator=True)
 	@commands.bot_has_permissions(administrator=True)
@@ -339,20 +353,6 @@ class SecureLog(commands.Cog):
 		else:
 			self.config[guild_id]['secure'] = True
 			await ctx.send('Enabled secure features')
-
-	@secure_log.command(name='disable')
-	@commands.has_permissions(administrator=True)
-	async def _disable(self, ctx):
-		""" Deletes a multi-log """
-		guild_id = str(ctx.guild.id)
-		if guild_id not in self.config:
-			return await ctx.send("Secure-Log isn't enabled")
-		if self.config[guild_id]['secure']:
-			if ctx.author.id != ctx.guild.owner.id:
-				return await ctx.send("Due to security settings, only the owner of the server can use this")
-		del self.config[guild_id]
-		await ctx.send('Disabled Secure-Log')
-		self.save_data()
 
 	@secure_log.command(name='ignore')
 	@commands.has_permissions(administrator=True)
