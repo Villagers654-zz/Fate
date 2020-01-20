@@ -474,6 +474,11 @@ class SecureLog(commands.Cog):
 		guild_id = str(before.guild.id)
 		if guild_id in self.config and not after.author.bot:
 			if before.content != after.content:
+				if before.author.id in self.config[guild_id]['ignored_bots']:
+					return
+				if before.channel.id in self.config[guild_id]['ignored_channels']:
+					return
+
 				e = discord.Embed(color=pink())
 				e.set_author(name='~==🍸Msg Edited🍸==~', icon_url=before.author.avatar_url)
 				e.set_thumbnail(url=before.author.avatar_url)
@@ -487,6 +492,11 @@ class SecureLog(commands.Cog):
 				self.queue[guild_id].append([e, 'chat'])
 
 			if before.embeds and not after.embeds:
+				if before.author.id in self.config[guild_id]['ignored_bots']:
+					return
+				if before.channel.id in self.config[guild_id]['ignored_channels']:
+					return
+
 				if before.channel.id == self.config[guild_id]['channel'] or(  # a message in the log was suppressed
 						before.channel.id in self.config[guild_id]['channels']):
 					await asyncio.sleep(0.5)  # prevent updating too fast and not showing on the users end
@@ -523,7 +533,9 @@ class SecureLog(commands.Cog):
 		guild_id = str(channel.guild.id)
 		if guild_id in self.config and not payload.cached_message:
 			msg = await channel.fetch_message(payload.message_id)
-			if msg.author.bot:
+			if msg.author.id in self.config[guild_id]['ignored_bots']:
+				return
+			if msg.channel.id in self.config[guild_id]['ignored_channels']:
 				return
 			e = discord.Embed(color=pink())
 			e.set_author(name='Uncached Msg Edited', icon_url=msg.author.avatar_url)
@@ -561,6 +573,10 @@ class SecureLog(commands.Cog):
 
 				if msg.author.id == self.bot.user.id and 'your cooldowns up' in msg.content:
 					return  # is from work notifs within the factions module
+				if msg.author.id in self.config[guild_id]['ignored_bots']:
+					return
+				if msg.channel.id in self.config[guild_id]['ignored_channels']:
+					return
 
 				e = discord.Embed(color=purple())
 				e.set_author(name='~==🍸Msg Deleted🍸==~', icon_url=msg.author.avatar_url)
@@ -591,6 +607,8 @@ class SecureLog(commands.Cog):
 	async def on_raw_message_delete(self, payload):
 		guild_id = str(payload.guild_id)
 		if guild_id in self.config and not payload.cached_message:
+			if payload.channel_id in self.config[guild_id]['ignored_channels']:
+				return
 			guild = self.bot.get_guild(payload.guild_id)
 			e = discord.Embed(color=purple())
 			dat = await self.search_audit(guild, audit.message_delete)
@@ -650,6 +668,10 @@ class SecureLog(commands.Cog):
 		if guild_id in self.config:
 			channel = self.bot.get_channel(payload.channel_id)
 			msg = await channel.fetch_message(payload.message_id)
+			if msg.author.id in self.config[guild_id]['ignored_bots']:
+				return
+			if msg.channel.id in self.config[guild_id]['ignored_channels']:
+				return
 			e = discord.Embed(color=yellow())
 			e.set_author(name='~==🍸Reactions Cleared🍸==~', icon_url=msg.author.avatar_url)
 			e.set_thumbnail(url=msg.author.avatar_url)
@@ -659,7 +681,7 @@ class SecureLog(commands.Cog):
 			self.queue[guild_id].append([e, 'chat'])
 
 	@commands.Cog.listener()
-	async def on_guild_update(self, before, after):
+	async def on_guild_update(self, before, after):  # due for rewrite
 		guild_id = str(after.id)
 		if guild_id in self.config:
 			dat = await self.search_audit(after, audit.guild_update)
@@ -857,7 +879,7 @@ class SecureLog(commands.Cog):
 			self.queue[guild_id].append([(e, path), 'actions'])
 
 	@commands.Cog.listener()
-	async def on_guild_channel_update(self, before, after):
+	async def on_guild_channel_update(self, before, after):  # due for rewrite
 		guild_id = str(after.guild.id)
 		if guild_id in self.config:
 			e = discord.Embed(color=orange())
