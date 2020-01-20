@@ -55,6 +55,10 @@ class SecureLog(commands.Cog):
 		}
 		self.static = {}
 
+		self.invites = {}
+		if self.bot.is_ready():
+			self.bot.loop.create_task(self.init_invites())
+
 		self.queues = {}
 		for guild_id in self.config.keys():
 			queue = bot.loop.create_task(self.start_queue(guild_id))
@@ -179,6 +183,17 @@ class SecureLog(commands.Cog):
 					self.recent_logs[guild_id][channelType] = self.recent_logs[guild_id][channelType][-50:]
 				elif log_type == 'single':
 					self.recent_logs[guild_id] = self.recent_logs[guild_id][-175:]
+
+	async def init_invites(self):
+		""" Indexes each servers invites """
+		for guild_id in self.config.keys():
+			guild = self.bot.get_guild(int(guild_id))
+			if isinstance(guild, discord.Guild):
+				if guild_id not in self.invites:
+					self.invites[guild_id] = {}
+				invites = await guild.invites()
+				for invite in invites:
+					self.invites[guild_id][invite.url] = invite.uses
 
 	def past(self):
 		""" gets the time 2 seconds ago in utc for audit searching """
@@ -338,7 +353,10 @@ class SecureLog(commands.Cog):
 	async def start_loop(self, ctx):
 		""" Restarts a loop that errored and stopped """
 		self.bot.loop.create_task(self.start_queue(str(ctx.guild.id)))
-		await ctx.send('Loop started')
+		msg = await ctx.send('Loop started')
+		await asyncio.sleep(delay=5)
+		await msg.delete()  # delete 'Loop started' msg
+		await ctx.delete()  # delete '^^PREFIX^^start-loop' cmd
 
 
 	""" LISTENERS / EVENTS """  # this will be removed after initial development
@@ -348,6 +366,7 @@ class SecureLog(commands.Cog):
 	async def on_ready(self):
 		for guild_id in self.config.keys():
 			self.bot.loop.create_task(self.start_queue(guild_id))
+		await self.init_invites()
 
 	@commands.Cog.listener()
 	async def on_message(self, msg):
@@ -362,7 +381,7 @@ class SecureLog(commands.Cog):
 				if '!here' in content:
 					mention = '@here'
 				if mention:
-					msg = await msg.channel.fetch_message(msg.id)
+					m = await msg.channel.fetch_message(msg.id)
 					e = discord.Embed(color=white())
 					e.title = f"~==🍸{mention} mentioned🍸==~"
 					e.set_thumbnail(url=msg.author.avatar_url)
@@ -377,7 +396,7 @@ class SecureLog(commands.Cog):
 					e.description = f"Author: [{msg.author.mention}]" \
 					                f"\nPing Worked: [{is_successful}]" \
 					                f"\nChannel: [{msg.channel.mention}]"
-					e.add_field(name='Content', value=msg.content, inline=False)
+					e.add_field(name='Content', value=m.content, inline=False)
 					self.queue[guild_id].append([e, 'system+'])
 
 	@commands.Cog.listener()
@@ -1087,6 +1106,44 @@ class SecureLog(commands.Cog):
 				                f"\n__**Bot Invite:**__ [here]({inv})" \
 				                f"\n__**Invited By:**__ {dat['user']}"
 				self.queue[guild_id].append([e, 'system+'])
+				return
+			invites = await member.guild.invites()
+			invite = None  # the invite used to join
+			for invite in invites:
+				if invite.url not in self.invites[guild_id]:
+					self.invites[guild_id][invite.url] = invite.uses
+					if invite.uses > 0:
+						invite = invite
+						break
+				elif invite.uses != self.invites[guild_id][invite.url]:
+					self.invites[guild_id][invite.url] = invite.uses
+					invite = invite
+					break
+			e = discord.Embed(color=lime_green())
+			icon_url = member.avatar_url
+			inviter = 'Unknown'
+			if invite.inviter:
+				icon_url = invite.inviter.avatar_url
+				inviter = invite.inviter
+			e.set_author(name='~==🍸Member Joined🍸==~', icon_url=icon_url)
+			e.set_thumbnail(url=member.avatar_url)
+			e.description = f"__**Name:**__ {member.name}" \
+			                f"\n__**Mention:**__ {member.mention}" \
+			                f"\n__**ID:**__ {member.id}" \
+			                f"\n__**Invited by:**__ {inviter}" \
+			                f"\n__**Invite:**__ [{invite.code}]({invite.url})"
+			aliases = list(set([
+				m.display_name for m in [
+					server.get_member(member.id) for server in self.bot.guilds if member in server.members
+				] if m.id == member.id and m.display_name != member.name
+			]))
+			if len(aliases) > 0:
+				e.add_field(
+					name='◈ Aliases',
+					value=', '.join(aliases),
+					inline=False
+				)
+			self.queue[guild_id].append([e, 'misc'])
 
 def setup(bot):
 	bot.add_cog(SecureLog(bot))
