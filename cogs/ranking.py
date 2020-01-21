@@ -800,6 +800,69 @@ class Ranking(commands.Cog):
 			await msg.edit(embed=embeds[index][sub_index])
 			await msg.remove_reaction(reaction, ctx.author)
 
+	@commands.command(name='gen-lb')
+	@commands.is_owner()
+	async def generate_leaderboard(self, ctx):
+		async def update_embed(m, data):
+			""" gen and update the leaderboard embed """
+			e = discord.Embed(color=0x4A0E50)
+			e.title = 'Msg Leaderboard'
+			e.description = ''
+			rank = 1
+			for user_id, xp in sorted(data.items(), reverse=True, key=lambda kv: kv[1]):
+				user = self.bot.get_user(int(user_id))
+				if not isinstance(user, discord.User):
+					continue
+				e.description += f'#{rank}. `{user}` - {xp}\n'
+				rank += 1
+				if rank == 10:
+					break
+			e.set_footer(text=footer)
+			await m.edit(embed=e)
+
+		e = discord.Embed()
+		e.description = 'Starting..'
+		m = await ctx.send(embed=e)
+
+		xp = {}
+		last_gain = {}
+		last_update = time() + 5
+
+		for i, channel in enumerate(ctx.guild.text_channels):
+			footer = f"Reading #{channel.name} ({i+1}/{len(ctx.guild.text_channels)})"
+			await update_embed(m, xp)
+			bot_counter = 0
+
+			async for msg in channel.history(oldest_first=True, limit=None):
+				# skip channels where every msg is a bot
+				if msg.author.bot:
+					bot_counter += 1
+					if bot_counter == 1024:
+						break
+					continue
+				else:
+					bot_counter = 0
+
+				# init
+				user_id = str(msg.author.id)
+				if user_id not in xp:
+					xp[user_id] = 0
+				if user_id not in last_gain:
+					last_gain[user_id] = None
+				if last_gain[user_id]:
+					if (msg.created_at - last_gain[user_id]).total_seconds() < 10:
+						continue
+
+				# update stuff
+				last_gain[user_id] = msg.created_at
+				xp[user_id] += 1
+				if last_update < time():
+					await update_embed(m, xp)
+					last_update = time() + 5
+
+		footer = f'Gen Complete ({len(ctx.guild.text_channels)}/{len(ctx.guild.text_channels)})'
+		await update_embed(m, xp)
+
 	@_min_xp_per_msg.before_invoke
 	@_max_xp_per_msg.before_invoke
 	@_first_level_xp_req.before_invoke
