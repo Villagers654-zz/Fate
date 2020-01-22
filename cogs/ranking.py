@@ -75,18 +75,20 @@ class Ranking(commands.Cog):
 		self.vc_counter = 0
 		self.backup_counter = 0
 		self.cache = {}
+		# xp config
 		self.config = {}
 		if path.isfile(self.path):
 			with open(self.path, 'r') as f:
 				self.config = json.load(f)
+		# save storage
+		for guild_id, config in self.config.items():
+			if config == self.static_config():
+				del self.config[guild_id]
+		# profile config
 		self.profile = {}
 		if path.isfile(self.profile_path):
 			with open(self.profile_path, 'r') as f:
 				self.profile = json.load(f)
-		self.msg_id_log = {}
-		if path.isfile(self.log_path):
-			with open(self.log_path, 'r') as f:
-				self.msg_id_log = json.load(f)
 
 	def _global(self, Global) -> dict:
 		""" Returns data for each global leaderboard """
