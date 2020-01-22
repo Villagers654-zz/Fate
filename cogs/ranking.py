@@ -12,7 +12,7 @@ from io import BytesIO
 
 from discord.ext import commands
 import discord
-from PIL import Image, ImageFont, ImageDraw
+from PIL import Image, ImageFont, ImageDraw, ImageSequence
 
 from utils import colors, utils
 
@@ -81,7 +81,7 @@ class Ranking(commands.Cog):
 			with open(self.path, 'r') as f:
 				self.config = json.load(f)
 		# save storage
-		for guild_id, config in self.config.items():
+		for guild_id, config in list(self.config.items()):
 			if config == self.static_config():
 				del self.config[guild_id]
 		# profile config
@@ -483,16 +483,16 @@ class Ranking(commands.Cog):
 
 		# config
 		title = 'Use .help profile'
-		background = None
+		background_url = None
 		if ctx.guild.splash:
-			background = ctx.guild.splash_url
+			background_url = ctx.guild.splash_url
 		if ctx.guild.banner:
-			background = ctx.guild.banner_url
+			background_url = ctx.guild.banner_url
 		if user_id in self.profile:
 			if 'title' in self.profile[user_id]:
 				title = self.profile[user_id]['title']
 			if 'background' in self.profile[user_id]:
-				background = self.profile[user_id]['background']
+				background_url = self.profile[user_id]['background']
 
 		# xp variables
 		guild_rank = 0
@@ -527,9 +527,6 @@ class Ranking(commands.Cog):
 			status = 'https://cdn.discordapp.com/attachments/541520201926311986/666182794665263124/1578900748602.png'
 
 		# Prepare the profile card
-		if background:
-			background = Image.open(BytesIO(requests.get(background).content)).convert('RGBA')
-			background = background.resize((1000, 500), Image.BICUBIC)
 		url = 'https://cdn.discordapp.com/attachments/632084935506788385/666158201867075585/rank-card.png'
 		card = Image.open(BytesIO(requests.get(url).content))
 		draw = ImageDraw.Draw(card)
@@ -581,11 +578,46 @@ class Ranking(commands.Cog):
 		draw.text((25, 415), misc, (255, 255, 255), font=font(50))
 		draw.line((0, 500, length, 500), fill=user.color.to_rgb(), width=10)
 
-		# misc
-		if background:
-			background.paste(card, (0, 0), card)
-			card = background
-		card.save(path, format='png')
+		# backgrounds and saving
+		if background_url:
+			background = Image.open(BytesIO(requests.get(background_url).content))
+			if 'gif' in background_url:
+				dur = background.info['duration']
+				count = len(list(ImageSequence.Iterator(background)))
+				skip = False
+				skipped = 0
+				frames = []
+				for frame in ImageSequence.Iterator(background):
+					if count > 75 and count < 150:
+						if skip:
+							skip = False
+							continue
+						else:
+							skip = True
+					elif count > 150:
+						skip = len(str(count)) + 2
+						if skipped <= skip:
+							skipped += 1
+							continue
+						else:
+							skipped = 0
+
+					frame = frame.convert('RGBA')
+					frame = frame.resize((1000, 500), Image.BICUBIC)
+					frame.paste(card, (0, 0), card)
+					b = BytesIO()
+					frame.save(b, format="GIF")
+					frame = Image.open(b)
+					frames.append(frame)
+				path = path.replace('png', 'gif')
+				frames[0].save(path, save_all=True, append_images=frames[1:], loop=0, duration=dur)
+			else:
+				background = background.convert('RGBA')
+				background = background.resize((1000, 500), Image.BICUBIC)
+				background.paste(card, (0, 0), card)
+				background.save(path, format='PNG')
+		else:
+			card.save(path, format=format)
 		await ctx.send(f"> **Profile card for {user}**", file=discord.File(path))
 
 	@commands.command(
