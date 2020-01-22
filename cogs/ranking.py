@@ -825,12 +825,12 @@ class Ranking(commands.Cog):
 		m = await ctx.send(embed=e)
 
 		xp = {}
-		last_gain = {}
 		last_update = time() + 5
 
 		for i, channel in enumerate(ctx.guild.text_channels):
-			footer = f"Reading #{channel.name} ({i+1}/{len(ctx.guild.text_channels)})"
+			footer = f"Reading #{channel.name} ({i + 1}/{len(ctx.guild.text_channels)})"
 			await update_embed(m, xp)
+			last_gain = {}
 			bot_counter = 0
 
 			async for msg in channel.history(oldest_first=True, limit=None):
