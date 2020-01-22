@@ -203,6 +203,7 @@ class SecureLog(commands.Cog):
 		""" Returns the latest entry from a list of actions """
 		dat = {
 			'user': 'Unknown',
+			'actual_user': None,
 			'target': 'Unknown',
 			'icon_url': guild.icon_url,
 			'thumbnail_url': guild.icon_url,
@@ -219,6 +220,7 @@ class SecureLog(commands.Cog):
 					dat['action'] = entry.action
 					if entry.user:
 						dat['user'] = entry.user.mention
+						dat['actual_user'] = entry.user
 						dat['thumbnail_url'] = entry.user.avatar_url
 					if entry.target and isinstance(entry.target, discord.Member):
 						dat['target'] = entry.target.mention
@@ -1152,6 +1154,10 @@ class SecureLog(commands.Cog):
 				audit.webhook_delete,
 				audit.webhook_update
 			)
+
+			who = dat['actual_user']  # type: discord.Member
+			if who.bot and who.id in self.config[guild_id]['ignored-bots']:
+				return
 
 			if dat['action'].name == 'webhook_create':
 				action = 'Created'
