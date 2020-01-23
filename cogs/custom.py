@@ -49,14 +49,14 @@ class Custom(commands.Cog):
 	async def villicool(self, ctx):
 		await ctx.send('villicool112 is indeed cool')
 
-	@commands.command(name='elon', aliases=['elongated', 'elongatedmuskrat'])
-	@commands.cooldown(1, 3, commands.BucketType.user)
-	async def elon(self, ctx):
-		with open('./data/images/urls/nekos.txt', 'r') as f:
-			image_urls = f.readlines()
-		e = discord.Embed(color=colors.cyan())
-		e.set_image(url=random.choice(image_urls))
-		await ctx.send(embed=e)
+	#@commands.command(name='elon', aliases=['elongated', 'elongatedmuskrat'])
+	#@commands.cooldown(1, 3, commands.BucketType.user)
+	#async def elon(self, ctx):
+	#	with open('./data/images/urls/nekos.txt', 'r') as f:
+	#		image_urls = f.readlines()
+	#	e = discord.Embed(color=colors.cyan())
+	#	e.set_image(url=random.choice(image_urls))
+	#	await ctx.send(embed=e)
 
 	@commands.command(name='opal')
 	@commands.cooldown(1, 3, commands.BucketType.user)
