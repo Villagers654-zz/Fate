@@ -5,6 +5,7 @@ Link multiple channels together via link command
 from os import path
 import json
 import aiohttp
+import asyncio
 
 from discord.ext import commands
 from discord import Webhook, AsyncWebhookAdapter
@@ -19,6 +20,7 @@ class GlobalChat(commands.Cog):
 		self.path = './data/userdata/global_chat.json'
 		self.channels = {}
 		self.webhooks = False
+		self.cd = {}
 		if path.isfile(self.path):
 			with open(self.path, 'r') as f:
 				dat = json.load(f)  # type: dict
@@ -91,29 +93,36 @@ class GlobalChat(commands.Cog):
 		if isinstance(msg.guild, discord.Guild) and (msg.content or msg.attachments):
 			channel_id = str(msg.channel.id)
 			if channel_id in self.channels and not str(msg.author).endswith('#0000') and not msg.content.startswith('Linked'):
-				msg = await msg.channel.fetch_message(msg.id)
-				channels = [
-					(id, url) for id, url in self.channels.items() if id != channel_id
-				]
-				if self.webhooks:
-					async with aiohttp.ClientSession() as session:
+				user_id = msg.author.id
+				if user_id not in self.cd:
+					self.cd[user_id] = []
+				if len(self.cd[user_id]) < 2:
+					self.cd[user_id].append(msg.id)
+					msg = await msg.channel.fetch_message(msg.id)
+					channels = [
+						(id, url) for id, url in self.channels.items() if id != channel_id
+					]
+					if self.webhooks:
+						async with aiohttp.ClientSession() as session:
+							for channel_id, webhook_url in channels:
+								try:
+									webhook = Webhook.from_url(webhook_url, adapter=AsyncWebhookAdapter(session))
+									await webhook.send(
+										msg.content, username=msg.author.display_name, avatar_url=msg.author.avatar_url
+									)
+								except:
+									del self.channels[channel_id]
+					else:
 						for channel_id, webhook_url in channels:
-							try:
-								webhook = Webhook.from_url(webhook_url, adapter=AsyncWebhookAdapter(session))
-								await webhook.send(
-									msg.content, username=msg.author.display_name, avatar_url=msg.author.avatar_url
-								)
-							except:
-								del self.channels[channel_id]
-				else:
-					for channel_id, webhook_url in channels:
-						channel = self.bot.get_channel(int(channel_id))
-						e = discord.Embed(color=msg.author.color)
-						e.set_author(name=str(msg.author), icon_url=msg.author.avatar_url)
-						e.description = msg.content
-						if msg.attachments:
-							e.set_image(url=msg.attachments[0].url)
-						await channel.send(embed=e)
+							channel = self.bot.get_channel(int(channel_id))
+							e = discord.Embed(color=msg.author.color)
+							e.set_author(name=str(msg.author), icon_url=msg.author.avatar_url)
+							e.description = msg.content
+							if msg.attachments:
+								e.set_image(url=msg.attachments[0].url)
+							await channel.send(embed=e)
+					await asyncio.sleep(5)
+					self.cd[user_id].remove(msg.id)
 
 def setup(bot):
 	bot.add_cog(GlobalChat(bot))
