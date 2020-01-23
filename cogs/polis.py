@@ -1,7 +1,10 @@
 import asyncio
 import random
+import os
+import aiohttp
 from discord.ext import commands
 import discord
+from discord import Webhook, AsyncWebhookAdapter
 from utils import checks, colors
 
 
@@ -82,6 +85,7 @@ class Polis(commands.Cog):
 		self.emoji = random.choice(self.emojis)
 		if self.bot.is_ready():
 			bot.loop.create_task(self.update_rules())
+		self.meme_channel = 633866670523285524
 
 	async def showcase_slider(self):
 		""" embeded partnership slideshow """
@@ -135,6 +139,23 @@ class Polis(commands.Cog):
 	async def on_ready(self):
 		self.bot.loop.create_task(self.showcase_slider())
 		self.bot.loop.create_task(self.update_rules())
+
+	#@commands.Cog.listener()
+	#async def on_message(self, msg):
+	#	if 'memes' in msg.channel.name and msg.channel.id != self.meme_channel:
+	#		if msg.attachments:
+	#			files = []
+	#			for file in msg.attachments:
+	#				await file.save(f'./static/{file.filename}')
+	#				files.append(discord.File(f'./static/{file.filename}'))
+	#			channel = self.bot.get_channel(self.meme_channel)
+	#			webhook = await channel.create_webhook(name='Meme')
+	#			async with aiohttp.ClientSession() as session:
+	#				webhook = Webhook.from_url(webhook.url, adapter=AsyncWebhookAdapter(session))
+	#				await webhook.send(files=files, username=msg.author.name, avatar_url=msg.author.avatar_url)
+	#				await webhook.delete()
+	#			for file in msg.attachments:
+	#				os.remove(f'./static/{file.filename}')
 
 	@commands.Cog.listener()
 	async def on_raw_reaction_add(self, payload):
