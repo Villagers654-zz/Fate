@@ -393,6 +393,9 @@ class Ranking(commands.Cog):
 			if 'background' not in self.profile[user_id]:
 				return await ctx.send("You don't have a custom background")
 			del self.profile[user_id]['background']
+			with open(self.profile_path, 'w+') as f:
+				json.dump(self.profile, f)
+			return await ctx.send('Reset your background')
 		if not url:
 			url = ctx.message.attachments[0].url
 		self.profile[user_id]['background'] = url
@@ -617,7 +620,7 @@ class Ranking(commands.Cog):
 				background.paste(card, (0, 0), card)
 				background.save(path, format='PNG')
 		else:
-			card.save(path, format=format)
+			card.save(path, format='PNG')
 		await ctx.send(f"> **Profile card for {user}**", file=discord.File(path))
 
 	@commands.command(
