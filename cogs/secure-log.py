@@ -1,8 +1,23 @@
 """
-Discord.Py v1.5+ Action Logs Module
+Discord.Py v1.3+ Action Logs Module:
 + can split up into multiple channels
-+ logs can't be deleted or purged by anyone
-- re-creates deleted log channels and resends the last x logs
++ key security features to protect the log
+- logs can't be deleted or purged by anyone
+- re-creates deleted log channel(s) and resends the last x logs
+
+Super Important To-Do list:
++ add time() to all the lists of args where logs are queued
+- this is to keep ALL the logs from the last x hours instead
+  of only keeping the last x logs regardless of timeframe
+- default 6h-12h, can be adjusted to a max of 48h
+- self.queue[guild_id].append([embed, type, time()])
++ add member update logs
+- whence this is done the log will replace the old .logger
++ recolor the embeds so there's no duplicate colors
+- try to match the colors for .logger
++ add a check in each log event which uses the audit that queues an
+  embed denoting the bot lost perms and wait for perms silently
+  for up to 12h as the queue will already notify the owner
 """
 
 import asyncio
