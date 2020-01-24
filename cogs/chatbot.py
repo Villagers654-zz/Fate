@@ -55,15 +55,18 @@ class ChatBot(commands.Cog):
 			e.set_thumbnail(url=self.bot.user.avatar_url)
 			e.description = f"**Current Status:** {toggle}\n" \
 				f"**Cache Location:** {cache}\n"
-			e.add_field(name="◈ Usage ◈", value=f".chatbot enable\n"
-				f"`enables chatbot`\n"
-				f".chatbot disable\n"
-				f"`disables chatbot`\n"
-				f".chatbot swap_cache\n"
-				f"`swaps to global or guilded cache`\n"
-				f".chatbot clear_cache\n"
-				f"`clears guilded cache`",
-			inline=False)
+			e.add_field(
+				name="◈ Usage ◈",
+				value=f".chatbot enable\n"
+				      f"`enables chatbot`\n"
+				      f".chatbot disable\n"
+				      f"`disables chatbot`\n"
+				      f".chatbot swap_cache\n"
+				      f"`swaps to global or guilded cache`\n"
+				      f".chatbot clear_cache\n"
+				      f"`clears guilded cache`",
+				inline=False
+			)
 			await ctx.send(embed=e)
 
 	@_chatbot.command(name="enable")
@@ -93,8 +96,7 @@ class ChatBot(commands.Cog):
 	async def _swap_cache(self, ctx):
 		guild_id = str(ctx.guild.id)
 		if guild_id not in self.dir:
-			return await ctx.send("Chatbot needs to be "
-			    "enabled in order for you to use this command")
+			return await ctx.send("Chatbot needs to be enabled in order for you to use this command")
 		if self.dir[guild_id] == "guilded":
 			self.dir[guild_id] = "global"
 		else:
