@@ -176,8 +176,7 @@ class GlobalChat(commands.Cog):
 					return await block()
 
 				self.bot.loop.create_task(queue(msg))
-				if '@' not in msg.content:
-					msg = await msg.channel.fetch_message(msg.id)
+				msg = await msg.channel.fetch_message(msg.id)
 				self.config[guild_id]['last'] = time()
 				self.save_data()
 
@@ -188,6 +187,8 @@ class GlobalChat(commands.Cog):
 							continue
 						try:
 							if conf['webhook']:
+								if '@' in msg.content:
+									msg.content = str(msg.content).replace('@', '!')
 								webhook = Webhook.from_url(conf['webhook'], adapter=AsyncWebhookAdapter(session))
 								await webhook.send(
 									msg.content, username=msg.author.display_name, avatar_url=msg.author.avatar_url
