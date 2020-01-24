@@ -48,6 +48,7 @@ class Security(commands.Cog):
 		self.dupes = {}
 		self.dupez = {}
 		self.msgs = {}
+		self.punished = {}
 
 	def save_data(self):
 		return  # don't wanna save during testing uwu
