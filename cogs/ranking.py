@@ -487,6 +487,7 @@ class Ranking(commands.Cog):
 		# config
 		title = 'Use .help profile'
 		backgrounds = [
+			'https://cdn.discordapp.com/attachments/632084935506788385/670258618750337024/unknown.png',  # gold
 			'https://media.giphy.com/media/26n6FdRZBIjOCHpJK/giphy.gif'  # spinning blade effect
 		]
 		background_url = choice(backgrounds)
@@ -625,7 +626,7 @@ class Ranking(commands.Cog):
 					if index == 50:
 						break
 				path = path.replace('png', 'gif')
-				frames[0].save(path, save_all=True, append_images=frames[1:], loop=0, duration=dur)
+				frames[0].save(path, save_all=True, append_images=frames[1:], loop=0, duration=dur, optimize=False)
 			else:
 				background = background.convert('RGBA')
 				background = background.resize((1000, 500), Image.BICUBIC)
