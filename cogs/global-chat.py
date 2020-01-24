@@ -151,7 +151,7 @@ class GlobalChat(commands.Cog):
 
 				# rate limits
 				ignore = False
-				if user_id in self.blocked or guild_id in self.blocked or self.silence:
+				if user_id in self.blocked or self.silence:
 					return
 
 				if len(self.msgs) >= 5:
@@ -172,9 +172,8 @@ class GlobalChat(commands.Cog):
 				if len(user) >= 2:
 					ignore = True
 				if len(user) >= 3:
-					if user_id not in self.blocked:
-						await msg.channel.send(f"{msg.author.mention} you've been temp blocked from global chat")
-						await block()
+					await msg.channel.send(f"{msg.author.mention} you've been temp blocked from global chat")
+					await block()
 					ignore = True
 
 				self.bot.loop.create_task(queue(msg))
