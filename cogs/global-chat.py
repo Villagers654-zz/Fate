@@ -4,6 +4,7 @@ from os import path
 import json
 import aiohttp
 import asyncio
+from time import time
 
 from discord.ext import commands
 from discord import Webhook, AsyncWebhookAdapter
@@ -36,6 +37,10 @@ class GlobalChat(commands.Cog):
 		if path.isfile(self.path):
 			with open(self.path, 'r') as f:
 				self.config = json.load(f)  # type: dict
+		for guild_id, conf in list(self.config.items()):
+			if conf['last'] < time() - 36288000:
+				del self.config[guild_id]
+				self.save_data()
 
 	def save_data(self):
 		with open(self.path, 'w+') as f:
@@ -44,7 +49,7 @@ class GlobalChat(commands.Cog):
 	async def remove_webhook(self, guild_id, channel):
 		""" deletes the global chat webhook so they don't pile up """
 		try:
-			webhooks = await channel.webooks()
+			webhooks = await channel.webhooks()
 			for webhook in webhooks:
 				if webhook.url == self.config[guild_id]['webhook']:
 					await webhook.delete()
@@ -81,7 +86,8 @@ class GlobalChat(commands.Cog):
 				await self.remove_webhook(guild_id, channel)
 		self.config[guild_id] = {
 			"channel": channel.id,
-			"webhook": None
+			"webhook": None,
+			"last": time()
 		}
 		await ctx.send(f"Linked {channel.mention}")
 		self.save_data()
@@ -129,6 +135,8 @@ class GlobalChat(commands.Cog):
 			guild_id = str(msg.guild.id)
 			user_id = str(msg.author.id)
 			if guild_id in self.config:
+				if msg.channel.id != self.config[guild_id]['channel']:
+					return
 
 				async def queue(m):
 					""" temporarily put the msg in a list """
@@ -167,10 +175,17 @@ class GlobalChat(commands.Cog):
 					await msg.channel.send(f"{msg.author.mention} you've been temp blocked from global chat")
 					return await block()
 
-				await queue(msg)
+				self.bot.loop.create_task(queue(msg))
+				if '@' not in msg.content:
+					msg = await msg.channel.fetch_message(msg.id)
+				self.config[guild_id]['last'] = time()
+				self.save_data()
+
 				# distribute the msg everywhere
 				async with aiohttp.ClientSession() as session:
 					for guild_id, conf in self.config.items():
+						if guild_id == str(msg.guild.id):
+							continue
 						try:
 							if conf['webhook']:
 								webhook = Webhook.from_url(conf['webhook'], adapter=AsyncWebhookAdapter(session))
@@ -180,6 +195,7 @@ class GlobalChat(commands.Cog):
 							else:
 								channel = self.bot.get_channel(conf['channel'])
 								e = discord.Embed(color=msg.author.color)
+								e.set_author(name=str(msg.author), icon_url=msg.author.avatar_url)
 								e.description = msg.content
 								if msg.attachments:
 									e.set_image(url=msg.attachments[0].url)
