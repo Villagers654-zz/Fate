@@ -486,7 +486,10 @@ class Ranking(commands.Cog):
 
 		# config
 		title = 'Use .help profile'
-		background_url = None
+		backgrounds = [
+			'https://media.giphy.com/media/26n6FdRZBIjOCHpJK/giphy.gif'  # spinning blade effect
+		]
+		background_url = choice(backgrounds)
 		if ctx.guild.splash:
 			background_url = ctx.guild.splash_url
 		if ctx.guild.banner:
@@ -588,17 +591,23 @@ class Ranking(commands.Cog):
 				dur = background.info['duration']
 				count = len(list(ImageSequence.Iterator(background)))
 				skip = False
+				skip_two = False
 				skipped = 0
 				frames = []
+				index = 0
 				for frame in ImageSequence.Iterator(background):
-					if count > 75 and count < 150:
+					if count > 40 and count < 100:
 						if skip:
 							skip = False
 							continue
+						elif skip_two:
+							skip_two = False
+							continue
 						else:
 							skip = True
-					elif count > 150:
-						skip = len(str(count)) + 2
+							skip_two = True
+					elif count > 100:
+						skip = int(str(count)[:1]) + 2
 						if skipped <= skip:
 							skipped += 1
 							continue
@@ -612,6 +621,9 @@ class Ranking(commands.Cog):
 					frame.save(b, format="GIF")
 					frame = Image.open(b)
 					frames.append(frame)
+					index += 1
+					if index == 50:
+						break
 				path = path.replace('png', 'gif')
 				frames[0].save(path, save_all=True, append_images=frames[1:], loop=0, duration=dur)
 			else:
