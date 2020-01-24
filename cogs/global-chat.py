@@ -164,15 +164,13 @@ class GlobalChat(commands.Cog):
 
 				guild = [m for m in self.msgs if str(m.guild.id) == guild_id]
 				if self.slowmode and len(guild) >= 2:
-					await msg.delete()
 					ignore = True
 				if len(guild) >= 3:
-					await msg.delete()
 					ignore = True
 
 				user = [m for m in self.msgs if str(m.author.id) == user_id]
 				if len(user) >= 2:
-					await msg.delete()
+					ignore = True
 				if len(user) >= 3:
 					if user_id not in self.blocked:
 						await msg.channel.send(f"{msg.author.mention} you've been temp blocked from global chat")
@@ -180,36 +178,37 @@ class GlobalChat(commands.Cog):
 					ignore = True
 
 				self.bot.loop.create_task(queue(msg))
+				if ignore:
+					return await msg.delete()
 				msg = await msg.channel.fetch_message(msg.id)
 				self.config[guild_id]['last'] = time()
 				self.save_data()
 
 				# distribute the msg everywhere
-				if not ignore:
-					async with aiohttp.ClientSession() as session:
-						for guild_id, conf in self.config.items():
-							if guild_id == str(msg.guild.id):
-								continue
-							try:
-								if conf['webhook']:
-									if '@' in msg.content:
-										msg.content = str(msg.content).replace('@', '!')
-									webhook = Webhook.from_url(conf['webhook'], adapter=AsyncWebhookAdapter(session))
-									await webhook.send(
-										msg.content, username=msg.author.display_name, avatar_url=msg.author.avatar_url
-									)
-								else:
-									channel = self.bot.get_channel(conf['channel'])
-									e = discord.Embed(color=msg.author.color)
-									e.set_author(name=str(msg.author), icon_url=msg.author.avatar_url)
-									e.description = msg.content
-									if msg.attachments:
-										e.set_image(url=msg.attachments[0].url)
-									await channel.send(embed=e)
-							except discord.errors.InvalidArgument:  # invalid webhook url
-								del self.config[guild_id]
-							except discord.errors.Forbidden:  # missing permissions to send
-								del self.config[guild_id]
+				async with aiohttp.ClientSession() as session:
+					for guild_id, conf in self.config.items():
+						if guild_id == str(msg.guild.id):
+							continue
+						try:
+							if conf['webhook']:
+								if '@' in msg.content:
+									msg.content = str(msg.content).replace('@', '!')
+								webhook = Webhook.from_url(conf['webhook'], adapter=AsyncWebhookAdapter(session))
+								await webhook.send(
+									msg.content, username=msg.author.display_name, avatar_url=msg.author.avatar_url
+								)
+							else:
+								channel = self.bot.get_channel(conf['channel'])
+								e = discord.Embed(color=msg.author.color)
+								e.set_author(name=str(msg.author), icon_url=msg.author.avatar_url)
+								e.description = msg.content
+								if msg.attachments:
+									e.set_image(url=msg.attachments[0].url)
+								await channel.send(embed=e)
+						except discord.errors.InvalidArgument:  # invalid webhook url
+							del self.config[guild_id]
+						except discord.errors.Forbidden:  # missing permissions to send
+							del self.config[guild_id]
 
 
 def setup(bot):
