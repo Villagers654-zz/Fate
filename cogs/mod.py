@@ -681,14 +681,13 @@ class Mod(commands.Cog):
 		if user.top_role.position >= ctx.guild.me.top_role.position:
 			return await ctx.send('I can\'t kick that user ;-;')
 		await user.kick(reason=reason)
-		path = os.getcwd() + "/data/images/reactions/beaned/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/beaned/"))
 		e = discord.Embed(color=0x80b0ff)
-		e.set_image(url="attachment://" + os.path.basename(path))
-		file = discord.File(path, filename=os.path.basename(path))
-		await ctx.send(f'◈ {ctx.message.author.display_name} kicked {user} ◈', file=file, embed=e)
-		await ctx.message.delete()
-		try: await user.send(f"You have been kicked from **{ctx.guild.name}** by **{ctx.author.name}** for `{reason}`")
-		except: pass
+		e.set_author(name=f'kicked {user}', icon_url=user.avatar_url)
+		await ctx.send(embed=e)
+		try:
+			await user.send(f"You have been kicked from **{ctx.guild.name}** by **{ctx.author.name}** for `{reason}`")
+		except:
+			pass
 
 	@commands.command(name='ban')
 	@commands.guild_only()
@@ -700,13 +699,13 @@ class Mod(commands.Cog):
 		if user.top_role.position >= ctx.guild.me.top_role.position:
 			return await ctx.send('I can\'t ban that user ;-;')
 		await ctx.guild.ban(user, reason=reason, delete_message_days=0)
-		path = os.getcwd() + "/data/images/reactions/beaned/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/beaned/"))
-		e = discord.Embed(color=colors.fate())
-		e.set_image(url='attachment://' + os.path.basename(path))
-		file = discord.File(path, filename=os.path.basename(path))
-		await ctx.send(f'◈ {ctx.author.display_name} banned {user} ◈', file=file, embed=e)
-		try: await user.send(f'You\'ve been banned in **{ctx.guild.name}** by **{ctx.author.name}** for {reason}')
-		except: pass
+		e = discord.Embed(color=0x80b0ff)
+		e.set_author(name=f'banned {user}', icon_url=user.avatar_url)
+		await ctx.send(embed=e)
+		try:
+			await user.send(f"You have been banned from **{ctx.guild.name}** by **{ctx.author.name}** for `{reason}`")
+		except:
+			pass
 
 	@commands.command(name='softban', aliases=['tempban'])
 	@commands.cooldown(1, 5, commands.BucketType.user)
