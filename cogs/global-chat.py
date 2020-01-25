@@ -178,6 +178,10 @@ class GlobalChat(commands.Cog):
 					self.bot.loop.create_task(block())
 					ignore = True
 
+				# filter
+				if 'discord.gg' in msg.content or 'discordapp.com/invite' in msg.content:
+					ignore = True
+
 				self.bot.loop.create_task(queue(msg))
 				if ignore:
 					return await msg.delete()
