@@ -73,6 +73,10 @@ class GlobalChat(commands.Cog):
 				value=f"{p}global-chat link\n> add your channel\n"
 				      f"{p}global-chat unlink\n> remove your channel"
 			)
+			e.add_field(
+				name='◈ Credit',
+				value=f"**Reaper of Lost Souls#3460**\n• Ideas and Suggestions for Everything"
+			)
 			await ctx.send(embed=e)
 
 	@global_chat.command(name='link')
