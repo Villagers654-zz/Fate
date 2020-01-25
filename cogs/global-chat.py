@@ -33,6 +33,8 @@ class GlobalChat(commands.Cog):
 		self.silence = False
 		self.slowmode = False
 		self.blocked = []
+		self.last_user = None
+		self.last_channel = None
 		if path.isfile(self.path):
 			with open(self.path, 'r') as f:
 				self.config = json.load(f)  # type: dict
@@ -173,7 +175,7 @@ class GlobalChat(commands.Cog):
 					ignore = True
 				if len(user) >= 3:
 					await msg.channel.send(f"{msg.author.mention} you've been temp blocked from global chat")
-					await block()
+					self.bot.loop.create_task(block())
 					ignore = True
 
 				self.bot.loop.create_task(queue(msg))
@@ -185,7 +187,7 @@ class GlobalChat(commands.Cog):
 
 				# distribute the msg everywhere
 				async with aiohttp.ClientSession() as session:
-					for guild_id, conf in self.config.items():
+					for guild_id, conf in list(self.config.items()):
 						if guild_id == str(msg.guild.id):
 							continue
 						try:
@@ -198,16 +200,24 @@ class GlobalChat(commands.Cog):
 								)
 							else:
 								channel = self.bot.get_channel(conf['channel'])
-								e = discord.Embed(color=msg.author.color)
-								e.set_author(name=str(msg.author), icon_url=msg.author.avatar_url)
-								e.description = msg.content
-								if msg.attachments:
-									e.set_image(url=msg.attachments[0].url)
-								await channel.send(embed=e)
-						except discord.errors.InvalidArgument:  # invalid webhook url
+								if msg.author.id == self.last_user and msg.channel.id == self.last_channel:
+									async for m in channel.history(limit=5):
+										if m.author.id == self.bot.user.id:
+											e = m.embeds[0]
+											e.description += f'\n{msg.content}'
+											await m.edit(embed=e)
+											break
+								else:
+									e = discord.Embed(color=msg.author.color)
+									e.set_author(name=str(msg.author), icon_url=msg.author.avatar_url)
+									e.description = msg.content
+									if msg.attachments:
+										e.set_image(url=msg.attachments[0].url)
+									await channel.send(embed=e)
+						except:  # invalid webhook url
 							del self.config[guild_id]
-						except discord.errors.Forbidden:  # missing permissions to send
-							del self.config[guild_id]
+				self.last_user = msg.author.id
+				self.last_channel = msg.channel.id
 
 
 def setup(bot):
