@@ -470,6 +470,8 @@ class SecureLog(commands.Cog):
 					e.set_thumbnail(url=msg.author.avatar_url)
 					is_successful = False
 					member = msg.guild.get_member(msg.author.id)
+					if not member:
+						return
 					if member.guild_permissions.administrator:
 						is_successful = True
 					elif member.guild_permissions.mention_everyone and (
