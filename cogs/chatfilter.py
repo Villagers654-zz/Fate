@@ -10,16 +10,19 @@ class ChatFilter(commands.Cog):
 		self.bot = bot
 		self.toggle = []
 		self.blacklist = {}
+		self.ignored = {}
 		if isfile("./data/userdata/chatfilter.json"):
 			with open("./data/userdata/chatfilter.json", "r") as f:
 				dat = json.load(f)
 				if "toggle" in dat and "blacklist" in dat:
 					self.toggle = dat["toggle"]
 					self.blacklist = dat["blacklist"]
+				if 'ignored' in dat:
+					self.ignored = dat['ignored']
 
 	def save_data(self):
 		with open("./data/userdata/chatfilter.json", "w") as f:
-			json.dump({"toggle": self.toggle, "blacklist": self.blacklist}, f)
+			json.dump({"toggle": self.toggle, "blacklist": self.blacklist, "ignored": self.ignored}, f)
 
 	@commands.group(name="chatfilter", description="Deletes messages containing blocked words/phrases")
 	@commands.bot_has_permissions(embed_links=True)
@@ -36,6 +39,7 @@ class ChatFilter(commands.Cog):
 			e.add_field(name="◈ Usage ◈", value=
 				".chatfilter enable\n"
 			    ".chatfilter disable\n"
+				".chatfilter ignore #channel\n"
 			    ".chatfilter add {word/phrase}\n"
 				".chatfilter remove {word/phrase}\n", inline=False)
 			if guild_id in self.blacklist:
@@ -63,6 +67,32 @@ class ChatFilter(commands.Cog):
 			return await ctx.send("Chatfilter is not enabled")
 		self.toggle.pop(self.toggle.index(ctx.guild.id))
 		await ctx.send("Disabled chatfilter")
+		self.save_data()
+
+	@_chatfilter.command(name="ignore")
+	@commands.has_permissions(manage_messages=True)
+	@commands.bot_has_permissions(manage_messages=True)
+	async def _ignore(self, ctx, channel: discord.TextChannel):
+		guild_id = str(ctx.guild.id)
+		if guild_id not in self.ignored:
+			self.ignored[guild_id] = []
+		self.ignored[guild_id].append(channel.id)
+		await ctx.send(f"I'll now ignore {channel.mention}")
+		self.save_data()
+
+	@_chatfilter.command(name="unignore")
+	@commands.has_permissions(manage_messages=True)
+	@commands.bot_has_permissions(manage_messages=True)
+	async def _unignore(self, ctx, channel: discord.TextChannel):
+		guild_id = str(ctx.guild.id)
+		if guild_id not in self.ignored:
+			return await ctx.send("This server has no ignored channels")
+		if channel.id not in self.ignored[guild_id]:
+			return await ctx.send(f"{channel.mention} isn't ignored")
+		self.ignored[guild_id].remove(channel.id)
+		await ctx.send(f"I'll no longer ignore {channel.mention}")
+		if not self.ignored[guild_id]:
+			del self.ignored[guild_id]
 		self.save_data()
 
 	@_chatfilter.command(name="add")
@@ -97,20 +127,22 @@ class ChatFilter(commands.Cog):
 	async def on_message(self, m: discord.Message):
 		if isinstance(m.author, discord.Member):
 			guild_id = str(m.guild.id)
-			if m.guild.id in self.toggle:
-				if guild_id in self.blacklist:
-					for phrase in self.blacklist[guild_id]:
-						if '\\' not in phrase:
-							m.content = m.content.replace('\\', '')
-						perms = [perm for perm, value in m.author.guild_permissions if value]
-						if "manage_messages" not in perms:
-							if phrase in m.content:
+			if m.guild.id in self.toggle and guild_id in self.blacklist:
+				if guild_id in self.ignored:
+					if m.channel.id in self.ignored[guild_id]:
+						return
+				for phrase in self.blacklist[guild_id]:
+					if '\\' not in phrase:
+						m.content = m.content.replace('\\', '')
+					perms = [perm for perm, value in m.author.guild_permissions if value]
+					if "manage_messages" not in perms:
+						if phrase in m.content:
+							await asyncio.sleep(0.5)
+							await m.delete()
+						else:
+							if phrase in m.content.replace(" ", ""):
 								await asyncio.sleep(0.5)
 								await m.delete()
-							else:
-								if phrase in m.content.replace(" ", ""):
-									await asyncio.sleep(0.5)
-									await m.delete()
 
 	@commands.Cog.listener()
 	async def on_message_edit(self, before, after):
