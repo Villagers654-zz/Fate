@@ -40,6 +40,7 @@ class ChatFilter(commands.Cog):
 				".chatfilter enable\n"
 			    ".chatfilter disable\n"
 				".chatfilter ignore #channel\n"
+				".chatfilter unignore #channel\n"
 			    ".chatfilter add {word/phrase}\n"
 				".chatfilter remove {word/phrase}\n", inline=False)
 			if guild_id in self.blacklist:
