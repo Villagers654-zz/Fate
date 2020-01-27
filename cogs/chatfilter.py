@@ -36,7 +36,7 @@ class ChatFilter(commands.Cog):
 			e.set_author(name="| Chat Filter", icon_url=ctx.author.avatar_url)
 			e.set_thumbnail(url=ctx.guild.icon_url)
 			e.description = "Deletes messages containing blocked words/phrases"
-			e.add_field(name="◈ Usage ◈", value=
+			e.add_field(name="◈ Usage", value=
 				".chatfilter enable\n"
 			    ".chatfilter disable\n"
 				".chatfilter ignore #channel\n"
@@ -46,7 +46,10 @@ class ChatFilter(commands.Cog):
 			if guild_id in self.blacklist:
 				text = str(self.blacklist[guild_id])
 				for text_group in [text[i:i + 1000] for i in range(0, len(text), 1000)]:
-					e.add_field(name="◈ Forbidden Shit ◈", value=text_group, inline=False)
+					e.add_field(name="◈ Forbidden Shit", value=text_group, inline=False)
+			if guild_id in self.ignored:
+				channels = [self.bot.get_channel(c_id).mention for c_id in self.ignored[guild_id]]
+				e.add_field(name='◈ Ignored Channels', value='\n'.join(channels))
 			e.set_footer(text=f"Current Status: {toggle}")
 			await ctx.send(embed=e)
 
