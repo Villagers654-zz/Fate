@@ -132,7 +132,7 @@ class ChatFilter(commands.Cog):
 					if m.channel.id in self.ignored[guild_id]:
 						return
 				for phrase in self.blacklist[guild_id]:
-					if '\\' not in phrase:
+					if '\\' in phrase:
 						m.content = m.content.replace('\\', '')
 					perms = [perm for perm, value in m.author.guild_permissions if value]
 					if "manage_messages" not in perms:
