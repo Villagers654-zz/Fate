@@ -61,6 +61,9 @@ class Ranking(commands.Cog):
 		if path.isfile(self.profile_path):
 			with open(self.profile_path, 'r') as f:
 				self.profile = json.load(f)
+		# vc caching
+		self.vclb = {}
+		self.vc_counter = 0
 
 	# def _global(self, Global) -> dict:
 	# 	""" Returns data for each global leaderboard """
@@ -159,7 +162,6 @@ class Ranking(commands.Cog):
 					await db.commit()
 
 			# per-server leveling
-			before = monotonic()
 			if guild_id not in self.cd:
 				self.cd[guild_id] = {}
 			if user_id not in self.cd[guild_id]:
@@ -182,92 +184,94 @@ class Ranking(commands.Cog):
 					await db.execute(f"INSERT INTO '{guild_id}' VALUES ({user_id}, {time()}, {new_xp});")
 					await db.commit()
 
-	# @commands.Cog.listener()
-	# async def on_voice_state_update(self, user, before, after):
-	# 	if isinstance(user.guild, discord.Guild):
-	# 		guild_id = str(user.guild.id)
-	# 		channel_id = None  # type: discord.TextChannel
-	# 		if before.channel:
-	# 			channel_id = str(before.channel.id)
-	# 		if after.channel:
-	# 			channel_id = str(after.channel.id)
-	# 		user_id = str(user.id)
-	# 		guild_path = path.join('xp', 'guilds', guild_id)
-	# 		if guild_id not in self.guilds:
-	# 			self.guilds[guild_id] = {
-	# 				Global: {} for Global in self.globals
-	# 			}
-	# 			os.mkdir(guild_path)
-	# 			for filename in self.globals:
-	# 				with open(path.join(guild_path, filename + '.json'), 'w') as f:
-	# 					json.dump({}, f)
-	# 		if user_id not in self.guilds[guild_id]['vc']:
-	# 			self.guilds[guild_id]['vc'][user_id] = 0
-	# 		if user_id not in self.gvclb:
-	# 			self.gvclb[user_id] = 0
-	# 		if channel_id not in self.cache:
-	# 			self.cache[channel_id] = {}
-	# 			self.cache[channel_id]['members'] = {}
-	# 		def get_active_members(channel):
-	# 			members = []
-	# 			total = 0
-	# 			for member in channel.members:
-	# 				if not member.bot:
-	# 					total += 1
-	# 					state = member.voice
-	# 					if not state.mute and not state.self_mute:
-	# 						if not state.deaf and not state.self_deaf:
-	# 							members.append(member)
-	# 			return (members, total)
-	# 		async def wrap(channel):
-	# 			cid = str(channel.id)
-	# 			for member_id in list(self.cache[cid]['members'].keys()):
-	# 				seconds = (datetime.now() - self.cache[cid]['members'][member_id]).seconds
-	# 				self.guilds[guild_id]['vc'][member_id] += seconds
-	# 				self.gvclb[member_id] += seconds
-	# 				del self.cache[cid]['members'][member_id]
-	# 				save()
-	# 		async def run(channel):
-	# 			channel_id = str(channel.id)
-	# 			members, total = get_active_members(channel)
-	# 			if len(members) == 0 or len(members) == 1 and len(members) == total:
-	# 				return await wrap(channel)
-	# 			for member in channel.members:
-	# 				if member not in self.cache[channel_id]['members']:
-	# 					if not member.bot:
-	# 						member_id = str(member.id)
-	# 						if member_id not in self.cache[channel_id]['members']:
-	# 							self.cache[channel_id]['members'][member_id] = datetime.now()
-	# 		def save():
-	# 			with open(path.join('xp', 'guilds', guild_id, 'vc.json'), 'w') as f:
-	# 				json.dump(self.guilds[guild_id]['vc'], f)
-	# 			with open(path.join('xp', 'global', 'vc.json'), 'w') as f:
-	# 				json.dump(self.gvclb, f)
-	# 			self.vc_counter = 0
-	# 		if before.channel and after.channel:
-	# 			if before.channel.id != after.channel.id:
-	# 				channel_id = str(before.channel.id)
-	# 				if user_id in self.cache[channel_id]['members']:
-	# 					seconds = (datetime.now() - self.cache[channel_id]['members'][user_id]).seconds
-	# 					self.guilds[guild_id]['vc'][user_id] += seconds
-	# 					self.gvclb[user_id] += seconds
-	# 					del self.cache[channel_id]['members'][user_id]
-	# 					save()
-	# 				await run(before.channel)
-	# 				await run(after.channel)
-	# 		if not after.channel:
-	# 			channel_id = str(before.channel.id)
-	# 			if user_id in self.cache[channel_id]['members']:
-	# 				seconds = (datetime.now() - self.cache[channel_id]['members'][user_id]).seconds
-	# 				self.guilds[guild_id]['vc'][user_id] += seconds
-	# 				self.gvclb[user_id] += seconds
-	# 				del self.cache[channel_id]['members'][user_id]
-	# 				save()
-	# 				await run(before.channel)
-	# 		if before.channel is not None:
-	# 			await run(before.channel)
-	# 		if after.channel is not None:
-	# 			await run(after.channel)
+	@commands.Cog.listener()
+	async def on_voice_state_update(self, user, before, after):
+		if isinstance(user.guild, discord.Guild):
+			guild_id = str(user.guild.id)
+			channel_id = None
+			if before.channel:
+				channel_id = str(before.channel.id)
+			if after.channel:
+				channel_id = str(after.channel.id)
+			user_id = user.id
+			if user_id not in self.vclb:
+				self.vclb[user_id] = 0
+			if channel_id not in self.cache:
+				self.cache[channel_id] = {}
+				self.cache[channel_id]['members'] = {}
+			def get_active_members(channel):
+				members = []
+				total = 0
+				for member in channel.members:
+					if not member.bot:
+						total += 1
+						state = member.voice
+						if not state.mute and not state.self_mute:
+							if not state.deaf and not state.self_deaf:
+								members.append(member)
+				return (members, total)
+			async def wrap(channel):
+				cid = str(channel.id)
+				for member_id in list(self.cache[cid]['members'].keys()):
+					seconds = (datetime.now() - self.cache[cid]['members'][member_id]).seconds
+					self.vclb[guild_id]['vc'][member_id] += seconds
+					del self.cache[cid]['members'][member_id]
+					await save()
+			async def run(channel):
+				channel_id = str(channel.id)
+				members, total = get_active_members(channel)
+				if len(members) == 0 or len(members) == 1 and len(members) == total:
+					return await wrap(channel)
+				for member in channel.members:
+					if member not in self.cache[channel_id]['members']:
+						if not member.bot:
+							member_id = str(member.id)
+							if member_id not in self.cache[channel_id]['members']:
+								self.cache[channel_id]['members'][member_id] = datetime.now()
+			async def save():
+				async with aiosqlite.connect('./data/userdata/global-xp.db') as db:
+					await db.execute("PRAGMA journal_mode=WAL;")
+					cursor = await db.execute(f"SELECT xp FROM vc WHERE user_id = {user_id} LIMIT 1;")
+					dat = await cursor.fetchone()
+					if not dat:
+						await db.execute(f"INSERT INTO vc VALUES ({user_id}, 0);")
+						dat = (0,)
+					new_xp = self.vclb[user_id] + dat[0]
+					await db.execute(f"UPDATE vc SET xp = {new_xp} WHERE user_id = {user_id};")
+					await db.commit()
+				async with aiosqlite.connect('./data/userdata/vc-xp.db') as db:
+					await db.execute("PRAGMA journal_mode=WAL;")
+					await db.execute(f"CREATE TABLE IF NOT EXISTS '{guild_id}' (user_id int, xp int);")
+					cursor = await db.execute(f"SELECT xp FROM '{guild_id}' WHERE user_id = {user_id} LIMIT 1;")
+					dat = await cursor.fetchone()
+					if not dat:
+						await db.execute(f"INSERT INTO '{guild_id}' VALUES ({user_id}, 0);")
+						dat = (0,)
+					new_xp = self.vclb[user_id] + dat[0]
+					await db.execute(f"UPDATE '{guild_id}' SET xp = {new_xp} WHERE user_id = {user_id};")
+					await db.commit()
+			if before.channel and after.channel:
+				if before.channel.id != after.channel.id:
+					channel_id = str(before.channel.id)
+					if user_id in self.cache[channel_id]['members']:
+						seconds = (datetime.now() - self.cache[channel_id]['members'][user_id]).seconds
+						self.vclb[user_id] += seconds
+						del self.cache[channel_id]['members'][user_id]
+						await save()
+					await run(before.channel)
+					await run(after.channel)
+			if not after.channel:
+				channel_id = str(before.channel.id)
+				if user_id in self.cache[channel_id]['members']:
+					seconds = (datetime.now() - self.cache[channel_id]['members'][user_id]).seconds
+					self.vclb[user_id] += seconds
+					del self.cache[channel_id]['members'][user_id]
+					await save()
+					await run(before.channel)
+			if before.channel is not None:
+				await run(before.channel)
+			if after.channel is not None:
+				await run(after.channel)
 
 	@commands.command(name='xp-config')
 	@commands.cooldown(*utils.default_cooldown())
@@ -686,7 +690,7 @@ class Ranking(commands.Cog):
 
 			return embeds
 
-		return await ctx.send("Ranking is currently undergoing changes, you'll still receive xp from messages")
+		return await ctx.send("Ranking is currently undergoing changes, you'll still receive xp")
 
 		with open('./data/config.json', 'r') as f:
 			config = json.load(f)  # type: dict
