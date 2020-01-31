@@ -64,6 +64,7 @@ class Ranking(commands.Cog):
 		# vc caching
 		self.vclb = {}
 		self.vc_counter = 0
+		self.write = {'global': False, 'guilded': False}
 
 	# def _global(self, Global) -> dict:
 	# 	""" Returns data for each global leaderboard """
@@ -139,6 +140,9 @@ class Ranking(commands.Cog):
 			if user_id not in self.global_cd:
 				self.global_cd[user_id] = 0
 			if self.global_cd[user_id] < time() - 10:
+				while self.write['global']:
+					await asyncio.sleep(0.21)
+				self.write['global'] = True
 				async with aiosqlite.connect('./data/userdata/global-xp.db') as db:
 					await db.execute(f"PRAGMA journal_mode=WAL;")
 					cursor = await db.execute(f"SELECT xp FROM msg WHERE user_id = {user_id} LIMIT 1;")
@@ -160,6 +164,7 @@ class Ranking(commands.Cog):
 					await db.execute(f"UPDATE msg SET xp = {msg_xp+new_xp} WHERE user_id = {user_id};")
 					await db.execute(f"INSERT INTO monthly_msg VALUES ({user_id}, {time()}, {new_xp});")
 					await db.commit()
+				self.write['global'] = False
 
 			# per-server leveling
 			if guild_id not in self.cd:
@@ -168,6 +173,9 @@ class Ranking(commands.Cog):
 				self.cd[guild_id][user_id] = []
 			msgs = [x for x in self.cd[guild_id][user_id] if x > time() - conf['timeframe']]
 			if len(msgs) < conf['msgs_within_timeframe']:
+				while self.write['guilded']:
+					await asyncio.sleep(0.21)
+				self.write['guilded'] = True
 				self.cd[guild_id][user_id].append(time())
 				async with aiosqlite.connect('./data/userdata/msg-xp.db') as db:
 					await db.execute("PRAGMA journal_mode=WAL;")
@@ -181,8 +189,10 @@ class Ranking(commands.Cog):
 					await db.commit()
 				async with aiosqlite.connect('./data/userdata/monthly-xp.db') as db:
 					await db.execute(f"PRAGMA journal_mode=WAL;")
+					await db.execute(f"CREATE TABLE IF NOT EXISTS '{guild_id}' (user_id int, msg_time float, xp int);")
 					await db.execute(f"INSERT INTO '{guild_id}' VALUES ({user_id}, {time()}, {new_xp});")
 					await db.commit()
+				self.write['guilded'] = False
 
 	@commands.Cog.listener()
 	async def on_voice_state_update(self, user, before, after):
@@ -457,6 +467,7 @@ class Ranking(commands.Cog):
 
 		# xp variables
 		async with aiosqlite.connect('./data/userdata/msg-xp.db') as db:
+			await db.execute("PRAGMA journal_mode=WAL;")
 			cursor = await db.execute(f"SELECT * FROM '{guild_id}' ORDER BY xp DESC;")
 			guild_xp = await cursor.fetchall()
 			guild_rank = 0
@@ -469,6 +480,7 @@ class Ranking(commands.Cog):
 		conf = self.config[guild_id]
 		if 'global' in ctx.message.content:
 			async with aiosqlite.connect('./data/userdata/global-xp.db') as db:
+				await db.execute("PRAGMA journal_mode=WAL;")
 				cursor = await db.execute(f"SELECT * FROM msg ORDER BY xp DESC;")
 				global_xp = await cursor.fetchall()
 				guild_rank = 0
@@ -690,8 +702,6 @@ class Ranking(commands.Cog):
 
 			return embeds
 
-		return await ctx.send("Ranking is currently undergoing changes, you'll still receive xp")
-
 		with open('./data/config.json', 'r') as f:
 			config = json.load(f)  # type: dict
 		prefix = '.'  # default prefix
@@ -724,30 +734,81 @@ class Ranking(commands.Cog):
 
 		embeds = []
 		guild_id = str(ctx.guild.id)
-		leaderboards = {
-			'Msg Leaderboard': self.guilds[guild_id]['msg'],
-			'Vc Leaderboard': {
-				user_id: timedelta(seconds=xp) for user_id, xp in self.guilds[guild_id]['vc'].items()
-			},
-			'Global Msg Leaderboard': self.msg,
-			'Global Vc Leaderboard': {
-				user_id: timedelta(seconds=xp) for user_id, xp in self.vc.items()
-			},
-			'Monthly Msg Leaderboard': {
-				user_id: sum(dat.values()) for user_id, dat in self.guilds[guild_id]['monthly_msg'].items()
-			},
-			'Global Monthly Msg Leaderboard': {
-				user_id: len(dat.items()) for user_id, dat in self.monthly_msg.items()
-			},
-			'Server Msg Leaderboard': {
-				guild_id: sum(xp for xp in dat['msg'].values()) for guild_id, dat in self.guilds.items()
-			},
-			'Server Vc Leaderboard': {
-				guild_id: timedelta(
-					seconds=sum([xp for xp in dat['vc'].values()])
-				) for guild_id, dat in self.guilds.items()
-			}
+		leaderboards = {}
+		async with aiosqlite.connect('./data/userdata/msg-xp.db') as db:
+			await db.execute("PRAGMA journal_mode=WAL;")
+			cursor = await db.execute("SELECT * FROM sqlite_master WHERE TYPE = 'table';")
+			tables = await cursor.fetchall()
+			tables = [i[1] for i in tables]
+			msg_xp = {}
+			for g_id in tables:
+				cursor = await db.execute(f"SELECT * FROM '{g_id}' ORDER BY xp DESC;")
+				dat = await cursor.fetchall()
+				msg_xp[g_id] = {
+					user_id: xp for user_id, xp in dat
+				}
+		leaderboards['Msg Leaderboard'] = {
+			user_id: xp for user_id, xp in msg_xp[guild_id].items()
 		}
+		async with aiosqlite.connect('./data/userdata/vc-xp.db') as db:
+			await db.execute("PRAGMA journal_mode=WAL;")
+			cursor = await db.execute("SELECT * FROM sqlite_master WHERE TYPE = 'table';")
+			tables = await cursor.fetchall()
+			tables = [i[1] for i in tables]
+			vc_xp = {}
+			for g_id in tables:
+				cursor = await db.execute(f"SELECT * FROM '{g_id}' ORDER BY xp DESC;")
+				dat = await cursor.fetchall()
+				vc_xp[g_id] = {
+					user_id: xp for user_id, xp in dat
+				}
+		leaderboards['Vc Leaderboard'] = {
+			user_id: timedelta(seconds=xp) for user_id, xp in vc_xp[guild_id].items()
+		}
+		async with aiosqlite.connect('./data/userdata/global-xp.db') as db:
+			await db.execute("PRAGMA journal_mode=WAL;")
+			cursor = await db.execute("SELECT * FROM msg ORDER BY xp DESC;")
+			global_msg_xp = await cursor.fetchall()
+			leaderboards['Global Msg Leaderboard'] = {
+				user_id: xp for user_id, xp in global_msg_xp
+			}
+			cursor = await db.execute("SELECT * FROM vc ORDER BY xp DESC")
+			global_vc_xp = await cursor.fetchall()
+			leaderboards['Global Vc Leaderboard'] = {
+				user_id: timedelta(seconds=xp) for user_id, xp in global_vc_xp
+			}
+			cursor = await db.execute("SELECT * FROM monthly_msg;")
+			dat = await cursor.fetchall()
+			global_monthly = {}
+			for user_id, msg_time, xp in dat:
+				if user_id not in global_monthly:
+					global_monthly[user_id] = 0
+				if msg_time > time() - 60*60*24*30:
+					global_monthly[user_id] += 1
+		async with aiosqlite.connect('./data/userdata/monthly-xp.db') as db:
+			await db.execute("PRAGMA journal_mode=WAL;")
+			cursor = await db.execute(f"SELECT * FROM '{guild_id}';")
+			dat = await cursor.fetchall()
+			monthly_msg = {}
+			for user_id, msg_time, xp in dat:
+				if user_id not in monthly_msg:
+					monthly_msg[user_id] = 0
+				monthly_msg[user_id] += xp
+		leaderboards['Monthly Msg Leaderboard'] = {
+			user_id: xp for user_id, xp in monthly_msg.items()
+		}
+		leaderboards['Global Monthly Msg Leaderboard'] = {
+			user_id: xp for user_id, xp in global_monthly.items()
+		}
+		leaderboards['Server Msg Leaderboard'] = {
+			guild_id: sum(xp for xp in dat.values()) for guild_id, dat in msg_xp.items()
+		}
+		leaderboards['Server Vc Leaderboard'] = {
+				guild_id: timedelta(
+					seconds=sum([xp for xp in dat.values()])
+				) for guild_id, dat in vc_xp.items()
+			}
+
 		for name, data in leaderboards.items():
 			sorted_data = [
 				(user_id, xp) for user_id, xp in sorted(
