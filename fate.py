@@ -158,7 +158,10 @@ async def on_disconnect():
 async def on_message(msg):
 	if '@everyone' in msg.content or '@here' in msg.content:
 		msg.content = msg.content.replace('@', '!')
-	if '--dm' in msg.content:
+	blacklist = [
+		'trap', 'dan', 'gel', 'yaoi'
+	]
+	if '--dm' in msg.content and not any(x in msg.content for x in blacklist):
 		msg.content = msg.content.replace(' --dm', '')
 		channel = await msg.author.create_dm()
 		msg.channel = channel
