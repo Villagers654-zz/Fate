@@ -20,6 +20,7 @@ from utils import config, outh, colors
 
 # //~== Core ==~\\
 
+
 def get_stats():
 	if not isfile('./data/stats.json'):
 		with open('./data/stats.json', 'w') as f:
@@ -27,12 +28,14 @@ def get_stats():
 	with open('./data/stats.json', 'r') as stats:
 		return json.load(stats)
 
+
 def get_config():
 	if not isfile('./data/config.json'):
 		with open('./data/config.json', 'w') as f:
 			json.dump({}, f, ensure_ascii=False)
-	with open('./data/config.json', 'r') as config:
-		return json.load(config)
+	with open('./data/config.json', 'r') as f:
+		return json.load(f)
+
 
 def get_prefix(bot, msg):
 	config = get_config()  # type: dict
@@ -60,9 +63,11 @@ def get_prefix(bot, msg):
 		return commands.when_mentioned_or('.')(bot, msg)
 	return commands.when_mentioned_or(prefixes[guild_id])(bot, msg)
 
+
 def total_seconds(now, before):
-	total_seconds = str((now - before).total_seconds())
-	return total_seconds[:total_seconds.find('.') + 2]
+	secs = str((now - before).total_seconds())
+	return secs[:secs.find('.') + 2]
+
 
 initial_extensions = [
 	'error_handler', 'config', 'menus', 'core', 'music', 'mod', 'welcome', 'farewell', 'notes', 'archive', 'coffeeshop',
@@ -79,6 +84,7 @@ bot.files = initial_extensions
 bot.get_stats = get_stats()
 bot.get_config = get_config()
 login_errors = []
+
 
 async def status_task():
 	while True:
@@ -101,6 +107,7 @@ async def status_task():
 			await asyncio.sleep(15)
 
 # //~== Events ==~\
+
 
 @bot.event
 async def on_ready():
@@ -146,13 +153,16 @@ async def on_ready():
 		for error in login_errors:
 			await channel.send(f'```{str(error)[:1990]}```')
 
+
 @bot.event
 async def on_shard_ready(shard_id):
 	print(f'Shard Loaded: {shard_id}')
 
+
 @bot.event
 async def on_disconnect():
 	print('NOTICE: Disconnected from discord')
+
 
 @bot.event
 async def on_message(msg):
@@ -166,6 +176,7 @@ async def on_message(msg):
 		channel = await msg.author.create_dm()
 		msg.channel = channel
 	await bot.process_commands(msg)
+
 
 @bot.event
 async def on_guild_join(guild):
@@ -183,6 +194,7 @@ async def on_guild_join(guild):
 	if guild.owner.id in conf['blocked']:
 		await guild.leave()
 
+
 @bot.event
 async def on_guild_remove(guild: discord.Guild):
 	channel = bot.get_channel(config.server("log"))
@@ -198,6 +210,7 @@ async def on_guild_remove(guild: discord.Guild):
 		f.write('\n'.join([f'{m.id}, {m}, {m.mention}' for m in guild.members]))
 	await channel.send(embed=e, file=discord.File('members.txt'))
 	os.remove('members.txt')
+
 
 @bot.event
 async def on_command(ctx):
