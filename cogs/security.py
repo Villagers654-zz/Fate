@@ -55,87 +55,104 @@ class Security(commands.Cog):
 		#with open(self.path, 'w+') as f:
 		#	json.dump(self.conf, f)
 
-	def init(self, guild_id: str):
-		self.conf[guild_id] = {
-				'anti_spam': {
-					'ignored': [],
-					'rate_limit': {
-						'toggle': True,
-						'message_limit': 3,
-						'timeframe': 5
-					},
-					'macro': {
-						'toggle': True,
-						'max_time_difference': 1,
-						'check_last_msgs': 3
-					},
-					'mass_ping': {
-						'toggle': False,
-						'per_msg_user_limit': 5,
-						'per_msg_role_limit': 1,
-						'user_pings_per_min': 3,
-						'role_pings_per_min': 1,
-						'limit': 3
-					},
-					'duplicates': {
-						'toggle': True,
-						'repeated_lines': 3,
-						'repeated_messages': 3,
-						'timeframe': 15
-					},
-					'filter': {
-						'invites': True,
-						'zaglo': False,
-						'caps': True,
-						'max_lines': None,
-						'emoji_limit': None,
-						'custom_emoji_limit': True,
-						'attachment_limit': None,
-						'link_limit': None,
-						'custom': ['uwu']
-					}
+	def static_config(self):
+		return {
+			'anti_spam': {
+				'rate_limit': {
+					'toggle': False,
+					'message_limit': 3,
+					'timeframe': 5
 				},
-				'anti_raid': {
-					'mass_join': {
-						'toggle': False,
-						'rate_limit': 5,
-						'timeframe': 15
-					},
-					'mass_remove': {
-						'toggle': False,
-						'rate_limit': 4,
-						'timeframe': 15,
-						'hourly_limit': 25
-					},
-					'object_to_inv': False,
-					'perm_transfer': False,
-					'lockdown': {  # for when multiple people trigger security modules
-						'toggle': False,
-						'kick': False,  # disables lockdown channel if enabled
-						'ban': False,  # disables lockdown channel if enabled
-						'channel': None,  # create one if not exists, and uses roles
-						'verification': True,
-						'lock_overwrites': {
-							'toggle': False,
-							'only_malicious': True
-						},
-						'levels': {  # an example - customizable - overrides kick/ban/raid channel/verification
-								'1': 'verification',
-								'2': 'mute',
-								'4': 'ban'
-						},
-						'lockdown_duration': 60 * 60 * 60,
-						'complete_cleanup': True,
-					},
-
+				'macro': {
+					'toggle': False,
+					'max_time_difference': 1,
+					'check_last_msgs': 3
 				},
-				'lock': {
-					'silence': False,
-					'mute': False,
-					'kick': False,
-					'ban': False
+				'mass_ping': {
+					'toggle': False,
+					'per_msg_user_limit': 5,
+					'per_msg_role_limit': 1,
+					'user_pings_per_min': 3,
+					'role_pings_per_min': 1,
+					'global-limit': 3
+				},
+				'duplicates': {
+					'toggle': False,
+					'repeated_lines': 3,
+					'repeated_messages': 3,
+					'timeframe': 15
+				},
+				'filter': {
+					'profanity': False,
+					'invites': False,
+					'zaglo': False,
+					'caps': False,
+					'char_limit': None,
+					'max_lines': None,
+					'emoji_limit': None,
+					'custom_emoji_limit': False,
+					'attachment_limit': None,
+					'link_limit': None,
+					'custom': []
 				}
+			},
+			'anti_raid': {
+				'mass_join': {
+					'toggle': False,
+					'rate_limit': 5,
+					'timeframe': 15
+				},
+				'mass_remove': {
+					'toggle': False,
+					'rate_limit': 4,
+					'timeframe': 15,
+					'hourly_limit': 25
+				},
+				'mass_channel_del': {
+					'toggle': False,
+					'limit': 5,
+					'timeframe': 60
+				},
+				'mass_role_del': {
+					'toggle': False,
+					'limit': 5,
+					'timeframe': 10
+				},
+				'mass_nick': {
+					'toggle': False,
+					'limit': 5,
+					'timeframe': 15
+				}
+			},
+			'misc': {
+				'rename_to_inv': False,
+				'perm_transfer': False,
+				'webhook_abuse': False,
+			},
+			'lockdown': {  # for when multiple people trigger security modules
+				'toggle': False,
+				'silence': False,
+				'mute': False,
+				'kick': False,  # disables lockdown channel if enabled
+				'ban': False,  # disables lockdown channel if enabled
+				'channel': None,  # create one if not exists, and uses roles
+				'verification': True,
+				'lock_overwrites': {
+					'toggle': False,
+					'only_malicious': True
+				},
+				'levels': {  # an example - customizable - overrides kick/ban/raid channel/verification
+					'1': 'verification',
+					'2': 'mute',
+					'4': 'ban'
+				},
+				'lockdown_duration': 60 * 60 * 60,
+				'complete_cleanup': True
 			}
+		}
+
+	def init(self, guild_id: str):
+		self.conf[guild_id] = self.static_config()
 		self.save_data()
 
 	@commands.group(name='security')
@@ -174,17 +191,24 @@ class Security(commands.Cog):
 				name='◈ Anti Raid',
 				value=f"{emoji(conf['mass_join']['toggle'])} **Mass Join**"
 				      f"\n{emoji(conf['mass_remove']['toggle'])} **Mass Remove**"
-				      f"\n{emoji(conf['object_to_inv'])} **Obj to Invite**"
-				      f"\n{emoji(conf['perm_transfer'])} **Perm Transfer**"
-				      f"\n{emoji(conf['lockdown']['toggle'])} **Lockdown**"
+				      f"\n{emoji(conf['mass_channel_del']['toggle'])} **Mass Del Channel**"
+				      f"\n{emoji(conf['mass_role_del']['toggle'])} **Mass Del Role**"
+				      f"\n{emoji(conf['mass_nick']['toggle'])} **Mass Nick**"
 			)
-			conf = config['lock']
+			conf = config['lockdown']
 			e.add_field(
-				name='◈ Lock',
+				name='◈ Lockdown',
 				value=f"{emoji(conf['silence'])} **Silence**"
 				      f"\n{emoji(conf['mute'])} **Mute**"
 				      f"\n{emoji(conf['kick'])} **Kick**"
 				      f"\n{emoji(conf['ban'])} **Ban**"
+			)
+			conf = config['misc']
+			e.add_field(
+				name='◈ Misc Anti Raid',
+				value=f"{emoji(conf['rename_to_inv'])} - **Rename Adverts**"
+				      f"\n{emoji(conf['perm_transfer'])} - **Perm Transfer**"
+				      f"\n{emoji(conf['webhook_abuse'])} - **Webhook Abuse**"
 			)
 			e.set_footer(text=f"API Response Time: {round(self.bot.latency * 1000)}ms")
 			await ctx.send(embed=e)
@@ -198,30 +222,37 @@ class Security(commands.Cog):
 		e = discord.Embed(color=colors.purple())
 		e.set_author(name='Detailed Security Overview', icon_url=self.bot.user.avatar_url)
 		e.set_thumbnail(url='https://cdn.discordapp.com/attachments/632084935506788385/662903270884245514/network-security.png')
+		config = json.dumps(self.conf[guild_id], indent=2, separators=(',', ': '))
+		new_config = ''
+		for line in config.split('\n'):
+			if len(new_config) + len(line) > 1000:
+				await ctx.send(f'```json\n{new_config}```')
+				new_config = ''
+			new_config += f"\n{line}"
+		await ctx.send(f"```json\n{new_config}```")
 
-		conf = config['anti_spam']
-		value = f"{emoji(len(conf['ignored']) > 0)} **Ignored Channels**"
-		if not conf['ignored']:
-			value += f"\n》None Ignored"
-		for channel_id in conf['ignored']:
-			channel = self.bot.get_channel(channel_id)
-			value += f"\n• {channel.mention}"
-		value += f"\n{emoji(conf['rate_limit']['toggle'])} **Rate Limit**" \
-		         f"\n》Msg Limit: {conf['rate_limit']['message_limit']}" \
-		         f"\n》Within Timeframe Of: {conf['rate_limit']['timeframe']}"
-		value += f"\n{emoji(conf['macro']['toggle'])} **Macro Detection**" \
-		         f"\n》Safe Time Difference: {conf['macro']['max_time_difference']}+ secs" \
-		         f"\n》Last X Msgs to Check: {conf['macro']['check_last_msgs']}" \
-		         f"\n{emoji(conf['mass_ping']['toggle'])} **Mass Pings**" \
-		         f"\n》Max User Pings Per Msg: {conf['mass_ping']['per_msg_user_limit']}" \
-		         f"\n》Max Role Pings Per Msg: {conf['mass_ping']['per_msg_role_limit']}" \
-		         f"\n》Max User Pings Mer Min: {conf['mass_ping']['user_pings_per_min']}" \
-		         f"\n》Max Role Pings Per Min: {conf['mass_ping']['role_pings_per_min']}"
-		e.add_field(
-			name='◈ Anti Spam',
-			value=value
-		)
-		await ctx.send(embed=e)
+		#conf = config['anti_spam']
+		#value = f"{emoji(len(conf['ignored']) > 0)} **Ignored Channels**"
+		#if not conf['ignored']:
+		#	value += f"\n》None Ignored"
+		#for channel_id in conf['ignored']:
+		#	channel = self.bot.get_channel(channel_id)
+		#	value += f"\n• {channel.mention}"
+		#value += f"\n{emoji(conf['rate_limit']['toggle'])} **Rate Limit**" \
+		#         f"\n> Msg Limit: {conf['rate_limit']['message_limit']}" \
+		#         f"\n> Within Timeframe Of: {conf['rate_limit']['timeframe']}"
+		#value += f"\n{emoji(conf['macro']['toggle'])} **Macro Detection**" \
+		#         f"\n> Safe Time Difference: {conf['macro']['max_time_difference']}+ secs" \
+		#         f"\n> Last X Msgs to Check: {conf['macro']['check_last_msgs']}" \
+		#         f"\n{emoji(conf['mass_ping']['toggle'])} **Mass Pings**" \
+		#         f"\n> Max User Pings Per Msg: {conf['mass_ping']['per_msg_user_limit']}" \
+		#         f"\n> Max Role Pings Per Msg: {conf['mass_ping']['per_msg_role_limit']}" \
+		#         f"\n> Max User Pings Mer Min: {conf['mass_ping']['user_pings_per_min']}" \
+		#         f"\n> Max Role Pings Per Min: {conf['mass_ping']['role_pings_per_min']}"
+		#e.add_field(
+		#	name='◈ Anti Spam',
+		#	value=value
+		#)
 
 	#@commands.Cog.listener()
 	async def on_message(self, msg):
