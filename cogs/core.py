@@ -250,7 +250,7 @@ class Core(commands.Cog):
 				self.spam_cd[user_id] = [now, 0]
 			if self.spam_cd[user_id][1] < 2 or msg.author.bot:
 				async with aiohttp.ClientSession() as session:
-					webhook = Webhook.from_url('https://discordapp.com/api/webhooks/582660984661868549/QXcjvb0O8v7SUv34o-hxaeR5mi2v5RYVRSVLi-p89VdbNHjxy8v5MP1muARTgulZnQTu', adapter=AsyncWebhookAdapter(session))
+					webhook = Webhook.from_url('https://discordapp.com/api/webhooks/673290242819883060/GDXiMBwbzw7dbom57ZupHsiEQ76w8TfV_mEwi7_pGw8CvVFL0LNgwRwk55yRPxNdPA4b', adapter=AsyncWebhookAdapter(session))
 					msg.content = discord.utils.escape_mentions(msg.content)
 					if msg.attachments:
 						for attachment in msg.attachments:
