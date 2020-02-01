@@ -4,6 +4,7 @@ import discord
 import os
 from os.path import join
 from zipfile import ZipFile
+from utils import outh
 
 
 def is_guild_owner():
@@ -98,6 +99,19 @@ class Archive(commands.Cog):
 				await ctx.send(file=discord.File('Archive.zip'))
 			except:
 				await ctx.send('File too big to send')
+
+	@commands.command(name='export')
+	@commands.is_owner()
+	async def export(self, ctx, channel: discord.TextChannel = None):
+		if not channel:
+			channel = ctx.channel
+		file = 'archiver/DiscordChatExporter.Cli.dll'
+		dir = '/home/luck/Fate/static'
+		os.system(f'dotnet {file} export -t "{outh.tokens("fatezero")}" -b -c {channel.id} -o {dir}')
+		file = [file for file in os.listdir('static') if '.html' in file][0]
+		await ctx.send(file=discord.File(f'./static/{file}'))
+		os.remove(f'./static/{file}')
+
 
 def setup(bot):
 	bot.add_cog(Archive(bot))
