@@ -43,7 +43,6 @@ class AutoRole(commands.Cog):
 			if guild_id not in self.roles:
 				return await ctx.send("Auto role is not active")
 			e.set_author(name="Auto Roles", icon_url=self.bot.user.avatar_url)
-			e.set_thumbnail(url=ctx.guild.icon_url)
 			e.description = ""
 			for role_id in self.roles[guild_id]:
 				role = ctx.guild.get_role(role_id)
