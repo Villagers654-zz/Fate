@@ -47,23 +47,29 @@ class Emojis(commands.Cog):
 		try:
 			emoji = await ctx.guild.create_custom_emoji(name=name, image=img, roles=roles, reason=reason)
 		except discord.errors.Forbidden as e:
-			if msg: await msg.edit(content=f'{msg.content}\nFailed to add {name}: [`{e}`]')
-			else: await ctx.send(f'Failed to add {name}: [`{e}`]')
+			if msg:
+				await msg.edit(content=f'{msg.content}\nFailed to add {name}: [`{e}`]')
+			else:
+				await ctx.send(f'Failed to add {name}: [`{e}`]')
 		except discord.errors.HTTPException as e:
 			await ctx.send(e)
 			try:
 				img = Image.open(img); img = img.resize((450, 450), Image.BICUBIC)
 			except:
-				if msg: return await msg.edit(content=f'{msg.content}\nFailed to resize {name}')
-				else: return await ctx.send(f'Failed to resize {name}')
+				if msg:
+					return await msg.edit(content=f'{msg.content}\nFailed to resize {name}')
+				else:
+					return await ctx.send(f'Failed to resize {name}')
 			img.save('emoji.png')
 			with open('emoji.png', 'rb') as image:
 				img = image.read()
 			await ctx.guild.create_custom_emoji(name=name, image=img, roles=roles, reason=reason)
 			await msg.edit(content=f'{msg.content}\nAdded {name} successfully')
 		except AttributeError as e:
-			if msg: await msg.edit(content=f'{msg.content}\nFailed to add {name}: [`{e}`]')
-			else: await ctx.send(f'Failed to add {name}: [`{e}`]')
+			if msg:
+				await msg.edit(content=f'{msg.content}\nFailed to add {name}: [`{e}`]')
+			else:
+				await ctx.send(f'Failed to add {name}: [`{e}`]')
 		else:
 			if msg: await msg.edit(content=f'{msg.content}\nAdded {emoji} - {name}')
 			else: await ctx.send(f'Added {emoji} - {name}')
@@ -161,6 +167,8 @@ class Emojis(commands.Cog):
 				continue
 			name = emoji.name; img = requests.get(emoji.url).content
 			await self.upload_emoji(ctx, name=name, img=img, reason=str(ctx.author), msg=msg)
+			if len(msg.content) > 1900:
+				msg = await ctx.send('Uploading emoji(s)..')
 
 	@commands.command(name="delemoji", aliases=["delemote"])
 	@commands.cooldown(1, 5, commands.BucketType.guild)
