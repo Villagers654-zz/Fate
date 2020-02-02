@@ -378,7 +378,7 @@ class SelfRoles(commands.Cog):
 		p = utils.get_prefix(ctx)
 		usage = f"{p}add-role msg_id emoji rolename"
 		if not emoji or not role:
-			await ctx.send(usage)
+			return await ctx.send(usage)
 		guild_id = str(ctx.guild.id)
 		if guild_id not in self.menus:
 			return await ctx.send(f"This guild has no self-role menus")
