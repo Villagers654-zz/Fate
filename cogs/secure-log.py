@@ -435,14 +435,16 @@ class SecureLog(commands.Cog):
 				channel = self.bot.get_channel(channel_id)
 				if isinstance(channel, discord.TextChannel):
 					channels.append(channel.mention)
-			e.add_field(name='◈ Ignored Channels', value=', '.join(channels), inline=False)
+			if channels:
+				e.add_field(name='◈ Ignored Channels', value=', '.join(channels), inline=False)
 		if self.config[guild_id]['ignored_bots']:
 			bots = []
 			for bot_id in self.config[guild_id]['ignored_bots']:
 				bot = ctx.guild.get_member(bot_id)
 				if isinstance(bot, discord.Member):
 					bots.append(bot.mention)
-			e.add_field(name='◈ Ignored Bots', value=', '.join(bots), inline=False)
+			if bots:
+				e.add_field(name='◈ Ignored Bots', value=', '.join(bots), inline=False)
 		await ctx.send(embed=e)
 
 	@commands.Cog.listener()
