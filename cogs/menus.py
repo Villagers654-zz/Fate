@@ -206,6 +206,9 @@ class Menus(commands.Cog):
 		if args:
 			for cmd in self.bot.commands:
 				if cmd.name.lower() == args.lower():
+					if not cmd.usage:
+						return await ctx.send("That command doesn't have extra help information. "
+						                      f"Try using `.{cmd.name}` without any args for help")
 					return await ctx.send(embed=cmd.usage)
 
 		msg = await ctx.send(embed=default())
