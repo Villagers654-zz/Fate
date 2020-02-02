@@ -235,7 +235,6 @@ class AntiSpam(commands.Cog):
         await ctx.send('👍')
         self.save_data()
 
-
     @commands.Cog.listener()
     async def on_message(self, msg: discord.Message):
         if not isinstance(msg.guild, discord.Guild) or msg.author.bot:
