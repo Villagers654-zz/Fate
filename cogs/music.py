@@ -289,7 +289,7 @@ class Music(commands.Cog):
         await asyncio.sleep(20)
         await ctx.message.delete()
 
-    @commands.command(name='skip', aliases=['forceskip', 'fs'])
+    @commands.command(name='skip', aliases=['forceskip', 'fs', 's'])
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(manage_messages=True)
