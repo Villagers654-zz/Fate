@@ -39,16 +39,20 @@ class ErrorHandler(commands.Cog):
 		elif isinstance(error, commands.MissingRequiredArgument):
 			return await ctx.send(error)
 		elif isinstance(error, commands.CheckFailure):
-			await ctx.send(error)
-			return await ctx.message.add_reaction('⚠')
+			await ctx.message.add_reaction('✋')
+			await ctx.message.add_reaction('✊')
+			await ctx.message.add_reaction('😤')
+			return await ctx.message.add_reaction('🚫')
 		elif isinstance(error, discord.errors.Forbidden):
 			bot = ctx.guild.get_member(self.bot.user.id)
 			if ctx.channel.permissions_for(bot).send_messages:
 				return await ctx.send(error)
 			if ctx.channel.permissions_for(bot).add_reactions:
 				return await ctx.message.add_reaction("⚠")
-			try: await ctx.author.send(f"__**{ctx.guild.name}:**__\nERROR: {error}")
-			except: pass
+			try:
+				await ctx.author.send(f"I don't have permission to reply to you in {ctx.guid.name}")
+			except discord.errors.Forbidden:
+				pass
 			return
 		elif isinstance(error, KeyError):
 			err = f'No Data: {error}'
