@@ -17,6 +17,7 @@ class Music(commands.Cog):
         if not hasattr(bot, 'lavalink'):
             lavalink.Client(bot=bot, password='youshallnotpass', loop=bot.loop, ws_port=2333, rest_port=2333)
             self.bot.lavalink.register_hook(self._track_hook)
+        self.skips = {}
 
     def cog_unload(self):
         for guild_id, player in self.bot.lavalink.players:
@@ -38,23 +39,24 @@ class Music(commands.Cog):
         elif isinstance(event, lavalink.Events.QueueEndEvent):
             await channel.send('Queue ended', delete_after=5)
 
+    def get_humans(self, channel):
+        humans = 0
+        for member in channel.members:
+            if not member.bot:
+                humans += 1
+        return humans
+
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
         if not after.channel:
-            def get_humans(channel):
-                humans = 0
-                for member in channel.members:
-                    if not member.bot:
-                        humans += 1
-                return humans
             bot = member.guild.get_member(self.bot.user.id)
             channel = self.bot.get_channel(before.channel.id)
             if bot in channel.members:
                 player = self.bot.lavalink.players.get(member.guild.id)
-                if get_humans(channel) < 1:
+                if self.get_humans(channel) < 1:
                     await asyncio.sleep(25)
                     channel = self.bot.get_channel(before.channel.id)
-                    if get_humans(channel) < 1:
+                    if self.get_humans(channel) < 1:
                         player.queue.clear()
 
     @commands.command(name="play")
@@ -298,8 +300,32 @@ class Music(commands.Cog):
             await ctx.send('Not playing.', delete_after=20)
             await asyncio.sleep(20)
             return await ctx.message.delete()
+        if not ctx.author.voice:
+            await ctx.send("You need to be connected to vc to use this", delete_after=20)
+            await asyncio.sleep(20)
+            return await ctx.message.delete()
+        channel = ctx.author.voice.channel
+        if ctx.author not in channel.members:
+            await ctx.send("You need to be connected to my vc to use this", delete_after=20)
+            await asyncio.sleep(20)
+            return await ctx.message.delete()
+        humans = self.get_humans(channel)  # type: int
+        req = int(humans / 2)
+        if ctx.guild.id not in self.skips:
+            self.skips[ctx.guild.id] = []
+        if not len(self.skips[ctx.guild.id]) >= req:
+            if ctx.author.id in self.skips[ctx.guild.id]:
+                await ctx.send("You've already used your skip", delete_after=20)
+                await asyncio.sleep(20)
+                return await ctx.messaged.delete()
+            self.skips[ctx.guild.id].append(ctx.author.id)
+        if not len(self.skips[ctx.guild.id]) >= req:
+            await ctx.send(f"Added your vote! ({len(self.skips[ctx.guild.id])}/{req})", delete_after=20)
+            await asyncio.sleep(20)
+            return await ctx.message.delete()
         await player.skip()
         await ctx.send('⏭ | Skipped.', delete_after=20)
+        del self.skips[ctx.guild.id]
         await asyncio.sleep(20)
         await ctx.message.delete()
 
