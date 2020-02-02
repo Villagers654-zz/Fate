@@ -224,7 +224,7 @@ class AntiSpam(commands.Cog):
     @commands.has_permissions(manage_messages=True)
     async def _unignore(self, ctx, channel: discord.TextChannel = None):
         guild_id = str(ctx.guild.id)
-        if guild_id not in self.blacklist[guild_id]:
+        if guild_id not in self.blacklist:
             return await ctx.send('This server has no ignored channels')
         if not channel:
             channel = ctx.channel
