@@ -14,7 +14,7 @@ from utils import utils
 cache = {}  # keep track of what commands are still being ran
 
 
-def check_if_running(fp):
+def check_if_running():
     """ Checks if the command is already in progress """
     async def predicate(ctx):
         # with open(fp, 'r') as f:
@@ -56,7 +56,9 @@ class Moderation(commands.Cog):
             "usermod": [],
             "rolemod": [],
             "commands": {
-                "mute": [],  # roles that can access
+                "warn": [],  # roles that have access
+                "purge": [],
+                "mute": [],
                 "kick": [],
                 "ban": []
             },
@@ -111,6 +113,21 @@ class Moderation(commands.Cog):
         # with open(self.fp, 'w') as f:
         #     json.dump(cache, f, indent=2)
 
+    @commands.command(name='purge')
+    @commands.cooldown(*utils.default_cooldown())
+    @has_required_permissions(manage_messages=True)
+    @commands.bot_has_permissions(read_message_history=True, manage_messages=True)
+    async def purge(self, ctx, *args):
+        pass
+
+    @commands.command(name='mute', aliases=['shutup', 'fuckoff'])
+    @commands.cooldown(*utils.default_cooldown())
+    @has_required_permissions(mute_members=True)
+    @commands.bot_has_permissions(embed_links=True)
+    @commands.bot_has_guild_permissions(manage_roles=True)
+    async def mute(self, ctx, member: Greedy[discord.Member], *, reason):  # check for timers in reason.split()[0]
+        pass
+
     @commands.command(name='kick')
     @commands.cooldown(*utils.default_cooldown())
     @has_required_permissions(kick_members=True)
@@ -138,6 +155,11 @@ class Moderation(commands.Cog):
     @commands.bot_has_guild_permissions(manage_roles=True)
     async def mass_role(self, ctx, *, role: Union[discord.Role, str]):
         pass
+
+    @commands.command(name='warn')
+    @commands.cooldown(*utils.default_cooldown())
+    async def warn(self, ctx, user: Greedy[discord.User], *, reason):
+        pass  # use a second special check for this with perm requirements based off of the set punishments
 
 
 def setup(bot):
