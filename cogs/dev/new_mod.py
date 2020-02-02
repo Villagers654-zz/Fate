@@ -11,11 +11,14 @@ from discord.ext.commands import Greedy
 from utils import utils
 
 
+cache = {}  # keep track of what commands are still being ran
+
+
 def check_if_running(fp):
     """ Checks if the command is already in progress """
     async def predicate(ctx):
-        with open(fp, 'r') as f:
-            cache = json.load(f)  # type: dict
+        # with open(fp, 'r') as f:
+        #     cache = json.load(f)  # type: dict
         cmd = ctx.command.name
         if cmd not in cache:
             cache[cmd] = []
@@ -83,30 +86,30 @@ class Moderation(commands.Cog):
 
     async def cog_before_invoke(self, ctx):
         """ index commands that are running """
-        if not path.isfile(self.fp):
-            with open(self.fp, 'w') as f:
-                json.dump({}, f, indent=2)
-        with open(self.fp, 'r') as f:
-            cache = json.load(f)  # type: dict
+        # if not path.isfile(self.fp):
+        #     with open(self.fp, 'w') as f:
+        #         json.dump({}, f, indent=2)
+        # with open(self.fp, 'r') as f:
+        #     cache = json.load(f)  # type: dict
         cmd = ctx.command.name
         if cmd not in cache:
             cache[cmd] = []
         if ctx.guild.id not in cache[cmd]:
             cache[cmd].append(ctx.guild.id)
-        with open(self.fp, 'w') as f:
-            json.dump(cache, f, indent=2)
+        # with open(self.fp, 'w') as f:
+        #     json.dump(cache, f, indent=2)
         if str(ctx.guild.id) not in self.config:
             self.config[str(ctx.guild.id)] = self.template
             self.save_data()
 
     async def cog_after_invoke(self, ctx):
         """ index commands that are running """
-        with open(self.fp, 'r') as f:
-            cache = json.load(f)  # type: dict
+        # with open(self.fp, 'r') as f:
+        #     cache = json.load(f)  # type: dict
         cmd = ctx.command.name
         cache[cmd].remove(ctx.guild.id)
-        with open(self.fp, 'w') as f:
-            json.dump(cache, f, indent=2)
+        # with open(self.fp, 'w') as f:
+        #     json.dump(cache, f, indent=2)
 
     @commands.command(name='kick')
     @commands.cooldown(*utils.default_cooldown())
