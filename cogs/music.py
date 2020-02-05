@@ -317,7 +317,7 @@ class Music(commands.Cog):
             if ctx.author.id in self.skips[ctx.guild.id]:
                 await ctx.send("You've already used your skip", delete_after=20)
                 await asyncio.sleep(20)
-                return await ctx.messaged.delete()
+                return await ctx.message.delete()
             self.skips[ctx.guild.id].append(ctx.author.id)
         if not len(self.skips[ctx.guild.id]) >= req:
             await ctx.send(f"Added your vote! ({len(self.skips[ctx.guild.id])}/{req})", delete_after=20)
