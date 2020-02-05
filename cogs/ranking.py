@@ -224,7 +224,7 @@ class Ranking(commands.Cog):
 				cid = str(channel.id)
 				for member_id in list(self.cache[cid]['members'].keys()):
 					seconds = (datetime.now() - self.cache[cid]['members'][member_id]).seconds
-					self.vclb[guild_id]['vc'][member_id] += seconds
+					self.vclb[member_id] += seconds
 					del self.cache[cid]['members'][member_id]
 					await save()
 			async def run(channel):
