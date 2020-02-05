@@ -75,7 +75,8 @@ initial_extensions = [
 	'polis', 'mha', 'apis', 'chatbridges', 'clean_rythm', 'utility', 'psutil', 'rules', 'duel_chat', 'selfroles',
 	'lock', 'audit', 'cookies', 'backup', 'stats', 'server_list', 'emojis', 'logger', 'autorole', 'changelog',
 	'restore_roles', 'chatbot', 'anti_spam', 'anti_raid', 'chatfilter', 'nsfw', 'minecraft', 'chatlock', 'rainbow',
-	'system', 'user', 'limiter', 'dm_channel', 'factions', 'secure_overwrites', 'server_setup', 'secure-log', 'ranking'
+	'system', 'user', 'limiter', 'dm_channel', 'factions', 'secure_overwrites', 'server_setup', 'secure-log', 'ranking',
+	'global-chat'
 ]
 
 bot = commands.AutoShardedBot(command_prefix=get_prefix, case_insensitive=True, max_messages=16000)
