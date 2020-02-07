@@ -611,6 +611,8 @@ class SecureLog(commands.Cog):
                 e.set_author(name='~==🍸Msg Deleted🍸==~', icon_url=msg.author.avatar_url)
                 dat = await self.search_audit(msg.guild, audit.message_delete)
                 e.set_thumbnail(url=dat['thumbnail_url'])
+                if dat['thumbnail_url'] == msg.guild.icon_url:
+                    e.set_thumbnail(url=msg.author.avatar_url)
                 e.description = f"**Author:** {msg.author.mention}" \
                                 f"\n**Channel:** {msg.channel.mention}" \
                                 f"\n**Deleted by:** {dat['user']}"
