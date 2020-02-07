@@ -919,7 +919,7 @@ class SecureLog(commands.Cog):
 
             if before.name != after.name:
                 e.add_field(
-                    name='~==🍸Name Changed🍸==~',
+                    name='~==🍸Channel Renamed🍸==~',
                     value=f"\n**Mention:** {after.mention}"
                           f"\n**ID:** `{after.id}`"
                           f"\n**Changed by:** {dat['user']}",
@@ -930,7 +930,7 @@ class SecureLog(commands.Cog):
 
             if before.position != after.position:
                 e.add_field(
-                    name='~==🍸Position Updated🍸==~',
+                    name='~==🍸Channel Moved🍸==~',
                     value=f"\n**Name:** {after.name}"
                           f"\n**Mention:** {after.mention}"
                           f"\n**ID:** {after.id}"
@@ -960,7 +960,7 @@ class SecureLog(commands.Cog):
 
             if before.category != after.category:
                 e.add_field(
-                    name='~==🍸Category Changed🍸==~',
+                    name='~==🍸Channel Re-Categorized🍸==~',
                     value=f"\n**Name:** {after.name}" \
                           f"\n**Mention:** {after.mention}" \
                           f"\n**ID:** {after.id}" \
