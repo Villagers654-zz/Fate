@@ -292,8 +292,8 @@ class Music(commands.Cog):
             if time.startswith('-'):
                 seconds *= -1
             track_time = player.position + seconds
-        if track_time >= player.current.duration:
-            await ctx.send("That's farther than the current track..", delete_after=20)
+        if track_time >= player.current.duration or track_time < 0:
+            await ctx.send("That's **beyond** the current track <a:Midoriya:643261596914679808>", delete_after=20)
             await asyncio.sleep(20)
             return await ctx.message.delete()
         await player.seek(track_time)
