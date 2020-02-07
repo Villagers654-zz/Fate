@@ -138,6 +138,10 @@ class SecureLog(commands.Cog):
 						file_paths = [file_paths]
 					files = [discord.File(file) for file in file_paths if os.path.isfile(file)]
 
+				for i, field in embed.fields:
+					if not field.value:
+						embed.fields[i].value = 'None'
+
 				sent = False
 				while not guild.me.guild_permissions.administrator:
 					if not sent:
@@ -152,14 +156,24 @@ class SecureLog(commands.Cog):
 					await asyncio.sleep(60)
 
 				category = self.bot.get_channel(self.config[guild_id]['channel'])
-				if not category:
-					if log_type == 'multi':
-						category = await self.initiate_category(guild)
+				while not category:
+					try:
+						category = await self.bot.fetch_channel(self.config[guild_id]['channel'])
+					except discord.errors.HTTPException:
+						category = None
+						await asyncio.sleep(25)
+					except (discord.errors.Forbidden, discord.errors.NotFound):
+						if log_type == 'multi':
+							category = await self.initiate_category(guild)
+							self.save_data()
+						elif log_type == 'single':
+							category = await guild.create_text_channel(name='bot-logs')
+							self.config[guild_id]['channel'] = category.id
 						self.save_data()
-					elif log_type == 'single':
-						category = await guild.create_text_channel(name='bot-logs')
-						self.config[guild_id]['channel'] = category.id
-					self.save_data()
+						break
+					else:
+						break
+
 
 				try:
 					if isinstance(category, discord.TextChannel):  # single channel log
@@ -901,31 +915,35 @@ class SecureLog(commands.Cog):
 		if guild_id in self.config:
 			e = discord.Embed(color=orange())
 			dat = await self.search_audit(after.guild, audit.channel_update)
-			e.set_author(name='~==🍸Channel Updated🍸==~', icon_url=dat['icon_url'])
+			e.title = 'Text Channel'
+			if isinstance(before, discord.VoiceChannel):
+				e.title = 'Voice Channel'
+			elif isinstance(before, discord.CategoryChannel):
+				e.title = 'Category Channel'
 			e.set_thumbnail(url=after.guild.icon_url)
 			category = 'None, or Changed'
 			if after.category and before.category == after.category:
 				category = after.category.name
 
 			if before.name != after.name:
-				e.description = f"> 》__**Name Changed**__《" \
-				                f"\n**Before:** {before.name}" \
-				                f"\n**After:** {after.name}" \
-				                f"\n**Mention:** {after.mention}" \
+				e.set_author(name='~==🍸Name Changed🍸==~', icon_url=dat['icon_url'])
+				e.description = f"\n**Mention:** {after.mention}" \
 				                f"\n**Category:** {category}" \
 				                f"\n**ID:** `{after.id}`" \
 				                f"\n**Changed by:** {dat['user']}"
+				e.add_field(name='◈ Before', value=before.name)
+				e.add_field(name='◈ After', value=after.name)
 				self.queue[guild_id].append([e, 'updates'])
 
 			if before.position != after.position:
-				e.description = f"> 》__**Position Changed**__《" \
-				                f"\n**Name:** {after.name}" \
+				e.set_author(name='~==🍸Position Updated🍸==~', icon_url=dat['icon_url'])
+				e.description = f"\n**Name:** {after.name}" \
 				                f"\n**Mention:** {after.mention}" \
 				                f"\n**ID:** {after.id}" \
 				                f"\n**Category:** {category}" \
-				                f"\n**Before:** {before.position}" \
-				                f"\n**After:** {after.position}" \
 				                f"\n**Changed By:** {dat['user']}"
+				e.add_field(name='Before', value=str(before.position))
+				e.add_field(name='After', value=str(after.position))
 				self.queue[guild_id].append([e, 'updates'])
 
 			if isinstance(before, discord.TextChannel):
