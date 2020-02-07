@@ -281,19 +281,21 @@ class Music(commands.Cog):
             if minutes:
                 seconds += 60 * minutes
             seconds = seconds * 1000
-            await player.seek(seconds)
-            await ctx.send(f'Moved track to **{lavalink.Utils.format_time(seconds)}**', delete_after=20)
+            track_time = seconds
+        else:
+            seconds = time_rx.search(time)
+            if not seconds:
+                await ctx.send('You need to specify the amount of seconds to skip!', delete_after=20)
+                await asyncio.sleep(20)
+                return await ctx.message.delete()
+            seconds = int(seconds.group()) * 1000
+            if time.startswith('-'):
+                seconds *= -1
+            track_time = player.position + seconds
+        if track_time >= player.current.duration:
+            await ctx.send("That's farther than the current track..", delete_after=20)
             await asyncio.sleep(20)
             return await ctx.message.delete()
-        seconds = time_rx.search(time)
-        if not seconds:
-            await ctx.send('You need to specify the amount of seconds to skip!', delete_after=20)
-            await asyncio.sleep(20)
-            return await ctx.message.delete()
-        seconds = int(seconds.group()) * 1000
-        if time.startswith('-'):
-            seconds *= -1
-        track_time = player.position + seconds
         await player.seek(track_time)
         await ctx.send(f'Moved track to **{lavalink.Utils.format_time(track_time)}**', delete_after=20)
         await asyncio.sleep(20)
