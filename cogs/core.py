@@ -92,6 +92,8 @@ class Core(commands.Cog):
 		if 'personal_prefix' not in config:
 			config['personal_prefix'] = {}
 		config['personal_prefix'][user_id] = prefix
+		if prefix == '.':
+			del config['personal_prefix'][user_id]
 		with open('./data/config.json', 'w') as f:
 			json.dump(config, f, ensure_ascii=False)
 		await ctx.send(f'Set your personal prefix as `{prefix}`\n'
