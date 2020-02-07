@@ -275,6 +275,16 @@ class Music(commands.Cog):
             await ctx.send('Not playing.', delete_after=20)
             await asyncio.sleep(20)
             return await ctx.message.delete()
+        if ':' in time:
+            minutes, seconds = time.split(':')
+            minutes = int(minutes); seconds = int(seconds)
+            if minutes:
+                seconds += 60 * minutes
+            seconds = seconds * 1000
+            await player.seek(seconds)
+            await ctx.send(f'Moved track to **{lavalink.Utils.format_time(seconds)}**', delete_after=20)
+            await asyncio.sleep(20)
+            return await ctx.message.delete()
         seconds = time_rx.search(time)
         if not seconds:
             await ctx.send('You need to specify the amount of seconds to skip!', delete_after=20)
