@@ -979,6 +979,35 @@ class Factions(commands.Cog):
 			rank += 1
 		await ctx.send(embed=e)
 
+	@_factions.command(name='gtop', aliases=['glb'])
+	@commands.cooldown(1, 3, commands.BucketType.user)
+	async def _gtop(self, ctx):
+		guild_id = str(ctx.guild.id)
+		if guild_id not in self.factions:
+			return await ctx.send('This server has no factions')
+		e = discord.Embed(color=colors.purple())
+		e.set_thumbnail(url=ctx.guild.icon_url)
+		e.description = ''
+		rank = 1
+		factions = []
+		for guild_id, data in self.factions.items():
+			for faction, dat in data.items():
+				if faction != 'category':
+					owner = self.bot.get_user(self.factions[guild_id][faction]['owner'])
+					if not isinstance(owner, discord.User):
+						continue
+					balance = dat['balance']
+					self.init(guild_id, faction)
+					for i in range(len(self.land_claims[guild_id][faction].keys())):
+						balance += 500
+					factions.append([faction, balance])
+		for faction, balance in sorted(factions, key=lambda kv: kv[1], reverse=True)[:15]:
+			if rank == 1:
+				e.set_author(name='Global Faction Leaderboard')
+			e.description += f'#{rank}. {faction} - ${balance}\n'
+			rank += 1
+		await ctx.send(embed=e)
+
 	@_factions.command(name='shop')
 	@commands.cooldown(1, 16, commands.BucketType.channel)
 	async def _shop(self, ctx):
