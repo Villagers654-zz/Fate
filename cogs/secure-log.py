@@ -706,7 +706,7 @@ class SecureLog(commands.Cog):
             e = discord.Embed(color=yellow())
             e.set_author(name='~==🍸Reactions Cleared🍸==~', icon_url=msg.author.avatar_url)
             e.set_thumbnail(url=msg.author.avatar_url)
-            e.description = f"**Author:* {msg.author.mention}" \
+            e.description = f"**Author:** {msg.author.mention}" \
                             f"\n**Channel:** {channel.mention}" \
                             f"\n[Jump to MSG]({msg.jump_url})"
             self.queue[guild_id].append([e, 'chat'])
