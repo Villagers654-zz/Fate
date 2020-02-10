@@ -5,6 +5,7 @@ import json
 import aiohttp
 import asyncio
 from time import time
+import re
 
 from discord.ext import commands
 from discord import Webhook, AsyncWebhookAdapter
@@ -186,11 +187,16 @@ class GlobalChat(commands.Cog):
 				# filter
 				if 'discord.gg' in msg.content or 'discordapp.com/invite' in msg.content or 'invite.gg' in msg.content:
 					ignore = True
-				abcs = 'abcdefghijklmnopqrstuvwxyz'
+				abcs = 'abcdefghijklmnopqrstuvwxyz '
+				matches = re.findall('<a?:[a-zA-Z]*:[0-9]*>', str(msg.content))
+				if matches:
+					for match in matches:
+						msg.content = str(msg.content.replace(match, ''))
 				letters = [l for l in list(msg.content) if l.lower() in abcs]
-				if len(letters) < len(msg.content) / 3 + len(msg.content) / 3 and len(msg.content) > 10:
+				if len(letters) < len(msg.content) / 3 + len(msg.content) / 3 and len(msg.content) > 5:
 					return await msg.delete()
 
+				# profanity filter
 				prob = predict_prob([msg.content])
 				new_prob = []
 				for i in prob:
