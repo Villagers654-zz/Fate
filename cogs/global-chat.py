@@ -9,6 +9,7 @@ from time import time
 from discord.ext import commands
 from discord import Webhook, AsyncWebhookAdapter
 import discord
+from profanity_check import predict_prob
 
 from utils import colors, utils, config
 
@@ -185,6 +186,19 @@ class GlobalChat(commands.Cog):
 				# filter
 				if 'discord.gg' in msg.content or 'discordapp.com/invite' in msg.content or 'invite.gg' in msg.content:
 					ignore = True
+				abcs = 'abcdefghijklmnopqrstuvwxyz'
+				letters = [l for l in list(msg.content) if l.lower() in abcs]
+				if len(letters) < len(msg.content) / 3 + len(msg.content) / 3 and len(msg.content) > 10:
+					return await msg.delete()
+
+				prob = predict_prob([msg.content])
+				new_prob = []
+				for i in prob:
+					if i >= 0.2:
+						new_prob.append(1)
+					elif i < 0.2:
+						new_prob.append(0)
+				profanity = any(prob == 1 for prob in new_prob)
 
 				self.bot.loop.create_task(queue(msg))
 				if ignore:
@@ -208,17 +222,21 @@ class GlobalChat(commands.Cog):
 								)
 							else:
 								channel = self.bot.get_channel(conf['channel'])
+								if profanity and not channel.is_nsfw():
+									content = '`[filtered message]`'
+								else:
+									content = msg.content
 								if msg.author.id == self.last_user and msg.channel.id == self.last_channel:
 									async for m in channel.history(limit=5):
 										if m.author.id == self.bot.user.id:
 											e = m.embeds[0]
-											e.description += f'\n{msg.content}'
+											e.description += f'\n{content}'
 											await m.edit(embed=e)
 											break
 								else:
 									e = discord.Embed(color=msg.author.color)
 									e.set_author(name=str(msg.author), icon_url=msg.author.avatar_url)
-									e.description = msg.content
+									e.description = content
 									if msg.attachments:
 										e.set_image(url=msg.attachments[0].url)
 									await channel.send(embed=e)
