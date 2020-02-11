@@ -17,6 +17,15 @@ from discord.ext import commands
 from termcolor import cprint
 
 from utils import config, outh, colors
+import logging
+
+if os.path.isfile('discord.log'):
+	os.remove('discord.log')
+logger = logging.getLogger('discord')
+logger.setLevel(logging.INFO)
+handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
+handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
+logger.addHandler(handler)
 
 # //~== Core ==~\\
 
@@ -79,7 +88,7 @@ initial_extensions = [
 	'global-chat'
 ]
 
-bot = commands.AutoShardedBot(command_prefix=get_prefix, case_insensitive=True, max_messages=16000)
+bot = commands.Bot(command_prefix=get_prefix, case_insensitive=True, max_messages=16000)
 bot.remove_command('help')
 bot.files = initial_extensions
 bot.get_stats = get_stats()
@@ -106,6 +115,31 @@ async def status_task():
 			except:
 				pass
 			await asyncio.sleep(15)
+
+
+async def debug_log():
+	channel = bot.get_channel(675878044824764456)
+	log = []
+	reads = 0
+	while True:
+		reads += 1
+		with open('discord.log', 'r') as f:
+			lines = f.readlines()
+		new_lines = len(lines) - len(log)
+		if new_lines > 0:
+			added_lines = lines[-new_lines:]
+			msg = ''.join(added_lines)
+			char = u"\u0000"
+			for group in [msg[i:i + 1990] for i in range(0, len(msg), 1990)]:
+				await channel.send(f'```{group.replace(char, "")}```')
+			log = [*log, *added_lines]
+		if reads == 1000:
+			with open('discord.log', 'w') as f:
+				f.write('')
+			log = []
+			reads = 0
+		await asyncio.sleep(1)
+
 
 # //~== Events ==~\
 
@@ -153,16 +187,12 @@ async def on_ready():
 	if login_errors:
 		for error in login_errors:
 			await channel.send(f'```{str(error)[:1990]}```')
+	bot.loop.create_task(debug_log())
 
 
 @bot.event
 async def on_shard_ready(shard_id):
 	print(f'Shard Loaded: {shard_id}')
-
-
-@bot.event
-async def on_disconnect():
-	print('NOTICE: Disconnected from discord')
 
 
 @bot.event
