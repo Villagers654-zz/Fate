@@ -40,24 +40,24 @@ class Music(commands.Cog):
             await channel.send('Queue ended', delete_after=5)
 
     def get_humans(self, channel):
-        humans = 0
-        for member in channel.members:
-            if not member.bot:
-                humans += 1
-        return humans
+        return len([m for m in channel.members if not m.bot])
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
         if not after.channel:
-            bot = member.guild.get_member(self.bot.user.id)
-            channel = self.bot.get_channel(before.channel.id)
-            if bot in channel.members:
-                player = self.bot.lavalink.players.get(member.guild.id)
-                if self.get_humans(channel) < 1:
+            player = self.bot.lavalink.players.get(member.guild.id)
+            channel = self.bot.get_channel(player.fetch('channel'))
+            if member.id == self.bot.user.id:
+                if player.queue:
+                    await channel.send("I paused your song", delete_after=20)
+            if player.is_connected and before.channel.id == channel.id:  # check if the vc is empty
+                if self.get_humans(after.channel) == 0:                 # and leave if it's empty after 25sec
                     await asyncio.sleep(25)
                     channel = self.bot.get_channel(before.channel.id)
-                    if self.get_humans(channel) < 1:
-                        player.queue.clear()
+                    if self.get_humans(after.channel) == 0:
+                        await player.set_pause(True)
+                        await channel.send("Paused music")
+                        await player.disconnect()
 
     @commands.command(name="play")
     @commands.cooldown(1, 3, commands.BucketType.user)
@@ -65,8 +65,8 @@ class Music(commands.Cog):
     @commands.bot_has_permissions(embed_links=True, manage_messages=True)
     async def _play(self, ctx, *, query):
         """ Lists the first 10 search results from a given query. """
+        player = self.bot.lavalink.players.get(ctx.guild.id)
         if 'youtu.be' in query or 'http' in query:
-            player = self.bot.lavalink.players.get(ctx.guild.id)
             query = query.strip('<>')
             if not url_rx.match(query):
                 query = f'ytsearch:{query}'

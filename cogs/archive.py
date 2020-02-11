@@ -112,6 +112,23 @@ class Archive(commands.Cog):
 		await ctx.send(file=discord.File(f'./static/{file}'))
 		os.remove(f'./static/{file}')
 
+	@commands.command(name='export-guild')
+	@commands.is_owner()
+	async def export_guild(self, ctx, guild_id: int):
+		file = 'archiver/DiscordChatExporter.Cli.dll'
+		dir = '/home/luck/Fate/static/export'
+		if not os.path.exists(dir):
+			os.mkdir(dir)
+		os.system(f'dotnet {file} exportguild -t "{outh.tokens("fatezero")}" -b -g {guild_id} -o {dir}')
+		files = [file for file in os.listdir('static/export') if '.html' in file]
+		for file in files:
+			try:
+				await ctx.send(file=discord.File(f'./static/export/{file}'))
+			except:
+				await ctx.send(f"File `{file}` is too large")
+			os.remove(f'./static/export/{file}')
+		await ctx.send('Done')
+
 
 def setup(bot):
 	bot.add_cog(Archive(bot))

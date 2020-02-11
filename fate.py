@@ -167,13 +167,10 @@ handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(me
 logger.addHandler(handler)
 
 
-# //~== Events ==~\
-
-
 @bot.event
 async def on_ready():
 	login_time = bot.utils.total_seconds(datetime.now(), login_start_time)
-	total_start_time =bot.utils.total_seconds(datetime.now(), bot.start_time)
+	total_start_time = bot.utils.total_seconds(datetime.now(), bot.start_time)
 	cprint('--------------------------', 'cyan')
 	info = f'Logged in as {bot.user}\n'
 	info += f"{bot.user.id}\n"
@@ -265,12 +262,15 @@ async def on_command(ctx):
 	with open('./data/stats.json', 'w') as f:
 		json.dump(stats, f, ensure_ascii=False)
 
+
 # //~== Startup ==~\\
+
 
 bot.start_time = datetime.now()
 if __name__ == '__main__':
 	cprint("Loading cogs..", "blue")
-	unloaded_cogs = []; index = 1
+	unloaded_cogs = []
+	index = 1
 	load_msg = ''
 	for cog in initial_extensions:
 		start_time = datetime.now()

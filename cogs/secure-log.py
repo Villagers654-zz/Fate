@@ -548,10 +548,12 @@ class SecureLog(commands.Cog):
                 e = discord.Embed(color=cyan())
                 e.set_author(name=f'~==🍸Msg {action}🍸==~', icon_url=after.author.avatar_url)
                 e.set_thumbnail(url=after.author.avatar_url)
-                e.description = f"**Author:** {after.author.mention}" \
-                                f"\n**Channel:** {after.channel.mention}" \
-                                f"**Who Pinned:** {audit_dat['user']}" \
-                                f"\n[Jump to MSG]({after.jump_url})"
+                e.description = self.bot.tools.format_dict({
+                    "Author": after.author.mention,
+                    "Channel": after.channel.mention,
+                    "Who Pinned": audit_dat['user'],
+                    "[Jump to MSG]": None
+                })
                 for text_group in self.split_into_groups(after.content):
                     e.add_field(name="◈ Content", value=text_group, inline=False)
                 self.queue[guild_id].append([e, 'chat'])
