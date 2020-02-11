@@ -1,6 +1,6 @@
 """
 Luck#1574's Discord Bot
-- Supports v1.5
+- Supports v1.3
 """
 
 import asyncio
@@ -11,13 +11,152 @@ import traceback
 from datetime import datetime
 import os
 import subprocess
+import logging
 
 import discord
 from discord.ext import commands
 from termcolor import cprint
 
 from utils import config, outh, colors
-import logging
+
+
+class Utils:
+
+	@staticmethod
+	def format_dict(data: dict) -> str:
+		result = ''
+		for k, v in data.items():
+			if v:
+				result += f"\n**{k}:** {v}"
+			else:
+				result += f"\n{k}"
+		return result
+
+	@staticmethod
+	def add_field(embed, name: str, value: dict, inline=True):
+		embed.add_field(
+			name=f'◈ {name}', value=Utils.format_dict(value), inline=inline
+		)
+
+	@staticmethod
+	def get_prefix(bot, msg):
+		conf = bot.utils.get_config()  # type: dict
+		if 'blocked' in conf:
+			if msg.author.id in conf['blocked']:
+				return 'lsimhbiwfefmtalol'
+		if not msg.guild:
+			return commands.when_mentioned_or(".")(bot, msg)
+		guild_id = str(msg.guild.id)
+		if 'restricted' not in conf:
+			conf['restricted'] = {}
+		if guild_id in conf['restricted']:
+			if msg.channel.id in conf['restricted'][guild_id]['channels'] and (
+					not msg.author.guild_permissions.administrator):
+				return 'lsimhbiwfefmtalol'
+		if 'personal_prefix' not in conf:
+			conf['personal_prefix'] = {}
+		user_id = str(msg.author.id)
+		if user_id in conf['personal_prefix']:
+			return commands.when_mentioned_or(conf['personal_prefix'][user_id])(bot, msg)
+		if 'prefix' not in conf:
+			conf['prefix'] = {}
+		prefixes = conf['prefix']
+		if guild_id not in prefixes:
+			return commands.when_mentioned_or('.')(bot, msg)
+		return commands.when_mentioned_or(prefixes[guild_id])(bot, msg)
+
+	@staticmethod
+	def total_seconds(now, before):
+		secs = str((now - before).total_seconds())
+		return secs[:secs.find('.') + 2]
+
+	def get_stats(self):
+		if not isfile('./data/stats.json'):
+			with open('./data/stats.json', 'w') as f:
+				json.dump({'commands': []}, f, ensure_ascii=False)
+		with open('./data/stats.json', 'r') as stats:
+			return json.load(stats)
+
+	def get_config(self):
+		if not isfile('./data/config.json'):
+			with open('./data/config.json', 'w') as f:
+				json.dump({}, f, ensure_ascii=False)
+		with open('./data/config.json', 'r') as f:
+			return json.load(f)
+
+
+class Tasks:
+	def __init__(self):
+		self.tasks = []
+
+	async def status_task(self):
+		while True:
+			motds = [
+				'FBI OPEN UP', 'YEET to DELETE', 'Pole-Man', '♡Juice wrld♡', 'Mad cuz Bad', 'Quest for Cake',
+				'Gone Sexual',
+				'@EPFFORCE#1337 wuz here'
+			]
+			stages = ['Serendipity', 'Euphoria', 'Singularity', 'Epiphany']
+			for i in range(len(stages)):
+				try:
+					await bot.change_presence(status=discord.Status.online,
+					                          activity=discord.Game(name=f'Seeking For The Clock'))
+					await asyncio.sleep(45)
+					await bot.change_presence(status=discord.Status.online,
+					                          activity=discord.Game(name=f'{stages[i]} | use .help'))
+					await asyncio.sleep(15)
+					await bot.change_presence(status=discord.Status.idle, activity=discord.Game(
+						name=f'SVR: {len(bot.guilds)} USR: {len(bot.users)}'))
+					await asyncio.sleep(15)
+					await bot.change_presence(status=discord.Status.dnd,
+					                          activity=discord.Game(name=f'{stages[i]} | {random.choice(motds)}'))
+				except:
+					pass
+				await asyncio.sleep(15)
+
+	async def debug_log(self):
+		channel = bot.get_channel(675878044824764456)
+		log = []
+		reads = 0
+		while True:
+			reads += 1
+			with open('discord.log', 'r') as f:
+				lines = f.readlines()
+			new_lines = len(lines) - len(log)
+			if new_lines > 0:
+				added_lines = lines[-new_lines:]
+				msg = ''.join(added_lines)
+				char = u"\u0000"
+				for group in [msg[i:i + 1990] for i in range(0, len(msg), 1990)]:
+					await channel.send(f'```{group.replace(char, "")}```')
+				log = [*log, *added_lines]
+			if reads == 1000:
+				with open('discord.log', 'w') as f:
+					f.write('')
+				log = []
+				reads = 0
+			await asyncio.sleep(1)
+
+
+class Fate(commands.Bot):
+	def __init__(self, **options):
+		self.utils = Utils()
+		self.tasks = Tasks()
+		super().__init__(self.utils.get_prefix, **options)
+
+
+bot = Fate(case_insensitive=True, max_messages=16000)
+bot.remove_command('help')
+initial_extensions = [
+	'error_handler', 'config', 'menus', 'core', 'music', 'mod', 'welcome', 'farewell', 'notes', 'archive', 'coffeeshop',
+	'custom', 'actions', 'reactions', 'responses', 'textart', 'fun', 'dev', '4b4t', 'readme', 'reload', 'embeds',
+	'polis', 'apis', 'chatbridges', 'clean_rythm', 'utility', 'psutil', 'rules', 'duel_chat', 'selfroles',
+	'lock', 'audit', 'cookies', 'backup', 'stats', 'server_list', 'emojis', 'logger', 'autorole', 'changelog',
+	'restore_roles', 'chatbot', 'anti_spam', 'anti_raid', 'chatfilter', 'nsfw', 'minecraft', 'chatlock', 'rainbow',
+	'system', 'user', 'limiter', 'dm_channel', 'factions', 'secure_overwrites', 'server_setup', 'secure-log', 'ranking',
+	'global-chat'
+]
+login_errors = []
 
 if os.path.isfile('discord.log'):
 	os.remove('discord.log')
@@ -27,127 +166,14 @@ handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w'
 handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
 logger.addHandler(handler)
 
-# //~== Core ==~\\
-
-
-def get_stats():
-	if not isfile('./data/stats.json'):
-		with open('./data/stats.json', 'w') as f:
-			json.dump({'commands': []}, f, ensure_ascii=False)
-	with open('./data/stats.json', 'r') as stats:
-		return json.load(stats)
-
-
-def get_config():
-	if not isfile('./data/config.json'):
-		with open('./data/config.json', 'w') as f:
-			json.dump({}, f, ensure_ascii=False)
-	with open('./data/config.json', 'r') as f:
-		return json.load(f)
-
-
-def get_prefix(bot, msg):
-	config = get_config()  # type: dict
-	if 'blocked' in config:
-		if msg.author.id in config['blocked']:
-			return 'lsimhbiwfefmtalol'
-	if not msg.guild:
-		return commands.when_mentioned_or(".")(bot, msg)
-	guild_id = str(msg.guild.id)
-	if 'restricted' not in config:
-		config['restricted'] = {}
-	if guild_id in config['restricted']:
-		if msg.channel.id in config['restricted'][guild_id]['channels'] and (
-				not msg.author.guild_permissions.administrator):
-			return 'lsimhbiwfefmtalol'
-	if 'personal_prefix' not in config:
-		config['personal_prefix'] = {}
-	user_id = str(msg.author.id)
-	if user_id in config['personal_prefix']:
-		return commands.when_mentioned_or(config['personal_prefix'][user_id])(bot, msg)
-	if 'prefix' not in config:
-		config['prefix'] = {}
-	prefixes = config['prefix']
-	if guild_id not in prefixes:
-		return commands.when_mentioned_or('.')(bot, msg)
-	return commands.when_mentioned_or(prefixes[guild_id])(bot, msg)
-
-
-def total_seconds(now, before):
-	secs = str((now - before).total_seconds())
-	return secs[:secs.find('.') + 2]
-
-
-initial_extensions = [
-	'error_handler', 'config', 'menus', 'core', 'music', 'mod', 'welcome', 'farewell', 'notes', 'archive', 'coffeeshop',
-	'custom', 'actions', 'reactions', 'responses', 'textart', 'fun', 'dev', '4b4t', 'readme', 'reload', 'embeds',
-	'polis', 'mha', 'apis', 'chatbridges', 'clean_rythm', 'utility', 'psutil', 'rules', 'duel_chat', 'selfroles',
-	'lock', 'audit', 'cookies', 'backup', 'stats', 'server_list', 'emojis', 'logger', 'autorole', 'changelog',
-	'restore_roles', 'chatbot', 'anti_spam', 'anti_raid', 'chatfilter', 'nsfw', 'minecraft', 'chatlock', 'rainbow',
-	'system', 'user', 'limiter', 'dm_channel', 'factions', 'secure_overwrites', 'server_setup', 'secure-log', 'ranking',
-	'global-chat'
-]
-
-bot = commands.Bot(command_prefix=get_prefix, case_insensitive=True, max_messages=16000)
-bot.remove_command('help')
-bot.files = initial_extensions
-bot.get_stats = get_stats()
-bot.get_config = get_config()
-login_errors = []
-
-
-async def status_task():
-	while True:
-		motds = [
-			'FBI OPEN UP', 'YEET to DELETE', 'Pole-Man', '♡Juice wrld♡', 'Mad cuz Bad', 'Quest for Cake', 'Gone Sexual',
-			'@EPFFORCE#1337 wuz here'
-		]
-		stages = ['Serendipity', 'Euphoria', 'Singularity', 'Epiphany']
-		for i in range(len(stages)):
-			try:
-				await bot.change_presence(status=discord.Status.online, activity=discord.Game(name=f'Seeking For The Clock'))
-				await asyncio.sleep(45)
-				await bot.change_presence(status=discord.Status.online, activity=discord.Game(name=f'{stages[i]} | use .help'))
-				await asyncio.sleep(15)
-				await bot.change_presence(status=discord.Status.idle, activity=discord.Game(name=f'SVR: {len(bot.guilds)} USR: {len(bot.users)}'))
-				await asyncio.sleep(15)
-				await bot.change_presence(status=discord.Status.dnd, activity=discord.Game(name=f'{stages[i]} | {random.choice(motds)}'))
-			except:
-				pass
-			await asyncio.sleep(15)
-
-
-async def debug_log():
-	channel = bot.get_channel(675878044824764456)
-	log = []
-	reads = 0
-	while True:
-		reads += 1
-		with open('discord.log', 'r') as f:
-			lines = f.readlines()
-		new_lines = len(lines) - len(log)
-		if new_lines > 0:
-			added_lines = lines[-new_lines:]
-			msg = ''.join(added_lines)
-			char = u"\u0000"
-			for group in [msg[i:i + 1990] for i in range(0, len(msg), 1990)]:
-				await channel.send(f'```{group.replace(char, "")}```')
-			log = [*log, *added_lines]
-		if reads == 1000:
-			with open('discord.log', 'w') as f:
-				f.write('')
-			log = []
-			reads = 0
-		await asyncio.sleep(1)
-
 
 # //~== Events ==~\
 
 
 @bot.event
 async def on_ready():
-	login_time = total_seconds(datetime.now(), login_start_time)
-	total_start_time = total_seconds(datetime.now(), bot.start_time)
+	login_time = bot.utils.total_seconds(datetime.now(), login_start_time)
+	total_start_time =bot.utils.total_seconds(datetime.now(), bot.start_time)
 	cprint('--------------------------', 'cyan')
 	info = f'Logged in as {bot.user}\n'
 	info += f"{bot.user.id}\n"
@@ -162,7 +188,7 @@ async def on_ready():
 	      '│  ├┘ your day is with the\n'
 	      '└──┘ blood of your enemys')
 	cprint('--------------------------', 'cyan')
-	bot.loop.create_task(status_task())
+	bot.loop.create_task(bot.tasks.status_task())
 	cprint(datetime.now().strftime("%m-%d-%Y %I:%M%p"), 'yellow')
 	# notify myself on discord that the bots logged in
 	channel = bot.get_channel(config.server("log"))
@@ -175,24 +201,13 @@ async def on_ready():
 	    f'Total time taken: {total_start_time} seconds```'
 	e = discord.Embed(color=colors.green())
 	e.set_author(name='Login Notice', icon_url=bot.user.avatar_url)
-	load_msgs = [f'```{load_msg[i:i + 1000]}```' for i in range(0, len(load_msg), 1000)]
-	for i in range(len(load_msgs)):
-		if i == 0:
-			e.description = load_msgs[i]; continue
-		e.add_field(name='~', value=load_msgs[i])
 	e.add_field(name="Loading Info", value=load_times, inline=False)
 	e.add_field(name='Security Check', value=f'```{output}```')
 	e.add_field(name="Welcome", value=info, inline=False)
 	await channel.send(embed=e)
-	if login_errors:
-		for error in login_errors:
-			await channel.send(f'```{str(error)[:1990]}```')
-	bot.loop.create_task(debug_log())
-
-
-@bot.event
-async def on_shard_ready(shard_id):
-	print(f'Shard Loaded: {shard_id}')
+	for error in login_errors:
+		await channel.send(f'```{str(error)[:1990]}```')
+	bot.loop.create_task(bot.tasks.debug_log())
 
 
 @bot.event
@@ -221,7 +236,7 @@ async def on_guild_join(guild):
 		f"**Owner:** {guild.owner}\n" \
 		f"**Members:** [`{len(guild.members)}`]"
 	await channel.send(embed=e)
-	conf = get_config()  # type: dict
+	conf = bot.utils.get_config()  # type: dict
 	if guild.owner.id in conf['blocked']:
 		await guild.leave()
 
@@ -245,7 +260,7 @@ async def on_guild_remove(guild: discord.Guild):
 
 @bot.event
 async def on_command(ctx):
-	stats = bot.get_stats  # type: dict
+	stats = bot.utils.get_stats()  # type: dict
 	stats['commands'].append(str(datetime.now()))
 	with open('./data/stats.json', 'w') as f:
 		json.dump(stats, f, ensure_ascii=False)
@@ -273,6 +288,6 @@ if __name__ == '__main__':
 	reaction = ':)' if index - 1 == len(initial_extensions) else ':('
 	cprint(f'Loaded {index - 1}/{len(initial_extensions)} cogs {reaction}', "magenta")
 	cprint(f"Logging into discord..", "blue")
-load_time = total_seconds(datetime.now(), bot.start_time)
+load_time = Utils.total_seconds(datetime.now(), bot.start_time)
 login_start_time = datetime.now()
 bot.run(outh.tokens('fatezero'))

@@ -411,7 +411,7 @@ class Utility(commands.Cog):
 	@commands.command(name='reminder', aliases=['timer', 'remindme'])
 	@commands.cooldown(2, 5, commands.BucketType.user)
 	async def timer(self, ctx, *args):
-		p = utils.get_prefix(ctx)
+		p = self.bot.utils.get_prefix(self.bot, ctx.message)
 		usage = f">>> Usage: `{p}reminder [30s|5m|1h|2d]`" \
 		        f"Example: `{p}reminder 1h take out da trash`"
 		timers = []

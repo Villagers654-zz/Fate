@@ -150,7 +150,9 @@ class Menus(commands.Cog):
 			    '• **id** - `sends your id & the channels id`\n' \
 			    '• **perms** - `checks what users/roles has a perm`\n' \
 				'• **create-webhook** - `creates webhooks for mobile`\n' \
-			    '• **vc-log** - `logs vc events to a channel`'
+			    '• **vc-log** - `logs vc events to a channel`\n' \
+			    '• **move** - `moves chats to another channel`\n' \
+			    '• **last-entry** - `info on the last ban`'
 			return e
 		def fun():
 			e = discord.Embed(color=colors.fate())

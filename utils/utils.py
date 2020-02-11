@@ -127,12 +127,8 @@ async def get_role(ctx, name):
 
 
 def get_prefix(ctx):
-	guild_id = str(ctx.guild.id)
-	config = ctx.bot.get_config  # type: dict
-	p = '.'  # default command prefix
-	if guild_id in config['prefix']:
-		p = config['prefix'][guild_id]
-	return p
+	return ctx.bot.utils.get_prefix(ctx.bot, ctx.message)
+
 
 async def wait_for_msg(self, ctx, user=None):
 	if not user:
@@ -146,6 +142,7 @@ async def wait_for_msg(self, ctx, user=None):
 		return False
 	else:
 		return msg
+
 
 def get_seconds(minutes=None, hours=None, days=None):
 	if minutes:
