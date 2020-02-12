@@ -214,10 +214,15 @@ class Menus(commands.Cog):
 						                      f"Try using `.{cmd.name}` without any args for help")
 					return await ctx.send(embed=cmd.usage)
 
-		msg = await ctx.send(embed=default())
+
 		emojis = ['🏡', '⏮', '⏪', '⏩', '⏭']
 		index = 0; sub_index = None
 		embeds = [default(), core(), mod(), utility(), fun(), music()]
+		if args:
+			ems = [e.__name__ for e in [default, core, mod, utility, fun, music]]
+			index = ems.index(args)
+		msg = await ctx.send(embed=embeds[index])
+
 		def index_check(index):
 			if index > len(embeds) - 1:
 				index = len(embeds) - 1
