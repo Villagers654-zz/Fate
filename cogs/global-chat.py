@@ -232,7 +232,7 @@ class GlobalChat(commands.Cog):
 									content = '`[filtered message]`'
 								else:
 									content = msg.content
-								if msg.author.id == self.last_user and msg.channel.id == self.last_channel:
+								if msg.author.id == self.last_user and msg.channel.id == self.last_channel and not msg.attachments:
 									async for m in channel.history(limit=5):
 										if m.author.id == self.bot.user.id:
 											e = m.embeds[0]
