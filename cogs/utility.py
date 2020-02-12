@@ -561,6 +561,34 @@ class Utility(commands.Cog):
 		except:
 			await ctx.send('Failed to dm you the webhook url', embed=e)
 
+	@commands.command(name='webhooks')
+	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.guild_only()
+	@commands.has_permissions(administrator=True)
+	@commands.bot_has_permissions(manage_webhooks=True)
+	async def webhooks(self, ctx, channel: discord.TextChannel = None):
+		""" Return all the servers webhooks """
+		e = discord.Embed(color=colors.fate())
+		e.set_author(name='Webhooks', icon_url=ctx.author.avatar_url)
+		e.set_thumbnail(url=ctx.guild.icon_url)
+		if channel:
+			if not channel.permissions_for(ctx.guild.me).manage_webhooks:
+				return await ctx.send("I need manage webhook(s) permissions in that channel")
+			webhooks = await channel.webhooks()
+			e.description = '\n'.join([f"• {webhook.name}" for webhook in webhooks])
+			await ctx.send(embed=e)
+		else:
+			for channel in ctx.guild.text_channels:
+				if channel.permissions_for(ctx.guild.me).manage_webhooks:
+					webhooks = await channel.webhooks()
+					if webhooks:
+						e.add_field(
+							name=f'◈ {channel}',
+							value='\n'.join([f"• {webhook.name}" for webhook in webhooks]),
+							inline=False
+						)
+			await ctx.send(embed=e)
+
 	@commands.command(name='move', aliases=['mv'])
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.guild_only()
