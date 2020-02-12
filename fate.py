@@ -142,7 +142,7 @@ class Fate(commands.Bot):
 	def __init__(self, **options):
 		self.utils = Utils()
 		self.tasks = Tasks()
-		self.get_config = self.utils.get_config
+		self.get_config = self.utils.get_config()
 		super().__init__(self.utils.get_prefix, **options)
 
 
