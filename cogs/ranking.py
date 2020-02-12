@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 import requests
 from io import BytesIO
 import aiosqlite
+import re
 
 from discord.ext import commands
 import discord
@@ -636,6 +637,7 @@ class Ranking(commands.Cog):
 	@commands.bot_has_permissions(embed_links=True, manage_messages=True)
 	async def leaderboard(self, ctx):
 		""" Refined leaderboard command """
+
 		async def wait_for_reaction():
 			try:
 				reaction, user = await self.bot.wait_for(
@@ -677,28 +679,59 @@ class Ranking(commands.Cog):
 			e = discord.Embed(color=0x4A0E50)
 			e.set_author(name=name, icon_url=icon_url)
 			e.set_thumbnail(url=thumbnail_url)
-			e.description = ''
+			e.description = '```'
+			lengths = []
+			length = 0
+			for user_id, xp in rankings[:15]:
+				user = self.bot.get_user(int(user_id))
+				if not user:
+					user = self.bot.get_guild(int(user_id))
+					if not user:
+						user = 'INVALID-USER'
+					else:
+						user = user.name
+				else:
+					user = user.name
+				lengths.append(len(str(user)))
+			if lengths:
+				length = sorted(lengths, reverse=True)[0] + 6
 			rank = 1; index = 0
 			for user_id, xp in rankings:
 				if index == lmt:
+					e.description += '```'
+					for line in e.description.split('\n'):
+						matches = re.search('#[0-9]*.', line)
+						if matches:
+							l = len(str(rank)) - len(matches.group())
+							new_line = line.replace(f'space123', ' ' * l)
+							e.description = e.description.replace(line, new_line)
 					embeds.append(e)
 					e = discord.Embed(color=0x4A0E50)
 					e.set_author(name=name, icon_url=icon_url)
 					e.set_thumbnail(url=thumbnail_url)
-					e.description = ''
+					e.description = '```'
 					index = 0
 				user = self.bot.get_user(int(user_id))
 				if isinstance(user, discord.User):
-					username = str(user)
+					username = str(user.name)
 				else:
 					guild = self.bot.get_guild(int(user_id))
 					if isinstance(guild, discord.Guild):
 						username = guild.name
 					else:
-						username = 'INVALID'
-				e.description += f"#{rank}. `{username}` - {xp}\n"
+						username = 'INVALID-USER'
+				spaces = length - len(f"#{rank}.space123{username} ")
+				spaces = spaces if spaces > 0 else 0
+				e.description += f"#{rank}.space123{username} {' '*spaces}{xp}\n"
 				rank += 1
 				index += 1
+			e.description += '```'
+			for line in e.description.split('\n'):
+				matches = re.search('#[0-9]*.', line)
+				if matches:
+					l = len(str(rank)) - len(matches.group())
+					new_line = line.replace(f'space123', ' ' * l)
+					e.description = e.description.replace(line, new_line)
 			embeds.append(e)
 
 			return embeds
