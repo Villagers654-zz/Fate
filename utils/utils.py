@@ -3,9 +3,72 @@ import datetime
 import discord
 import asyncio
 import time
+from os.path import isfile
+import json
 
 from discord.ext import commands
 
+
+def format_dict(data: dict) -> str:
+	result = ''
+	for k, v in data.items():
+		if v:
+			result += f"\n**{k}:** {v}"
+		else:
+			result += f"\n{k}"
+	return result
+
+
+def add_field(embed, name: str, value: dict, inline=True):
+	embed.add_field(
+		name=f'◈ {name}', value=format_dict(value), inline=inline
+	)
+
+
+def get_prefix(bot, msg):
+	conf = bot.utils.get_config()  # type: dict
+	if 'blocked' in conf:
+		if msg.author.id in conf['blocked']:
+			return 'lsimhbiwfefmtalol'
+	if not msg.guild:
+		return commands.when_mentioned_or(".")(bot, msg)
+	guild_id = str(msg.guild.id)
+	if 'restricted' not in conf:
+		conf['restricted'] = {}
+	if guild_id in conf['restricted']:
+		if msg.channel.id in conf['restricted'][guild_id]['channels'] and (
+				not msg.author.guild_permissions.administrator):
+			return 'lsimhbiwfefmtalol'
+	if 'personal_prefix' not in conf:
+		conf['personal_prefix'] = {}
+	user_id = str(msg.author.id)
+	if user_id in conf['personal_prefix']:
+		return commands.when_mentioned_or(conf['personal_prefix'][user_id])(bot, msg)
+	if 'prefix' not in conf:
+		conf['prefix'] = {}
+	prefixes = conf['prefix']
+	if guild_id not in prefixes:
+		return commands.when_mentioned_or('.')(bot, msg)
+	return commands.when_mentioned_or(prefixes[guild_id])(bot, msg)
+
+
+def total_seconds(now, before):
+	secs = str((now - before).total_seconds())
+	return secs[:secs.find('.') + 2]
+
+def get_stats():
+	if not isfile('./data/stats.json'):
+		with open('./data/stats.json', 'w') as f:
+			json.dump({'commands': []}, f, ensure_ascii=False)
+	with open('./data/stats.json', 'r') as stats:
+		return json.load(stats)
+
+def get_config():
+	if not isfile('./data/config.json'):
+		with open('./data/config.json', 'w') as f:
+			json.dump({}, f, ensure_ascii=False)
+	with open('./data/config.json', 'r') as f:
+		return json.load(f)
 
 def default_cooldown():
 	return [2, 5, commands.BucketType.user]
@@ -124,10 +187,6 @@ async def get_role(ctx, name):
 				await embed.delete()
 				await msg.delete()
 				return roles[role - 1]
-
-
-def get_prefix(ctx):
-	return ctx.bot.utils.get_prefix(ctx.bot, ctx.message)
 
 
 async def wait_for_msg(self, ctx, user=None):
