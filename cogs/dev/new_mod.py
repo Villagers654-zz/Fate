@@ -8,7 +8,7 @@ from discord.ext import commands
 import discord
 from discord.ext.commands import Greedy
 
-from utils import utils
+from utils import utils, colors
 
 
 cache = {}  # keep track of what commands are still being ran
@@ -141,6 +141,35 @@ class Moderation(commands.Cog):
     @commands.bot_has_permissions(embed_links=True, ban_members=True)
     async def ban(self, ctx, users: Greedy[discord.User], *, reason):
         pass
+
+    @commands.command(name='unban')
+    @commands.cooldown(*utils.default_cooldown())
+    @has_required_permissions(ban_members=True)
+    @commands.bot_has_permissions(embed_links=True, ban_members=True, view_audit_log=True)
+    async def unban(self, ctx, users: Greedy[discord.User], *, reason=':author:'):
+        if not users:
+            async for entry in ctx.guild.audit_logs(limit=1, action=discord.AuditLogAction.ban):
+               users = entry.target,
+        if len(users) == 1:
+            user = users[0]
+            await ctx.guild.unban(user, reason=reason.replace(':author:', str(ctx.author)))
+            e = discord.Embed(color=colors.red())
+            e.set_author(name=f'{user} unbanned', icon_url=user.avatar_url)
+            await ctx.send(embed=e)
+        else:
+            e = discord.Embed(color=colors.green())
+            e.set_author(name=f'Unbanning {len(users)} users', icon_url=ctx.author.avatar_url)
+            e.description = ''
+            msg = await ctx.send(embed=e)
+            index = 1
+            for user in users:
+                e.description += f'✅ {user}'
+                if index == 5:
+                    await msg.edit(embed=e)
+                    index = 1
+                else:
+                    index += 1
+            await msg.edit(embed=e)
 
     @commands.command(name='mass-nick', aliases=['massnick'])
     @commands.cooldown(*utils.default_cooldown())
