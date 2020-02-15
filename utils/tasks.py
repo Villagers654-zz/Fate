@@ -73,7 +73,9 @@ class Tasks:
 				msg = ''.join(added_lines)
 				char = u"\u0000"
 				for group in [msg[i:i + 1990] for i in range(0, len(msg), 1990)]:
-					await channel.send(f'```{group.replace(char, "")}```')
+					group = group.replace(char, "")
+					if group:
+						await channel.send(f'```{group}```')
 				log = [*log, *added_lines]
 			if reads == 1000:
 				with open('discord.log', 'w') as f:
