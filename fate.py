@@ -24,7 +24,7 @@ class Fate(commands.Bot):
 		self.get_stats = self.utils.get_stats()
 		self.get_config = self.utils.get_config()
 
-		super().__init__(self.utils.get_prefix, **options)
+		super().__init__(self.utils.get_prefixes, **options)
 
 
 bot = Fate(case_insensitive=True, max_messages=16000)

@@ -148,8 +148,10 @@ class Utility(commands.Cog):
 		if ctx.message.mentions:  # user mentions
 			user = ctx.message.mentions[0]
 			icon_url = user.avatar_url if user.avatar_url else self.bot.user.avatar_url
-			try: e = discord.Embed(color=self.avg_color(user.avatar_url))
-			except ZeroDivisionError: e = discord.Embed(color=user.top_role.color)
+			try:
+				e = discord.Embed(color=self.avg_color(user.avatar_url))
+			except ZeroDivisionError:
+				e = discord.Embed(color=user.top_role.color)
 			e.set_author(name=user.display_name, icon_url=icon_url)
 			e.set_thumbnail(url=ctx.guild.icon_url)
 			e.description = f'__**ID:**__ {user.id}\n{f"Active On Mobile" if user.is_on_mobile() else ""}'
