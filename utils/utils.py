@@ -1,12 +1,16 @@
-from utils import colors
 import datetime
-import discord
 import asyncio
 import time
 from os.path import isfile
 import json
+from io import BytesIO
+import requests
 
 from discord.ext import commands
+import discord
+from PIL import Image
+
+from utils import colors
 
 
 def format_dict(data: dict) -> str:
@@ -25,7 +29,16 @@ def add_field(embed, name: str, value: dict, inline=True):
 	)
 
 
-def get_prefix(bot, msg):
+def get_prefix(ctx):
+	guild_id = str(ctx.guild.id)
+	config = ctx.bot.get_config  # type: dict
+	p = '.'  # default command prefix
+	if guild_id in config['prefix']:
+		p = config['prefix'][guild_id]
+	return p
+
+
+def get_prefixes(bot, msg):
 	conf = bot.utils.get_config()  # type: dict
 	if 'blocked' in conf:
 		if msg.author.id in conf['blocked']:
@@ -50,6 +63,41 @@ def get_prefix(bot, msg):
 	if guild_id not in prefixes:
 		return commands.when_mentioned_or('.')(bot, msg)
 	return commands.when_mentioned_or(prefixes[guild_id])(bot, msg)
+
+
+def emojis(emoji):
+	if emoji is "plus":
+		return "<:plus:548465119462424595>"
+	if emoji is "edited":
+		return "<:edited:550291696861315093>"
+	if emoji == 'invisible':
+		return '<:status_offline:659976011651219462>'
+	if emoji == 'dnd':
+		return '<:status_dnd:596576774364856321>'
+	if emoji == 'idle':
+		return '<:status_idle:659976006030983206>'
+	if emoji == 'online':
+		return '<:status_online:659976003334045727>'
+
+
+def avg_color(url):
+	"""Gets an image and returns the average color"""
+	if not url:
+		return colors.fate()
+	im = Image.open(BytesIO(requests.get(url).content)).convert('RGBA')
+	pixels = list(im.getdata())
+	r = g = b = c = 0
+	for pixel in pixels:
+		# brightness = (pixel[0] + pixel[1] + pixel[2]) / 3
+		if pixel[3] > 64:
+			r += pixel[0]
+			g += pixel[1]
+			b += pixel[2]
+			c += 1
+	r = r / c
+	g = g / c
+	b = b / c
+	return eval('0x' + rgb2hex(round(r), round(g), round(b)).replace('#', ''))
 
 
 def total_seconds(now, before):
