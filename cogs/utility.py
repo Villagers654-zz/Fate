@@ -733,7 +733,6 @@ class Utility(commands.Cog):
 			await channel.send(f"{dat['mention']} remember dat thing: {msg}")
 		except (discord.errors.Forbidden, discord.errors.NotFound):
 			print(f'Error sending reminder {msg}')
-		print(self.timers[user_id])
 		del self.timers[user_id][msg]
 		self.save_timers()
 
