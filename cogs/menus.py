@@ -153,7 +153,9 @@ class Menus(commands.Cog):
 			    '• **vc-log** - `logs vc events to a channel`\n' \
 			    '• **move** - `moves chats to another channel`\n' \
 			    '• **last-entry** - `info on the last ban`\n' \
-			    '• **webhooks** - `list every channels webhooks`'
+			    '• **webhooks** - `list every channels webhooks`\n' \
+			    '• **timer** - `get a reminder on something`\n' \
+			    '• **timers** - `view your running timers`'
 			return e
 		def fun():
 			e = discord.Embed(color=colors.fate())

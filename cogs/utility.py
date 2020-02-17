@@ -8,8 +8,6 @@ import os
 import platform
 import requests
 import re
-from os import path
-from time import time as timestamp
 
 import discord
 from PIL import Image
@@ -44,13 +42,13 @@ class Utility(commands.Cog):
 		self.afk = {}
 		self.timer_path = './data/userdata/timers.json'
 		self.timers = {}
-		if path.isfile(self.timer_path):
+		if os.path.isfile(self.timer_path):
 			with open(self.timer_path, 'r') as f:
 				self.timers = json.load(f)
 
 	def save_timers(self):
 		with open(self.timer_path, 'w') as f:
-			json.dump(self.timers, f, ensure_ascii=False)
+			json.dump(self.timers, f, indent=2, ensure_ascii=False)
 
 	def avg_color(self, url):
 		"""Gets an image and returns the average color"""
@@ -456,18 +454,46 @@ class Utility(commands.Cog):
 		user_id = str(ctx.author.id)
 		if user_id not in self.timers:
 			self.timers[user_id] = {}
-		self.timers[user_id][' '.join(args)] = {
+		msg = ' '.join(args)
+		self.timers[user_id][msg] = {
 			'timer': str(datetime.utcnow() + timedelta(seconds=timer)),
 			'channel': ctx.channel.id,
-			'mention': ctx.author.mention
+			'mention': ctx.author.mention,
+			'expanded_timer': expanded_timer
 		}
 		self.save_timers()
 
 		await asyncio.sleep(timer)
-
-		del self.timers[user_id][' '.join(args)]
+		del self.timers[user_id][msg]
+		if not self.timers[user_id]:
+			del self.timers[user_id]
+		print(self.timers[user_id])
 		self.save_timers()
-		await ctx.send(f"{ctx.author.mention} remember dat thing: {' '.join(args)}")
+		await ctx.send(f"{ctx.author.mention} remember dat thing: {msg}")
+
+	@commands.command(name='timers', aliases=['reminders'])
+	@commands.cooldown(*utils.default_cooldown())
+	async def timers(self, ctx):
+		user_id = str(ctx.author.id)
+		if user_id not in self.timers:
+			return await ctx.send("You currently have no timers")
+		if not self.timers[user_id]:
+			return await ctx.send("You currently have no timers")
+		e = discord.Embed(color=colors.fate())
+		for msg, dat in list(self.timers[user_id].items()):
+			end_time = datetime.strptime(dat['timer'], "%Y-%m-%d %H:%M:%S.%f")
+			if datetime.utcnow() > end_time:
+				del self.timers[user_id][msg]
+				self.save_timers()
+				continue
+			expanded_time = timedelta(seconds=(end_time - datetime.utcnow()).seconds)
+			channel = self.bot.get_channel(dat['channel'])
+			if not channel:
+				del self.timers[user_id][msg]
+				self.save_timers()
+				continue
+			e.add_field(name=f'Ending in {expanded_time}', value=f'{channel.mention} - `{msg}`', inline=False)
+		await ctx.send(embed=e)
 
 	@commands.command(name='findmsg')
 	@commands.cooldown(1, 5, commands.BucketType.channel)
@@ -699,21 +725,23 @@ class Utility(commands.Cog):
 		await asyncio.sleep(5)
 		await ctx.message.delete()
 
+	async def remind(self, user_id, msg, dat):
+		end_time = datetime.strptime(dat['timer'], "%Y-%m-%d %H:%M:%S.%f")
+		await discord.utils.sleep_until(end_time)
+		channel = self.bot.get_channel(dat['channel'])
+		try:
+			await channel.send(f"{dat['mention']} remember dat thing: {msg}")
+		except (discord.errors.Forbidden, discord.errors.NotFound):
+			print(f'Error sending reminder {msg}')
+		print(self.timers[user_id])
+		del self.timers[user_id][msg]
+		self.save_timers()
+
 	@commands.Cog.listener()
 	async def on_ready(self):
-		async def remind(msg, dat):
-			end_time = datetime.strptime(dat['timer'], "%Y-%m-%d %H:%M:%S.%f")
-			await discord.utils.sleep_until(end_time)
-			channel = self.bot.get_channel(dat['channel'])
-			try:
-				await channel.send(f"{dat['mention']} remember dat thing: {msg}")
-			except (discord.errors.Forbidden, discord.errors.NotFound):
-				print(f'Error sending reminder {msg}')
-			del self.timers[user_id][msg]
-			self.save_timers()
 		for user_id, timers in self.timers.items():
 			for timer, dat in timers.items():
-				self.bot.loop.create_task(remind(timer, dat))
+				self.bot.loop.create_task(self.remind(user_id, timer, dat))
 
 	@commands.Cog.listener()
 	async def on_message(self, msg):
