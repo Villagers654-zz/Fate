@@ -14,17 +14,21 @@ class UtilityBeta(commands.Cog):
         self.path = './data/info.json'
         self.guild_logs = {}
         self.user_logs = {}
+        self.misc_logs = {
+            'invites': {}
+        }
         if path.isfile(self.path):
             with open(self.path, 'r') as f:
                 dat = json.load(f)  # type: dict
                 self.guild_logs = dat['guild_logs']
                 self.user_logs = dat['user_logs']
+                self.misc_logs = dat['misc_logs']
         self.cache = {}
 
     def save_data(self):
         with open(self.path, 'w+') as f:
             json.dump(
-                {'guild_logs': self.guild_logs, 'user_logs': self.user_logs},
+                {'guild_logs': self.guild_logs, 'user_logs': self.user_logs, 'misc_logs': self.misc_logs},
                 f, indent=2, sort_keys=True, ensure_ascii=False
             )
 
@@ -40,8 +44,7 @@ class UtilityBeta(commands.Cog):
                         },
                         'bots': {
                             str(bot.id): None for bot in [m for m in arg.members if m.bot]
-                        },
-                        'invites': {}
+                        }
                     }
                     self.save_data()
             if isinstance(arg, discord.User):
@@ -60,6 +63,10 @@ class UtilityBeta(commands.Cog):
                 if changed_at > time() - 60*60*24*60:
                     del self.user_logs[user_id]['names'][name]
         self.save_data()
+
+    @commands.command(name='info')
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.guild_only()
 
     @commands.Cog.listener()
     async def on_user_update(self, before, after):
@@ -87,8 +94,8 @@ class UtilityBeta(commands.Cog):
                 del self.cache[user_id]
                 self.save_data()
 
-    @commands.Cog.listener('on_member_join')
-    async def log_who_invited_bots(self, member):
+    @commands.Cog.listener()
+    async def on_member_join(self, member):
         if member.bot:
             guild = member.guild
             guild_id = str(guild.id)
@@ -101,6 +108,41 @@ class UtilityBeta(commands.Cog):
                 audit = discord.AuditLogAction
                 async for entry in guild.audit_logs(limit=1, action=audit.bot_add):
                     self.guild_logs[guild_id]['bots'][bot_id] = entry.user.id
+            self.save_data()
+
+    @commands.Cog.listener()
+    async def on_invite_create(self, invite):
+        if invite.code not in self.misc_logs['invites']:
+            guild = self.bot.get_guild(invite.guild.id)
+            invite_info = {
+                'deleted': False,
+                'inviter': invite.inviter.id,
+                'guild': {
+                    'name': guild.name,
+                    'id': guild.id
+                }
+            }
+            try:
+                invite = await self.bot.fetch_invite(invite.code, with_counts=True)
+            except discord.errors.HTTPException:
+                pass
+            invite_info['member_count'] = invite.approximate_member_count
+            invite_info['online_count'] = invite.approximate_presence_count
+            invite_info['channel'] = {'name': None, 'id': invite.channel.id}
+            if isinstance(invite.channel, (discord.TextChannel, discord.VoiceChannel, discord.PartialInviteChannel)):
+                invite_info['channel']['name'] = invite.channel.name
+            invite_info['temporary'] = invite.temporary
+            invite_info['created_at'] = invite.created_at
+            invite_info['uses'] = invite.uses
+            invite_info['max_uses'] = invite.max_uses
+            self.misc_logs['invites'][invite.code] = invite_info
+            self.save_data()
+
+    @commands.Cog.listener()
+    async def on_invite_delete(self, invite):
+        if invite.code in self.misc_logs['invites']:
+            self.misc_logs['invites'][invite.code]['deleted'] = True
+            self.save_data()
 
 
 def setup(bot):
