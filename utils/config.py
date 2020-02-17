@@ -11,12 +11,6 @@ def links():
 		f'[Discord](https://discord.gg/BQ23Z2E) <:discord:513634338487795732>'
 	return embed
 
-def emojis(emoji):
-	if emoji is "plus":
-		return "<:plus:548465119462424595>"
-	if emoji is "edited":
-		return "<:edited:550291696861315093>"
-
 def owner(ctx):
 	return ctx.author.id == 264838866480005122
 
@@ -30,6 +24,20 @@ def server(item):
 		return 577661500802465813
 	if item is "error":
 		return 577661500802465813
+
+def emojis(emoji):
+	if emoji is "plus":
+		return "<:plus:548465119462424595>"
+	if emoji is "edited":
+		return "<:edited:550291696861315093>"
+	if emoji == 'invisible':
+		return '<:status_offline:659976011651219462>'
+	if emoji == 'dnd':
+		return '<:status_dnd:596576774364856321>'
+	if emoji == 'idle':
+		return '<:status_idle:659976006030983206>'
+	if emoji == 'online':
+		return '<:status_online:659976003334045727>'
 
 def color():
 	return 0x80b0ff

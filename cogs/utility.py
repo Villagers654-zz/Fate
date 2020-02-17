@@ -1,6 +1,4 @@
-from utils.utils import bytes2human
-from discord.ext import commands
-from datetime import datetime
+from datetime import datetime, timedelta
 import aiohttp
 import asyncio
 import random
@@ -10,13 +8,18 @@ import os
 import platform
 import requests
 import re
+from os import path
+from time import time as timestamp
 
 import discord
 from PIL import Image
 from colormap import rgb2hex
 import psutil
 
-from utils import colors, utils, bytes2human as p, config, checks
+from discord.ext import commands
+
+from utils.utils import bytes2human
+from utils import colors, utils, bytes2human as p, config
 
 
 class SatisfiableChannel(commands.Converter):
@@ -39,6 +42,15 @@ class Utility(commands.Cog):
 		self.bot = bot
 		self.find = {}
 		self.afk = {}
+		self.timer_path = './data/userdata/timers.json'
+		self.timers = {}
+		if path.isfile(self.timer_path):
+			with open(self.timer_path, 'r') as f:
+				self.timers = json.load(f)
+
+	def save_timers(self):
+		with open(self.timer_path, 'w') as f:
+			json.dump(self.timers, f, ensure_ascii=False)
 
 	def avg_color(self, url):
 		"""Gets an image and returns the average color"""
@@ -412,7 +424,7 @@ class Utility(commands.Cog):
 	@commands.command(name='reminder', aliases=['timer', 'remindme'])
 	@commands.cooldown(2, 5, commands.BucketType.user)
 	async def timer(self, ctx, *args):
-		p = self.bot.utils.get_prefix(self.bot, ctx.message)
+		p = self.bot.utils.get_prefixes(self.bot, ctx.message)[2]
 		usage = f">>> Usage: `{p}reminder [30s|5m|1h|2d]`" \
 		        f"Example: `{p}reminder 1h take out da trash`"
 		timers = []
@@ -440,7 +452,20 @@ class Utility(commands.Cog):
 			time_to_sleep[1].append(f"{raw} {repr if raw == '1' else repr + 's'}")
 		timer, expanded_timer = time_to_sleep
 		await ctx.send(f"I'll remind you about {' '.join(args)} in {', '.join(expanded_timer)}")
+
+		user_id = str(ctx.author.id)
+		if user_id not in self.timers:
+			self.timers[user_id] = {}
+		self.timers[user_id][' '.join(args)] = {
+			'timer': str(datetime.utcnow() + timedelta(seconds=timer)),
+			'channel': ctx.channel.id
+		}
+		self.save_timers()
+
 		await asyncio.sleep(timer)
+
+		del self.timers[user_id][' '.join(args)]
+		self.save_timers()
 		await ctx.send(f"{ctx.author.mention} remember dat thing: {' '.join(args)}")
 
 	@commands.command(name='findmsg')
@@ -672,6 +697,22 @@ class Utility(commands.Cog):
 		self.afk[str(ctx.author.id)] = reason
 		await asyncio.sleep(5)
 		await ctx.message.delete()
+
+	@commands.Cog.listener()
+	async def on_ready(self):
+		async def remind(msg, dat):
+			end_time = datetime.strptime(dat['timer'], "%Y-%m-%d %H:%M:%S.%f")
+			await discord.utils.sleep_until(end_time)
+			channel = self.bot.get_channel(dat['channel'])
+			try:
+				await channel.send(msg)
+			except (discord.errors.Forbidden, discord.errors.NotFound):
+				print(f'Error sending reminder {msg}')
+			del self.timers[user_id][msg]
+			self.save_timers()
+		for user_id, timers in self.timers.items():
+			for timer, dat in timers.items():
+				self.bot.loop.create_task(remind(timer, dat))
 
 	@commands.Cog.listener()
 	async def on_message(self, msg):

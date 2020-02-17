@@ -1,5 +1,6 @@
 import asyncio
 import random
+import traceback
 import discord
 
 
@@ -18,10 +19,11 @@ class Tasks:
 
 	def ensure_all_are_running(self):
 		for coro in self.enabled_tasks:
-			if coro.__name__ not in [task.get_name() for task in self.tasks()]:
-				new_task = self.bot.loop.create_task(coro())
-				new_task.set_name(coro.__name__)
-				print(f'Started task {new_task.get_name()}')
+			self.bot.loop.create_task(coro())
+			# if coro.__name__ not in [task.get_name() for task in self.tasks()]:
+			# 	new_task = self.bot.loop.create_task(coro())
+			# 	new_task.set_name(coro.__name__)
+			# 	print(f'Started task {new_task.get_name()}')
 
 	def start(self, coro):
 		new_task = self.bot.loop.create_task(coro())
@@ -44,19 +46,15 @@ class Tasks:
 			stages = ['Serendipity', 'Euphoria', 'Singularity', 'Epiphany']
 			for i in range(len(stages)):
 				try:
-					await self.bot.change_presence(status=discord.Status.online,
-					                          activity=discord.Game(name=f'Seeking For The Clock'))
+					await self.bot.change_presence(status=discord.Status.online, activity=discord.Game(name=f'Seeking For The Clock'))
 					await asyncio.sleep(45)
-					await self.bot.change_presence(status=discord.Status.online,
-					                          activity=discord.Game(name=f'{stages[i]} | use .help'))
+					await self.bot.change_presence(status=discord.Status.online, activity=discord.Game(name=f'{stages[i]} | use .help'))
 					await asyncio.sleep(15)
-					await self.bot.change_presence(status=discord.Status.idle, activity=discord.Game(
-						name=f'SVR: {len(self.bot.guilds)} USR: {len(self.bot.users)}'))
+					await self.bot.change_presence(status=discord.Status.idle, activity=discord.Game(name=f'SVR: {len(self.bot.guilds)} USR: {len(self.bot.users)}'))
 					await asyncio.sleep(15)
-					await self.bot.change_presence(status=discord.Status.dnd,
-					                          activity=discord.Game(name=f'{stages[i]} | {random.choice(motds)}'))
-				except:
-					pass
+					await self.bot.change_presence(status=discord.Status.dnd, activity=discord.Game(name=f'{stages[i]} | {random.choice(motds)}'))
+				except (discord.errors.Forbidden, discord.errors.HTTPException):
+					print(f'Error changing my status:\n{traceback.format_exc()}')
 				await asyncio.sleep(15)
 
 	async def debug_log(self):
