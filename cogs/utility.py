@@ -458,7 +458,8 @@ class Utility(commands.Cog):
 			self.timers[user_id] = {}
 		self.timers[user_id][' '.join(args)] = {
 			'timer': str(datetime.utcnow() + timedelta(seconds=timer)),
-			'channel': ctx.channel.id
+			'channel': ctx.channel.id,
+			'mention': ctx.author.mention
 		}
 		self.save_timers()
 
@@ -705,7 +706,7 @@ class Utility(commands.Cog):
 			await discord.utils.sleep_until(end_time)
 			channel = self.bot.get_channel(dat['channel'])
 			try:
-				await channel.send(msg)
+				await channel.send(f"{dat['mention']} remember dat thing: {msg}")
 			except (discord.errors.Forbidden, discord.errors.NotFound):
 				print(f'Error sending reminder {msg}')
 			del self.timers[user_id][msg]
