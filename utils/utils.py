@@ -5,28 +5,13 @@ from os.path import isfile
 import json
 from io import BytesIO
 import requests
+from colormap import rgb2hex
 
 from discord.ext import commands
 import discord
 from PIL import Image
 
 from utils import colors
-
-
-def format_dict(data: dict) -> str:
-	result = ''
-	for k, v in data.items():
-		if v:
-			result += f"\n**{k}:** {v}"
-		else:
-			result += f"\n{k}"
-	return result
-
-
-def add_field(embed, name: str, value: dict, inline=True):
-	embed.add_field(
-		name=f'◈ {name}', value=format_dict(value), inline=inline
-	)
 
 
 def get_prefix(ctx):
@@ -66,18 +51,45 @@ def get_prefixes(bot, msg):
 
 
 def emojis(emoji):
+	if emoji is None:
+		return '‎'
+
 	if emoji is "plus":
 		return "<:plus:548465119462424595>"
 	if emoji is "edited":
 		return "<:edited:550291696861315093>"
-	if emoji == 'invisible':
+	if emoji == 'arrow':
+		return '<:enter:673955417994559539>'
+
+	if emoji == 'text_channel':
+		return '<:textchannel:679179620867899412>'
+	if emoji == 'voice_channel':
+		return '<:voicechannel:679179727994617881>'
+
+	if emoji == 'invisible' or emoji is discord.Status.offline:
 		return '<:status_offline:659976011651219462>'
-	if emoji == 'dnd':
+	if emoji == 'dnd' or emoji is discord.Status.dnd:
 		return '<:status_dnd:596576774364856321>'
-	if emoji == 'idle':
+	if emoji == 'idle' or emoji is discord.Status.idle:
 		return '<:status_idle:659976006030983206>'
-	if emoji == 'online':
+	if emoji == 'online' or emoji is discord.Status.online:
 		return '<:status_online:659976003334045727>'
+
+
+def format_dict(data: dict) -> str:
+	result = ''
+	for k, v in data.items():
+		if v:
+			result += f"\n{emojis('arrow')} **{k}:** {v}"
+		else:
+			result += f"\n{emojis('arrow')} {k}"
+	return result
+
+
+def add_field(embed, name: str, value: dict, inline=True):
+	embed.add_field(
+		name=f'◈ {name}', value=format_dict(value), inline=inline
+	)
 
 
 def avg_color(url):
@@ -178,6 +190,8 @@ def get_user(ctx, user=None):
 
 def get_time(seconds):
 	result = ''
+	if seconds < 60:
+		return f'{seconds} seconds'
 	time = str(datetime.timedelta(seconds=seconds))
 	if ',' in time:
 		days = str(time).replace(' days,', '').split(' ')[0]
