@@ -976,14 +976,14 @@ class SecureLog(commands.Cog):
                     name = before.category.name
                 e.add_field(
                     name='◈ Before',
-                    value=f"**Name:** {name}"
+                    value=name
                 )
                 name = 'None'
                 if after.category:
                     name = after.category.name
                 e.add_field(
                     name='◈ After',
-                    value=f"**Name:** {name}"
+                    value=name
                 )
 
             if before.overwrites != after.overwrites:
@@ -1021,7 +1021,6 @@ class SecureLog(commands.Cog):
                             inline=False
                         )
 
-                e.set_author(name='~==🍸Channel Updated🍸==~', icon_url=dat['icon_url'])
                 e.description = f"> 》__**Overwrites Changed**__《" \
                                 f"\n**Name:** [{after.name}]" \
                                 f"\n**Mention:** [{after.mention}]" \
