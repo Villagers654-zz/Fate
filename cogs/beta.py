@@ -95,7 +95,10 @@ class UtilityBeta(commands.Cog):
             e.set_thumbnail(url=user.avatar_url)
             e.description = ''
             emojis = self.bot.utils.emojis
+            user_id = str(user.id)
+            guild_id = str(ctx.guild.id)
 
+            # User Information
             user_info = {
                 'Profile': f'{user.mention}',
                 'ID': user.id,
@@ -110,6 +113,7 @@ class UtilityBeta(commands.Cog):
             if nicks:
                 user_info['Nicks'] = ', '.join(nicks)
 
+            # Member Information
             member_info = {}
             if isinstance(user, discord.Member):
                 user_info['Profile'] = f'{user.mention} {self.bot.utils.emojis(user.status)}'
@@ -144,8 +148,28 @@ class UtilityBeta(commands.Cog):
 
                 member_info['Shared Servers'] = str(len([s for s in self.bot.guilds if user in s.members]))
 
+                # Bot Information
+                if user.bot:
+                    logs = self.guild_logs[guild_id]['bots']
+                    if user_id not in logs or not logs[user_id]:
+                        self.guild_logs[guild_id]['bots'][user_id] = None
+
+                        # search the audit log to see who invited the bot
+                        if ctx.guild.me.guild_permissions.view_audit_log:
+                            async for entry in ctx.guild.audit_logs(limit=50, action=discord.AuditLogAction.bot_add):
+                                if entry.target and entry.target.id == user.id:
+                                     self.guild_logs[guild_id]['bots'][user_id] = entry.user.id
+                                     break
+
+                    inviter = self.guild_logs[guild_id]['bots'][user_id]
+                    if inviter:
+                        user_info['Inviter'] = await self.bot.fetch_user(inviter)
+                    else:
+                        user_info['Inviter'] = 'Unknown'
+
+
+            # Activity Information
             activity_info = {}
-            user_id = str(user.id)
             mutual = [g for g in self.bot.guilds if user.id in [m.id for m in g.members]]
             if mutual:
                 user = mutual[0].get_member(user.id)
@@ -163,6 +187,7 @@ class UtilityBeta(commands.Cog):
                 else:
                     activity_info['Last Msg'] = 'Unknown'
 
+            # username history - broken (maybe)
             names = [
                 name for name, name_time in self.user_logs[user_id]['names'].items() if (
                     name_time > time() - 60*60*24*60
@@ -229,6 +254,7 @@ class UtilityBeta(commands.Cog):
     async def on_message(self, msg):
         # Keep track of their last message time
         self.setup_if_not_exists(msg.author)
+        await asyncio.sleep(1)  # avoid getting in the way of .info @user
         self.user_logs[str(msg.author.id)]['last_msg'] = time()
         # Check for invites and log their current state
         if 'discord.gg' in msg.content:
