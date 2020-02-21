@@ -53,6 +53,8 @@ class ErrorHandler(commands.Cog):
 				pass
 			return
 		elif isinstance(error, KeyError):
+			if 'content-type' in str(error):
+				return await ctx.send("Oop-\nDiscord shit in the bed\nIt's not my fault, it's theirs")
 			err = f'No Data: {error}'
 		print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
 		traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)

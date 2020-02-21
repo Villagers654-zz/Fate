@@ -5,9 +5,11 @@ import json
 from time import time
 import re
 from datetime import datetime
+import asyncio
 
 from discord.ext import commands
 import discord
+import aiofiles
 
 from utils import colors
 
@@ -29,12 +31,16 @@ class UtilityBeta(commands.Cog):
                 self.misc_logs = dat['misc_logs']
         self.cache = {}
 
-    def save_data(self):
-        with open(self.path, 'w+') as f:
-            json.dump(
-                {'guild_logs': self.guild_logs, 'user_logs': self.user_logs, 'misc_logs': self.misc_logs},
-                f, indent=2, sort_keys=True, ensure_ascii=False
-            )
+    async def save_data(self):
+        while True:
+            await asyncio.sleep(60*5)
+            async with aiofiles.open(self.path, 'w+') as f:
+                await f.write(
+                    json.dumps(
+                        {'guild_logs': self.guild_logs, 'user_logs': self.user_logs, 'misc_logs': self.misc_logs},
+                        indent=2, sort_keys=True, ensure_ascii=False
+                    )
+                )
 
     def setup_if_not_exists(self, *args):
         for arg in args:
@@ -48,7 +54,6 @@ class UtilityBeta(commands.Cog):
                             str(bot.id): None for bot in [m for m in arg.members if m.bot]
                         }
                     }
-                    self.save_data()
             if isinstance(arg, (discord.User, discord.Member)):
                 user_id = str(arg.id)
                 if user_id not in self.user_logs:
@@ -58,7 +63,6 @@ class UtilityBeta(commands.Cog):
                         'last_online': None,
                         'duration': None
                     }
-                    self.save_data()
 
     def cleanup_users(self):
         for user_id, data in self.user_logs.items():
@@ -69,28 +73,31 @@ class UtilityBeta(commands.Cog):
 
     @commands.command(name='xinfo')
     @commands.cooldown(1, 5, commands.BucketType.user)
-    @commands.guild_only()
     async def xinfo(self, ctx, *args):
         if not args:
             pass
 
-        elif ctx.message.mentions:
-            user = ctx.message.mentions[0]
-            tmp = ctx.guild.get_member(user.id)
-            color = colors.fate()
-            if isinstance(tmp, discord.Member):
-                user = tmp
-                color = tmp.color
+        elif ctx.message.raw_mentions:
+            user = ctx.message.raw_mentions[0]
+            if isinstance(user, int):
+                try:
+                    user = await self.bot.fetch_user(user)
+                except discord.errors.NotFound:
+                    return await ctx.send("I can't find that user")
+            if ctx.guild:
+                tmp = ctx.guild.get_member(user.id)
+                if isinstance(tmp, discord.Member):
+                    user = tmp
             self.setup_if_not_exists(user)
 
-            e = discord.Embed(color=color)
+            e = discord.Embed(color=colors.fate())
             e.set_author(name="Here's what I got on them..", icon_url=self.bot.user.avatar_url)
             e.set_thumbnail(url=user.avatar_url)
             e.description = ''
             emojis = self.bot.utils.emojis
 
             user_info = {
-                'Profile': f'{user.mention} {self.bot.utils.emojis(user.status)}',
+                'Profile': f'{user.mention}',
                 'ID': user.id,
                 'Created at': datetime.date(user.created_at).strftime("%m-%d-%Y")
             }
@@ -98,13 +105,19 @@ class UtilityBeta(commands.Cog):
             for guild in self.bot.guilds:
                 for member in guild.members:
                     if member.id == user.id:
-                        if member.display_name != user.name:
+                        if member.display_name != user.display_name:
                             nicks = list(set(list([member.display_name, *nicks])))
             if nicks:
                 user_info['Nicks'] = ', '.join(nicks)
 
             member_info = {}
             if isinstance(user, discord.Member):
+                user_info['Profile'] = f'{user.mention} {self.bot.utils.emojis(user.status)}'
+                if user.is_on_mobile():
+                    user_info["Active on Mobile 📱"] = None
+                else:
+                    user_info["Active on PC 🖥"] = None
+
                 member_info = {}
                 if user.name != user.display_name:
                     member_info['Display Name'] = user.display_name
@@ -129,21 +142,26 @@ class UtilityBeta(commands.Cog):
                     perms = ['administrator'] if user.guild_permissions.administrator else perms
                     member_info['Notable Perms'] = f"`{', '.join(perms)}`"
 
+                member_info['Shared Servers'] = str(len([s for s in self.bot.guilds if user in s.members]))
+
             activity_info = {}
             user_id = str(user.id)
-            if user.status is discord.Status.offline:
-                if self.user_logs[user_id]['last_online']:
-                    seconds = round(time() - self.user_logs[user_id]['last_online'])
-                    activity_info['Last Online'] = f"{self.bot.utils.get_time(seconds)} ago"
-                    seconds = round(self.user_logs[user_id]['duration'])
-                    activity_info['Online For'] = f"{self.bot.utils.get_time(seconds)}"
+            mutual = [g for g in self.bot.guilds if user.id in [m.id for m in g.members]]
+            if mutual:
+                user = mutual[0].get_member(user.id)
+                if user.status is discord.Status.offline:
+                    if self.user_logs[user_id]['last_online']:
+                        seconds = round(time() - self.user_logs[user_id]['last_online'])
+                        activity_info['Last Online'] = f"{self.bot.utils.get_time(seconds)} ago"
+                        seconds = round(self.user_logs[user_id]['duration'])
+                        activity_info['Online For'] = f"{self.bot.utils.get_time(seconds)}"
+                    else:
+                        activity_info['Last Online'] = 'Unknown'
+                if self.user_logs[user_id]['last_msg']:
+                    seconds = round(time() - self.user_logs[user_id]['last_msg'])
+                    activity_info['Last Msg'] = f"{self.bot.utils.get_time(seconds)} ago"
                 else:
-                    activity_info['Last Online'] = 'Unknown'
-            if self.user_logs[user_id]['last_msg']:
-                seconds = round(time() - self.user_logs[user_id]['last_msg'])
-                activity_info['Last Msg'] = f"{self.bot.utils.get_time(seconds)} ago"
-            else:
-                activity_info['Last Msg'] = 'Unknown'
+                    activity_info['Last Msg'] = 'Unknown'
 
             names = [
                 name for name, name_time in self.user_logs[user_id]['names'].items() if (
@@ -196,10 +214,16 @@ class UtilityBeta(commands.Cog):
         if isinstance(invite.channel, (discord.TextChannel, discord.VoiceChannel, discord.PartialInviteChannel)):
             invite_info['channel']['name'] = invite.channel.name
         invite_info['temporary'] = invite.temporary
-        invite_info['created_at'] = invite.created_at
+        invite_info['created_at'] = time()
         invite_info['uses'] = invite.uses
         invite_info['max_uses'] = invite.max_uses
+        if 'inviters' not in invite_info:
+            invite_info['inviters'] = []
         return invite_info
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        self.bot.loop.create_task(self.save_data())
 
     @commands.Cog.listener()
     async def on_message(self, msg):
@@ -208,7 +232,7 @@ class UtilityBeta(commands.Cog):
         self.user_logs[str(msg.author.id)]['last_msg'] = time()
         # Check for invites and log their current state
         if 'discord.gg' in msg.content:
-            invites = re.findall('discord.gg/[a-zA-Z0-9]{7}', msg.content)
+            invites = re.findall('discord.gg/.{7}', msg.content)
             if invites:
                 for invite in invites:
                     code = discord.utils.resolve_invite(invite)
@@ -218,7 +242,9 @@ class UtilityBeta(commands.Cog):
                         if invite.code not in self.misc_logs['invites']:
                             self.misc_logs[invite.code] = invite_info
                         for key, value in invite_info.items():
-                            if value != self.misc_logs[invite.code][key] and value is not None:
+                            if key not in self.misc_logs[invite.code]:
+                                self.misc_logs[invite.code][key] = value
+                            elif value != self.misc_logs[invite.code][key] and value is not None:
                                 self.misc_logs[invite.code][key] = value
                     except discord.errors.NotFound:
                         pass
@@ -251,7 +277,6 @@ class UtilityBeta(commands.Cog):
                 self.user_logs[user_id]['last_online'] = self.cache[user_id]
                 self.user_logs[user_id]['duration'] = time() - self.cache[user_id]
                 del self.cache[user_id]
-                self.save_data()
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -266,11 +291,9 @@ class UtilityBeta(commands.Cog):
                 audit = discord.AuditLogAction
                 async for entry in guild.audit_logs(limit=1, action=audit.bot_add):
                     self.guild_logs[guild_id]['bots'][bot_id] = entry.user.id
-            self.save_data()
         else:
             self.setup_if_not_exists(guild)
             self.guild_logs[guild_id]['joins'][str(member.id)] = time()
-            self.save_data()
 
     @commands.Cog.listener()
     async def on_member_leave(self, member):
@@ -290,13 +313,11 @@ class UtilityBeta(commands.Cog):
             except discord.errors.HTTPException:
                 pass
             self.misc_logs['invites'][invite.code] = self.collect_invite_info(invite, guild)
-            self.save_data()
 
     @commands.Cog.listener()
     async def on_invite_delete(self, invite):
         if invite.code in self.misc_logs['invites']:
             self.misc_logs['invites'][invite.code]['deleted'] = True
-            self.save_data()
 
 
 def setup(bot):

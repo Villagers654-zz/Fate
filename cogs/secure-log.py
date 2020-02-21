@@ -492,11 +492,13 @@ class SecureLog(commands.Cog):
                         is_successful = True
                     elif msg.channel.permissions_for(msg.author).mention_everyone:
                         is_successful = True
-                    e.description = f"Author: {msg.author.mention}" \
-                                    f"\nPing Worked: {is_successful}" \
-                                    f"\nChannel: {msg.channel.mention}"
-                    e.add_field(name='Content', value=m.content, inline=False)
-                    self.queue[guild_id].append([e, 'system+'])
+                    if is_successful:
+                        e.description = self.bot.utils.format_dict({
+                            "Author": msg.author.mention,
+                            "Channel": msg.channel.mention
+                        })
+                        e.add_field(name='Content', value=m.content, inline=False)
+                        self.queue[guild_id].append([e, 'system+'])
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
@@ -511,9 +513,11 @@ class SecureLog(commands.Cog):
                 e = discord.Embed(color=pink())
                 e.set_author(name='~==🍸Msg Edited🍸==~', icon_url=before.author.avatar_url)
                 e.set_thumbnail(url=before.author.avatar_url)
-                e.description = f"**Author:** {before.author.mention}" \
-                                f"\n**Channel:** {before.channel.mention}" \
-                                f"\n[Jump to MSG]({before.jump_url})\n"
+                e.description = self.bot.utils.format_dict({
+                    "author": before.author.mention,
+                    "Channel": before.channel.mention,
+                    f"[Jump to MSG](before.jump_url)": None
+                })
                 for group in [before.content[i:i + 1000] for i in range(0, len(before.content), 1000)]:
                     e.add_field(name='◈ Before', value=group, inline=False)
                 for group in [after.content[i:i + 1000] for i in range(0, len(after.content), 1000)]:
@@ -533,9 +537,11 @@ class SecureLog(commands.Cog):
                 e = discord.Embed(color=pink())
                 e.set_author(name='~==🍸Embed Hidden🍸==~', icon_url=before.author.avatar_url)
                 e.set_thumbnail(url=before.author.avatar_url)
-                e.description = f"**Author:** {before.author.mention}" \
-                                f"\n**Channel:** {before.channel.mention}" \
-                                f"\n[Jump to MSG]({before.jump_url})\n"
+                e.description = self.bot.utils.format_dict({
+                    "author": before.author.mention,
+                    "Channel": before.channel.mention,
+                    f"[Jump to MSG](before.jump_url)": None
+                })
                 em = before.embeds[0].to_dict()
                 path = f'./static/embed-{before.id}.json'
                 with open(path, 'w+') as f:
@@ -548,7 +554,7 @@ class SecureLog(commands.Cog):
                 e = discord.Embed(color=cyan())
                 e.set_author(name=f'~==🍸Msg {action}🍸==~', icon_url=after.author.avatar_url)
                 e.set_thumbnail(url=after.author.avatar_url)
-                e.description = self.bot.tools.format_dict({
+                e.description = self.bot.utils.format_dict({
                     "Author": after.author.mention,
                     "Channel": after.channel.mention,
                     "Who Pinned": audit_dat['user'],
@@ -571,9 +577,11 @@ class SecureLog(commands.Cog):
             e = discord.Embed(color=pink())
             e.set_author(name='Uncached Msg Edited', icon_url=msg.author.avatar_url)
             e.set_thumbnail(url=msg.author.avatar_url)
-            e.description = f"**Author:** {msg.author.mention}" \
-                            f"\n**Channel:** {channel.mention}" \
-                            f"\n[Jump to MSG]({msg.jump_url})"
+            e.description = self.bot.utils.format_dict({
+                "Author": msg.author.mention,
+                "Channel": channel.mention,
+                f"[Jump to MSG]({msg.jump_url})": None
+            })
             for text_group in self.split_into_groups(msg.content):
                 e.add_field(name='◈ Content', value=text_group, inline=False)
             self.queue[guild_id].append([e, 'chat'])
@@ -615,9 +623,11 @@ class SecureLog(commands.Cog):
                 e.set_thumbnail(url=dat['thumbnail_url'])
                 if dat['thumbnail_url'] == msg.guild.icon_url:
                     e.set_thumbnail(url=msg.author.avatar_url)
-                e.description = f"**Author:** {msg.author.mention}" \
-                                f"\n**Channel:** {msg.channel.mention}" \
-                                f"\n**Deleted by:** {dat['user']}"
+                e.description = self.bot.utils.format_dict({
+                    "Author": msg.author.mention,
+                    "Channel": msg.channel.mention,
+                    "Deleted by": dat['user']
+                })
                 for text_group in self.split_into_groups(msg.content):
                     e.add_field(name='◈ MSG Content', value=text_group, inline=False)
                 if msg.embeds:
@@ -647,10 +657,12 @@ class SecureLog(commands.Cog):
             dat = await self.search_audit(guild, audit.message_delete)
             e.set_author(name='Uncached Message Deleted', icon_url=dat['icon_url'])
             e.set_thumbnail(url=dat['thumbnail_url'])
-            e.description = f"**Author:** {dat['target']}" \
-                            f"\n**MSG ID:** {payload.message_id}" \
-                            f"\n**Channel:** {self.bot.get_channel(payload.channel_id).mention}" \
-                            f"\n**Deleted By:** {dat['user']}"
+            e.description = self.bot.utils.format_dict({
+                "Author": dat['target'],
+                "MSG ID": payload.message_id,
+                "Channel": self.bot.get_channel(payload.channel_id).mention,
+                "Deleted by": dat['user']
+            })
             self.queue[guild_id].append([e, 'chat'])
 
     @commands.Cog.listener()
@@ -690,9 +702,11 @@ class SecureLog(commands.Cog):
                 e.set_author(name=f"~==🍸{len(payload.cached_messages)} Msgs Purged🍸==~")
             if dat['thumbnail_url']:
                 e.set_thumbnail(url=dat['thumbnail_url'])
-            e.description = f"**Users Effected:** {len(list(set([msg.author for msg in payload.cached_messages])))}" \
-                            f"\n**Channel:** {channel.mention}" \
-                            f"\n**Purged By:** {dat['user']}"
+            e.description = self.bot.utils.format_dict({
+                "Users Effected": len(list(set([msg.author for msg in payload.cached_messages]))),
+                "Channel": channel.mention,
+                "Purged by": dat['user']
+            })
             self.queue[guild_id].append([(e, path), 'chat'])
 
     @commands.Cog.listener()
@@ -708,9 +722,11 @@ class SecureLog(commands.Cog):
             e = discord.Embed(color=yellow())
             e.set_author(name='~==🍸Reactions Cleared🍸==~', icon_url=msg.author.avatar_url)
             e.set_thumbnail(url=msg.author.avatar_url)
-            e.description = f"**Author:** {msg.author.mention}" \
-                            f"\n**Channel:** {channel.mention}" \
-                            f"\n[Jump to MSG]({msg.jump_url})"
+            e.description = self.bot.utils.format_dict({
+                "Author": msg.author.mention,
+                "Channel": channel.mention,
+                f"[Jump to MSG]({msg.jump_url})": None
+            })
             self.queue[guild_id].append([e, 'chat'])
 
     @commands.Cog.listener()
@@ -851,11 +867,13 @@ class SecureLog(commands.Cog):
             mention = 'None'
             if isinstance(channel, discord.TextChannel):
                 mention = channel.mention
-            e.description = f"**Name:** {channel.name}" \
-                            f"\n**Mention:** {mention}" \
-                            f"\n**ID:** {channel.id}" \
-                            f"\n**Creator:** {dat['user']}" \
-                            f"\n**Members:** {member_count}"
+            e.description = self.bot.utils.format_dict({
+                "Name": channel.name,
+                "Mention": mention,
+                "ID": channel.id,
+                "Creator": dat['user'],
+                "Members": member_count
+            })
             self.queue[guild_id].append([e, 'actions'])
 
     @commands.Cog.listener()
@@ -890,12 +908,13 @@ class SecureLog(commands.Cog):
             e = discord.Embed(color=red())
             e.set_author(name='~==🍸Channel Deleted🍸==~', icon_url=dat['icon_url'])
             e.set_thumbnail(url=dat['thumbnail_url'])
-            e.description = f"**Name:** {channel.name}" \
-                            f"\n**ID:** {channel.id}" \
-                            f"\n**Category:** {category}" \
-                            f"\n**User:** {dat['user']}" \
-                            f"\n**Members:** {member_count}" \
-                            f"\n**Deleted by:** {dat['user']}"
+            e.description = self.bot.utils.format_dict({
+                "Name": channel.name,
+                "ID": channel.id,
+                "Category": category,
+                "Members": member_count,
+                "Deleted by": dat['user']
+            })
 
             if isinstance(channel, discord.CategoryChannel):
                 self.queue[guild_id].append([e, 'actions'])

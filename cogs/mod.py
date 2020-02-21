@@ -465,7 +465,7 @@ class Mod(commands.Cog):
 				await ctx.message.channel.purge(limit=amount, before=ctx.message)
 				await ctx.send(f'{ctx.author.mention}, successfully purged {amount} messages', delete_after=5)
 				return await ctx.message.delete()
-			except Exception as e:
+			except discord.errors.Forbidden as e:
 				await ctx.send(e)
 			finally:
 				del self.purge[channel_id]
@@ -492,7 +492,7 @@ class Mod(commands.Cog):
 								break
 				await ctx.send(f'{ctx.author.mention}, purged {position} messages from {user.display_name}', delete_after=5)
 				return await ctx.message.delete()
-			except Exception as e:
+			except discord.errors.Forbidden as e:
 				await ctx.send(e)
 			finally:
 				del self.purge[channel_id]
@@ -511,7 +511,7 @@ class Mod(commands.Cog):
 							break
 				await ctx.send(f"{ctx.author.mention}, purged {position} images", delete_after=5)
 				return await ctx.message.delete()
-			except Exception as e:
+			except discord.errors.Forbidden as e:
 				await ctx.send(e)
 			finally:
 				del self.purge[channel_id]
@@ -529,7 +529,7 @@ class Mod(commands.Cog):
 							break
 				await ctx.send(f"{ctx.author.mention}, purged {position} embeds", delete_after=5)
 				return await ctx.message.delete()
-			except Exception as e:
+			except discord.errors.Forbidden as e:
 				await ctx.send(e)
 			finally:
 				del self.purge[channel_id]
@@ -547,7 +547,7 @@ class Mod(commands.Cog):
 							break
 				await ctx.send(f"{ctx.author.mention}, purged {position} user messages", delete_after=5)
 				return await ctx.message.delete()
-			except Exception as e:
+			except discord.errors.Forbidden as e:
 				await ctx.send(e)
 			finally:
 				del self.purge[channel_id]
@@ -565,7 +565,7 @@ class Mod(commands.Cog):
 							break
 				await ctx.send(f"{ctx.author.mention}, purged {position} bot messages", delete_after=5)
 				return await ctx.message.delete()
-			except Exception as e:
+			except discord.errors.Forbidden as e:
 				await ctx.send(e)
 			finally:
 				del self.purge[channel_id]
@@ -583,7 +583,7 @@ class Mod(commands.Cog):
 							break
 				await ctx.send(f"{ctx.author.mention}, purged {position} mentions", delete_after=5)
 				return await ctx.message.delete()
-			except Exception as e:
+			except discord.errors.Forbidden as e:
 				await ctx.send(e)
 			finally:
 				del self.purge[channel_id]
@@ -601,7 +601,7 @@ class Mod(commands.Cog):
 							break
 				await ctx.send(f"{ctx.author.mention}, purged {position} reactions", delete_after=5)
 				return await ctx.message.delete()
-			except Exception as e:
+			except discord.errors.Forbidden as e:
 				await ctx.send(e)
 			finally:
 				del self.purge[channel_id]
@@ -621,7 +621,7 @@ class Mod(commands.Cog):
 							break
 			await ctx.send(f"{ctx.author.mention}, purged {position} messages", delete_after=5)
 			return await ctx.message.delete()
-		except Exception as e:
+		except discord.errors.Forbidden as e:
 			await ctx.send(e)
 		finally:
 			del self.purge[channel_id]

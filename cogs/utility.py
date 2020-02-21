@@ -467,7 +467,6 @@ class Utility(commands.Cog):
 		del self.timers[user_id][msg]
 		if not self.timers[user_id]:
 			del self.timers[user_id]
-		print(self.timers[user_id])
 		self.save_timers()
 		await ctx.send(f"{ctx.author.mention} remember dat thing: {msg}")
 
