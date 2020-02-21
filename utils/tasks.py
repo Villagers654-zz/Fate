@@ -8,6 +8,7 @@ class Tasks:
 	def __init__(self, bot):
 		self.bot = bot
 		self.enabled_tasks = [self.status_task, self.debug_log]
+		self.running = []
 
 	def tasks(self):
 		return [
@@ -19,7 +20,11 @@ class Tasks:
 
 	def ensure_all_are_running(self):
 		for coro in self.enabled_tasks:
-			self.bot.loop.create_task(coro())
+			if coro in self.running:
+				continue
+			else:
+				self.bot.loop.create_task(coro())
+				self.running.append(coro)
 			# if coro.__name__ not in [task.get_name() for task in self.tasks()]:
 			# 	new_task = self.bot.loop.create_task(coro())
 			# 	new_task.set_name(coro.__name__)
