@@ -69,7 +69,7 @@ def emojis(emoji):
 	if emoji == 'invisible' or emoji is discord.Status.offline:
 		return '<:status_offline:659976011651219462>'
 	if emoji == 'dnd' or emoji is discord.Status.dnd:
-		return '<:status_dnd:596576774364856321>'
+		return '<:status_dnd:659976008627388438>'
 	if emoji == 'idle' or emoji is discord.Status.idle:
 		return '<:status_idle:659976006030983206>'
 	if emoji == 'online' or emoji is discord.Status.online:
