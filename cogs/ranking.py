@@ -3,18 +3,18 @@
 from os import path
 import os
 import json
-from time import time, monotonic
+from time import time
 from random import *
 import asyncio
 from datetime import datetime, timedelta
 import requests
 from io import BytesIO
 import aiosqlite
-import re
 
 from discord.ext import commands
 import discord
 from PIL import Image, ImageFont, ImageDraw, ImageSequence
+import aiofiles as aio
 
 from utils import colors, utils
 
@@ -39,11 +39,13 @@ class Ranking(commands.Cog):
 		self.db_path = './data/userdata/xp.db'
 		self.path = './data/userdata/xp.json'
 		self.profile_path = './data/userdata/profiles.json'
+		self.clb_path = './data/userdata/cmd-lb.json'
 
 		self.msg_cooldown = 10
 		self.cd = {}
 		self.global_cd = {}
 		self.macro_cd = {}
+		self.cmd_cd = {}
 		self.counter = 0
 		self.vc_counter = 0
 		self.backup_counter = 0
@@ -62,6 +64,11 @@ class Ranking(commands.Cog):
 		if path.isfile(self.profile_path):
 			with open(self.profile_path, 'r') as f:
 				self.profile = json.load(f)
+		# top command lb
+		self.cmds = {}
+		if path.isfile(self.clb_path):
+			with open(self.clb_path, 'r') as f:
+				self.cmds = json.load(f)
 		# vc caching
 		self.vclb = {}
 		self.vc_counter = 0
@@ -194,6 +201,22 @@ class Ranking(commands.Cog):
 					await db.execute(f"INSERT INTO '{guild_id}' VALUES ({user_id}, {time()}, {new_xp});")
 					await db.commit()
 				self.write['guilded'] = False
+
+	@commands.Cog.listener()
+	async def on_command_completion(self, ctx):
+		user_id = ctx.author.id
+		cmd = ctx.command.name
+		if user_id not in self.cmd_cd:
+			self.cmd_cd[user_id] = []
+		if cmd not in self.cmd_cd[user_id]:
+			self.cmd_cd[user_id].append(cmd)
+			if cmd not in self.cmds:
+				self.cmds[cmd] = []
+			self.cmds[cmd].append(time())
+			async with aio.open(self.clb_path, 'w') as f:
+				await f.write(json.dumps(self.cmds))
+			await asyncio.sleep(5)
+			self.cmd_cd[user_id].remove(cmd)
 
 	@commands.Cog.listener()
 	async def on_voice_state_update(self, user, before, after):
@@ -888,6 +911,20 @@ class Ranking(commands.Cog):
 			embeds[index][sub_index].set_footer(text=f'Leaderboard {index + 1}/{len(embeds)} Page {sub_index+1}/{len(embeds[index])}')
 			await msg.edit(embed=embeds[index][sub_index])
 			await msg.remove_reaction(reaction, ctx.author)
+
+	@commands.command(name='clb')
+	@commands.cooldown(1, 5, commands.BucketType.user)
+	async def clb(self, ctx):
+		for cmd, uses in list(self.cmds.items()):
+			for use in uses:
+				if use < time() - 60*60*24*30:
+					self.cmds[cmd].remove(use)
+		e = discord.Embed(color=colors.fate())
+		e.set_author(name='Command Leaderboard', icon_url=self.bot.user.avatar_url)
+		e.description = ''
+		for cmd, uses in sorted(self.cmds.items(), key=lambda kv: len(kv[1]), reverse=True)[:10]:
+			e.description += f'**#.** `{cmd}` - {len(uses)}\n'
+		await ctx.send(embed=e)
 
 	@commands.command(name='gen-lb')
 	@commands.is_owner()
