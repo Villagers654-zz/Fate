@@ -922,8 +922,10 @@ class Ranking(commands.Cog):
 		e = discord.Embed(color=colors.fate())
 		e.set_author(name='Command Leaderboard', icon_url=self.bot.user.avatar_url)
 		e.description = ''
+		rank = 1
 		for cmd, uses in sorted(self.cmds.items(), key=lambda kv: len(kv[1]), reverse=True)[:10]:
-			e.description += f'**#.** `{cmd}` - {len(uses)}\n'
+			e.description += f'**#{rank}.** `{cmd}` - {len(uses)}\n'
+			rank += 1
 		await ctx.send(embed=e)
 
 	@commands.command(name='gen-lb')

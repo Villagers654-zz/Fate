@@ -7,6 +7,7 @@ from datetime import datetime
 import os
 import subprocess
 import logging
+import asyncio
 
 import discord
 from discord.ext import commands
@@ -50,8 +51,19 @@ handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(me
 logger.addHandler(handler)
 
 
+#async def handle_echo(reader, writer):
+#	data = await reader.read(100)
+#	message = data.decode()
+#	# addr = writer.get_extra_info('peername')
+#	await bot.get_channel(633866664252801024).send(discord.utils.escape_mentions(message))
+#	for i in range(5):
+#		writer.write(b'Received your Msg')
+#		await writer.drain()
+
+
 @bot.event
 async def on_ready():
+	# await asyncio.start_server(handle_echo, '5.189.131.176', port=31337, loop=bot.loop)
 	login_time = bot.utils.total_seconds(datetime.now(), login_start_time)
 	total_start_time = bot.utils.total_seconds(datetime.now(), bot.start_time)
 	cprint('--------------------------', 'cyan')

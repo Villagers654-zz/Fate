@@ -1058,10 +1058,12 @@ class SecureLog(commands.Cog):
             e = discord.Embed(color=lime_green())
             e.set_author(name='~==🍸Role Created🍸==~', icon_url=dat['icon_url'])
             e.set_thumbnail(url=dat['thumbnail_url'])
-            e.description = f"**Name:** [{role.name}]" \
-                            f"\n**Mention:** [{role.mention}]" \
-                            f"\n**ID:** [{role.id}]" \
-                            f"\n**Created by:** [{dat['user']}]"
+            e.description = self.bot.utils.format_dict({
+                "Name": role.name,
+                "Mention": role.mention,
+                "ID": role.id,
+                "Created by": dat['user']
+            })
             self.queue[guild_id].append([e, 'actions'])
 
     @commands.Cog.listener()
@@ -1072,19 +1074,19 @@ class SecureLog(commands.Cog):
             e = discord.Embed(color=dark_green())
             e.set_author(name='~==🍸Role Deleted🍸==~', icon_url=dat['icon_url'])
             e.set_thumbnail(url=dat['thumbnail_url'])
-            e.description = f"**Name:** [{role.name}]" \
-                            f"\n**Mention:** [{role.mention}]" \
-                            f"\n**ID:** [{role.id}]" \
-                            f"\n**Created by:** [{dat['user']}]" \
-                            f"\n**Members:** [{len(role.members)}]"
-
+            e.description = self.bot.utils.format_dict({
+                "Name": role.name,
+                "Mention": role.mention,
+                "ID": role.id,
+                "Members": len(role.members),
+                "Deleted by": dat['user']
+            })
             path = f'./static/role-members-{r.randint(1, 9999)}.txt'
             members = f"{role.name} - Member List"
             for member in role.members:
                 members += f"\n{member.id}, {member.mention}, {member}, {member.display_name}"
             with open(path, 'w') as f:
                 f.write(members)
-
             self.queue[guild_id].append([(e, path), 'actions'])
 
     @commands.Cog.listener()
@@ -1096,10 +1098,12 @@ class SecureLog(commands.Cog):
             e = discord.Embed(color=green())
             e.set_author(name='~==🍸Role Updated🍸==~', icon_url=dat['thumbnail_url'])
             e.set_thumbnail(url=dat['thumbnail_url'])
-            e.description = f"**Name:** {after.name}" \
-                            f"\n**Mention** {after.mention}" \
-                            f"\n**ID** {after.id}" \
-                            f"\n**Changed by:** {dat['user']}"
+            e.description = self.bot.utils.format_dict({
+                "Name": after.name,
+                "Mention": after.mention,
+                "ID": before.id,
+                "Changed by": dat['user']
+            })
 
             if before.name != after.name:
                 e.add_field(
@@ -1150,32 +1154,35 @@ class SecureLog(commands.Cog):
                 e.description += f"[{action}]"
 
             if before.position != after.position:
-                before_roles = before.guild.roles
-                before_roles.pop(after.position)
-                before_roles.insert(before.position, before)
+                em = discord.Embed()
+                em.description = f"Channel '{before.name}' was moved"
+                self.queue[guild_id].append(em)
+                # before_roles = before.guild.roles
+                # before_roles.pop(after.position)
+                # before_roles.insert(before.position, before)
 
-                if guild_id not in self.role_pos_cd:
-                    self.role_pos_cd[guild_id] = 0
-                if self.role_pos_cd[guild_id] < time() - 2:
-                    self.role_pos_cd[guild_id] = time()
+                # if guild_id not in self.role_pos_cd:
+                #     self.role_pos_cd[guild_id] = 0
+                # if self.role_pos_cd[guild_id] < time() - 2:
+                #     self.role_pos_cd[guild_id] = time()
 
-                    before_above = before_roles[before.position+1].mention
-                    before_below = before_roles[before.position-1].mention
-                    after_above = after.guild.roles[after.position+1].mention
-                    after_below = after.guild.roles[after.position-1].mention
+                #     before_above = before_roles[before.position+1].mention
+                #     before_below = before_roles[before.position-1].mention
+                #     after_above = after.guild.roles[after.position+1].mention
+                #     after_below = after.guild.roles[after.position-1].mention
 
-                    e.add_field(
-                        name='◈ Position Changed',
-                        value=f"**》Before** - {before.position}"
-                              f"\n{before_above}"
-                              f"\n{before.mention}"
-                              f"\n{before_below}"
-                              f"\n\n**》After** - {after.position}"
-                              f"\n{after_above}"
-                              f"\n{after.mention}"
-                              f"\n{after_below}",
-                        inline=False
-                    )
+                #     e.add_field(
+                #         name='◈ Position Changed',
+                #         value=f"**》Before** - {before.position}"
+                #               f"\n{before_above}"
+                #               f"\n{before.mention}"
+                #               f"\n{before_below}"
+                #               f"\n\n**》After** - {after.position}"
+                #               f"\n{after_above}"
+                #               f"\n{after.mention}"
+                #               f"\n{after_below}",
+                #         inline=False
+                #     )
             if before.permissions != after.permissions:
                 changes = ''
                 for i, (perm, value) in enumerate(iter(before.permissions)):
@@ -1229,15 +1236,16 @@ class SecureLog(commands.Cog):
                 webhook = await self.bot.fetch_webhook(dat['target'].id)
                 channel = self.bot.get_channel(webhook.channel_id)
                 e.set_thumbnail(url=webhook.avatar_url)
-                e.description = f"**Name:** [{webhook.name}]" \
-                                f"\n**Type:** [{webhook.type}]"
+                e.description = self.bot.utils.format_dict({
+                    "Name": webhook.name,
+                    "Type": webhook.type
+                })
 
-
-            e.description += f"\n**ID:** [{dat['target'].id}]" \
-                             f"\n**Channel:** [{channel.name}]" \
-                             f"\n**C-Mention:** [{channel.mention}]" \
-                             f"\n**{action} by:** [{dat['user']}]"
-
+            e.description += self.bot.utils.format_dict({
+                "ID": dat['target'].id,
+                "Channel": channel.mention,
+                f"{action} by": dat['user']
+            })
             self.queue[guild_id].append([e, 'misc'])
 
     @commands.Cog.listener()

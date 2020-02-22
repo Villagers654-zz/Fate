@@ -117,10 +117,11 @@ class UtilityBeta(commands.Cog):
             member_info = {}
             if isinstance(user, discord.Member):
                 user_info['Profile'] = f'{user.mention} {self.bot.utils.emojis(user.status)}'
-                if user.is_on_mobile():
-                    user_info["Active on Mobile 📱"] = None
-                else:
-                    user_info["Active on PC 🖥"] = None
+                if user.status is user.status.online:
+                    if user.is_on_mobile():
+                        user_info["Active on Mobile 📱"] = None
+                    else:
+                        user_info["Active on PC 🖥"] = None
 
                 member_info = {}
                 if user.name != user.display_name:
