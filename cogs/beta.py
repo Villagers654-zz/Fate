@@ -9,7 +9,9 @@ import asyncio
 
 from discord.ext import commands
 import discord
+from discord import *
 import aiofiles
+from discord.ext.commands import Greedy as g
 
 from utils import colors
 
@@ -73,17 +75,9 @@ class UtilityBeta(commands.Cog):
 
     @commands.command(name='xinfo')
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def xinfo(self, ctx, *args):
-        if not args:
-            pass
-
-        elif ctx.message.raw_mentions:
-            user = ctx.message.raw_mentions[0]
-            if isinstance(user, int):
-                try:
-                    user = await self.bot.fetch_user(user)
-                except discord.errors.NotFound:
-                    return await ctx.send("I can't find that user")
+    async def xinfo(self, ctx, users: g[User], roles: g[Role], channels: g[TextChannel]):
+        if users:
+            user = users[0]
             if ctx.guild:
                 tmp = ctx.guild.get_member(user.id)
                 if isinstance(tmp, discord.Member):
@@ -117,7 +111,7 @@ class UtilityBeta(commands.Cog):
             member_info = {}
             if isinstance(user, discord.Member):
                 user_info['Profile'] = f'{user.mention} {self.bot.utils.emojis(user.status)}'
-                if user.status is user.status.online:
+                if user.status is discord.Status.online:
                     if user.is_on_mobile():
                         user_info["Active on Mobile 📱"] = None
                     else:

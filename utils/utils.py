@@ -1,4 +1,4 @@
-import datetime
+from datetime import *
 import asyncio
 import time
 from os.path import isfile
@@ -53,12 +53,26 @@ def get_prefixes(bot, msg):
 def emojis(emoji):
 	if emoji is None:
 		return '‎'
-
 	if emoji is "plus":
 		return "<:plus:548465119462424595>"
 	if emoji is "edited":
 		return "<:edited:550291696861315093>"
 	if emoji == 'arrow':
+		date = datetime.utcnow()
+		if date.month == 1 and date.day == 26:  # Chinese New Year
+			return '🐉'
+		if date.month == 2 and date.day == 14:  # Valentines Day
+			return '❤'
+		if date.month == 6:  # Pride Month
+			return '<a:arrow:679213991721173012>'
+		if date.month == 7 and date.day == 4:  # July 4th
+			return '🎆'
+		if date.month == 10 and date.day == 31:  # Halloween
+			return '🎃'
+		if date.month == 11 and date.day == 26:  # Thanksgiving
+			return '🦃'
+		if datetime.month == 12 and date.day == 25:  # Christmas
+			return '🎄'
 		return '<:enter:673955417994559539>'
 
 	if emoji == 'text_channel':
@@ -76,13 +90,17 @@ def emojis(emoji):
 		return '<:status_online:659976003334045727>'
 
 
-def format_dict(data: dict) -> str:
+def format_dict(data: dict, emoji=None) -> str:
+	if emoji is None:
+		emoji = emojis('arrow') + ' '
+	elif emoji is False:
+		emoji = ''
 	result = ''
 	for k, v in data.items():
 		if v:
-			result += f"\n{emojis('arrow')} **{k}:** {v}"
+			result += f"\n{emoji}**{k}:** {v}"
 		else:
-			result += f"\n{emojis('arrow')} {k}"
+			result += f"\n{emoji}{k}"
 	return result
 
 
@@ -192,7 +210,7 @@ def get_time(seconds):
 	result = ''
 	if seconds < 60:
 		return f'{seconds} seconds'
-	time = str(datetime.timedelta(seconds=seconds))
+	time = str(timedelta(seconds=seconds))
 	if ',' in time:
 		days = str(time).replace(' days,', '').split(' ')[0]
 		time = time.replace(f'{days} day{"s" if int(days) > 1 else ""}, ', '')
@@ -321,6 +339,7 @@ class Bot:
 		else:
 			return msg
 
+
 class User:
 	def __init__(self, user: discord.User):
 		self.user = user
@@ -333,15 +352,17 @@ class User:
 	def can_dm(self):
 		return self.user.dm_channel.permissions_for(self).send_messages
 
+
 class Datetime:
 	def __init__(self, seconds):
 		self.seconds = seconds
 
 	def future(self):
-		return datetime.datetime.utcnow() + datetime.timedelta(seconds=self.seconds)
+		return datetime.utcnow() + timedelta(seconds=self.seconds)
 
 	def past(self):
-		return datetime.datetime.utcnow() - datetime.timedelta(seconds=self.seconds)
+		return datetime.utcnow() - timedelta(seconds=self.seconds)
+
 
 class Time:
 	def __init__(self, seconds):

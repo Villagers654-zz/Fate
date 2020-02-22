@@ -943,9 +943,11 @@ class SecureLog(commands.Cog):
             if before.name != after.name:
                 e.add_field(
                     name='~==🍸Channel Renamed🍸==~',
-                    value=f"\n**Mention:** {after.mention}"
-                          f"\n**ID:** `{after.id}`"
-                          f"\n**Changed by:** {dat['user']}",
+                    value=self.bot.utils.format_dict({
+                        "Mention": after.mention,
+                        "ID": after.id,
+                        "Changed by": dat['user']
+                    }),
                     inline=False
                 )
                 e.add_field(name='◈ Before', value=before.name)
@@ -954,10 +956,11 @@ class SecureLog(commands.Cog):
             if before.position != after.position:
                 e.add_field(
                     name='~==🍸Channel Moved🍸==~',
-                    value=f"\n**Name:** {after.name}"
-                          f"\n**Mention:** {after.mention}"
-                          f"\n**ID:** {after.id}"
-                          f"\n**Changed By:** {dat['user']}",
+                    value=self.bot.utils.format_dict({
+                        "Mention": after.mention,
+                        "ID": after.id,
+                        "Changed by": dat['user']
+                    }),
                     inline=False
                 )
                 e.add_field(name='Before', value=str(before.position))
@@ -968,10 +971,12 @@ class SecureLog(commands.Cog):
                     if before.id not in self.config[guild_id]['ignored_channels']:
                         e.add_field(
                             name='~==🍸Topic Updated🍸==~',
-                            value=f"\n**Name:** {after.name}"
-                                  f"\n**Mention:** {after.mention}"
-                                  f"\n**ID:** {after.id}"
-                                  f"\n**Changed by:** {dat['user']}",
+                            value=self.bot.utils.format_dict({
+                                "Name": after.name,
+                                "Mention": after.mention,
+                                "ID": after.id,
+                                "Changed by": dat['user']
+                            }),
                             inline=False
                         )
                         if before.topic:
@@ -984,10 +989,12 @@ class SecureLog(commands.Cog):
             if before.category != after.category:
                 e.add_field(
                     name='~==🍸Channel Re-Categorized🍸==~',
-                    value=f"\n**Name:** {after.name}" \
-                          f"\n**Mention:** {after.mention}" \
-                          f"\n**ID:** {after.id}" \
-                          f"\n**Changed by:** {dat['user']}",
+                    value=self.bot.utils.format_dict({
+                        "Name": after.name,
+                        "Mention": after.mention,
+                        "ID": after.id,
+                        "Changed by": dat['user']
+                    }),
                     inline=False
                 )
                 name = 'None'
@@ -1040,12 +1047,12 @@ class SecureLog(commands.Cog):
                             inline=False
                         )
 
-                e.description = f"> 》__**Overwrites Changed**__《" \
-                                f"\n**Name:** [{after.name}]" \
-                                f"\n**Mention:** [{after.mention}]" \
-                                f"\n**ID:** [{after.id}]" \
-                                f"\n**Category:** {category}" \
-                                f"\n**Changed by:** {dat['user']}"
+                e.description = self.bot.utils.format_dict({
+                    "Name": after.name,
+                    "Mention": after.name,
+                    "ID": after.id,
+                    "Changed by": dat['user']
+                })
 
             if e.fields:
                 self.queue[guild_id].append([e, 'updates'])
@@ -1258,11 +1265,13 @@ class SecureLog(commands.Cog):
                 e.set_author(name='~==🍸Bot Added🍸==~', icon_url=dat['icon_url'])
                 e.set_thumbnail(url=dat['thumbnail_url'])
                 inv = f'https://discordapp.com/oauth2/authorize?client_id={member.id}&permissions=0&scope=bot'
-                e.description = f"**Name:** {member.name}" \
-                                f"\n**Mention:** {member.mention}" \
-                                f"\n**ID:** {member.id}" \
-                                f"\n**Bot Invite:** [here]({inv})" \
-                                f"\n**Invited By:** {dat['user']}"
+                e.description = self.bot.utils.format_dict({
+                    "Name": member.name,
+                    "Mention": member.mention,
+                    "ID": member.id,
+                    "Bot Invite": f'[here]({inv})',
+                    "Invited by": dat['user']
+                })
                 self.queue[guild_id].append([e, 'system+'])
                 return
             invites = await member.guild.invites()
@@ -1285,11 +1294,13 @@ class SecureLog(commands.Cog):
                 inviter = invite.inviter
             e.set_author(name='~==🍸Member Joined🍸==~', icon_url=icon_url)
             e.set_thumbnail(url=member.avatar_url)
-            e.description = f"**Name:** {member.name}" \
-                            f"\n**Mention:** {member.mention}" \
-                            f"\n**ID:** {member.id}" \
-                            f"\n**Invited by:** {inviter}" \
-                            f"\n**Invite:** [{invite.code}]({invite.url})"
+            e.description = self.bot.utils.format_dict({
+                "Name": member.name,
+                "Mention": member.mention,
+                "ID": member.id,
+                "Invited by": inviter,
+                "Invite:": f'[{invite.code}]({invite.url})'
+            })
             aliases = list(set([
                 m.display_name for m in [
                     server.get_member(member.id) for server in self.bot.guilds if member in server.members
@@ -1308,24 +1319,30 @@ class SecureLog(commands.Cog):
         guild_id = str(member.guild.id)
         if guild_id in self.config:
             e = discord.Embed(color=red())
-            e.description = f"**Username:** {member}" \
-                            f"\n**Mention:** {member.mention}" \
-                            f"\n**ID:** {member.id}" \
-                            f"\n**Top Role:** {member.top_role.mention}"
+            e.description = self.bot.utils.format_dict({
+                "Username": member,
+                "Mention": member.mention,
+                "ID": member.id,
+                "Top Role": member.top_role.mention
+            })
             e.set_thumbnail(url=member.avatar_url)
             removed = False
 
             async for entry in member.guild.audit_logs(limit=1, action=audit.kick):
                 if entry.target.id == member.id and entry.created_at > self.past():
                     e.set_author(name='~==🍸Member Kicked🍸==~', icon_url=entry.user.avatar_url)
-                    e.description += f"\n**Kicked by:** {entry.user.mention}"
+                    e.description += self.bot.utils.format_dict({
+                        "Kicked by": entry.user.mention
+                    })
                     self.queue[guild_id].append([e, 'sudo'])
                     removed = True
 
             async for entry in member.guild.audit_logs(limit=1, action=audit.ban):
                 if entry.target.id == member.id and entry.created_at > self.past():
                     e.set_author(name='~==🍸Member Banned🍸==~', icon_url=entry.user.avatar_url)
-                    e.description += f"\n**Banned by:** {entry.user.mention}"
+                    e.description += self.bot.utils.format_dict({
+                        "Banned by": entry.user.mention
+                    })
                     self.queue[guild_id].append([e, 'sudo'])
                     removed = True
 
