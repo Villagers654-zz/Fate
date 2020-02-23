@@ -52,9 +52,9 @@ class Reload(commands.Cog):
 					e.add_field(name=f"Error - {cog}", value=f'```{discord.utils.escape_markdown(text_group)}```', inline=False)
 		await ctx.send(embed=e)
 
-	@commands.command(name='disable')
+	@commands.command(name='unload')
 	@has_bot_owner_level_perms()
-	async def _disable(self, ctx, *, module : str):
+	async def unload(self, ctx, *, module : str):
 		try:
 			self.bot.unload_extension("cogs." + module)
 		except:

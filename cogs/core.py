@@ -24,6 +24,7 @@ class Core(commands.Cog):
 		self.bot = bot
 		self.last = {}
 		self.spam_cd = {}
+		self.path = './data/userdata/disabled_commands.json'
 
 	@commands.command(name="topguilds")
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -45,7 +46,6 @@ class Core(commands.Cog):
 
 	@commands.command(name="say")
 	@commands.cooldown(1, 5, commands.BucketType.user)
-	@checks.command_is_enabled()
 	@commands.bot_has_permissions(attach_files=True)
 	async def say(self, ctx, *, content: commands.clean_content=None):
 		if len(str(content).split('\n')) > 4:
@@ -103,17 +103,58 @@ class Core(commands.Cog):
 	@commands.cooldown(2, 5, commands.BucketType.user)
 	async def enable(self, ctx, *command):
 		""" Enables a disabled command """
-		await ctx.send('e')
+		guild_id = str(ctx.guild.id)
+		with open(self.path, 'r') as f:
+			config = json.load(f)  # type: dict
+		if guild_id not in config:
+			return await ctx.send('This server has no disabled commands')
+		cmds = [cmd.name for cmd in self.bot.commands]
+		for cmd in command:
+			if cmd.lower() not in cmds:
+				return await ctx.send(f"Command '`{cmd}`' doesn't exist")
+			if cmd not in config[guild_id]:
+				await ctx.send(f"`{cmd}` isn't disabled")
+				continue
+			config[guild_id].remove(cmd)
+			await ctx.send(f"Enabled `{cmd}`")
+		with open(self.path, 'w') as f:
+			json.dump(config, f, ensure_ascii=False)
 
-#	@commands.command(name='disable')
-#	@commands.cooldown(2, 5, commands.BucketType.user)
-#	async def disable(self, ctx, *command):
-#		""" Disables an enabled command """
+	@commands.command(name='disable')
+	@commands.cooldown(2, 5, commands.BucketType.user)
+	@commands.has_permissions(administrator=True)
+	async def disable(self, ctx, *command):
+		""" Disables an enabled command """
+		guild_id = str(ctx.guild.id)
+		with open(self.path, 'r') as f:
+			config = json.load(f)  # type: dict
+		if guild_id not in config:
+			config[guild_id] = []
+		cmds = [cmd.name for cmd in self.bot.commands]
+		for cmd in command:
+			if cmd.lower() not in cmds:
+				return await ctx.send(f"Command '`{cmd}`' doesn't exist")
+			if cmd in config[guild_id]:
+				await ctx.send(f"`{cmd}` is already disabled")
+				continue
+			config[guild_id].append(cmd)
+			await ctx.send(f"Disabled `{cmd}`")
+		with open(self.path, 'w') as f:
+			json.dump(config, f, ensure_ascii=False)
 
 	@commands.command(name='disabled')
 	@commands.cooldown(1, 5, commands.BucketType.channel)
+	@commands.has_permissions(administrator=True)
 	async def disabled(self, ctx):
 		""" Lists the guilds disabled commands """
+		with open(self.path, 'r') as f:
+			config = json.load(f)  # type: dict
+		guild_id = str(ctx.guild.id)
+		if guild_id not in config or not config[guild_id]:
+			return await ctx.send("There are no disabled commands")
+		e = discord.Embed(color=colors.fate())
+		e.description = ', '.join(config[guild_id])
+		await ctx.send(embed=e)
 
 	@commands.command(name="ping")
 	@commands.cooldown(1, 5, commands.BucketType.user)

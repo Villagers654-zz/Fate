@@ -7,13 +7,12 @@ from datetime import datetime
 import os
 import subprocess
 import logging
-import asyncio
 
 import discord
 from discord.ext import commands
 from termcolor import cprint
 
-from utils import config, outh, colors, utils, tasks
+from utils import config, outh, colors, utils, tasks, checks
 
 
 class Fate(commands.Bot):
@@ -30,6 +29,7 @@ class Fate(commands.Bot):
 
 bot = Fate(case_insensitive=True, max_messages=16000)
 bot.remove_command('help')
+bot.add_check(checks.command_is_enabled)
 initial_extensions = [
 	'error_handler', 'config', 'menus', 'core', 'music', 'mod', 'welcome', 'farewell', 'notes', 'archive', 'coffeeshop',
 	'custom', 'actions', 'reactions', 'responses', 'textart', 'fun', 'dev', '4b4t', 'readme', 'reload', 'embeds',
