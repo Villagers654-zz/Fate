@@ -12,6 +12,8 @@ Backup.zip
 /utils/outh.py
 /utils/ServerStatus.py
 /utils/ssh.py
+/testing/*
+/testing/
 /venv/*
 /venv/
 /template_cogs/
