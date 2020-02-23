@@ -28,6 +28,19 @@ def command_is_enabled(ctx):
 
 	if guild_id not in config:
 		return True  # command isn't disabled
-	if ctx.command.name in config[guild_id]:
+
+	cmd = ctx.command.name
+	conf = config[guild_id]  # type: dict
+
+	if cmd in conf['global']:
 		return False
+	channel_id = str(ctx.channel.id)
+	if channel_id in conf['channels']:
+		if cmd in conf['channels'][channel_id]:
+			return False
+	if ctx.channel.category:
+		channel_id = str(ctx.channel.category.id)
+		if channel_id in conf['categories']:
+			if cmd in conf['categories'][channel_id]:
+				return False
 	return True
