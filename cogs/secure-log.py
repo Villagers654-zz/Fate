@@ -516,7 +516,7 @@ class SecureLog(commands.Cog):
                 e.description = self.bot.utils.format_dict({
                     "author": before.author.mention,
                     "Channel": before.channel.mention,
-                    f"[Jump to MSG](before.jump_url)": None
+                    f"[Jump to MSG]({before.jump_url})": None
                 })
                 for group in [before.content[i:i + 1000] for i in range(0, len(before.content), 1000)]:
                     e.add_field(name='◈ Before', value=group, inline=False)
@@ -540,7 +540,7 @@ class SecureLog(commands.Cog):
                 e.description = self.bot.utils.format_dict({
                     "author": before.author.mention,
                     "Channel": before.channel.mention,
-                    f"[Jump to MSG](before.jump_url)": None
+                    f"[Jump to MSG]({before.jump_url})": None
                 })
                 em = before.embeds[0].to_dict()
                 path = f'./static/embed-{before.id}.json'
@@ -558,7 +558,7 @@ class SecureLog(commands.Cog):
                     "Author": after.author.mention,
                     "Channel": after.channel.mention,
                     "Who Pinned": audit_dat['user'],
-                    "[Jump to MSG]": None
+                    f"[Jump to MSG]({after.jump_url})": None
                 })
                 for text_group in self.split_into_groups(after.content):
                     e.add_field(name="◈ Content", value=text_group, inline=False)
@@ -618,11 +618,11 @@ class SecureLog(commands.Cog):
                     return
 
                 e = discord.Embed(color=purple())
-                e.set_author(name='~==🍸Msg Deleted🍸==~', icon_url=msg.author.avatar_url)
                 dat = await self.search_audit(msg.guild, audit.message_delete)
-                e.set_thumbnail(url=dat['thumbnail_url'])
                 if dat['thumbnail_url'] == msg.guild.icon_url:
-                    e.set_thumbnail(url=msg.author.avatar_url)
+                    dat['thumbnail_url'] = msg.author.id
+                e.set_author(name='~==🍸Msg Deleted🍸==~', icon_url=dat['user'])
+                e.set_thumbnail(url=dat['icon_url'])
                 e.description = self.bot.utils.format_dict({
                     "Author": msg.author.mention,
                     "Channel": msg.channel.mention,
@@ -1066,7 +1066,6 @@ class SecureLog(commands.Cog):
             e.set_author(name='~==🍸Role Created🍸==~', icon_url=dat['icon_url'])
             e.set_thumbnail(url=dat['thumbnail_url'])
             e.description = self.bot.utils.format_dict({
-                "Name": role.name,
                 "Mention": role.mention,
                 "ID": role.id,
                 "Created by": dat['user']
@@ -1083,7 +1082,6 @@ class SecureLog(commands.Cog):
             e.set_thumbnail(url=dat['thumbnail_url'])
             e.description = self.bot.utils.format_dict({
                 "Name": role.name,
-                "Mention": role.mention,
                 "ID": role.id,
                 "Members": len(role.members),
                 "Deleted by": dat['user']

@@ -172,6 +172,11 @@ class Core(commands.Cog):
 			location: Union[discord.TextChannel, discord.CategoryChannel] = None,
 	):
 		"""Enable or commands in a channel, or category"""
+		command = command.lower()
+		if command == 'disable' or command == 'enable' or 'lucky' in command:
+			return await ctx.send("BiTcH nO")
+		if command not in [cmd.name for cmd in self.bot.commands]:
+			return await ctx.send("That's not a command")
 		with open(self.path, 'r') as f:
 			config = json.load(f)  # type: dict
 		guild_id = str(ctx.guild.id)

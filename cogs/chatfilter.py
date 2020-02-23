@@ -48,7 +48,13 @@ class ChatFilter(commands.Cog):
 				for text_group in [text[i:i + 1000] for i in range(0, len(text), 1000)]:
 					e.add_field(name="◈ Forbidden Shit", value=text_group, inline=False)
 			if guild_id in self.ignored:
-				channels = [self.bot.get_channel(c_id).mention for c_id in self.ignored[guild_id]]
+				channels = []
+				for channel_id in list(self.ignored[guild_id]):
+					channel = self.bot.get_channel(channel_id)
+					if not channel:
+						self.ignored[guild_id].remove(channel_id)
+						continue
+					channels.append(channel.mention)
 				e.add_field(name='◈ Ignored Channels', value='\n'.join(channels))
 			e.set_footer(text=f"Current Status: {toggle}")
 			await ctx.send(embed=e)
