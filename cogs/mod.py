@@ -9,10 +9,13 @@ from time import monotonic
 import asyncio
 import random
 import os
+from time import time
+import re
 
 from discord.ext import commands
 import discord
 from discord.ext.commands import Greedy
+from discord import *
 
 from utils import colors, config, checks, utils
 
@@ -39,6 +42,11 @@ class Mod(commands.Cog):
 					self.mods = dat['mods']
 				if 'clearwarns' in dat:
 					self.wipe = dat['clearwarns']
+		self.path = './data/userdata/rolepersist.json'
+		self.rp = {}
+		if isfile(self.path):
+			with open(self.path, 'r') as f:
+				self.rp = json.load(f)  # type: dict
 
 	def save_json(self):
 		with open("./data/userdata/mod.json", "w") as outfile:
@@ -807,10 +815,12 @@ class Mod(commands.Cog):
 		await ctx.message.add_reaction('🖍')
 		count = 0
 		for member in ctx.guild.members:
+			if not nick and not member.nick:
+				continue
 			try:
 				await member.edit(nick=nick)
 				count += 1
-				await asyncio.sleep(0.25)
+				await asyncio.sleep(1)
 			except:
 				pass
 		self.massnick[guild_id] = False
@@ -821,31 +831,113 @@ class Mod(commands.Cog):
 	@commands.guild_only()
 	@commands.has_permissions(manage_roles=True)
 	@commands.bot_has_permissions(manage_roles=True)
-	async def role(self, ctx, user:commands.clean_content, *, role:commands.clean_content):
-		user_name = str(user).lower().replace('@', '')
-		user = None
-		for member in ctx.guild.members:
-			if user_name in member.name.lower():
-				user = member
-				break
+	async def role(self, ctx, user, role, *, args=''):
+		def time_to_sleep(timers):
+			time_to_sleep = [0, []]
+			for timer in timers:
+				raw = ''.join(x for x in list(timer) if x.isdigit())
+				if 'd' in timer:
+					time = int(timer.replace('d', '')) * 60 * 60 * 24
+					repr = 'day'
+				elif 'h' in timer:
+					time = int(timer.replace('h', '')) * 60 * 60
+					repr = 'hour'
+				elif 'm' in timer:
+					time = int(timer.replace('m', '')) * 60
+					repr = 'minute'
+				else:  # 's' in timer
+					time = int(timer.replace('s', ''))
+					repr = 'second'
+				time_to_sleep[0] += time
+				time_to_sleep[1].append(f"{raw} {repr if raw == '1' else repr + 's'}")
+			timer, expanded_timer = time_to_sleep
+			return [timer, expanded_timer]
+
+		timers = []
+		for timer in [re.findall('[0-9]+[smhd]', arg) for arg in args.split()]:
+			timers = [*timers, *timer]
+		user = self.bot.utils.get_user(ctx, user)
 		if not user:
 			return await ctx.send('User not found')
-		role_name = str(role).lower().replace('@', '')
-		role_name.replace('+', '').replace('-', '')
-		role = await utils.get_role(ctx, role_name)
+		converter = commands.RoleConverter()
+		try:
+			result = await converter.convert(ctx, role)
+			role = result  # type: discord.Role
+		except:
+			pass
+		if not isinstance(role, discord.Role):
+			role = await utils.get_role(ctx, role)
 		if not role:
 			return await ctx.send('Role not found')
+
+		guild_id = str(ctx.guild.id)
+		user_id = str(user.id)
+		role_id = str(role.id)
+		timer = expanded_timer = None
+
 		if user.top_role.position >= ctx.author.top_role.position:
 			return await ctx.send('This user is above your paygrade, take a seat')
 		if role.position >= ctx.author.top_role.position:
 			return await ctx.send('This role is above your paygrade, take a seat')
 		if role in user.roles:
+			add = False
 			await user.remove_roles(role)
 			msg = f'Removed **{role.name}** from @{user.name}'
+			if guild_id in self.rp and user_id in self.rp[guild_id]:
+				if role_id in self.rp[guild_id][user_id]:
+					del self.rp[guild_id][user_id][role_id]
+					if not self.rp[guild_id][user_id]:
+						del self.rp[guild_id][user_id]
+					if not self.rp[guild_id]:
+						del self.rp[guild_id]
+					await ctx.send('Removed role persist as well')
+					with open(self.path, 'w') as f:
+						json.dump(self.rp, f, ensure_ascii=False)
 		else:
+			add = True
 			await user.add_roles(role)
 			msg = f'Gave **{role.name}** to **@{user.name}**'
+			if timers:
+				timer, expanded_timer = time_to_sleep(timers)
+				await ctx.send(f"I'll keep this stuck to them for {', '.join(expanded_timer)}")
+				if '-np' not in args:
+					if guild_id not in self.rp:
+						self.rp[guild_id] = {}
+					if user_id not in self.rp[guild_id]:
+						self.rp[guild_id][user_id] = {}
+					self.rp[guild_id][user_id][str(role.id)] = time() + timer
+					with open(self.path, 'w') as f:
+						json.dump(self.rp, f, ensure_ascii=False)
 		await ctx.send(msg)
+		if timer:
+			await asyncio.sleep(timer)
+			if add:
+				await user.remove_roles(role)
+				await ctx.send(f"Removed `{role}` from @{user}")
+			else:
+				await user.add_roles(role)
+				await ctx.send(f"Added `{role}` to @{user}")
+			if '-np' not in args:
+				del self.rp[guild_id][user_id][role_id]
+				if not self.rp[guild_id][user_id]:
+					del self.rp[guild_id][user_id]
+				if not self.rp[guild_id]:
+					del self.rp[guild_id]
+				with open(self.path, 'w') as f:
+					json.dump(self.rp, f, ensure_ascii=False)
+
+	@commands.Cog.listener('on_member_join')
+	async def role_persist(self, member):
+		guild_id = str(member.guild.id)
+		user_id = str(member.id)
+		if guild_id in self.rp and user_id in self.rp[guild_id]:
+			for role_id, end_time in self.rp[guild_id][user_id].items():
+				if time() > end_time():
+					del self.rp[guild_id][user_id][role_id]
+					continue
+				role = member.guild.get_role(int(role_id))
+				if role:
+					await member.add_roles(role)
 
 	@commands.command(name="massrole")
 	@commands.cooldown(1, 25, commands.BucketType.guild)
