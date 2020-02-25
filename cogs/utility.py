@@ -464,11 +464,13 @@ class Utility(commands.Cog):
 		self.save_timers()
 
 		await asyncio.sleep(timer)
-		del self.timers[user_id][msg]
-		if not self.timers[user_id]:
-			del self.timers[user_id]
-		self.save_timers()
-		await ctx.send(f"{ctx.author.mention} remember dat thing: {msg}")
+		if user_id in self.timers:
+			if msg in self.timers[user_id]:
+				del self.timers[user_id][msg]
+				if not self.timers[user_id]:
+					del self.timers[user_id]
+				self.save_timers()
+				await ctx.send(f"{ctx.author.mention} remember dat thing: {msg}")
 
 	@commands.command(name='timers', aliases=['reminders'])
 	@commands.cooldown(*utils.default_cooldown())

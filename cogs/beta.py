@@ -117,7 +117,6 @@ class UtilityBeta(commands.Cog):
                     else:
                         user_info["Active on PC 🖥"] = None
 
-                member_info = {}
                 if user.name != user.display_name:
                     member_info['Display Name'] = user.display_name
                 if user.activity:
@@ -133,9 +132,7 @@ class UtilityBeta(commands.Cog):
 
                 notable = ['view_audit_log', 'manage_roles', 'manage_channels', 'manage_emojis',
                            'kick_members', 'ban_members', 'manage_messages', 'mention_everyone']
-                member_info = {
-                    'Access': f"{emojis('text_channel')} {text} {emojis('voice_channel')} {voice}"
-                }
+                member_info['Access'] = f"{emojis('text_channel')} {text} {emojis('voice_channel')} {voice}"
                 if any(k in notable and v for k, v in list(user.guild_permissions)):
                     perms = [k for k, v in user.guild_permissions if k in notable and v]
                     perms = ['administrator'] if user.guild_permissions.administrator else perms

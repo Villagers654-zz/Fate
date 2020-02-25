@@ -174,7 +174,12 @@ class SecureLog(commands.Cog):
 
                 try:
                     if isinstance(category, discord.TextChannel):  # single channel log
-                        await category.send(embed=embed, files=files)
+                        try:
+                            await category.send(embed=embed, files=files)
+                        except:
+                            e = discord.Embed(title='Failed to send embed')
+                            e.description = f'```{json.dumps(embed.to_dict(), indent=2)}```'
+                            await category.send(embed=e)
                         if file_paths:
                             for file in file_paths:
                                 if os.path.isfile(file):
@@ -192,7 +197,12 @@ class SecureLog(commands.Cog):
                                 )
                                 self.config[guild_id]['channels'][Type] = channel.id
                                 self.save_data()
-                            await channel.send(embed=embed, files=files)
+                            try:
+                                await channel.send(embed=embed, files=files)
+                            except:
+                                e = discord.Embed(title='Failed to send embed')
+                                e.description = f'```json\n{json.dumps(embed.to_dict(), indent=2)}```'
+                                await channel.send(embed=e)
                             if file_paths:
                                 for file in file_paths:
                                     if os.path.isfile(file):
@@ -200,9 +210,10 @@ class SecureLog(commands.Cog):
                             self.queue[guild_id].remove(list_obj)
                             self.recent_logs[guild_id][channelType].append(embed)
                             break
-                except Exception as e:
+                except:
                     err_channel = self.bot.get_channel(577661461543780382)
                     await err_channel.send(f"Secure Log Error\n{str(traceback.format_exc())[-1980:]}")
+                    await err_channel.send(f'```json\n{json.dumps(embed.to_dict(), indent=2)}```')
 
                 if log_type == 'multi':
                     # noinspection PyUnboundLocalVariable
@@ -620,9 +631,9 @@ class SecureLog(commands.Cog):
                 e = discord.Embed(color=purple())
                 dat = await self.search_audit(msg.guild, audit.message_delete)
                 if dat['thumbnail_url'] == msg.guild.icon_url:
-                    dat['thumbnail_url'] = msg.author.id
-                e.set_author(name='~==🍸Msg Deleted🍸==~', icon_url=dat['user'])
-                e.set_thumbnail(url=dat['icon_url'])
+                    dat['thumbnail_url'] = msg.author.avatar_url
+                e.set_author(name='~==🍸Msg Deleted🍸==~', icon_url=dat['thumbnail_url'])
+                e.set_thumbnail(url=msg.author.avatar_url)
                 e.description = self.bot.utils.format_dict({
                     "Author": msg.author.mention,
                     "Channel": msg.channel.mention,
@@ -1083,16 +1094,23 @@ class SecureLog(commands.Cog):
             e.description = self.bot.utils.format_dict({
                 "Name": role.name,
                 "ID": role.id,
-                "Members": len(role.members),
+                "Members": len(role.members) if role.members else 'None',
                 "Deleted by": dat['user']
             })
+            card = Image.new('RGBA', (25, 25), color=role.color.to_rgb())
+            fp = os.getcwd() + f'/static/color-{r.randint(1111, 9999)}.png'
+            card.save(fp, format='PNG')
+            e.set_footer(
+                text=f"Hex {role.color} | RGB {role.color.to_rgb()}",
+                icon_url="attachment://" + os.path.basename(fp)
+            )
             path = f'./static/role-members-{r.randint(1, 9999)}.txt'
             members = f"{role.name} - Member List"
             for member in role.members:
                 members += f"\n{member.id}, {member.mention}, {member}, {member.display_name}"
             with open(path, 'w') as f:
                 f.write(members)
-            self.queue[guild_id].append([(e, path), 'actions'])
+            self.queue[guild_id].append([(e, [path, fp]), 'actions'])
 
     @commands.Cog.listener()
     async def on_guild_role_update(self, before, after):
