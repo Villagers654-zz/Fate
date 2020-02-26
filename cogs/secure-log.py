@@ -73,12 +73,8 @@ class SecureLog(commands.Cog):
         self.invites = {}
         if self.bot.is_ready():
             self.bot.loop.create_task(self.init_invites())
-
-        self.queues = {}
-        for guild_id in self.config.keys():
-            queue = bot.loop.create_task(self.start_queue(guild_id))
-            self.queues[guild_id] = queue
-
+            for guild_id in self.config.keys():
+                bot.tasks.start(self.start_queue, guild_id, task_id=f'queue-{guild_id}')
         self.role_pos_cd = {}
 
     def save_data(self):
@@ -113,6 +109,14 @@ class SecureLog(commands.Cog):
         be able to resend if deleted """
 
         guild = self.bot.get_guild(int(guild_id))
+        index = 1
+        while not guild:
+            await asyncio.sleep(60)
+            guild = self.bot.get_guild(int(guild_id))
+            index += 1
+            if index == 60*12:
+                del self.config[guild_id]
+                return
         if guild_id not in self.queue:
             self.queue[guild_id] = []
         if guild_id not in self.recent_logs:
@@ -472,7 +476,7 @@ class SecureLog(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         for guild_id in self.config.keys():
-            self.bot.loop.create_task(self.start_queue(guild_id))
+            self.bot.tasks.start(self.start_queue, guild_id, task_id=f'queue-{guild_id}')
         await self.init_invites()
 
     @commands.Cog.listener()

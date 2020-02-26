@@ -419,6 +419,19 @@ class Utility(commands.Cog):
 		await role.edit(color=hex)
 		await ctx.send(f'Changed {role.name}\'s color from {previous_color} to {hex}')
 
+	async def remind(self, user_id, msg, dat):
+		end_time = datetime.strptime(dat['timer'], "%Y-%m-%d %H:%M:%S.%f")
+		await discord.utils.sleep_until(end_time)
+		channel = self.bot.get_channel(dat['channel'])
+		try:
+			await channel.send(f"{dat['mention']} remember dat thing: {msg}")
+		except (discord.errors.Forbidden, discord.errors.NotFound):
+			pass
+		del self.timers[user_id][msg]
+		if not self.timers[user_id]:
+			del self.timers[user_id]
+		self.save_timers()
+
 	@commands.command(name='reminder', aliases=['timer', 'remindme'])
 	@commands.cooldown(2, 5, commands.BucketType.user)
 	async def timer(self, ctx, *args):
@@ -462,15 +475,10 @@ class Utility(commands.Cog):
 			'expanded_timer': expanded_timer
 		}
 		self.save_timers()
-
-		await asyncio.sleep(timer)
-		if user_id in self.timers:
-			if msg in self.timers[user_id]:
-				del self.timers[user_id][msg]
-				if not self.timers[user_id]:
-					del self.timers[user_id]
-				self.save_timers()
-				await ctx.send(f"{ctx.author.mention} remember dat thing: {msg}")
+		self.bot.tasks.start(
+			self.remind, user_id, msg, self.timers[user_id][msg],
+			task_id=f"timer-{self.timers[user_id][msg]['timer']}"
+		)
 
 	@commands.command(name='timers', aliases=['reminders'])
 	@commands.cooldown(*utils.default_cooldown())
@@ -495,6 +503,14 @@ class Utility(commands.Cog):
 				continue
 			e.add_field(name=f'Ending in {expanded_time}', value=f'{channel.mention} - `{msg}`', inline=False)
 		await ctx.send(embed=e)
+
+	@commands.Cog.listener('on_ready')
+	async def resume_timers(self):
+		for user_id, timers in self.timers.items():
+			for timer, dat in timers.items():
+				self.bot.tasks.start(
+					self.remind, user_id, timer, dat, task_id=f"timer-{dat['timer']}"
+				)
 
 	@commands.command(name='findmsg')
 	@commands.cooldown(1, 5, commands.BucketType.channel)
@@ -725,23 +741,6 @@ class Utility(commands.Cog):
 		self.afk[str(ctx.author.id)] = reason
 		await asyncio.sleep(5)
 		await ctx.message.delete()
-
-	async def remind(self, user_id, msg, dat):
-		end_time = datetime.strptime(dat['timer'], "%Y-%m-%d %H:%M:%S.%f")
-		await discord.utils.sleep_until(end_time)
-		channel = self.bot.get_channel(dat['channel'])
-		try:
-			await channel.send(f"{dat['mention']} remember dat thing: {msg}")
-		except (discord.errors.Forbidden, discord.errors.NotFound):
-			print(f'Error sending reminder {msg}')
-		del self.timers[user_id][msg]
-		self.save_timers()
-
-	@commands.Cog.listener()
-	async def on_ready(self):
-		for user_id, timers in self.timers.items():
-			for timer, dat in timers.items():
-				self.bot.loop.create_task(self.remind(user_id, timer, dat))
 
 	@commands.Cog.listener()
 	async def on_message(self, msg):

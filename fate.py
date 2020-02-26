@@ -102,7 +102,7 @@ async def on_ready():
 	for error in login_errors:
 		await channel.send(f'```{str(error)[:1990]}```')
 
-	bot.tasks.ensure_all_are_running()
+	bot.tasks.ensure_all()
 
 
 @bot.event

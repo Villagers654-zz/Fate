@@ -10,32 +10,39 @@ class Tasks:
 		self.enabled_tasks = [self.status_task, self.debug_log]
 		self.running = []
 
-	def tasks(self):
+	def running_tasks(self):
 		return [
 			task for task in asyncio.all_tasks(self.bot.loop) if not task.done() and not task.cancelled()
 		]
 
-	def names(self):
-		return [task.get_name() for task in self.tasks()]
+	def running_task_names(self):
+		return sorted([task.get_name() for task in self.running_tasks()])
 
-	def ensure_all_are_running(self):
+	def ensure_all(self):
+		"""Start any core tasks that aren't running"""
 		for coro in self.enabled_tasks:
-			if coro in self.running:
-				continue
-			else:
-				self.bot.loop.create_task(coro())
-				self.running.append(coro)
-			# if coro.__name__ not in [task.get_name() for task in self.tasks()]:
-			# 	new_task = self.bot.loop.create_task(coro())
-			# 	new_task.set_name(coro.__name__)
-			# 	print(f'Started task {new_task.get_name()}')
+			if coro.__name__ not in [task.get_name() for task in self.running_tasks()]:
+				new_task = self.bot.loop.create_task(coro())
+				new_task.set_name(coro.__name__)
+				print(f'Started task {new_task.get_name()}')
 
-	def start(self, coro):
-		new_task = self.bot.loop.create_task(coro())
-		new_task.set_name(coro.__name__)
+	def start(self, coro, *args, **kwargs):
+		"""Start a task without fear of duplicates"""
+		if 'task_id' in kwargs:
+			task_id = kwargs['task_id']  # type: str
+			del kwargs['task_id']
+		else:
+			task_id = coro.__name__
+
+		if task_id in self.running_task_names():
+			return None
+
+		new_task = self.bot.loop.create_task(coro(*args, **kwargs))
+		new_task.set_name(task_id)
 		return new_task
 
 	def cancel(self, task_name):
+		"""Cancel a running task - doesn't work"""
 		for task in asyncio.all_tasks(self.bot.loop):
 			if task.get_name() == task_name:
 				task.cancel()
