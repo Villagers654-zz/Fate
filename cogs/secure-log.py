@@ -1182,8 +1182,8 @@ class SecureLog(commands.Cog):
 
             if before.position != after.position:
                 em = discord.Embed()
-                em.description = f"Channel '{before.name}' was moved"
-                self.queue[guild_id].append(em)
+                em.description = f"Role {before.mention} was moved"
+                self.queue[guild_id].append([em, 'updates'])
                 # before_roles = before.guild.roles
                 # before_roles.pop(after.position)
                 # before_roles.insert(before.position, before)
@@ -1213,7 +1213,7 @@ class SecureLog(commands.Cog):
             if before.permissions != after.permissions:
                 changes = ''
                 for i, (perm, value) in enumerate(iter(before.permissions)):
-                    if value != after.permissions[i][1]:
+                    if value != list(after.permissions)[i][1]:
                         changes += f"\n• {perm} {'allowed' if value else 'unallowed'}"
                 e.add_field(name='◈ Permissions Changed', value=changes, inline=False)
             if e.fields:
