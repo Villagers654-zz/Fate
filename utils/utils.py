@@ -5,11 +5,13 @@ from os.path import isfile
 import json
 from io import BytesIO
 import requests
-from colormap import rgb2hex
+import subprocess
+import os
 
 from discord.ext import commands
 import discord
 from PIL import Image
+from colormap import rgb2hex
 
 from utils import colors
 
@@ -321,6 +323,49 @@ async def get_images(ctx) -> list:
 			return image_links
 	await ctx.send('No images found in the last 10 msgs')
 	return image_links
+
+
+class MemoryInfo:
+	@staticmethod
+	async def __coro_fetch(interval=0):
+		p = subprocess.Popen(f'python3 memory_info.py {os.getpid()} {interval}', stdout=subprocess.PIPE, shell=True)
+		await asyncio.sleep(1)
+		(output, err) = p.communicate()
+		output = output.decode()
+		return json.loads(output)
+
+	@staticmethod
+	def __fetch(interval=1):
+		p = subprocess.Popen(f'python3 memory_info.py {os.getpid()} {interval}', stdout=subprocess.PIPE, shell=True)
+		(output, err) = p.communicate()
+		output = output.decode()
+		return json.loads(output)
+
+	@staticmethod
+	async def full(interval=1):
+		return await MemoryInfo.__coro_fetch(interval)
+
+	@staticmethod
+	async def cpu(interval=1):
+		mem = await MemoryInfo.__coro_fetch(interval)
+		return mem['PID']['CPU']
+
+	@staticmethod
+	def ram(interval=0):
+		return MemoryInfo.__fetch(interval)['PID']['RAM']['RSS']
+
+	@staticmethod
+	async def cpu_info(interval=1):
+		mem = await MemoryInfo.__coro_fetch(interval)
+		return {'global': mem['GLOBAL']['CPU'], 'bot': mem['PID']['CPU']}
+
+	@staticmethod
+	def global_cpu(interval=1):
+		return MemoryInfo.__fetch(interval)['GLOBAL']['CPU']
+
+	@staticmethod
+	def global_ram(interval=0):
+		return MemoryInfo.__fetch()['GLOBAL']['RAM']['USED']
 
 
 class Bot:
