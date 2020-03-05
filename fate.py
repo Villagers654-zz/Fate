@@ -7,6 +7,7 @@ from datetime import datetime
 import os
 import subprocess
 import logging
+import asyncio
 
 import discord
 from discord.ext import commands
@@ -24,6 +25,10 @@ class Fate(commands.Bot):
 		self.get_stats = self.utils.get_stats()
 		self.get_config = self.utils.get_config()
 
+		# memory info
+
+		self.memory = utils.MemoryInfo
+
 		super().__init__(self.utils.get_prefixes, **options)
 
 
@@ -36,7 +41,7 @@ initial_extensions = [
 	'polis', 'apis', 'chatbridges', 'clean_rythm', 'utility', 'psutil', 'rules', 'duel_chat', 'selfroles',
 	'lock', 'audit', 'cookies', 'backup', 'stats', 'server_list', 'emojis', 'logger', 'autorole', 'changelog',
 	'restore_roles', 'chatbot', 'anti_spam', 'anti_raid', 'chatfilter', 'nsfw', 'minecraft', 'chatlock', 'rainbow',
-	'system', 'user', 'limiter', 'dm_channel', 'factions', 'secure_overwrites', 'server_setup', 'secure-log', 'ranking',
+	'system', 'user', 'limiter', 'dm_channel', 'factions', 'secure_overwrites', 'server_setup', 'secure-log',
 	'global-chat', 'beta'
 ]
 login_errors = []

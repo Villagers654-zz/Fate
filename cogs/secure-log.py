@@ -224,6 +224,7 @@ class SecureLog(commands.Cog):
                     self.recent_logs[guild_id][channelType] = self.recent_logs[guild_id][channelType][-50:]
                 elif log_type == 'single':
                     self.recent_logs[guild_id] = self.recent_logs[guild_id][-175:]
+                await asyncio.sleep(0.21)
 
     async def init_invites(self):
         """ Indexes each servers invites """

@@ -74,13 +74,18 @@ class Mod(commands.Cog):
 		async def unmute():
 			if mute_role:
 				if mute_role in user.roles:
-					await user.remove_roles(mute_role)
-					await channel.send(f"**Unmuted:** {user.name}")
+					try:
+						await user.remove_roles(mute_role)
+					except discord.errors.Forbidden:
+						pass
 			for role_id in removed_roles:
 				role = channel.guild.get_role(role_id)
 				if role:
 					if role not in user.roles:
-						await user.add_roles(role)
+						try:
+							await user.add_roles(role)
+						except discord.errors.Forbidden:
+							pass
 						await asyncio.sleep(0.5)
 		if datetime.now() < end_time:
 			await asyncio.sleep(sleep_time)
@@ -925,6 +930,13 @@ class Mod(commands.Cog):
 					del self.rp[guild_id]
 				with open(self.path, 'w') as f:
 					json.dump(self.rp, f, ensure_ascii=False)
+
+	# @commands.command(name='rolepersist')
+	# @commands.cooldown(2, 5, commands.BucketType.user)
+	# async def role_persist(self, ctx, user: User, *, role):
+	# 	role = self.bot.utils.get_role(role)
+	# 	if not role:
+
 
 	@commands.Cog.listener('on_member_join')
 	async def role_persist(self, member):

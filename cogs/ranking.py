@@ -284,6 +284,7 @@ class Ranking(commands.Cog):
 					new_xp = self.vclb[user_id] + dat[0]
 					await db.execute(f"UPDATE '{guild_id}' SET xp = {new_xp} WHERE user_id = {user_id};")
 					await db.commit()
+				del self.vclb[user_id]
 			if before.channel and after.channel:
 				if before.channel.id != after.channel.id:
 					channel_id = str(before.channel.id)
