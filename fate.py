@@ -42,7 +42,7 @@ initial_extensions = [
 	'lock', 'audit', 'cookies', 'backup', 'stats', 'server_list', 'emojis', 'logger', 'autorole', 'changelog',
 	'restore_roles', 'chatbot', 'anti_spam', 'anti_raid', 'chatfilter', 'nsfw', 'minecraft', 'chatlock', 'rainbow',
 	'system', 'user', 'limiter', 'dm_channel', 'factions', 'secure_overwrites', 'server_setup', 'secure-log',
-	'global-chat', 'beta'
+	'global-chat', 'beta', 'ranking'
 ]
 login_errors = []
 
