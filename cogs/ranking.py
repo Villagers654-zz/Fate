@@ -789,9 +789,10 @@ class Ranking(commands.Cog):
 				vc_xp[g_id] = {
 					user_id: xp for user_id, xp in dat
 				}
-		leaderboards['Vc Leaderboard'] = {
-			user_id: timedelta(seconds=xp) for user_id, xp in vc_xp[guild_id].items()
-		}
+		if guild_id in vc_xp:
+			leaderboards['Vc Leaderboard'] = {
+				user_id: timedelta(seconds=xp) for user_id, xp in vc_xp[guild_id].items()
+			}
 		async with aiosqlite.connect('./data/userdata/global-xp.db') as db:
 			await db.execute("PRAGMA journal_mode=WAL;")
 			cursor = await db.execute("SELECT * FROM msg ORDER BY xp DESC;")
