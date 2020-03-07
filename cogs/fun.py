@@ -34,7 +34,7 @@ class Fun(commands.Cog):
 		if ctx.channel.id in self.bullying:
 			return await ctx.send('I\'m already bullying someone :[')
 		self.bullying.append(ctx.channel.id)
-		await ctx.send('I might as well..\nReply with "cancel" to make me stop')
+		await ctx.send('I might as well..')
 
 		try:
 			dat = outh.reddit()  # type: dict
@@ -48,36 +48,35 @@ class Fun(commands.Cog):
 		reddit_posts = []  # type: praw.Reddit.submission
 
 		for reddit_page in reddits:
-			try:
-				for submission in reddit.subreddit(reddit_page).hot(limit=250):
-					exts = ['.png', '.jpg', '.jpeg', '.gif']
-					if submission.title and all(ext not in submission.url for ext in exts):
+			for submission in reddit.subreddit(reddit_page).hot(limit=250):
+				exts = ['.png', '.jpg', '.jpeg', '.gif']
+				if submission.title and all(ext not in submission.url for ext in exts):
+					if 'insult' not in submission.title and 'roast' not in submission.title:
 						reddit_posts.append(submission)
-			except Exception as e:
-				await ctx.send(f'Error Searching r/{reddit_page}\n{e}')
-				print(traceback.format_exc())
-				return cleanup()
 
-		for i in range(5):
+		for i in range(3):
 			random.shuffle(reddit_posts)
 		print([r.title for r in reddit_posts])
 		for iteration, submission in enumerate(reddit_posts):
 			def pred(m):
-				return m.channel.id == ctx.channel.id and 'cancel' in m.content and not m.author.bot == True
+				return m.channel.id == ctx.channel.id and m.author.id == user.id
+
 			try:
-				msg = await self.bot.wait_for('message', check=pred, timeout=random.randint(10, 25))
+				msg = await self.bot.wait_for('message', check=pred, timeout=60)
 			except asyncio.TimeoutError:
-				pass
-			else:
-				if msg:
-					self.bullying.remove(ctx.channel.id)
-					return await ctx.send('👍')
+				continue
+			if 'stop' in msg.content or 'cancel' in msg.content:
+				await ctx.send('*yeets out the door*')
+				break
 			try:
-				await ctx.send(f'{submission.title}')
-			except:
-				return cleanup()
-			if iteration == 10:
-				return cleanup()
+				await asyncio.sleep(random.randint(1, 3))
+				async with ctx.channel.typing():
+					await asyncio.sleep(len(submission.title)*0.1)
+					await ctx.send(submission.title)
+			except discord.errors.Forbidden:
+				break
+
+		cleanup()
 
 	@commands.command(name='meme')
 	@commands.cooldown(1, 3, commands.BucketType.channel)
