@@ -54,10 +54,10 @@ class Fun(commands.Cog):
 					if 'insult' not in submission.title and 'roast' not in submission.title:
 						reddit_posts.append(submission)
 
-		for i in range(3):
+		for i in range(5):
 			random.shuffle(reddit_posts)
 		print([r.title for r in reddit_posts])
-		for iteration, submission in enumerate(reddit_posts):
+		for iteration, submission in enumerate(reddit_posts[:3]):
 			def pred(m):
 				return m.channel.id == ctx.channel.id and m.author.id == user.id
 

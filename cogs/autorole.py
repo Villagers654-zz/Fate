@@ -96,10 +96,13 @@ class AutoRole(commands.Cog):
 				if role.position >= m.guild.me.top_role.position:
 					try:
 						await m.guild.owner.send(f"**[AutoRole - {m.guild.name}] Error adding {role.name} to user. Its position is higher than mine")
-					except:
+					except discord.errors.Forbidden:
 						pass
 				else:
-					await m.add_roles(role)
+					try:
+						await m.add_roles(role)
+					except discord.errors.NotFound:
+						pass
 
 	@commands.Cog.listener()
 	async def on_role_delete(self, role):

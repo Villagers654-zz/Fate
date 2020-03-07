@@ -1,3 +1,5 @@
+
+import inspect
 from utils import bytes2human as p, config, colors
 from discord.ext import commands
 from datetime import datetime
@@ -7,7 +9,6 @@ import asyncio
 import random
 import psutil
 import json
-import time
 import os
 
 class Menus(commands.Cog):
@@ -214,8 +215,16 @@ class Menus(commands.Cog):
 					if not cmd.usage:
 						return await ctx.send("That command doesn't have extra help information. "
 						                      f"Try using `.{cmd.name}` without any args for help")
-					return await ctx.send(embed=cmd.usage)
-
+					if isinstance(cmd.usage, discord.Embed):
+						e = cmd.usage
+					elif inspect.isclass(cmd.usage):
+						help = cmd.usage(self.bot)
+						e = await help.embed() if help.coro else help.embed()
+					elif inspect.isfunction(cmd.usage):
+						e = cmd.usage()
+					else:
+						return await ctx.send("Oop, my help menu for that command is in an unknown format")
+					return await ctx.send(embed=e)
 
 		emojis = ['🏡', '⏮', '⏪', '⏩', '⏭']
 		index = 0; sub_index = None
