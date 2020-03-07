@@ -11,19 +11,19 @@ memory_info = {
 		'RAM': {
 			"USED": read(psutil.virtual_memory().used),
 			"TOTAL": read(psutil.virtual_memory().total),
-			"PERCENT": f"{round(psutil.virtual_memory().percent)}%"
+			"PERCENT": round(psutil.virtual_memory().percent)
 		},
-		"CPU": f"{round(psutil.cpu_percent())}%",
+		"CPU": round(psutil.cpu_percent()),
 		"STORAGE": {
 			"USED": read(psutil.disk_usage('/').used),
 			"TOTAL": read(psutil.disk_usage('/').total)
 		}
 	},
 	"PID": {
-		"CPU": f"{round(process.cpu_percent(interval=interval))}%",
+		"CPU": round(process.cpu_percent(interval=interval)),
 		"RAM": {
 			"RSS": read(process.memory_full_info().rss),
-			"PERCENT": f"{round(process.memory_percent())}%"
+			"PERCENT": round(process.memory_percent())
 		}
 	}
 }

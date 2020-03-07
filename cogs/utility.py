@@ -121,10 +121,11 @@ class Utility(commands.Cog):
 			e.add_field(name="◈ Summary ◈",  value="Fate is a ~~multipurpose~~ hybrid bot created for fun", inline=False)
 			e.add_field(name="◈ Statistics ◈", value=f'Commands: [{len(self.bot.commands)}]\nModules: [{len(self.bot.extensions)}]\nServers: [{guilds}]\nUsers: [{users}]')
 			e.add_field(name="◈ Credits ◈", value="• Tothy ~ `rival`\n• Cortex ~ `teacher`\n• Discord.py ~ `existing`")
+			bot_cpu = await self.bot.memory.cpu()
 			e.add_field(name="◈ Memory ◈", value=f"__**Storage**__: [{p.bytes2human(psutil.disk_usage('/').used)}/{p.bytes2human(psutil.disk_usage('/').total)}]\n"
 				f"__**RAM**__: [{p.bytes2human(psutil.virtual_memory().used)}/{p.bytes2human(psutil.virtual_memory().total)}] ({psutil.virtual_memory().percent}%)\n"
 				f"__**Bot RAM**__: {p.bytes2human(bot_pid.memory_full_info().rss)} ({round(bot_pid.memory_percent())}%)\n"
-				f"__**CPU**__: **Global**: {psutil.cpu_percent()}% **Bot**: {bot_pid.cpu_percent()}%\n", inline=False)
+				f"__**CPU**__: **Global**: {psutil.cpu_percent()}% **Bot**: {bot_cpu}%\n", inline=False)
 			uptime = (datetime.now() - self.bot.start_time)
 			e.add_field(name="◈ Uptime ◈", value=utils.get_time(round(uptime.total_seconds())), inline=False)
 			e.set_footer(text=f"Powered by Python {platform.python_version()} and Discord.py {discord.__version__}", icon_url="https://cdn.discordapp.com/attachments/501871950260469790/567779834533773315/RPrw70n.png")
