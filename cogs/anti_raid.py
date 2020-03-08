@@ -87,7 +87,7 @@ class Anti_Raid(commands.Cog):
 	async def on_member_join(self, m: discord.Member):
 		""" Prevents mass-join raids """
 		guild_id = str(m.guild.id); user_id = str(m.id)
-		rate_limit = 5
+		rate_limit = 15
 		if guild_id in self.toggle:
 			required_permission = await self.ensure_permissions(m.guild)
 			if not required_permission:
@@ -106,7 +106,7 @@ class Anti_Raid(commands.Cog):
 			if guild_id not in self.last:
 				self.last[guild_id] = {}
 			self.last[guild_id][user_id] = time()
-			now = int(time() / 20)
+			now = int(time() / 25)
 			if guild_id not in self.join_cd:
 				self.join_cd[guild_id] = [now, 0]
 			if self.join_cd[guild_id][0] == now:
