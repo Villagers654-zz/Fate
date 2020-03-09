@@ -240,7 +240,7 @@ class UtilityBeta(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        self.bot.loop.create_task(self.save_data())
+        self.bot.tasks.start(self.save_data(), task_id='info-save')
 
     @commands.Cog.listener()
     async def on_message(self, msg):
