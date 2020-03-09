@@ -218,36 +218,42 @@ class GlobalChat(commands.Cog):
 					for guild_id, conf in list(self.config.items()):
 						if guild_id == str(msg.guild.id):
 							continue
-						try:
-							if conf['webhook']:
-								if '@' in msg.content:
-									msg.content = str(msg.content).replace('@', '!')
+						if conf['webhook']:
+							if '@' in msg.content:
+								msg.content = str(msg.content).replace('@', '!')
+							try:
 								webhook = Webhook.from_url(conf['webhook'], adapter=AsyncWebhookAdapter(session))
 								await webhook.send(
 									msg.content, username=msg.author.display_name, avatar_url=msg.author.avatar_url
 								)
+							except:  # invalid webhook url
+								del self.config[guild_id]
+						else:
+							channel = self.bot.get_channel(conf['channel'])
+							if not channel:
+								try:
+									channel = await self.bot.fetch_channel(conf['channel'])
+								except discord.errors.NotFound:
+									del self.config[guild_id]
+									continue
+							if profanity and not channel.is_nsfw():
+								content = '`[filtered message]`'
 							else:
-								channel = self.bot.get_channel(conf['channel'])
-								if profanity and not channel.is_nsfw():
-									content = '`[filtered message]`'
-								else:
-									content = msg.content
-								if msg.author.id == self.last_user and msg.channel.id == self.last_channel and not msg.attachments:
-									async for m in channel.history(limit=5):
-										if m.author.id == self.bot.user.id:
-											e = m.embeds[0]
-											e.description += f'\n{content}'
-											await m.edit(embed=e)
-											break
-								else:
-									e = discord.Embed(color=msg.author.color)
-									e.set_author(name=str(msg.author), icon_url=msg.author.avatar_url)
-									e.description = content
-									if msg.attachments:
-										e.set_image(url=msg.attachments[0].url)
-									await channel.send(embed=e)
-						except:  # invalid webhook url
-							del self.config[guild_id]
+								content = msg.content
+							if msg.author.id == self.last_user and msg.channel.id == self.last_channel and not msg.attachments:
+								async for m in channel.history(limit=5):
+									if m.author.id == self.bot.user.id:
+										e = m.embeds[0]
+										e.description += f'\n{content}'
+										await m.edit(embed=e)
+										break
+							else:
+								e = discord.Embed(color=msg.author.color)
+								e.set_author(name=str(msg.author), icon_url=msg.author.avatar_url)
+								e.description = content
+								if msg.attachments:
+									e.set_image(url=msg.attachments[0].url)
+								await channel.send(embed=e)
 				self.last_user = msg.author.id
 				self.last_channel = msg.channel.id
 
