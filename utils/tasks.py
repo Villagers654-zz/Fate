@@ -39,7 +39,7 @@ class Tasks:
 
 		new_task = self.bot.loop.create_task(coro(*args, **kwargs))
 		new_task.set_name(task_id)
-		print(f'Started {task_id}')
+		print(f'Started task {task_id}')
 		return new_task
 
 	def cancel(self, task_name):

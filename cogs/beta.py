@@ -6,6 +6,7 @@ from time import time
 import re
 from datetime import datetime
 import asyncio
+import os
 
 from discord.ext import commands
 import discord
@@ -35,14 +36,17 @@ class UtilityBeta(commands.Cog):
 
     async def save_data(self):
         while True:
-            await asyncio.sleep(60*5)
-            async with aiofiles.open(self.path, 'w+') as f:
+            await asyncio.sleep(60*5)  # save every 5mins
+            async with aiofiles.open(self.path+'.temp', 'w+') as f:
                 await f.write(
                     json.dumps(
                         {'guild_logs': self.guild_logs, 'user_logs': self.user_logs, 'misc_logs': self.misc_logs},
                         indent=2, sort_keys=True, ensure_ascii=False
                     )
                 )
+                os.rename(self.path, self.path+'.old')
+                os.rename(self.path+'.temp', self.path)
+                os.remove(self.path+'.old')
 
     def setup_if_not_exists(self, *args):
         for arg in args:
@@ -240,7 +244,7 @@ class UtilityBeta(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        self.bot.tasks.start(self.save_data(), task_id='info-save')
+        self.bot.tasks.start(self.save_data, task_id='save-info-data')
 
     @commands.Cog.listener()
     async def on_message(self, msg):
