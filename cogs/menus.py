@@ -65,7 +65,9 @@ class Menus(commands.Cog):
 			owner = self.bot.get_user(config.owner_id())
 			e.set_author(name='~==🥂🍸🍷Core🍷🍸🥂==~', icon_url=owner.avatar_url)
 			e.set_thumbnail(url=self.bot.user.avatar_url)
-			e.description = '• **info** `depending on your args it provides information for users/roles/channels & invites`\n' \
+			e.description = '• **enable** - `enable a command`\n' \
+			    '• **disable** - `disable a command`' \
+			    '• **info** `depending on your args it provides information for users/roles/channels & invites`\n' \
 				'• **sinfo** - `sends server info`\n' \
 			    '• **leaderboard** - `servers lvl/xp ranking`\n' \
 			    '• **gleaderboard** - `global lvl/xp ranking`\n' \
