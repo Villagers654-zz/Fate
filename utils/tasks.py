@@ -94,3 +94,26 @@ class Tasks:
 				log = []
 				reads = 0
 			await asyncio.sleep(1)
+
+	async def log_queue(self):
+		if not self.bot.is_ready():
+			await self.bot.wait_until_ready()
+		channel = await self.bot.fetch_channel(self.bot.config['log_channel'])
+		while True:
+			await asyncio.sleep(1)
+			if not self.bot.logs:
+				continue
+			message = '```'
+			for log in list(self.bot.logs):  # type: str
+				self.bot.logs.remove(log)
+				if len(log) >= 2000:
+					for group in self.bot.utils.split(log, 1990):
+						await channel.send(f"```{group}```")
+					continue
+				if len(message) + len(log) >= 1990:
+					message += '```'
+					await channel.send(message)
+					message = '```'
+				message += log + '\n'
+			message += '```'
+			await channel.send(message)

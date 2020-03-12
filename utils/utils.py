@@ -16,6 +16,17 @@ from colormap import rgb2hex
 from utils import colors
 
 
+class Result:
+	def __init__(self, result, errored=False, traceback=None):
+		self.result = result
+		self.errored = errored
+		self.traceback = traceback
+
+
+def split(text, amount=2000) -> list:
+	return [text[i:i + amount] for i in range(0, len(text), amount)]
+
+
 def get_prefix(ctx):
 	guild_id = str(ctx.guild.id)
 	config = ctx.bot.get_config  # type: dict
@@ -55,9 +66,9 @@ def get_prefixes(bot, msg):
 def emojis(emoji):
 	if emoji is None:
 		return '‎'
-	if emoji is "plus":
+	if emoji == "plus":
 		return "<:plus:548465119462424595>"
-	if emoji is "edited":
+	if emoji == "edited":
 		return "<:edited:550291696861315093>"
 	if emoji == 'arrow':
 		date = datetime.utcnow()
