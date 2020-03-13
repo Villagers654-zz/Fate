@@ -50,6 +50,7 @@ class Tasks:
 				print(f'Cancelled {task.get_name()} - {task.cancelled()}')
 
 	async def status_task(self):
+		await asyncio.sleep(10)
 		while True:
 			motds = [
 				'FBI OPEN UP', 'YEET to DELETE', 'Pole-Man', '♡Juice wrld♡', 'Mad cuz Bad', 'Quest for Cake',
