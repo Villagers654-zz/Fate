@@ -41,6 +41,10 @@ class Fate(commands.AutoShardedBot):
         self.memory = utils.MemoryInfo  # Class for easily accessing memory usage
         self.tasks = tasks.Tasks(self)  # Task Manager
 
+        # deprecated shit
+        self.get_stats = utils.get_stats
+        self.get_config = utils.get_config
+
         super().__init__(
             command_prefix=utils.get_prefixes,
             activity=discord.Game(name=self.config['startup_status']), **options
