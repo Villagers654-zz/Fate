@@ -3,11 +3,16 @@ import traceback
 from time import time
 from datetime import datetime
 import os
+import asyncio
+# from contextlib import suppress
+import logging
+
 from discord.ext import commands
 import discord
 import aiomysql
 from pymysql.err import OperationalError
 from termcolor import cprint
+
 from utils import outh, utils, tasks, colors
 
 
@@ -15,12 +20,20 @@ class Fate(commands.AutoShardedBot):
     def __init__(self, **options):
         with open('Rewrite/data/config.json', 'r') as f:
             self.config = json.load(f)  # type: dict
-        self.debug = self.config['debug_mode']
+        self.debug_mode = self.config['debug_mode']
         self.pool = None                # MySQL Pool initialized on_ready
-
         self.login_errors = []          # Exceptions ignored during startup
         self.logs = []                  # Logs to send to discord, empties out quickly
-        self.initial_extensions = []    # Cogs to load before logging in
+
+        self.initial_extensions = [     # Cogs to load before logging in
+            'error_handler', 'config', 'menus', 'core', 'music', 'mod', 'welcome', 'farewell', 'notes', 'archive',
+            'coffeeshop', 'custom', 'actions', 'reactions', 'responses', 'textart', 'fun', 'dev', '4b4t', 'readme',
+            'reload', 'embeds', 'polis', 'apis', 'chatbridges', 'clean_rythm', 'utility', 'psutil', 'rules',
+            'duel_chat', 'selfroles', 'lock', 'audit', 'cookies', 'backup', 'stats', 'server_list', 'emojis',
+            'logger', 'autorole', 'changelog', 'restore_roles', 'chatbot', 'anti_spam', 'anti_raid', 'chatfilter',
+            'nsfw', 'minecraft', 'chatlock', 'rainbow', 'system', 'user', 'limiter', 'dm_channel', 'factions',
+            'secure_overwrites', 'server_setup', 'secure-log', 'global-chat', 'beta'
+        ]
         self.awaited_extensions = []    # Cogs to load when the internal cache is ready
 
         self.utils = utils              # Custom utility functions
@@ -44,10 +57,9 @@ class Fate(commands.AutoShardedBot):
                 db=sql.db,
                 loop=self.loop
             )
-        except OperationalError:
-            print(traceback.format_exc())
-            self.log("Couldn't connect to SQL server", 'CRITICAL')
-            self.unload(*self.initial_extensions)
+        except (ConnectionRefusedError, OperationalError):
+            self.log("Couldn't connect to SQL server", 'CRITICAL', tb=traceback.format_exc())
+            self.unload(*self.initial_extensions, log=False)
             self.log("Logging out..")
             await self.logout()
         else:
@@ -63,13 +75,15 @@ class Fate(commands.AutoShardedBot):
             except commands.ExtensionError:
                 self.log(f"Couldn't load {cog}", tb=traceback.format_exc())
 
-    def unload(self, *extensions):
+    def unload(self, *extensions, log=True):
         for cog in extensions:
             try:
                 self.unload_extension(f"cogs.{cog}")
-                self.log(f"Unloaded {cog}")
+                if log:
+                    self.log(f"Unloaded {cog}")
             except commands.ExtensionNotLoaded:
-                self.log(f"Failed to load {cog}")
+                if log:
+                    self.log(f"Failed to unload {cog}")
 
     def reload(self, *extensions):
         for cog in extensions:
@@ -83,8 +97,8 @@ class Fate(commands.AutoShardedBot):
             except commands.ExtensionError:
                 self.log(f"Ignoring exception in Cog: {cog}", tb=traceback.format_exc())
 
-    def log(self, message, level='INFO', tb=None):
-        if level == 'DEBUG' and not self.debug:
+    def log(self, message, level='INFO', tb=None, color=None):
+        if level == 'DEBUG' and not self.debug_mode:
             return
         now = str(datetime.now().strftime("%I:%M%p"))
         if now.startswith('0'):
@@ -93,29 +107,38 @@ class Fate(commands.AutoShardedBot):
         for line in message.split('\n'):
             msg = f"{now} | {level} | {line}"
             if level == 'DEBUG' and self.config['debug_mode']:
-                cprint(msg, 'cyan')
+                cprint(msg, color if color else 'cyan')
             elif level == 'INFO':
-                cprint(msg, 'green')
+                cprint(msg, color if color else 'green')
             elif level == 'CRITICAL':
-                cprint(msg, 'red')
+                cprint(msg, color if color else 'red')
             lines.append(msg)
         if tb:
-            cprint(str(tb), 'red')
+            cprint(str(tb), color if color else 'red')
             lines.append(str(tb))
         self.logs.append('\n'.join(lines))
         self.logs = self.logs[:1000]
 
     def run(self):
-        self.log("Loading cogs")
-        self.load(*self.initial_extensions)
-        self.log("Finished loading cogs\nLogging in..")
+        if bot.initial_extensions:
+            self.log("Loading initial cogs", color='yellow')
+            self.load(*self.initial_extensions)
+            self.log("Finished loading initial cogs\nLogging in..", color='yellow')
         super().run(outh.tokens('fatezero'))
 
 
 start_time = time()
 bot = Fate(max_messages=16000)
-if not bot.config['use_default_help']:
-    bot.remove_command('help')
+bot.remove_command('help')
+
+# debug_task log
+if os.path.isfile('discord.log'):  # reset the file on startup so the debug_log task doesn't resend logs
+    os.remove('discord.log')       # also keeps the file size down and speeds things up
+logger = logging.getLogger('discord')
+logger.setLevel(logging.INFO)
+handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
+handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
+logger.addHandler(handler)
 
 
 @bot.event
@@ -130,9 +153,14 @@ async def on_ready():
         '\nLogged in as'
         f'\n{bot.user}'
         f'\n{bot.user.id}'
-        '\n------------'
+        '\n------------',
+        color='yellow'
     )
     await bot.create_pool()
+    if bot.awaited_extensions:
+        bot.log("Loading awaited cogs", color='yellow')
+        bot.load(*bot.awaited_extensions)
+        bot.log("Finished loading awaited cogs", color='yellow')
     bot.tasks.ensure_all()
     seconds = round(time() - start_time)
     bot.log(f"Startup took {seconds} seconds")
@@ -189,6 +217,7 @@ async def on_guild_remove(guild: discord.Guild):
     await channel.send(embed=e, file=discord.File('members.txt'))
     os.remove('members.txt')
 
+
 @bot.event
 async def on_command(_ctx):
     stats = bot.utils.get_stats()  # type: dict
@@ -197,10 +226,10 @@ async def on_command(_ctx):
         json.dump(stats, f, ensure_ascii=False)
 
 
-bot.log("Starting Bot")
+bot.log("Starting Bot", color='yellow')
 try:
     bot.run()
-except RuntimeError:
-    print("RuntimeError, exiting..")
 except discord.errors.LoginFailure:
     print("Invalid Token")
+except asyncio.exceptions.CancelledError:
+    pass
