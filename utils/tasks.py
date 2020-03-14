@@ -7,7 +7,7 @@ import discord
 class Tasks:
 	def __init__(self, bot):
 		self.bot = bot
-		self.enabled_tasks = [self.status_task, self.debug_log]
+		self.enabled_tasks = [self.status_task, self.log_queue]
 		self.running = []
 
 	def running_tasks(self):
@@ -24,7 +24,7 @@ class Tasks:
 			if coro.__name__ not in [task.get_name() for task in self.running_tasks()]:
 				new_task = self.bot.loop.create_task(coro())
 				new_task.set_name(coro.__name__)
-				print(f'Started task {new_task.get_name()}')
+				self.bot.log(f'Started task {new_task.get_name()}', color='cyan')
 
 	def start(self, coro, *args, **kwargs):
 		"""Start a task without fear of duplicates"""
@@ -39,7 +39,7 @@ class Tasks:
 
 		new_task = self.bot.loop.create_task(coro(*args, **kwargs))
 		new_task.set_name(task_id)
-		print(f'Started task {task_id}')
+		self.bot.log(f'Started task {task_id}', 'DEBUG')
 		return new_task
 
 	def cancel(self, task_name):
@@ -47,7 +47,7 @@ class Tasks:
 		for task in asyncio.all_tasks(self.bot.loop):
 			if task.get_name() == task_name:
 				task.cancel()
-				print(f'Cancelled {task.get_name()} - {task.cancelled()}')
+				self.bot.log(f'Cancelled {task.get_name()} - {task.cancelled()}', 'DEBUG')
 
 	async def status_task(self):
 		await asyncio.sleep(10)
@@ -68,7 +68,7 @@ class Tasks:
 					await asyncio.sleep(15)
 					await self.bot.change_presence(status=discord.Status.dnd, activity=discord.Game(name=f'{stages[i]} | {random.choice(motds)}'))
 				except (discord.errors.Forbidden, discord.errors.HTTPException):
-					print(f'Error changing my status:\n{traceback.format_exc()}')
+					self.bot.log(f'Error changing my status', 'CRITICAL', traceback.format_exc())
 				await asyncio.sleep(15)
 
 	async def debug_log(self):

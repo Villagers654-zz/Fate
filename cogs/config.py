@@ -9,7 +9,7 @@ class Config(commands.Cog):
 		self.bot = bot
 
 	def save_config(self, config):
-		with open('./data/config.json', 'w') as f:
+		with open('./data/userdata/config.json', 'w') as f:
 			json.dump(config, f, ensure_ascii=False)
 
 	def prefix(self, id):
