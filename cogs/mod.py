@@ -639,7 +639,7 @@ class Mod(commands.Cog):
 		finally:
 			del self.purge[channel_id]
 
-	@commands.command(name='ban', aliases=['ban'])
+	@commands.command(name='ban')
 	@commands.cooldown(2, 10, commands.BucketType.guild)
 	@commands.guild_only()
 	@commands.has_permissions(ban_members=True)
