@@ -639,7 +639,7 @@ class Mod(commands.Cog):
 		finally:
 			del self.purge[channel_id]
 
-	@commands.command(name='test-ban')
+	@commands.command(name='id-ban', aliases=['idban'])
 	@commands.cooldown(2, 10, commands.BucketType.guild)
 	@commands.guild_only()
 	@commands.has_permissions(ban_members=True)
@@ -757,6 +757,35 @@ class Mod(commands.Cog):
 			else: await ctx.send(f'**Unbanned {user}**')
 			del self.timers['ban'][guild_id][user_id]
 			self.save_json()
+
+	@commands.command(name='unban')
+	@commands.cooldown(*utils.default_cooldown())
+	@commands.has_permissions(ban_members=True)
+	@commands.bot_has_permissions(embed_links=True, ban_members=True, view_audit_log=True)
+	async def unban(self, ctx, users: Greedy[discord.User], *, reason=':author:'):
+		if not users:
+			async for entry in ctx.guild.audit_logs(limit=1, action=discord.AuditLogAction.ban):
+				users = entry.target,
+		if len(users) == 1:
+			user = users[0]
+			await ctx.guild.unban(user, reason=reason.replace(':author:', str(ctx.author)))
+			e = discord.Embed(color=colors.red())
+			e.set_author(name=f'{user} unbanned', icon_url=user.avatar_url)
+			await ctx.send(embed=e)
+		else:
+			e = discord.Embed(color=colors.green())
+			e.set_author(name=f'Unbanning {len(users)} users', icon_url=ctx.author.avatar_url)
+			e.description = ''
+			msg = await ctx.send(embed=e)
+			index = 1
+			for user in users:
+				e.description += f'✅ {user}'
+				if index == 5:
+					await msg.edit(embed=e)
+					index = 1
+				else:
+					index += 1
+			await msg.edit(embed=e)
 
 	@commands.command(name='bans')
 	@commands.cooldown(1, 10, commands.BucketType.channel)
@@ -1221,7 +1250,7 @@ class Mod(commands.Cog):
 		user_id = str(user.id)
 		guild_id = str(ctx.guild.id)
 		punishments = ['None', 'None', 'Mute', 'Kick', 'Softban', 'Ban']
-		config = self.bot.get_config  # type: dict
+		config = self.bot.utils.get_config  # type: dict
 		if guild_id in config['warns']['punishments']:
 			punishments = config['warns']['punishments'][guild_id]
 		if guild_id not in self.warns:
