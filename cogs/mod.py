@@ -639,16 +639,17 @@ class Mod(commands.Cog):
 		finally:
 			del self.purge[channel_id]
 
-	@commands.command(name='id-ban', aliases=['idban'])
+	@commands.command(name='ban', aliases=['ban'])
 	@commands.cooldown(2, 10, commands.BucketType.guild)
 	@commands.guild_only()
 	@commands.has_permissions(ban_members=True)
 	@commands.bot_has_permissions(embed_links=True, ban_members=True)
-	async def test_ban(self, ctx, ids: Greedy[int], users: Greedy[discord.User], *, reason='Unspecified'):
+	async def ban(self, ctx, ids: Greedy[int], users: Greedy[discord.User], *, reason='Unspecified'):
 		""" Ban cmd that supports more than just members """
 		users_to_ban = len(ids) + len(users)
 		e = discord.Embed(color=colors.fate())
-		e.set_author(name=f"Banning {users_to_ban} user{'' if users_to_ban > 1 else ''}", icon_url=ctx.author.avatar_url)
+		if len(ids if ids else 0) + len(users if users else 0) > 1:
+			e.set_author(name=f"Banning {users_to_ban} user{'' if users_to_ban > 1 else ''}", icon_url=ctx.author.avatar_url)
 		e.set_thumbnail(url='https://cdn.discordapp.com/attachments/514213558549217330/514345278669848597/8yx98C.gif')
 		msg = await ctx.send(embed=e)
 		for id in ids:
@@ -702,23 +703,23 @@ class Mod(commands.Cog):
 		except:
 			pass
 
-	@commands.command(name='ban')
-	@commands.guild_only()
-	@commands.has_permissions(ban_members=True)
-	@commands.bot_has_permissions(ban_members=True)
-	async def _ban(self, ctx, user:discord.Member, *, reason='unspecified reasons'):
-		if user.top_role.position >= ctx.author.top_role.position:
-			return await ctx.send('That user is above your paygrade, take a seat')
-		if user.top_role.position >= ctx.guild.me.top_role.position:
-			return await ctx.send('I can\'t ban that user ;-;')
-		await ctx.guild.ban(user, reason=reason, delete_message_days=0)
-		e = discord.Embed(color=0x80b0ff)
-		e.set_author(name=f'banned {user}', icon_url=user.avatar_url)
-		await ctx.send(embed=e)
-		try:
-			await user.send(f"You have been banned from **{ctx.guild.name}** by **{ctx.author.name}** for `{reason}`")
-		except:
-			pass
+	# @commands.command(name='ban')
+	# @commands.guild_only()
+	# @commands.has_permissions(ban_members=True)
+	# @commands.bot_has_permissions(ban_members=True)
+	# async def _ban(self, ctx, user:discord.Member, *, reason='unspecified reasons'):
+	# 	if user.top_role.position >= ctx.author.top_role.position:
+	# 		return await ctx.send('That user is above your paygrade, take a seat')
+	# 	if user.top_role.position >= ctx.guild.me.top_role.position:
+	# 		return await ctx.send('I can\'t ban that user ;-;')
+	# 	await ctx.guild.ban(user, reason=reason, delete_message_days=0)
+	# 	e = discord.Embed(color=0x80b0ff)
+	# 	e.set_author(name=f'banned {user}', icon_url=user.avatar_url)
+	# 	await ctx.send(embed=e)
+	# 	try:
+	# 		await user.send(f"You have been banned from **{ctx.guild.name}** by **{ctx.author.name}** for `{reason}`")
+	# 	except:
+	# 		pass
 
 	@commands.command(name='softban', aliases=['tempban'])
 	@commands.cooldown(1, 5, commands.BucketType.user)
