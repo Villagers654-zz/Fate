@@ -7,7 +7,7 @@ import discord
 class Tasks:
 	def __init__(self, bot):
 		self.bot = bot
-		self.enabled_tasks = [self.status_task, self.log_queue]
+		self.enabled_tasks = [self.status_task, self.log_queue, self.debug_log]
 		self.running = []
 
 	def running_tasks(self):

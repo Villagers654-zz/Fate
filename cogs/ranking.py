@@ -10,11 +10,13 @@ from datetime import datetime, timedelta
 import requests
 from io import BytesIO
 import aiosqlite
+from contextlib import suppress
 
 from discord.ext import commands
 import discord
 from PIL import Image, ImageFont, ImageDraw, ImageSequence
 import aiofiles as aio
+import sqlite3
 
 from utils import colors, utils
 
@@ -143,36 +145,27 @@ class Ranking(commands.Cog):
 			if guild_id in self.config:
 				conf = self.config[guild_id]
 			new_xp = randint(conf['min_xp_per_msg'], conf['max_xp_per_msg'])
-
-			# global leveling
 			if user_id not in self.global_cd:
 				self.global_cd[user_id] = 0
 			if self.global_cd[user_id] < time() - 10:
-				while self.write['global']:
-					await asyncio.sleep(0.21)
-				self.write['global'] = True
-				async with aiosqlite.connect('./data/userdata/global-xp.db') as db:
-					await db.execute(f"PRAGMA journal_mode=WAL;")
-					cursor = await db.execute(f"SELECT xp FROM msg WHERE user_id = {user_id} LIMIT 1;")
-					dat = await cursor.fetchone()
-					if not dat:
-						await db.execute(f"INSERT INTO msg VALUES ({user_id}, 0);")
-						dat = (0,)
-					msg_xp = dat[0]  # type: int
-					cursor = await db.execute(f"SELECT * FROM monthly_msg WHERE user_id = {user_id};")
-					dat = await cursor.fetchall()
-					monthly_xp = 0
-					for user_id, msg_time, xp in dat:
-						if msg_time > time() - 60*60*24*30:
-							monthly_xp += msg_xp
-						else:
-							await db.execute(
-								f"DELETE FROM monthly_msg WHERE msg_time = '{msg_time}' and user_id = {user_id};"
-							)
-					await db.execute(f"UPDATE msg SET xp = {msg_xp+new_xp} WHERE user_id = {user_id};")
-					await db.execute(f"INSERT INTO monthly_msg VALUES ({user_id}, {time()}, {new_xp});")
-					await db.commit()
-				self.write['global'] = False
+
+				# global msg xp
+				results = await self.bot.select('xp', 'global_msg', user_id=user_id)
+				if not results:
+					await self.bot.insert('global_msg', user_id, new_xp)
+				else:
+					await self.bot.update('global_msg', xp=results[1]+new_xp, user_id=user_id)
+
+				# global monthly msg xp
+				await self.bot.insert('global_monthly', user_id, time(), new_xp)
+				# results = await self.bot.select('msg_time', 'global_monthly', user_id=user_id)
+				# expired = [msg_time for msg_time in results if msg_time > time() - 60 * 60 * 24 * 30]
+				# if expired:
+				# 	async with self.bot.pool.acquire() as conn:
+				# 		async with conn.cursor() as cur:
+				# 			for msg_time in expired:
+				# 				await cur.execute(f"DELETE FROM global_msg WHERE msg_time = {msg_time}")
+				# 			await conn.commit()
 
 			# per-server leveling
 			if guild_id not in self.cd:
@@ -181,26 +174,18 @@ class Ranking(commands.Cog):
 				self.cd[guild_id][user_id] = []
 			msgs = [x for x in self.cd[guild_id][user_id] if x > time() - conf['timeframe']]
 			if len(msgs) < conf['msgs_within_timeframe']:
-				while self.write['guilded']:
-					await asyncio.sleep(0.21)
-				self.write['guilded'] = True
-				self.cd[guild_id][user_id].append(time())
-				async with aiosqlite.connect('./data/userdata/msg-xp.db') as db:
-					await db.execute("PRAGMA journal_mode=WAL;")
-					await db.execute(f"CREATE TABLE IF NOT EXISTS '{guild_id}' (user_id int, xp int);")
-					cursor = await db.execute(f"SELECT xp FROM '{guild_id}' WHERE user_id = {user_id};")
-					dat = await cursor.fetchone()
-					if not dat:
-						await db.execute(f"INSERT INTO '{guild_id}' VALUES ({user_id}, 0);")
-						dat = (0,)
-					await db.execute(f"UPDATE '{guild_id}' SET xp = {new_xp+dat[0]} WHERE user_id = {user_id};")
-					await db.commit()
-				async with aiosqlite.connect('./data/userdata/monthly-xp.db') as db:
-					await db.execute(f"PRAGMA journal_mode=WAL;")
-					await db.execute(f"CREATE TABLE IF NOT EXISTS '{guild_id}' (user_id int, msg_time float, xp int);")
-					await db.execute(f"INSERT INTO '{guild_id}' VALUES ({user_id}, {time()}, {new_xp});")
-					await db.commit()
-				self.write['guilded'] = False
+
+				# guilded msg xp
+				results = await self.bot.select('*', 'msg', guild_id=guild_id)
+				if user_id not in [r[1] for r in results]:
+					await self.bot.insert('msg', guild_id, user_id, new_xp)
+				else:
+					for guild_id, uid, xp in results:
+						if uid == user_id:
+							await self.bot.update('msg', xp=new_xp+xp, guild_id=guild_id, user_id=user_id)
+
+				# monthly guilded msg xp
+				await self.bot.insert('monthly_msg', guild_id, user_id, time(), new_xp)
 
 	@commands.Cog.listener()
 	async def on_command_completion(self, ctx):

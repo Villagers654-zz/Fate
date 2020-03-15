@@ -4,7 +4,6 @@ from time import time
 from datetime import datetime
 import os
 import asyncio
-# from contextlib import suppress
 import logging
 
 from discord.ext import commands
@@ -42,8 +41,8 @@ class Fate(commands.AutoShardedBot):
         self.tasks = tasks.Tasks(self)  # Task Manager
 
         # deprecated shit
-        self.get_stats = utils.get_stats
-        self.get_config = utils.get_config
+        self.get_stats = utils.get_stats()
+        self.get_config = utils.get_config()
 
         super().__init__(
             command_prefix=utils.get_prefixes,
@@ -68,6 +67,42 @@ class Fate(commands.AutoShardedBot):
             await self.logout()
         else:
             self.log(f"Initialized db {sql.db} with {sql.user}@{sql.host}")
+
+    async def insert(self, table, *values):
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                command = f"INSERT INTO {table} VALUES ({', '.join(values)});"
+                await cur.execute(command)
+
+    async def select(self, target, table, order_by=None, **where):
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                command = f"SELECT {target} FROM {table}"
+                if where:
+                    for i, (key, value) in enumerate(where.items()):
+                        if i == 0:
+                            command += f" WHERE {key} = {value}"
+                        else:
+                            command += f" and {key} = {value}"
+                if order_by:
+                    command += f" ORDER BY {order_by}"
+                await cur.execute(command+';')
+                return await cur.fetchone()
+
+    async def update(self, table, **where):
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                set_key, set_value = list(where.items())[0]
+                command = f"UPDATE {table} SET {set_key} = {set_value}"
+                for i, (key, value) in enumerate(where.items()):
+                    if i == 0:
+                        continue
+                    if i == 1:
+                        command += f" WHERE {key} = {value}"
+                    else:
+                        command += f" and {key} = {value}"
+                await cur.execute(command+';')
+                await conn.commit()
 
     def load(self, *extensions):
         for cog in extensions:

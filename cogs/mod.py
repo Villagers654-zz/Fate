@@ -1251,7 +1251,7 @@ class Mod(commands.Cog):
 		user_id = str(user.id)
 		guild_id = str(ctx.guild.id)
 		punishments = ['None', 'None', 'Mute', 'Kick', 'Softban', 'Ban']
-		config = self.bot.utils.get_config  # type: dict
+		config = self.bot.utils.get_config()  # type: dict
 		if guild_id in config['warns']['punishments']:
 			punishments = config['warns']['punishments'][guild_id]
 		if guild_id not in self.warns:
