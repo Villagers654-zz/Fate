@@ -29,7 +29,7 @@ def split(text, amount=2000) -> list:
 
 def get_prefix(ctx):
 	guild_id = str(ctx.guild.id)
-	config = ctx.bot.get_config  # type: dict
+	config = ctx.bot.utils.get_config()  # type: dict
 	p = '.'  # default command prefix
 	if guild_id in config['prefix']:
 		p = config['prefix'][guild_id]
@@ -155,10 +155,10 @@ def get_stats():
 		return json.load(stats)
 
 def get_config():
-	if not isfile('./data/config.json'):
-		with open('./data/config.json', 'w') as f:
+	if not isfile('./data/userdata/config.json'):
+		with open('./data/userdata/config.json', 'w') as f:
 			json.dump({}, f, ensure_ascii=False)
-	with open('./data/config.json', 'r') as f:
+	with open('./data/userdata/config.json', 'r') as f:
 		return json.load(f)
 
 def default_cooldown():

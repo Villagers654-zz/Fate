@@ -71,22 +71,16 @@ class Fate(commands.AutoShardedBot):
     async def insert(self, table, *values):
         async with self.pool.acquire() as conn:
             async with conn.cursor() as cur:
-                command = f"INSERT INTO {table} VALUES ({', '.join(values)});"
+                command = f"INSERT INTO {table} VALUES ({', '.join([str(v) for v in values])});"
                 await cur.execute(command)
+                await conn.commit()
 
-    async def select(self, target, table, order_by=None, **where):
+    async def select(self, sql, all=False):
         async with self.pool.acquire() as conn:
             async with conn.cursor() as cur:
-                command = f"SELECT {target} FROM {table}"
-                if where:
-                    for i, (key, value) in enumerate(where.items()):
-                        if i == 0:
-                            command += f" WHERE {key} = {value}"
-                        else:
-                            command += f" and {key} = {value}"
-                if order_by:
-                    command += f" ORDER BY {order_by}"
-                await cur.execute(command+';')
+                await cur.execute(f"SELECT "+sql if not str(sql).lower().startswith('select') else sql)
+                if all:
+                    return await cur.fetchall()
                 return await cur.fetchone()
 
     async def update(self, table, **where):
@@ -266,6 +260,7 @@ async def on_command(_ctx):
 
 
 bot.log("Starting Bot", color='yellow')
+bot.start_time = datetime.now()
 try:
     bot.run()
 except discord.errors.LoginFailure:

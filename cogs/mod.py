@@ -646,9 +646,9 @@ class Mod(commands.Cog):
 	@commands.bot_has_permissions(embed_links=True, ban_members=True)
 	async def ban(self, ctx, ids: Greedy[int], users: Greedy[discord.User], *, reason='Unspecified'):
 		""" Ban cmd that supports more than just members """
-		users_to_ban = len(ids) + len(users)
+		users_to_ban = len(ids if ids else []) + len(users if users else [])
 		e = discord.Embed(color=colors.fate())
-		if len(ids if ids else 0) + len(users if users else 0) > 1:
+		if users_to_ban > 1:
 			e.set_author(name=f"Banning {users_to_ban} user{'' if users_to_ban > 1 else ''}", icon_url=ctx.author.avatar_url)
 		e.set_thumbnail(url='https://cdn.discordapp.com/attachments/514213558549217330/514345278669848597/8yx98C.gif')
 		msg = await ctx.send(embed=e)
