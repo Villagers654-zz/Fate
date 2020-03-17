@@ -150,22 +150,15 @@ class Ranking(commands.Cog):
 			if self.global_cd[user_id] < time() - 10:
 
 				# global msg xp
-				results = await self.bot.select('xp', 'global_msg', user_id=user_id)
+				results = await self.bot.select(f"select xp from global_msg where user_id = {user_id};")
 				if not results:
 					await self.bot.insert('global_msg', user_id, new_xp)
 				else:
-					await self.bot.update('global_msg', xp=results[1]+new_xp, user_id=user_id)
+					xp = results[0]
+					await self.bot.update('global_msg', xp=xp+new_xp, user_id=user_id)
 
 				# global monthly msg xp
 				await self.bot.insert('global_monthly', user_id, time(), new_xp)
-				# results = await self.bot.select('msg_time', 'global_monthly', user_id=user_id)
-				# expired = [msg_time for msg_time in results if msg_time > time() - 60 * 60 * 24 * 30]
-				# if expired:
-				# 	async with self.bot.pool.acquire() as conn:
-				# 		async with conn.cursor() as cur:
-				# 			for msg_time in expired:
-				# 				await cur.execute(f"DELETE FROM global_msg WHERE msg_time = {msg_time}")
-				# 			await conn.commit()
 
 			# per-server leveling
 			if guild_id not in self.cd:
@@ -176,7 +169,7 @@ class Ranking(commands.Cog):
 			if len(msgs) < conf['msgs_within_timeframe']:
 
 				# guilded msg xp
-				results = await self.bot.select('*', 'msg', guild_id=guild_id)
+				results = await self.bot.select(f"select * from msg where guild_id = 470961230362837002;", all=True)
 				if user_id not in [r[1] for r in results]:
 					await self.bot.insert('msg', guild_id, user_id, new_xp)
 				else:
@@ -458,6 +451,7 @@ class Ranking(commands.Cog):
 			user = ctx.message.mentions[0]
 		user_id = str(user.id)
 		guild_id = str(ctx.guild.id)
+		conf = self.config[guild_id]
 
 		# config
 		title = 'Use .help profile'
@@ -477,43 +471,42 @@ class Ranking(commands.Cog):
 				background_url = self.profile[user_id]['background']
 
 		# xp variables
-		async with aiosqlite.connect('./data/userdata/msg-xp.db') as db:
-			await db.execute("PRAGMA journal_mode=WAL;")
-			cursor = await db.execute(f"SELECT * FROM '{guild_id}' ORDER BY xp DESC;")
-			guild_xp = await cursor.fetchall()
+		guild_xp = await self.bot.select(
+			f'select * from msg where guild_id = {int(guild_id)} order by xp desc;', all=True
+		)
+		guild_rank = 0
+		for i, (_, id, xp) in enumerate(guild_xp):
+			if id == user.id:
+				guild_rank = i + 1
+				break
+
+		if 'global' in ctx.message.content or 'profile' in ctx.message.content.lower():
+			global_xp = await self.bot.select(f"select * from global_msg order by xp desc;", all=True)
 			guild_rank = 0
-			for i, (id, xp) in enumerate(guild_xp):
+			for i, (id, xp) in enumerate(global_xp):
 				if id == user.id:
 					guild_rank = i + 1
 					break
-			cursor = await db.execute(f"SELECT xp FROM '{guild_id}' WHERE user_id = '{user.id}';")
-			guild_xp = await cursor.fetchone()
-		conf = self.config[guild_id]
-		if 'global' in ctx.message.content:
-			async with aiosqlite.connect('./data/userdata/global-xp.db') as db:
-				await db.execute("PRAGMA journal_mode=WAL;")
-				cursor = await db.execute(f"SELECT * FROM msg ORDER BY xp DESC;")
-				global_xp = await cursor.fetchall()
-				guild_rank = 0
-				for i, (id, xp) in enumerate(global_xp):
-					if id == user.id:
-						guild_rank = i + 1
-						break
-				cursor = await db.execute(f"SELECT xp FROM msg WHERE user_id = '{user.id}';")
-				guild_xp = await cursor.fetchone()
+
+			guild_xp = [xp for uid, xp in global_xp if uid == user.id]
+			guild_xp = guild_xp[0] if guild_xp else None
 			if not guild_xp:
 				return await ctx.send('somehow I have no xp for you .-.')
-			dat = self.calc_lvl(guild_xp[0], self.static_config())
+			dat = self.calc_lvl(guild_xp, self.static_config())
+
 		else:
+			guild_xp = [xp for gid, uid, xp in guild_xp if uid == user.id]
+			guild_xp = guild_xp[0] if guild_xp else None
 			if not guild_xp:
 				return await ctx.send('somehow I have no xp for this server .-.')
-			dat = self.calc_lvl(guild_xp[0], conf)
+			dat = self.calc_lvl(guild_xp, conf)
+
 		base_req = self.config[guild_id]['first_lvl_xp_req']
 		level = dat['level']
 		xp = dat['xp']
 		max_xp = base_req if level == 0 else dat['level_up']
 		length = ((100 * (xp / max_xp)) * 1000) / 100
-		total = f'Total: {guild_xp[0]}'
+		total = f'Total: {guild_xp}'
 		required = f'Required: {max_xp - xp}'
 		progress = f'{xp} / {max_xp} xp'
 		misc = f'{progress} | {total} | {required}'
@@ -630,7 +623,8 @@ class Ranking(commands.Cog):
 				background.save(path, format='PNG')
 		else:
 			card.save(path, format='PNG')
-		await ctx.send(f"> **Profile card for {user}**", file=discord.File(path))
+		type = 'Profile' if 'profile' in ctx.message.content.lower() else 'Rank'
+		await ctx.send(f"> **{type} card for {user}**", file=discord.File(path))
 
 	@commands.command(
 		name='leaderboard',
@@ -714,7 +708,7 @@ class Ranking(commands.Cog):
 
 			return embeds
 
-		with open('./data/config.json', 'r') as f:
+		with open('./data/userdata/config.json', 'r') as f:
 			config = json.load(f)  # type: dict
 		prefix = '.'  # default prefix
 		guild_id = str(ctx.guild.id)
@@ -745,78 +739,109 @@ class Ranking(commands.Cog):
 		self.bot.loop.create_task(add_emojis_task())
 
 		embeds = []
-		guild_id = str(ctx.guild.id)
+		guild_id = ctx.guild.id
 		leaderboards = {}
-		async with aiosqlite.connect('./data/userdata/msg-xp.db') as db:
-			await db.execute("PRAGMA journal_mode=WAL;")
-			cursor = await db.execute("SELECT * FROM sqlite_master WHERE TYPE = 'table';")
-			tables = await cursor.fetchall()
-			tables = [i[1] for i in tables]
-			msg_xp = {}
-			for g_id in tables:
-				cursor = await db.execute(f"SELECT * FROM '{g_id}' ORDER BY xp DESC;")
-				dat = await cursor.fetchall()
-				msg_xp[g_id] = {
-					user_id: xp for user_id, xp in dat
-				}
+
+		results = await self.bot.select(
+			"select * from msg order by xp desc;",
+			all=True
+		)
+		msg_xp = {}
+		for g_id, user_id, xp in results:
+			if g_id not in msg_xp:
+				msg_xp[g_id] = {}
+			msg_xp[g_id][user_id] = xp
 		leaderboards['Msg Leaderboard'] = {
 			user_id: xp for user_id, xp in msg_xp[guild_id].items()
 		}
-		async with aiosqlite.connect('./data/userdata/vc-xp.db') as db:
-			await db.execute("PRAGMA journal_mode=WAL;")
-			cursor = await db.execute("SELECT * FROM sqlite_master WHERE TYPE = 'table';")
-			tables = await cursor.fetchall()
-			tables = [i[1] for i in tables]
-			vc_xp = {}
-			for g_id in tables:
-				cursor = await db.execute(f"SELECT * FROM '{g_id}' ORDER BY xp DESC;")
-				dat = await cursor.fetchall()
-				vc_xp[g_id] = {
-					user_id: xp for user_id, xp in dat
-				}
+
+		results = await self.bot.select(
+			"select * from vc_xp order by xp desc;",
+			all=True
+		)
+		vc_xp = {}
+		for g_id, user_id, xp in results:
+			if g_id not in vc_xp:
+				vc_xp[g_id] = {}
+			vc_xp[g_id][user_id] = xp
+
 		if guild_id not in vc_xp:
-			vc_xp[guild_id] = {str(ctx.guild.owner.id): 0}
+			vc_xp[guild_id] = {ctx.guild.owner.id: 0}
 		leaderboards['Vc Leaderboard'] = {
 			user_id: timedelta(seconds=xp) for user_id, xp in vc_xp[guild_id].items()
 		}
-		async with aiosqlite.connect('./data/userdata/global-xp.db') as db:
-			await db.execute("PRAGMA journal_mode=WAL;")
-			cursor = await db.execute("SELECT * FROM msg ORDER BY xp DESC;")
-			global_msg_xp = await cursor.fetchall()
-			leaderboards['Global Msg Leaderboard'] = {
-				user_id: xp for user_id, xp in global_msg_xp
-			}
-			cursor = await db.execute("SELECT * FROM vc ORDER BY xp DESC")
-			global_vc_xp = await cursor.fetchall()
-			leaderboards['Global Vc Leaderboard'] = {
-				user_id: timedelta(seconds=xp) for user_id, xp in global_vc_xp
-			}
-			cursor = await db.execute("SELECT * FROM monthly_msg;")
-			dat = await cursor.fetchall()
-			global_monthly = {}
-			for user_id, msg_time, xp in dat:
-				if user_id not in global_monthly:
-					global_monthly[user_id] = 0
-				if msg_time > time() - 60*60*24*30:
-					global_monthly[user_id] += 1
-		async with aiosqlite.connect('./data/userdata/monthly-xp.db') as db:
-			await db.execute("PRAGMA journal_mode=WAL;")
-			cursor = await db.execute(f"SELECT * FROM '{guild_id}';")
-			dat = await cursor.fetchall()
-			monthly_msg = {}
-			for user_id, msg_time, xp in dat:
-				if user_id not in monthly_msg:
-					monthly_msg[user_id] = 0
+
+		results = await self.bot.select(
+			"select * from global_msg order by xp desc;",
+			all=True
+		)
+		leaderboards['Global Msg Leaderboard'] = {
+			user_id: xp for user_id, xp in results
+		}
+
+		results = await self.bot.select(
+			"select * from global_vc order by xp desc;",
+			all=True
+		)
+		leaderboards['Global Vc Leaderboard'] = {
+			user_id: timedelta(seconds=xp) for user_id, xp in results
+		}
+
+		results = await self.bot.select(
+			f"select * from monthly_msg where guild_id = {guild_id} order by xp desc;",
+			all=True
+		)
+		monthly_msg = {}
+		expired = []
+		for _, user_id, msg_time, xp in results:
+			if user_id not in monthly_msg:
+				monthly_msg[user_id] = 0
+			if msg_time > time() - 60 * 60 * 24 * 30:
 				monthly_msg[user_id] += xp
+			else:
+				expired.append(msg_time)
+		if expired:
+			async with self.bot.pool.acquire() as conn:
+				async with conn.cursor() as cur:
+					await cur.execute(
+						f"delete from monthly_msg where msg_time < {time() - 60 * 60 * 24 * 30};"
+					)
+					await conn.commit()
 		leaderboards['Monthly Msg Leaderboard'] = {
 			user_id: xp for user_id, xp in monthly_msg.items()
 		}
-		leaderboards['Global Monthly Msg Leaderboard'] = {
-			user_id: xp for user_id, xp in global_monthly.items()
-		}
+
+		# results = await self.bot.select(
+		# 	"select * from global_monthly order by xp desc;",
+		# 	all=True
+		# )
+		# global_monthly = {}
+		# expired = []
+		# for user_id, msg_time, xp in results:
+		# 	if user_id not in global_monthly:
+		# 		global_monthly[user_id] = 0
+		# 	if msg_time > time() - 60 * 60 * 24 * 30:
+		# 		global_monthly[user_id] += 1
+		# 	else:
+		# 		expired.append(msg_time)
+		# if expired:
+		# 	async with self.bot.pool.acquire() as conn:
+		# 		async with conn.cursor() as cur:
+		# 			for msg_time in list(set(expired)):
+		# 				await cur.execute(
+		# 					f"delete from global_monthly where msg_time = {msg_time};"
+		# 				)
+		# 			await conn.commit()
+		# leaderboards['Global Monthly Msg Leaderboard'] = {
+		# 	user_id: xp for user_id, xp in global_monthly.items()
+		# }
+
+		print('made it past global monthly xp')
+
 		leaderboards['Server Msg Leaderboard'] = {
 			guild_id: sum(xp for xp in dat.values()) for guild_id, dat in msg_xp.items()
 		}
+
 		leaderboards['Server Vc Leaderboard'] = {
 				guild_id: timedelta(
 					seconds=sum([xp for xp in dat.values()])
