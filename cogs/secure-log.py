@@ -133,7 +133,7 @@ class SecureLog(commands.Cog):
 
             log_type = self.config[guild_id]['type']  # type: str
 
-            for embed, channelType in self.queue[guild_id][-175:]:
+            for embed, channelType, logged_at in self.queue[guild_id][-175:]:
                 list_obj = [embed, channelType]
                 file_paths = []; files = []
                 if isinstance(embed, tuple):
@@ -221,9 +221,13 @@ class SecureLog(commands.Cog):
 
                 if log_type == 'multi':
                     # noinspection PyUnboundLocalVariable
-                    self.recent_logs[guild_id][channelType] = self.recent_logs[guild_id][channelType][-50:]
+                    for log in self.recent_logs[guild_id][channelType]:
+                        if time() - log[2] > 60*60*24:
+                            self.recent_logs[guild_id][channelType].remove(log)
                 elif log_type == 'single':
-                    self.recent_logs[guild_id] = self.recent_logs[guild_id][-175:]
+                    for log in self.recent_logs[guild_id]:
+                        if time() - log[2] > 60*60*24:
+                            self.recent_logs[guild_id].remove(log)
                 await asyncio.sleep(0.21)
 
     async def init_invites(self):
@@ -289,7 +293,7 @@ class SecureLog(commands.Cog):
             return text
         return [text[i:i + 1000] for i in range(0, len(text), 1000)]
 
-    @commands.group(name='secure-log', aliases=['log'])
+    @commands.group(name='log', aliases=['secure-log'])
     @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
@@ -514,7 +518,7 @@ class SecureLog(commands.Cog):
                             "Channel": msg.channel.mention
                         })
                         e.add_field(name='Content', value=m.content, inline=False)
-                        self.queue[guild_id].append([e, 'system+'])
+                        self.queue[guild_id].append([e, 'system+', time()])
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
@@ -538,7 +542,7 @@ class SecureLog(commands.Cog):
                     e.add_field(name='◈ Before', value=group, inline=False)
                 for group in [after.content[i:i + 1000] for i in range(0, len(after.content), 1000)]:
                     e.add_field(name='◈ After', value=group, inline=False)
-                self.queue[guild_id].append([e, 'chat'])
+                self.queue[guild_id].append([e, 'chat', time()])
 
             if before.embeds and not after.embeds:
                 if before.author.id in self.config[guild_id]['ignored_bots']:
@@ -562,7 +566,7 @@ class SecureLog(commands.Cog):
                 path = f'./static/embed-{before.id}.json'
                 with open(path, 'w+') as f:
                     json.dump(em, f, sort_keys=True, indent=4, separators=(',', ': '))
-                self.queue[guild_id].append([(e, path), 'chat'])
+                self.queue[guild_id].append([(e, path), 'chat', time()])
 
             if before.pinned != after.pinned:
                 action = 'Unpinned' if before.pinned else 'Pinned'
@@ -578,7 +582,7 @@ class SecureLog(commands.Cog):
                 })
                 for text_group in self.split_into_groups(after.content):
                     e.add_field(name="◈ Content", value=text_group, inline=False)
-                self.queue[guild_id].append([e, 'chat'])
+                self.queue[guild_id].append([e, 'chat', time()])
 
     @commands.Cog.listener()
     async def on_raw_message_edit(self, payload):
@@ -600,7 +604,7 @@ class SecureLog(commands.Cog):
             })
             for text_group in self.split_into_groups(msg.content):
                 e.add_field(name='◈ Content', value=text_group, inline=False)
-            self.queue[guild_id].append([e, 'chat'])
+            self.queue[guild_id].append([e, 'chat', time()])
 
     @commands.Cog.listener()
     async def on_message_delete(self, msg):
@@ -620,9 +624,9 @@ class SecureLog(commands.Cog):
                                 with open(path, 'wb') as f:
                                     f.write(file)
                                 files.append(path)
-                            self.queue[guild_id].append([(msg.embeds[0], files), 'sudo'])
+                            self.queue[guild_id].append([(msg.embeds[0], files), 'sudo', time()])
                         else:
-                            self.queue[guild_id].append([msg.embeds[0], 'sudo'])
+                            self.queue[guild_id].append([msg.embeds[0], 'sudo', time()])
 
                         return
 
@@ -656,11 +660,11 @@ class SecureLog(commands.Cog):
                         with open(path, 'wb') as f:
                             f.write(file)
                         files.append(path)
-                    self.queue[guild_id].append([(e, files), 'chat'])
+                    self.queue[guild_id].append([(e, files), 'chat', time()])
                 else:
-                    self.queue[guild_id].append([e, 'chat'])
+                    self.queue[guild_id].append([e, 'chat', time()])
                 if msg.embeds:
-                    self.queue[guild_id].append([msg.embeds[0], 'chat'])
+                    self.queue[guild_id].append([msg.embeds[0], 'chat', time()])
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, payload):
@@ -679,7 +683,7 @@ class SecureLog(commands.Cog):
                 "Channel": self.bot.get_channel(payload.channel_id).mention,
                 "Deleted by": dat['user']
             })
-            self.queue[guild_id].append([e, 'chat'])
+            self.queue[guild_id].append([e, 'chat', time()])
 
     @commands.Cog.listener()
     async def on_raw_bulk_message_delete(self, payload):
@@ -693,11 +697,11 @@ class SecureLog(commands.Cog):
                 if self.config[guild_id]['secure']:
                     if msg.embeds:
                         if msg.channel.id == self.config[guild_id]['channel']:
-                            self.queue[guild_id].append([msg.embeds[0], 'sudo'])
+                            self.queue[guild_id].append([msg.embeds[0], 'sudo', time()])
                             continue
                         if msg.channel.id in self.config[guild_id]['channels']:
                             await msg.channel.send("OwO what's this", embed=msg.embeds[0])
-                            self.queue[guild_id].append([msg.embeds[0], 'sudo'])
+                            self.queue[guild_id].append([msg.embeds[0], 'sudo', time()])
                             continue
 
                 timestamp = msg.created_at.strftime('%I:%M%p')
@@ -723,7 +727,7 @@ class SecureLog(commands.Cog):
                 "Channel": channel.mention,
                 "Purged by": dat['user']
             })
-            self.queue[guild_id].append([(e, path), 'chat'])
+            self.queue[guild_id].append([(e, path), 'chat', time()])
 
     @commands.Cog.listener()
     async def on_raw_reaction_clear(self, payload):
@@ -743,7 +747,7 @@ class SecureLog(commands.Cog):
                 "Channel": channel.mention,
                 f"[Jump to MSG]({msg.jump_url})": None
             })
-            self.queue[guild_id].append([e, 'chat'])
+            self.queue[guild_id].append([e, 'chat', time()])
 
     @commands.Cog.listener()
     async def on_guild_update(self, before, after):  # due for rewrite
@@ -763,7 +767,7 @@ class SecureLog(commands.Cog):
                                 f"\n**Changed by:** {dat['user']}"
                 e.add_field(name='◈ Before', value=before.name, inline=False)
                 e.add_field(name='◈ After', value=after.name, inline=False)
-                self.queue[guild_id].append([e, 'updates'])
+                self.queue[guild_id].append([e, 'updates', time()])
             if before.icon_url != after.icon_url:
                 e = create_template_embed()
                 e.description = f"> 》__**Icon Changed**__《" \
@@ -772,31 +776,31 @@ class SecureLog(commands.Cog):
                     e.description += f"\n__**Icons now animated**__"
                 if not after.is_icon_animated() and before.is_icon_animated():
                     e.description += f'\n__**Icons no longer animated**__'
-                self.queue[guild_id].append([e, 'updates'])
+                self.queue[guild_id].append([e, 'updates', time()])
             if before.banner_url != after.banner_url:
                 e = create_template_embed()
                 e.description = f"> 》__**Banner Changed**__《" \
                                 f"\n**Changed by:** {dat['user']}"
-                self.queue[guild_id].append([e, 'updates'])
+                self.queue[guild_id].append([e, 'updates', time()])
             if before.splash_url != after.splash_url:
                 e = create_template_embed()
                 e.description = f"> 》__**Splash Changed**__《" \
                                 f"\n**Changed by:** {dat['user']}"
-                self.queue[guild_id].append([e, 'updates'])
+                self.queue[guild_id].append([e, 'updates', time()])
             if before.region != after.region:
                 e = create_template_embed()
                 e.description = f"> 》__**Region Changed**__《" \
                                 f"\n**Changed by:** {dat['user']}"
                 e.add_field(name='◈ Before', value=str(before.region), inline=False)
                 e.add_field(name='◈ After', value=str(after.region), inline=False)
-                self.queue[guild_id].append([e, 'updates'])
+                self.queue[guild_id].append([e, 'updates', time()])
             if before.afk_timeout != after.afk_timeout:
                 e = create_template_embed()
                 e.description = f"> 》__**AFK Timeout Changed**__《" \
                                 f"\n**Changed by:** {dat['user']}"
                 e.add_field(name='◈ Before', value=str(before.afk_timeout), inline=False)
                 e.add_field(name='◈ After', value=str(after.afk_timeout), inline=False)
-                self.queue[guild_id].append([e, 'updates'])
+                self.queue[guild_id].append([e, 'updates', time()])
             if before.afk_channel != after.afk_channel:
                 e = create_template_embed()
                 e.description = f"> 》__**AFK Channel Changed**__《" \
@@ -815,7 +819,7 @@ class SecureLog(commands.Cog):
                               f"\n**ID:** {after.afk_channel.id}",
                         inline=False
                     )
-                self.queue[guild_id].append([e, 'updates'])
+                self.queue[guild_id].append([e, 'updates', time()])
             if before.owner != after.owner:
                 e = create_template_embed()
                 e.description = f"> 》__**Owner Changed**__《"
@@ -831,7 +835,7 @@ class SecureLog(commands.Cog):
                           f"\n**Mention:** {after.owner.mention}"
                           f"\n**ID:** {after.owner.id}"
                 )
-                self.queue[guild_id].append([e, 'updates'])
+                self.queue[guild_id].append([e, 'updates', time()])
             if before.features != after.features:
                 e = create_template_embed()
                 e.description = f"> 》__**Features Changed**__《"
@@ -843,13 +847,13 @@ class SecureLog(commands.Cog):
                     if feature not in before.features:
                         changes += f"<:plus:548465119462424595> {feature}"
                 e.add_field(name='◈ Changes', value=changes)
-                self.queue[guild_id].append([e, 'updates'])
+                self.queue[guild_id].append([e, 'updates', time()])
             if before.premium_tier != after.premium_tier:
                 e = create_template_embed()
                 e.description = f"> 》__**Premium Tier Changed**__《" \
                                 f"\n**Before:** [{before.premium_tier}]" \
                                 f"\n**After:** [{after.premium_tier}]"
-                self.queue[guild_id].append([e, 'updates'])
+                self.queue[guild_id].append([e, 'updates', time()])
             if before.premium_subscription_count != after.premium_subscription_count:
                 e = create_template_embed()
                 if after.premium_subscription_count > before.premium_subscription_count:
@@ -864,7 +868,7 @@ class SecureLog(commands.Cog):
                     who = changed[0].mention
                 e.description = f"> **Member {action}**《" \
                                 f"\n**Who:** [{who}]"
-                self.queue[guild_id].append([e, 'system+'])
+                self.queue[guild_id].append([e, 'system+', time()])
             # mfa_level, verification_level, explicit_content_filter, default_notifications
             # preferred_locale, large, system_channel, system_channel_flags
             # Union[emoji_limit, bitrate_limit, filesize_limit]
@@ -890,7 +894,7 @@ class SecureLog(commands.Cog):
                 "Creator": dat['user'],
                 "Members": member_count
             })
-            self.queue[guild_id].append([e, 'actions'])
+            self.queue[guild_id].append([e, 'actions', time()])
 
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, channel):
@@ -903,15 +907,15 @@ class SecureLog(commands.Cog):
                 if channel.id == self.config[guild_id]['channel']:
                     if type == 'single':
                         for embed in self.recent_logs[guild_id]:
-                            self.queue[guild_id].append([embed, 'actions'])
+                            self.queue[guild_id].append([embed, 'actions', time()])
                         return
                     for channelType, embeds in self.recent_logs[guild_id].items():
                         for embed in embeds:
-                            self.queue[guild_id].append([embed, channelType])
+                            self.queue[guild_id].append([embed, channelType, time()])
                 for channelType, channel_id in self.config[guild_id]['channels'].items():
                     if channel_id == channel.id:
                         for embed in self.recent_logs[guild_id][channelType]:
-                            self.queue[guild_id].append([embed, channelType])
+                            self.queue[guild_id].append([embed, channelType, time()])
 
             dat = await self.search_audit(channel.guild, audit.channel_delete)
             member_count = 'Unknown'
@@ -933,7 +937,7 @@ class SecureLog(commands.Cog):
             })
 
             if isinstance(channel, discord.CategoryChannel):
-                self.queue[guild_id].append([e, 'actions'])
+                self.queue[guild_id].append([e, 'actions', time()])
                 return
 
             path = f'./static/members-{r.randint(1, 9999)}.txt'
@@ -943,7 +947,7 @@ class SecureLog(commands.Cog):
             with open(path, 'w') as f:
                 f.write(members)
 
-            self.queue[guild_id].append([(e, path), 'actions'])
+            self.queue[guild_id].append([(e, path), 'actions', time()])
 
     @commands.Cog.listener()
     async def on_guild_channel_update(self, before, after):  # due for rewrite
@@ -1071,7 +1075,7 @@ class SecureLog(commands.Cog):
                 })
 
             if e.fields:
-                self.queue[guild_id].append([e, 'updates'])
+                self.queue[guild_id].append([e, 'updates', time()])
 
     @commands.Cog.listener()
     async def on_guild_role_create(self, role):
@@ -1086,7 +1090,7 @@ class SecureLog(commands.Cog):
                 "ID": role.id,
                 "Created by": dat['user']
             })
-            self.queue[guild_id].append([e, 'actions'])
+            self.queue[guild_id].append([e, 'actions', time()])
 
     @commands.Cog.listener()
     async def on_guild_role_delete(self, role):
@@ -1115,7 +1119,7 @@ class SecureLog(commands.Cog):
                 members += f"\n{member.id}, {member.mention}, {member}, {member.display_name}"
             with open(path, 'w') as f:
                 f.write(members)
-            self.queue[guild_id].append([(e, [path, fp]), 'actions'])
+            self.queue[guild_id].append([(e, [path, fp]), 'actions', time()])
 
     @commands.Cog.listener()
     async def on_guild_role_update(self, before, after):
@@ -1184,7 +1188,7 @@ class SecureLog(commands.Cog):
             if before.position != after.position:
                 em = discord.Embed()
                 em.description = f"Role {before.mention} was moved"
-                self.queue[guild_id].append([em, 'updates'])
+                self.queue[guild_id].append([em, 'updates', time()])
                 # before_roles = before.guild.roles
                 # before_roles.pop(after.position)
                 # before_roles.insert(before.position, before)
@@ -1219,9 +1223,9 @@ class SecureLog(commands.Cog):
                 e.add_field(name='◈ Permissions Changed', value=changes, inline=False)
             if e.fields:
                 if path:
-                    self.queue[guild_id].append([(e, path), 'updates'])
+                    self.queue[guild_id].append([(e, path), 'updates', time()])
                 else:
-                    self.queue[guild_id].append([e, 'updates'])
+                    self.queue[guild_id].append([e, 'updates', time()])
 
     @commands.Cog.listener()
     async def on_guild_integrations_update(self, guild):
@@ -1231,7 +1235,7 @@ class SecureLog(commands.Cog):
             e.set_author(name='~==🍸Integrations Update🍸==~', icon_url=guild.owner.avatar_url)
             e.set_thumbnail(url=guild.icon_url)
             e.description = "An integration was created, modified, or removed"
-            self.queue[guild_id].append([e, 'system+'])
+            self.queue[guild_id].append([e, 'system+', time()])
 
     @commands.Cog.listener()
     async def on_webhooks_update(self, channel):
@@ -1274,7 +1278,7 @@ class SecureLog(commands.Cog):
                 "Channel": channel.mention,
                 f"{action} by": dat['user']
             })
-            self.queue[guild_id].append([e, 'misc'])
+            self.queue[guild_id].append([e, 'misc', time()])
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -1293,7 +1297,7 @@ class SecureLog(commands.Cog):
                     "Bot Invite": f'[here]({inv})',
                     "Invited by": dat['user']
                 })
-                self.queue[guild_id].append([e, 'system+'])
+                self.queue[guild_id].append([e, 'system+', time()])
                 return
             invites = await member.guild.invites()
             invite = None  # the invite used to join
@@ -1333,7 +1337,7 @@ class SecureLog(commands.Cog):
                     value=', '.join(aliases),
                     inline=False
                 )
-            self.queue[guild_id].append([e, 'misc'])
+            self.queue[guild_id].append([e, 'misc', time()])
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
@@ -1355,7 +1359,7 @@ class SecureLog(commands.Cog):
                     e.description += self.bot.utils.format_dict({
                         "Kicked by": entry.user.mention
                     })
-                    self.queue[guild_id].append([e, 'sudo'])
+                    self.queue[guild_id].append([e, 'sudo', time()])
                     removed = True
 
             async for entry in member.guild.audit_logs(limit=1, action=audit.ban):
@@ -1364,12 +1368,12 @@ class SecureLog(commands.Cog):
                     e.description += self.bot.utils.format_dict({
                         "Banned by": entry.user.mention
                     })
-                    self.queue[guild_id].append([e, 'sudo'])
+                    self.queue[guild_id].append([e, 'sudo', time()])
                     removed = True
 
             if not removed:
                 e.set_author(name='~==🍸Member Left🍸==~', icon_url=member.avatar_url)
-                self.queue[guild_id].append([e, 'misc'])
+                self.queue[guild_id].append([e, 'misc', time()])
 
 def setup(bot):
     bot.add_cog(SecureLog(bot))
