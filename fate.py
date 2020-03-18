@@ -31,7 +31,7 @@ class Fate(commands.AutoShardedBot):
             'duel_chat', 'selfroles', 'lock', 'audit', 'cookies', 'backup', 'stats', 'server_list', 'emojis',
             'logger', 'autorole', 'changelog', 'restore_roles', 'chatbot', 'anti_spam', 'anti_raid', 'chatfilter',
             'nsfw', 'minecraft', 'chatlock', 'rainbow', 'system', 'user', 'limiter', 'dm_channel', 'factions',
-            'secure_overwrites', 'server_setup', 'secure-log', 'global-chat', 'beta'
+            'secure_overwrites', 'server_setup', 'secure-log', 'global-chat', 'beta', 'ranking'
         ]
         self.awaited_extensions = []    # Cogs to load when the internal cache is ready
 
@@ -58,7 +58,9 @@ class Fate(commands.AutoShardedBot):
                 user=sql.user,
                 password=sql.password,
                 db=sql.db,
-                loop=self.loop
+                loop=self.loop,
+                minsize=10,
+                maxsize=64
             )
         except (ConnectionRefusedError, OperationalError):
             self.log("Couldn't connect to SQL server", 'CRITICAL', tb=traceback.format_exc())
@@ -69,6 +71,8 @@ class Fate(commands.AutoShardedBot):
             self.log(f"Initialized db {sql.db} with {sql.user}@{sql.host}")
 
     async def insert(self, table, *values):
+        while not self.pool:
+            await asyncio.sleep(0.21)
         async with self.pool.acquire() as conn:
             async with conn.cursor() as cur:
                 command = f"INSERT INTO {table} VALUES ({', '.join([str(v) for v in values])});"
@@ -76,6 +80,8 @@ class Fate(commands.AutoShardedBot):
                 await conn.commit()
 
     async def select(self, sql, all=False):
+        while not self.pool:
+            await asyncio.sleep(0.21)
         async with self.pool.acquire() as conn:
             async with conn.cursor() as cur:
                 await cur.execute(f"SELECT "+sql if not str(sql).lower().startswith('select') else sql)
@@ -84,6 +90,8 @@ class Fate(commands.AutoShardedBot):
                 return await cur.fetchone()
 
     async def update(self, table, **where):
+        while not self.pool:
+            await asyncio.sleep(0.21)
         async with self.pool.acquire() as conn:
             async with conn.cursor() as cur:
                 set_key, set_value = list(where.items())[0]
