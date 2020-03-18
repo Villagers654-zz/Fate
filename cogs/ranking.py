@@ -169,13 +169,13 @@ class Ranking(commands.Cog):
 			if len(msgs) < conf['msgs_within_timeframe']:
 
 				# guilded msg xp
-				results = await self.bot.select(f"select * from msg where guild_id = 470961230362837002;", all=True)
-				if user_id not in [r[1] for r in results]:
-					await self.bot.insert('msg', guild_id, user_id, new_xp)
-				else:
-					for guild_id, uid, xp in results:
-						if uid == user_id:
-							await self.bot.update('msg', xp=new_xp+xp, guild_id=guild_id, user_id=user_id)
+				# results = await self.bot.select(f"select * from msg where guild_id = {guild_id};", all=True)
+				# if user_id not in [r[1] for r in results]:
+				# 	await self.bot.insert('msg', guild_id, user_id, new_xp)
+				# else:
+				# 	for guild_id, uid, xp in results:
+				# 		if uid == user_id:
+				# 			await self.bot.update('msg', xp=new_xp+xp, guild_id=guild_id, user_id=user_id)
 
 				# monthly guilded msg xp
 				await self.bot.insert('monthly_msg', guild_id, user_id, time(), new_xp)
@@ -680,7 +680,10 @@ class Ranking(commands.Cog):
 						icon_url = guild.icon_url
 			embeds = []
 			e = discord.Embed(color=0x4A0E50)
-			e.set_author(name=name, icon_url=icon_url)
+			if icon_url:
+				e.set_author(name=name, icon_url=icon_url)
+			else:
+				e.set_author(name=name, icon_url=self.bot.user.avatar_url)
 			e.set_thumbnail(url=thumbnail_url)
 			e.description = ''
 			rank = 1; index = 0
@@ -787,56 +790,45 @@ class Ranking(commands.Cog):
 			user_id: timedelta(seconds=xp) for user_id, xp in results
 		}
 
+		lmt = time() - 60 * 60 * 24 * 30
 		results = await self.bot.select(
-			f"select * from monthly_msg where guild_id = {guild_id} order by xp desc;",
+			f"select * from monthly_msg where guild_id = {guild_id} and msg_time > {lmt} order by xp desc;",
 			all=True
 		)
+
 		monthly_msg = {}
-		expired = []
 		for _, user_id, msg_time, xp in results:
 			if user_id not in monthly_msg:
 				monthly_msg[user_id] = 0
-			if msg_time > time() - 60 * 60 * 24 * 30:
-				monthly_msg[user_id] += xp
-			else:
-				expired.append(msg_time)
-		if expired:
-			async with self.bot.pool.acquire() as conn:
-				async with conn.cursor() as cur:
-					await cur.execute(
-						f"delete from monthly_msg where msg_time < {time() - 60 * 60 * 24 * 30};"
-					)
-					await conn.commit()
+			monthly_msg[user_id] += xp
+		async with self.bot.pool.acquire() as conn:
+			async with conn.cursor() as cur:
+				await cur.execute(
+					f"delete from monthly_msg where msg_time < {time() - 60 * 60 * 24 * 30};"
+				)
+				await conn.commit()
 		leaderboards['Monthly Msg Leaderboard'] = {
 			user_id: xp for user_id, xp in monthly_msg.items()
 		}
 
-		# results = await self.bot.select(
-		# 	"select * from global_monthly order by xp desc;",
-		# 	all=True
-		# )
-		# global_monthly = {}
-		# expired = []
-		# for user_id, msg_time, xp in results:
-		# 	if user_id not in global_monthly:
-		# 		global_monthly[user_id] = 0
-		# 	if msg_time > time() - 60 * 60 * 24 * 30:
-		# 		global_monthly[user_id] += 1
-		# 	else:
-		# 		expired.append(msg_time)
-		# if expired:
-		# 	async with self.bot.pool.acquire() as conn:
-		# 		async with conn.cursor() as cur:
-		# 			for msg_time in list(set(expired)):
-		# 				await cur.execute(
-		# 					f"delete from global_monthly where msg_time = {msg_time};"
-		# 				)
-		# 			await conn.commit()
-		# leaderboards['Global Monthly Msg Leaderboard'] = {
-		# 	user_id: xp for user_id, xp in global_monthly.items()
-		# }
-
-		print('made it past global monthly xp')
+		results = await self.bot.select(
+			f"select * from global_monthly where msg_time > {lmt} order by xp desc;",
+			all=True
+		)
+		global_monthly = {}
+		for user_id, msg_time, xp in results:
+			if user_id not in global_monthly:
+				global_monthly[user_id] = 0
+			global_monthly[user_id] += 1
+		async with self.bot.pool.acquire() as conn:
+			async with conn.cursor() as cur:
+				await cur.execute(
+					f"delete from monthly_msg where msg_time < {time() - 60 * 60 * 24 * 30};"
+				)
+				await conn.commit()
+		leaderboards['Global Monthly Msg Leaderboard'] = {
+			user_id: xp for user_id, xp in global_monthly.items()
+		}
 
 		leaderboards['Server Msg Leaderboard'] = {
 			guild_id: sum(xp for xp in dat.values()) for guild_id, dat in msg_xp.items()
@@ -851,7 +843,7 @@ class Ranking(commands.Cog):
 		for name, data in leaderboards.items():
 			sorted_data = [
 				(user_id, xp) for user_id, xp in sorted(
-					data.items(), key=lambda kv: kv[1], reverse=True
+					list(data.items())[:175], key=lambda kv: kv[1], reverse=True
 				)
 			]
 			ems = await create_embed(
