@@ -134,7 +134,7 @@ class SecureLog(commands.Cog):
             log_type = self.config[guild_id]['type']  # type: str
 
             for embed, channelType, logged_at in self.queue[guild_id][-175:]:
-                list_obj = [embed, channelType]
+                list_obj = [embed, channelType, logged_at]
                 file_paths = []; files = []
                 if isinstance(embed, tuple):
                     embed, file_paths = embed
@@ -145,6 +145,8 @@ class SecureLog(commands.Cog):
                 for i, field in enumerate(embed.fields):
                     if not field.value:
                         embed.fields[i].value = 'None'
+
+                embed.timestamp = datetime.fromtimestamp(logged_at)
 
                 sent = False
                 while not guild.me.guild_permissions.administrator:
@@ -189,7 +191,7 @@ class SecureLog(commands.Cog):
                                 if os.path.isfile(file):
                                     os.remove(file)
                         self.queue[guild_id].remove(list_obj)
-                        self.recent_logs[guild_id].append(embed)
+                        self.recent_logs[guild_id].append([embed, logged_at])
 
                     for Type, channel_id in self.config[guild_id]['channels'].items():
                         if Type == channelType:
@@ -212,21 +214,22 @@ class SecureLog(commands.Cog):
                                     if os.path.isfile(file):
                                         os.remove(file)
                             self.queue[guild_id].remove(list_obj)
-                            self.recent_logs[guild_id][channelType].append(embed)
+                            self.recent_logs[guild_id][channelType].append([embed, logged_at])
                             break
                 except:
                     err_channel = self.bot.get_channel(577661461543780382)
                     await err_channel.send(f"Secure Log Error\n{str(traceback.format_exc())[-1980:]}")
                     await err_channel.send(f'```json\n{json.dumps(embed.to_dict(), indent=2)}```')
+                    self.queue[guild_id].remove([embed, channelType, logged_at])
 
                 if log_type == 'multi':
                     # noinspection PyUnboundLocalVariable
                     for log in self.recent_logs[guild_id][channelType]:
-                        if time() - log[2] > 60*60*24:
+                        if time() - log[1] > 60*60*24:
                             self.recent_logs[guild_id][channelType].remove(log)
                 elif log_type == 'single':
                     for log in self.recent_logs[guild_id]:
-                        if time() - log[2] > 60*60*24:
+                        if time() - log[1] > 60*60*24:
                             self.recent_logs[guild_id].remove(log)
                 await asyncio.sleep(0.21)
 
@@ -910,12 +913,12 @@ class SecureLog(commands.Cog):
                             self.queue[guild_id].append([embed, 'actions', time()])
                         return
                     for channelType, embeds in self.recent_logs[guild_id].items():
-                        for embed in embeds:
-                            self.queue[guild_id].append([embed, channelType, time()])
+                        for embed, logged_at in embeds:
+                            self.queue[guild_id].append([embed, channelType, logged_at])
                 for channelType, channel_id in self.config[guild_id]['channels'].items():
                     if channel_id == channel.id:
-                        for embed in self.recent_logs[guild_id][channelType]:
-                            self.queue[guild_id].append([embed, channelType, time()])
+                        for embed, logged_at in self.recent_logs[guild_id][channelType]:
+                            self.queue[guild_id].append([embed, channelType, logged_at])
 
             dat = await self.search_audit(channel.guild, audit.channel_delete)
             member_count = 'Unknown'

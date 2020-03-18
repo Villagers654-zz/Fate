@@ -17,7 +17,7 @@ from utils import outh, utils, tasks, colors
 
 class Fate(commands.AutoShardedBot):
     def __init__(self, **options):
-        with open('Rewrite/data/config.json', 'r') as f:
+        with open('./data/config.json', 'r') as f:
             self.config = json.load(f)  # type: dict
         self.debug_mode = self.config['debug_mode']
         self.pool = None                # MySQL Pool initialized on_ready
