@@ -1,3 +1,4 @@
+import aiohttp
 import requests
 import random
 import json
@@ -19,31 +20,35 @@ class APIS(commands.Cog):
     async def _tenor(self, ctx, *, search):
         apikey = "LIWIXISVM3A7"
         lmt = 50
-        r = requests.get("https://api.tenor.com/v1/anonid?key=%s" % apikey)
-        if r.status_code == 200:
-            anon_id = json.loads(r.content)["anon_id"]
-        else:
-            anon_id = ""
-        r = requests.get(
-            "https://api.tenor.com/v1/search?q=%s&key=%s&limit=%s&anon_id=%s"
-            % (search, apikey, lmt, anon_id)
-        )
-        if r.status_code == 200:
-            try:
-                dat = json.loads(r.content)
-                e = discord.Embed(color=colors.random())
-                e.set_image(
-                    url=dat["results"][random.randint(0, len(dat["results"]) - 1)][
-                        "media"
-                    ][0]["gif"]["url"]
-                )
-                e.set_footer(text="Powered by Tenor")
-                await ctx.send(embed=e)
-                await ctx.message.delete()
-            except Exception as e:
-                await ctx.send(e)
-        else:
-            await ctx.send("error")
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                "https://api.tenor.com/v1/anonid?key=%s" % apikey
+            ) as r:
+                if r.status == 200:
+                    anon_id = json.loads(r.content)["anon_id"]
+                else:
+                    anon_id = ""
+                async with aiohttp.ClientSession() as session_2:
+                    async with session_2.get(
+                        "https://api.tenor.com/v1/search?q=%s&key=%s&limit=%s&anon_id=%s"
+                        % (search, apikey, lmt, anon_id)
+                    ) as rr:
+                        if rr.status == 200:
+                            try:
+                                dat = json.loads(rr.content)
+                                e = discord.Embed(color=colors.random())
+                                e.set_image(
+                                    url=dat["results"][
+                                        random.randint(0, len(dat["results"]) - 1)
+                                    ]["media"][0]["gif"]["url"]
+                                )
+                                e.set_footer(text="Powered by Tenor")
+                                await ctx.send(embed=e)
+                                await ctx.message.delete()
+                            except Exception as e:
+                                await ctx.send(e)
+                        else:
+                            await ctx.send("error")
 
     @commands.command(name="reddit")
     @commands.cooldown(1, 5, commands.BucketType.user)
