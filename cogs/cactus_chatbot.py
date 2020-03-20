@@ -17,249 +17,229 @@ import tensorflow as tf
 
 
 class CactusChatbot(commands.Cog):
-    def __init__(self, bot):
-        logging.basicConfig(level=logging.INFO)
 
-        self.bot = bot
-        self.reset_model()
-        self.is_inferencing = False
+	def __init__(self, bot):
+		logging.basicConfig(level=logging.INFO)
 
-    def init_state(self):
-        self.model_name = "big"
-        self.batch_size = 1
-        self.seed = None
-        self.nsamples = 1
-        self.length = 400
-        self.temperature = 1
-        self.top_k = 40
+		self.bot = bot
+		self.reset_model()
+		self.is_inferencing = False
 
-    def set_state(
-        self, nsamples, length, temperature, top_k, model_name="big",
-    ):
-        self.nsamples = nsamples
-        self.length = length
-        self.temperature = temperature
-        self.top_k
-        self.model_name = model_name
+	def init_state(self):
+		self.model_name = 'big'
+		self.batch_size = 1
+		self.seed = None
+		self.nsamples = 1
+		self.length = 400
+		self.temperature = 1
+		self.top_k = 40
 
-    def preinit_model(self):
-        np.random.seed(self.seed)
-        tf.set_random_seed(self.seed)
-        self.enc = encoder.get_encoder(self.model_name)
-        self.hparams = model.default_hparams()
-        with open(os.path.join("models", self.model_name, "hparams.json")) as f:
-            self.hparams.override_from_dict(json.load(f))
+	def set_state(self, nsamples, length, temperature, top_k, model_name='big', ):
+		self.nsamples = nsamples
+		self.length = length
+		self.temperature = temperature
+		self.top_k
+		self.model_name = model_name
 
-        if self.length is None:
-            self.length = self.hparams.n_ctx // 2
-        elif self.length > self.hparams.n_ctx:
-            logging.error(
-                "Can't get samples longer than window size: %s" % self.hparams.n_ctx
-            )
+	def preinit_model(self):
+		np.random.seed(self.seed)
+		tf.set_random_seed(self.seed)
+		self.enc = encoder.get_encoder(self.model_name)
+		self.hparams = model.default_hparams()
+		with open(os.path.join('models', self.model_name, 'hparams.json')) as f:
+			self.hparams.override_from_dict(json.load(f))
 
-    def init_model(self):
-        self.context = tf.compat.v1.placeholder(tf.int32, [1, None])
-        self.output = sample.sample_sequence(
-            hparams=self.hparams,
-            length=self.length,
-            context=self.context,
-            batch_size=self.batch_size,
-            temperature=self.temperature,
-            top_k=self.top_k,
-        )
+		if self.length is None:
+			self.length = self.hparams.n_ctx // 2
+		elif self.length > self.hparams.n_ctx:
+			logging.error("Can't get samples longer than window size: %s" % self.hparams.n_ctx)
 
-        self.saver = tf.train.Saver()
-        self.ckpt = tf.train.latest_checkpoint(os.path.join("models", self.model_name))
-        self.saver.restore(self.session, self.ckpt)
-        self.is_inferencing = False
+	def init_model(self):
+		self.context = tf.compat.v1.placeholder(tf.int32, [1, None])
+		self.output = sample.sample_sequence(
+			hparams=self.hparams, length=self.length,
+			context=self.context,
+			batch_size=self.batch_size,
+			temperature=self.temperature, top_k=self.top_k
+		)
 
-    def reset_model(self):
-        self.init_state()
-        self.preinit_model()
-        self.session = tf.InteractiveSession(graph=tf.Graph())
-        self.init_model()
+		self.saver = tf.train.Saver()
+		self.ckpt = tf.train.latest_checkpoint(os.path.join('models', self.model_name))
+		self.saver.restore(self.session, self.ckpt)
+		self.is_inferencing = False
 
-    def shutdown(self):
-        logging.info("Shutting down GPT.")
-        self.session.close()
+	def reset_model(self):
+		self.init_state()
+		self.preinit_model()
+		self.session = tf.InteractiveSession(graph=tf.Graph())
+		self.init_model()
 
-    @commands.command()
-    @commands.guild_only()
-    async def talk(self, ctx, *, message):
-        logging.info("MSG: " + message)
-        if self.is_inferencing:
-            await ctx.send("Currently talking to someone. Try again later.")
-            return
+	def shutdown(self):
+		logging.info('Shutting down GPT.')
+		self.session.close()
 
-        self.is_inferencing = True
-        context_tokens = self.enc.encode(message)
-        for _ in range(self.nsamples):
-            async with ctx.typing():
-                start = time.time()
-                text_generator = functools.partial(self.generate_text, context_tokens)
-                out = await self.bot.loop.run_in_executor(None, text_generator)
+	@commands.command()
+	@commands.guild_only()
+	async def talk(self, ctx, *, message):
+		logging.info('MSG: ' + message)
+		if (self.is_inferencing):
+			await ctx.send('Currently talking to someone. Try again later.')
+			return
 
-                response = self.enc.decode(out[0])
-                logging.info(
-                    "RESPONSE GENERATED IN :"
-                    + str(round(time.time() - start, 2))
-                    + " seconds."
-                )
-                logging.info("RESPONSE: " + response)
-                logging.info("RESPONSE LEN: " + str(len(response)))
+		self.is_inferencing = True
+		context_tokens = self.enc.encode(message)
+		for _ in range(self.nsamples):
+			async with ctx.typing():
+				start = time.time()
+				text_generator = functools.partial(self.generate_text, context_tokens)
+				out = await self.bot.loop.run_in_executor(None, text_generator)
 
-                response_chunk = 0
-                chunk_size = 1990
-                if len(response) > 2000:
-                    while len(response) > response_chunk:
-                        await ctx.send(
-                            response[response_chunk : response_chunk + chunk_size]
-                        )
-                        response_chunk += chunk_size
-                else:
-                    await ctx.send(response)
+				response = self.enc.decode(out[0])
+				logging.info('RESPONSE GENERATED IN :' + str(round(time.time() - start, 2)) + ' seconds.')
+				logging.info('RESPONSE: ' + response)
+				logging.info('RESPONSE LEN: ' + str(len(response)))
 
-        self.is_inferencing = False
+				response_chunk = 0
+				chunk_size = 1990
+				if (len(response) > 2000):
+					while (len(response) > response_chunk):
+						await ctx.send(response[response_chunk:response_chunk + chunk_size])
+						response_chunk += chunk_size
+				else:
+					await ctx.send(response)
 
-    def generate_text(self, context_tokens):
-        return self.session.run(
-            self.output, feed_dict={self.context: [context_tokens for _ in range(1)]}
-        )[:, len(context_tokens) :]
+		self.is_inferencing = False
 
-    @commands.command()
-    @commands.guild_only()
-    async def getconfig(self, ctx):
-        logging.info("Current state.")
-        await ctx.send("N Samples: " + str(self.nsamples))
-        await ctx.send("Max Length: " + str(self.length))
-        await ctx.send("Temperature: " + str(self.temperature))
-        await ctx.send("Top K: " + str(self.top_k))
-        await ctx.send("Model: " + str(self.model_name))
+	def generate_text(self, context_tokens):
+		return self.session.run(self.output, feed_dict={
+			self.context: [context_tokens for _ in range(1)]
+		})[:, len(context_tokens):]
 
-    @commands.command()
-    @commands.guild_only()
-    async def models(self, ctx):
-        logging.info("Help Invoked.")
-        message1 = """
+	@commands.command()
+	@commands.guild_only()
+	async def getconfig(self, ctx):
+		logging.info('Current state.')
+		await ctx.send('N Samples: ' + str(self.nsamples))
+		await ctx.send('Max Length: ' + str(self.length))
+		await ctx.send('Temperature: ' + str(self.temperature))
+		await ctx.send('Top K: ' + str(self.top_k))
+		await ctx.send('Model: ' + str(self.model_name))
+
+	@commands.command()
+	@commands.guild_only()
+	async def models(self, ctx):
+		logging.info('Help Invoked.')
+		message1 = """
 ```
 Available models:
 {0}
 ```
 """
-        modelnames = os.listdir("D:\gpt2\discordbot\gpt2-discord-bot\models")
-        await ctx.send(message1.format(modelnames))
+		modelnames = os.listdir('D:\gpt2\discordbot\gpt2-discord-bot\models')
+		await ctx.send(message1.format(modelnames))
 
-    @commands.command()
-    @commands.guild_only()
-    # async def setconfig(self, ctx, nsamples: int, length: int, temp: float, top_k: int, model_name: str):
-    async def setconfig(self, ctx, length: int, model_name: str):
-        logging.info("Set configuration.")
-        if self.is_inferencing:
-            await ctx.send("Currently talking to someone. Try again later.")
-            return
+	@commands.command()
+	@commands.guild_only()
+	# async def setconfig(self, ctx, nsamples: int, length: int, temp: float, top_k: int, model_name: str):
+	async def setconfig(self, ctx, length: int, model_name: str):
+		logging.info('Set configuration.')
+		if (self.is_inferencing):
+			await ctx.send('Currently talking to someone. Try again later.')
+			return
 
-        await ctx.trigger_typing()
-        self.shutdown()
-        # self.set_state(int(nsamples), int(length), float(temp), int(top_k), model_name)
-        self.set_state(1, int(length), 1, 40, model_name)
-        await ctx.trigger_typing()
-        self.preinit_model()
-        self.session = tf.InteractiveSession(graph=tf.Graph())
-        await ctx.trigger_typing()
-        self.init_model()
+		await ctx.trigger_typing()
+		self.shutdown()
+		# self.set_state(int(nsamples), int(length), float(temp), int(top_k), model_name)
+		self.set_state(1, int(length), 1, 40, model_name)
+		await ctx.trigger_typing()
+		self.preinit_model()
+		self.session = tf.InteractiveSession(graph=tf.Graph())
+		await ctx.trigger_typing()
+		self.init_model()
 
-        await ctx.send("Succesfully Set Configuration!")
-        if self.nsamples * self.length > 100:
-            await ctx.send(
-                "The configuration parameters are process intensive, responses may take a while."
-            )
+		await ctx.send('Succesfully Set Configuration!')
+		if (self.nsamples * self.length > 100):
+			await ctx.send('The configuration parameters are process intensive, responses may take a while.')
 
-    @commands.command()
-    @commands.guild_only()
-    async def makepoem(self, ctx, *, message):
-        logging.info("MSG: " + message)
-        if self.is_inferencing:
-            await ctx.send("Currently talking to someone. Try again later.")
-            return
+	@commands.command()
+	@commands.guild_only()
+	async def makepoem(self, ctx, *, message):
+		logging.info('MSG: ' + message)
+		if (self.is_inferencing):
+			await ctx.send('Currently talking to someone. Try again later.')
+			return
 
-        await ctx.trigger_typing()
-        self.shutdown()
-        self.set_state(1, None, 0.95, 40, "poetry")
-        await ctx.trigger_typing()
-        self.preinit_model()
-        self.session = tf.InteractiveSession(graph=tf.Graph())
-        await ctx.trigger_typing()
-        self.init_model()
+		await ctx.trigger_typing()
+		self.shutdown()
+		self.set_state(1, None, 0.95, 40, 'poetry')
+		await ctx.trigger_typing()
+		self.preinit_model()
+		self.session = tf.InteractiveSession(graph=tf.Graph())
+		await ctx.trigger_typing()
+		self.init_model()
 
-        self.is_inferencing = True
-        context_tokens = self.enc.encode(message)
-        for _ in range(self.nsamples):
-            async with ctx.typing():
-                start = time.time()
-                text_generator = functools.partial(self.generate_text, context_tokens)
-                out = await self.bot.loop.run_in_executor(None, text_generator)
+		self.is_inferencing = True
+		context_tokens = self.enc.encode(message)
+		for _ in range(self.nsamples):
+			async with ctx.typing():
+				start = time.time()
+				text_generator = functools.partial(self.generate_text, context_tokens)
+				out = await self.bot.loop.run_in_executor(None, text_generator)
 
-                response = self.enc.decode(out[0])
-                logging.info(
-                    "RESPONSE GENERATED IN :"
-                    + str(round(time.time() - start, 2))
-                    + " seconds."
-                )
-                logging.info("RESPONSE: " + response)
-                logging.info("RESPONSE LEN: " + str(len(response)))
+				response = self.enc.decode(out[0])
+				logging.info('RESPONSE GENERATED IN :' + str(round(time.time() - start, 2)) + ' seconds.')
+				logging.info('RESPONSE: ' + response)
+				logging.info('RESPONSE LEN: ' + str(len(response)))
 
-                response_chunk = 0
-                chunk_size = 1990
-                if len(response) > 2000:
-                    while len(response) > response_chunk:
-                        await ctx.send(
-                            response[response_chunk : response_chunk + chunk_size]
-                        )
-                        response_chunk += chunk_size
-                else:
-                    await ctx.send(response)
+				response_chunk = 0
+				chunk_size = 1990
+				if (len(response) > 2000):
+					while (len(response) > response_chunk):
+						await ctx.send(response[response_chunk:response_chunk + chunk_size])
+						response_chunk += chunk_size
+				else:
+					await ctx.send(response)
 
-        self.is_inferencing = False
+		self.is_inferencing = False
 
-        def generate_text(self, context_tokens):
-            return self.session.run(
-                self.output,
-                feed_dict={self.context: [context_tokens for _ in range(1)]},
-            )[:, len(context_tokens) :]
-            logging.info("Set configuration.")
+		def generate_text(self, context_tokens):
+			return self.session.run(self.output, feed_dict={
+				self.context: [context_tokens for _ in range(1)]
+			})[:, len(context_tokens):]
+			logging.info('Set configuration.')
 
-        await ctx.trigger_typing()
-        self.shutdown()
-        self.init_state()
-        await ctx.trigger_typing()
-        self.preinit_model()
-        self.session = tf.InteractiveSession(graph=tf.Graph())
-        await ctx.trigger_typing()
-        self.init_model()
+		await ctx.trigger_typing()
+		self.shutdown()
+		self.init_state()
+		await ctx.trigger_typing()
+		self.preinit_model()
+		self.session = tf.InteractiveSession(graph=tf.Graph())
+		await ctx.trigger_typing()
+		self.init_model()
 
-    @commands.command()
-    @commands.guild_only()
-    async def default(self, ctx):
-        logging.info("Setting to Default configuration.")
-        if self.is_inferencing:
-            await ctx.send("Currently talking to someone. Try again later.")
-            return
+	@commands.command()
+	@commands.guild_only()
+	async def default(self, ctx):
+		logging.info('Setting to Default configuration.')
+		if (self.is_inferencing):
+			await ctx.send('Currently talking to someone. Try again later.')
+			return
 
-        await ctx.trigger_typing()
-        self.shutdown()
-        self.init_state()
-        await ctx.trigger_typing()
-        self.preinit_model()
-        self.session = tf.InteractiveSession(graph=tf.Graph())
-        await ctx.trigger_typing()
-        self.init_model()
+		await ctx.trigger_typing()
+		self.shutdown()
+		self.init_state()
+		await ctx.trigger_typing()
+		self.preinit_model()
+		self.session = tf.InteractiveSession(graph=tf.Graph())
+		await ctx.trigger_typing()
+		self.init_model()
 
-        await ctx.send("Succesfully Set Default Configuration!")
+		await ctx.send('Succesfully Set Default Configuration!')
 
-    @commands.command()
-    @commands.guild_only()
-    async def help(self, ctx):
-        message1 = """
+	@commands.command()
+	@commands.guild_only()
+	async def help(self, ctx):
+		message1 = """
 ```
 This bot was made by cactus uwu#0523
 Basic bot usage:
@@ -269,29 +249,29 @@ Model names for MODEL_NAME:
 {0}
 ```
 """
-        modelnames = os.listdir("D:\gpt2\discordbot\gpt2-discord-bot\models")
-        await ctx.send(message1.format(modelnames))
+		modelnames = os.listdir('D:\gpt2\discordbot\gpt2-discord-bot\models')
+		await ctx.send(message1.format(modelnames))
 
-    # await ctx.send("> " + ', '.join(modelnames))
-    # await ctx.send('use ^setconfig LENGTH_OF_MESSAGE MODEL_NAME')
-    # await ctx.send('just use 400-1000 for LENGTH_OF_MESSAGE')
-    # #await ctx.send('use 774M, got, lotr and 2b2told for MODEL_NAME')
-    # await ctx.send('model names for MODEL_NAME:')
-    # modelnames = os.listdir('D:\gpt2\discordbot\gpt2-discord-bot\models')
-    # await ctx.send(modelnames)
+	# await ctx.send("> " + ', '.join(modelnames))
+	# await ctx.send('use ^setconfig LENGTH_OF_MESSAGE MODEL_NAME')
+	# await ctx.send('just use 400-1000 for LENGTH_OF_MESSAGE')
+	# #await ctx.send('use 774M, got, lotr and 2b2told for MODEL_NAME')
+	# await ctx.send('model names for MODEL_NAME:')
+	# modelnames = os.listdir('D:\gpt2\discordbot\gpt2-discord-bot\models')
+	# await ctx.send(modelnames)
 
-    @commands.command()
-    @commands.guild_only()
-    async def stoptest(self, ctx):
-        logging.info("trying to stop.")
-        self.shutdown()
-        self.init_state()
-        await ctx.trigger_typing()
-        self.preinit_model()
-        self.session = tf.InteractiveSession(graph=tf.Graph())
-        await ctx.trigger_typing()
-        self.init_model()
+	@commands.command()
+	@commands.guild_only()
+	async def stoptest(self, ctx):
+		logging.info('trying to stop.')
+		self.shutdown()
+		self.init_state()
+		await ctx.trigger_typing()
+		self.preinit_model()
+		self.session = tf.InteractiveSession(graph=tf.Graph())
+		await ctx.trigger_typing()
+		self.init_model()
 
 
 def setup(bot):
-    bot.add_cog(CactusChatbot(bot))
+	bot.add_cog(CactusChatbot(bot))
