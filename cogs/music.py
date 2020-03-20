@@ -7,15 +7,22 @@ import math
 import json
 import re
 
-time_rx = re.compile('[0-9]+')
-url_rx = re.compile('https?:\/\/(?:www\.)?.+')  # noqa: W605
+time_rx = re.compile("[0-9]+")
+url_rx = re.compile("https?:\/\/(?:www\.)?.+")  # noqa: W605
+
 
 class Music(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.map = []
-        if not hasattr(bot, 'lavalink'):
-            lavalink.Client(bot=bot, password='youshallnotpass', loop=bot.loop, ws_port=2333, rest_port=2333)
+        if not hasattr(bot, "lavalink"):
+            lavalink.Client(
+                bot=bot,
+                password="youshallnotpass",
+                loop=bot.loop,
+                ws_port=2333,
+                rest_port=2333,
+            )
             self.bot.lavalink.register_hook(self._track_hook)
         self.skips = {}
 
@@ -30,14 +37,20 @@ class Music(commands.Cog):
     async def _track_hook(self, event):
         if isinstance(event, lavalink.Events.StatsUpdateEvent):
             return
-        channel = self.bot.get_channel(event.player.fetch('channel'))
+        channel = self.bot.get_channel(event.player.fetch("channel"))
         if not channel:
             return
         if isinstance(event, lavalink.Events.TrackStartEvent):
-            await channel.send(embed=discord.Embed(title='Now playing:',
-                description=event.track.title, color=colors.green()), delete_after=20)
+            await channel.send(
+                embed=discord.Embed(
+                    title="Now playing:",
+                    description=event.track.title,
+                    color=colors.green(),
+                ),
+                delete_after=20,
+            )
         elif isinstance(event, lavalink.Events.QueueEndEvent):
-            await channel.send('Queue ended', delete_after=5)
+            await channel.send("Queue ended", delete_after=5)
 
     def get_humans(self, channel):
         return len([m for m in channel.members if not m.bot])
@@ -46,12 +59,16 @@ class Music(commands.Cog):
     async def on_voice_state_update(self, member, before, after):
         if not after.channel:
             player = self.bot.lavalink.players.get(member.guild.id)
-            channel = self.bot.get_channel(player.fetch('channel'))
+            channel = self.bot.get_channel(player.fetch("channel"))
             if member.id == self.bot.user.id:
                 if player.queue:
                     await channel.send("I paused your song", delete_after=20)
-            if player.is_connected and before.channel.id == channel.id:  # check if the vc is empty
-                if self.get_humans(after.channel) == 0:                 # and leave if it's empty after 25sec
+            if (
+                player.is_connected and before.channel.id == channel.id
+            ):  # check if the vc is empty
+                if (
+                    self.get_humans(after.channel) == 0
+                ):  # and leave if it's empty after 25sec
                     await asyncio.sleep(25)
                     channel = self.bot.get_channel(before.channel.id)
                     if self.get_humans(after.channel) == 0:
@@ -66,72 +83,85 @@ class Music(commands.Cog):
     async def _play(self, ctx, *, query):
         """ Lists the first 10 search results from a given query. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
-        if 'youtu.be' in query or 'http' in query:
-            query = query.strip('<>')
+        if "youtu.be" in query or "http" in query:
+            query = query.strip("<>")
             if not url_rx.match(query):
-                query = f'ytsearch:{query}'
+                query = f"ytsearch:{query}"
             results = await self.bot.lavalink.get_tracks(query)
-            if not results or not results['tracks']:
-                await ctx.send('Nothing found', delete_after=20)
+            if not results or not results["tracks"]:
+                await ctx.send("Nothing found", delete_after=20)
                 await asyncio.sleep(20)
                 return await ctx.message.delete()
             e = discord.Embed(color=colors.green())
-            if results['loadType'] == 'PLAYLIST_LOADED':
-                tracks = results['tracks']
+            if results["loadType"] == "PLAYLIST_LOADED":
+                tracks = results["tracks"]
                 for track in tracks:
                     player.add(requester=ctx.author.id, track=track)
-                e.set_author(name="Playlist Enqueued!", icon_url="https://cdn.discordapp.com/attachments/498333830395199488/507136609897021455/Z23N.gif")
-                e.description = f'{results["playlistInfo"]["name"]} - {len(tracks)} tracks'
+                e.set_author(
+                    name="Playlist Enqueued!",
+                    icon_url="https://cdn.discordapp.com/attachments/498333830395199488/507136609897021455/Z23N.gif",
+                )
+                e.description = (
+                    f'{results["playlistInfo"]["name"]} - {len(tracks)} tracks'
+                )
                 await ctx.send(embed=e, delete_after=20)
             else:
-                track = results['tracks'][0]
-                e.set_author(name="Track Enqueued", icon_url="https://cdn.discordapp.com/attachments/498333830395199488/507136609897021455/Z23N.gif")
+                track = results["tracks"][0]
+                e.set_author(
+                    name="Track Enqueued",
+                    icon_url="https://cdn.discordapp.com/attachments/498333830395199488/507136609897021455/Z23N.gif",
+                )
                 e.description = f'[{track["info"]["title"]}]({track["info"]["uri"]})'
                 await ctx.send(embed=e, delete_after=20)
                 player.add(requester=ctx.author.id, track=track)
             if not player.is_playing:
                 await player.play()
             return await ctx.message.delete()
-        if not query.startswith('ytsearch:') and not query.startswith('scsearch:'):
-            query = 'ytsearch:' + query
+        if not query.startswith("ytsearch:") and not query.startswith("scsearch:"):
+            query = "ytsearch:" + query
         results = await self.bot.lavalink.get_tracks(query)
-        if not results or not results['tracks']:
-            await ctx.send('Nothing found', delete_after=20)
+        if not results or not results["tracks"]:
+            await ctx.send("Nothing found", delete_after=20)
             await asyncio.sleep(20)
             return await ctx.message.delete()
-        tracks = results['tracks'][:10]  # First 10 results
+        tracks = results["tracks"][:10]  # First 10 results
         e = discord.Embed(color=colors.green())
-        e.title = 'Which track number?'
-        e.description = ''
+        e.title = "Which track number?"
+        e.description = ""
         local = []
         for index, track in enumerate(tracks, start=1):
             track_title = track["info"]["title"]
             track_uri = track["info"]["uri"]
-            e.description += f'`{index}.` [{track_title}]({track_uri})\n'
+            e.description += f"`{index}.` [{track_title}]({track_uri})\n"
             local.append((f"{track_title}", track_uri))
         e.set_footer(text='Reply with "cancel" to stop')
         message = await ctx.send(embed=e)
         completed = False
         while completed is False:
+
             async def clean_chat(ctx, message, msg=None):
                 await ctx.message.delete()
                 await message.delete()
                 if msg:
                     await msg.delete()
+
             def pred(m):
                 return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+
             try:
-                msg = await self.bot.wait_for('message', check=pred, timeout=60)
+                msg = await self.bot.wait_for("message", check=pred, timeout=60)
             except asyncio.TimeoutError:
-                await ctx.send('You took a min to respond so ima just go.. ;-;', delete_after=5)
+                await ctx.send(
+                    "You took a min to respond so ima just go.. ;-;", delete_after=5
+                )
                 await clean_chat(ctx, message)
             else:
-                if 'cancel' in msg.content.lower():
+                if "cancel" in msg.content.lower():
                     return await clean_chat(ctx, message, msg)
                 invalid_chars = False
                 for x in list(msg.content):
-                    if x not in '1234567890':
-                        await ctx.send('Invalid character, try again', delete_after=3)
+                    if x not in "1234567890":
+                        await ctx.send("Invalid character, try again", delete_after=3)
                         await msg.delete()
                         invalid_chars = True
                         break
@@ -139,26 +169,36 @@ class Music(commands.Cog):
                     continue
                 query = local[int(msg.content) - 1][1]  # type: str
                 player = self.bot.lavalink.players.get(ctx.guild.id)
-                query = query.strip('<>')
+                query = query.strip("<>")
                 if not url_rx.match(query):
-                    query = f'ytsearch:{query}'
+                    query = f"ytsearch:{query}"
                 results = await self.bot.lavalink.get_tracks(query)
-                if not results or not results['tracks']:
-                    await ctx.send('Nothing found', delete_after=20)
+                if not results or not results["tracks"]:
+                    await ctx.send("Nothing found", delete_after=20)
                     await asyncio.sleep(20)
                     return await clean_chat(ctx, message, msg)
                 embed = discord.Embed(color=colors.green())
-                if results['loadType'] == 'PLAYLIST_LOADED':
-                    tracks = results['tracks']
+                if results["loadType"] == "PLAYLIST_LOADED":
+                    tracks = results["tracks"]
                     for track in tracks:
                         player.add(requester=ctx.author.id, track=track)
-                    embed.set_author(name="Playlist Enqueued!", icon_url="https://cdn.discordapp.com/attachments/498333830395199488/507136609897021455/Z23N.gif")
-                    embed.description = f'{results["playlistInfo"]["name"]} - {len(tracks)} tracks'
+                    embed.set_author(
+                        name="Playlist Enqueued!",
+                        icon_url="https://cdn.discordapp.com/attachments/498333830395199488/507136609897021455/Z23N.gif",
+                    )
+                    embed.description = (
+                        f'{results["playlistInfo"]["name"]} - {len(tracks)} tracks'
+                    )
                     await ctx.send(embed=embed, delete_after=20)
                 else:
-                    track = results['tracks'][0]
-                    embed.set_author(name="Track Enqueued", icon_url="https://cdn.discordapp.com/attachments/498333830395199488/507136609897021455/Z23N.gif")
-                    embed.description = f'[{track["info"]["title"]}]({track["info"]["uri"]})'
+                    track = results["tracks"][0]
+                    embed.set_author(
+                        name="Track Enqueued",
+                        icon_url="https://cdn.discordapp.com/attachments/498333830395199488/507136609897021455/Z23N.gif",
+                    )
+                    embed.description = (
+                        f'[{track["info"]["title"]}]({track["info"]["uri"]})'
+                    )
                     await ctx.send(embed=embed, delete_after=20)
                     player.add(requester=ctx.author.id, track=track)
                 if not player.is_playing:
@@ -166,32 +206,40 @@ class Music(commands.Cog):
                 await clean_chat(ctx, message, msg)
                 completed = True
 
-    @commands.command(name='old_play', aliases=['p'])
+    @commands.command(name="old_play", aliases=["p"])
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True, manage_messages=True)
     async def _old_play(self, ctx, *, query: str):
         """ Searches and plays a song from a given query. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
-        query = query.strip('<>')
+        query = query.strip("<>")
         if not url_rx.match(query):
-            query = f'ytsearch:{query}'
+            query = f"ytsearch:{query}"
         results = await self.bot.lavalink.get_tracks(query)
-        if not results or not results['tracks']:
-            await ctx.send('Nothing found', delete_after=20)
+        if not results or not results["tracks"]:
+            await ctx.send("Nothing found", delete_after=20)
             await asyncio.sleep(20)
             return await ctx.message.delete()
         embed = discord.Embed(color=colors.green())
-        if results['loadType'] == 'PLAYLIST_LOADED':
-            tracks = results['tracks']
+        if results["loadType"] == "PLAYLIST_LOADED":
+            tracks = results["tracks"]
             for track in tracks:
                 player.add(requester=ctx.author.id, track=track)
-            embed.set_author(name="Playlist Enqueued!", icon_url="https://cdn.discordapp.com/attachments/498333830395199488/507136609897021455/Z23N.gif")
-            embed.description = f'{results["playlistInfo"]["name"]} - {len(tracks)} tracks'
+            embed.set_author(
+                name="Playlist Enqueued!",
+                icon_url="https://cdn.discordapp.com/attachments/498333830395199488/507136609897021455/Z23N.gif",
+            )
+            embed.description = (
+                f'{results["playlistInfo"]["name"]} - {len(tracks)} tracks'
+            )
             await ctx.send(embed=embed, delete_after=20)
         else:
-            track = results['tracks'][0]
-            embed.set_author(name="Track Enqueued", icon_url="https://cdn.discordapp.com/attachments/498333830395199488/507136609897021455/Z23N.gif")
+            track = results["tracks"][0]
+            embed.set_author(
+                name="Track Enqueued",
+                icon_url="https://cdn.discordapp.com/attachments/498333830395199488/507136609897021455/Z23N.gif",
+            )
             embed.description = f'[{track["info"]["title"]}]({track["info"]["uri"]})'
             await ctx.send(embed=embed, delete_after=20)
             player.add(requester=ctx.author.id, track=track)
@@ -199,7 +247,7 @@ class Music(commands.Cog):
             await player.play()
         await ctx.message.delete()
 
-    @commands.command(name='previous', aliases=['pv'])
+    @commands.command(name="previous", aliases=["pv"])
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(manage_messages=True)
@@ -212,11 +260,11 @@ class Music(commands.Cog):
             await asyncio.sleep(20)
             await ctx.message.delete()
         except lavalink.NoPreviousTrack:
-            await ctx.send('There is no previous song to play.', delete_after=20)
+            await ctx.send("There is no previous song to play.", delete_after=20)
             await asyncio.sleep(20)
             await ctx.message.delete()
 
-    @commands.command(name='playnow', aliases=['pn'])
+    @commands.command(name="playnow", aliases=["pn"])
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True, manage_messages=True)
@@ -227,24 +275,24 @@ class Music(commands.Cog):
             await ctx.invoke(self._play, query=query, delete_after=20)
             await asyncio.sleep(20)
             return await ctx.message.delete()
-        query = query.strip('<>')
+        query = query.strip("<>")
         if not url_rx.match(query):
-            query = f'ytsearch:{query}'
+            query = f"ytsearch:{query}"
         results = await self.bot.lavalink.get_tracks(query)
-        if not results or not results['tracks']:
-            await ctx.send('Nothing found', delete_after=20)
+        if not results or not results["tracks"]:
+            await ctx.send("Nothing found", delete_after=20)
             await asyncio.sleep(20)
             return await ctx.message.delete()
-        tracks = results['tracks']
+        tracks = results["tracks"]
         track = tracks.pop(0)
-        if results['loadType'] == 'PLAYLIST_LOADED':
+        if results["loadType"] == "PLAYLIST_LOADED":
             for _track in tracks:
                 player.add(requester=ctx.author.id, track=_track)
         await player.play_now(requester=ctx.author.id, track=track)
         await asyncio.sleep(20)
         await ctx.message.delete()
 
-    @commands.command(name='playat', aliases=['pa'])
+    @commands.command(name="playat", aliases=["pa"])
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True, manage_messages=True)
@@ -252,14 +300,14 @@ class Music(commands.Cog):
         """ Plays the queue from a specific point. Disregards tracks before the index. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
         if index < 1:
-            await ctx.send('Invalid specified index.', delete_after=20)
+            await ctx.send("Invalid specified index.", delete_after=20)
             await asyncio.sleep(20)
             return await ctx.message.delete()
         if len(player.queue) < index:
-            await ctx.send('This index exceeds the queue\'s length.', delete_after=20)
+            await ctx.send("This index exceeds the queue's length.", delete_after=20)
             await asyncio.sleep(20)
             return await ctx.message.delete()
-        await player.play_at(index-1)
+        await player.play_at(index - 1)
         await ctx.message.add_reaction("👍")
         await asyncio.sleep(20)
         await ctx.message.delete()
@@ -272,12 +320,13 @@ class Music(commands.Cog):
         """ Seeks to a given position in a track. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
         if not player.is_playing:
-            await ctx.send('Not playing.', delete_after=20)
+            await ctx.send("Not playing.", delete_after=20)
             await asyncio.sleep(20)
             return await ctx.message.delete()
-        if ':' in time:
-            minutes, seconds = time.split(':')
-            minutes = int(minutes); seconds = int(seconds)
+        if ":" in time:
+            minutes, seconds = time.split(":")
+            minutes = int(minutes)
+            seconds = int(seconds)
             if minutes:
                 seconds += 60 * minutes
             seconds = seconds * 1000
@@ -285,23 +334,32 @@ class Music(commands.Cog):
         else:
             seconds = time_rx.search(time)
             if not seconds:
-                await ctx.send('You need to specify the amount of seconds to skip!', delete_after=20)
+                await ctx.send(
+                    "You need to specify the amount of seconds to skip!",
+                    delete_after=20,
+                )
                 await asyncio.sleep(20)
                 return await ctx.message.delete()
             seconds = int(seconds.group()) * 1000
-            if time.startswith('-'):
+            if time.startswith("-"):
                 seconds *= -1
             track_time = player.position + seconds
         if track_time >= player.current.duration or track_time < 0:
-            await ctx.send("That's **beyond** the current track <a:Midoriya:643261596914679808>", delete_after=20)
+            await ctx.send(
+                "That's **beyond** the current track <a:Midoriya:643261596914679808>",
+                delete_after=20,
+            )
             await asyncio.sleep(20)
             return await ctx.message.delete()
         await player.seek(track_time)
-        await ctx.send(f'Moved track to **{lavalink.Utils.format_time(track_time)}**', delete_after=20)
+        await ctx.send(
+            f"Moved track to **{lavalink.Utils.format_time(track_time)}**",
+            delete_after=20,
+        )
         await asyncio.sleep(20)
         await ctx.message.delete()
 
-    @commands.command(name='skip', aliases=['forceskip', 'fs', 's'])
+    @commands.command(name="skip", aliases=["forceskip", "fs", "s"])
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(manage_messages=True)
@@ -309,16 +367,20 @@ class Music(commands.Cog):
         """ Skips the current track. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
         if not player.is_playing:
-            await ctx.send('Not playing.', delete_after=20)
+            await ctx.send("Not playing.", delete_after=20)
             await asyncio.sleep(20)
             return await ctx.message.delete()
         if not ctx.author.voice:
-            await ctx.send("You need to be connected to vc to use this", delete_after=20)
+            await ctx.send(
+                "You need to be connected to vc to use this", delete_after=20
+            )
             await asyncio.sleep(20)
             return await ctx.message.delete()
         channel = ctx.author.voice.channel
         if ctx.author not in channel.members:
-            await ctx.send("You need to be connected to my vc to use this", delete_after=20)
+            await ctx.send(
+                "You need to be connected to my vc to use this", delete_after=20
+            )
             await asyncio.sleep(20)
             return await ctx.message.delete()
         humans = self.get_humans(channel)  # type: int
@@ -332,16 +394,19 @@ class Music(commands.Cog):
                 return await ctx.message.delete()
             self.skips[ctx.guild.id].append(ctx.author.id)
         if not len(self.skips[ctx.guild.id]) >= req:
-            await ctx.send(f"Added your vote! ({len(self.skips[ctx.guild.id])}/{req})", delete_after=20)
+            await ctx.send(
+                f"Added your vote! ({len(self.skips[ctx.guild.id])}/{req})",
+                delete_after=20,
+            )
             await asyncio.sleep(20)
             return await ctx.message.delete()
         await player.skip()
-        await ctx.send('⏭ | Skipped.', delete_after=20)
+        await ctx.send("⏭ | Skipped.", delete_after=20)
         del self.skips[ctx.guild.id]
         await asyncio.sleep(20)
         await ctx.message.delete()
 
-    @commands.command(name='stop')
+    @commands.command(name="stop")
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(manage_messages=True)
@@ -349,36 +414,38 @@ class Music(commands.Cog):
         """ Stops the player and clears its queue. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
         if not player.is_playing:
-            await ctx.send('Not playing.', delete_after=20)
+            await ctx.send("Not playing.", delete_after=20)
             await asyncio.sleep(20)
             return await ctx.message.delete()
         player.queue.clear()
         await player.stop()
-        await ctx.send('⏹ | Stopped.', delete_after=20)
+        await ctx.send("⏹ | Stopped.", delete_after=20)
         await asyncio.sleep(20)
         await ctx.message.delete()
 
-    @commands.command(name='now', aliases=['np', 'n', 'playing'])
+    @commands.command(name="now", aliases=["np", "n", "playing"])
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True, manage_messages=True)
     async def _now(self, ctx):
         """ Shows some stats about the currently playing song. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
-        song = 'Nothing'
+        song = "Nothing"
         if player.current:
             position = lavalink.Utils.format_time(player.position)
             if player.current.stream:
-                duration = '🔴 LIVE'
+                duration = "🔴 LIVE"
             else:
                 duration = lavalink.Utils.format_time(player.current.duration)
-            song = f'**[{player.current.title}]({player.current.uri})**\n({position}/{duration})'
-        embed = discord.Embed(color=colors.green(), title='Now Playing', description=song)
+            song = f"**[{player.current.title}]({player.current.uri})**\n({position}/{duration})"
+        embed = discord.Embed(
+            color=colors.green(), title="Now Playing", description=song
+        )
         await ctx.send(embed=embed, delete_after=20)
         await asyncio.sleep(20)
         return await ctx.message.delete()
 
-    @commands.command(name='queue', aliases=['q'])
+    @commands.command(name="queue", aliases=["q"])
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True, manage_messages=True)
@@ -386,25 +453,33 @@ class Music(commands.Cog):
         """ Shows the player's queue. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
         if not player.queue:
-            await ctx.send('There\'s nothing in the queue! Why not queue something?', delete_after=20)
+            await ctx.send(
+                "There's nothing in the queue! Why not queue something?",
+                delete_after=20,
+            )
             await asyncio.sleep(20)
             return await ctx.message.delete()
         items_per_page = 10
         pages = math.ceil(len(player.queue) / items_per_page)
         start = (page - 1) * items_per_page
         end = start + items_per_page
-        queue_list = ''
+        queue_list = ""
         for index, track in enumerate(player.queue[start:end], start=start):
-            queue_list += f'`{index + 1}.` [**{track.title}**]({track.uri})\n'
+            queue_list += f"`{index + 1}.` [**{track.title}**]({track.uri})\n"
         embed = discord.Embed(colour=colors.green(), description=queue_list)
-        embed.set_author(name=f"Queue: {len(player.queue)}", icon_url="https://cdn.discordapp.com/attachments/498333830395199488/507136609897021455/Z23N.gif")
-        embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/498333830395199488/507170864614342676/75c21df998c0d0c97631853ea5619ea1.gif")
-        embed.set_footer(text=f'Viewing page {page}/{pages}')
+        embed.set_author(
+            name=f"Queue: {len(player.queue)}",
+            icon_url="https://cdn.discordapp.com/attachments/498333830395199488/507136609897021455/Z23N.gif",
+        )
+        embed.set_thumbnail(
+            url="https://cdn.discordapp.com/attachments/498333830395199488/507170864614342676/75c21df998c0d0c97631853ea5619ea1.gif"
+        )
+        embed.set_footer(text=f"Viewing page {page}/{pages}")
         await ctx.send(embed=embed, delete_after=60)
         await asyncio.sleep(60)
         await ctx.message.delete()
 
-    @commands.command(name='pause', aliases=['resume'])
+    @commands.command(name="pause", aliases=["resume"])
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(manage_messages=True)
@@ -412,21 +487,21 @@ class Music(commands.Cog):
         """ Pauses/Resumes the current track. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
         if not player.is_playing:
-            await ctx.send('Not playing.', delete_after=20)
+            await ctx.send("Not playing.", delete_after=20)
             await asyncio.sleep(20)
             return await ctx.message.delete()
         if player.paused:
             await player.set_pause(False)
-            await ctx.send('⏯ | Resumed', delete_after=20)
+            await ctx.send("⏯ | Resumed", delete_after=20)
             await asyncio.sleep(20)
             await ctx.message.delete()
         else:
             await player.set_pause(True)
-            await ctx.send('⏯ | Paused', delete_after=20)
+            await ctx.send("⏯ | Paused", delete_after=20)
             await asyncio.sleep(20)
             await ctx.message.delete()
 
-    @commands.command(name='volume', aliases=['vol'])
+    @commands.command(name="volume", aliases=["vol"])
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(manage_messages=True)
@@ -434,15 +509,15 @@ class Music(commands.Cog):
         """ Changes the player's volume. Must be between 0 and 1000. Error Handling for that is done by Lavalink. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
         if not volume:
-            await ctx.send(f'🔈 | {player.volume}%', delete_after=20)
+            await ctx.send(f"🔈 | {player.volume}%", delete_after=20)
             await asyncio.sleep(20)
             return await ctx.message.delete()
         await player.set_volume(volume)
-        await ctx.send(f'🔈 | Set to {player.volume}%', delete_after=20)
+        await ctx.send(f"🔈 | Set to {player.volume}%", delete_after=20)
         await asyncio.sleep(20)
         return await ctx.message.delete()
 
-    @commands.command(name='shuffle')
+    @commands.command(name="shuffle")
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(manage_messages=True)
@@ -450,15 +525,18 @@ class Music(commands.Cog):
         """ Shuffles the player's queue. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
         if not player.is_playing:
-            await ctx.send('Nothing playing.', delete_after=20)
+            await ctx.send("Nothing playing.", delete_after=20)
             await asyncio.sleep(20)
             return await ctx.message.delete()
         player.shuffle = not player.shuffle
-        await ctx.send('🔀 | Shuffle ' + ('enabled' if player.shuffle else 'disabled'), delete_after=20)
+        await ctx.send(
+            "🔀 | Shuffle " + ("enabled" if player.shuffle else "disabled"),
+            delete_after=20,
+        )
         await asyncio.sleep(20)
         await ctx.message.delete()
 
-    @commands.command(name='repeat', aliases=['loop'])
+    @commands.command(name="repeat", aliases=["loop"])
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(manage_messages=True)
@@ -466,15 +544,18 @@ class Music(commands.Cog):
         """ Repeats the current song until the command is invoked again. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
         if not player.is_playing:
-            await ctx.send('Nothing playing.', delete_after=20)
+            await ctx.send("Nothing playing.", delete_after=20)
             await asyncio.sleep(20)
             return await ctx.message.delete()
         player.repeat = not player.repeat
-        await ctx.send('🔁 | Repeat ' + ('enabled' if player.repeat else 'disabled'), delete_after=20)
+        await ctx.send(
+            "🔁 | Repeat " + ("enabled" if player.repeat else "disabled"),
+            delete_after=20,
+        )
         await asyncio.sleep(20)
         await ctx.message.delete()
 
-    @commands.command(name='remove')
+    @commands.command(name="remove")
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(manage_messages=True)
@@ -482,44 +563,47 @@ class Music(commands.Cog):
         """ Removes an item from the player's queue with the given index. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
         if not player.queue:
-            await ctx.send('Nothing queued.', delete_after=20)
+            await ctx.send("Nothing queued.", delete_after=20)
             await asyncio.sleep(20)
             return await ctx.message.delete()
         if index > len(player.queue) or index < 1:
-            await ctx.send(f'Index has to be **between** 1 and {len(player.queue)}', delete_after=20)
+            await ctx.send(
+                f"Index has to be **between** 1 and {len(player.queue)}",
+                delete_after=20,
+            )
             await asyncio.sleep(20)
             return await ctx.message.delete()
         index -= 1
         removed = player.queue.pop(index)
-        await ctx.send(f'Removed **{removed.title}** from the queue.', delete_after=20)
+        await ctx.send(f"Removed **{removed.title}** from the queue.", delete_after=20)
         await asyncio.sleep(20)
         await ctx.message.delete()
 
-    @commands.command(name='find')
+    @commands.command(name="find")
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True, manage_messages=True)
     async def _find(self, ctx, *, query):
         """ Lists the first 10 search results from a given query. """
-        if not query.startswith('ytsearch:') and not query.startswith('scsearch:'):
-            query = 'ytsearch:' + query
+        if not query.startswith("ytsearch:") and not query.startswith("scsearch:"):
+            query = "ytsearch:" + query
         results = await self.bot.lavalink.get_tracks(query)
-        if not results or not results['tracks']:
-            await ctx.send('Nothing found', delete_after=20)
+        if not results or not results["tracks"]:
+            await ctx.send("Nothing found", delete_after=20)
             await asyncio.sleep(20)
             return await ctx.message.delete()
-        tracks = results['tracks'][:10]  # First 10 results
-        o = ''
+        tracks = results["tracks"][:10]  # First 10 results
+        o = ""
         for index, track in enumerate(tracks, start=1):
             track_title = track["info"]["title"]
             track_uri = track["info"]["uri"]
-            o += f'`{index}.` [{track_title}]({track_uri})\n'
+            o += f"`{index}.` [{track_title}]({track_uri})\n"
         embed = discord.Embed(color=colors.green(), description=o)
         await ctx.send(embed=embed, delete_after=20)
         await asyncio.sleep(20)
         await ctx.message.delete()
 
-    @commands.command(name='disconnect', aliases=['dc'])
+    @commands.command(name="disconnect", aliases=["dc"])
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(manage_messages=True)
@@ -527,16 +611,19 @@ class Music(commands.Cog):
         """ Disconnects the player from the voice channel and clears its queue. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
         if not player.is_connected:
-            await ctx.send('Not connected.', delete_after=20)
+            await ctx.send("Not connected.", delete_after=20)
             await asyncio.sleep(20)
             return await ctx.message.delete()
-        if not ctx.author.voice or (player.is_connected and ctx.author.voice.channel.id != int(player.channel_id)):
-            await ctx.send('You\'re not in my voicechannel!', delete_after=20)
+        if not ctx.author.voice or (
+            player.is_connected
+            and ctx.author.voice.channel.id != int(player.channel_id)
+        ):
+            await ctx.send("You're not in my voicechannel!", delete_after=20)
             await asyncio.sleep(20)
             return await ctx.message.delete()
         player.queue.clear()
         await player.disconnect()
-        await ctx.send('*⃣ | Disconnected.', delete_after=20)
+        await ctx.send("*⃣ | Disconnected.", delete_after=20)
         await asyncio.sleep(20)
         await ctx.message.delete()
 
@@ -549,21 +636,26 @@ class Music(commands.Cog):
         player = self.bot.lavalink.players.get(ctx.guild.id)
         if not player.is_connected:
             if not ctx.author.voice or not ctx.author.voice.channel:
-                await ctx.send('You aren\'t connected to any voice channel.', delete_after=20)
+                await ctx.send(
+                    "You aren't connected to any voice channel.", delete_after=20
+                )
                 await asyncio.sleep(20)
                 return await ctx.message.delete()
             permissions = ctx.author.voice.channel.permissions_for(ctx.me)
             if not permissions.connect or not permissions.speak:
-                await ctx.send('Missing permissions `CONNECT` and/or `SPEAK`.', delete_after=20)
+                await ctx.send(
+                    "Missing permissions `CONNECT` and/or `SPEAK`.", delete_after=20
+                )
                 await asyncio.sleep(20)
                 return await ctx.message.delete()
-            player.store('channel', ctx.channel.id)
+            player.store("channel", ctx.channel.id)
             await player.connect(ctx.author.voice.channel.id)
         else:
             if player.connected_channel.id != ctx.author.voice.channel.id:
-                await ctx.send('Join my voice channel!', delete_after=20)
+                await ctx.send("Join my voice channel!", delete_after=20)
                 await asyncio.sleep(20)
                 await ctx.message.delete()
+
 
 def setup(bot):
     bot.add_cog(Music(bot))

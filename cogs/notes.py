@@ -7,6 +7,7 @@ import random
 import json
 import os
 
+
 class Notepad(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -21,7 +22,11 @@ class Notepad(commands.Cog):
 
     def save(self):
         with open("./data/userdata/notes.json", "w") as outfile:
-            return json.dump({"notes": self.notes, "timestamp": self.timestamp}, outfile, ensure_ascii=False)
+            return json.dump(
+                {"notes": self.notes, "timestamp": self.timestamp},
+                outfile,
+                ensure_ascii=False,
+            )
 
     @commands.command(name="note")
     @commands.cooldown(1, 1, commands.BucketType.user)
@@ -38,15 +43,27 @@ class Notepad(commands.Cog):
                     del self.notes[author_id][0]
                 if author_id not in self.timestamp:
                     self.timestamp[author_id] = []
-                self.timestamp[author_id].append(datetime.datetime.now().strftime("%m-%d-%Y %I:%M%p"))
+                self.timestamp[author_id].append(
+                    datetime.datetime.now().strftime("%m-%d-%Y %I:%M%p")
+                )
                 if len(self.timestamp[author_id]) > 5:
                     del self.timestamp[author_id][0]
                 self.save()
-                path = os.getcwd() + "/data/images/reactions/notes/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/notes/"))
+                path = (
+                    os.getcwd()
+                    + "/data/images/reactions/notes/"
+                    + random.choice(
+                        os.listdir(os.getcwd() + "/data/images/reactions/notes/")
+                    )
+                )
                 e = discord.Embed(color=0xFFC923)
-                e.set_author(name='Noted..', icon_url=ctx.author.avatar_url)
+                e.set_author(name="Noted..", icon_url=ctx.author.avatar_url)
                 e.set_image(url="attachment://" + os.path.basename(path))
-                await ctx.send(file=discord.File(path, filename=os.path.basename(path)), embed=e, delete_after=10)
+                await ctx.send(
+                    file=discord.File(path, filename=os.path.basename(path)),
+                    embed=e,
+                    delete_after=10,
+                )
             await asyncio.sleep(10)
             await ctx.message.delete()
         else:
@@ -74,11 +91,13 @@ class Notepad(commands.Cog):
             del self.notes[author_id][0]
         if author_id not in self.timestamp:
             self.timestamp[author_id] = []
-        self.timestamp[author_id].append(datetime.datetime.now().strftime("%m-%d-%Y %I:%M%p"))
+        self.timestamp[author_id].append(
+            datetime.datetime.now().strftime("%m-%d-%Y %I:%M%p")
+        )
         if len(self.timestamp[author_id]) > 5:
             del self.timestamp[author_id][0]
         self.save()
-        await ctx.send('Noted..', delete_after=1)
+        await ctx.send("Noted..", delete_after=1)
         await asyncio.sleep(1)
         await ctx.message.delete()
 
@@ -99,7 +118,8 @@ class Notepad(commands.Cog):
                 position += 1
             await ctx.send(embed=e)
         else:
-          await ctx.send("no data")
+            await ctx.send("no data")
+
 
 def setup(bot: commands.Bot):
     bot.add_cog(Notepad(bot))
