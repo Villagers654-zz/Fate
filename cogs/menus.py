@@ -49,6 +49,8 @@ class Menus(commands.Cog):
 			owner = self.bot.get_user(config.owner_id())
 			e.set_author(name='~==🥂🍸🍷Help🍷🍸🥂==~', icon_url=owner.avatar_url)
 			e.set_thumbnail(url=self.bot.user.avatar_url)
+			e.description = f"[Support Server]({self.bot.config['support_server']}) | " \
+			                f"[Bot Invite]({self.bot.invite_url})"
 			usage = '• using a cmd with no args will usually send its help menu\n' \
 			    '• try using `.module enable` instead of `.enable module`'
 			e.add_field(name='◈ Basic Bot Usage', value=usage, inline=False)
