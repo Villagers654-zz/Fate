@@ -137,7 +137,7 @@ class Ranking(commands.Cog):
 
 	@commands.Cog.listener()
 	async def on_message(self, msg):
-		if msg.guild and not msg.author.bot:
+		if msg.guild and not msg.author.bot and self.bot.pool:
 			guild_id = str(msg.guild.id)
 			user_id = msg.author.id
 
@@ -444,6 +444,9 @@ class Ranking(commands.Cog):
 		def font(size):
 			return ImageFont.truetype("./utils/fonts/Modern_Sans_Light.otf", size)
 
+		if not self.bot.pool:
+			return await ctx.send("I'm not fully online yet, try again later")
+
 		# core
 		path = './static/card.png'
 		user = ctx.author
@@ -710,6 +713,9 @@ class Ranking(commands.Cog):
 			embeds.append(e)
 
 			return embeds
+
+		if not self.bot.pool:
+			return await ctx.send("I'm not fully online yet, try again later")
 
 		with open('./data/userdata/config.json', 'r') as f:
 			config = json.load(f)  # type: dict
