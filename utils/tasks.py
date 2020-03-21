@@ -72,7 +72,7 @@ class Tasks:
 				await asyncio.sleep(15)
 
 	async def debug_log(self):
-		channel = self.bot.get_channel(675878044824764456)
+		channel = self.bot.get_channel(self.bot.config["debug_channel"])
 		log = []
 		reads = 0
 		while True:

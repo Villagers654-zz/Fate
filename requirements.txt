@@ -1,3 +1,5 @@
+discord
+discord.py
 beautifulsoup4
 bs4
 colorama
@@ -18,3 +20,8 @@ youtube-dl
 tqdm
 aiosqlite
 aiofiles
+aiomysql
+pymysql
+easydev
+profanity-check
+praw
