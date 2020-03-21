@@ -21,6 +21,51 @@ from utils.colors import purple, cyan, fate
 from utils import utils, checks
 
 
+class Faction(object):
+	def __init__(self, outer_instance, guild_id: str, name: str):
+		self.instance = outer_instance  # type: Factions
+		self.bot = self.instance.bot  # type: commands.AutoShardedBot
+		if not self.bot.is_ready():
+			raise EnvironmentError("You can't initialize a faction object when the bot isn't ready")
+
+		self.guild_id = guild_id
+		self._name = name
+
+		self.guild = self.bot.get_guild(int(guild_id))
+		self.owner = self.guild.get_member(self.data['owner'])
+		self.members = [self.guild.get_member(uid) for uid in self.data['members']]
+
+	@property
+	def name(self):
+		return self._name
+
+	@name.setter
+	def name(self, value):
+		if value in self.instance.factions[self.guild_id]:
+			raise ValueError(f"Faction {value} already exists")
+		self.instance.factions[self.guild_id][value] = self.data
+		del self.instance.factions[self.guild_id][self.name]
+		self._name = value
+		self.instance.save_data()
+
+	@property
+	def data(self):
+		return self.instance.factions[self.guild_id][self.name]
+
+	def add_member(self, member: discord.Member):
+		if member.id in self.data['members'] or member.id == self.owner.id:
+			raise ValueError("That member is already in the faction")
+		self.instance.factions[self.guild_id][self.name]['members'].append(member.id)
+		self.instance.save_data()
+
+	def remove_member(self, member: discord.Member):
+		if member.id == self.owner.id:
+			raise PermissionError("You can't remove the faction owner")
+		if member.id not in self.data['members']:
+			raise ValueError("That member isn't in the faction")
+		self.instance.factions[self.guild_id][self.name]['members'].remove(member.id)
+		self.instance.save_data()
+
 class MiniGames:
 	def __init__(self, *users):
 		self.users = users
@@ -73,9 +118,9 @@ class Factions(commands.Cog):
 
 	def save_data(self) -> None:
 		""" Saves the current variables """
+		# with open(self.path, 'w+') as f:
+		# 	json.dump(self.factions, f)
 		return
-		with open(self.path, 'w+') as f:
-			json.dump(self.factions, f)
 
 	def init(self, guild_id: str):
 		""" Creates guild dictionary if it doesnt exist """
