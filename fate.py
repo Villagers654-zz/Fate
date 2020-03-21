@@ -40,6 +40,20 @@ class Fate(commands.AutoShardedBot):
         self.memory = utils.MemoryInfo  # Class for easily accessing memory usage
         self.tasks = tasks.Tasks(self)  # Task Manager
 
+        self.invite_url = discord.utils.oauth_url(
+            bot.user.id,
+            discord.Permissions(0).update(
+                embed_links=True, manage_messages=True,
+                view_audit_log=True, manage_webhooks=True,
+                manage_roles=True, manage_channels=True,
+                manage_guild=True, manage_emojis=True,
+                change_nickname=True, manage_nicknames=True,
+                external_emojis=True, attach_files=True,
+                kick_members=True, ban_members=True,
+                read_message_history=True, add_reactions=True
+            )
+        )
+
         # deprecated shit
         self.get_stats = utils.get_stats()
         self.get_config = utils.get_config()
