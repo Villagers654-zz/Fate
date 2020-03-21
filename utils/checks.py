@@ -13,12 +13,12 @@ def luck(ctx):
 	return ctx.message.author.id in [264838866480005122, 355026215137968129]
 
 def devs(ctx: commands.Context):
-    return (
-        ctx.author
-        in await ctx.bot.fetch_guild(397415086295089155)
-        .get_role(690642373180522606)
-        .members
-    )
+	return (
+		ctx.author
+		in ctx.bot.get_guild(397415086295089155)
+		.get_role(690642373180522606)
+		.members
+	)
 
 
 def command_is_enabled(ctx):
