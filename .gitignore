@@ -11,6 +11,7 @@ __pycache__/
 
 testing.py
 Backup.zip
+discord.log
 
 /cogs/dev.py
 /data/clipboard.txt
@@ -32,3 +33,4 @@ Backup.zip
 /template_cogs/*
 /testing/
 /testing/*
+/src/
