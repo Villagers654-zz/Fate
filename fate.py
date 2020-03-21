@@ -26,7 +26,7 @@ class Fate(commands.AutoShardedBot):
 
         self.initial_extensions = [     # Cogs to load before logging in
             'error_handler', 'config', 'menus', 'core', 'music', 'mod', 'welcome', 'farewell', 'notes', 'archive',
-            'coffeeshop', 'custom', 'actions', 'reactions', 'responses', 'textart', 'fun', 'dev', '4b4t', 'readme',
+            'coffeeshop', 'custom', 'actions', 'reactions', 'responses', 'textart', 'fun', 'dev', 'readme',
             'reload', 'embeds', 'polis', 'apis', 'chatbridges', 'clean_rythm', 'utility', 'psutil', 'rules',
             'duel_chat', 'selfroles', 'lock', 'audit', 'cookies', 'backup', 'stats', 'server_list', 'emojis',
             'logger', 'autorole', 'changelog', 'restore_roles', 'chatbot', 'anti_spam', 'anti_raid', 'chatfilter',
@@ -41,7 +41,7 @@ class Fate(commands.AutoShardedBot):
         self.tasks = tasks.Tasks(self)  # Task Manager
 
         self.invite_url = discord.utils.oauth_url(
-            bot.user.id,
+            self.config['bot_user_id'],
             discord.Permissions(0).update(
                 embed_links=True, manage_messages=True,
                 view_audit_log=True, manage_webhooks=True,
