@@ -12,8 +12,14 @@ __pycache__/
 testing.py
 Backup.zip
 
-/data/clipboard.txt
 /cogs/dev.py
+/data/clipboard.txt
+/data/4b4t/
+/data/images/
+/data/temp/
+/data/userdata/
+/data/videos/
+
 
 /utils/livechat.py
 /utils/outh.py
