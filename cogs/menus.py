@@ -235,6 +235,9 @@ class Menus(commands.Cog):
 		embeds = [default(), core(), mod(), utility(), fun(), music()]
 		if args:
 			ems = [e.__name__ for e in [default, core, mod, utility, fun, music]]
+			if args not in ems:
+				return await ctx.send("I don't have any commands, or category pages under that name. "
+				                      "Try locating it in the help menus then retry with its actual name")
 			index = ems.index(args)
 		msg = await ctx.send(embed=embeds[index])
 
