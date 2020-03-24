@@ -1,4 +1,3 @@
-discord
 discord.py
 beautifulsoup4
 bs4
