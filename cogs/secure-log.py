@@ -1304,6 +1304,8 @@ class SecureLog(commands.Cog):
                 return
             invites = await member.guild.invites()
             invite = None  # the invite used to join
+            if guild_id not in self.invites:
+                self.invites[guild_id] = {}
             for invite in invites:
                 if invite.url not in self.invites[guild_id]:
                     self.invites[guild_id][invite.url] = invite.uses
