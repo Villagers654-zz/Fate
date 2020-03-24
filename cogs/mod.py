@@ -1175,18 +1175,20 @@ class Mod(commands.Cog):
 		self.save_json()
 		await asyncio.sleep(timer)
 		if user_id in self.timers['mute'][guild_id]:
-			if mute_role in user.roles:
-				await user.remove_roles(mute_role)
-				await ctx.send(f"**Unmuted:** {user.name}")
-			for role_id in removed_roles:
-				role = ctx.guild.get_role(role_id)
-				if role not in user.roles:
-					await user.add_roles(role)
-					await asyncio.sleep(0.5)
-			if guild_id in self.timers:
-				if user_id in self.timers[guild_id]:
-					del self.timers['mute'][guild_id][user_id]
-					self.save_json()
+			user = ctx.guild.get_member(int(user_id))
+			if user:
+				if mute_role in user.roles:
+					await user.remove_roles(mute_role)
+					await ctx.send(f"**Unmuted:** {user.name}")
+				for role_id in removed_roles:
+					role = ctx.guild.get_role(role_id)
+					if role not in user.roles:
+						await user.add_roles(role)
+						await asyncio.sleep(0.5)
+				if guild_id in self.timers:
+					if user_id in self.timers[guild_id]:
+						del self.timers['mute'][guild_id][user_id]
+						self.save_json()
 
 	@commands.command(name="unmute", description="Unblocks users from sending messages")
 	@commands.cooldown(1, 3, commands.BucketType.user)

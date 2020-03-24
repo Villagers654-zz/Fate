@@ -50,7 +50,8 @@ class Utility(commands.Cog):
 		with open(self.timer_path, 'w') as f:
 			json.dump(self.timers, f, indent=2, ensure_ascii=False)
 
-	def avg_color(self, url):
+	@staticmethod
+	def avg_color(url):
 		"""Gets an image and returns the average color"""
 		if not url:
 			return colors.fate()
@@ -67,11 +68,12 @@ class Utility(commands.Cog):
 		r = r / c; g = g / c; b = b / c
 		return eval('0x' + rgb2hex(round(r), round(g), round(b)).replace('#', ''))
 
-	async def wait_for_dismissal(self, ctx, msg):
+	@staticmethod
+	async def wait_for_dismissal(ctx, msg):
 		def pred(m):
 			return m.channel.id == ctx.channel.id and m.content.lower().startswith('k')
 		try:
-			reply = await self.bot.wait_for('message', check=pred, timeout=25)
+			reply = await ctx.bot.wait_for('message', check=pred, timeout=25)
 		except asyncio.TimeoutError:
 			pass
 		else:
@@ -562,8 +564,7 @@ class Utility(commands.Cog):
 			      f"\nTarget: {entry.target}" \
 			      f"\nReason: {entry.reason}" \
 			      f"\nExtra: {entry.extra}" \
-			      f"\nCreated: {entry.created_at}" \
-			      f"\nChanges: {entry.changes}"
+			      f"\nCreated: {entry.created_at}"
 			await ctx.send(dat)
 
 	@commands.command(name='poll')
