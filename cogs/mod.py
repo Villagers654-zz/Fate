@@ -1159,13 +1159,16 @@ class Mod(commands.Cog):
 					await asyncio.sleep(0.5)
 				except:
 					pass
-		timer_info = {
-			'channel': ctx.channel.id,
-			'user': user.id,
-			'end_time': str(datetime.now() + timedelta(seconds=round(timer))),
-			'mute_role': mute_role.id,
-			'roles': removed_roles
-		}
+		try:
+			timer_info = {
+				'channel': ctx.channel.id,
+				'user': user.id,
+				'end_time': str(datetime.now() + timedelta(seconds=round(timer))),
+				'mute_role': mute_role.id,
+				'roles': removed_roles
+			}
+		except OverflowError:
+			return await ctx.send("No way in hell I'm waiting that long to unmute")
 		if guild_id not in self.timers['mute']:
 			self.timers['mute'][guild_id] = {}
 		self.timers['mute'][guild_id][user_id] = timer_info
