@@ -34,7 +34,7 @@ def profile_help():
 class Ranking(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
-		self.cleanup_interval = 10                        # One hour xp cleanup interval
+		self.cleanup_interval = 3600                         # One hour xp cleanup interval
 		self.path = './data/userdata/xp.json'                # filepath: Per-guild xp configs
 		self.profile_path = './data/userdata/profiles.json'  # filepath: Profile data
 		self.clb_path = './data/userdata/cmd-lb.json'        # filepath: Commands used
