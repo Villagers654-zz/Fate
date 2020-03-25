@@ -6,7 +6,6 @@ import requests
 from time import time, monotonic
 from datetime import datetime, timedelta
 import os
-from math import sqrt
 
 from discord.ext import commands
 import discord
@@ -14,7 +13,6 @@ from PIL import ImageDraw
 from PIL import ImageFont
 from PIL import Image
 from io import BytesIO
-from sympy import Symbol, solve, log
 
 from utils import checks, colors, utils
 
