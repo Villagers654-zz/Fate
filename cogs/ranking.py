@@ -1,22 +1,18 @@
 # Customizable xp ranking system
 
 from os import path
-import os
 import json
 from time import time
 from random import *
 import asyncio
-from datetime import datetime, timedelta
+from datetime import timedelta
 import requests
 from io import BytesIO
-import aiosqlite
-from contextlib import suppress
 
 from discord.ext import commands
 import discord
 from PIL import Image, ImageFont, ImageDraw, ImageSequence
 import aiofiles as aio
-import sqlite3
 
 from utils import colors, utils
 
@@ -38,12 +34,12 @@ def profile_help():
 class Ranking(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
-		self.db_path = './data/userdata/xp.db'
-		self.path = './data/userdata/xp.json'
-		self.profile_path = './data/userdata/profiles.json'
-		self.clb_path = './data/userdata/cmd-lb.json'
+		self.cleanup_interval = 10                        # One hour xp cleanup interval
+		self.path = './data/userdata/xp.json'                # filepath: Per-guild xp configs
+		self.profile_path = './data/userdata/profiles.json'  # filepath: Profile data
+		self.clb_path = './data/userdata/cmd-lb.json'        # filepath: Commands used
 
-		self.msg_cooldown = 10
+		self.msg_cooldown = 3600
 		self.cd = {}
 		self.global_cd = {}
 		self.macro_cd = {}
@@ -52,25 +48,30 @@ class Ranking(commands.Cog):
 		self.vc_counter = 0
 		self.backup_counter = 0
 		self.cache = {}
+
 		# xp config
 		self.config = {}
 		if path.isfile(self.path):
 			with open(self.path, 'r') as f:
 				self.config = json.load(f)
+
 		# save storage
 		for guild_id, config in list(self.config.items()):
 			if config == self.static_config():
 				del self.config[guild_id]
+
 		# profile config
 		self.profile = {}
 		if path.isfile(self.profile_path):
 			with open(self.profile_path, 'r') as f:
 				self.profile = json.load(f)
+
 		# top command lb
 		self.cmds = {}
 		if path.isfile(self.clb_path):
 			with open(self.clb_path, 'r') as f:
 				self.cmds = json.load(f)
+
 		# vc caching
 		self.vclb = {}
 		self.vc_counter = 0
@@ -135,6 +136,25 @@ class Ranking(commands.Cog):
 			'xp': round(progress)
 		}
 
+	async def cleanup_task(self):
+		if not self.bot.is_ready():
+			await self.bot.wait_until_ready()
+		while self.bot.pool is None:
+			await asyncio.sleep(5)
+		while True:
+			async with self.bot.pool.acquire() as conn:
+				async with conn.cursor() as cur:
+					limit = time() - 60 * 60 * 24 * 30  # One month
+					await cur.execute(f"delete from monthly_msg where msg_time < {limit};")
+					await cur.execute(f"delete from global_monthly where msg_time < {limit};")
+					await conn.commit()
+					self.bot.log("Removed expired messages from monthly leaderboards", "DEBUG")
+			await asyncio.sleep(self.cleanup_interval)
+
+	@commands.Cog.listener()
+	async def on_ready(self):
+		self.bot.tasks.start(self.cleanup_task, task_id='xp-cleanup')
+
 	@commands.Cog.listener()
 	async def on_message(self, msg):
 		if msg.guild and not msg.author.bot and self.bot.pool:
@@ -148,17 +168,20 @@ class Ranking(commands.Cog):
 			if user_id not in self.global_cd:
 				self.global_cd[user_id] = 0
 			if self.global_cd[user_id] < time() - 10:
+				async with self.bot.pool.acquire() as conn:
+					async with conn.cursor() as cur:
 
-				# global msg xp
-				results = await self.bot.select(f"select xp from global_msg where user_id = {user_id};")
-				if not results:
-					await self.bot.insert('global_msg', user_id, new_xp)
-				else:
-					xp = results[0]
-					await self.bot.update('global_msg', xp=xp+new_xp, user_id=user_id)
+						# global msg xp
+						await cur.execute(f"select xp from global_msg where user_id = {user_id};")
+						results = await cur.fetchone()
+						if not results:
+							await cur.execute(f"insert into global_msg values ({user_id}, {new_xp});")
+						else:
+							await cur.execute(f"update global_msg set xp={results[0]+new_xp} where user_id = {user_id};")
 
-				# global monthly msg xp
-				await self.bot.insert('global_monthly', user_id, time(), new_xp)
+						# global monthly msg xp
+						await cur.execute(f"insert into global_monthly values ({user_id}, {time()}, {new_xp});")
+						await conn.commit()
 
 			# per-server leveling
 			if guild_id not in self.cd:
@@ -169,16 +192,22 @@ class Ranking(commands.Cog):
 			if len(msgs) < conf['msgs_within_timeframe']:
 
 				# guilded msg xp
-				# results = await self.bot.select(f"select * from msg where guild_id = {guild_id};", all=True)
-				# if user_id not in [r[1] for r in results]:
-				# 	await self.bot.insert('msg', guild_id, user_id, new_xp)
-				# else:
-				# 	for guild_id, uid, xp in results:
-				# 		if uid == user_id:
-				# 			await self.bot.update('msg', xp=new_xp+xp, guild_id=guild_id, user_id=user_id)
+				async with self.bot.pool.acquire() as conn:
+					async with conn.cursor() as cur:
+						await cur.execute(f"select * from msg where guild_id = {guild_id} and user_id = {user_id};")
+						results = await cur.fetchall()
+						if not results:
+							await cur.execute(f"insert into msg values ({guild_id}, {user_id}, {new_xp});")
+						else:
+							for guild_id, uid, xp in results:
+								if uid == user_id:
+									sql = f"update msg set xp = {new_xp + xp} where guild_id = {guild_id} and user_id = {user_id};"
+									await cur.execute(sql)
+									break
 
-				# monthly guilded msg xp
-				await self.bot.insert('monthly_msg', guild_id, user_id, time(), new_xp)
+						# monthly guilded msg xp
+						await cur.execute(f"insert into monthly_msg values ({guild_id}, {user_id}, {time()}, {new_xp});")
+						await conn.commit()
 
 	@commands.Cog.listener()
 	async def on_command_completion(self, ctx):
@@ -730,8 +759,8 @@ class Ranking(commands.Cog):
 			('vclb', 'vcleaderboard'),
 			('glb', 'gleaderboard'),
 			('gvclb', 'gvcleaderboard'),
-			('mlb', 'mleaderboard'),
-			('gmlb', 'gmleaderboard'),
+			# ('mlb', 'mleaderboard'),
+			# ('gmlb', 'gmleaderboard'),
 			('gglb', 'ggleaderboard'),
 			('ggvclb', 'ggvcleaderboard')
 		]
@@ -802,39 +831,39 @@ class Ranking(commands.Cog):
 			all=True
 		)
 
-		monthly_msg = {}
-		for _, user_id, msg_time, xp in results:
-			if user_id not in monthly_msg:
-				monthly_msg[user_id] = 0
-			monthly_msg[user_id] += xp
-		async with self.bot.pool.acquire() as conn:
-			async with conn.cursor() as cur:
-				await cur.execute(
-					f"delete from monthly_msg where msg_time < {time() - 60 * 60 * 24 * 30};"
-				)
-				await conn.commit()
-		leaderboards['Monthly Msg Leaderboard'] = {
-			user_id: xp for user_id, xp in monthly_msg.items()
-		}
+		# monthly_msg = {}
+		# for _, user_id, msg_time, xp in results:
+		# 	if user_id not in monthly_msg:
+		# 		monthly_msg[user_id] = 0
+		# 	monthly_msg[user_id] += xp
+		# async with self.bot.pool.acquire() as conn:
+		# 	async with conn.cursor() as cur:
+		# 		await cur.execute(
+		# 			f"delete from monthly_msg where msg_time < {time() - 60 * 60 * 24 * 30};"
+		# 		)
+		# 		await conn.commit()
+		# leaderboards['Monthly Msg Leaderboard'] = {
+		# 	user_id: xp for user_id, xp in monthly_msg.items()
+		# }
 
-		results = await self.bot.select(
-			f"select * from global_monthly where msg_time > {lmt} order by xp desc;",
-			all=True
-		)
-		global_monthly = {}
-		for user_id, msg_time, xp in results:
-			if user_id not in global_monthly:
-				global_monthly[user_id] = 0
-			global_monthly[user_id] += 1
-		async with self.bot.pool.acquire() as conn:
-			async with conn.cursor() as cur:
-				await cur.execute(
-					f"delete from monthly_msg where msg_time < {time() - 60 * 60 * 24 * 30};"
-				)
-				await conn.commit()
-		leaderboards['Global Monthly Msg Leaderboard'] = {
-			user_id: xp for user_id, xp in global_monthly.items()
-		}
+		# results = await self.bot.select(
+		# 	f"select * from global_monthly where msg_time > {lmt} order by xp desc;",
+		# 	all=True
+		# )
+		# global_monthly = {}
+		# for user_id, msg_time, xp in results:
+		# 	if user_id not in global_monthly:
+		# 		global_monthly[user_id] = 0
+		# 	global_monthly[user_id] += 1
+		# async with self.bot.pool.acquire() as conn:
+		# 	async with conn.cursor() as cur:
+		# 		await cur.execute(
+		# 			f"delete from monthly_msg where msg_time < {time() - 60 * 60 * 24 * 30};"
+		# 		)
+		# 		await conn.commit()
+		# leaderboards['Global Monthly Msg Leaderboard'] = {
+		# 	user_id: xp for user_id, xp in global_monthly.items()
+		# }
 
 		leaderboards['Server Msg Leaderboard'] = {
 			guild_id: sum(xp for xp in dat.values()) for guild_id, dat in msg_xp.items()
