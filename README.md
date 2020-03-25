@@ -2,7 +2,7 @@
 A multipurpose discord bot
 ## Getting Started
 ### Compatibility
-Python 3.8 or Higher
+Python 3.8 or higher due to required asyncio features
 ### Installing
 > Clone the Project
 ```
@@ -16,7 +16,9 @@ pip install -r requirements.txt
 - Download  the LavaLink server from https://github.com/Devoxin/Lavalink.py
 - Configure the Lavalink server with the default config   
 If not be sure to adjust the connection settings in [`cogs/music.py`](https://github.com/FrequencyX4/Fate/blob/master/cogs/music.py)
-###  Running
+### Initial Setup
+-  You can configure things like the debug channel, command prefix, and personalization in [`data/config.json`](https://github.com/FrequencyX4/Fate/blob/master/data/config.json)
+### Running
 ```py
 python fate.py
 ```
