@@ -16,6 +16,6 @@ def reddit():
 
 def tokens(token):
     if token == "fatezero":
-        return ""
+        return "nO"
     if token == "4b4t":
-        return ""
+        return "really? nO"
