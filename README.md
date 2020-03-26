@@ -18,6 +18,12 @@ pip install -r requirements.txt
 If not be sure to adjust the connection settings in [`cogs/music.py`](https://github.com/FrequencyX4/Fate/blob/master/cogs/music.py)
 ### Initial Setup
 -  You can configure things like the debug channel, command prefix, and personalization in [`data/config.json`](https://github.com/FrequencyX4/Fate/blob/master/data/config.json)
+###  Configuring - this is more compicated but is required for making the bot work!
+- create `./data/xp.json`
+- edit `./data/config.json` to your hearts content
+- create `./utils/outh.py` from `./utils/outh_template.py`
+- create `./data/userdata/config.json` with the value `{}`
+- create `./data/userdata/xp.json` with the value `{}`
 ### Running
 ```py
 python fate.py

@@ -6,8 +6,9 @@ import asyncio
 import psutil
 import json
 import os
-
-config = {'channel_id': 510410941809033216, 'message': None}
+with open('data/config.json') as f:
+	cfg = json.load(f)
+config = {'channel_id': cfg["stats_channel_id"], 'message': None}
 
 class Stats(commands.Cog):
 	def __init__(self, bot):
