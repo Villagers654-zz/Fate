@@ -11,7 +11,7 @@ import psutil
 import json
 import os
 
-class Menus(commands.Cog):
+class MenusCore(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 
@@ -422,6 +422,12 @@ class Menus(commands.Cog):
 		e.add_field(name="◈ Bots ◈", value=f'• [TotherBot]({totherbot})', inline=False)
 		msg = await ctx.send(embed=e)
 		await self.wait_for_dismissal(ctx, msg)
+
+
+class Menus(MenusCore):
+	def __init__(self, bot):
+		super().__init__(bot)
+
 
 def setup(bot):
 	bot.add_cog(Menus(bot))
