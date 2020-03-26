@@ -6,9 +6,7 @@ import asyncio
 import psutil
 import json
 import os
-with open('data/config.json') as f:
-	cfg = json.load(f)
-config = {'channel_id': cfg["stats_channel_id"], 'message': None}
+
 
 class Stats(commands.Cog):
 	def __init__(self, bot):
@@ -19,7 +17,9 @@ class Stats(commands.Cog):
 			try:
 				with open("./data/userdata/xp.json", "r") as f:
 					xp = json.load(f)
-				channel = self.bot.get_channel(config['channel_id'])
+				if '4b4t_stats_channel' not in self.bot.config:
+					self.bot.log("4b4t_stats_channel isn't in the config", "CRITICAL")
+				channel = self.bot.get_channel(self.bot.config['4b4t_stats_channel'])
 				if not isinstance(channel, discord.TextChannel):
 					print('4B4T Stats: channel not found'); break
 				guild = channel.guild
