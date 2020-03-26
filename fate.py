@@ -23,7 +23,7 @@ class Fate(commands.AutoShardedBot):
         self.pool = None                # MySQL Pool initialized on_ready
         self.login_errors = []          # Exceptions ignored during startup
         self.logs = []                  # Logs to send to discord, empties out quickly
-        original_only = ['polis', 'dev', 'backup']
+
         self.initial_extensions = [     # Cogs to load before logging in
             'error_handler', 'config', 'menus', 'core', 'music', 'mod', 'welcome', 'farewell', 'notes', 'archive',
             'coffeeshop', 'custom', 'actions', 'reactions', 'responses', 'textart', 'fun', 'dev', 'readme',
@@ -33,12 +33,12 @@ class Fate(commands.AutoShardedBot):
             'nsfw', 'minecraft', 'chatlock', 'rainbow', 'system', 'user', 'limiter', 'dm_channel', 'factions',
             'secure_overwrites', 'server_setup', 'secure-log', 'global-chat', 'beta', 'ranking'
         ]
+        self.awaited_extensions = []    # Cogs to load when the internal cache is ready
+
         if not self.config["original"]:
+            original_only = ['polis', 'dev', 'backup']
             for ext in original_only:
                 self.initial_extensions.remove(ext)
-        if not self.config["music_enabled"]:
-            self.initial_extensions.remove('music')
-        self.awaited_extensions = []    # Cogs to load when the internal cache is ready
 
         self.utils = utils              # Custom utility functions
         self.result = utils.Result      # Custom Result Object Creator

@@ -1,15 +1,12 @@
 {
-  "bot_user_id": 123456789012345678,
+  "bot_user_id": 506735111543193601,
   "use_default_help": false,
   "startup_status": "Up and Running",
   "debug_mode": true,
-  "log_channel": 123456789012345678,
-  "debug_channel": 123456789012345678,
+  "hub_server": 397415086295089155,
+  "log_channel": 577661500802465813,
+  "debug_channel": 675878044824764456,
+  "dump_channel": 123456789123456789,
   "support_server": "https://discord.gg/wtjuznh",
-  "original": false,
-  "music_enabled": false,
-  "stats_channel_id": 123456789012345678,
-  "util_cfg_id": 123456789012345678,
-  "util_cfg_log": 123456789012345678,
-  "util_cfg_error": 123456789012345678
+  "original": false
 }

@@ -9,13 +9,13 @@ def links():
     embed.set_author(name=f'| Links | 📚',
                      icon_url="https://images-ext-1.discordapp.net/external/kgeJxDOsmMoy2gdBr44IFpg5hpYzqxTkOUqwjYZbPtI/%3Fsize%3D1024/https/cdn.discordapp.com/avatars/506735111543193601/689cf49cf2435163ca420996bcb723a5.webp")
     embed.set_thumbnail(url=random.choice([
-                                              "https://cdn.discordapp.com/attachments/501871950260469790/513636718835007488/kisspng-computer-icons-message-icon-design-download-invite-5abf1e6f0905a2.045504771522474607037.png",
-                                              "https://cdn.discordapp.com/attachments/501871950260469790/513636728733433857/mail-open-outline.png",
-                                              "https://cdn.discordapp.com/attachments/501871950260469790/513636736492896271/mail-open-solid.png"]))
-    embed.description = \
-        f'[Invite](https://discordapp.com/oauth2/authorize?client_id=506735111543193601&permissions=1551232246&scope=bot) 📥\n' \
-        f'[Support](https://discord.gg/wtjuznh) 📧\n' \
-        f'[Discord](https://discord.gg/BQ23Z2E) <:discord:513634338487795732>'
+            "https://cdn.discordapp.com/attachments/501871950260469790/513636718835007488/kisspng-computer-icons-message-icon-design-download-invite-5abf1e6f0905a2.045504771522474607037.png",
+            "https://cdn.discordapp.com/attachments/501871950260469790/513636728733433857/mail-open-outline.png",
+            "https://cdn.discordapp.com/attachments/501871950260469790/513636736492896271/mail-open-solid.png"
+        ]))
+    embed.description = f'[Invite](https://discordapp.com/oauth2/authorize?client_id=506735111543193601&permissions=1551232246&scope=bot) 📥\n' \
+                        f'[Support](https://discord.gg/wtjuznh) 📧\n' \
+                        f'[Discord](https://discord.gg/BQ23Z2E) <:discord:513634338487795732>'
     return embed
 
 
@@ -28,14 +28,14 @@ def owner_id():
 
 
 def server(item):
-    with open('data/config.json') as file:
-        cfg = json.load(file)
+    with open("data/config.json", "r") as f:
+        config = json.load(f)  # type: dict
     if item == "id":
-        return cfg["util_cfg_id"]
+        return config["hub_server"]
     if item == "log":
-        return cfg["util_cfg_log"]
+        return config['log_channel']
     if item == "error":
-        return cfg["util_cfg_error"]
+        return config["log_channel"]
 
 
 def emojis(emoji):
