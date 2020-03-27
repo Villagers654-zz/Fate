@@ -11,15 +11,17 @@ import os
 class Stats(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
+		if '4b4t_stats_channel' not in bot.config:
+			self.bot.log("4b4t_stats_channel isn't in the config", "CRITICAL")
+			raise KeyError("4b4t_stats_channel isn't in the config")
 
 	async def stats_task(self):
 		while True:
 			try:
 				with open("./data/userdata/xp.json", "r") as f:
 					xp = json.load(f)
-				if '4b4t_stats_channel' not in self.bot.config:
-					self.bot.log("4b4t_stats_channel isn't in the config", "CRITICAL")
-				channel = self.bot.get_channel(self.bot.config['4b4t_stats_channel'])
+				config = self.bot.config
+				channel = self.bot.get_channel(config['4b4t_stats_channel'])
 				if not isinstance(channel, discord.TextChannel):
 					print('4B4T Stats: channel not found'); break
 				guild = channel.guild
@@ -70,7 +72,7 @@ class Stats(commands.Cog):
 
 	@commands.Cog.listener()
 	async def on_message(self, msg):
-		if msg.channel.id == config['channel_id']:
+		if msg.channel.id == self.bot.config['4b4t_stats_channel']:
 			if msg.author.id != self.bot.user.id:
 				await asyncio.sleep(60)
 				await msg.delete()
