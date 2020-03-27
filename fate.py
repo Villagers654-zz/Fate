@@ -78,7 +78,7 @@ class Fate(commands.AutoShardedBot):
                 password=sql.password,
                 db=sql.db,
                 loop=self.loop,
-                minsize=10,
+                minsize=1,
                 maxsize=64
             )
         except (ConnectionRefusedError, OperationalError):
