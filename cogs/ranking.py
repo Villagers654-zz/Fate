@@ -503,35 +503,37 @@ class Ranking(commands.Cog):
 				background_url = self.profile[user_id]['background']
 
 		# xp variables
-		guild_xp = await self.bot.select(
-			f'select * from msg where guild_id = {int(guild_id)} order by xp desc;', all=True
-		)
-		guild_rank = 0
-		for i, (_, id, xp) in enumerate(guild_xp):
-			if id == user.id:
-				guild_rank = i + 1
-				break
+		async with self.bot.pool.acquire() as conn:
+			async with conn.cursor() as cur:
+				if 'global' in ctx.message.content or 'profile' in ctx.message.content.lower():
+					await cur.execute(f"select * from global_msg order by xp desc;")
+					global_xp = await cur.fetchall()
+					guild_rank = 0
+					for i, (id, xp) in enumerate(global_xp):
+						if id == user.id:
+							guild_rank = i + 1
+							break
 
-		if 'global' in ctx.message.content or 'profile' in ctx.message.content.lower():
-			global_xp = await self.bot.select(f"select * from global_msg order by xp desc;", all=True)
-			guild_rank = 0
-			for i, (id, xp) in enumerate(global_xp):
-				if id == user.id:
-					guild_rank = i + 1
-					break
+					guild_xp = [xp for uid, xp in global_xp if uid == user.id]
+					guild_xp = guild_xp[0] if guild_xp else None
+					if not guild_xp:
+						return await ctx.send('somehow I have no xp for you .-.')
+					dat = self.calc_lvl(guild_xp, self.static_config())
 
-			guild_xp = [xp for uid, xp in global_xp if uid == user.id]
-			guild_xp = guild_xp[0] if guild_xp else None
-			if not guild_xp:
-				return await ctx.send('somehow I have no xp for you .-.')
-			dat = self.calc_lvl(guild_xp, self.static_config())
+				else:
+					await cur.execute(f"select * from msg where guild_id = {int(guild_id)} order by xp desc;")
+					guild_xp = await cur.fetchall()
+					guild_rank = 0
+					for i, (_, id, xp) in enumerate(guild_xp):
+						if id == user.id:
+							guild_rank = i + 1
+							break
 
-		else:
-			guild_xp = [xp for gid, uid, xp in guild_xp if uid == user.id]
-			guild_xp = guild_xp[0] if guild_xp else None
-			if not guild_xp:
-				return await ctx.send('somehow I have no xp for this server .-.')
-			dat = self.calc_lvl(guild_xp, conf)
+					guild_xp = [xp for gid, uid, xp in guild_xp if uid == user.id]
+					guild_xp = guild_xp[0] if guild_xp else None
+					if not guild_xp:
+						return await ctx.send('somehow I have no xp for this server .-.')
+					dat = self.calc_lvl(guild_xp, conf)
 
 		base_req = self.config[guild_id]['first_lvl_xp_req']
 		level = dat['level']
