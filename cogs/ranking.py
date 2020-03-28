@@ -743,9 +743,6 @@ class Ranking(commands.Cog):
 
 			return embeds
 
-		if not self.bot.pool:
-			return await ctx.send("I'm not fully online yet, try again later")
-
 		with open('./data/userdata/config.json', 'r') as f:
 			config = json.load(f)  # type: dict
 		prefix = '.'  # default prefix
@@ -780,56 +777,53 @@ class Ranking(commands.Cog):
 		guild_id = ctx.guild.id
 		leaderboards = {}
 
-		results = await self.bot.select(
-			"select * from msg order by xp desc;",
-			all=True
-		)
-		msg_xp = {}
-		for g_id, user_id, xp in results:
-			if g_id not in msg_xp:
-				msg_xp[g_id] = {}
-			msg_xp[g_id][user_id] = xp
-		leaderboards['Msg Leaderboard'] = {
-			user_id: xp for user_id, xp in msg_xp[guild_id].items()
-		}
+		if not self.bot.pool:
+			return await ctx.send("I'm not fully online yet, try again later")
+		async with self.bot.pool.acquire() as conn:
+			async with conn.cursor() as cur:
 
-		results = await self.bot.select(
-			"select * from vc_xp order by xp desc;",
-			all=True
-		)
-		vc_xp = {}
-		for g_id, user_id, xp in results:
-			if g_id not in vc_xp:
-				vc_xp[g_id] = {}
-			vc_xp[g_id][user_id] = xp
+				await cur.execute("select * from msg;")
+				results = await cur.fetchall()
+				msg_xp = {}
+				for g_id, user_id, xp in results:
+					if g_id not in msg_xp:
+						msg_xp[g_id] = {}
+					msg_xp[g_id][user_id] = xp
+				leaderboards['Msg Leaderboard'] = {
+					user_id: xp for user_id, xp in msg_xp[guild_id].items()
+				}
 
-		if guild_id not in vc_xp:
-			vc_xp[guild_id] = {ctx.guild.owner.id: 0}
-		leaderboards['Vc Leaderboard'] = {
-			user_id: timedelta(seconds=xp) for user_id, xp in vc_xp[guild_id].items()
-		}
+				await cur.execute("select * from vc_xp;")
+				results = await cur.fetchall()
+				vc_xp = {}
+				for g_id, user_id, xp in results:
+					if g_id not in vc_xp:
+						vc_xp[g_id] = {}
+					vc_xp[g_id][user_id] = xp
 
-		results = await self.bot.select(
-			"select * from global_msg order by xp desc;",
-			all=True
-		)
-		leaderboards['Global Msg Leaderboard'] = {
-			user_id: xp for user_id, xp in results
-		}
+				if guild_id not in vc_xp:
+					vc_xp[guild_id] = {ctx.guild.owner.id: 0}
+				leaderboards['Vc Leaderboard'] = {
+					user_id: timedelta(seconds=xp) for user_id, xp in vc_xp[guild_id].items()
+				}
 
-		results = await self.bot.select(
-			"select * from global_vc order by xp desc;",
-			all=True
-		)
-		leaderboards['Global Vc Leaderboard'] = {
-			user_id: timedelta(seconds=xp) for user_id, xp in results
-		}
+				await cur.execute("select * from global_msg;")
+				results = await cur.fetchall()
+				leaderboards['Global Msg Leaderboard'] = {
+					user_id: xp for user_id, xp in results
+				}
 
-		lmt = time() - 60 * 60 * 24 * 30
-		results = await self.bot.select(
-			f"select * from monthly_msg where guild_id = {guild_id} and msg_time > {lmt} order by xp desc;",
-			all=True
-		)
+				await cur.execute("select * from global_vc;")
+				results = await cur.fetchall()
+				leaderboards['Global Vc Leaderboard'] = {
+					user_id: timedelta(seconds=xp) for user_id, xp in results
+				}
+
+		# lmt = time() - 60 * 60 * 24 * 30
+		# results = await self.bot.select(
+		# 	f"select * from monthly_msg where guild_id = {guild_id} and msg_time > {lmt} order by xp desc;",
+		# 	all=True
+		# )
 
 		# monthly_msg = {}
 		# for _, user_id, msg_time, xp in results:
@@ -871,7 +865,7 @@ class Ranking(commands.Cog):
 
 		leaderboards['Server Vc Leaderboard'] = {
 				guild_id: timedelta(
-					seconds=sum([xp for xp in dat.values()])
+					seconds=sum(list(dat.values()))
 				) for guild_id, dat in vc_xp.items()
 			}
 
