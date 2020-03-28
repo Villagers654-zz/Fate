@@ -77,9 +77,7 @@ class Fate(commands.AutoShardedBot):
                 user=sql.user,
                 password=sql.password,
                 db=sql.db,
-                loop=self.loop,
-                minsize=1,
-                maxsize=64
+                loop=self.loop
             )
         except (ConnectionRefusedError, OperationalError):
             self.log("Couldn't connect to SQL server", 'CRITICAL', tb=traceback.format_exc())
