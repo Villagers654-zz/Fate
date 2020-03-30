@@ -43,13 +43,20 @@ class Emojis(commands.Cog):
 				result += char
 		return result if result else 'new_emoji'
 
+	@staticmethod
+	async def update_msg(msg, new) -> discord.Message:
+		if len(msg.content) + len(new) + 2 >= 2000:
+			msg = await msg.channel.send("Uploading emoji(s)")
+		await msg.edit(content=f"{msg.content}\n{new}")
+		return msg
+
 	async def upload_emoji(self, ctx, name, img, reason, roles=None, msg=None):
 		"""Creates partial emojis with a queue to prevent spammy messages"""
 		try:
 			emoji = await ctx.guild.create_custom_emoji(name=name, image=img, roles=roles, reason=reason)
 		except discord.errors.Forbidden as e:
 			if msg:
-				await msg.edit(content=f'{msg.content}\nFailed to add {name}: [`{e}`]')
+				await Emojis.update_msg(msg, f'Failed to add {name}: [`{e}`]')
 			else:
 				await ctx.send(f'Failed to add {name}: [`{e}`]')
 		except discord.errors.HTTPException as e:
@@ -58,22 +65,24 @@ class Emojis(commands.Cog):
 				img = Image.open(img); img = img.resize((450, 450), Image.BICUBIC)
 			except:
 				if msg:
-					return await msg.edit(content=f'{msg.content}\nFailed to resize {name}')
+					return await Emojis.update_msg(msg, f'Failed to resize {name}')
 				else:
 					return await ctx.send(f'Failed to resize {name}')
 			img.save('emoji.png')
 			with open('emoji.png', 'rb') as image:
 				img = image.read()
 			await ctx.guild.create_custom_emoji(name=name, image=img, roles=roles, reason=reason)
-			await msg.edit(content=f'{msg.content}\nAdded {name} successfully')
+			await Emojis.update_msg(msg, f'{msg.content}\nAdded {name} successfully')
 		except AttributeError as e:
 			if msg:
-				await msg.edit(content=f'{msg.content}\nFailed to add {name}: [`{e}`]')
+				await Emojis.update_msg(msg, f'Failed to add {name}: [`{e}`]')
 			else:
 				await ctx.send(f'Failed to add {name}: [`{e}`]')
 		else:
-			if msg: await msg.edit(content=f'{msg.content}\nAdded {emoji} - {name}')
-			else: await ctx.send(f'Added {emoji} - {name}')
+			if msg:
+				await Emojis.update_msg(msg, f'Added {emoji} - {name}')
+			else:
+				await ctx.send(f'Added {emoji} - {name}')
 
 	@commands.command(name="emoji", aliases=["emote"])
 	@commands.cooldown(1, 3, commands.BucketType.user)
@@ -87,7 +96,7 @@ class Emojis(commands.Cog):
 			await ctx.send(embed=e)
 			await asyncio.sleep(1)
 
-	@commands.command(name='add-emoji', aliases=['add-emote'])
+	@commands.command(name='add-emoji', aliases=['add-emote', 'addemoji', 'addemote', 'stealemoji'])
 	@commands.cooldown(2, 5, commands.BucketType.user)
 	@commands.guild_only()
 	@commands.has_permissions(manage_emojis=True)
@@ -97,79 +106,83 @@ class Emojis(commands.Cog):
 			ids: Greedy[int], *args
 	):
 		""" Uploads Emojis Via Various Methods """
-		msg = await ctx.send(f'Uploading emoji(s)..')
+		def max_emotes() -> bool:
+			return len([e for e in ctx.guild.emojis if not e.animated]) == ctx.guild.emoji_limit
 
+		def max_a_emotes() -> bool:
+			return len([e for e in ctx.guild.emojis if e.animated]) == ctx.guild.emoji_limit
+
+		async def not_at_limit(emoji) -> bool:
+			if emoji.animated and a_limit:
+				failed.append(emoji.name)
+				return False
+			elif not emoji.animated and limit:
+				failed.append(emoji.name)
+				return False
+			elif max_emotes() or max_a_emotes():
+				if max_emotes():
+					globals()['limit'] = True
+				elif max_a_emotes():
+					globals()['a_limit'] = True
+				await Emojis.update_msg(msg, "**Reached the emoji limit**")
+				return False
+			return True
+
+		# Handle emoji limitations
+		if len(ctx.guild.emojis) == ctx.guild.emoji_limit * 2:
+			return await ctx.send("You're at the emoji limit for both emojis and animated emojis")
+		limit = a_limit = False
+		failed = []  # Emojis that failed due to the emoji limit
+
+		# initialization
+		if not custom and not ids and not args:
+			return await ctx.send("You need to include an emoji to steal, an image/gif, or an image/gif URL")
+		ids = list(ids); args = list(args)
+		for arg in args:
+			if arg.isdigit():
+				ids.append(int(arg))
+				args.remove(arg)
+		msg = await ctx.send("Uploading emoji(s)..")
+
+		# PartialEmoji objects
 		for emoji in custom:
-			if self.is_blacklisted(emoji):
-				await msg.edit(content=f"{msg.content}\nERR: {emoji.name} - Invalid Emoji")
-				continue
-			name = emoji.name; img = requests.get(emoji.url).content
-			await self.upload_emoji(ctx, name=name, img=img, reason=str(ctx.author), msg=msg)
+			if await not_at_limit(emoji):
+				if self.is_blacklisted(emoji):
+					await Emojis.update_msg(msg, f"ERR: {emoji.name} - Invalid Emoji")
+					continue
+				name = emoji.name; img = requests.get(emoji.url).content
+				await self.upload_emoji(ctx, name=name, img=img, reason=str(ctx.author), msg=msg)
 
+		# PartialEmoji IDS
 		for emoji_id in ids:
 			emoji = self.bot.get_emoji(emoji_id)
 			if not emoji:
-				await msg.edit(content=f"{msg.content}\n{emoji_id} - Couldn't Fetch")
+				await Emojis.update_msg(msg, f"{emoji_id} - Couldn't Fetch")
 				continue
-			img = requests.get(emoji.url).content
-			await self.upload_emoji(ctx, name=str(emoji_id), img=img, reason=str(ctx.author), msg=msg)
+			if await not_at_limit(emoji):
+				# Get any optional 'name' arguments
+				argsv = ctx.message.content.split()
+				index = argsv.index(str(emoji_id)) + 1
+				name = f"new_emoji_{emoji_id}"
+				if len(argsv) > index:
+					new_name = argsv[index]
+					if not new_name.isdigit():
+						name = new_name
 
+				img = requests.get(emoji.url).content
+				await self.upload_emoji(ctx, name=str(name), img=img, reason=str(ctx.author), msg=msg)
+
+		# Image/Gif URLS
 		def check(iter):
-			if iter+1 > len(args):
+			if iter + 2 > len(args):
 				return '.'
-			return args[iter+1]
+			return args[iter + 1]
 		mappings = {
 			requests.get(arg).content: check(iter) if '.' not in check(iter) else 'new_emoji'
 				for iter, arg in enumerate(args) if '.' in arg
 		}
 		for img, name in mappings.items():
 			await self.upload_emoji(ctx, name=name, img=img, reason=str(ctx.author), msg=msg)
-
-	@commands.command(name='addemoji', aliases=['addemote'])
-	@commands.cooldown(1, 5, commands.BucketType.guild)
-	@commands.guild_only()
-	@commands.has_permissions(manage_emojis=True)
-	@commands.bot_has_permissions(manage_emojis=True)
-	async def add_emoji(self, ctx, *, args='new_emoji'):
-		"""Creates partial emojis from attached files/urls"""
-		args = args.split(' '); image_urls = None; roles = []
-		if 'https://' in args[0]:
-			image_urls = args[0]
-			args.pop(0); args = ['new_emoji'] if not args else args
-		if ctx.message.attachments:
-			image_urls = [(file.filename, file.url) for file in ctx.message.attachments]
-		if len(args) > 1: args = ' '.join(args)
-		else: args = args[0]
-		if not image_urls:
-			return await ctx.send('You need to attach a file or provide a url')
-		msg = await ctx.send('Uploading emoji(s)..')
-		if not isinstance(image_urls, list):
-			if self.is_blacklisted(image_urls):
-				return await ctx.send('ERR: Invalid Emoji')
-			name = self.cleanup_text(args); img = requests.get(image_urls).content
-			await self.upload_emoji(ctx, name, img, str(ctx.author), roles, msg)
-		else:
-			for filename, url in image_urls:
-				if self.is_blacklisted(url):
-					await msg.edit(content=f"{msg.content}\nERR: {filename} - Invalid Emoji")
-				name = self.cleanup_text(args if args else filename); img = requests.get(url).content
-				await self.upload_emoji(ctx, name, img, str(ctx.author), roles, msg)
-				await asyncio.sleep(1)
-
-	@commands.command(name="stealemoji", aliases=["stealemote", "fromemote", "fromemoji"])
-	@commands.has_permissions(manage_emojis=True)
-	@commands.bot_has_permissions(manage_emojis=True)
-	@commands.cooldown(1, 5, commands.BucketType.guild)
-	async def stealemoji(self, ctx, *emoji: discord.PartialEmoji):
-		msg = await ctx.send(f'Uploading emoji(s)..')
-		for emoji in emoji:
-			if self.is_blacklisted(emoji):
-				await msg.edit(content=f"{msg.content}\nERR: {emoji.name} - Invalid Emoji")
-				continue
-			name = emoji.name; img = requests.get(emoji.url).content
-			await self.upload_emoji(ctx, name=name, img=img, reason=str(ctx.author), msg=msg)
-			if len(msg.content) > 1900:
-				msg = await ctx.send('Uploading emoji(s)..')
 
 	@commands.command(name="delemoji", aliases=["delemote"])
 	@commands.cooldown(1, 5, commands.BucketType.guild)
