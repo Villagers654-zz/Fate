@@ -3,11 +3,11 @@
   "bot_owner_id": 264838866480005122,
   "use_default_help": false,
   "startup_status": "Up and Running",
-  "debug_mode": true,
+  "debug_mode": false,
   "hub_server": 397415086295089155,
   "log_channel": 577661500802465813,
   "debug_channel": 675878044824764456,
   "dump_channel": 123456789123456789,
   "support_server": "https://discord.gg/wtjuznh",
-  "original": false
+  "original": true
 }
