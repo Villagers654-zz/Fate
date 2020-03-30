@@ -43,20 +43,13 @@ class Emojis(commands.Cog):
 				result += char
 		return result if result else 'new_emoji'
 
-	@staticmethod
-	async def update_msg(msg, new) -> discord.Message:
-		if len(msg.content) + len(new) + 2 >= 2000:
-			msg = await msg.channel.send("Uploading emoji(s)")
-		await msg.edit(content=f"{msg.content}\n{new}")
-		return msg
-
 	async def upload_emoji(self, ctx, name, img, reason, roles=None, msg=None):
 		"""Creates partial emojis with a queue to prevent spammy messages"""
 		try:
 			emoji = await ctx.guild.create_custom_emoji(name=name, image=img, roles=roles, reason=reason)
 		except discord.errors.Forbidden as e:
 			if msg:
-				await Emojis.update_msg(msg, f'Failed to add {name}: [`{e}`]')
+				await ctx.bot.utils.update_msg(msg, f'Failed to add {name}: [`{e}`]')
 			else:
 				await ctx.send(f'Failed to add {name}: [`{e}`]')
 		except discord.errors.HTTPException as e:
@@ -65,22 +58,22 @@ class Emojis(commands.Cog):
 				img = Image.open(img); img = img.resize((450, 450), Image.BICUBIC)
 			except:
 				if msg:
-					return await Emojis.update_msg(msg, f'Failed to resize {name}')
+					return await ctx.bot.utils.update_msg(msg, f'Failed to resize {name}')
 				else:
 					return await ctx.send(f'Failed to resize {name}')
 			img.save('emoji.png')
 			with open('emoji.png', 'rb') as image:
 				img = image.read()
 			await ctx.guild.create_custom_emoji(name=name, image=img, roles=roles, reason=reason)
-			await Emojis.update_msg(msg, f'{msg.content}\nAdded {name} successfully')
+			await ctx.bot.utils.update_msg(msg, f'{msg.content}\nAdded {name} successfully')
 		except AttributeError as e:
 			if msg:
-				await Emojis.update_msg(msg, f'Failed to add {name}: [`{e}`]')
+				await ctx.bot.utils.update_msg(msg, f'Failed to add {name}: [`{e}`]')
 			else:
 				await ctx.send(f'Failed to add {name}: [`{e}`]')
 		else:
 			if msg:
-				await Emojis.update_msg(msg, f'Added {emoji} - {name}')
+				await ctx.bot.utils.update_msg(msg, f'Added {emoji} - {name}')
 			else:
 				await ctx.send(f'Added {emoji} - {name}')
 
@@ -124,7 +117,7 @@ class Emojis(commands.Cog):
 					globals()['limit'] = True
 				elif max_a_emotes():
 					globals()['a_limit'] = True
-				await Emojis.update_msg(msg, "**Reached the emoji limit**")
+				await self.bot.utils.update_msg(msg, "**Reached the emoji limit**")
 				return False
 			return True
 
@@ -135,7 +128,7 @@ class Emojis(commands.Cog):
 		failed = []  # Emojis that failed due to the emoji limit
 
 		# initialization
-		if not custom and not ids and not args:
+		if not custom and not ids and not args and not ctx.message.attachments:
 			return await ctx.send("You need to include an emoji to steal, an image/gif, or an image/gif URL")
 		ids = list(ids); args = list(args)
 		for arg in args:
@@ -148,7 +141,7 @@ class Emojis(commands.Cog):
 		for emoji in custom:
 			if await not_at_limit(emoji):
 				if self.is_blacklisted(emoji):
-					await Emojis.update_msg(msg, f"ERR: {emoji.name} - Invalid Emoji")
+					await self.bot.utils.update_msg(msg, f"ERR: {emoji.name} - Invalid Emoji")
 					continue
 				name = emoji.name; img = requests.get(emoji.url).content
 				await self.upload_emoji(ctx, name=name, img=img, reason=str(ctx.author), msg=msg)
@@ -157,7 +150,7 @@ class Emojis(commands.Cog):
 		for emoji_id in ids:
 			emoji = self.bot.get_emoji(emoji_id)
 			if not emoji:
-				await Emojis.update_msg(msg, f"{emoji_id} - Couldn't Fetch")
+				await self.bot.utils.update_msg(msg, f"{emoji_id} - Couldn't Fetch")
 				continue
 			if await not_at_limit(emoji):
 				# Get any optional 'name' arguments
@@ -172,7 +165,7 @@ class Emojis(commands.Cog):
 				img = requests.get(emoji.url).content
 				await self.upload_emoji(ctx, name=str(name), img=img, reason=str(ctx.author), msg=msg)
 
-		# Image/Gif URLS
+		# Image/GIF URLS
 		def check(iter):
 			if iter + 2 > len(args):
 				return '.'
@@ -183,6 +176,24 @@ class Emojis(commands.Cog):
 		}
 		for img, name in mappings.items():
 			await self.upload_emoji(ctx, name=name, img=img, reason=str(ctx.author), msg=msg)
+
+		# Attached Images/GIFs
+		allowed_extensions = ['png', 'jpg', 'jpeg', 'gif']
+		for attachment in ctx.message.attachments:
+			file_is_allowed = any(not attachment.filename.endswith(ext) for ext in allowed_extensions)
+			if not attachment.height or not file_is_allowed:
+				await self.bot.utils.update_msg(msg, f"{attachment.filename} - Not an image or gif")
+				continue
+
+			file = await attachment.read()  # Raw bytes file
+			name = attachment.filename[:attachment.filename.find('.')]
+			if args and not custom and not ids and not mappings:
+				name = args[0]
+
+			await self.upload_emoji(ctx, name=name, img=file, reason=str(ctx.author), msg=msg)
+
+		if not len(msg.content.split('\n')) > 1:
+			await self.bot.utils.update_msg(msg, "No proper formats I can work with were provided")
 
 	@commands.command(name="delemoji", aliases=["delemote"])
 	@commands.cooldown(1, 5, commands.BucketType.guild)

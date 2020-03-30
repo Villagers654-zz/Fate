@@ -22,6 +22,12 @@ class Result:
 		self.errored = errored
 		self.traceback = traceback
 
+async def update_msg(msg, new) -> discord.Message:
+	if len(msg.content) + len(new) + 2 >= 2000:
+		msg = await msg.channel.send("Uploading emoji(s)")
+	await msg.edit(content=f"{msg.content}\n{new}")
+	return msg
+
 
 def split(text, amount=2000) -> list:
 	return [text[i:i + amount] for i in range(0, len(text), amount)]
