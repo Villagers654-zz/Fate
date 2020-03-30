@@ -68,6 +68,13 @@ class Fate(commands.AutoShardedBot):
             activity=discord.Game(name=self.config['startup_status']), **options
         )
 
+    def get_message(self, message_id: int):
+        """ Return a message from the internal cache if it exists """
+        for message in self.cached_messages:
+            if message.id == message_id:
+                return message
+        return None
+
     async def create_pool(self):
         sql = outh.MySQL()
         try:

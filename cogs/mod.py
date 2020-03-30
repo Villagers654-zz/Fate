@@ -158,7 +158,7 @@ class Mod(commands.Cog):
 	@commands.Cog.listener()
 	async def on_message(self, m: discord.Message):
 		if isinstance(m.guild, discord.Guild):
-			if m.channel.id == config.server('log'):
+			if m.channel.id == self.bot.config['log_channel']:
 				if m.content.startswith('Mute Timer:'):
 					guild_id, user_id = m.content.replace('Mute Timer:', '').split('|')
 					await self.start_mute_timer(guild_id, user_id)
