@@ -288,7 +288,10 @@ class SelfRoles(commands.Cog):
 		for emoji in menu['items'].values():
 			if isinstance(emoji, int):
 				emoji = self.bot.get_emoji(emoji)
-			await msg.add_reaction(emoji)
+			try:
+				await msg.add_reaction(emoji)
+			except discord.errors.HTTPException:
+				await ctx.send(f"I couldn't access the emoji {emoji}\nYou'll need to add the reaction yourself")
 		if guild_id not in self.menus:
 			self.menus[guild_id] = {}
 		self.menus[guild_id][str(msg.id)] = menu
