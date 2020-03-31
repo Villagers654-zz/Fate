@@ -30,30 +30,30 @@ class HelpMenus():
         owner = self.bot.get_user(config.owner_id())
         e.set_author(name='~==🥂🍸🍷Core🍷🍸🥂==~', icon_url=owner.avatar_url)
         e.set_thumbnail(url=self.bot.user.avatar_url)
-        e.description = '• **enable** - `enable a command`\n' \
-                        '• **disable** - `disable a command`' \
-                        '• **info** `depending on your args it provides information for users/roles/channels & invites`\n' \
-                        '• **sinfo** - `sends server info`\n' \
-                        '• **leaderboard** - `servers lvl/xp ranking`\n' \
-                        '• **gleaderboard** - `global lvl/xp ranking`\n' \
-                        '• **ggleaderboard** - `global server ranking`\n' \
-                        '• **mleaderboard** - `monthly server ranking`\n' \
-                        '• **gmleaderboard** - `global monthly ranking`\n' \
-                        '• **vcleaderboard** - `voicecall leaderboard`\n' \
-                        '• **gvcleaderboard** - `global vc leaderboard`\n' \
-                        '• **partners** - `fates partnered bots/servers`\n' \
-                        '• **servers** - `featured server list`\n' \
-                        '• **restrict** - `block ppl/channels from using cmds`\n' \
-                        '• **unrestrict** - `undoes the following^`\n' \
-                        '• **restricted** - `lists restricted channels/users`\n' \
-                        '• **config** - `sends toggles for core modules`\n' \
+        e.description = '• **config** - `sends toggles for core modules`\n' \
                         '• **prefix** - `lets you change the bots prefix`\n' \
                         '• **links** - `sends invite/support links`\n' \
                         '• **ping** - `checks the bots latency`\n' \
                         '• **say** - `says stuff through the bot`\n' \
                         '• **profile** - `rank card based on xp`\n' \
                         '• **set** - `configure profiles and xp`\n' \
-                        '• **xp-config** - `overview of current xp config`'
+                        '• **xp-config** - `overview of current xp config`\n' \
+                        '• **enable** - `enable a command`\n' \
+                        '• **disable** - `disable a command`' \
+                        '• **restrict** - `block ppl/channels from using cmds`\n' \
+                        '• **unrestrict** - `undoes the following^`\n' \
+                        '• **restricted** - `lists restricted channels/users`\n' \
+                        '• **info** `depending on your args it provides information for users/roles/channels & invites`\n' \
+                        '• **sinfo** - `sends server info`\n' \
+                        '• **partners** - `fates partnered bots/servers`\n' \
+                        '• **servers** - `featured server list`\n' \
+                        '• **leaderboard** - `servers lvl/xp ranking`\n' \
+                        '• **gleaderboard** - `global lvl/xp ranking`\n' \
+                        '• **ggleaderboard** - `global server ranking`\n' \
+                        '• **mleaderboard** - `monthly server ranking`\n' \
+                        '• **gmleaderboard** - `global monthly ranking`\n' \
+                        '• **vcleaderboard** - `voice call leaderboard`\n' \
+                        '• **gvcleaderboard** - `global vc leaderboard`\n'
         return e
 
     def mod(self):
