@@ -220,10 +220,15 @@ async def on_guild_join(guild):
     e.set_author(name="Bot Added to Guild", icon_url=bot.user.avatar_url)
     if guild.icon_url:
         e.set_thumbnail(url=guild.icon_url)
-    e.description = f"**Name:** {guild.name}\n" \
-                    f"**ID:** {guild.id}\n" \
-                    f"**Owner:** {guild.owner}\n" \
-                    f"**Members:** [`{len(guild.members)}`]"
+    inviter = "Unknown"
+    if guild.me.guild_permissions.view_audit_log:
+        async for entry in guild.audit_logs(action=discord.AuditLogAction.bot_add, limit=1):
+            inviter = str(entry.user)
+    e.description = f"**Name:** {guild.name}" \
+                    f"\n**ID:** {guild.id}" \
+                    f"\n**Owner:** {guild.owner}" \
+                    f"\n**Members:** [`{len(guild.members)}`]" \
+                    f"\n**Inviter:** [`{inviter}`]"
     await channel.send(embed=e)
     conf = bot.utils.get_config()  # type: dict
     if guild.owner.id in conf['blocked']:
