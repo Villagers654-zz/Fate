@@ -188,7 +188,7 @@ class GlobalChat(commands.Cog):
 				if 'discord.gg' in msg.content or 'discordapp.com/invite' in msg.content or 'invite.gg' in msg.content:
 					ignore = True
 				abcs = 'abcdefghijklmnopqrstuvwxyz '
-				matches = re.findall('<a?:[a-zA-Z]*:[0-9]*>', str(msg.content))
+				matches = re.findall('<a?:[a-zA-Z0-9_]*:[0-9]*>', str(msg.content))
 				if matches:
 					for match in matches:
 						msg.content = str(msg.content.replace(match, ''))
