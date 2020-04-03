@@ -76,6 +76,7 @@ class Giveaways(commands.Cog):
     @commands.command(name="giveaway", aliases=["giveaways"])
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.guild_only()
+    @commands.has_permissions(administrator=True)
     @commands.bot_has_permissions(embed_links=True)
     async def giveaway(self, ctx):
         """ Work with the author in setting up a giveaway """
