@@ -5,6 +5,7 @@ from datetime import datetime
 import os
 import asyncio
 import logging
+from typing import *
 
 from discord.ext import commands
 import discord
@@ -28,7 +29,7 @@ class Fate(commands.AutoShardedBot):
             'error_handler', 'config', 'menus', 'core', 'music', 'mod', 'welcome', 'farewell', 'notes', 'archive',
             'coffeeshop', 'custom', 'actions', 'reactions', 'responses', 'textart', 'fun', 'dev', 'readme',
             'reload', 'embeds', 'polis', 'apis', 'chatbridges', 'clean_rythm', 'utility', 'psutil', 'rules',
-            'duel_chat', 'selfroles', 'lock', 'audit', 'cookies', 'backup', 'server_list', 'emojis',
+            'duel_chat', 'selfroles', 'lock', 'audit', 'cookies', 'backup', 'server_list', 'emojis', 'giveaways'
             'logger', 'autorole', 'changelog', 'restore_roles', 'chatbot', 'anti_spam', 'anti_raid', 'chatfilter',
             'nsfw', 'minecraft', 'chatlock', 'rainbow', 'system', 'user', 'limiter', 'dm_channel', 'factions',
             'secure_overwrites', 'server_setup', 'secure-log', 'global-chat', 'beta', 'ranking'
@@ -147,6 +148,24 @@ class Fate(commands.AutoShardedBot):
             lines.append(str(tb))
         self.logs.append('\n'.join(lines))
         self.logs = self.logs[:1000]
+
+    async def wait_for_msg(self, ctx, timeout=60, action="Action") -> Optional[discord.Message]:
+        def pred(m):
+            return m.author.id == ctx.author.id and m.channel.id == ctx.channel.id
+
+        now = time()
+        try:
+            msg = await self.wait_for('message', check=pred, timeout=timeout)
+        except asyncio.TimeoutError:
+            await ctx.send(f"{action} timed out!")
+            return None
+        else:
+            async def remove_msg(msg):
+                await asyncio.sleep(round(time() - now))
+                await msg.delete()
+
+            self.loop.create_task(remove_msg(msg))
+            return msg
 
     def run(self):
         if bot.initial_extensions:

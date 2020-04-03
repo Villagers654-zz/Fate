@@ -22,6 +22,7 @@ class Result:
 		self.errored = errored
 		self.traceback = traceback
 
+
 async def update_msg(msg, new) -> discord.Message:
 	if len(msg.content) + len(new) + 2 >= 2000:
 		msg = await msg.channel.send("Uploading emoji(s)")
