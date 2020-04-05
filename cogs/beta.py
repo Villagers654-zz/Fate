@@ -264,10 +264,13 @@ class UtilityBeta(commands.Cog):
                         if invite.code not in self.misc_logs['invites']:
                             self.misc_logs[invite.code] = invite_info
                         for key, value in invite_info.items():
-                            if key not in self.misc_logs[invite.code]:
-                                self.misc_logs[invite.code][key] = value
-                            elif value != self.misc_logs[invite.code][key] and value is not None:
-                                self.misc_logs[invite.code][key] = value
+                            try:
+                                if key not in self.misc_logs[invite.code]:
+                                    self.misc_logs[invite.code][key] = value
+                                elif value != self.misc_logs[invite.code][key] and value is not None:
+                                    self.misc_logs[invite.code][key] = value
+                            except KeyError:
+                                return
                     except discord.errors.NotFound:
                         pass
                     except discord.errors.HTTPException:

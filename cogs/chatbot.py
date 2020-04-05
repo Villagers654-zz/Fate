@@ -234,6 +234,8 @@ class ChatBot(commands.Cog):
 				blacklist = ['rape']
 				key = random.choice(msg.content.split())
 				matches = get_matches(key)
+				if not matches:
+					return
 
 				prob = predict_prob(matches)
 				new_prob = []

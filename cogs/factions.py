@@ -824,7 +824,10 @@ class Factions(commands.Cog):
 				return self.save_data()
 		chance = 60 if f['balance'] > t['balance'] else 40
 		lmt = (5 * t['balance'] if t['balance'] < f['balance'] else f['balance']) / 100
-		pay = random.randint(0, round(lmt))
+		try:
+			pay = random.randint(0, round(lmt))
+		except ValueError:
+			return await ctx.send("Sorry, but one of you is too poor, and I don't speak broke")
 		if random.randint(0, 100) < chance:
 			self.factions[guild_id][target]['balance'] -= pay
 			self.factions[guild_id][faction]['balance'] += pay

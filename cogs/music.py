@@ -276,6 +276,8 @@ class Music(commands.Cog):
             await asyncio.sleep(20)
             return await ctx.message.delete()
         if ':' in time:
+            if time.split(':') > 2:
+                return await ctx.send("Sorry, but I only support minutes:seconds format at the moment")
             minutes, seconds = time.split(':')
             minutes = int(minutes); seconds = int(seconds)
             if minutes:

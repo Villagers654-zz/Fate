@@ -146,13 +146,16 @@ class ChatFilter(commands.Cog):
 						m.content = m.content.replace('\\', '')
 					perms = [perm for perm, value in m.author.guild_permissions if value]
 					if "manage_messages" not in perms:
-						if phrase in m.content:
-							await asyncio.sleep(0.5)
-							await m.delete()
-						else:
-							if phrase in m.content.replace(" ", ""):
+						try:
+							if phrase in m.content:
 								await asyncio.sleep(0.5)
 								await m.delete()
+							else:
+								if phrase in m.content.replace(" ", ""):
+									await asyncio.sleep(0.5)
+									await m.delete()
+						except discord.errors.NotFound:
+							pass
 
 	@commands.Cog.listener()
 	async def on_message_edit(self, before, after):

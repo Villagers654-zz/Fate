@@ -25,7 +25,7 @@ class Reload(commands.Cog):
 	@has_bot_owner_level_perms()
 	async def reload(self, ctx, *modules: lambda x: x.lower()):
 		if not modules:
-			modules = self.bot.extensions
+			modules = [*self.bot.initial_extensions, *self.bot.awaited_extensions]
 		successful = []
 		unsuccessful = []
 		for module in modules:
@@ -49,6 +49,8 @@ class Reload(commands.Cog):
 			e.set_footer(text=f'{random.choice(["So sorry", "Apologies", "Sucks to be you", "Sorry"])} {random.choice(["dad", "master", "mike", "luck"])}')
 			for cog, error in unsuccessful:
 				for text_group in [str(error)[i:i + 990] for i in range(0, len(str(error)), 990)]:
+					if len(e) >= 5000:
+						break
 					e.add_field(name=f"Error - {cog}", value=f'```{discord.utils.escape_markdown(text_group)}```', inline=False)
 		await ctx.send(embed=e)
 

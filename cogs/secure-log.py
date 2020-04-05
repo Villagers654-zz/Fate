@@ -398,6 +398,8 @@ class SecureLog(commands.Cog):
     async def _toggle_security(self, ctx):
         """ Toggles whether or not to keep the log secure """
         guild_id = str(ctx.guild.id)
+        if guild_id not in self.config:
+            return await ctx.send("You need to enable logger to use this")
         if self.config[guild_id]['secure']:
             self.config[guild_id]['secure'] = False
             await ctx.send('Disabled secure features')
