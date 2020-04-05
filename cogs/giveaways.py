@@ -9,7 +9,6 @@ import random
 
 from discord.ext import commands
 import discord
-import aiofiles
 
 from utils import colors, utils
 
@@ -24,8 +23,8 @@ class Giveaways(commands.Cog):
                 self.data = json.load(f)  # type: dict
 
     async def save_data(self):
-        async with aiofiles.open(self.path, 'w') as f:
-            await f.write(json.dumps(self.data))
+        with open(self.path, 'w') as f:
+            json.dump(self.data, f, ensure_ascii=False)
 
     async def make_embed(self, dat):
         e = discord.Embed(color=colors.fate())
@@ -37,7 +36,7 @@ class Giveaways(commands.Cog):
             e.set_footer(text=f"Giveaway Ended")
         else:
             end_time = re.sub('\.[0-9]*', '', end_time)
-            e.set_footer(text=f"Ends in {end_time}")
+            e.set_footer(text=f"Winners: {dat['winners']} | Ends in {end_time}")
         return e
 
     async def run_giveaway(self, guild_id, giveaway_id):
@@ -67,11 +66,14 @@ class Giveaways(commands.Cog):
             del self.data[guild_id]
         await self.save_data()
 
-    @commands.Cog.listener()
-    async def on_ready(self):
+    @commands.Cog.listener('on_ready')
+    async def resume_tasks(self):
         for guild_id, giveaways in self.data.items():
             for giveaway_id in giveaways.keys():
-                self.bot.tasks.start(self.run_giveaway, guild_id, giveaway_id, task_id=f"giveaway-{guild_id}-{giveaway_id}")
+                self.bot.tasks.start(
+                    self.run_giveaway, guild_id, giveaway_id,
+                    task_id=f"giveaway-{guild_id}-{giveaway_id}"
+                )
 
     @commands.command(name="giveaway", aliases=["giveaways"])
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -124,7 +126,7 @@ class Giveaways(commands.Cog):
             return await ctx.send('oop')
 
         # Giveaway information
-        message = await ctx.send("Send a description of the giveaway. Be sure to include what you're giving out")
+        message = await ctx.send("Send a description of what you're giving out")
         msg = await self.bot.wait_for_msg(ctx, timeout=60*3, action="giveaway setup")
         if not msg:
             return
