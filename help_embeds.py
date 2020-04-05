@@ -95,7 +95,8 @@ class HelpMenus():
         owner = self.bot.get_user(config.owner_id())
         e.set_author(name='~==🥂🍸🍷Utility🍷🍸🥂==~', icon_url=owner.avatar_url)
         e.set_thumbnail(url=self.bot.user.avatar_url)
-        e.description = '• **members** - `sends the servers member count`\n' \
+        e.description = '• **giveaway** - `easily setup a giveaway`\n' \
+                        '• **members** - `sends the servers member count`\n' \
                         '• **icon** - `sends the servers icon`\n' \
                         '• **sinfo** - `sends server info`\n' \
                         '• **poll** - `makes a reaction poll via embed`\n' \
