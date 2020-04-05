@@ -527,89 +527,91 @@ class SecureLog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
-        guild_id = str(before.guild.id)
-        if guild_id in self.config and not after.author.bot:
-            if before.content != after.content:
-                if before.author.id in self.config[guild_id]['ignored_bots']:
-                    return
-                if before.channel.id in self.config[guild_id]['ignored_channels']:
-                    return
+        if isinstance(before.guild, discord.Guild):
+            guild_id = str(before.guild.id)
+            if guild_id in self.config and not after.author.bot:
+                if before.content != after.content:
+                    if before.author.id in self.config[guild_id]['ignored_bots']:
+                        return
+                    if before.channel.id in self.config[guild_id]['ignored_channels']:
+                        return
 
-                e = discord.Embed(color=pink())
-                e.set_author(name='~==🍸Msg Edited🍸==~', icon_url=before.author.avatar_url)
-                e.set_thumbnail(url=before.author.avatar_url)
-                e.description = self.bot.utils.format_dict({
-                    "author": before.author.mention,
-                    "Channel": before.channel.mention,
-                    f"[Jump to MSG]({before.jump_url})": None
-                })
-                for group in [before.content[i:i + 1000] for i in range(0, len(before.content), 1000)]:
-                    e.add_field(name='◈ Before', value=group, inline=False)
-                for group in [after.content[i:i + 1000] for i in range(0, len(after.content), 1000)]:
-                    e.add_field(name='◈ After', value=group, inline=False)
-                self.queue[guild_id].append([e, 'chat', time()])
+                    e = discord.Embed(color=pink())
+                    e.set_author(name='~==🍸Msg Edited🍸==~', icon_url=before.author.avatar_url)
+                    e.set_thumbnail(url=before.author.avatar_url)
+                    e.description = self.bot.utils.format_dict({
+                        "author": before.author.mention,
+                        "Channel": before.channel.mention,
+                        f"[Jump to MSG]({before.jump_url})": None
+                    })
+                    for group in [before.content[i:i + 1000] for i in range(0, len(before.content), 1000)]:
+                        e.add_field(name='◈ Before', value=group, inline=False)
+                    for group in [after.content[i:i + 1000] for i in range(0, len(after.content), 1000)]:
+                        e.add_field(name='◈ After', value=group, inline=False)
+                    self.queue[guild_id].append([e, 'chat', time()])
 
-            if before.embeds and not after.embeds:
-                if before.author.id in self.config[guild_id]['ignored_bots']:
-                    return
-                if before.channel.id in self.config[guild_id]['ignored_channels']:
-                    return
+                if before.embeds and not after.embeds:
+                    if before.author.id in self.config[guild_id]['ignored_bots']:
+                        return
+                    if before.channel.id in self.config[guild_id]['ignored_channels']:
+                        return
 
-                if before.channel.id == self.config[guild_id]['channel'] or(  # a message in the log was suppressed
-                        before.channel.id in self.config[guild_id]['channels']):
-                    await asyncio.sleep(0.5)  # prevent updating too fast and not showing on the users end
-                    return await after.edit(suppress=False, embed=before.embeds[0])
-                e = discord.Embed(color=pink())
-                e.set_author(name='~==🍸Embed Hidden🍸==~', icon_url=before.author.avatar_url)
-                e.set_thumbnail(url=before.author.avatar_url)
-                e.description = self.bot.utils.format_dict({
-                    "author": before.author.mention,
-                    "Channel": before.channel.mention,
-                    f"[Jump to MSG]({before.jump_url})": None
-                })
-                em = before.embeds[0].to_dict()
-                path = f'./static/embed-{before.id}.json'
-                with open(path, 'w+') as f:
-                    json.dump(em, f, sort_keys=True, indent=4, separators=(',', ': '))
-                self.queue[guild_id].append([(e, path), 'chat', time()])
+                    if before.channel.id == self.config[guild_id]['channel'] or(  # a message in the log was suppressed
+                            before.channel.id in self.config[guild_id]['channels']):
+                        await asyncio.sleep(0.5)  # prevent updating too fast and not showing on the users end
+                        return await after.edit(suppress=False, embed=before.embeds[0])
+                    e = discord.Embed(color=pink())
+                    e.set_author(name='~==🍸Embed Hidden🍸==~', icon_url=before.author.avatar_url)
+                    e.set_thumbnail(url=before.author.avatar_url)
+                    e.description = self.bot.utils.format_dict({
+                        "author": before.author.mention,
+                        "Channel": before.channel.mention,
+                        f"[Jump to MSG]({before.jump_url})": None
+                    })
+                    em = before.embeds[0].to_dict()
+                    path = f'./static/embed-{before.id}.json'
+                    with open(path, 'w+') as f:
+                        json.dump(em, f, sort_keys=True, indent=4, separators=(',', ': '))
+                    self.queue[guild_id].append([(e, path), 'chat', time()])
 
-            if before.pinned != after.pinned:
-                action = 'Unpinned' if before.pinned else 'Pinned'
-                audit_dat = await self.search_audit(after.guild, audit.message_pin)
-                e = discord.Embed(color=cyan())
-                e.set_author(name=f'~==🍸Msg {action}🍸==~', icon_url=after.author.avatar_url)
-                e.set_thumbnail(url=after.author.avatar_url)
-                e.description = self.bot.utils.format_dict({
-                    "Author": after.author.mention,
-                    "Channel": after.channel.mention,
-                    "Who Pinned": audit_dat['user'],
-                    f"[Jump to MSG]({after.jump_url})": None
-                })
-                for text_group in self.split_into_groups(after.content):
-                    e.add_field(name="◈ Content", value=text_group, inline=False)
-                self.queue[guild_id].append([e, 'chat', time()])
+                if before.pinned != after.pinned:
+                    action = 'Unpinned' if before.pinned else 'Pinned'
+                    audit_dat = await self.search_audit(after.guild, audit.message_pin)
+                    e = discord.Embed(color=cyan())
+                    e.set_author(name=f'~==🍸Msg {action}🍸==~', icon_url=after.author.avatar_url)
+                    e.set_thumbnail(url=after.author.avatar_url)
+                    e.description = self.bot.utils.format_dict({
+                        "Author": after.author.mention,
+                        "Channel": after.channel.mention,
+                        "Who Pinned": audit_dat['user'],
+                        f"[Jump to MSG]({after.jump_url})": None
+                    })
+                    for text_group in self.split_into_groups(after.content):
+                        e.add_field(name="◈ Content", value=text_group, inline=False)
+                    self.queue[guild_id].append([e, 'chat', time()])
 
     @commands.Cog.listener()
     async def on_raw_message_edit(self, payload):
         channel = self.bot.get_channel(int(payload.data['channel_id']))
-        guild_id = str(channel.guild.id)
-        if guild_id in self.config and not payload.cached_message:
-            msg = await channel.fetch_message(payload.message_id)
-            if msg.author.id in self.config[guild_id]['ignored_bots']:
-                return
-            if msg.channel.id in self.config[guild_id]['ignored_channels']:
-                return
-            e = discord.Embed(color=pink())
-            e.set_author(name='Uncached Msg Edited', icon_url=msg.author.avatar_url)
-            e.set_thumbnail(url=msg.author.avatar_url)
-            e.description = self.bot.utils.format_dict({
-                "Author": msg.author.mention,
-                "Channel": channel.mention,
-                f"[Jump to MSG]({msg.jump_url})": None
-            })
-            for text_group in self.split_into_groups(msg.content):
-                e.add_field(name='◈ Content', value=text_group, inline=False)
-            self.queue[guild_id].append([e, 'chat', time()])
+        if not isinstance(channel, discord.DMChannel):
+            guild_id = str(channel.guild.id)
+            if guild_id in self.config and not payload.cached_message:
+                msg = await channel.fetch_message(payload.message_id)
+                if msg.author.id in self.config[guild_id]['ignored_bots']:
+                    return
+                if msg.channel.id in self.config[guild_id]['ignored_channels']:
+                    return
+                e = discord.Embed(color=pink())
+                e.set_author(name='Uncached Msg Edited', icon_url=msg.author.avatar_url)
+                e.set_thumbnail(url=msg.author.avatar_url)
+                e.description = self.bot.utils.format_dict({
+                    "Author": msg.author.mention,
+                    "Channel": channel.mention,
+                    f"[Jump to MSG]({msg.jump_url})": None
+                })
+                for text_group in self.split_into_groups(msg.content):
+                    e.add_field(name='◈ Content', value=text_group, inline=False)
+                self.queue[guild_id].append([e, 'chat', time()])
 
     @commands.Cog.listener()
     async def on_message_delete(self, msg):

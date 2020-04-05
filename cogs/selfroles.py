@@ -532,11 +532,12 @@ class SelfRoles(commands.Cog):
 
 	@commands.Cog.listener()
 	async def on_message_delete(self, msg):
-		guild_id = str(msg.guild.id)
-		if guild_id in self.menus:
-			if str(msg.id) in self.menus[guild_id]:
-				del self.menus[guild_id][str(msg.id)]
-				self.save_data()
+		if isinstance(msg.guild, discord.Guild):
+			guild_id = str(msg.guild.id)
+			if guild_id in self.menus:
+				if str(msg.id) in self.menus[guild_id]:
+					del self.menus[guild_id][str(msg.id)]
+					self.save_data()
 
 def setup(bot):
 	bot.add_cog(SelfRoles(bot))
