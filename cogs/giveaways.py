@@ -184,7 +184,7 @@ class Giveaways(commands.Cog):
         if guild_id not in self.data:
             self.data[guild_id] = {}
         key = random.randint(0, 10000)
-        if key in self.data[guild_id]:
+        while key in self.data[guild_id]:
             key = random.randint(0, 10000)
         self.data[guild_id][key] = {
             **dat, "message": message.id
