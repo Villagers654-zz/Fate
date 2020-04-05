@@ -346,6 +346,8 @@ class AntiSpam(commands.Cog):
                     return
                 if msg.guild.id == 632870495653593099:  # darks server
                     return  # dont mute, just delete spam
+                if not msg.channel.permissions_for(msg.guild.me).send_messages:
+                    return
                 async with msg.channel.typing():
                     with open("./data/userdata/mod.json", "r") as f:
                         dat = json.load(f)  # type: dict
@@ -368,8 +370,7 @@ class AntiSpam(commands.Cog):
                                 await msg.channel.send("Disabled anti spam, missing required permissions")
                                 self.save_data()
                             return
-                        mute_role = await msg.guild.create_role(name="Muted", color=discord.Color(colors.black()),
-                                                              hoist=True)
+                        mute_role = await msg.guild.create_role(name="Muted", color=discord.Color(colors.black()), hoist=True)
                         for channel in msg.guild.text_channels:
                             await channel.set_permissions(mute_role, send_messages=False)
                         for channel in msg.guild.voice_channels:
