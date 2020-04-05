@@ -82,7 +82,12 @@ class ChatBridge(commands.Cog):
 			for embed in msg.embeds:
 				embed = embed
 
-			msg = await msg.channel.fetch_message(msg.id)
+			try:
+				msg = await msg.channel.fetch_message(msg.id)
+			except discord.errors.NotFound:
+				for attachment in msg.attachments:
+					os.remove(os.path.join('static', attachment.filename))
+				return
 			if '@' in msg.content:
 				msg.content = str(msg.content).replace('\\', '').replace('<@​', '<@')
 				for user_id in msg.raw_mentions:
