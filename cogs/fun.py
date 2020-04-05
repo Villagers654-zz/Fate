@@ -37,9 +37,11 @@ class Fun(commands.Cog):
 		await ctx.send('I might as well..')
 
 		try:
-			dat = outh.reddit()  # type: dict
-			reddit = praw.Reddit(client_id=dat['client_id'], client_secret=dat['client_secret'],
-		                     user_agent=dat['user_agent'])
+			creds = outh.Reddit()
+			reddit = praw.Reddit(
+				client_id=creds.client_id, client_secret=creds.client_secret,
+				user_agent=creds.user_agent
+			)
 		except Exception as e:
 			await ctx.send(f'Error With Reddit Credentials\n{e}')
 			return cleanup()
@@ -83,8 +85,11 @@ class Fun(commands.Cog):
 	@commands.bot_has_permissions(embed_links=True)
 	async def meme(self, ctx):
 		""" fetches a random meme from a random meme subreddit """
-		dat = outh.reddit()  # type: dict
-		reddit = praw.Reddit(client_id=dat['client_id'], client_secret=dat['client_secret'], user_agent=dat['user_agent'])
+		creds = outh.Reddit()
+		reddit = praw.Reddit(
+			client_id=creds.client_id, client_secret=creds.client_secret,
+			user_agent=creds.user_agent
+		)
 
 		reddits = ['memes', 'dankmemes', 'MemeEconomy', 'ComedyCemetery']
 		reddit_posts = []  # type: praw.Reddit.submission

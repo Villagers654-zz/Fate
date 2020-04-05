@@ -1,3 +1,5 @@
+# Rename this file to outh.py in order for it to be functional
+
 # noinspection SpellCheckingInspection
 class MySQL:
     def __init__(self):
@@ -7,12 +9,21 @@ class MySQL:
         self.password = 'Eppy'
         self.db = ''
 
+
+class Reddit:
+    def __init__(self):
+        self.client_id = ''
+        self.client_secret = '',
+        self.user_agent = ''
+
+
 def reddit():
     return {
         'client_id': '',
         'client_secret': '',
         'user_agent': ''
     }
+
 
 def tokens(token):
     if token == "fatezero":
