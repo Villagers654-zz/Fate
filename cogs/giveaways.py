@@ -36,7 +36,7 @@ class Giveaways(commands.Cog):
             e.set_footer(text=f"Giveaway Ended")
         else:
             end_time = re.sub('\.[0-9]*', '', end_time)
-            e.set_footer(text=f"Winners: {dat['winners']} | Ends in {end_time}")
+            e.set_footer(text=f"Winners({dat['winners']}) | Ends in {end_time}")
         return e
 
     async def run_giveaway(self, guild_id, giveaway_id):

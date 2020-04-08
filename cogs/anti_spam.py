@@ -337,11 +337,14 @@ class AntiSpam(commands.Cog):
                         await msg.channel.send("Disabled anti spam, missing required permissions")
                         self.save_data()
                     return
-                messages = [m for m, mtime in self.msgs[user_id] if mtime > time() - 15]
+                messages = [m for m, mtime in self.msgs[user_id] if mtime > time() - 15 and m]
                 self.msgs[user_id] = []  # removes deleted messages from the list
                 if msg.author.top_role.position >= bot.top_role.position or msg.author.guild_permissions.administrator:
                     return await msg.channel.delete_messages(messages)
-                await msg.channel.delete_messages(messages)
+                try:
+                    await msg.channel.delete_messages(messages)
+                except discord.errors.NotFound:
+                    pass
                 if "send_messages" not in perms:
                     return
                 if msg.guild.id == 632870495653593099:  # darks server

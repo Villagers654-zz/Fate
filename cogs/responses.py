@@ -48,33 +48,33 @@ class Responses(commands.Cog):
 					with open("./data/userdata/config/toggles.json", "w") as outfile:
 						json.dump({"responses": self.responses}, outfile, ensure_ascii=False)
 				if self.responses[str(m.guild.id)] == 'enabled':
-					if list(filter(lambda x: m.content.startswith(x), ["<@506735111543193601>", "<@!506735111543193601>"])):
-						m.content = m.content.replace("!", "").replace("<@506735111543193601> ", "")
-						found = False
-						keys = m.content.split(" ")
-						key = random.choice(keys)
-						if "the" in keys:
-							key = keys[keys.index("the") + 1]
-						if "if" in keys:
-							key = keys[keys.index("if") + 2]
-						matches = []
-						for msg in self.cache():
-							if key in msg:
-								matches.append(msg)
-								found = True
-						if found:
-							name = m.author.display_name
-							choice = random.choice(matches)
-							choice = choice.replace(str(self.bot.user.mention), str(m.author.mention))
-							if choice.lower() == m.content.lower():
-								return
-							choice = choice.replace('Fate', name).replace('fate', name)
-							try:
-								async with m.channel.typing():
-									await asyncio.sleep(1)
-								await m.channel.send(choice)
-							except:
-								pass
+					# if list(filter(lambda x: m.content.startswith(x), ["<@506735111543193601>", "<@!506735111543193601>"])):
+					# 	m.content = m.content.replace("!", "").replace("<@506735111543193601> ", "")
+					# 	found = False
+					# 	keys = m.content.split(" ")
+					# 	key = random.choice(keys)
+					# 	if "the" in keys:
+					# 		key = keys[keys.index("the") + 1]
+					# 	if "if" in keys:
+					# 		key = keys[keys.index("if") + 2]
+					# 	matches = []
+					# 	for msg in self.cache():
+					# 		if key in msg:
+					# 			matches.append(msg)
+					# 			found = True
+					# 	if found:
+					# 		name = m.author.display_name
+					# 		choice = random.choice(matches)
+					# 		choice = choice.replace(str(self.bot.user.mention), str(m.author.mention))
+					# 		if choice.lower() == m.content.lower():
+					# 			return
+					# 		choice = choice.replace('Fate', name).replace('fate', name)
+					# 		try:
+					# 			async with m.channel.typing():
+					# 				await asyncio.sleep(1)
+					# 			await m.channel.send(choice)
+					# 		except:
+					# 			pass
 					if random.randint(1, 4) == 4:
 						if m.content.startswith("hello"):
 							await m.channel.send(random.choice(["Hello", "Hello :3", "Suh", "Suh :3", "Wazzuh"]))

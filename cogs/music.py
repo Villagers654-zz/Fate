@@ -45,19 +45,15 @@ class Music(commands.Cog):
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
         if not after.channel:
-            player = self.bot.lavalink.players.get(member.guild.id)
-            channel = self.bot.get_channel(player.fetch('channel'))
-            if member.id == self.bot.user.id:
-                if player.queue:
-                    await channel.send("I paused your song", delete_after=20)
-            if player.is_connected and before.channel.id == channel.id:  # check if the vc is empty
-                if self.get_humans(after.channel) == 0:                 # and leave if it's empty after 25sec
+            bot = member.guild.get_member(self.bot.user.id)
+            channel = self.bot.get_channel(before.channel.id)
+            if bot in channel.members:
+                player = self.bot.lavalink.players.get(member.guild.id)
+                if self.get_humans(channel) < 1:
                     await asyncio.sleep(25)
                     channel = self.bot.get_channel(before.channel.id)
-                    if self.get_humans(after.channel) == 0:
-                        await player.set_pause(True)
-                        await channel.send("Paused music")
-                        await player.disconnect()
+                    if self.get_humans(channel) < 1:
+                        player.queue.clear()
 
     @commands.command(name="play")
     @commands.cooldown(1, 3, commands.BucketType.user)

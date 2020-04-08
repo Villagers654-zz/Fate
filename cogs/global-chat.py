@@ -40,10 +40,10 @@ class GlobalChat(commands.Cog):
 		if path.isfile(self.path):
 			with open(self.path, 'r') as f:
 				self.config = json.load(f)  # type: dict
-		for guild_id, conf in list(self.config.items()):
-			if conf['last'] < time() - 36288000:
-				del self.config[guild_id]
-				self.save_data()
+		# for guild_id, conf in list(self.config.items()):
+		# 	if conf['last'] < time() - 36288000:
+		# 		del self.config[guild_id]
+		# 		self.save_data()
 
 	def save_data(self):
 		with open(self.path, 'w+') as f:
@@ -91,12 +91,13 @@ class GlobalChat(commands.Cog):
 		if guild_id in self.config:
 			if self.config[guild_id]['webhook']:
 				await self.remove_webhook(guild_id, channel)
+		relinked = guild_id in self.config
 		self.config[guild_id] = {
 			"channel": channel.id,
 			"webhook": None,
 			"last": time()
 		}
-		await ctx.send(f"Linked {channel.mention}")
+		await ctx.send(f"{'Re' if relinked else ''}Linked {channel.mention}")
 		self.save_data()
 
 	@global_chat.command(name='unlink')
