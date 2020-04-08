@@ -52,14 +52,17 @@ class Giveaways(commands.Cog):
             if str(reaction.emoji) == "🎉":
                 users = await reaction.users().flatten()
                 users = [user for user in users if not user.bot]
-                random.shuffle(users)
-                winners = []
-                for i in range(dat["winners"]):
-                    winners.append(users[i])
-                if len(winners) == 1:
-                    await channel.send(f"Congratulations {winners[0].mention}, you won the giveaway for {dat['giveaway']}")
+                if not users:
+                    await channel.send("There are no winners :[")
                 else:
-                    await channel.send(f"Congratulations {', '.join([w.mention for w in winners])}, you won the giveaway for {dat['giveaway']}")
+                    random.shuffle(users)
+                    winners = []
+                    for i in range(dat["winners"]):
+                        winners.append(users[i])
+                    if len(winners) == 1:
+                        await channel.send(f"Congratulations {winners[0].mention}, you won the giveaway for {dat['giveaway']}")
+                    else:
+                        await channel.send(f"Congratulations {', '.join([w.mention for w in winners])}, you won the giveaway for {dat['giveaway']}")
                 break
         del self.data[guild_id][giveaway_id]
         if not self.data[guild_id]:
