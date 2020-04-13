@@ -717,7 +717,7 @@ class SecureLog(commands.Cog):
             if payload.cached_messages and not purged_messages:  # only logs were purged
                 return
 
-            path = f'./static/purged-messages-{r.randint(0, 9999)}'
+            path = f'./static/purged-messages-{r.randint(0, 9999)}.txt'
             with open(path, 'w') as f:
                 f.write(purged_messages)
 
