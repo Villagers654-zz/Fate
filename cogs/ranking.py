@@ -8,6 +8,7 @@ import asyncio
 from datetime import timedelta
 import requests
 from io import BytesIO
+from datetime import datetime
 
 from discord.ext import commands
 import discord
@@ -42,6 +43,7 @@ class Ranking(commands.Cog):
 		self.msg_cooldown = 3600
 		self.cd = {}
 		self.global_cd = {}
+		self.spam_cd = {}
 		self.macro_cd = {}
 		self.cmd_cd = {}
 		self.counter = 0
@@ -161,13 +163,56 @@ class Ranking(commands.Cog):
 			guild_id = str(msg.guild.id)
 			user_id = msg.author.id
 
+			async def punish():
+				self.global_cd[user_id] = time() + 60
+				# async with self.bot.pool.acquire() as conn:
+				# 	async with conn.cursor() as cur:
+				# 		await cur.execute(f"select xp from global_msg where user_id = {user_id};")
+				# 		xp = await cur.fetchone()
+				# 		if not xp:
+				# 			return
+				# 		xp = xp[0]
+				# 		if xp > 1:
+				# 			xp -= 1
+				# 		await cur.execute(f"update global_msg set xp = {xp} where user_id = {user_id};")
+				# 		await conn.commit()
+
+			# anti spam
+			now = int(time() / 5)
+			if guild_id not in self.spam_cd:
+				self.spam_cd[guild_id] = {}
+			if user_id not in self.spam_cd[guild_id]:
+				self.spam_cd[guild_id][user_id] = [now, 0]
+			if self.spam_cd[guild_id][user_id][0] == now:
+				self.spam_cd[guild_id][user_id][1] += 1
+			else:
+				self.spam_cd[guild_id][user_id] = [now, 0]
+			if self.spam_cd[guild_id][user_id][1] > 2:
+				return await punish()
+
+			# anti macro
+			if user_id not in self.macro_cd:
+				self.macro_cd[user_id] = {}
+				self.macro_cd[user_id]['intervals'] = []
+			if 'last' not in self.macro_cd[user_id]:
+				self.macro_cd[user_id]['last'] = datetime.now()
+			else:
+				last = self.macro_cd[user_id]['last']
+				self.macro_cd[user_id]['intervals'].append((datetime.now() - last).seconds)
+				intervals = self.macro_cd[user_id]['intervals']
+				self.macro_cd[user_id]['intervals'] = intervals[-3:]
+				if len(intervals) > 2:
+					if all(interval == intervals[0] for interval in intervals):
+						return await punish()
+
 			conf = self.static_config()  # type: dict
 			if guild_id in self.config:
 				conf = self.config[guild_id]
 			new_xp = randint(conf['min_xp_per_msg'], conf['max_xp_per_msg'])
 			if user_id not in self.global_cd:
 				self.global_cd[user_id] = 0
-			if self.global_cd[user_id] < time() - 10:
+			if self.global_cd[user_id] < time():
+				self.global_cd[user_id] = time() + 10
 				async with self.bot.pool.acquire() as conn:
 					async with conn.cursor() as cur:
 
@@ -189,8 +234,9 @@ class Ranking(commands.Cog):
 			if user_id not in self.cd[guild_id]:
 				self.cd[guild_id][user_id] = []
 			msgs = [x for x in self.cd[guild_id][user_id] if x > time() - conf['timeframe']]
+			self.cd[guild_id][user_id] = msgs
 			if len(msgs) < conf['msgs_within_timeframe']:
-
+				self.cd[guild_id][user_id].append(time())
 				# guilded msg xp
 				async with self.bot.pool.acquire() as conn:
 					async with conn.cursor() as cur:
@@ -660,6 +706,29 @@ class Ranking(commands.Cog):
 		type = 'Profile' if 'profile' in ctx.message.content.lower() else 'Rank'
 		await ctx.send(f"> **{type} card for {user}**", file=discord.File(path))
 
+	@commands.command(name="sub-from-lb")
+	@commands.is_owner()
+	async def sub_from_lb(self, ctx, user_id: int, new_xp: int):
+		await ctx.send(f"user_id {user_id}")
+		async with self.bot.pool.acquire() as conn:
+			async with conn.cursor() as cur:
+				await cur.execute(f"select xp from global_msg where user_id = {user_id};")
+				xp = await cur.fetchone()
+				await ctx.send(xp)
+				await cur.execute(f"update global_msg set xp = {xp[0] - new_xp} where user_id = {user_id};")
+				await conn.commit()
+				await ctx.send("Done")
+				# await cur.execute(f"select * from global_monthly where msg_time > {time() - 60 * 60 * 24 * 30} order by xp desc;")
+				# results = await cur.fetchall()
+				# Dict = {}
+				# for user_id, msg_time, xp in results:
+				# 	if user_id not in Dict:
+				# 		Dict[user_id] = []
+				# 	Dict[user_id].append(msg_time)
+				# for user_id, msg_times in Dict.items():
+				# 	for msg_time in sorted(msg_times):
+
+
 	@commands.command(
 		name='leaderboard',
 		aliases = [
@@ -874,8 +943,8 @@ class Ranking(commands.Cog):
 		for name, data in leaderboards.items():
 			sorted_data = [
 				(user_id, xp) for user_id, xp in sorted(
-					list(data.items())[:175], key=lambda kv: kv[1], reverse=True
-				)
+					list(data.items()), key=lambda kv: kv[1], reverse=True
+				)[:175]
 			]
 			ems = await create_embed(
 				name=name,
