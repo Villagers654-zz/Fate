@@ -33,9 +33,15 @@ class Tasks:
 			del kwargs['task_id']
 		else:
 			task_id = coro.__name__
-
-		if task_id in self.running_task_names():
-			return None
+		if 'kill_existing' in kwargs:
+			for task in self.running_tasks():
+				if task.get_name() == task_id:
+					print('attempting to kill the task')
+					task.cancel()
+			del kwargs['kill_existing']
+		else:
+			if task_id in self.running_task_names():
+				return None
 
 		new_task = self.bot.loop.create_task(coro(*args, **kwargs))
 		new_task.set_name(task_id)
