@@ -74,7 +74,7 @@ class SecureLog(commands.Cog):
         if self.bot.is_ready():
             self.bot.loop.create_task(self.init_invites())
             for guild_id in self.config.keys():
-                bot.tasks.start(self.start_queue, guild_id, task_id=f'queue-{guild_id}')
+                bot.tasks.start(self.start_queue, guild_id, task_id=f'queue-{guild_id}', kill_existing=True)
         self.role_pos_cd = {}
 
     def save_data(self):

@@ -77,16 +77,6 @@ class Ranking(commands.Cog):
 		# vc caching
 		self.vclb = {}
 		self.vc_counter = 0
-		self.write = {'global': False, 'guilded': False}
-
-	# def _global(self, Global) -> dict:
-	# 	""" Returns data for each global leaderboard """
-	# 	try:
-	# 		with open(path.join('xp', 'global', Global) + '.json', 'r') as f:
-	# 			return json.load(f)
-	# 	except json.JSONDecodeError:
-	# 		with open(path.join('xp', 'global', 'backup', Global + '.json'), 'r') as f:
-	# 			return json.load(f)
 
 	def save_config(self):
 		""" Saves per-server configuration """
@@ -187,7 +177,7 @@ class Ranking(commands.Cog):
 				self.spam_cd[guild_id][user_id][1] += 1
 			else:
 				self.spam_cd[guild_id][user_id] = [now, 0]
-			if self.spam_cd[guild_id][user_id][1] > 2:
+			if self.spam_cd[guild_id][user_id][1] > 3:
 				return await punish()
 
 			# anti macro
