@@ -53,7 +53,7 @@ class Mod(commands.Cog):
 			json.dump({'mods': self.mods, "warns": self.warns, "roles": self.roles, "timers": self.timers, 'clearwarns': self.wipe}, outfile, ensure_ascii=False)
 
 	def save_config(self, config):
-		with open('./data/config.json', 'w') as f:
+		with open('./data/userdata/config.json', 'w') as f:
 			json.dump(config, f, ensure_ascii=False)
 
 	async def start_mute_timer(self, guild_id, user_id):
