@@ -204,6 +204,8 @@ class ChatBot(commands.Cog):
 				return
 			if msg.raw_channel_mentions:
 				return
+			if not msg.channel.permissions_for(msg.guild.me).send_messages:
+				return
 
 			content = list(str(msg.content).lower())
 			if len(content) >= 4:
@@ -261,7 +263,7 @@ class ChatBot(commands.Cog):
 			async with msg.channel.typing():
 				timer = 0
 				for char in list(choice):
-					timer += 0.2
+					timer += 0.1
 				await asyncio.sleep(timer)
 				await msg.channel.send(choice)
 
