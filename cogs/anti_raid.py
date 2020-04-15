@@ -124,6 +124,8 @@ class Anti_Raid(commands.Cog):
 	@commands.Cog.listener()
 	async def on_member_remove(self, m):
 		guild_id = str(m.guild.id)
+		if not m.guild.me.guild_permissions.view_audit_log:
+			return
 		async for entry in m.guild.audit_logs(limit=1):
 			if entry.created_at > datetime.utcnow() - timedelta(seconds=3):
 				actions = [discord.AuditLogAction.kick, discord.AuditLogAction.ban]
