@@ -1232,7 +1232,10 @@ class Logger(commands.Cog):
 				e.add_field(name="◈ Roles ◈", value=role_changes, inline=False)
 			if member_changed:
 				e.set_footer(text=f"{datetime.datetime.now().strftime('%m/%d/%Y %I:%M%p')}")
-				await channel.send(embed=e)
+				try:
+					await channel.send(embed=e)
+				except discord.errors.HTTPException:
+					pass
 
 def setup(bot):
 	bot.add_cog(Logger(bot))
