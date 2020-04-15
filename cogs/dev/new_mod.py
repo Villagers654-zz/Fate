@@ -3,6 +3,8 @@
 from os import path
 import json
 from typing import *
+from datetime import datetime, timedelta
+import asyncio
 
 from discord.ext import commands
 import discord
@@ -53,20 +55,6 @@ class Moderation(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.fp = './static/mod-cache.json'
-        self.template = {
-            "usermod": [],
-            "rolemod": [],
-            "commands": {
-                "warn": [],  # roles that have access
-                "purge": [],
-                "mute": [],
-                "kick": [],
-                "ban": []
-            },
-            "warns": {},
-            "config": {},
-            "timers": []
-        }
         self.path = './data/userdata/moderation.json'
         self.config = {}
         if path.isfile(self.path):
@@ -82,6 +70,23 @@ class Moderation(commands.Cog):
                 if key not in self.template:
                     del config[key]
             self.config[guild_id] = config
+
+    @property
+    def template(self):
+        return {
+            "usermod": [],
+            "rolemod": [],
+            "commands": {
+                "warn": [],  # roles that have access
+                "purge": [],
+                "mute": [],
+                "kick": [],
+                "ban": []
+            },
+            "warns": {},
+            "config": {},
+            "timers": []
+        }
 
     def save_data(self):
         with open(self.path, 'w') as f:
@@ -341,10 +346,145 @@ class Moderation(commands.Cog):
     async def mass_role(self, ctx, *, role: Union[discord.Role, str]):
         pass
 
-    @commands.command(name='warn')
+    async def warn_user(self, channel, user, reason):
+        guild = channel.guild
+        guild_id = str(guild.id)
+        user_id = str(user.id)
+        if guild_id not in self.config:
+            self.config[guild_id] = self.template
+        warns = self.config[guild_id]["warns"]
+        config = self.bot.utils.get_config()  # type: dict
+        punishments = ['None', 'None', 'Mute', 'Kick', 'Softban', 'Ban']
+        if guild_id in config['warns']['punishments']:
+            punishments = config['warns']['punishments'][guild_id]
+        if user_id not in warns:
+            warns[user_id] = []
+        if not isinstance(warns[user_id], list):
+            warns[user_id] = []
+
+        warns[user_id].append([reason, str(datetime.now())])
+        total_warns = 0
+        for reason, time in warns[user_id]:
+            time = datetime.strptime(time, '%Y-%m-%d %H:%M:%S.%f')
+            if (datetime.now() - time).days > 30:
+                if guild_id in config['warns']['expire']:
+                    warns[user_id].remove([reason, str(time)])
+                    continue
+            total_warns += 1
+        self.save_data()
+
+        if warns > len(punishments):
+            punishment = punishments[-1:][0]
+        else:
+            punishment = punishments[warns - 1]
+        if warns >= len(punishments):
+            next_punishment = punishments[-1:][0]
+        else:
+            next_punishment = punishments[warns]
+
+        e = discord.Embed(color=colors.fate())
+        url = self.bot.user.avatar_url
+        if user.avatar_url:
+            url = user.avatar_url
+        e.set_author(name=f'{user.name} has been warned', icon_url=url)
+        e.description = f'**Warns:** [`{warns}`] '
+        if punishment != 'None':
+            e.description += f'**Punishment:** [`{punishment}`]'
+        if punishment == 'None' and next_punishment != 'None':
+            e.description += f'**Next Punishment:** [`{next_punishment}`]'
+        else:
+            if punishment == 'None' and next_punishment == 'None':
+                e.description += f'**Reason:** [`{reason}`]'
+            if next_punishment != 'None':
+                e.description += f'\n**Next Punishment:** [`{next_punishment}`]'
+        if punishment != 'None' and next_punishment != 'None':
+            e.add_field(name='Reason', value=reason, inline=False)
+        await channel.send(embed=e)
+        try:
+            await user.send(f"You've been warned in **{channel.guild}** for `{reason}`")
+        except:
+            pass
+        if punishment == 'Mute':
+            mute_role = None
+            for role in channel.guild.roles:
+                if role.name.lower() == "muted":
+                    mute_role = role
+            if not mute_role:
+                bot = discord.utils.get(guild.members, id=self.bot.user.id)
+                perms = list(perm for perm, value in bot.guild_permissions if value)
+                if "manage_channels" not in perms:
+                    return await channel.send("No muted role found, and I'm missing manage_channel permissions to set one up")
+                mute_role = await guild.create_role(name="Muted", color=discord.Color(colors.black()))
+                for channel in guild.text_channels:
+                    await channel.set_permissions(mute_role, send_messages=False)
+                for channel in guild.voice_channels:
+                    await channel.set_permissions(mute_role, speak=False)
+            if mute_role in user.roles:
+                return await channel.send(f"{user.display_name} is already muted")
+            user_roles = []
+            for role in user.roles:
+                try:
+                    await user.remove_roles(role)
+                    user_roles.append(role.id)
+                    await asyncio.sleep(0.5)
+                except:
+                    pass
+            await user.add_roles(mute_role)
+            timer_info = {
+                'action': 'mute',
+                'channel': channel.id,
+                'user': user.id,
+                'end_time': str(datetime.now() + timedelta(seconds=7200)),
+                'mute_role': mute_role.id,
+                'roles': user_roles}
+            if user_id not in self.config[guild_id]['timers']:
+                self.config[guild_id]['timers'][user_id] = []
+            self.config[guild_id]['timers'][user_id].append(timer_info)
+            self.save_data()
+            await asyncio.sleep(7200)
+            if mute_role in user.roles:
+                await user.remove_roles(mute_role)
+                await channel.send(f"**Unmuted:** {user.name}")
+            if user_id in self.config[guild_id]['timers'] and timer_info in self.config[guild_id]['timers'][user_id]:
+                self.config[guild_id]['timers'][user_id].remove(timer_info)
+            if not self.config[guild_id]['timers'][user_id]:
+                del self.config[guild_id]['timers'][user_id]
+            self.save_data()
+        if punishment == 'Kick':
+            try:
+                await guild.kick(user, reason='Reached Sufficient Warns')
+            except:
+                await channel.send('Failed to kick this user')
+        if punishment == 'Softban':
+            try:
+                await guild.kick(user, reason='Softban - Reached Sufficient Warns')
+                await guild.unban(user, reason='Softban')
+            except:
+                await channel.send('Failed to softban this user')
+        if punishment == 'Ban':
+            try:
+                await guild.ban(user, reason='Reached Sufficient Warns')
+            except:
+                await channel.send('Failed to ban this user')
+
+    def has_warn_permission(self):
+        async def predicate(ctx):
+            config = self.template
+            guild_id = str(ctx.guild.id)
+            if guild_id in self.config:
+                config = self.config[guild_id]
+            if ctx.author.id in config['commands']['warn']:
+                return True
+            elif ctx.author.guild_permissions.administrator:
+                return True
+        return commands.check(predicate)
+
+    @commands.command(name='warn')  # use a second special check for this with perm requirements based off of the set punishments
+    @has_warn_permission()
     @commands.cooldown(*utils.default_cooldown())
     async def warn(self, ctx, user: Greedy[discord.User], *, reason):
-        pass  # use a second special check for this with perm requirements based off of the set punishments
+        for user in list(user):
+            await self.warn_user(ctx.channel, user, reason)
 
 
 def setup(bot):

@@ -6,7 +6,7 @@ from utils import colors, checks
 class User(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
-		self.dir = './data/config.json'
+		self.dir = './data/userdata/config.json'
 
 	def get_config(self):
 		with open(self.dir, 'r') as config:

@@ -28,13 +28,11 @@ class AutoModeration(commands.Cog):
         with open(self.path, "w") as f:
             json.dump(self.config, f, ensure_ascii=False)
 
-    @commands.Cog.listener()
+    # @commands.Cog.listener()
     async def on_message(self, msg):
-        cog = self.bot.get_cog("Mod")
+        cog = self.bot.get_cog("Moderation")
         if cog and isinstance(msg.guild, discord.Guild):
-            ctx = self.bot.get_context(msg)
-            ctx.message.content
-            # Anti Spam
+            await cog.warn_user(msg.channel, msg.author, "reason")
 
 def setup(bot):
     bot.add_cog(AutoModeration(bot))
