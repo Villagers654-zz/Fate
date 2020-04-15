@@ -414,8 +414,10 @@ class Utility(commands.Cog):
 			role = await utils.get_role(ctx, args[0])
 		if not role:
 			return await ctx.send('Unknown role')
-		try: hex = discord.Color(eval('0x' + args[1].replace('#', '')))
-		except: return await ctx.send('Invalid Hex')
+		try:
+			hex = discord.Color(int('0x' + args[1].strip('#').strip('0x'), 0))
+		except:
+			return await ctx.send('Invalid Hex')
 		if role.position >= ctx.author.top_role.position:
 			return await ctx.send('That roles above your paygrade, take a seat')
 		previous_color = role.color

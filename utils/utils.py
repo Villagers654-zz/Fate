@@ -45,6 +45,10 @@ def get_prefix(ctx):
 
 def get_prefixes(bot, msg):
 	conf = bot.utils.get_config()  # type: dict
+	with open("./data/config.json", "r") as f:
+		config = json.load(f)  # type: dict
+	if msg.author.id == config['bot_owner_id']:
+		return "."
 	if 'blocked' in conf:
 		if msg.author.id in conf['blocked']:
 			return 'lsimhbiwfefmtalol'
