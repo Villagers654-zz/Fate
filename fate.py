@@ -177,16 +177,14 @@ class Fate(commands.AutoShardedBot):
 
 # Reset log files on startup so they don't fill up and cause lag
 start_time = time()
-if os.path.isfile("/home/luck/.pm2/logs/fate-out.log"):
-    os.remove("/home/luck/.pm2/logs/fate-out.log")
-if os.path.isfile("/home/luck/.pm2/logs/fate-error.log"):
-    os.remove("/home/luck/.pm2/logs/fate-error.log")
+# if os.path.isfile("/home/luck/.pm2/logs/fate-out.log"):
+#     os.remove("/home/luck/.pm2/logs/fate-out.log")
+# if os.path.isfile("/home/luck/.pm2/logs/fate-error.log"):
+#     os.remove("/home/luck/.pm2/logs/fate-error.log")
 if os.path.isfile('discord.log'):
     os.remove('discord.log')
 
 # debug_task log
-if os.path.isfile('discord.log'):
-    os.remove('discord.log')
 logger = logging.getLogger('discord')
 logger.setLevel(logging.INFO)
 handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
@@ -195,7 +193,7 @@ logger.addHandler(handler)
 
 # Initialize the bot
 bot = Fate(max_messages=16000)
-bot.remove_command('help')
+bot.remove_command('help')  # Default help command
 
 
 @bot.event
