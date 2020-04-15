@@ -175,7 +175,7 @@ class Logger(commands.Cog):
 			return await ctx.send("That events not blacklisted")
 		target = self.blacklist[guild_id].index(event)
 		self.blacklist[guild_id].pop(target)
-		if len(self.blacklist[guild_id]) is 0:
+		if len(self.blacklist[guild_id]) == 0:
 			del self.blacklist[guild_id]
 		e = discord.Embed(color=colors.fate())
 		e.set_author(name=f"| {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
@@ -204,7 +204,7 @@ class Logger(commands.Cog):
 					channels.append(self.bot.get_channel(channel_id).mention)
 				else:
 					self.blocked[guild_id].pop(self.blocked[guild_id].index(channel_id))
-					if len(self.blocked[guild_id]) is 0:
+					if len(self.blocked[guild_id]) == 0:
 						del self.blocked[guild_id]
 					self.save_json()
 			if guild_id not in self.blocked:
@@ -236,7 +236,7 @@ class Logger(commands.Cog):
 					channels.append(self.bot.get_channel(channel_id).mention)
 				else:
 					self.blocked[guild_id].pop(self.blocked[guild_id].index(channel_id))
-					if len(self.blocked[guild_id]) is 0:
+					if len(self.blocked[guild_id]) == 0:
 						del self.blocked[guild_id]
 					self.save_json()
 			if guild_id not in self.blocked:
@@ -678,7 +678,7 @@ class Logger(commands.Cog):
 			if guild_id in self.blocked:
 				if channel.id in self.blocked[guild_id]:
 					self.blocked[guild_id].pop(channel.id)
-					if len(self.blocked[guild_id]) is 0:
+					if len(self.blocked[guild_id]) == 0:
 						del self.blocked[guild_id]
 					self.save_json()
 			if channel.id == self.channel[guild_id]:
