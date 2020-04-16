@@ -1,4 +1,8 @@
 # quick moderation based commands
+"""
+Notes
+- make sure commands work in unison with each other with muting
+"""
 
 from os import path
 import json
@@ -85,7 +89,8 @@ class Moderation(commands.Cog):
             },
             "warns": {},
             "config": {},
-            "timers": []
+            "timers": [],
+            "mute_timers": {}
         }
 
     def save_data(self):
@@ -141,9 +146,10 @@ class Moderation(commands.Cog):
         if 'restricted' not in config:
             config['restricted'] = {}
         if guild_id not in config['restricted']:
-            config['restricted'][guild_id] = {}
-            config['restricted'][guild_id]['channels'] = []
-            config['restricted'][guild_id]['users'] = []
+            config['restricted'][guild_id] = {
+                'channels': [],
+                'users': []
+            }
         restricted = '**Restricted:**'
         dat = config['restricted'][guild_id]
         for channel in ctx.message.channel_mentions:
@@ -172,18 +178,17 @@ class Moderation(commands.Cog):
         unrestricted = '**Unrestricted:**'
         dat = config['restricted'][guild_id]
         if guild_id not in config['restricted']:
-            config['restricted'][guild_id] = {}
-            config['restricted'][guild_id]['channels'] = []
-            config['restricted'][guild_id]['users'] = []
+            config['restricted'][guild_id] = {
+                'channels': [],
+                'users': []
+            }
         for channel in ctx.message.channel_mentions:
             if channel.id in dat['channels']:
-                index = config['restricted'][guild_id]['channels'].index(channel.id)
-                config['restricted'][guild_id]['channels'].pop(index)
+                config['restricted'][guild_id]['channels'].remove(channel.id)
                 unrestricted += f'\n{channel.mention}'
         for member in ctx.message.mentions:
             if member.id in dat['users']:
-                index = config['restricted'][guild_id]['users'].index(member.id)
-                config['restricted'][guild_id]['users'].pop(index)
+                config['restricted'][guild_id]['users'].remove(member.id)
                 unrestricted += f'\n{member.mention}'
         e = discord.Embed(color=colors.fate(), description=unrestricted)
         await ctx.send(embed=e)
@@ -240,15 +245,103 @@ class Moderation(commands.Cog):
     @has_required_permissions(mute_members=True)
     @commands.bot_has_permissions(embed_links=True)
     @commands.bot_has_guild_permissions(manage_roles=True)
-    async def mute(self, ctx, member: Greedy[discord.Member], *, reason):  # check for timers in reason.split()[0]
-        pass
+    async def mute(self, ctx, members: Greedy[discord.Member], *, reason):  # check for timers with regex
+        for user in list(members):
+            async with ctx.typing():
+                if not user:
+                    return await ctx.send("**Format:** `.mute {@user} {timer: 2m, 2h, or 2d}`")
+                if user.top_role.position >= ctx.author.top_role.position:
+                    return await ctx.send("That user is above your paygrade, take a seat")
+                guild_id = str(ctx.guild.id)
+                user_id = str(user.id)
+                mute_role = None
+                for role in ctx.guild.roles:
+                    if role.name.lower() == "muted":
+                        mute_role = role
+                        for channel in ctx.guild.text_channels:
+                            if not channel.permissions_for(ctx.guild.me).manage_channels:
+                                continue
+                            if mute_role not in channel.overwrites:
+                                await channel.set_permissions(mute_role, send_messages=False)
+                                await asyncio.sleep(0.5)
+                        for channel in ctx.guild.voice_channels:
+                            if not channel.permissions_for(ctx.guild.me).manage_channels:
+                                continue
+                            if mute_role not in channel.overwrites:
+                                await channel.set_permissions(mute_role, speak=False)
+                                await asyncio.sleep(0.5)
+                if not mute_role:
+                    perms = [perm for perm, value in ctx.guild.me.guild_permissions if value]
+                    if 'manage_channels' not in perms:
+                        return await ctx.send(
+                            'No muted role found, and I\'m missing manage_channel permissions to set one up')
+                    mute_role = await ctx.guild.create_role(name="Muted", color=discord.Color(colors.black()))
+                    for channel in ctx.guild.text_channels:
+                        try:
+                            await channel.set_permissions(mute_role, send_messages=False)
+                        except:
+                            await ctx.send(f"Couldn't modify mute role in {channel.mention}s overwrites")
+                        await asyncio.sleep(0.5)
+                    for channel in ctx.guild.voice_channels:
+                        try:
+                            await channel.set_permissions(mute_role, speak=False)
+                        except:
+                            await ctx.send(f"Couldn't modify mute role in {channel.name}s overwrites")
+                        await asyncio.sleep(0.5)
+                if mute_role in user.roles:
+                    return await ctx.send(f'{user.display_name} is already muted')
+                if not timer:
+                    await user.add_roles(mute_role)
+                    return await ctx.send(f'Muted {user.display_name}')
+                for x in list(timer):
+                    if x not in '1234567890dhms':
+                        return await ctx.send("Invalid character used in timer field")
+                timer, time = self.convert_timer(timer)
+                if not isinstance(timer, float):
+                    return await ctx.send("Invalid character used in timer field")
+                await user.add_roles(mute_role)
+                if not timer:
+                    await ctx.send(f"**Muted:** {user.name}")
+                else:
+                    await ctx.send(f"Muted **{user.name}** for {time}")
+                removed_roles = []
+                for role in [role for role in sorted(user.roles, reverse=True) if role is not mute_role]:
+                    try:
+                        await user.remove_roles(role)
+                        removed_roles.append(role.id)
+                        await asyncio.sleep(0.5)
+                    except:
+                        pass
+            try:
+                timer_info = {
+                    'channel': ctx.channel.id,
+                    'user': user.id,
+                    'end_time': str(datetime.now() + timedelta(seconds=round(timer))),
+                    'mute_role': mute_role.id,
+                    'roles': removed_roles
+                }
+            except OverflowError:
+                return await ctx.send("No way in hell I'm waiting that long to unmute")
+            if guild_id not in self.config:
+                self.config[guild_id] = self.template
+            self.config[guild_id]['mute_timers'][user_id] = timer_info
+            self.save_data()
+            await asyncio.sleep(timer)
+            if user_id in self.config[guild_id]['mute_timers']:
+                user = ctx.guild.get_member(int(user_id))
+                if user:
+                    if mute_role in user.roles:
+                        await user.remove_roles(mute_role)
+                        await ctx.send(f"**Unmuted:** {user.name}")
+                    del self.config[guild_id]['mute_timers'][user_id]
 
     @commands.command(name='kick')
     @commands.cooldown(*utils.default_cooldown())
     @has_required_permissions(kick_members=True)
     @commands.bot_has_permissions(embed_links=True, kick_members=True)
     async def kick(self, ctx, members: Greedy[discord.Member], *, reason):
-        pass
+        if not members:
+            return await ctx.send("Member(s) not found")
 
     @commands.command(name='ban')
     @commands.cooldown(2, 10, commands.BucketType.guild)
