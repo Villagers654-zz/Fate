@@ -337,7 +337,49 @@ class Moderation(commands.Cog):
     @has_required_permissions(manage_nicknames=True)
     @commands.bot_has_guild_permissions(manage_nicknames=True)
     async def mass_nick(self, ctx, *, nick):
-        pass
+        def gen_embed(iteration):
+            e = discord.Embed(color=colors.fate())
+            e.set_author(name="Mass Updating Nicknames", icon_url=ctx.author.avatar_url)
+            e.description = f"{iteration}/{len(members)} complete" \
+                            f"\nETA of {self.bot.utils.get_time(len(members))}"
+            return e
+
+        members = [
+            m for m in ctx.guild.members if m.top_role.position < ctx.author.top_role.position
+                                            and m.author.top_role.position < ctx.guild.me.top_role.position
+                                            and m.display_name != nick
+        ]
+        if len(members) > 3600:
+            async with ctx.typing():
+                await asyncio.sleep(1)
+            msg = await ctx.send("Bruh.. you get ONE hour, but that's it.", embed=gen_embed(0))
+        else:
+            msg = await ctx.send(embed=gen_embed(0))
+        async with ctx.typing():
+            await msg.add_reaction("❌")
+            for i, member in enumerate(members[:3600]):
+                for reaction in [r for r in msg.reactions if str(reaction.emoji) == "❌"] and reaction.count > 1:
+                    async for user in reaction.users():
+                        if not user.guild_permissions.manage_nicknames:
+                            await msg.remove_reaction(reaction.emoji, user)
+                            continue
+                        return await msg.edit(content="Message Inactive: Operation Cancelled")
+                if (i + 1) % 5 == 0:
+                    await msg.edit(embed=gen_embed(i))
+                try:
+                    await member.edit(nick=nick)
+                except discord.errors.Forbidden:
+                    if not ctx.guild.me.guild_permissions.manage_nicknames:
+                        await msg.edit(content="Message Inactive: Missing Permissions")
+                        return await ctx.send("I'm missing permissions to manage nicknames. Canceling the operation :[")
+                await asyncio.sleep(1)
+                for reaction in msg.reactions:
+                    if str(reaction.emoji) == "❌" and reaction.count > 1:
+                        async for user in reaction.users():
+                            if not user.guild_permissions.manage_nicknames:
+                                await msg.remove_reaction(reaction.emoji, user)
+                                continue
+                            return await msg.edit(content="Message Inactive: Operation Cancelled")
 
     @commands.command(name='mass-role', aliases=['massrole'])
     @commands.cooldown(*utils.default_cooldown())
