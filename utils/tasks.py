@@ -1,4 +1,5 @@
 import asyncio
+import websockets
 import random
 import traceback
 import discord
@@ -73,7 +74,7 @@ class Tasks:
 					await self.bot.change_presence(status=discord.Status.idle, activity=discord.Game(name=f'SVR: {len(self.bot.guilds)} USR: {len(self.bot.users)}'))
 					await asyncio.sleep(15)
 					await self.bot.change_presence(status=discord.Status.dnd, activity=discord.Game(name=f'{stages[i]} | {random.choice(motds)}'))
-				except (discord.errors.Forbidden, discord.errors.HTTPException):
+				except (discord.errors.Forbidden, discord.errors.HTTPException, websockets.exceptions.ConnectionClosedError):
 					self.bot.log(f'Error changing my status', 'CRITICAL', traceback.format_exc())
 				await asyncio.sleep(15)
 
