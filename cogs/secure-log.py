@@ -1256,7 +1256,7 @@ class SecureLog(commands.Cog):
             )
 
             who = dat['actual_user']  # type: discord.Member
-            if who.bot and who.id in self.config[guild_id]['ignored_bots']:
+            if who and who.bot and who.id in self.config[guild_id]['ignored_bots']:
                 return
 
             if dat['action'].name == 'webhook_create':
