@@ -273,8 +273,7 @@ class Moderation(commands.Cog):
                 if not mute_role:
                     perms = [perm for perm, value in ctx.guild.me.guild_permissions if value]
                     if 'manage_channels' not in perms:
-                        return await ctx.send(
-                            'No muted role found, and I\'m missing manage_channel permissions to set one up')
+                        return await ctx.send('No muted role found, and I\'m missing manage_channel permissions to set one up')
                     mute_role = await ctx.guild.create_role(name="Muted", color=discord.Color(colors.black()))
                     for channel in ctx.guild.text_channels:
                         try:

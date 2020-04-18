@@ -19,9 +19,9 @@ class AutoModeration(commands.Cog):
             with open(self.path, "r") as f:
                 self.config = json.load(f)
         self.example_config = {
-            "toggle": bool,
-            "spam": bool,
-            "raids": bool
+            "toggle": False,
+            "spam": False,
+            "raids": False
         }
 
     def save_data(self):
@@ -33,6 +33,11 @@ class AutoModeration(commands.Cog):
         cog = self.bot.get_cog("Moderation")
         if cog and isinstance(msg.guild, discord.Guild):
             await cog.warn_user(msg.channel, msg.author, "reason")
+
+    @commands.command(name="auto-moderation", aliases=['automod', 'automoderation', 'auto-mod'])
+    async def auto_moderation(self, ctx):
+        await self.bot.utils.configure(self, ctx, self.example_config)
+        await ctx.send("alright.")
 
 def setup(bot):
     bot.add_cog(AutoModeration(bot))
