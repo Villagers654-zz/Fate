@@ -1399,19 +1399,14 @@ class SecureLog(commands.Cog):
                     e.set_author(name="~==🍸Role Granted🍸==~", icon_url=dat['icon_url'])
                     roles = [role for role in after.roles if role not in before.roles]
 
-                role_mentions = "\n".join([role.mention for role in roles])
-                e.description = role_mentions
-                info = {"ID": after.id}
-                if len(roles) == 1:
-                    info["Role ID"] = roles[0].id
-                else:
-                    for i, role in enumerate(roles):
-                        info[f"Role{i + 1} ID"] = role.id
-                e.description = f"{role_mentions} - {after.mention}\n"
-                e.add_field(
-                    name=str(after),
-                    value=self.bot.utils.format_dict(info)
-                )
+                info = {
+                    "User": str(after),
+                    "Mention": after.mention,
+                    "Role ID": roles[0].id,
+                    "Updated by": dat['user']
+                }
+                e.description = f"{roles[0].mention} - {roles[0].name}" \
+                                f"\n{self.bot.utils.format_dict(info)}"
                 self.queue[guild_id].append([e, 'updates', time()])
 
 
