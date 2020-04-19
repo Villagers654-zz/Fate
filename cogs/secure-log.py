@@ -1384,5 +1384,36 @@ class SecureLog(commands.Cog):
                 e.set_author(name='~==🍸Member Left🍸==~', icon_url=member.avatar_url)
                 self.queue[guild_id].append([e, 'misc', time()])
 
+    @commands.Cog.listener()
+    async def on_member_update(self, before, after):
+        guild_id = str(before.guild.id)
+        if guild_id in self.config:
+            e = discord.Embed(color=blue())
+            if len(before.roles) != len(after.roles):
+                dat = await self.search_audit(after.guild, audit.member_role_update)
+                e.set_thumbnail(url=dat['thumbnail_url'])
+                if len(before.roles) > len(after.roles):
+                    e.set_author(name="~==🍸Role Revoked🍸==~", icon_url=dat['icon_url'])
+                    roles = [role for role in before.roles if role not in after.roles]
+                else:
+                    e.set_author(name="~==🍸Role Granted🍸==~", icon_url=dat['icon_url'])
+                    roles = [role for role in after.roles if role not in before.roles]
+
+                role_mentions = "\n".join([role.mention for role in roles])
+                e.description = role_mentions
+                info = {"ID": after.id}
+                if len(roles) == 1:
+                    info["Role ID"] = roles[0].id
+                else:
+                    for i, role in enumerate(roles):
+                        info[f"Role{i + 1} ID"] = role.id
+                e.description = f"{role_mentions} - {after.mention}\n"
+                e.add_field(
+                    name=str(after),
+                    value=self.bot.utils.format_dict(info)
+                )
+                self.queue[guild_id].append([e, 'updates', time()])
+
+
 def setup(bot):
     bot.add_cog(SecureLog(bot))
