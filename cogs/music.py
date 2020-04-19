@@ -233,7 +233,7 @@ class Music(commands.Cog):
         """ Plays immediately a song. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
         if not player.queue and not player.is_playing:
-            await ctx.invoke(self._play, query=query, delete_after=20)
+            await ctx.invoke(self._play, query=query)
             await asyncio.sleep(20)
             return await ctx.message.delete()
         query = query.strip('<>')
