@@ -1389,24 +1389,39 @@ class SecureLog(commands.Cog):
         guild_id = str(before.guild.id)
         if guild_id in self.config:
             e = discord.Embed(color=blue())
+            if before.display_name != after.display_name:
+                e.set_author(name="~==🍸Nick Changed🍸==~")
+                e.description = self.bot.utils.format_dict({
+                    "User": after,
+                    "Mention": after.mention,
+                    "ID": after.id
+                })
+                e.add_field(name="◈ Before", value=before.display_name)
+                e.add_field(name="◈ After", value=after.display_name)
+                self.queue[guild_id].append([e, 'updates', time()])
+
             if len(before.roles) != len(after.roles):
                 dat = await self.search_audit(after.guild, audit.member_role_update)
                 e.set_thumbnail(url=dat['thumbnail_url'])
                 if len(before.roles) > len(after.roles):
-                    e.set_author(name="~==🍸Role Revoked🍸==~", icon_url=dat['icon_url'])
+                    action = "Revoked"
                     roles = [role for role in before.roles if role not in after.roles]
+                    e.description = f"{roles[0].mention} was taken from {before.mention}"
                 else:
-                    e.set_author(name="~==🍸Role Granted🍸==~", icon_url=dat['icon_url'])
+                    action = "Granted"
                     roles = [role for role in after.roles if role not in before.roles]
-
+                    e.description = f"{roles[0].mention} was given to {before.mention}"
+                e.set_author(name=f"~==🍸Role {action}🍸==~", icon_url=dat['icon_url'])
                 info = {
-                    "User": str(after),
-                    "Mention": after.mention,
+                    "User": after,
                     "Role ID": roles[0].id,
-                    "Updated by": dat['user']
+                    f"{action} by": dat['user']
                 }
-                e.description = f"{roles[0].mention} - {roles[0].name}" \
-                                f"\n{self.bot.utils.format_dict(info)}"
+                e.add_field(
+                    name="◈ Information",
+                    value=self.bot.utils.format_dict(info),
+                    inline=False
+                )
                 self.queue[guild_id].append([e, 'updates', time()])
 
 
