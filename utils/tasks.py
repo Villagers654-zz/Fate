@@ -37,7 +37,7 @@ class Tasks:
 		if 'kill_existing' in kwargs:
 			for task in self.running_tasks():
 				if task.get_name() == task_id:
-					print('attempting to kill the task')
+					self.bot.log(f'Attempting to kill task {task_id}', 'DEBUG')
 					task.cancel()
 			del kwargs['kill_existing']
 		else:

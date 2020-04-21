@@ -139,15 +139,16 @@ class Logger(commands.Cog):
                 embed.timestamp = datetime.fromtimestamp(logged_at)
 
                 while not guild.me.guild_permissions.administrator:
-                    text = f"I need administrator permissions in {guild} for the logger module to function. " \
-                            f"Until that's satisfied, i'll keep a maximum 12 hours of logs in queue"
                     try:
                         dm = guild.owner.dm_channel
                         if not dm:
                             dm = await guild.owner.create_dm()
                         async for msg in dm.history(limit=1):
-                            if msg.content != text:
-                                await guild.owner.send(text)
+                            if "I need administrator" not in msg.content:
+                                await guild.owner.send(
+                                    f"I need administrator permissions in {guild} for the logger module to function. "
+                                    f"Until that's satisfied, i'll keep a maximum 12 hours of logs in queue"
+                                )
                     except:
                         pass
                     await asyncio.sleep(60)
