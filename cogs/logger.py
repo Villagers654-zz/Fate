@@ -141,6 +141,8 @@ class Logger(commands.Cog):
                 if not guild.me.guild_permissions.administrator:
                     dm = None
                     for _attempt in range(24*60):
+                        if guild.me.guild_permissions.administrator:
+                            break
                         try:
                             if not dm:
                                 dm = guild.owner.dm_channel
