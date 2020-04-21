@@ -1155,31 +1155,31 @@ class SecureLog(commands.Cog):
                 def font(size):
                     return ImageFont.truetype("./utils/fonts/Modern_Sans_Light.otf", size)
 
-                card = Image.new('RGBA', (100, 100), color=after.color.to_rgb())
+                card = Image.new('RGBA', (300, 50), color=after.color.to_rgb())
                 draw = ImageDraw.Draw(card)
-                draw.text((60 - 1, 5), 'After', (0, 0, 0), font=font(13))
-                draw.text((60 + 1, 5), 'After', (0, 0, 0), font=font(13))
-                draw.text((60, 5 - 1), 'After', (0, 0, 0), font=font(13))
-                draw.text((60, 5 + 1), 'After', (0, 0, 0), font=font(13))
-                draw.text((60, 5), 'After', (255, 255, 255), font=font(13))
+                draw.text((180 - 2, 5), 'After', (0, 0, 0), font=font(45))
+                draw.text((180 + 2, 5), 'After', (0, 0, 0), font=font(45))
+                draw.text((180, 5 - 2), 'After', (0, 0, 0), font=font(45))
+                draw.text((180, 5 + 2), 'After', (0, 0, 0), font=font(45))
+                draw.text((180, 5), 'After', (255, 255, 255), font=font(45))
 
-                box = Image.new('RGBA', (50, 100), color=before.color.to_rgb())
+                box = Image.new('RGBA', (150, 50), color=before.color.to_rgb())
                 draw = ImageDraw.Draw(box)
-                draw.text((5 - 1, 5), 'Before', (0, 0, 0), font=font(13))
-                draw.text((5 + 1, 5), 'Before', (0, 0, 0), font=font(13))
-                draw.text((5, 5 - 1), 'Before', (0, 0, 0), font=font(13))
-                draw.text((5, 5 + 1), 'Before', (0, 0, 0), font=font(13))
-                draw.text((5, 5), 'Before', (255, 255, 255), font=font(13))
+                draw.text((10 - 2, 5), 'Before', (0, 0, 0), font=font(45))
+                draw.text((10 + 2, 5), 'Before', (0, 0, 0), font=font(45))
+                draw.text((10, 5 - 2), 'Before', (0, 0, 0), font=font(45))
+                draw.text((10, 5 + 2), 'Before', (0, 0, 0), font=font(45))
+                draw.text((10, 5), 'Before', (255, 255, 255), font=font(45))
 
                 card.paste(box)
                 path = os.getcwd() + f'/static/color-{r.randint(1, 999)}.png'
                 card.save(path)
 
-                e.set_thumbnail(url="attachment://" + os.path.basename(path))
+                e.set_image(url="attachment://" + os.path.basename(path))
+                e.set_thumbnail(url=dat['thumbnail_url'])
                 e.add_field(
                     name='◈ Color Changed',
-                    value=f"__**Before:**__ {before.color}"
-                          f"\n__**After:**__ {after.color}"
+                    value=f"From **{before.color}** -> **{after.color}**"
                 )
             if before.hoist != after.hoist:
                 action = 'is now visible'
@@ -1414,6 +1414,7 @@ class SecureLog(commands.Cog):
                 e.set_author(name=f"~==🍸Role {action}🍸==~", icon_url=dat['icon_url'])
                 info = {
                     "User": after,
+                    "Role": roles[0].name,
                     "Role ID": roles[0].id,
                     f"{action} by": dat['user']
                 }
