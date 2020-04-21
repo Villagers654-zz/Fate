@@ -177,7 +177,6 @@ class Logger(commands.Cog):
                     else:
                         break
 
-
                 try:
                     if isinstance(category, discord.TextChannel):  # single channel log
                         try:
