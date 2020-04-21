@@ -36,7 +36,7 @@ def is_guild_owner():
     return commands.check(predicate)
 
 
-class SecureLog(commands.Cog):
+class Logger(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -1418,4 +1418,4 @@ class SecureLog(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(SecureLog(bot))
+    bot.add_cog(Logger(bot))
