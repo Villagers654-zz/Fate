@@ -32,7 +32,7 @@ class Fate(commands.AutoShardedBot):
             'duel_chat', 'selfroles', 'lock', 'audit', 'cookies', 'backup', 'server_list', 'emojis', 'giveaways',
             'logger', 'autorole', 'changelog', 'restore_roles', 'chatbot', 'anti_spam', 'anti_raid', 'chatfilter',
             'nsfw', 'minecraft', 'chatlock', 'rainbow', 'system', 'user', 'limiter', 'dm_channel', 'factions',
-            'secure_overwrites', 'server_setup', 'secure-log', 'global-chat', 'beta', 'ranking'
+            'secure_overwrites', 'server_setup', 'global-chat', 'beta', 'ranking'
         ]
         self.awaited_extensions = []    # Cogs to load when the internal cache is ready
 
@@ -78,22 +78,27 @@ class Fate(commands.AutoShardedBot):
 
     async def create_pool(self):
         sql = outh.MySQL()
-        try:
-            self.pool = await aiomysql.create_pool(
-                host=sql.host,
-                port=sql.port,
-                user=sql.user,
-                password=sql.password,
-                db=sql.db,
-                loop=self.loop
-            )
-        except (ConnectionRefusedError, OperationalError):
-            self.log("Couldn't connect to SQL server", 'CRITICAL', tb=traceback.format_exc())
+        for _ in range(5):
+            try:
+                pool = await aiomysql.create_pool(
+                    host=sql.host,
+                    port=sql.port,
+                    user=sql.user,
+                    password=sql.password,
+                    db=sql.db,
+                    loop=self.loop
+                )
+                self.pool = pool
+                break
+            except (ConnectionRefusedError, OperationalError):
+                self.log("Couldn't connect to SQL server, retrying in 25 seconds..", 'CRITICAL')
+            await asyncio.sleep(25)
+        else:
+            self.log("Couldn't connect to SQL server, reached max attempts", 'CRITICAL', tb=traceback.format_exc())
             self.unload(*self.initial_extensions, log=False)
             self.log("Logging out..")
-            await self.logout()
-        else:
-            self.log(f"Initialized db {sql.db} with {sql.user}@{sql.host}")
+            return await self.logout()
+        self.log(f"Initialized db {sql.db} with {sql.user}@{sql.host}")
 
     def load(self, *extensions):
         for cog in extensions:
