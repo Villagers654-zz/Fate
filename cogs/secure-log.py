@@ -6,18 +6,8 @@ Discord.Py v1.3+ Action Logs Module:
 - re-creates deleted log channel(s) and resends the last x logs
 
 Super Important To-Do list:
-+ add time() to all the lists of args where logs are queued
-- this is to keep ALL the logs from the last x hours instead
-  of only keeping the last x logs regardless of timeframe
-- default 6h-12h, can be adjusted to a max of 48h
-- self.queue[guild_id].append([embed, type, time()])
-+ add member update logs
-- whence this is done the log will replace the old .logger
 + recolor the embeds so there's no duplicate colors
 - try to match the colors for .logger
-+ add a check in each log event which uses the audit that queues an
-  embed denoting the bot lost perms and wait for perms silently
-  for up to 12h as the queue will already notify the owner
 """
 
 import asyncio
@@ -153,8 +143,8 @@ class SecureLog(commands.Cog):
                     if not sent:
                         try:
                             await guild.owner.send(
-                                f"I need administrator permissions in {guild} for the multi-log to function securely. "
-                                f"Until that's satisfied, i'll keep a maximum of 175 logs in queue"
+                                f"I need administrator permissions in {guild} for the logger module to function. "
+                                f"Until that's satisfied, i'll keep a maximum 12 hours of logs in queue"
                             )
                         except:
                             pass
@@ -287,8 +277,8 @@ class SecureLog(commands.Cog):
                     dat['recent'] = True
                     break
         else:
-            await guild.owner.send(f"I'm missing audit log permissions for secure-log in {guild}\n"
-                                   f"run `.secure-log disable` to stop recieving msgs")
+            await guild.owner.send(f"I'm missing audit log permissions for the logger module in {guild}\n"
+                                   f"run `.log disable` to stop receiving msgs")
         return dat
 
     def split_into_groups(self, text):
@@ -340,8 +330,8 @@ class SecureLog(commands.Cog):
         """ Creates a multi-log """
         guild_id = str(ctx.guild.id)
         if guild_id in self.config:
-            return await ctx.send("Secure-Log is already enabled")
-        channel = await ctx.guild.create_text_channel(name='secure-log')
+            return await ctx.send("Logger is already enabled")
+        channel = await ctx.guild.create_text_channel(name='discord-log')
         self.config[guild_id] = {
             "channel": channel.id,
             "channels": {},
@@ -351,7 +341,7 @@ class SecureLog(commands.Cog):
             "ignored_bots": []
         }
         self.bot.loop.create_task(self.start_queue(guild_id))
-        await ctx.send("Enabled Secure-Log")
+        await ctx.send("Enabled Logger")
         self.save_data()
 
     @secure_log.command(name='disable')
@@ -360,12 +350,12 @@ class SecureLog(commands.Cog):
         """ Deletes a multi-log """
         guild_id = str(ctx.guild.id)
         if guild_id not in self.config:
-            return await ctx.send("Secure-Log isn't enabled")
+            return await ctx.send("Logger isn't enabled")
         if self.config[guild_id]['secure']:
             if ctx.author.id != ctx.guild.owner.id:
                 return await ctx.send("Due to security settings, only the owner of the server can use this")
         del self.config[guild_id]
-        await ctx.send('Disabled Secure-Log')
+        await ctx.send('Disabled Logger')
         self.save_data()
 
     @secure_log.command(name='switch')
@@ -382,14 +372,14 @@ class SecureLog(commands.Cog):
             self.recent_logs[guild_id] = {
                 Type: [] for Type in self.channel_types
             }
-            await ctx.send("Enabled Multi-Log")
+            await ctx.send("Switched to Multi-Log")
         else:
             log = await ctx.guild.create_text_channel(name='bot-logs')
             self.config[guild_id]['channel'] = log.id
             self.config[guild_id]['channels'] = {}
             self.config[guild_id]['type'] = 'single'
             self.recent_logs[guild_id] = []
-            await ctx.send('Enabled Single-Log')
+            await ctx.send('Switched to Single-Log')
         self.save_data()
 
     @secure_log.command(name='security')
@@ -413,7 +403,7 @@ class SecureLog(commands.Cog):
         """ ignore channels and/or bots """
         guild_id = str(ctx.guild.id)
         if guild_id not in self.config:
-            return await ctx.send("Secure-Log isn't enabled")
+            return await ctx.send("Logger isn't enabled")
         if self.config[guild_id]['secure'] and ctx.author.id != ctx.guild.owner.id:
             return await ctx.send("Due to security settings, only the owner of the server can use this")
         for member in ctx.message.mentions:
@@ -438,7 +428,7 @@ class SecureLog(commands.Cog):
         """ unignore channels and/or bots """
         guild_id = str(ctx.guild.id)
         if guild_id not in self.config:
-            return await ctx.send("Secure-Log isn't enabled")
+            return await ctx.send("Logger isn't enabled")
         if self.config[guild_id]['secure'] and ctx.author.id != ctx.guild.owner.id:
             return await ctx.send("Due to security settings, only the owner of the server can use this")
         for member in ctx.message.mentions:
