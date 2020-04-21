@@ -138,20 +138,26 @@ class Logger(commands.Cog):
 
                 embed.timestamp = datetime.fromtimestamp(logged_at)
 
-                while not guild.me.guild_permissions.administrator:
-                    try:
-                        dm = guild.owner.dm_channel
-                        if not dm:
-                            dm = await guild.owner.create_dm()
-                        async for msg in dm.history(limit=1):
-                            if "I need administrator" not in msg.content:
-                                await guild.owner.send(
-                                    f"I need administrator permissions in {guild} for the logger module to function. "
-                                    f"Until that's satisfied, i'll keep a maximum 12 hours of logs in queue"
-                                )
-                    except:
-                        pass
-                    await asyncio.sleep(60)
+                if not guild.me.guild_permissions.administrator:
+                    dm = None
+                    for _attempt in range(24*60):
+                        try:
+                            if not dm:
+                                dm = guild.owner.dm_channel
+                            if not dm:
+                                dm = await guild.owner.create_dm()
+                            async for msg in dm.history(limit=1):
+                                if "I need administrator" not in msg.content:
+                                    await guild.owner.send(
+                                        f"I need administrator permissions in {guild} for the logger module to function. "
+                                        f"Until that's satisfied, i'll keep a maximum 12 hours of logs in queue"
+                                    )
+                        except (discord.errors.Forbidden, discord.errors.NotFound):
+                            pass
+                        await asyncio.sleep(60)
+                    else:
+                        del self.config[guild_id]
+                        return self.save_data()
 
                 category = self.bot.get_channel(self.config[guild_id]['channel'])
                 while not category:
