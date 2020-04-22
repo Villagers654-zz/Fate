@@ -649,7 +649,11 @@ class Ranking(commands.Cog):
 
 		# backgrounds and saving
 		if background_url:
-			background = Image.open(BytesIO(requests.get(background_url).content))
+			try:
+				background = Image.open(BytesIO(requests.get(background_url).content))
+			except UnidentifiedImageError:
+				return await ctx.send("Sorry, but I seem to be having issues using your current background"
+				                      "\nYou can use `.set background` to reset it, or attach a file while using that command to change it")
 			if 'gif' in str(background_url):
 				dur = background.info['duration']
 				count = len(list(ImageSequence.Iterator(background)))
