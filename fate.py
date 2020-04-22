@@ -76,7 +76,14 @@ class Fate(commands.AutoShardedBot):
                 return message
         return None
 
-    async def create_pool(self):
+    async def create_pool(self, force=False):
+        if self.pool and not force:
+            return self.log("bot.create_pool was called when one was already initialized", "INFO")
+        elif self.pool:
+            self.log("Closing the existing pool to start a new connection", "CRITICAL")
+            self.pool.close()
+            await self.pool.wait_closed()
+            self.log("Pool was successfully closed", "INFO")
         sql = outh.MySQL()
         for _ in range(5):
             try:
@@ -216,7 +223,8 @@ async def on_ready():
         '\n------------',
         color='yellow'
     )
-    await bot.create_pool()
+    if not bot.pool:
+        await bot.create_pool()
     if bot.awaited_extensions:
         bot.log("Loading awaited cogs", color='yellow')
         bot.load(*bot.awaited_extensions)
