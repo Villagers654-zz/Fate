@@ -51,7 +51,7 @@ def get_prefixes(bot, msg):
 	with open("./data/config.json", "r") as f:
 		config = json.load(f)  # type: dict
 	if msg.author.id == config['bot_owner_id']:
-		return "."
+		return commands.when_mentioned_or(".")(bot, msg)
 	if 'blocked' in conf:
 		if msg.author.id in conf['blocked']:
 			return 'lsimhbiwfefmtalol'
