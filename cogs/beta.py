@@ -33,6 +33,9 @@ class UtilityBeta(commands.Cog):
                 self.user_logs = dat['user_logs']
                 self.misc_logs = dat['misc_logs']
         self.cache = {}
+        for guild_id, data in self.guild_logs.items():
+            if 'bots' in data:
+                del self.guild_logs[guild_id]['bots']
 
     async def save_data(self):
         while True:
@@ -55,10 +58,7 @@ class UtilityBeta(commands.Cog):
                 if guild_id not in self.guild_logs:
                     self.guild_logs[guild_id] = {
                         'joins': {},
-                        'names': [],
-                        'bots': {
-                            str(bot.id): None for bot in [m for m in arg.members if m.bot]
-                        }
+                        'names': []
                     }
             if isinstance(arg, (discord.User, discord.Member)):
                 user_id = str(arg.id)
@@ -145,24 +145,14 @@ class UtilityBeta(commands.Cog):
                 member_info['Shared Servers'] = str(len([s for s in self.bot.guilds if user in s.members]))
 
                 # Bot Information
-                if user.bot:
-                    logs = self.guild_logs[guild_id]['bots']
-                    if user_id not in logs or not logs[user_id]:
-                        self.guild_logs[guild_id]['bots'][user_id] = None
-
-                        # search the audit log to see who invited the bot
-                        if ctx.guild.me.guild_permissions.view_audit_log:
-                            async for entry in ctx.guild.audit_logs(limit=50, action=discord.AuditLogAction.bot_add):
-                                if entry.target and entry.target.id == user.id:
-                                     self.guild_logs[guild_id]['bots'][user_id] = entry.user.id
-                                     break
-
-                    inviter = self.guild_logs[guild_id]['bots'][user_id]
-                    if inviter:
-                        user_info['Inviter'] = await self.bot.fetch_user(inviter)
-                    else:
-                        user_info['Inviter'] = 'Unknown'
-
+                if user.bot:  # search the audit log to see who invited the bot
+                    inviter = "Unknown"
+                    if ctx.guild.me.guild_permissions.view_audit_log:
+                        async for entry in ctx.guild.audit_logs(limit=250, action=discord.AuditLogAction.bot_add):
+                            if entry.target and entry.target.id == user.id:
+                                 inviter = entry.user
+                                 break
+                    user_info['Inviter'] = inviter
 
             # Activity Information
             activity_info = {}
