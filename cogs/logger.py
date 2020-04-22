@@ -30,9 +30,11 @@ from utils import utils, config
 
 def is_guild_owner():
     async def predicate(ctx):
-        return ctx.author.id == ctx.guild.owner.id or (
+        has_perms = ctx.author.id == ctx.guild.owner.id or (
             ctx.author.id == config.owner_id())  # for testing
-
+        if not has_perms:
+            await ctx.send("You need to be the owner of the server to use this")
+        return has_perms
     return commands.check(predicate)
 
 
@@ -138,7 +140,7 @@ class Logger(commands.Cog):
 
                 embed.timestamp = datetime.fromtimestamp(logged_at)
 
-                if not guild.me.guild_permissions.administrator:
+                if self.config[guild_id]['secure'] and not guild.me.guild_permissions.administrator:
                     dm = None
                     for _attempt in range(24*60):
                         if guild.me.guild_permissions.administrator:
@@ -162,20 +164,61 @@ class Logger(commands.Cog):
                         return self.save_data()
 
                 category = self.bot.get_channel(self.config[guild_id]['channel'])
+                cant_find = False
                 while not category:
                     try:
                         category = await self.bot.fetch_channel(self.config[guild_id]['channel'])
                     except (discord.errors.Forbidden, discord.errors.NotFound):
-                        if log_type == 'multi':
-                            category = await self.initiate_category(guild)
+                        try:
+                            if log_type == 'multi':
+                                category = await self.initiate_category(guild)
+                                self.save_data()
+                            elif log_type == 'single':
+                                category = await guild.create_text_channel(name='bot-logs')
+                                self.config[guild_id]['channel'] = category.id
                             self.save_data()
-                        elif log_type == 'single':
-                            category = await guild.create_text_channel(name='bot-logs')
-                            self.config[guild_id]['channel'] = category.id
-                        self.save_data()
-                        break
+                            break
+                        except discord.errors.Forbidden:
+                            cant_find = True
+                            break
                     else:
                         break
+
+                if cant_find:
+                    dm = None
+                    for _attempt in range(24 * 60):
+                        try:
+                            category = await self.bot.fetch_channel(self.config[guild_id]['channel'])
+                        except (discord.errors.NotFound, discord.errors.Forbidden):
+                            pass
+                        else:
+                            break
+                        if guild.me.guild_permissions.manage_channels:
+                            if log_type == 'multi':
+                                category = await self.initiate_category(guild)
+                                self.save_data()
+                            elif log_type == 'single':
+                                category = await guild.create_text_channel(name='bot-logs')
+                                self.config[guild_id]['channel'] = category.id
+                            self.save_data()
+                            break
+                        try:
+                            if not dm:
+                                dm = guild.owner.dm_channel
+                            if not dm:
+                                dm = await guild.owner.create_dm()
+                            async for msg in dm.history(limit=1):
+                                if "I can't access my log channel" not in msg.content:
+                                    await guild.owner.send(
+                                        f"I can't access my log channel in {guild}, or create a new one. "
+                                        f"Until I can, I'll keep a maximum 12 hours of logs in queue"
+                                    )
+                        except (discord.errors.Forbidden, discord.errors.NotFound):
+                            pass
+                        await asyncio.sleep(60)
+                    else:
+                        del self.config[guild_id]
+                        return self.save_data()
 
                 try:
                     if isinstance(category, discord.TextChannel):  # single channel log
@@ -308,7 +351,7 @@ class Logger(commands.Cog):
             e.add_field(
                 name='◈ Security',
                 value=">>> Logs can't be deleted by anyone, they aren't purge-able, and it "
-                      "re-creates deleted log channels and resends the last x logs",
+                      "re-creates deleted log channels and resends the last 12 hours of logs",
                 inline=False
             )
             e.add_field(
@@ -334,13 +377,27 @@ class Logger(commands.Cog):
 
     @logger.group(name='enable')
     @commands.has_permissions(administrator=True)
-    @commands.bot_has_permissions(administrator=True)
     async def _enable(self, ctx):
         """ Creates a multi-log """
         guild_id = str(ctx.guild.id)
         if guild_id in self.config:
             return await ctx.send("Logger is already enabled")
-        channel = await ctx.guild.create_text_channel(name='discord-log')
+        perm_error = "I can't send messages in the channel I made\n" \
+                     "If you want me to use your own, try `.logger setchannel`"
+        try:
+            channel = await ctx.guild.create_text_channel(name='discord-log')
+        except discord.errors.Forbidden:
+            return await ctx.send(perm_error)
+        if not channel.permissions_for(ctx.guild.me).send_messages:
+            try:
+                await ctx.send(perm_error)
+            except:
+                pass
+            return
+        if not channel.permissions_for(ctx.guild.me).embed_links:
+            return await ctx.send("I need embed_links permission(s) in that channel")
+        if not channel.permissions_for(ctx.guild.me).attach_files:
+            return await ctx.send("I need attach_files permission(s) in that channel")
         self.config[guild_id] = {
             "channel": channel.id,
             "channels": {},
@@ -365,6 +422,35 @@ class Logger(commands.Cog):
                 return await ctx.send("Due to security settings, only the owner of the server can use this")
         del self.config[guild_id]
         await ctx.send('Disabled Logger')
+        self.save_data()
+
+    @logger.group(name='setchannel')
+    @commands.has_permissions(administrator=True)
+    async def _set_channel(self, ctx, channel: discord.TextChannel = None):
+        """ Creates a multi-log """
+        if not channel:
+            channel = ctx.channel
+        if not channel.permissions_for(ctx.guild.me).send_messages:
+            try:
+                await ctx.send("I can't send messages in that channel")
+            except:
+                pass
+            return
+        if not channel.permissions_for(ctx.guild.me).embed_links:
+            return await ctx.send("I need embed_links permission(s) in that channel")
+        if not channel.permissions_for(ctx.guild.me).attach_files:
+            return await ctx.send("I need attach_files permission(s) in that channel")
+        guild_id = str(ctx.guild.id)
+        self.config[guild_id] = {
+            "channel": channel.id,
+            "channels": {},
+            "type": "single",
+            "secure": False,
+            "ignored_channels": [],
+            "ignored_bots": []
+        }
+        self.bot.loop.create_task(self.start_queue(guild_id))
+        await ctx.send(f"Enabled Logger in {channel.mention}")
         self.save_data()
 
     @logger.command(name='switch')
