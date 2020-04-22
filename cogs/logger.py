@@ -1240,7 +1240,7 @@ class Logger(commands.Cog):
                 def font(size):
                     return ImageFont.truetype("./utils/fonts/Modern_Sans_Light.otf", size)
 
-                card = Image.new('RGBA', (300, 50), color=after.color.to_rgb())
+                card = Image.new('RGBA', (200, 30), color=after.color.to_rgb())
                 # draw = ImageDraw.Draw(card)
                 # draw.text((180 - 2, 5), 'After', (0, 0, 0), font=font(45))
                 # draw.text((180 + 2, 5), 'After', (0, 0, 0), font=font(45))
@@ -1248,7 +1248,7 @@ class Logger(commands.Cog):
                 # draw.text((180, 5 + 2), 'After', (0, 0, 0), font=font(45))
                 # draw.text((180, 5), 'After', (255, 255, 255), font=font(45))
 
-                box = Image.new('RGBA', (150, 50), color=before.color.to_rgb())
+                box = Image.new('RGBA', (100, 30), color=before.color.to_rgb())
                 # draw = ImageDraw.Draw(box)
                 # draw.text((10 - 2, 5), 'Before', (0, 0, 0), font=font(45))
                 # draw.text((10 + 2, 5), 'Before', (0, 0, 0), font=font(45))
