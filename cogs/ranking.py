@@ -12,7 +12,7 @@ from datetime import datetime
 
 from discord.ext import commands
 import discord
-from PIL import Image, ImageFont, ImageDraw, ImageSequence
+from PIL import Image, ImageFont, ImageDraw, ImageSequence, UnidentifiedImageError
 import aiofiles as aio
 
 from utils import colors, utils
@@ -611,7 +611,10 @@ class Ranking(commands.Cog):
 		card.putdata(data)
 
 		# user vanity
-		avatar = Image.open(BytesIO(requests.get(user.avatar_url).content)).convert('RGBA')
+		try:
+			avatar = Image.open(BytesIO(requests.get(user.avatar_url).content)).convert('RGBA')
+		except UnidentifiedImageError:
+			return await ctx.send("Sorry, but I seem to be having issues using your avatar")
 		avatar = add_corners(avatar.resize((175, 175), Image.BICUBIC), 87)
 		card.paste(avatar, (75, 85), avatar)
 		draw.ellipse((75, 85, 251, 261), outline='black', width=6)
