@@ -204,7 +204,7 @@ handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(me
 logger.addHandler(handler)
 
 # Initialize the bot
-bot = Fate(max_messages=16000)
+bot = Fate(max_messages=16000, case_insensitive=True)
 bot.remove_command('help')  # Default help command
 
 

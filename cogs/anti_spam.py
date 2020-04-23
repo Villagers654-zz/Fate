@@ -154,7 +154,7 @@ class AntiSpam(commands.Cog):
             await ctx.send('Disabled anti-spam')
             self.save_data()
 
-    @_disable.command(name='rate-limit')
+    @_disable.command(name='rate-limit', aliases=['Rate-Limit', 'ratelimit', 'RateLimit'])
     @commands.has_permissions(manage_messages=True)
     async def _disable_rate_limit(self, ctx):
         guild_id = str(ctx.guild.id)
@@ -164,7 +164,7 @@ class AntiSpam(commands.Cog):
         await ctx.send('Disabled rate-limit module')
         self.save_data()
 
-    @_disable.command(name='anti-macro')
+    @_disable.command(name='anti-macro', aliases=['Anti-Macro', 'antimacro', 'AntiMacro'])
     @commands.has_permissions(manage_messages=True)
     async def _disable_anti_macro(self, ctx):
         guild_id = str(ctx.guild.id)
@@ -174,7 +174,7 @@ class AntiSpam(commands.Cog):
         await ctx.send('Disabled anti-macro module')
         self.save_data()
 
-    @_disable.command(name='mass-pings')
+    @_disable.command(name='mass-pings', aliases=['Mass-Pings', 'masspings', 'MassPings'])
     @commands.has_permissions(manage_messages=True)
     async def _disable_mass_pings(self, ctx):
         guild_id = str(ctx.guild.id)
@@ -184,7 +184,7 @@ class AntiSpam(commands.Cog):
         await ctx.send('Disabled mass-pings module')
         self.save_data()
 
-    @_disable.command(name='duplicates')
+    @_disable.command(name='duplicates', aliases=['Duplicates', 'duplicate', 'Duplicate'])
     @commands.has_permissions(manage_messages=True)
     async def _disable_duplicates(self, ctx):
         guild_id = str(ctx.guild.id)
