@@ -424,7 +424,7 @@ class Logger(commands.Cog):
         await ctx.send('Disabled Logger')
         self.save_data()
 
-    @logger.group(name='setchannel')
+    @logger.group(name='setchannel', aliases="set-channel")
     @commands.has_permissions(administrator=True)
     async def _set_channel(self, ctx, channel: discord.TextChannel = None):
         """ Creates a multi-log """
@@ -441,14 +441,19 @@ class Logger(commands.Cog):
         if not channel.permissions_for(ctx.guild.me).attach_files:
             return await ctx.send("I need attach_files permission(s) in that channel")
         guild_id = str(ctx.guild.id)
-        self.config[guild_id] = {
-            "channel": channel.id,
-            "channels": {},
-            "type": "single",
-            "secure": False,
-            "ignored_channels": [],
-            "ignored_bots": []
-        }
+        if guild_id in self.config:
+            if self.config[guild_id]["type"] == "multi":
+                return await ctx.send("You can only use this on single-channel logs")
+            self.config[guild_id]["channel"] = channel.id
+        else:
+            self.config[guild_id] = {
+                "channel": channel.id,
+                "channels": {},
+                "type": "single",
+                "secure": False,
+                "ignored_channels": [],
+                "ignored_bots": []
+            }
         self.bot.loop.create_task(self.start_queue(guild_id))
         await ctx.send(f"Enabled Logger in {channel.mention}")
         self.save_data()
@@ -549,7 +554,8 @@ class Logger(commands.Cog):
         e.set_author(name="Logger Config", icon_url=ctx.guild.owner.avatar_url)
         e.set_thumbnail(url=self.bot.user.avatar_url)
         e.description = f"**Log Type:** {self.config[guild_id]['type']} channel" \
-                        f"\n**Security:** {self.config[guild_id]['secure']}"
+                        f"\n**Security:** {self.config[guild_id]['secure']}" \
+                        f"\n**Channel:** {self.bot.get_channel(self.config['guild_id']['channel'])}"
         if self.config[guild_id]['ignored_channels']:
             channels = []
             for channel_id in self.config[guild_id]['ignored_channels']:
