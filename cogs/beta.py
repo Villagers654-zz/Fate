@@ -297,18 +297,8 @@ class UtilityBeta(commands.Cog):
     async def on_member_join(self, member):
         guild = member.guild
         guild_id = str(guild.id)
-        if member.bot:
-            bot_id = str(member.id)
-            self.setup_if_not_exists(guild, member)
-            self.guild_logs[guild_id]['bots'][bot_id] = None
-
-            if guild.me.guild_permissions.view_audit_log:
-                audit = discord.AuditLogAction
-                async for entry in guild.audit_logs(limit=1, action=audit.bot_add):
-                    self.guild_logs[guild_id]['bots'][bot_id] = entry.user.id
-        else:
-            self.setup_if_not_exists(guild)
-            self.guild_logs[guild_id]['joins'][str(member.id)] = time()
+        self.setup_if_not_exists(guild)
+        self.guild_logs[guild_id]['joins'][str(member.id)] = time()
 
     @commands.Cog.listener()
     async def on_member_leave(self, member):
