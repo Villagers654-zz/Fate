@@ -368,7 +368,7 @@ class Logger(commands.Cog):
                         f"\n{p}log security - `toggles security`"
                         f"\n{p}log ignore #channel - `ignore chat events`"
                         f"\n{p}log ignore @bot - `ignores bot spam`"
-                        f"\n{p}log config ` `current setup overview`",
+                        f"\n{p}log config `current setup overview`",
                 inline=False
             )
             icon_url = 'https://cdn.discordapp.com/attachments/501871950260469790/513637799530856469/fzilwhwdxgubnoohgsas.png'
@@ -424,7 +424,7 @@ class Logger(commands.Cog):
         await ctx.send('Disabled Logger')
         self.save_data()
 
-    @logger.group(name='setchannel', aliases="set-channel")
+    @logger.group(name='setchannel', aliases=["set-channel"])
     @commands.has_permissions(administrator=True)
     async def _set_channel(self, ctx, channel: discord.TextChannel = None):
         """ Creates a multi-log """
@@ -555,7 +555,7 @@ class Logger(commands.Cog):
         e.set_thumbnail(url=self.bot.user.avatar_url)
         e.description = f"**Log Type:** {self.config[guild_id]['type']} channel" \
                         f"\n**Security:** {self.config[guild_id]['secure']}" \
-                        f"\n**Channel:** {self.bot.get_channel(self.config['guild_id']['channel'])}"
+                        f"\n**Channel:** {self.bot.get_channel(self.config[guild_id]['channel'])}"
         if self.config[guild_id]['ignored_channels']:
             channels = []
             for channel_id in self.config[guild_id]['ignored_channels']:
@@ -1424,7 +1424,7 @@ class Logger(commands.Cog):
                 "Mention": member.mention,
                 "ID": member.id,
                 "Invited by": inviter,
-                "Invite:": f'[{invite.code}]({invite.url})'
+                "Invite": f'[{invite.code}]({invite.url})'
             })
             aliases = list(set([
                 m.display_name for m in [
