@@ -367,6 +367,8 @@ class Welcome(commands.Cog):
 				msg = msg.replace('!user', m.mention).replace('!server', m.guild.name)
 				path = os.getcwd() + "/data/images/reactions/welcome/" + random.choice(
 					os.listdir(os.getcwd() + "/data/images/reactions/welcome/"))
+				if guild_id in self.images and not self.images[guild_id]:
+					del self.images[guild_id]
 				if guild_id in self.useimages:
 					e = discord.Embed(color=colors.fate())
 					if guild_id in self.images:
