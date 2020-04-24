@@ -22,7 +22,7 @@ from time import time
 from discord.ext import commands
 import discord
 from discord import AuditLogAction as audit
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image
 
 from utils.colors import *
 from utils import utils, config
@@ -67,7 +67,7 @@ class Logger(commands.Cog):
             self.bot.loop.create_task(self.init_invites())
             for guild_id in self.config.keys():
                 bot.tasks.start(self.start_queue, guild_id, task_id=f'queue-{guild_id}', kill_existing=True)
-        self.role_pos_cd = {}
+        self.wait_queue = {}
 
     def save_data(self):
         """ Saves local variables """
@@ -91,6 +91,58 @@ class Logger(commands.Cog):
         guild_id = str(guild.id)
         self.config[guild_id]['channel'] = category.id
         return category
+
+    async def wait_for_permission(self, guild, permission: str):
+        """Notify the owner of missing permissions and wait until they've been granted"""
+
+        # Keep a 'process list' of sorts to prevent multiple events using this
+        # from causing a lot of API spam from the dm history searches
+        parent = False
+        guild_id = str(guild.id)
+        if guild_id not in self.wait_queue:
+            self.wait_queue[guild_id] = []
+        if permission not in self.wait_queue[guild_id]:
+            self.wait_queue[guild_id].append(permission)
+            parent = True
+        dm = None
+
+        for _attempt in range(12 * 60):  # Timeout of 12 hours
+            # Check if you have the required permission
+            if eval(f"guild.me.guild_permissions.{permission}"):
+                if parent:
+                    self.wait_queue[guild_id].remove(permission)
+                    if not self.wait_queue[guild_id]:
+                        del self.wait_queue[guild_id]
+                break
+
+            # See if the bot can send a dm notice
+            # This is only used by the parent to prevent API spam
+            if parent:
+                try:
+                    if not dm:
+                        dm = guild.owner.dm_channel
+                    if not dm:
+                        dm = await guild.owner.create_dm()
+                    async for msg in dm.history(limit=3):
+                        if f"I need {permission}" in msg.content:
+                            break
+                    else:
+                        print("a queue was missing permissions")
+                        await guild.owner.send(
+                            f"I need {permission} permissions in {guild} for the logger module to function. "
+                            f"Until that's satisfied, i'll keep a maximum 12 hours of logs in queue"
+                        )
+                except (discord.errors.Forbidden, discord.errors.NotFound):
+                    pass
+            await asyncio.sleep(60)
+
+        else:
+            if parent:
+                self.wait_queue[guild_id].remove(permission)
+                if not self.wait_queue[guild_id]:
+                    del self.wait_queue[guild_id]
+            return False
+        return True
 
     async def start_queue(self, guild_id: str):
         """ Loop for managing the guilds queue
@@ -127,7 +179,8 @@ class Logger(commands.Cog):
 
             for embed, channelType, logged_at in self.queue[guild_id][-175:]:
                 list_obj = [embed, channelType, logged_at]
-                file_paths = []; files = []
+                file_paths = []
+                files = []
                 if isinstance(embed, tuple):
                     embed, file_paths = embed
                     if not isinstance(file_paths, list):
@@ -141,25 +194,8 @@ class Logger(commands.Cog):
                 embed.timestamp = datetime.fromtimestamp(logged_at)
 
                 if self.config[guild_id]['secure'] and not guild.me.guild_permissions.administrator:
-                    dm = None
-                    for _attempt in range(24*60):
-                        if guild.me.guild_permissions.administrator:
-                            break
-                        try:
-                            if not dm:
-                                dm = guild.owner.dm_channel
-                            if not dm:
-                                dm = await guild.owner.create_dm()
-                            async for msg in dm.history(limit=1):
-                                if "I need administrator" not in msg.content:
-                                    await guild.owner.send(
-                                        f"I need administrator permissions in {guild} for the logger module to function. "
-                                        f"Until that's satisfied, i'll keep a maximum 12 hours of logs in queue"
-                                    )
-                        except (discord.errors.Forbidden, discord.errors.NotFound):
-                            pass
-                        await asyncio.sleep(60)
-                    else:
+                    result = await self.wait_for_permission(guild, "administrator")
+                    if not result:
                         del self.config[guild_id]
                         return self.save_data()
 
@@ -224,7 +260,7 @@ class Logger(commands.Cog):
                     if isinstance(category, discord.TextChannel):  # single channel log
                         try:
                             await category.send(embed=embed, files=files)
-                        except:
+                        except (discord.errors.Forbidden, discord.errors.NotFound):
                             e = discord.Embed(title='Failed to send embed')
                             e.description = f'```{json.dumps(embed.to_dict(), indent=2)}```'
                             await category.send(embed=e)
@@ -247,7 +283,7 @@ class Logger(commands.Cog):
                                 self.save_data()
                             try:
                                 await channel.send(embed=embed, files=files)
-                            except:
+                            except (discord.errors.NotFound, discord.errors.Forbidden):
                                 e = discord.Embed(title='Failed to send embed')
                                 e.description = f'```json\n{json.dumps(embed.to_dict(), indent=2)}```'
                                 await channel.send(embed=e)
@@ -258,7 +294,7 @@ class Logger(commands.Cog):
                             self.queue[guild_id].remove(list_obj)
                             self.recent_logs[guild_id][channelType].append([embed, logged_at])
                             break
-                except:
+                except (discord.errors.HTTPException, discord.errors.Forbidden, discord.errors.NotFound):
                     err_channel = self.bot.get_channel(577661461543780382)
                     await err_channel.send(f"Secure Log Error\n{str(traceback.format_exc())[-1980:]}")
                     await err_channel.send(f'```json\n{json.dumps(embed.to_dict(), indent=2)}```')
@@ -286,28 +322,16 @@ class Logger(commands.Cog):
                 for invite in invites:
                     self.invites[guild_id][invite.url] = invite.uses
 
+    @property
     def past(self):
         """ gets the time 2 seconds ago in utc for audit searching """
         return datetime.utcnow() - timedelta(seconds=10)
 
     async def search_audit(self, guild, *actions):
         """ Returns the latest entry from a list of actions """
-        dat = {
-            'user': 'Unknown',
-            'actual_user': None,
-            'target': 'Unknown',
-            'icon_url': guild.icon_url,
-            'thumbnail_url': guild.icon_url,
-            'reason': None,
-            'extra': None,
-            'changes': None,
-            'before': None,
-            'after': None,
-            'recent': False
-        }
-        if guild.me.guild_permissions.view_audit_log:
+        async def search():
             async for entry in guild.audit_logs(limit=5):
-                if entry.created_at > self.past() and any(entry.action.name == action.name for action in actions):
+                if entry.created_at > self.past and any(entry.action.name == action.name for action in actions):
                     dat['action'] = entry.action
                     if entry.user:
                         dat['user'] = entry.user.mention
@@ -328,15 +352,34 @@ class Logger(commands.Cog):
                     dat['after'] = entry.after
                     dat['recent'] = True
                     break
-        else:
-            await guild.owner.send(f"I'm missing audit log permissions for the logger module in {guild}\n"
-                                   f"run `.log disable` to stop receiving msgs")
+            return dat
+        dat = {
+            'user': 'Unknown',
+            'actual_user': None,
+            'target': 'Unknown',
+            'icon_url': guild.icon_url,
+            'thumbnail_url': guild.icon_url,
+            'reason': None,
+            'extra': None,
+            'changes': None,
+            'before': None,
+            'after': None,
+            'recent': False
+        }
+        can_run = await self.wait_for_permission(guild, "view_audit_log")
+        if can_run:
+            for _ in range(3):
+                try:
+                    new_dat = await search()
+                    dat = new_dat
+                    break
+                except discord.errors.Forbidden:
+                    can_run = await self.wait_for_permission(guild, "view_audit_log")
+                    if not can_run:
+                        return dat
+            else:
+                return dat
         return dat
-
-    def split_into_groups(self, text):
-        if not text:
-            return text
-        return [text[i:i + 1000] for i in range(0, len(text), 1000)]
 
     @commands.group(name='logger', aliases=['log', 'secure-log'])
     @commands.cooldown(2, 5, commands.BucketType.user)
@@ -362,13 +405,13 @@ class Logger(commands.Cog):
             p = utils.get_prefix(ctx)
             e.add_field(
                 name='◈ Commands',
-                value = f"{p}log enable - `creates a log`"
-                        f"\n{p}log disable - `deletes the log`"
-                        f"\n{p}log switch - `toggles multi-log`"
-                        f"\n{p}log security - `toggles security`"
-                        f"\n{p}log ignore #channel - `ignore chat events`"
-                        f"\n{p}log ignore @bot - `ignores bot spam`"
-                        f"\n{p}log config `current setup overview`",
+                value=f"{p}log enable - `creates a log`"
+                      f"\n{p}log disable - `deletes the log`"
+                      f"\n{p}log switch - `toggles multi-log`"
+                      f"\n{p}log security - `toggles security`"
+                      f"\n{p}log ignore #channel - `ignore chat events`"
+                      f"\n{p}log ignore @bot - `ignores bot spam`"
+                      f"\n{p}log config `current setup overview`",
                 inline=False
             )
             icon_url = 'https://cdn.discordapp.com/attachments/501871950260469790/513637799530856469/fzilwhwdxgubnoohgsas.png'
@@ -391,7 +434,7 @@ class Logger(commands.Cog):
         if not channel.permissions_for(ctx.guild.me).send_messages:
             try:
                 await ctx.send(perm_error)
-            except:
+            except discord.errors.Forbidden:
                 pass
             return
         if not channel.permissions_for(ctx.guild.me).embed_links:
@@ -433,7 +476,7 @@ class Logger(commands.Cog):
         if not channel.permissions_for(ctx.guild.me).send_messages:
             try:
                 await ctx.send("I can't send messages in that channel")
-            except:
+            except discord.errors.Forbidden:
                 pass
             return
         if not channel.permissions_for(ctx.guild.me).embed_links:
@@ -604,7 +647,7 @@ class Logger(commands.Cog):
                     if member.guild_permissions.administrator:
                         is_successful = True
                     elif member.guild_permissions.mention_everyone and (
-                            not msg.channel.permissions_for(msg.author).mention_everyone == False):
+                            not msg.channel.permissions_for(msg.author).mention_everyone is False):
                         is_successful = True
                     elif msg.channel.permissions_for(msg.author).mention_everyone:
                         is_successful = True
@@ -647,7 +690,7 @@ class Logger(commands.Cog):
                     if before.channel.id in self.config[guild_id]['ignored_channels']:
                         return
 
-                    if before.channel.id == self.config[guild_id]['channel'] or(  # a message in the log was suppressed
+                    if before.channel.id == self.config[guild_id]['channel'] or (  # a message in the log was suppressed
                             before.channel.id in self.config[guild_id]['channels']):
                         await asyncio.sleep(0.5)  # prevent updating too fast and not showing on the users end
                         return await after.edit(suppress=False, embed=before.embeds[0])
@@ -660,10 +703,10 @@ class Logger(commands.Cog):
                         f"[Jump to MSG]({before.jump_url})": None
                     })
                     em = before.embeds[0].to_dict()
-                    path = f'./static/embed-{before.id}.json'
-                    with open(path, 'w+') as f:
+                    fp = f'./static/embed-{before.id}.json'
+                    with open(fp, 'w+') as f:
                         json.dump(em, f, sort_keys=True, indent=4, separators=(',', ': '))
-                    self.queue[guild_id].append([(e, path), 'chat', time()])
+                    self.queue[guild_id].append([(e, fp), 'chat', time()])
 
                 if before.pinned != after.pinned:
                     action = 'Unpinned' if before.pinned else 'Pinned'
@@ -677,7 +720,7 @@ class Logger(commands.Cog):
                         "Who Pinned": audit_dat['user'],
                         f"[Jump to MSG]({after.jump_url})": None
                     })
-                    for text_group in self.split_into_groups(after.content):
+                    for text_group in self.bot.utils.split(after.content):
                         e.add_field(name="◈ Content", value=text_group, inline=False)
                     self.queue[guild_id].append([e, 'chat', time()])
 
@@ -700,7 +743,7 @@ class Logger(commands.Cog):
                     "Channel": channel.mention,
                     f"[Jump to MSG]({msg.jump_url})": None
                 })
-                for text_group in self.split_into_groups(msg.content):
+                for text_group in self.bot.utils.split(msg.content):
                     e.add_field(name='◈ Content', value=text_group, inline=False)
                 self.queue[guild_id].append([e, 'chat', time()])
 
@@ -717,11 +760,11 @@ class Logger(commands.Cog):
                         if msg.attachments:
                             files = []
                             for attachment in msg.attachments:
-                                path = os.path.join('static', attachment.filename)
+                                fp = os.path.join('static', attachment.filename)
                                 file = requests.get(attachment.proxy_url).content
-                                with open(path, 'wb') as f:
+                                with open(fp, 'wb') as f:
                                     f.write(file)
-                                files.append(path)
+                                files.append(fp)
                             self.queue[guild_id].append([(msg.embeds[0], files), 'sudo', time()])
                         else:
                             self.queue[guild_id].append([msg.embeds[0], 'sudo', time()])
@@ -746,18 +789,18 @@ class Logger(commands.Cog):
                     "Channel": msg.channel.mention,
                     "Deleted by": dat['user']
                 })
-                for text_group in self.split_into_groups(msg.content):
+                for text_group in self.bot.utils.split(msg.content):
                     e.add_field(name='◈ MSG Content', value=text_group, inline=False)
                 if msg.embeds:
                     e.set_footer(text='⇓ Embed ⇓')
                 if msg.attachments:
                     files = []
                     for attachment in msg.attachments:
-                        path = os.path.join('static', attachment.filename)
+                        fp = os.path.join('static', attachment.filename)
                         file = requests.get(attachment.proxy_url).content
-                        with open(path, 'wb') as f:
+                        with open(fp, 'wb') as f:
                             f.write(file)
-                        files.append(path)
+                        files.append(fp)
                     self.queue[guild_id].append([(e, files), 'chat', time()])
                 else:
                     self.queue[guild_id].append([e, 'chat', time()])
@@ -808,14 +851,14 @@ class Logger(commands.Cog):
             if payload.cached_messages and not purged_messages:  # only logs were purged
                 return
 
-            path = f'./static/purged-messages-{r.randint(0, 9999)}.txt'
-            with open(path, 'w') as f:
+            fp = f'./static/purged-messages-{r.randint(0, 9999)}.txt'
+            with open(fp, 'w') as f:
                 f.write(purged_messages)
 
             e = discord.Embed(color=lime_green())
             dat = await self.search_audit(guild, audit.message_bulk_delete)
             if dat['extra'] and dat['icon_url']:
-                e.set_author(name=f"~==🍸{dat['extra']['count']} Msgs Purged🍸==~", icon_url=dat['icon_url'])
+                e.set_author(name=f"~==🍸{dict(dat['extra'])['count']} Msgs Purged🍸==~", icon_url=dat['icon_url'])
             else:
                 e.set_author(name=f"~==🍸{len(payload.cached_messages)} Msgs Purged🍸==~")
             if dat['thumbnail_url']:
@@ -825,7 +868,7 @@ class Logger(commands.Cog):
                 "Channel": channel.mention,
                 "Purged by": dat['user']
             })
-            self.queue[guild_id].append([(e, path), 'chat', time()])
+            self.queue[guild_id].append([(e, fp), 'chat', time()])
 
     @commands.Cog.listener()
     async def on_raw_reaction_clear(self, payload):
@@ -852,12 +895,13 @@ class Logger(commands.Cog):
         guild_id = str(after.id)
         if guild_id in self.config:
             dat = await self.search_audit(after, audit.guild_update)
+
             def create_template_embed():
                 """ Creates a new embed to work with """
-                e = discord.Embed(color=lime_green())
-                e.set_author(name='~==🍸Server Updated🍸==~', icon_url=dat['icon_url'])
-                e.set_thumbnail(url=after.icon_url)
-                return e
+                em = discord.Embed(color=lime_green())
+                em.set_author(name='~==🍸Server Updated🍸==~', icon_url=dat['icon_url'])
+                em.set_thumbnail(url=after.icon_url)
+                return em
 
             e = create_template_embed()
             if before.name != after.name:
@@ -1001,9 +1045,9 @@ class Logger(commands.Cog):
 
             # anti log channel deletion
             if self.config[guild_id]['secure']:
-                type = self.config[guild_id]['type']
+                log_type = self.config[guild_id]['type']
                 if channel.id == self.config[guild_id]['channel']:
-                    if type == 'single':
+                    if log_type == 'single':
                         for embed in self.recent_logs[guild_id]:
                             self.queue[guild_id].append([embed, 'actions', time()])
                         return
@@ -1038,14 +1082,14 @@ class Logger(commands.Cog):
                 self.queue[guild_id].append([e, 'actions', time()])
                 return
 
-            path = f'./static/members-{r.randint(1, 9999)}.txt'
+            fp = f'./static/members-{r.randint(1, 9999)}.txt'
             members = f"{channel.name} - Member List"
             for member in channel.members:
                 members += f"\n{member.id}, {member.mention}, {member}, {member.display_name}"
-            with open(path, 'w') as f:
+            with open(fp, 'w') as f:
                 f.write(members)
 
-            self.queue[guild_id].append([(e, path), 'actions', time()])
+            self.queue[guild_id].append([(e, fp), 'actions', time()])
 
     @commands.Cog.listener()
     async def on_guild_channel_update(self, before, after):  # due for rewrite
@@ -1054,9 +1098,9 @@ class Logger(commands.Cog):
             e = discord.Embed(color=orange())
             dat = await self.search_audit(after.guild, audit.channel_update)
             e.set_thumbnail(url=after.guild.icon_url)
-            category = 'None, or Changed'
-            if after.category and before.category == after.category:
-                category = after.category.name
+            # category = 'None, or Changed'
+            # if after.category and before.category == after.category:
+            #     category = after.category.name
 
             if before.name != after.name:
                 e.add_field(
@@ -1098,10 +1142,10 @@ class Logger(commands.Cog):
                             inline=False
                         )
                         if before.topic:
-                            for text_group in self.split_into_groups(before.topic):
+                            for text_group in self.bot.utils.split(before.topic):
                                 e.add_field(name='◈ Before', value=text_group, inline=False)
                         if after.topic:
-                            for text_group in self.split_into_groups(after.topic):
+                            for text_group in self.bot.utils.split(after.topic):
                                 e.add_field(name='◈ After', value=text_group, inline=False)
 
             if before.category != after.category:
@@ -1149,8 +1193,8 @@ class Logger(commands.Cog):
                         e.add_field(
                             name=f'<:edited:550291696861315093> {obj.name}',
                             value='\n'.join([
-                                f"{perm} - {after_values[iter][1]}" for iter, (perm, value) in enumerate(list(permissions)) if (
-                                    value != after_values[iter][1])
+                                f"{perm} - {after_values[i][1]}" for i, (perm, value) in enumerate(list(permissions)) if (
+                                    value != after_values[i][1])
                             ]),
                             inline=False
                         )
@@ -1211,19 +1255,19 @@ class Logger(commands.Cog):
                 text=f"Hex {role.color} | RGB {role.color.to_rgb()}",
                 icon_url="attachment://" + os.path.basename(fp)
             )
-            path = f'./static/role-members-{r.randint(1, 9999)}.txt'
+            fp1 = f'./static/role-members-{r.randint(1, 9999)}.txt'
             members = f"{role.name} - Member List"
             for member in role.members:
                 members += f"\n{member.id}, {member.mention}, {member}, {member.display_name}"
-            with open(path, 'w') as f:
+            with open(fp1, 'w') as f:
                 f.write(members)
-            self.queue[guild_id].append([(e, [path, fp]), 'actions', time()])
+            self.queue[guild_id].append([(e, [fp1, fp]), 'actions', time()])
 
     @commands.Cog.listener()
     async def on_guild_role_update(self, before, after):
         guild_id = str(after.guild.id)
         if guild_id in self.config:
-            path = None
+            fp = None
             dat = await self.search_audit(after.guild, audit.role_update)
             e = discord.Embed(color=green())
             e.set_author(name='~==🍸Role Updated🍸==~', icon_url=dat['thumbnail_url'])
@@ -1243,8 +1287,8 @@ class Logger(commands.Cog):
                     inline=False
                 )
             if before.color != after.color:
-                def font(size):
-                    return ImageFont.truetype("./utils/fonts/Modern_Sans_Light.otf", size)
+                # def font(size):
+                #     return ImageFont.truetype("./utils/fonts/Modern_Sans_Light.otf", size)
 
                 card = Image.new('RGBA', (200, 30), color=after.color.to_rgb())
                 # draw = ImageDraw.Draw(card)
@@ -1263,10 +1307,10 @@ class Logger(commands.Cog):
                 # draw.text((10, 5), 'Before', (255, 255, 255), font=font(45))
 
                 card.paste(box)
-                path = os.getcwd() + f'/static/color-{r.randint(1, 999)}.png'
-                card.save(path)
+                fp1 = os.getcwd() + f'/static/color-{r.randint(1, 999)}.png'
+                card.save(fp1)
 
-                e.set_image(url="attachment://" + os.path.basename(path))
+                e.set_image(url="attachment://" + os.path.basename(fp1))
                 e.set_thumbnail(url=dat['thumbnail_url'])
                 e.add_field(
                     name='◈ Color Changed',
@@ -1274,7 +1318,7 @@ class Logger(commands.Cog):
                 )
             if before.hoist != after.hoist:
                 action = 'is now visible'
-                if after.hoist == False:
+                if after.hoist is False:
                     action = 'is no longer visible'
                 e.description += f"[{action}]"
             if before.mentionable != after.mentionable:
@@ -1284,22 +1328,29 @@ class Logger(commands.Cog):
                 e.description += f"[{action}]"
 
             if before.position != after.position:
+                # old_roles = self.role_index[guild_id]
+                # old_pos = old_roles.index(before)
+                # if old_roles[old_pos+1] is after.guild.roles[after.position+1]:
+                #     if old_roles[old_pos-1] is after.guild.roles[after.position-1]:
+                #         return
+                # self.role_index[guild_id] = [role for role in after.guild.roles]
                 em = discord.Embed()
                 em.description = f"Role {before.mention} was moved"
                 self.queue[guild_id].append([em, 'updates', time()])
+
                 # before_roles = before.guild.roles
                 # before_roles.pop(after.position)
                 # before_roles.insert(before.position, before)
-
-                # if guild_id not in self.role_pos_cd:
-                #     self.role_pos_cd[guild_id] = 0
-                # if self.role_pos_cd[guild_id] < time() - 2:
-                #     self.role_pos_cd[guild_id] = time()
-
-                #     before_above = before_roles[before.position+1].mention
-                #     before_below = before_roles[before.position-1].mention
-                #     after_above = after.guild.roles[after.position+1].mention
-                #     after_below = after.guild.roles[after.position-1].mention
+                #
+                # before_above = before_roles[before.position+1].id
+                # before_below = before_roles[before.position-1].id
+                # after_above = after.guild.roles[after.position+1].id
+                # after_below = after.guild.roles[after.position-1].id
+                #
+                # if before_above == after_above and before_below == after_below:
+                #     print("Identical! EEEEEE")
+                # else:
+                #     self.queue[guild_id].append([em, 'updates', time()])
 
                 #     e.add_field(
                 #         name='◈ Position Changed',
@@ -1320,8 +1371,8 @@ class Logger(commands.Cog):
                         changes += f"\n• {perm} {'allowed' if value else 'unallowed'}"
                 e.add_field(name='◈ Permissions Changed', value=changes, inline=False)
             if e.fields:
-                if path:
-                    self.queue[guild_id].append([(e, path), 'updates', time()])
+                if fp:
+                    self.queue[guild_id].append([(e, fp), 'updates', time()])
                 else:
                     self.queue[guild_id].append([e, 'updates', time()])
 
@@ -1453,8 +1504,12 @@ class Logger(commands.Cog):
             e.set_thumbnail(url=member.avatar_url)
             removed = False
 
+            can_run = await self.wait_for_permission(member.guild, "view_audit_log")
+            if not can_run:
+                return
+
             async for entry in member.guild.audit_logs(limit=1, action=audit.kick):
-                if entry.target.id == member.id and entry.created_at > self.past():
+                if entry.target.id == member.id and entry.created_at > self.past:
                     e.set_author(name='~==🍸Member Kicked🍸==~', icon_url=entry.user.avatar_url)
                     e.description += self.bot.utils.format_dict({
                         "Kicked by": entry.user.mention
@@ -1463,7 +1518,7 @@ class Logger(commands.Cog):
                     removed = True
 
             async for entry in member.guild.audit_logs(limit=1, action=audit.ban):
-                if entry.target.id == member.id and entry.created_at > self.past():
+                if entry.target.id == member.id and entry.created_at > self.past:
                     e.set_author(name='~==🍸Member Banned🍸==~', icon_url=entry.user.avatar_url)
                     e.description += self.bot.utils.format_dict({
                         "Banned by": entry.user.mention
