@@ -235,13 +235,180 @@ class Moderation(commands.Cog):
 
     @commands.command(name='purge')
     @commands.cooldown(*utils.default_cooldown())
+    @check_if_running()
     @has_required_permissions(manage_messages=True)
     @commands.bot_has_permissions(read_message_history=True, manage_messages=True)
     async def purge(self, ctx, *args):
-        pass
+        def help_embed():
+            e = discord.Embed(color=colors.fate())
+            u = '.purge amount\n' \
+                '.purge @user amount\n' \
+                '.purge images amount\n' \
+                '.purge embeds amount\n' \
+                '.purge mentions amount\n' \
+                '.purge users amount\n' \
+                '.purge bots amount\n' \
+                '.purge word/phrase amount'
+            e.description = u
+            return e
+
+        if not args:
+            return await ctx.send(embed=help_embed())
+        if args[0].isdigit():  # no special option used
+            try:
+                amount = int(args[0])
+            except:
+                return await ctx.send('Invalid amount')
+            if amount > 1000:
+                return await ctx.send("You cannot purge more than 1000 messages at a time")
+            try:
+                await ctx.message.channel.purge(limit=amount, before=ctx.message)
+                await ctx.send(f'{ctx.author.mention}, successfully purged {amount} messages', delete_after=5)
+                return await ctx.message.delete()
+            except discord.errors.Forbidden as e:
+                await ctx.send(e)
+        if len(args) == 1:
+            return await ctx.send(embed=help_embed())
+        try:
+            amount = int(args[1])
+        except:
+            return await ctx.send('Invalid amount')
+        if ctx.message.mentions:
+            user = ctx.message.mentions[0]
+            if amount > 250:
+                return await ctx.send("You cannot purge more than 250 user messages at a time")
+            try:
+                position = 0
+                async for msg in ctx.channel.history(limit=500):
+                    if msg.author.id == user.id:
+                        if msg.id != ctx.message.id:
+                            await msg.delete()
+                            position += 1
+                            if position == amount:
+                                break
+                await ctx.send(f'{ctx.author.mention}, purged {position} messages from {user.display_name}', delete_after=5)
+                return await ctx.message.delete()
+            except discord.errors.Forbidden as e:
+                await ctx.send(e)
+            return
+        option = args[0].lower()  # type: str
+        if option == 'image' or option == 'images':
+            if amount > 250:
+                return await ctx.send("You cannot purge more than 250 images at a time")
+            try:
+                position = 0
+                async for msg in ctx.channel.history(limit=500):
+                    if msg.attachments:
+                        await msg.delete()
+                        position += 1
+                        if position == amount:
+                            break
+                await ctx.send(f"{ctx.author.mention}, purged {position} images", delete_after=5)
+                return await ctx.message.delete()
+            except discord.errors.Forbidden as e:
+                await ctx.send(e)
+            return
+        if option == 'embed' or option == 'embeds':
+            if amount > 250:
+                return await ctx.send("You cannot purge more than 250 embeds at a time")
+            try:
+                position = 0
+                async for msg in ctx.channel.history(limit=500):
+                    if msg.embeds:
+                        await msg.delete()
+                        position += 1
+                        if position == amount:
+                            break
+                await ctx.send(f"{ctx.author.mention}, purged {position} embeds", delete_after=5)
+                return await ctx.message.delete()
+            except discord.errors.Forbidden as e:
+                await ctx.send(e)
+            return
+        if option == 'user' or option == 'users':
+            if amount > 250:
+                return await ctx.send("You cannot purge more than 250 user messages at a time")
+            try:
+                position = 0
+                async for msg in ctx.channel.history(limit=500):
+                    if not msg.author.bot:
+                        await msg.delete()
+                        position += 1
+                        if position == amount:
+                            break
+                await ctx.send(f"{ctx.author.mention}, purged {position} user messages", delete_after=5)
+                return await ctx.message.delete()
+            except discord.errors.Forbidden as e:
+                await ctx.send(e)
+            return
+        if option == 'bot' or option == 'bots':
+            if amount > 250:
+                return await ctx.send("You cannot purge more than 250 bot messages at a time")
+            try:
+                position = 0
+                async for msg in ctx.channel.history(limit=500):
+                    if msg.author.bot:
+                        await msg.delete()
+                        position += 1
+                        if position == amount:
+                            break
+                await ctx.send(f"{ctx.author.mention}, purged {position} bot messages", delete_after=5)
+                return await ctx.message.delete()
+            except discord.errors.Forbidden as e:
+                await ctx.send(e)
+            return
+        if option == 'mention' or option == 'mentions':
+            if amount > 250:
+                return await ctx.send("You cannot purge more than 250 mentions at a time")
+            try:
+                position = 0
+                async for msg in ctx.channel.history(limit=500):
+                    if msg.mentions:
+                        await msg.delete()
+                        position += 1
+                        if position == amount:
+                            break
+                await ctx.send(f"{ctx.author.mention}, purged {position} mentions", delete_after=5)
+                return await ctx.message.delete()
+            except discord.errors.Forbidden as e:
+                await ctx.send(e)
+            return
+        if option == 'reaction' or option == 'reactions':
+            if amount > 250:
+                return await ctx.send("You cannot purge more than 250 reactions at a time")
+            try:
+                position = 0
+                async for msg in ctx.channel.history(limit=500):
+                    if msg.reactions:
+                        await msg.clear_reactions()
+                        position += 1
+                        if position == amount:
+                            break
+                await ctx.send(f"{ctx.author.mention}, purged {position} reactions", delete_after=5)
+                return await ctx.message.delete()
+            except discord.errors.Forbidden as e:
+                await ctx.send(e)
+            return
+        phrase = args[0]
+        amount = int(args[1])
+        if amount > 250:
+            return await ctx.send("You cannot purge more than 250 phrases at a time")
+        try:
+            position = 0
+            async for msg in ctx.channel.history(limit=500):
+                if phrase.lower() in msg.content.lower():
+                    if msg.id != ctx.message.id:
+                        await msg.delete()
+                        position += 1
+                        if position == amount:
+                            break
+            await ctx.send(f"{ctx.author.mention}, purged {position} messages", delete_after=5)
+            return await ctx.message.delete()
+        except discord.errors.Forbidden as e:
+            await ctx.send(e)
 
     @commands.command(name='mute', aliases=['shutup', 'fuckoff'])
     @commands.cooldown(*utils.default_cooldown())
+    @check_if_running()
     @has_required_permissions(mute_members=True)
     @commands.bot_has_permissions(embed_links=True)
     @commands.bot_has_guild_permissions(manage_roles=True)
@@ -336,11 +503,10 @@ class Moderation(commands.Cog):
 
     @commands.command(name='kick')
     @commands.cooldown(*utils.default_cooldown())
+    @check_if_running()
     @has_required_permissions(kick_members=True)
     @commands.bot_has_permissions(embed_links=True, kick_members=True)
     async def kick(self, ctx, members: Greedy[discord.Member], *, reason="Unspecified"):
-        if not members:
-            return await ctx.send("Member(s) not found")
         if not members:
             return await ctx.send("You need to properly specify who to kick")
         e = discord.Embed(color=colors.fate())
@@ -360,6 +526,7 @@ class Moderation(commands.Cog):
 
     @commands.command(name='ban')
     @commands.cooldown(2, 10, commands.BucketType.guild)
+    @check_if_running()
     @commands.guild_only()
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(embed_links=True, ban_members=True)
@@ -413,6 +580,7 @@ class Moderation(commands.Cog):
 
     @commands.command(name='unban')
     @commands.cooldown(*utils.default_cooldown())
+    @check_if_running()
     @has_required_permissions(ban_members=True)
     @commands.bot_has_permissions(embed_links=True, ban_members=True, view_audit_log=True)
     async def unban(self, ctx, users: Greedy[discord.User], *, reason=':author:'):
@@ -442,6 +610,7 @@ class Moderation(commands.Cog):
 
     @commands.command(name='mass-nick', aliases=['massnick'])
     @commands.cooldown(*utils.default_cooldown())
+    @check_if_running()
     @has_required_permissions(manage_nicknames=True)
     @commands.bot_has_guild_permissions(manage_nicknames=True)
     async def mass_nick(self, ctx, *, nick):
@@ -491,6 +660,7 @@ class Moderation(commands.Cog):
 
     @commands.command(name='mass-role', aliases=['massrole'])
     @commands.cooldown(*utils.default_cooldown())
+    @check_if_running()
     @has_required_permissions(manage_roles=True)
     @commands.bot_has_guild_permissions(manage_roles=True)
     async def mass_role(self, ctx, *, role: Union[discord.Role, str]):
@@ -629,9 +799,10 @@ class Moderation(commands.Cog):
                 return True
         return commands.check(predicate)
 
-    @commands.command(name='warn')  # use a second special check for this with perm requirements based off of the set punishments
-    @has_warn_permission()
+    @commands.command(name='warn')
     @commands.cooldown(*utils.default_cooldown())
+    @check_if_running()
+    @has_warn_permission()
     async def warn(self, ctx, user: Greedy[discord.User], *, reason):
         for user in list(user):
             await self.warn_user(ctx.channel, user, reason)
