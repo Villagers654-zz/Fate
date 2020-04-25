@@ -338,9 +338,25 @@ class Moderation(commands.Cog):
     @commands.cooldown(*utils.default_cooldown())
     @has_required_permissions(kick_members=True)
     @commands.bot_has_permissions(embed_links=True, kick_members=True)
-    async def kick(self, ctx, members: Greedy[discord.Member], *, reason):
+    async def kick(self, ctx, members: Greedy[discord.Member], *, reason="Unspecified"):
         if not members:
             return await ctx.send("Member(s) not found")
+        if not members:
+            return await ctx.send("You need to properly specify who to kick")
+        e = discord.Embed(color=colors.fate())
+        e.set_author(name=f"Kicking members", icon_url=ctx.author.avatar_url)
+        msg = await ctx.send(embed=e)
+        for i, member in enumerate(members):
+            if member.top_role.position >= ctx.author.top_role.position:
+                e.description += f"\n❌ {member} is Higher Than You"
+            elif member.top_role.position >= ctx.guild.me.top_role.position:
+                e.description += f"❌ {member} is Higher Than Me"
+            else:
+                await member.kick(reason=f"Kicked by {ctx.author} with ID: {ctx.author.id} for {reason}")
+                e.description += f"✅ {member}"
+            if i % 2 == 0 and i != len(members) - 1:
+                await msg.edit(embed=e)
+        await msg.edit(embed=e)
 
     @commands.command(name='ban')
     @commands.cooldown(2, 10, commands.BucketType.guild)
