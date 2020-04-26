@@ -37,6 +37,10 @@ class GlobalChat(commands.Cog):
 		self.blocked = []
 		self.last_user = None
 		self.last_channel = None
+		self.banned = [
+			595369406905712650,  # InToXiCAtEd_B¡+€h#0560 - NSFW
+			647469014146351122,  # flashing images
+		]
 		if path.isfile(self.path):
 			with open(self.path, 'r') as f:
 				self.config = json.load(f)  # type: dict
@@ -160,6 +164,9 @@ class GlobalChat(commands.Cog):
 
 				# rate limits
 				ignore = False
+				if int(user_id) in self.banned:
+					await msg.channel.send(f"{msg.author.mention}, you're blocked from using global-chat", delete_after=10)
+					return await msg.delete()
 				if user_id in self.blocked or self.silence:
 					return
 
@@ -252,8 +259,10 @@ class GlobalChat(commands.Cog):
 								e = discord.Embed(color=msg.author.color)
 								e.set_author(name=str(msg.author), icon_url=msg.author.avatar_url)
 								e.description = content
-								if msg.attachments:
+								if msg.attachments and channel.is_nsfw():
 									e.set_image(url=msg.attachments[0].url)
+								elif msg.attachments and not channel.is_nsfw():
+									e.description += f"\n[`filtered image, enable`]"
 								await channel.send(embed=e)
 				self.last_user = msg.author.id
 				self.last_channel = msg.channel.id
