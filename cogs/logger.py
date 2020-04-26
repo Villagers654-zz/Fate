@@ -330,6 +330,23 @@ class Logger(commands.Cog):
     async def search_audit(self, guild, *actions):
         """ Returns the latest entry from a list of actions """
         async def search():
+
+            return dat
+        dat = {
+            'user': 'Unknown',
+            'actual_user': None,
+            'target': 'Unknown',
+            'icon_url': guild.icon_url,
+            'thumbnail_url': guild.icon_url,
+            'reason': None,
+            'extra': None,
+            'changes': None,
+            'before': None,
+            'after': None,
+            'recent': False
+        }
+        can_run = await self.wait_for_permission(guild, "view_audit_log")
+        if can_run:
             async for entry in guild.audit_logs(limit=5):
                 if entry.created_at > self.past and any(entry.action.name == action.name for action in actions):
                     dat['action'] = entry.action
@@ -352,33 +369,6 @@ class Logger(commands.Cog):
                     dat['after'] = entry.after
                     dat['recent'] = True
                     break
-            return dat
-        dat = {
-            'user': 'Unknown',
-            'actual_user': None,
-            'target': 'Unknown',
-            'icon_url': guild.icon_url,
-            'thumbnail_url': guild.icon_url,
-            'reason': None,
-            'extra': None,
-            'changes': None,
-            'before': None,
-            'after': None,
-            'recent': False
-        }
-        can_run = await self.wait_for_permission(guild, "view_audit_log")
-        if can_run:
-            for _ in range(3):
-                try:
-                    new_dat = await search()
-                    dat = new_dat
-                    break
-                except discord.errors.Forbidden:
-                    can_run = await self.wait_for_permission(guild, "view_audit_log")
-                    if not can_run:
-                        return dat
-            else:
-                return dat
         return dat
 
     @commands.group(name='logger', aliases=['log', 'secure-log'])
