@@ -2,13 +2,19 @@ import asyncio
 import websockets
 import random
 import traceback
+import os
+import time
+from datetime import datetime
+from zipfile import ZipFile
 import discord
+import pysftp
+from utils import outh
 
 
 class Tasks:
 	def __init__(self, bot):
 		self.bot = bot
-		self.enabled_tasks = [self.status_task, self.log_queue, self.debug_log]
+		self.enabled_tasks = [self.status_task, self.log_queue, self.debug_log, self.auto_backup]
 		self.running = []
 
 	def running_tasks(self):
@@ -125,3 +131,48 @@ class Tasks:
 				message += log + '\n'
 			message += '```'
 			await channel.send(message)
+
+	async def auto_backup(self):
+		"""Backs up files every x seconds and keeps them for x days"""
+		def get_all_file_paths(directory):
+			file_paths = []
+			for root, directories, files in os.walk(directory):
+				for filename in files:
+					if 'backup' not in filename and 'images' not in root:
+						filepath = os.path.join(root, filename)
+						file_paths.append(filepath)
+			return file_paths
+
+		run_automatic_backups = True  # Toggle automatic backups
+		# backup_interval = 21600     # Backup every 6 hours
+		backup_interval = 3600        # Backup interval in seconds
+		keep_for = 7                  # Days to keep each backup
+		while run_automatic_backups:
+			await asyncio.sleep(backup_interval)
+
+			before = time.monotonic()
+			creds = outh.Backups()
+			cnopts = pysftp.CnOpts()
+			cnopts.hostkeys = None
+
+			# Copy all data to the ZipFile
+			file_paths = get_all_file_paths("./data")
+			fp = f'backup_{datetime.now()}.zip'
+			with ZipFile(fp, 'w') as zip:
+				for file in file_paths:
+					zip.write(file)
+
+			with pysftp.Connection(creds.host, username=creds.username, password=creds.password, port=7822, cnopts=cnopts) as sftp:
+				# Remove older backups
+				root = "/home/fate/Backups"
+				for backup in sftp.listdir(root):
+					backup_time = datetime.strptime(backup.split('_')[1].strip('.zip'), '%Y-%m-%d %H:%M:%S.%f')
+					if (datetime.now() - backup_time).days > keep_for:
+						sftp.remove(backup)
+						self.bot.log(f"Removed backup {backup}")
+
+				# Transfer then remove the local backup
+				sftp.put(fp, os.path.join(root, fp))
+				os.remove(fp)
+			ping = round((time.monotonic() - before) * 1000)
+			print(f'Ran Automatic Backup: {ping}ms')
