@@ -42,7 +42,11 @@ class Giveaways(commands.Cog):
     async def run_giveaway(self, guild_id, giveaway_id):
         dat = self.data[guild_id][giveaway_id]
         channel = await self.bot.fetch_channel(dat['channel'])
-        message = await channel.fetch_message(dat['message'])
+        try:
+            message = await channel.fetch_message(dat['message'])
+        except discord.errors.NotFound:
+            del self.data[guild_id][giveaway_id]
+            return await self.save_data()
         while timestamp() < dat['end_time']:
             await asyncio.sleep(30)
             await message.edit(embed=await self.make_embed(dat))
