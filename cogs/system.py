@@ -115,8 +115,6 @@ class System(commands.Cog):
 							await member.edit(nick='')
 					except:
 						pass
-		if msg.content.startswith('mhm?'):
-			await msg.channel.send('Alive and ready :3')
 
 	# @commands.Cog.listener()
 	# async def on_member_update(self, before, after):

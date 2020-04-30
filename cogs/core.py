@@ -385,8 +385,6 @@ class Core(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, msg: discord.Message):
-        if 'who is joe' in str(msg.content).lower() or 'who\'s joe' in str(msg.content).lower():
-            await msg.channel.send('JOE MAMA')
         if isinstance(msg.channel, discord.DMChannel):
             user_id = msg.author.id
             now = int(time() / 5)
