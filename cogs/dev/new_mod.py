@@ -78,10 +78,10 @@ class Moderation(commands.Cog):
     @property
     def template(self):
         return {
-            "usermod": [],
-            "rolemod": [],
+            "usermod": [],  # Users with access to all mod commands
+            "rolemod": [],  # Roles with access to all mod commands
             "commands": {
-                "warn": [],  # roles that have access
+                "warn": [],  # roles that have access  # Change to users and roles
                 "purge": [],
                 "mute": [],
                 "kick": [],
