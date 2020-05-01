@@ -665,7 +665,7 @@ class Moderation(commands.Cog):
                     index += 1
             await msg.edit(embed=e)
 
-    @commands.command(name='mass-nick', aliases=['massnick'])  # Add +/- support
+    @commands.command(name='mass-nick', aliases=['massnick'])
     @commands.cooldown(*utils.default_cooldown())
     @check_if_running()
     @has_required_permissions(manage_nicknames=True)
