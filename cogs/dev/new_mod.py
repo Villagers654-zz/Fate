@@ -665,7 +665,7 @@ class Moderation(commands.Cog):
                     index += 1
             await msg.edit(embed=e)
 
-    @commands.command(name='mass-nick', aliases=['massnick'])
+    @commands.command(name='mass-nick', aliases=['massnick'])  # Add +/- support
     @commands.cooldown(*utils.default_cooldown())
     @check_if_running()
     @has_required_permissions(manage_nicknames=True)
@@ -715,7 +715,7 @@ class Moderation(commands.Cog):
                                 continue
                             return await msg.edit(content="Message Inactive: Operation Cancelled")
 
-    @commands.command(name='mass-role', aliases=['massrole'])
+    @commands.command(name='mass-role', aliases=['massrole'])  # Have +/- support
     @commands.cooldown(*utils.default_cooldown())
     @check_if_running()
     @has_required_permissions(manage_roles=True)
