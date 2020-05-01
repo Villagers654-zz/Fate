@@ -92,7 +92,10 @@ class Mod(commands.Cog):
 			await unmute()
 		else:
 			await unmute()
-		del self.timers['mute'][guild_id][user_id]
+		try:
+			del self.timers['mute'][guild_id][user_id]
+		except KeyError:
+			pass
 		self.save_json()
 
 	async def start_ban_timer(self, guild_id, user_id):
