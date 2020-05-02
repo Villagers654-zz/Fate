@@ -16,8 +16,13 @@ from utils import colors, utils, outh
 
 code = "```py\n{0}\n```"
 sexualities = [
-	"gay", "straight", "heterosexual", "lesbian", "bi", "bisexual", "poly", "polysexual", "pan", "pansexual",
-	"asexual", "ace"
+	"allosexual", "allosexism", "androsexual", "asexual", "aromantic", "autosexual", "autoromantic",
+	"bicurious", "bisexual", "biromantic", "closeted", "coming out", "cupiosexual", "demisexual", "demiromantic",
+	"fluid", "gay", "graysexual", "grayromantic", "gynesexual", "heterosexual", "homosexual", "lesbian",
+	"lgbtqia+", "libidoist asexual", "M\monosexual", "non-libidoist asexual", "omnisexual", "pansexual",
+	"panromantic", "polysexual", "pomosexual", "passing", "queer", "questioning", "romantic attraction",
+	"sapiosexual", "sexual attraction", "sex-averse", "sex-favorable", "sex-indifferent", "sex-repulsed",
+	"skoliosexual", "spectrasexual", "straight", "bi", "ace"
 ]
 
 class Fun(commands.Cog):
@@ -422,8 +427,11 @@ class Fun(commands.Cog):
 	@commands.cooldown(3, 5, commands.BucketType.user)
 	@commands.bot_has_permissions(embed_links=True)
 	async def sexuality(self, ctx, percentage=None):
+		usage = f"Usage: `{self.bot.utils.get_prefix(ctx)}{ctx.invoked_with} percentage/reset/help`" \
+				f"\nExample Usage: `{self.bot.utils.get_prefix(ctx)}{ctx.invoked_with} 75%`" \
+				f"\n\nThe available sexualities are {', '.join(sexualities)}."
 		if ctx.invoked_with == "sexuality":
-			return await ctx.send(f"You're options are {', '.join(sexualities)}. You can suggest more in the support server")
+			return await ctx.send(usage)
 		user_id = str(ctx.author.id)
 		if percentage:
 			if percentage.lower() == "reset":
@@ -431,6 +439,8 @@ class Fun(commands.Cog):
 					return await ctx.send("You don't have a custom percentage set")
 				del self.gay[ctx.invoked_with][user_id]
 				await ctx.send(f"Removed your custom {ctx.invoked_with} percentage")
+			elif percentage.lower() == "help":
+				return await ctx.send(usage)
 			else:
 				stripped = percentage.strip("%")
 				if not stripped.isdigit():
