@@ -5,6 +5,8 @@ import traceback
 import aiohttp
 from random import random as rd
 import praw
+from os import path
+import json
 
 from discord.ext import commands
 import discord
@@ -13,13 +15,27 @@ from discord import Webhook, AsyncWebhookAdapter
 from utils import colors, utils, outh
 
 code = "```py\n{0}\n```"
-
+sexualities = [
+	"gay", "straight", "heterosexual", "lesbian", "bi", "bisexual", "poly", "polysexual", "pan", "pansexual"
+]
 
 class Fun(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.dat = {}
 		self.bullying = []
+		self.gay = {sexuality: {} for sexuality in sexualities}
+		self.gp = "./data/userdata/gay.json"
+		if path.isfile(self.gp):
+			with open(self.gp, 'r') as f:
+				self.gay = json.load(f)
+		for sexuality in sexualities:
+			if sexuality not in self.gay:
+				self.gay[sexuality] = {}
+
+	def save_gay(self):
+		with open(self.gp, 'w') as f:
+			json.dump(self.gay, f, ensure_ascii=False)
 
 	@commands.command(name='bully')
 	@commands.cooldown(1, 5, commands.BucketType.channel)
@@ -401,35 +417,33 @@ class Fun(commands.Cog):
 			"Why not ¯\_(ツ)_/¯", "Ye", "Yep", "Yup", "tHe AnSwEr LiEs WiThIn",
 			"Basically yes^", "Not really", "Well duh", "hell yeah", "hell no"]))
 
-	@commands.command(name="gay")
-	@commands.cooldown(1, 3, commands.BucketType.user)
+	@commands.command(name="sexuality", aliases=sexualities[::1])
+	@commands.cooldown(3, 5, commands.BucketType.user)
 	@commands.bot_has_permissions(embed_links=True)
-	async def gay(self, ctx, *, user: discord.Member=None):
-		if user is None:
-			user = ctx.author
-		e=discord.Embed(color=colors.pink())
-		e.set_author(name=f"You are {random.randint(0,100)}% gay", icon_url=user.avatar_url)
-		await ctx.send (embed=e)
-
-	@commands.command(name="straight")
-	@commands.cooldown(1, 3, commands.BucketType.user)
-	@commands.bot_has_permissions(embed_links=True)
-	async def straight(self, ctx, *, user: discord.Member=None):
-		if user is None:
-			user = ctx.author
-		e=discord.Embed(color=colors.pink())
-		e.set_author(name=f"You are {random.randint(0,100)}% straight", icon_url=user.avatar_url)
-		await ctx.send (embed=e)
-
-	@commands.command(name="lesbian")
-	@commands.cooldown(1, 3, commands.BucketType.user)
-	@commands.bot_has_permissions(embed_links=True)
-	async def lesbian(self, ctx, *, user: discord.Member=None):
-		if user is None:
-			user = ctx.author
-		e=discord.Embed(color=colors.pink())
-		e.set_author(name=f"You are {random.randint(0,100)}% lesbian", icon_url=user.avatar_url)
-		await ctx.send (embed=e)
+	async def sexuality(self, ctx, percentage=None):
+		if ctx.invoked_with == "sexuality":
+			return await ctx.send(f"You're options are {', '.join(sexualities)}. You can suggest more in the support server")
+		user_id = str(ctx.author.id)
+		if percentage:
+			if percentage.lower() == "reset":
+				if user_id not in self.gay[ctx.invoked_with]:
+					return await ctx.send("You don't have a custom percentage set")
+				del self.gay[ctx.invoked_with][user_id]
+				await ctx.send(f"Removed your custom {ctx.invoked_with} percentage")
+			else:
+				stripped = percentage.strip("%")
+				if not stripped.isdigit():
+					return await ctx.send("The percentage needs to be an integer")
+				self.gay[ctx.invoked_with][user_id] = int(stripped)
+				self.save_gay()
+				await ctx.send(f"Use `{self.bot.utils.get_prefix(ctx)}gay reset` to go back to random results")
+		e = discord.Embed(color=ctx.author.color)
+		e.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
+		percentage = random.randint(0, 100)
+		if user_id in self.gay[ctx.invoked_with]:
+			percentage = self.gay[ctx.invoked_with][user_id]
+		e.description = f"{percentage}% {ctx.invoked_with}"
+		await ctx.send(embed=e)
 
 	@commands.command()
 	async def rps(self, ctx):
