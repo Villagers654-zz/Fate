@@ -98,7 +98,17 @@ class ChatBot(commands.Cog):
 		if guild_id not in self.dir:
 			return await ctx.send("Chatbot needs to be enabled in order for you to use this command")
 		if self.dir[guild_id] == "guilded":
-			self.dir[guild_id] = "global"
+			await ctx.send("Are you sure you'd like to switch to global cache? There's a filter to block profanity, "
+			               "but some things can slip through. If you go through with it, and something does, you can "
+			               "join the support server and request its removal\nReply with '`yes`' or '`confirm`' to "
+			               "accept and switch to using global cache, or anything else to deny")
+			msg = await self.bot.utils.wait_for_msg(ctx)
+			if not msg:
+				return
+			if "yes" in str(msg.content).lower() or "confirm" in str(msg.content).lower():
+				self.dir[guild_id] = "global"
+			else:
+				return await ctx.send("Alright, maybe some other time in a NSFW channel perhaps?")
 		else:
 			self.dir[guild_id] = "guilded"
 		await ctx.send(f"Swapped cache location to {self.dir[guild_id]}")

@@ -16,6 +16,7 @@ import discord
 from discord import Webhook, AsyncWebhookAdapter
 import wikipedia
 import wikipedia.exceptions
+from profanity_check import predict_prob
 
 from utils import config, colors, utils, checks
 
@@ -376,6 +377,17 @@ class Core(commands.Cog):
                 url="https://cdn.discordapp.com/attachments/450528552199258123/524139193723781120/urban-dictionary-logo.png")
             e.description = "**Meaning:**\n{}\n\n**Example:**\n{}\n".format(meaning, resp.find('div', {
                 'class': 'example'}).text.strip('\n'))
+
+            prob = predict_prob([e.description])
+            new_prob = []
+            for i in prob:
+                if i >= 0.14:
+                    new_prob.append(1)
+                elif i < 0.14:
+                    new_prob.append(0)
+            if new_prob[0] == 1 and not ctx.channel.is_nsfw():
+                return await ctx.send("You need to be in an nsfw channel to check that definition")
+
             e.set_footer(text="~{}".format(resp.find('div', {'class': 'contributor'}).text.strip('\n')))
             await ctx.send(embed=e)
         except AttributeError:
