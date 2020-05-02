@@ -16,7 +16,8 @@ from utils import colors, utils, outh
 
 code = "```py\n{0}\n```"
 sexualities = [
-	"gay", "straight", "heterosexual", "lesbian", "bi", "bisexual", "poly", "polysexual", "pan", "pansexual"
+	"gay", "straight", "heterosexual", "lesbian", "bi", "bisexual", "poly", "polysexual", "pan", "pansexual",
+	"asexual", "ace"
 ]
 
 class Fun(commands.Cog):
