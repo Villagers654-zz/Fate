@@ -41,9 +41,14 @@ class GlobalChat(commands.Cog):
 			595369406905712650,  # InToXiCAtEd_B¡+€h#0560 - NSFW
 			647469014146351122,  # flashing images
 		]
+		self.mods = [
+			493082973906927616  # Chaos
+		]
 		if path.isfile(self.path):
 			with open(self.path, 'r') as f:
-				self.config = json.load(f)  # type: dict
+				dat = json.load(f)  # type: dict
+				self.config = dat["config"]
+				self.banned = dat["banned"]
 		# for guild_id, conf in list(self.config.items()):
 		# 	if conf['last'] < time() - 36288000:
 		# 		del self.config[guild_id]
@@ -51,7 +56,7 @@ class GlobalChat(commands.Cog):
 
 	def save_data(self):
 		with open(self.path, 'w+') as f:
-			json.dump(self.config, f)
+			json.dump({"config": self.config, "banned": self.banned}, f)
 
 	async def remove_webhook(self, guild_id, channel):
 		""" deletes the global chat webhook so they don't pile up """
@@ -135,6 +140,22 @@ class GlobalChat(commands.Cog):
 			webhook = await channel.create_webhook(name='Global Chat')
 			self.config[guild_id]['webhook'] = webhook.url
 			await ctx.send('Enabled webhooks')
+		self.save_data()
+
+	@global_chat.command(name='ban')
+	async def _ban(self, ctx, *, user: discord.User):
+		if ctx.author.id not in self.mods:
+			return await ctx.send("You don't have permission to use this command")
+		self.banned.append(user.id)
+		await ctx.send(f"Banned {user} from global-chat")
+		self.save_data()
+
+	@global_chat.command(name='unban')
+	async def _unban(self, ctx, *, user: discord.User):
+		if ctx.author.id not in self.mods:
+			return await ctx.send("You don't have permission to use this command")
+		self.banned.remove(user.id)
+		await ctx.send(f"Unbanned {user} from global-chat")
 		self.save_data()
 
 	@commands.Cog.listener()
