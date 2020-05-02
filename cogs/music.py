@@ -60,6 +60,8 @@ class Music(commands.Cog):
         if not after.channel:
             bot = member.guild.get_member(self.bot.user.id)
             channel = self.bot.get_channel(before.channel.id)
+            if not channel:
+                return
             if bot in channel.members:
                 player = self.bot.lavalink.players.get(member.guild.id)
                 if self.get_humans(channel) < 1:

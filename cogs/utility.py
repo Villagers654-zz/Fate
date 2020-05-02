@@ -430,7 +430,7 @@ class Utility(commands.Cog):
 		channel = self.bot.get_channel(dat['channel'])
 		try:
 			await channel.send(f"{dat['mention']} remember dat thing: {msg}")
-		except (discord.errors.Forbidden, discord.errors.NotFound):
+		except (discord.errors.Forbidden, discord.errors.NotFound, AttributeError):
 			pass
 		del self.timers[user_id][msg]
 		if not self.timers[user_id]:
