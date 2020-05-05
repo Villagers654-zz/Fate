@@ -63,7 +63,7 @@ class Actions(commands.Cog):
 	@commands.command(description="Boops a user")
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	async def boop(self, ctx, user: discord.Member):
-		await ctx.send("<@{}> {} boops {}".format(ctx.author.id, random.choice(["sneakily", "sexually", "forcefully", "gently", "softly"]), user.display_name))
+		await ctx.send("<@{}> {} boops {}".format(ctx.author.id, random.choice(["sneakily", "sexually", "forcefully", "gently", "softly"]), user.name))
 		await ctx.message.delete()
 
 	@commands.command(description="Gives a user anything of your choosing")
