@@ -19,7 +19,7 @@ sexualities = [
 	"allosexual", "allosexism", "androsexual", "asexual", "aromantic", "autosexual", "autoromantic",
 	"bicurious", "bisexual", "biromantic", "closeted", "coming out", "cupiosexual", "demisexual", "demiromantic",
 	"fluid", "gay", "graysexual", "grayromantic", "gynesexual", "heterosexual", "homosexual", "lesbian",
-	"lgbtqia+", "libidoist asexual", "M\monosexual", "non-libidoist asexual", "omnisexual", "pansexual",
+	"lgbtqia+", "libidoist asexual", "Monosexual", "non-libidoist asexual", "omnisexual", "pansexual",
 	"panromantic", "polysexual", "pomosexual", "passing", "queer", "questioning", "romantic attraction",
 	"sapiosexual", "sexual attraction", "sex-averse", "sex-favorable", "sex-indifferent", "sex-repulsed",
 	"skoliosexual", "spectrasexual", "straight", "bi", "ace"

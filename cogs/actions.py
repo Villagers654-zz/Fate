@@ -43,7 +43,7 @@ class Actions(commands.Cog):
 			"AIDS", "HIV positive blood", "an STD", "the cure", "FLex Seal", "Kool-Aid powder",
 			"soda", "the flu", "Coronavirus", "Covid-19"
 		]
-		choices = [ 
+		choices = [
 			"$user has been injected with $injection", "$user was injected with $injection and died",
 			"injected $injection into $user's dick", "$user was injected with $injection and got autism",
 			"$author tripped and injected himself with $injection"
