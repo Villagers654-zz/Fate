@@ -644,7 +644,8 @@ class Logger(commands.Cog):
                     if is_successful:
                         e.description = self.bot.utils.format_dict({
                             "Author": msg.author.mention,
-                            "Channel": msg.channel.mention
+                            "Channel": msg.channel.mention,
+                            f"[Jump to MSG]({msg.jump_url})": None
                         })
                         e.add_field(name='Content', value=m.content, inline=False)
                         self.queue[guild_id].append([e, 'system+', time()])
