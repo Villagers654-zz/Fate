@@ -610,7 +610,7 @@ class Logger(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         for guild_id in self.config.keys():
-            self.bot.tasks.start(self.start_queue, guild_id, task_id=f'queue-{guild_id}')
+            self.bot.tasks.start(self.start_queue, guild_id, task_id=f'queue-{guild_id}', kill_existing=True)
         await self.init_invites()
 
     @commands.Cog.listener()
