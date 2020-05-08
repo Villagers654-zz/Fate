@@ -564,7 +564,10 @@ class Utility(commands.Cog):
 	@commands.bot_has_permissions(view_audit_log=True)
 	async def last_entry(self, ctx, action):
 		""" Gets the last entry for a specific action """
-		action = eval('discord.AuditLogAction.'+action)
+		try:
+			action = eval('discord.AuditLogAction.'+action)
+		except SyntaxError:
+			return await ctx.send(f"`{action}` isn't an audit log action")
 		async for entry in ctx.guild.audit_logs(limit=1, action=action):
 			dat = f"User: {entry.user}" \
 			      f"\nTarget: {entry.target}" \
