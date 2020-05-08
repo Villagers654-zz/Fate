@@ -11,6 +11,7 @@ import re
 from typing import Optional
 
 import discord
+import PIL
 from PIL import Image
 from colormap import rgb2hex
 import psutil
@@ -164,7 +165,7 @@ class Utility(commands.Cog):
 			icon_url = user.avatar_url if user.avatar_url else self.bot.user.avatar_url
 			try:
 				e = discord.Embed(color=self.avg_color(user.avatar_url))
-			except ZeroDivisionError:
+			except (ZeroDivisionError, PIL.UnidentifiedImageError):
 				e = discord.Embed(color=user.top_role.color)
 			e.set_author(name=user.display_name, icon_url=icon_url)
 			e.set_thumbnail(url=ctx.guild.icon_url)
