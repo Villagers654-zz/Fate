@@ -55,7 +55,8 @@ class ChatFilter(commands.Cog):
 						self.ignored[guild_id].remove(channel_id)
 						continue
 					channels.append(channel.mention)
-				e.add_field(name='◈ Ignored Channels', value='\n'.join(channels))
+				if channels:
+					e.add_field(name='◈ Ignored Channels', value='\n'.join(channels))
 			e.set_footer(text=f"Current Status: {toggle}")
 			await ctx.send(embed=e)
 
