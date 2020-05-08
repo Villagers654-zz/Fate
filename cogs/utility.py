@@ -8,6 +8,7 @@ import os
 import platform
 import requests
 import re
+from typing import Optional
 
 import discord
 from PIL import Image
@@ -562,19 +563,34 @@ class Utility(commands.Cog):
 	@commands.cooldown(2, 5, commands.BucketType.user)
 	@commands.has_permissions(view_audit_log=True)
 	@commands.bot_has_permissions(view_audit_log=True)
-	async def last_entry(self, ctx, action):
+	async def last_entry(self, ctx, user: Optional[discord.User], action=None):
 		""" Gets the last entry for a specific action """
-		try:
-			action = eval('discord.AuditLogAction.'+action)
-		except SyntaxError:
-			return await ctx.send(f"`{action}` isn't an audit log action")
-		async for entry in ctx.guild.audit_logs(limit=1, action=action):
-			dat = f"User: {entry.user}" \
-			      f"\nTarget: {entry.target}" \
-			      f"\nReason: {entry.reason}" \
-			      f"\nExtra: {entry.extra}" \
-			      f"\nCreated: {entry.created_at}"
-			await ctx.send(dat)
+		last_entry = None
+		if not user and not action:
+			return await ctx.send("You need to specify a user, or an audit log action")
+		elif user:
+			async for entry in ctx.guild.audit_logs(limit=250):
+				if (entry.target and entry.target.id == user.id) or entry.user.id == user.id:
+					last_entry = entry
+					break
+		else:
+			try:
+				action = eval('discord.AuditLogAction.' + action)
+			except SyntaxError:
+				return await ctx.send(f"`{action}` isn't an audit log action")
+			async for entry in ctx.guild.audit_logs(limit=1, action=action):
+				last_entry = entry
+		if not last_entry:
+			return await ctx.send(f"I couldn't find anything")
+		e = discord.Embed(color=colors.fate())
+		e.description = self.bot.utils.format_dict({
+			"Action": last_entry.action.name,
+			"User": last_entry.user,
+			"Target": last_entry.target,
+			"Reason": last_entry.reason if last_entry.reason else "None Specified",
+			"When": last_entry.created_at
+		})
+		await ctx.send(embed=e)
 
 	@commands.command(name='poll')
 	@commands.cooldown(1, 3, commands.BucketType.user)
