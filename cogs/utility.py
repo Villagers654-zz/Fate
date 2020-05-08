@@ -408,8 +408,10 @@ class Utility(commands.Cog):
 			return await ctx.send(embed=e)
 		if not ctx.author.guild_permissions.manage_roles:
 			return await ctx.send('You need manage roles permissions to use this')
-		if '@' in args[0]:
+		if '<@' in args[0]:
 			target = ''.join(x for x in args[0] if x.isdigit())
+			if not target:
+				return await ctx.send("Wtf man.. wHo")
 			role = ctx.guild.get_role(int(target))
 		else:
 			role = await utils.get_role(ctx, args[0])
