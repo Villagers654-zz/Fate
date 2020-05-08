@@ -467,18 +467,22 @@ class Utility(commands.Cog):
 			time_to_sleep[0] += time
 			time_to_sleep[1].append(f"{raw} {repr if raw == '1' else repr + 's'}")
 		timer, expanded_timer = time_to_sleep
-		await ctx.send(f"I'll remind you about {' '.join(args)} in {', '.join(expanded_timer)}")
+
 
 		user_id = str(ctx.author.id)
 		if user_id not in self.timers:
 			self.timers[user_id] = {}
 		msg = ' '.join(args)
-		self.timers[user_id][msg] = {
-			'timer': str(datetime.utcnow() + timedelta(seconds=timer)),
-			'channel': ctx.channel.id,
-			'mention': ctx.author.mention,
-			'expanded_timer': expanded_timer
-		}
+		try:
+			self.timers[user_id][msg] = {
+				'timer': str(datetime.utcnow() + timedelta(seconds=timer)),
+				'channel': ctx.channel.id,
+				'mention': ctx.author.mention,
+				'expanded_timer': expanded_timer
+			}
+		except OverflowError:
+			return await ctx.send("That's a bit.. *too far*  into the future")
+		await ctx.send(f"I'll remind you about {' '.join(args)} in {', '.join(expanded_timer)}")
 		self.save_timers()
 		self.bot.tasks.start(
 			self.remind, user_id, msg, self.timers[user_id][msg],
