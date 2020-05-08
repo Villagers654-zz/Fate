@@ -148,7 +148,10 @@ class Music(commands.Cog):
                         break
                 if invalid_chars:
                     continue
-                query = local[int(msg.content) - 1][1]  # type: str
+                try:
+                    query = local[int(msg.content) - 1][1]  # type: str
+                except IndexError:
+                    return await ctx.send("That wasn't a valid number, please redo the cmd")
                 player = self.bot.lavalink.players.get(ctx.guild.id)
                 query = query.strip('<>')
                 if not url_rx.match(query):
