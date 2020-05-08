@@ -247,7 +247,11 @@ class Config(commands.Cog):
 							dump()
 							break
 						options = ['None', 'Mute', 'Kick', 'Softban', 'Ban']
-						reaction_index = emojis.index(reaction)
+						try:
+							reaction_index = emojis.index(reaction)
+						except:
+							await ctx.send("Invalid reaction >:(")
+							continue
 						punishments.append(options[reaction_index])
 			else:
 				if reaction == emoji(3):
