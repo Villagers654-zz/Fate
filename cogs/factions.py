@@ -864,7 +864,7 @@ class Factions(commands.Cog):
 		if channel_id in self.land_claims[guild_id][faction]:
 			return await ctx.send('You already claimed this channel')
 		cost = 500; old_claim = None
-		for fac, land_claims in self.land_claims[guild_id].items():
+		for fac, land_claims in list(self.land_claims[guild_id].items()):
 			if fac not in self.factions[guild_id]:
 				del self.land_claims[guild_id][fac]
 				continue
