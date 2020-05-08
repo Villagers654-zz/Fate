@@ -319,7 +319,8 @@ class Logger(commands.Cog):
                 except (discord.errors.HTTPException, discord.errors.Forbidden, discord.errors.NotFound):
                     err_channel = self.bot.get_channel(577661461543780382)
                     await err_channel.send(f"Secure Log Error\n{str(traceback.format_exc())[-1980:]}")
-                    await err_channel.send(f'```json\n{json.dumps(embed.to_dict(), indent=2)}```')
+                    for text_group in self.bot.utils.split(str(json.dumps(embed.to_dict(), indent=2)), 1980):
+                        await err_channel.send(f'```json\n{text_group}```')
                     self.queue[guild_id].remove([embed, channelType, logged_at])
                 self.last_checkin[guild_id] = time()
 
