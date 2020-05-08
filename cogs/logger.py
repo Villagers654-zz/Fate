@@ -67,7 +67,9 @@ class Logger(commands.Cog):
             self.bot.loop.create_task(self.init_invites())
             for guild_id in self.config.keys():
                 bot.tasks.start(self.start_queue, guild_id, task_id=f'queue-{guild_id}', kill_existing=True)
+            bot.tasks.start(self.ensure_tasks, task_id="keep-logs-alive", kill_existing=True)
         self.wait_queue = {}
+        self.last_checkin = {}
 
     def save_data(self):
         """ Saves local variables """
@@ -91,6 +93,17 @@ class Logger(commands.Cog):
         guild_id = str(guild.id)
         self.config[guild_id]['channel'] = category.id
         return category
+
+    async def ensure_tasks(self):
+        channel = self.bot.get_channel(541520201926311986)
+        while True:
+            now = time()
+            for guild_id, last_checkin in list(self.last_checkin.items()):
+                if last_checkin < now - 60:
+                    guild = self.bot.get_guild(int(guild_id))
+                    await channel.send(f"The queue for {guild} failed to check in after 1 minute, closing and restarting")
+                    self.bot.tasks.start(self.start_queue, guild_id, task_id=f'queue-{guild_id}', kill_existing=True)
+            await asyncio.sleep(10)
 
     async def wait_for_permission(self, guild, permission: str):
         """Notify the owner of missing permissions and wait until they've been granted"""
@@ -173,11 +186,13 @@ class Logger(commands.Cog):
 
         while True:
             while not self.queue[guild_id]:
+                self.last_checkin[guild_id] = time()
                 await asyncio.sleep(1.21)
 
             log_type = self.config[guild_id]['type']  # type: str
 
             for embed, channelType, logged_at in self.queue[guild_id][-175:]:
+                self.last_checkin[guild_id] = time()
                 list_obj = [embed, channelType, logged_at]
                 file_paths = []
                 files = []
@@ -194,14 +209,18 @@ class Logger(commands.Cog):
                 embed.timestamp = datetime.fromtimestamp(logged_at)
 
                 if self.config[guild_id]['secure'] and not guild.me.guild_permissions.administrator:
+                    del self.last_checkin[guild_id]
                     result = await self.wait_for_permission(guild, "administrator")
                     if not result:
                         del self.config[guild_id]
+                        del self.last_checkin[guild_id]
                         return self.save_data()
+                    self.last_checkin[guild_id] = time()
 
                 category = self.bot.get_channel(self.config[guild_id]['channel'])
                 cant_find = False
                 while not category:
+                    self.last_checkin[guild_id] = time()
                     try:
                         category = await self.bot.fetch_channel(self.config[guild_id]['channel'])
                     except (discord.errors.Forbidden, discord.errors.NotFound):
@@ -221,6 +240,7 @@ class Logger(commands.Cog):
                         break
 
                 if cant_find:
+                    del self.last_checkin[guild_id]
                     dm = None
                     for _attempt in range(24 * 60):
                         try:
@@ -255,6 +275,8 @@ class Logger(commands.Cog):
                     else:
                         del self.config[guild_id]
                         return self.save_data()
+
+                self.last_checkin[guild_id] = time()
 
                 try:
                     if isinstance(category, discord.TextChannel):  # single channel log
@@ -299,6 +321,7 @@ class Logger(commands.Cog):
                     await err_channel.send(f"Secure Log Error\n{str(traceback.format_exc())[-1980:]}")
                     await err_channel.send(f'```json\n{json.dumps(embed.to_dict(), indent=2)}```')
                     self.queue[guild_id].remove([embed, channelType, logged_at])
+                self.last_checkin[guild_id] = time()
 
                 if log_type == 'multi':
                     # noinspection PyUnboundLocalVariable
@@ -611,6 +634,7 @@ class Logger(commands.Cog):
     async def on_ready(self):
         for guild_id in self.config.keys():
             self.bot.tasks.start(self.start_queue, guild_id, task_id=f'queue-{guild_id}', kill_existing=True)
+        self.bot.tasks.start(self.ensure_tasks, task_id="keep-logs-alive", kill_existing=True)
         await self.init_invites()
 
     @commands.Cog.listener()
