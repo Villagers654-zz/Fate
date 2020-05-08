@@ -42,7 +42,7 @@ class GlobalChat(commands.Cog):
 			647469014146351122,  # flashing images
 		]
 		self.mods = [
-			493082973906927616  # Chaos,
+			493082973906927616,  # Chaos,
 			611108193275478018  # Eppy
 		]
 		if path.isfile(self.path):
