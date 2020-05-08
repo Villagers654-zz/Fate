@@ -423,37 +423,38 @@ class Fun(commands.Cog):
 			"Why not ¯\_(ツ)_/¯", "Ye", "Yep", "Yup", "tHe AnSwEr LiEs WiThIn",
 			"Basically yes^", "Not really", "Well duh", "hell yeah", "hell no"]))
 
-	@commands.command(name="sexuality", aliases=sexualities[::1])
+	@commands.command(name="sexuality", aliases=[s.strip(" ") for s in sexualities[::1]])
 	@commands.cooldown(3, 5, commands.BucketType.user)
 	@commands.bot_has_permissions(embed_links=True)
 	async def sexuality(self, ctx, percentage=None):
 		usage = f"Usage: `{self.bot.utils.get_prefix(ctx)}{ctx.invoked_with} percentage/reset/help`" \
 				f"\nExample Usage: `{self.bot.utils.get_prefix(ctx)}{ctx.invoked_with} 75%`" \
 				f"\n\nThe available sexualities are {', '.join(sexualities)}."
-		if ctx.invoked_with == "sexuality":
+		invoked_with = str(ctx.invoked_with).lower()
+		if invoked_with == "sexuality":
 			return await ctx.send(usage)
 		user_id = str(ctx.author.id)
 		if percentage:
 			if percentage.lower() == "reset":
-				if user_id not in self.gay[ctx.invoked_with]:
+				if user_id not in self.gay[invoked_with]:
 					return await ctx.send("You don't have a custom percentage set")
-				del self.gay[ctx.invoked_with][user_id]
-				await ctx.send(f"Removed your custom {ctx.invoked_with} percentage")
+				del self.gay[invoked_with][user_id]
+				await ctx.send(f"Removed your custom {invoked_with} percentage")
 			elif percentage.lower() == "help":
 				return await ctx.send(usage)
 			else:
 				stripped = percentage.strip("%")
 				if not stripped.isdigit():
 					return await ctx.send("The percentage needs to be an integer")
-				self.gay[ctx.invoked_with][user_id] = int(stripped)
+				self.gay[invoked_with][user_id] = int(stripped)
 				self.save_gay()
-				await ctx.send(f"Use `{self.bot.utils.get_prefix(ctx)}gay reset` to go back to random results")
+				await ctx.send(f"Use `{self.bot.utils.get_prefix(ctx)}{invoked_with} reset` to go back to random results")
 		e = discord.Embed(color=ctx.author.color)
 		e.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
 		percentage = random.randint(0, 100)
-		if user_id in self.gay[ctx.invoked_with]:
-			percentage = self.gay[ctx.invoked_with][user_id]
-		e.description = f"{percentage}% {ctx.invoked_with}"
+		if user_id in self.gay[invoked_with]:
+			percentage = self.gay[invoked_with][user_id]
+		e.description = f"{percentage}% {invoked_with}"
 		await ctx.send(embed=e)
 
 	@commands.command()
