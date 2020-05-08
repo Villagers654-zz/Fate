@@ -283,7 +283,8 @@ async def get_role(ctx, name):
 				msg = await ctx.bot.wait_for('message', check=pred, timeout=60)
 			except asyncio.TimeoutError:
 				await ctx.send('Timeout error', delete_after=5)
-				return await embed.delete()
+				await embed.delete()
+				return None
 			else:
 				try:
 					role = int(msg.content)
