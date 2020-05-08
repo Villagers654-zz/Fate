@@ -350,7 +350,8 @@ class Music(commands.Cog):
             return await ctx.message.delete()
         await player.skip()
         await ctx.send('⏭ | Skipped.', delete_after=20)
-        del self.skips[ctx.guild.id]
+        if ctx.guild.id in self.skips:
+            del self.skips[ctx.guild.id]
         await asyncio.sleep(20)
         await ctx.message.delete()
 
