@@ -1088,9 +1088,10 @@ class Mod(commands.Cog):
 	@commands.command(name="mute", description="Blocks a user from sending messages")
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.guild_only()
-	@commands.has_permissions(manage_roles=True)
 	@commands.bot_has_permissions(manage_roles=True)
 	async def mute(self, ctx, user: discord.Member=None, timer=None):
+		if not ctx.author.guild_permissions.manage_roles and ctx.author.id not in self.mods[str(ctx.guild.id)]:
+			return await ctx.send("You need manage role(s) permission(s) to use this")
 		async with ctx.typing():
 			if not user:
 				return await ctx.send("**Format:** `.mute {@user} {timer: 2m, 2h, or 2d}`")
@@ -1197,9 +1198,10 @@ class Mod(commands.Cog):
 	@commands.command(name="unmute", description="Unblocks users from sending messages")
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.guild_only()
-	@commands.has_permissions(manage_roles=True)
 	@commands.bot_has_permissions(manage_roles=True, manage_channels=True)
 	async def unmute(self, ctx, user: discord.Member=None):
+		if not ctx.author.guild_permissions.manage_roles and ctx.author.id not in self.mods[str(ctx.guild.id)]:
+			return await ctx.send("You need manage role(s) permission(s) to use this")
 		if user is None:
 			return await ctx.send("**Unmute Usage:**\n.unmute {@user}")
 		if user.top_role.position >= ctx.author.top_role.position:
