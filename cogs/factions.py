@@ -340,7 +340,16 @@ class Factions(commands.Cog):
 		members = self.get_members(ctx, faction)
 		e.add_field(name='◈ Members ◈', value=members if members else 'none')
 		claims = self.get_claims(guild_id, faction)
-		e.add_field(name='◈ Land Claims ◈', value=claims if claims else 'none')
+		claims = claims if claims else "None"
+		value = ""
+		for claim in claims.split("\n"):
+			claim = f"\n{claim}"
+			if len(value) + len(claim) >= 1000:
+				e.add_field(name='◈ Land Claims ◈', value=value)
+				value = ""
+				continue
+			value += claim
+		e.add_field(name='◈ Land Claims ◈', value=value)
 		if 'banner' in f:
 			e.set_image(url=f['banner'])
 		factions = []
