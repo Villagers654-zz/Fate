@@ -272,7 +272,7 @@ class Mod(commands.Cog):
 		e.description = mod_log
 		await ctx.send(embed=e)
 
-	@commands.command(name='addmod', enabled=False)
+	@commands.command(name='addmod')
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.guild_only()
 	@commands.has_permissions(administrator=True)
@@ -294,7 +294,7 @@ class Mod(commands.Cog):
 		await ctx.send(embed=e)
 		self.save_json()
 
-	@commands.command(name='delmod', enabled=False)
+	@commands.command(name='delmod')
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.guild_only()
 	@commands.has_permissions(administrator=True)
@@ -317,7 +317,7 @@ class Mod(commands.Cog):
 		await ctx.send(embed=e)
 		self.save_json()
 
-	@commands.command(name='mods', enabled=False)
+	@commands.command(name='mods')
 	@commands.cooldown(1, 5, commands.BucketType.channel)
 	@commands.guild_only()
 	@commands.bot_has_permissions(embed_links=True)
