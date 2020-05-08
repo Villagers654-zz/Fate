@@ -499,6 +499,16 @@ class SelfRoles(commands.Cog):
 						emoji = self.bot.get_emoji(emoji)
 					if str(emoji) == str(payload.emoji):
 						role = guild.get_role(int(role_id))
+						if not role:
+							try:
+								await target.send(
+									f"Sorry, but the role with the emoji {emoji} that you reacted to in "
+									f"{guild} doesn't seem to exist anymore. I've just removed it from the menu"
+								)
+							except discord.errors.Forbidden:
+								pass
+							del self.menus[guild_id][msg_id]['items'][role_id]
+							return await self.edit_menu(guild_id, msg_id)
 						await target.add_roles(role)
 
 						if self.menus[guild_id][msg_id]['limit']:
