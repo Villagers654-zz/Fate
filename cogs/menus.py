@@ -38,7 +38,7 @@ class Menus(commands.Cog, HelpMenus):
     @commands.command(name='help')
     @commands.cooldown(2, 10, commands.BucketType.user)
     @commands.cooldown(1, 3, commands.BucketType.channel)
-    @commands.bot_has_permissions(embed_links=True, add_reactions=True, manage_messages=True)
+    @commands.bot_has_permissions(embed_links=True, add_reactions=True)
     async def help(self, ctx, *, args=None):
         async def wait_for_reaction() -> list:
             def check(reaction, user):
@@ -152,7 +152,8 @@ class Menus(commands.Cog, HelpMenus):
                 if index == len(embeds) - 1:
                     embeds[index].set_footer(text=f'Last Page! {index + 1}/{len(embeds)}')
                 await msg.edit(embed=embeds[index])
-            await msg.remove_reaction(reaction, ctx.author)
+            if ctx.channel.permissions_for(ctx.guild.me).manage_messages:
+                await msg.remove_reaction(reaction, ctx.author)
 
         # Old help command
     # @commands.group(name="help")
