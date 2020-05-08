@@ -36,7 +36,10 @@ class Audit(commands.Cog):
 		e.description = ""
 		audit_position = 0
 		e.set_author(name=f"Last {amount} {action}'s", icon_url=ctx.author.avatar_url)
-		action = eval("discord.AuditLogAction." + action)
+		try:
+			action = eval("discord.AuditLogAction." + action)
+		except (AttributeError, SyntaxError):
+			return await ctx.send("That's not an audit log action")
 		async for entry in ctx.guild.audit_logs(limit=amount, action=action):
 			if len(e.description) + 75 > 2000:
 				reached_char_limit = "| 2k Character Limit Reached"
