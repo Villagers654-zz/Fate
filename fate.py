@@ -22,7 +22,7 @@ class Fate(commands.AutoShardedBot):
             self.config = json.load(f)  # type: dict
         self.debug_mode = self.config['debug_mode']
         self.owner_id = self.config["bot_owner_id"]
-        self.owner_ids = self.config["bot_owner_ids"]
+        # self.owner_ids = self.config["bot_owner_ids"]
         self.pool = None                # MySQL Pool initialized on_ready
         self.login_errors = []          # Exceptions ignored during startup
         self.logs = []                  # Logs to send to discord, empties out quickly
@@ -234,6 +234,7 @@ async def on_ready():
     bot.tasks.ensure_all()
     seconds = round(time() - start_time)
     bot.log(f"Startup took {seconds} seconds")
+    bot.owner_ids = bot.config["bot_owner_ids"]
     for error in bot.login_errors:
         bot.log("Error ignored during startup", level='CRITICAL', tb=error)
 
