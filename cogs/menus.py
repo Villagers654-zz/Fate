@@ -152,7 +152,7 @@ class Menus(commands.Cog, HelpMenus):
                 if index == len(embeds) - 1:
                     embeds[index].set_footer(text=f'Last Page! {index + 1}/{len(embeds)}')
                 await msg.edit(embed=embeds[index])
-            if ctx.channel.permissions_for(ctx.guild.me).manage_messages:
+            if ctx.channel.permissions_for(self if not ctx.guild else ctx.guild.me).manage_messages:
                 await msg.remove_reaction(reaction, ctx.author)
 
         # Old help command
