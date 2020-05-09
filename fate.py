@@ -234,7 +234,7 @@ async def on_ready():
     bot.tasks.ensure_all()
     seconds = round(time() - start_time)
     bot.log(f"Startup took {seconds} seconds")
-    bot.owner_ids = bot.config["bot_owner_ids"]
+    bot.owner_ids = set(bot.config["bot_owner_ids"])
     for error in bot.login_errors:
         bot.log("Error ignored during startup", level='CRITICAL', tb=error)
 
