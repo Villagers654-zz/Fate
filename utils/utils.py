@@ -253,9 +253,9 @@ def get_time(seconds):
 async def get_role(ctx, name):
 	if name.startswith("<@"):
 		for char in list(name):
-			if char not in list('1234567890'):
+			if not char.isdigit():
 				name = name.replace(str(char), '')
-		return ctx.guild.get_member(int(name))
+		return ctx.guild.get_role(int(name))
 	else:
 		roles = []
 		for role in ctx.guild.roles:
@@ -289,9 +289,11 @@ async def get_role(ctx, name):
 				try:
 					role = int(msg.content)
 				except:
-					return await ctx.send('Invalid response')
+					await ctx.send('Invalid response')
+					return None
 				if role > len(roles):
-					return await ctx.send('Invalid response')
+					await ctx.send('Invalid response')
+					return None
 				await embed.delete()
 				await msg.delete()
 				return roles[role - 1]
