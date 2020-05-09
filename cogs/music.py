@@ -1,5 +1,5 @@
 from discord.ext import commands
-from utils import colors, utils
+from utils import colors, utils, outh
 import lavalink
 import discord
 import asyncio
@@ -15,7 +15,8 @@ class Music(commands.Cog):
         self.bot = bot
         self.map = []
         if not hasattr(bot, 'lavalink'):
-            lavalink.Client(bot=bot, password='youshallnotpass', loop=bot.loop, ws_port=2333, rest_port=2333)
+            creds = outh.Lavalink()
+            lavalink.Client(bot=bot, password=creds.password, loop=bot.loop, ws_port=creds.ws_port, rest_port=creds.ws_port)
             self.bot.lavalink.register_hook(self._track_hook)
         self.skips = {}
         self.bot.tasks.start(self.cleanup_task, task_id="music_cleanup")
