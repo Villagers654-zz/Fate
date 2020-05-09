@@ -60,16 +60,21 @@ class Logger(commands.Cog):
                 dat['type'] == 'multi'
             )
         }
+
         self.static = {}
+        self.tasks = {}
+        self.wait_queue = {}
+        self.last_checkin = {}
 
         self.invites = {}
         if self.bot.is_ready():
             self.bot.loop.create_task(self.init_invites())
             for guild_id in self.config.keys():
-                bot.tasks.start(self.start_queue, guild_id, task_id=f'queue-{guild_id}', kill_existing=True)
-            bot.tasks.start(self.ensure_tasks, task_id="keep-logs-alive", kill_existing=True)
-        self.wait_queue = {}
-        self.last_checkin = {}
+                if guild_id in self.tasks:
+                    self.tasks[guild_id].cancel()
+                task = self.bot.loop.create_task(self.start_queue(guild_id))
+                self.tasks[guild_id] = task
+            # bot.tasks.start(self.ensure_tasks, task_id="keep-logs-alive", kill_existing=True)
 
     def save_data(self):
         """ Saves local variables """
@@ -93,17 +98,6 @@ class Logger(commands.Cog):
         guild_id = str(guild.id)
         self.config[guild_id]['channel'] = category.id
         return category
-
-    async def ensure_tasks(self):
-        channel = self.bot.get_channel(541520201926311986)
-        while True:
-            now = time()
-            for guild_id, last_checkin in list(self.last_checkin.items()):
-                if last_checkin < now - 60:
-                    guild = self.bot.get_guild(int(guild_id))
-                    await channel.send(f"The queue for {guild} failed to check in after 1 minute, closing and restarting")
-                    self.bot.tasks.start(self.start_queue, guild_id, task_id=f'queue-{guild_id}', kill_existing=True)
-            await asyncio.sleep(10)
 
     async def wait_for_permission(self, guild, permission: str):
         """Notify the owner of missing permissions and wait until they've been granted"""
@@ -634,9 +628,20 @@ class Logger(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         for guild_id in self.config.keys():
-            self.bot.tasks.start(self.start_queue, guild_id, task_id=f'queue-{guild_id}', kill_existing=True)
-        self.bot.tasks.start(self.ensure_tasks, task_id="keep-logs-alive", kill_existing=True)
-        await self.init_invites()
+            task = self.bot.loop.create_task(self.start_queue(guild_id))
+            self.tasks[guild_id] = task
+        self.bot.tasks.start(self.init_invites)
+        channel = self.bot.get_channel(541520201926311986)
+        while True:
+            now = time()
+            for guild_id, last_checkin in list(self.last_checkin.items()):
+                if last_checkin < now - 60:
+                    guild = self.bot.get_guild(int(guild_id))
+                    await channel.send(f"The queue for {guild} failed to check in after 1 minute, closing and restarting")
+                    self.tasks[guild_id].cancel()
+                    task = self.bot.loop.create_task(self.start_queue(guild_id))
+                    self.tasks[guild_id] = task
+            await asyncio.sleep(10)
 
     @commands.Cog.listener()
     async def on_message(self, msg):
