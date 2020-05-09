@@ -721,7 +721,82 @@ class Moderation(commands.Cog):
     @has_required_permissions(manage_roles=True)
     @commands.bot_has_guild_permissions(manage_roles=True)
     async def mass_role(self, ctx, *, role: Union[discord.Role, str]):
-        pass
+        def gen_embed(iteration):
+            e = discord.Embed(color=colors.fate())
+            e.set_author(name=f"Mass {action} Roles", icon_url=ctx.author.avatar_url)
+            e.description = f"{iteration}/{len(members)} complete" \
+                            f"\nETA of {self.bot.utils.get_time(len(members))}"
+            return e
+
+        if not role:
+            e = discord.Embed(color=colors.fate())
+            e.set_author(name="MassRole Usages", icon_url=ctx.author.avatar_url)
+            e.description = f"Add, or remove roles from members in mass"
+            p = self.bot.utils.get_prefix(ctx)
+            e.add_field(
+                name=f"{p}massrole @Role",
+                value="Mass adds roles"
+            )
+            e.add_field(
+                name=f"{p}massrole -@Role",
+                value="Mass removes roles"
+            )
+            e.add_field(
+                name="Note",
+                value="@Role can be replaced with role names, role mentions, or role ids",
+                inline=False
+            )
+            return await ctx.send(embed=e)
+
+        role = role.lstrip("+")
+        action = "Adding"
+        if role.startswith("-"):
+            action = "Removing"
+            role = role.lstrip("-")
+        role = await self.bot.utils.get_role(ctx, role)
+        if not role:
+            return
+        members = [
+            member for member in ctx.guild.members
+            if member.top_role.position < ctx.author.top_role.position
+               and member.author.top_role.position < ctx.guild.me.top_role.position
+               and (role not in member.roles if action == "Adding"
+                    else role in member.roles)
+        ]
+        if len(members) > 3600:
+            async with ctx.typing():
+                await asyncio.sleep(1)
+            msg = await ctx.send("Bruh.. you get ONE hour, but that's it.", embed=gen_embed(0))
+        else:
+            msg = await ctx.send(embed=gen_embed(0))
+        async with ctx.typing():
+            await msg.add_reaction("❌")
+            for i, member in enumerate(members[:3600]):
+                for reaction in [r for r in msg.reactions if str(reaction.emoji) == "❌"] and reaction.count > 1:
+                    async for user in reaction.users():
+                        if not user.guild_permissions.manage_nicknames:
+                            await msg.remove_reaction(reaction.emoji, user)
+                            continue
+                        return await msg.edit(content="Message Inactive: Operation Cancelled")
+                if (i + 1) % 5 == 0:
+                    await msg.edit(embed=gen_embed(i))
+                try:
+                    if action == "Adding":
+                        await member.add_roles(role)
+                    else:
+                        await member.remove_roles(role)
+                except discord.errors.Forbidden:
+                    if not ctx.guild.me.guild_permissions.manage_roles:
+                        await msg.edit(content="Message Inactive: Missing Permissions")
+                        return await ctx.send("I'm missing permissions to manage roles. Canceling the operation :[")
+                await asyncio.sleep(1)
+                for reaction in msg.reactions:
+                    if str(reaction.emoji) == "❌" and reaction.count > 1:
+                        async for user in reaction.users():
+                            if not user.guild_permissions.manage_nicknames:
+                                await msg.remove_reaction(reaction.emoji, user)
+                                continue
+                            return await msg.edit(content="Message Inactive: Operation Cancelled")
 
     async def warn_user(self, channel, user, reason):
         guild = channel.guild
