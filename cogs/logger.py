@@ -1012,10 +1012,9 @@ class Logger(commands.Cog):
                 e.add_field(name='◈ Changes', value=changes)
                 self.queue[guild_id].append([e, 'updates', time()])
             if before.premium_tier != after.premium_tier:
-                e = create_template_embed()
-                e.description = f"> 》__**Premium Tier Changed**__《" \
-                                f"\n**Before:** [{before.premium_tier}]" \
-                                f"\n**After:** [{after.premium_tier}]"
+                e = discord.Embed(color=pink())
+                action = "lowered" if before.premium_tier > after.premium_tier else "raised"
+                e.description = f"Servers boost level {action} to {after.premium_tier}"
                 self.queue[guild_id].append([e, 'updates', time()])
             if before.premium_subscription_count != after.premium_subscription_count:
                 e = create_template_embed()
