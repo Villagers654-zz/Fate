@@ -27,7 +27,9 @@ class GlobalChat(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.path = './data/userdata/global_chat.json'
+		self.main_channel = 610767401386115091
 		self.config = {}
+		self.index = {}  # Index of messages to delete things globally
 		self.msgs = []
 		self.user_cd = {}
 		self.guild_cd = {}
@@ -37,13 +39,11 @@ class GlobalChat(commands.Cog):
 		self.blocked = []
 		self.last_user = None
 		self.last_channel = None
-		self.banned = [
-			595369406905712650,  # InToXiCAtEd_B¡+€h#0560 - NSFW
-			647469014146351122,  # flashing images
-		]
+		self.banned = []
 		self.mods = [
-			493082973906927616,  # Chaos,
-			611108193275478018  # Eppy
+			bot.config["bot_owner_id"],
+			*bot.config["bot_owner_ids"],
+			493082973906927616,  # Chaos
 		]
 		if path.isfile(self.path):
 			with open(self.path, 'r') as f:
@@ -245,6 +245,10 @@ class GlobalChat(commands.Cog):
 
 				# distribute the msg everywhere
 				async with aiohttp.ClientSession() as session:
+					sent_msgs = []
+					main_id = None
+					if msg.channel.id == self.main_channel:
+						main_id = msg.id
 					for guild_id, conf in list(self.config.items()):
 						if guild_id == str(msg.guild.id):
 							continue
@@ -285,9 +289,31 @@ class GlobalChat(commands.Cog):
 									e.set_image(url=msg.attachments[0].url)
 								elif msg.attachments and not channel.is_nsfw():
 									e.description += f"\n[`filtered image, enable`]"
-								await channel.send(embed=e)
+								m = await channel.send(embed=e)
+							if m.channel.id == self.main_channel:
+								main_id = m.channel.id, m.id
+							else:
+								sent_msgs.append(m.id)
+				self.index[main_id] = m.id
 				self.last_user = msg.author.id
 				self.last_channel = msg.channel.id
+
+	@commands.Cog.listener()
+	async def on_message_delete(self, msg):
+		if msg.channel.id == self.main_channel:
+			if msg.id in self.index:
+				channel_id, msg_id = self.index[msg.id]
+				channel = self.bot.get_channel(channel_id)
+				if channel:
+					try:
+						msg = await channel.fetch_message(msg_id)
+						await msg.delete()
+					except (discord.errors.NotFound, discord.errors.Forbidden):
+						print("error finding and deleting")
+				else:
+					print("Channel not found")
+			else:
+				print("Not in index")
 
 
 def setup(bot):
