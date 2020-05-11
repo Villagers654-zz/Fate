@@ -638,7 +638,8 @@ class Logger(commands.Cog):
                 if last_checkin < now - 60:
                     guild = self.bot.get_guild(int(guild_id))
                     await channel.send(f"The queue for {guild} failed to check in after 1 minute, closing and restarting")
-                    self.tasks[guild_id].cancel()
+                    if guild_id in self.tasks:
+                        self.tasks[guild_id].cancel()
                     task = self.bot.loop.create_task(self.start_queue(guild_id))
                     self.tasks[guild_id] = task
             await asyncio.sleep(10)
