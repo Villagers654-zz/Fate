@@ -245,7 +245,7 @@ class GlobalChat(commands.Cog):
 
 				# distribute the msg everywhere
 				async with aiohttp.ClientSession() as session:
-					sent_msgs = []
+					sent_msgs = {}
 					main_id = None
 					if msg.channel.id == self.main_channel:
 						main_id = msg.id
@@ -288,13 +288,13 @@ class GlobalChat(commands.Cog):
 								if msg.attachments and channel.is_nsfw():
 									e.set_image(url=msg.attachments[0].url)
 								elif msg.attachments and not channel.is_nsfw():
-									e.description += f"\n[`filtered image, enable`]"
+									e.description += f"\n[`filtered image, enable nsfw to start receiving images`]"
 								m = await channel.send(embed=e)
 							if m.channel.id == self.main_channel:
-								main_id = m.channel.id, m.id
+								main_id = m.id
 							else:
-								sent_msgs.append(m.id)
-				self.index[main_id] = m.id
+								sent_msgs[guild_id] = m
+				self.index[main_id] = sent_msgs
 				self.last_user = msg.author.id
 				self.last_channel = msg.channel.id
 
@@ -302,18 +302,12 @@ class GlobalChat(commands.Cog):
 	async def on_message_delete(self, msg):
 		if msg.channel.id == self.main_channel:
 			if msg.id in self.index:
-				channel_id, msg_id = self.index[msg.id]
-				channel = self.bot.get_channel(channel_id)
-				if channel:
-					try:
-						msg = await channel.fetch_message(msg_id)
-						await msg.delete()
-					except (discord.errors.NotFound, discord.errors.Forbidden):
-						print("error finding and deleting")
-				else:
-					print("Channel not found")
-			else:
-				print("Not in index")
+				for guild_id, config in list(self.config.items()):
+					if guild_id in self.index[msg.id] and self.index[msg.id][guild_id]:
+						try:
+							await self.index[msg.id][guild_id].delete()
+						except discord.errors.Forbidden:
+							pass
 
 
 def setup(bot):
