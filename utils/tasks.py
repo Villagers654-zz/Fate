@@ -145,7 +145,7 @@ class Tasks:
 
 		run_automatic_backups = True  # Toggle automatic backups
 		# backup_interval = 21600     # Backup every 6 hours
-		backup_interval = 3600        # Backup interval in seconds
+		backup_interval = 3600 * 4    # Backup interval in seconds
 		keep_for = 7                  # Days to keep each backup
 		while run_automatic_backups:
 			await asyncio.sleep(backup_interval)
@@ -168,8 +168,11 @@ class Tasks:
 				for backup in sftp.listdir(root):
 					backup_time = datetime.strptime(backup.split('_')[1].strip('.zip'), '%Y-%m-%d %H:%M:%S.%f')
 					if (datetime.now() - backup_time).days > keep_for:
-						sftp.remove(backup)
-						self.bot.log(f"Removed backup {backup}")
+						try:
+							sftp.remove(backup)
+							self.bot.log(f"Removed backup {backup}")
+						except FileNotFoundError:
+							pass
 
 				# Transfer then remove the local backup
 				sftp.put(fp, os.path.join(root, fp))
