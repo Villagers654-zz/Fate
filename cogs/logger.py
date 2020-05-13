@@ -99,7 +99,7 @@ class Logger(commands.Cog):
         self.config[guild_id]['channel'] = category.id
         return category
 
-    async def wait_for_permission(self, guild, permission: str):
+    async def wait_for_permission(self, guild, permission: str, channel=None):
         """Notify the owner of missing permissions and wait until they've been granted"""
 
         # Keep a 'process list' of sorts to prevent multiple events using this
@@ -115,12 +115,20 @@ class Logger(commands.Cog):
 
         for _attempt in range(12 * 60):  # Timeout of 12 hours
             # Check if you have the required permission
-            if eval(f"guild.me.guild_permissions.{permission}"):
-                if parent:
-                    self.wait_queue[guild_id].remove(permission)
-                    if not self.wait_queue[guild_id]:
-                        del self.wait_queue[guild_id]
-                break
+            if channel:
+                if eval(f"channel.permissions_for(guild.me).{permission}"):
+                    if parent:
+                        self.wait_queue[guild_id].remove(permission)
+                        if not self.wait_queue[guild_id]:
+                            del self.wait_queue[guild_id]
+                    break
+            else:
+                if eval(f"guild.me.guild_permissions.{permission}"):
+                    if parent:
+                        self.wait_queue[guild_id].remove(permission)
+                        if not self.wait_queue[guild_id]:
+                            del self.wait_queue[guild_id]
+                    break
 
             # See if the bot can send a dm notice
             # This is only used by the parent to prevent API spam
@@ -177,6 +185,10 @@ class Logger(commands.Cog):
                 self.recent_logs[guild_id] = {
                     Type: [] for Type in self.channel_types
                 }
+        err_channel = self.bot.get_channel(577661461543780382)
+        dm = guild.owner.dm_channel
+        if not dm:
+            dm = await guild.owner.create_dm()
 
         while True:
             while not self.queue[guild_id]:
@@ -202,119 +214,118 @@ class Logger(commands.Cog):
 
                 embed.timestamp = datetime.fromtimestamp(logged_at)
 
-                if self.config[guild_id]['secure'] and not guild.me.guild_permissions.administrator:
-                    del self.last_checkin[guild_id]
+                # Permission checks to ensure the secure features can function
+                del self.last_checkin[guild_id]
+                if self.config[guild_id]['secure']:
                     result = await self.wait_for_permission(guild, "administrator")
                     if not result:
                         del self.config[guild_id]
                         del self.last_checkin[guild_id]
                         return self.save_data()
-                    self.last_checkin[guild_id] = time()
 
+                # Ensure the channel still exists
                 category = self.bot.get_channel(self.config[guild_id]['channel'])
-                cant_find = False
-                while not category:
-                    self.last_checkin[guild_id] = time()
+                if not category:
+                    if not guild.me.guild_permissions.manage_channels:
+                        result = await self.wait_for_permission(guild, "manage_channels")
+                        if not result:
+                            del self.config[guild_id]
+                            return self.save_data()
                     try:
                         category = await self.bot.fetch_channel(self.config[guild_id]['channel'])
-                    except (discord.errors.Forbidden, discord.errors.NotFound):
-                        try:
-                            if log_type == 'multi':
-                                category = await self.initiate_category(guild)
-                                self.save_data()
-                            elif log_type == 'single':
-                                category = await guild.create_text_channel(name='bot-logs')
-                                self.config[guild_id]['channel'] = category.id
+                    except discord.errors.NotFound:
+                        if log_type == 'multi':
+                            category = await self.initiate_category(guild)
                             self.save_data()
-                            break
-                        except discord.errors.Forbidden:
-                            cant_find = True
-                            break
-                    else:
-                        break
+                        elif log_type == 'single':
+                            category = await guild.create_text_channel(name='bot-logs')
+                            self.config[guild_id]['channel'] = category.id
+                        self.save_data()
 
-                if cant_find:
-                    del self.last_checkin[guild_id]
-                    dm = None
-                    for _attempt in range(24 * 60):
-                        try:
-                            category = await self.bot.fetch_channel(self.config[guild_id]['channel'])
-                        except (discord.errors.NotFound, discord.errors.Forbidden):
-                            pass
-                        else:
-                            break
-                        if guild.me.guild_permissions.manage_channels:
-                            if log_type == 'multi':
-                                category = await self.initiate_category(guild)
-                                self.save_data()
-                            elif log_type == 'single':
-                                category = await guild.create_text_channel(name='bot-logs')
-                                self.config[guild_id]['channel'] = category.id
-                            self.save_data()
-                            break
-                        try:
-                            if not dm:
-                                dm = guild.owner.dm_channel
-                            if not dm:
-                                dm = await guild.owner.create_dm()
-                            async for msg in dm.history(limit=1):
-                                if "I can't access my log channel" not in msg.content:
-                                    await guild.owner.send(
-                                        f"I can't access my log channel in {guild}, or create a new one. "
-                                        f"Until I can, I'll keep a maximum 12 hours of logs in queue"
-                                    )
-                        except (discord.errors.Forbidden, discord.errors.NotFound):
-                            pass
-                        await asyncio.sleep(60)
-                    else:
+                # Ensure basic send-embed level permissions
+                if isinstance(category, discord.TextChannel):
+                    result = await self.wait_for_permission(guild, "send_messages", category)
+                    if not result:
+                        del self.config[guild_id]
+                        return self.save_data()
+                    result = await self.wait_for_permission(guild, "embed_links", category)
+                    if not result:
                         del self.config[guild_id]
                         return self.save_data()
 
                 self.last_checkin[guild_id] = time()
 
-                try:
-                    if isinstance(category, discord.TextChannel):  # single channel log
+                if isinstance(category, discord.TextChannel):  # single channel log
+                    try:
+                        await category.send(embed=embed, files=files)
+                    except (discord.errors.Forbidden, discord.errors.NotFound):
+                        e = discord.Embed(title='Failed to send embed')
+                        e.set_author(name=guild if guild else "Unknown Guild")
+                        for text_group in self.bot.utils.split(str(json.dumps(embed.to_dict(), indent=2)), 1990):
+                            e.add_field(name="Embed Data", value=text_group, inline=False)
+                        e.set_footer(text=str(guild.id) if guild else "Unknown Guild")
                         try:
-                            await category.send(embed=embed, files=files)
+                            await category.send(embed=e)
+                        except (discord.errors.Forbidden, discord.errors.NotFound):
+                            break
+                        await err_channel.send(embed=e)
+                        continue
+                    if file_paths:
+                        for file in file_paths:
+                            if os.path.isfile(file):
+                                os.remove(file)
+                    self.queue[guild_id].remove(list_obj)
+                    self.recent_logs[guild_id].append([embed, logged_at])
+
+                for Type, channel_id in self.config[guild_id]['channels'].items():
+                    if Type == channelType:
+                        channel = self.bot.get_channel(channel_id)
+                        if not channel:
+
+                            # Ensure send-embed level permissions
+                            if not guild.me.guild_permissions.manage_channels:
+                                del self.last_checkin[guild_id]
+                                result = await self.wait_for_permission(guild, "manage_channels")
+                                if not result:
+                                    del self.config[guild_id]
+                                    return self.save_data()
+                                self.last_checkin[guild_id] = time()
+                            result = await self.wait_for_permission(guild, "send_messages", channel)
+                            if not result:
+                                del self.config[guild_id]
+                                return self.save_data()
+                            result = await self.wait_for_permission(guild, "embed_links", channel)
+                            if not result:
+                                del self.config[guild_id]
+                                return self.save_data()
+
+                            channel = await guild.create_text_channel(
+                                name=channelType,
+                                category=category
+                            )
+                            self.config[guild_id]['channels'][Type] = channel.id
+                            self.save_data()
+                        try:
+                            await channel.send(embed=embed, files=files)
                         except (discord.errors.Forbidden, discord.errors.NotFound):
                             e = discord.Embed(title='Failed to send embed')
-                            e.description = f'```{json.dumps(embed.to_dict(), indent=2)}```'
-                            await category.send(embed=e)
+                            e.set_author(name=guild if guild else "Unknown Guild")
+                            for text_group in self.bot.utils.split(str(json.dumps(embed.to_dict(), indent=2)), 1990):
+                                e.add_field(name="Embed Data", value=text_group, inline=False)
+                            e.set_footer(text=str(guild.id) if guild else "Unknown Guild")
+                            try:
+                                await channel.send(embed=e)
+                            except (discord.errors.Forbidden, discord.errors.NotFound):
+                                break
+                            await err_channel.send(embed=e)
+                            continue
                         if file_paths:
                             for file in file_paths:
                                 if os.path.isfile(file):
                                     os.remove(file)
                         self.queue[guild_id].remove(list_obj)
-                        self.recent_logs[guild_id].append([embed, logged_at])
-
-                    for Type, channel_id in self.config[guild_id]['channels'].items():
-                        if Type == channelType:
-                            channel = self.bot.get_channel(channel_id)
-                            if not channel:
-                                channel = await guild.create_text_channel(
-                                    name=channelType,
-                                    category=category
-                                )
-                                self.config[guild_id]['channels'][Type] = channel.id
-                                self.save_data()
-                            try:
-                                await channel.send(embed=embed, files=files)
-                            except (discord.errors.NotFound, discord.errors.Forbidden):
-                                e = discord.Embed(title='Failed to send embed')
-                                e.description = f'```json\n{json.dumps(embed.to_dict(), indent=2)}```'
-                                await channel.send(embed=e)
-                            if file_paths:
-                                for file in file_paths:
-                                    if os.path.isfile(file):
-                                        os.remove(file)
-                            self.queue[guild_id].remove(list_obj)
-                            self.recent_logs[guild_id][channelType].append([embed, logged_at])
-                            break
-                except (discord.errors.HTTPException, discord.errors.Forbidden, discord.errors.NotFound):
-                    err_channel = self.bot.get_channel(577661461543780382)
-                    await err_channel.send(f"Secure Log Error\n{str(traceback.format_exc())[-1980:]}")
-                    for text_group in self.bot.utils.split(str(json.dumps(embed.to_dict(), indent=2)), 1980):
-                        await err_channel.send(f'```json\n{text_group}```')
+                        self.recent_logs[guild_id][channelType].append([embed, logged_at])
+                        break
                     self.queue[guild_id].remove([embed, channelType, logged_at])
                 self.last_checkin[guild_id] = time()
 
