@@ -186,9 +186,6 @@ class Logger(commands.Cog):
                     Type: [] for Type in self.channel_types
                 }
         err_channel = self.bot.get_channel(577661461543780382)
-        dm = guild.owner.dm_channel
-        if not dm:
-            dm = await guild.owner.create_dm()
 
         while True:
             while not self.queue[guild_id]:
@@ -220,7 +217,6 @@ class Logger(commands.Cog):
                     result = await self.wait_for_permission(guild, "administrator")
                     if not result:
                         del self.config[guild_id]
-                        del self.last_checkin[guild_id]
                         return self.save_data()
 
                 # Ensure the channel still exists
@@ -280,16 +276,15 @@ class Logger(commands.Cog):
                 for Type, channel_id in self.config[guild_id]['channels'].items():
                     if Type == channelType:
                         channel = self.bot.get_channel(channel_id)
-                        if not channel:
 
-                            # Ensure send-embed level permissions
+                        # Ensure send-embed level permissions
+                        del self.last_checkin[guild_id]
+                        if not channel:
                             if not guild.me.guild_permissions.manage_channels:
-                                del self.last_checkin[guild_id]
                                 result = await self.wait_for_permission(guild, "manage_channels")
                                 if not result:
                                     del self.config[guild_id]
                                     return self.save_data()
-                                self.last_checkin[guild_id] = time()
                             result = await self.wait_for_permission(guild, "send_messages", channel)
                             if not result:
                                 del self.config[guild_id]
@@ -305,6 +300,7 @@ class Logger(commands.Cog):
                             )
                             self.config[guild_id]['channels'][Type] = channel.id
                             self.save_data()
+                        self.last_checkin[guild_id] = time()
                         try:
                             await channel.send(embed=embed, files=files)
                         except (discord.errors.Forbidden, discord.errors.NotFound):
@@ -646,14 +642,14 @@ class Logger(commands.Cog):
         while True:
             now = time()
             for guild_id, last_checkin in list(self.last_checkin.items()):
-                if last_checkin < now - 60:
+                if last_checkin < now - 60 * 60 * 24:
                     guild = self.bot.get_guild(int(guild_id))
                     await channel.send(f"The queue for {guild} failed to check in after 1 minute, closing and restarting")
                     if guild_id in self.tasks:
                         self.tasks[guild_id].cancel()
                     task = self.bot.loop.create_task(self.start_queue(guild_id))
                     self.tasks[guild_id] = task
-            await asyncio.sleep(10)
+            await asyncio.sleep(60)
 
     @commands.Cog.listener()
     async def on_message(self, msg):
