@@ -20,7 +20,7 @@ from utils import utils, colors
 
 cache = {}  # Keep track of what commands are still being ran
             # This should empty out as quickly as it's filled
-
+cls = None  # type: Moderation
 
 def check_if_running():
     """ Checks if the command is already in progress """
@@ -42,6 +42,8 @@ def has_required_permissions(**kwargs):
     async def predicate(ctx):
         with open('./data/userdata/moderation.json', 'r') as f:
             config = json.load(f)  # type: dict
+        if str(ctx.guild.id) not in config:
+            config[str(ctx.guild.id)] = cls.template
         config = config[str(ctx.guild.id)]  # type: dict
         if ctx.command.name in config['commands']:
             allowed = config['commands'][ctx.command.name]  # type: dict
@@ -55,6 +57,19 @@ def has_required_permissions(**kwargs):
             return True
         perms = ctx.author.guild_permissions
         return all((perm, value) in list(perms) for perm, value in kwargs.items())
+    return commands.check(predicate)
+
+
+def has_warn_permission():
+    async def predicate(ctx):
+        config = cls.template
+        guild_id = str(ctx.guild.id)
+        if guild_id in cls.config:
+            config = cls.config[guild_id]
+        if ctx.author.id in config['commands']['warn']:
+            return True
+        elif ctx.author.guild_permissions.administrator:
+            return True
     return commands.check(predicate)
 
 
@@ -120,6 +135,7 @@ class Moderation(commands.Cog):
         if str(ctx.guild.id) not in self.config:
             self.config[str(ctx.guild.id)] = self.template
             self.save_data()
+        ctx.cls = self
 
     async def cog_after_invoke(self, ctx):
         """ Index commands that are running """
@@ -720,7 +736,7 @@ class Moderation(commands.Cog):
     @check_if_running()
     @has_required_permissions(manage_roles=True)
     @commands.bot_has_guild_permissions(manage_roles=True)
-    async def mass_role(self, ctx, *, role: Union[discord.Role, str]):
+    async def mass_role(self, ctx, *, role):
         def gen_embed(iteration):
             e = discord.Embed(color=colors.fate())
             e.set_author(name=f"Mass {action} Roles", icon_url=ctx.author.avatar_url)
@@ -750,6 +766,7 @@ class Moderation(commands.Cog):
 
         role = role.lstrip("+")
         action = "Adding"
+        i = 0
         if role.startswith("-"):
             action = "Removing"
             role = role.lstrip("-")
@@ -759,7 +776,7 @@ class Moderation(commands.Cog):
         members = [
             member for member in ctx.guild.members
             if member.top_role.position < ctx.author.top_role.position
-               and member.author.top_role.position < ctx.guild.me.top_role.position
+               and member.top_role.position < ctx.guild.me.top_role.position
                and (role not in member.roles if action == "Adding"
                     else role in member.roles)
         ]
@@ -770,15 +787,18 @@ class Moderation(commands.Cog):
         else:
             msg = await ctx.send(embed=gen_embed(0))
         async with ctx.typing():
-            await msg.add_reaction("❌")
+            react = await msg.add_reaction("❌")
             for i, member in enumerate(members[:3600]):
-                for reaction in [r for r in msg.reactions if str(reaction.emoji) == "❌"] and reaction.count > 1:
+                for reaction in [r for r in msg.reactions if react is r]:
+                    if reaction.count == 1:
+                        continue
                     async for user in reaction.users():
-                        if not user.guild_permissions.manage_nicknames:
+                        if user.guild_permissions.manage_nicknames:
                             await msg.remove_reaction(reaction.emoji, user)
                             continue
                         return await msg.edit(content="Message Inactive: Operation Cancelled")
                 if (i + 1) % 5 == 0:
+                    msg = await ctx.channel.fetch_message(msg.id)
                     await msg.edit(embed=gen_embed(i))
                 try:
                     if action == "Adding":
@@ -797,6 +817,7 @@ class Moderation(commands.Cog):
                                 await msg.remove_reaction(reaction.emoji, user)
                                 continue
                             return await msg.edit(content="Message Inactive: Operation Cancelled")
+            await msg.edit(content="Operation Complete", embed=gen_embed(i))
 
     async def warn_user(self, channel, user, reason):
         guild = channel.guild
@@ -919,18 +940,6 @@ class Moderation(commands.Cog):
             except:
                 await channel.send('Failed to ban this user')
 
-    def has_warn_permission(self):
-        async def predicate(ctx):
-            config = self.template
-            guild_id = str(ctx.guild.id)
-            if guild_id in self.config:
-                config = self.config[guild_id]
-            if ctx.author.id in config['commands']['warn']:
-                return True
-            elif ctx.author.guild_permissions.administrator:
-                return True
-        return commands.check(predicate)
-
     @commands.command(name='warn')
     @commands.cooldown(*utils.default_cooldown())
     @check_if_running()
@@ -941,4 +950,6 @@ class Moderation(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Moderation(bot))
+    cls = Moderation(bot)
+    globals()["cls"] = cls
+    bot.add_cog(cls)
