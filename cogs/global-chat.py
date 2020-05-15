@@ -30,6 +30,7 @@ class GlobalChat(commands.Cog):
 		self.main_channel = 610767401386115091
 		self.config = {}
 		self.index = {}  # Index of messages to delete things globally
+		self.msg_index = {}
 		self.msgs = []
 		self.user_cd = {}
 		self.guild_cd = {}
@@ -294,6 +295,7 @@ class GlobalChat(commands.Cog):
 								main_id = m.id
 							else:
 								sent_msgs[guild_id] = m
+							self.msg_index[m.id] = msg
 				self.index[main_id] = sent_msgs
 				self.last_user = msg.author.id
 				self.last_channel = msg.channel.id
@@ -308,6 +310,21 @@ class GlobalChat(commands.Cog):
 							await self.index[msg.id][guild_id].delete()
 						except discord.errors.Forbidden:
 							pass
+
+	@commands.Cog.listener()
+	async def on_reaction_add(self, reaction, user):
+		msg = reaction.message
+		guild = msg.guild
+		if guild and str(guild.id) in self.config:
+			if msg.channel.id == self.config[str(guild.id)]["channel"]:
+				if msg.id in self.msg_index:
+					if not self.msg_index[msg.id]:
+						del self.msg_index[msg.id]
+						return
+					m = self.msg_index[msg.id]  # type: discord.Message
+					information = f"```From {m.author}\nWith Display Name Of {m.author.display_name}\nIn {m.guild}" \
+					              f"\nWith UserID: {m.author.id}\nAnd GuildID: {m.guild.id}```"
+					await msg.edit(content=information)
 
 
 def setup(bot):
