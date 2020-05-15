@@ -166,7 +166,6 @@ class Logger(commands.Cog):
         + can wait to send logs
         + archives the last 50-175 logs to
         be able to resend if deleted """
-
         guild = self.bot.get_guild(int(guild_id))
         index = 1
         while not guild:
@@ -322,7 +321,6 @@ class Logger(commands.Cog):
                         self.queue[guild_id].remove(list_obj)
                         self.recent_logs[guild_id][channelType].append([embed, logged_at])
                         break
-                    self.queue[guild_id].remove([embed, channelType, logged_at])
                 self.last_checkin[guild_id] = time()
 
                 if log_type == 'multi':
@@ -642,7 +640,7 @@ class Logger(commands.Cog):
         while True:
             now = time()
             for guild_id, last_checkin in list(self.last_checkin.items()):
-                if last_checkin < now - 60 * 60 * 24:
+                if last_checkin < now - 60:
                     guild = self.bot.get_guild(int(guild_id))
                     await channel.send(f"The queue for {guild} failed to check in after 1 minute, closing and restarting")
                     if guild_id in self.tasks:
