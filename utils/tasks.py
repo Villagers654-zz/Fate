@@ -145,7 +145,7 @@ class Tasks:
 
 		run_automatic_backups = True  # Toggle automatic backups
 		# backup_interval = 21600     # Backup every 6 hours
-		backup_interval = 3600 * 4    # Backup interval in seconds
+		backup_interval = 3600 * 12    # Backup interval in seconds
 		keep_for = 7                  # Days to keep each backup
 		while run_automatic_backups:
 			await asyncio.sleep(backup_interval)
