@@ -649,7 +649,7 @@ class Moderation(commands.Cog):
         if not e.fields:
             e.colour = colors.red()
             e.set_author(name="Couldn't ban any of the specified user(s)")
-            await msg.edit(embed=e)
+        await msg.edit(embed=e)
 
     @commands.command(name='unban')
     @commands.cooldown(*utils.default_cooldown())
