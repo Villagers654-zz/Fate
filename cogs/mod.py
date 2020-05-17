@@ -652,7 +652,9 @@ class Mod(commands.Cog):
 		reason = f"{ctx.author}: {reason}"
 		users_to_ban = len(ids if ids else []) + len(users if users else [])
 		e = discord.Embed(color=colors.fate())
-		if users_to_ban > 1:
+		if users_to_ban == 0:
+			return await ctx.send("You need to specify who to ban")
+		elif users_to_ban > 1:
 			e.set_author(name=f"Banning {users_to_ban} user{'' if users_to_ban > 1 else ''}", icon_url=ctx.author.avatar_url)
 		e.set_thumbnail(url='https://cdn.discordapp.com/attachments/514213558549217330/514345278669848597/8yx98C.gif')
 		msg = await ctx.send(embed=e)
@@ -663,7 +665,7 @@ class Mod(commands.Cog):
 					e.add_field(name=f'◈ Failed to ban {member}', value="This users is above your paygrade", inline=False)
 					await msg.edit(embed=e)
 					continue
-				if member.top_role.position >= ctx.guild.me.top_role.position:
+				elif member.top_role.position >= ctx.guild.me.top_role.position:
 					e.add_field(name=f'◈ Failed to ban {member}', value="I can't ban this user", inline=False)
 					await msg.edit(embed=e)
 					continue
@@ -688,6 +690,11 @@ class Mod(commands.Cog):
 					continue
 			await ctx.guild.ban(user, reason=reason)
 			e.add_field(name=f'◈ Banned {user}', value=f'Reason: {reason}', inline=False)
+		if not e.fields:
+			e.colour = colors.red()
+			e.set_author(name="Couldn't ban any of the specified user(s)")
+			await msg.edit(embed=e)
+		await msg.edit(embed=e)
 
 	@commands.command(name='kick')
 	@commands.guild_only()
@@ -1255,8 +1262,6 @@ class Mod(commands.Cog):
 			return await ctx.send("User not found")
 		if user.top_role.position >= ctx.author.top_role.position:
 			return await ctx.send("That user is above your paygrade, take a seat")
-		if user.id == self.bot.user.id:
-			return await ctx.send('nO')
 		if not reason:
 			reason = "unspecified"
 		user_id = str(user.id)
