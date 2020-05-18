@@ -407,7 +407,7 @@ class Mod(commands.Cog):
 	@commands.command(name='restricted')
 	@commands.guild_only()
 	@commands.cooldown(1, 3, commands.BucketType.user)
-	@commands.has_permissions(administrator=True)
+	@commands.bot_has_permissions(embed_links=True)
 	async def restricted(self, ctx):
 		guild_id = str(ctx.guild.id)
 		config = self.bot.get_config  # type: dict
