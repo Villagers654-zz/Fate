@@ -89,7 +89,7 @@ class Fate(commands.AutoShardedBot):
             await self.pool.wait_closed()
             self.log("Pool was successfully closed", "INFO")
         sql = outh.MySQL()
-        for _ in range(5):
+        for _attempt in range(5):
             try:
                 pool = await aiomysql.create_pool(
                     host=sql.host,
@@ -210,7 +210,6 @@ logger.addHandler(handler)
 # Initialize the bot
 bot = Fate(max_messages=16000, case_insensitive=True)
 bot.remove_command('help')  # Default help command
-
 
 @bot.event
 async def on_shard_ready(shard_id):

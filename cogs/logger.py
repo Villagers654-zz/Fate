@@ -205,7 +205,10 @@ class Logger(commands.Cog):
                     files = [discord.File(file) for file in file_paths if os.path.isfile(file)]
 
                 for i, field in enumerate(embed.fields):
-                    if not field.value:
+                    if not field.value or field.value is discord.Embed.Empty:
+                        self.bot.log(f"A log of type {channelType} had no value", "CRITICAL")
+                        for chunk in self.bot.utils.split(str(embed.to_dict()), 1900):
+                            self.bot.log(chunk, "CRITICAL")
                         embed.fields[i].value = 'None'
 
                 embed.timestamp = datetime.fromtimestamp(logged_at)
@@ -249,6 +252,15 @@ class Logger(commands.Cog):
                         return self.save_data()
 
                 self.last_checkin[guild_id] = time()
+
+                # Ensure this still exists
+                if guild_id not in self.recent_logs:
+                    if self.config[guild_id]['type'] == 'single':
+                        self.recent_logs[guild_id] = []
+                    else:
+                        self.recent_logs[guild_id] = {
+                            Type: [] for Type in self.channel_types
+                        }
 
                 if isinstance(category, discord.TextChannel):  # single channel log
                     try:
@@ -318,20 +330,26 @@ class Logger(commands.Cog):
                             for file in file_paths:
                                 if os.path.isfile(file):
                                     os.remove(file)
-                        self.queue[guild_id].remove(list_obj)
+                        try:
+                            self.queue[guild_id].remove(list_obj)
+                        except IndexError:
+                            pass
                         self.recent_logs[guild_id][channelType].append([embed, logged_at])
                         break
                 self.last_checkin[guild_id] = time()
 
-                if log_type == 'multi':
-                    # noinspection PyUnboundLocalVariable
-                    for log in self.recent_logs[guild_id][channelType]:
-                        if time() - log[1] > 60*60*24:
-                            self.recent_logs[guild_id][channelType].remove(log)
-                elif log_type == 'single':
-                    for log in self.recent_logs[guild_id]:
-                        if time() - log[1] > 60*60*24:
-                            self.recent_logs[guild_id].remove(log)
+                try:
+                    if log_type == 'multi':
+                        # noinspection PyUnboundLocalVariable
+                        for log in self.recent_logs[guild_id][channelType]:
+                            if time() - log[1] > 60*60*24:
+                                self.recent_logs[guild_id][channelType].remove(log)
+                    elif log_type == 'single':
+                        for log in self.recent_logs[guild_id]:
+                            if time() - log[1] > 60*60*24:
+                                self.recent_logs[guild_id].remove(log)
+                except Exception as e:
+                    await err_channel.send(f"Error cleaning out older logs\n{e}")
                 await asyncio.sleep(0.21)
 
     async def init_invites(self):
