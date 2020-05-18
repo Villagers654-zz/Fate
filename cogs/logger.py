@@ -16,7 +16,6 @@ import json
 import os
 from datetime import datetime, timedelta
 import requests
-import traceback
 from time import time
 
 from discord.ext import commands
@@ -64,7 +63,6 @@ class Logger(commands.Cog):
         self.static = {}
         self.tasks = {}
         self.wait_queue = {}
-        self.last_checkin = {}
 
         self.invites = {}
         if self.bot.is_ready():
@@ -184,17 +182,14 @@ class Logger(commands.Cog):
                 self.recent_logs[guild_id] = {
                     Type: [] for Type in self.channel_types
                 }
-        err_channel = self.bot.get_channel(577661461543780382)
 
         while True:
             while not self.queue[guild_id]:
-                self.last_checkin[guild_id] = time()
                 await asyncio.sleep(1.21)
 
             log_type = self.config[guild_id]['type']  # type: str
 
             for embed, channelType, logged_at in self.queue[guild_id][-175:]:
-                self.last_checkin[guild_id] = time()
                 list_obj = [embed, channelType, logged_at]
                 file_paths = []
                 files = []
@@ -214,7 +209,6 @@ class Logger(commands.Cog):
                 embed.timestamp = datetime.fromtimestamp(logged_at)
 
                 # Permission checks to ensure the secure features can function
-                del self.last_checkin[guild_id]
                 if self.config[guild_id]['secure']:
                     result = await self.wait_for_permission(guild, "administrator")
                     if not result:
@@ -251,8 +245,6 @@ class Logger(commands.Cog):
                         del self.config[guild_id]
                         return self.save_data()
 
-                self.last_checkin[guild_id] = time()
-
                 # Ensure this still exists
                 if guild_id not in self.recent_logs:
                     if self.config[guild_id]['type'] == 'single':
@@ -275,7 +267,6 @@ class Logger(commands.Cog):
                             await category.send(embed=e)
                         except (discord.errors.Forbidden, discord.errors.NotFound):
                             break
-                        await err_channel.send(embed=e)
                         continue
                     if file_paths:
                         for file in file_paths:
@@ -289,7 +280,6 @@ class Logger(commands.Cog):
                         channel = self.bot.get_channel(channel_id)
 
                         # Ensure send-embed level permissions
-                        del self.last_checkin[guild_id]
                         if not channel:
                             if not guild.me.guild_permissions.manage_channels:
                                 result = await self.wait_for_permission(guild, "manage_channels")
@@ -311,7 +301,6 @@ class Logger(commands.Cog):
                             )
                             self.config[guild_id]['channels'][Type] = channel.id
                             self.save_data()
-                        self.last_checkin[guild_id] = time()
                         try:
                             await channel.send(embed=embed, files=files)
                         except (discord.errors.Forbidden, discord.errors.NotFound):
@@ -324,7 +313,6 @@ class Logger(commands.Cog):
                                 await channel.send(embed=e)
                             except (discord.errors.Forbidden, discord.errors.NotFound):
                                 break
-                            await err_channel.send(embed=e)
                             continue
                         if file_paths:
                             for file in file_paths:
@@ -336,20 +324,16 @@ class Logger(commands.Cog):
                             pass
                         self.recent_logs[guild_id][channelType].append([embed, logged_at])
                         break
-                self.last_checkin[guild_id] = time()
 
-                try:
-                    if log_type == 'multi':
-                        # noinspection PyUnboundLocalVariable
-                        for log in self.recent_logs[guild_id][channelType]:
-                            if time() - log[1] > 60*60*24:
-                                self.recent_logs[guild_id][channelType].remove(log)
-                    elif log_type == 'single':
-                        for log in self.recent_logs[guild_id]:
-                            if time() - log[1] > 60*60*24:
-                                self.recent_logs[guild_id].remove(log)
-                except Exception as e:
-                    await err_channel.send(f"Error cleaning out older logs\n{e}")
+                if log_type == 'multi':
+                    # noinspection PyUnboundLocalVariable
+                    for log in self.recent_logs[guild_id][channelType]:
+                        if time() - log[1] > 60*60*24:
+                            self.recent_logs[guild_id][channelType].remove(log)
+                elif log_type == 'single':
+                    for log in self.recent_logs[guild_id]:
+                        if time() - log[1] > 60*60*24:
+                            self.recent_logs[guild_id].remove(log)
                 await asyncio.sleep(0.21)
 
     async def init_invites(self):
@@ -370,9 +354,6 @@ class Logger(commands.Cog):
 
     async def search_audit(self, guild, *actions):
         """ Returns the latest entry from a list of actions """
-        async def search():
-
-            return dat
         dat = {
             'user': 'Unknown',
             'actual_user': None,
@@ -651,18 +632,16 @@ class Logger(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         for guild_id in self.config.keys():
-            task = self.bot.loop.create_task(self.start_queue(guild_id))
-            self.tasks[guild_id] = task
+            if guild_id in self.tasks and not self.tasks[guild_id].done():
+                task = self.bot.loop.create_task(self.start_queue(guild_id))
+                self.tasks[guild_id] = task
         self.bot.tasks.start(self.init_invites)
         channel = self.bot.get_channel(541520201926311986)
         while True:
-            now = time()
-            for guild_id, last_checkin in list(self.last_checkin.items()):
-                if last_checkin < now - 60:
+            for guild_id, task in self.tasks.items():
+                if task.done():
                     guild = self.bot.get_guild(int(guild_id))
-                    await channel.send(f"The queue for {guild} failed to check in after 1 minute, closing and restarting")
-                    if guild_id in self.tasks:
-                        self.tasks[guild_id].cancel()
+                    await channel.send(f"The queue task for {guild} unexpectedly completed, here's the result\n```python\n{str(task.result())[:1900]}```")
                     task = self.bot.loop.create_task(self.start_queue(guild_id))
                     self.tasks[guild_id] = task
             await asyncio.sleep(60)
