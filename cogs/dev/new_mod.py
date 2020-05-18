@@ -107,9 +107,7 @@ class Moderation(commands.Cog):
                 "ban": {'users': [], 'roles': []}
             },
             "warns": {},
-            "config": {
-                "mute_role": None  # type: Optional[None, discord.Role.id]
-            },
+            "mute_role": None,  # type: Optional[None, discord.Role.id]
             "timers": [],
             "mute_timers": {}
         }
@@ -150,6 +148,20 @@ class Moderation(commands.Cog):
         """ Save things like channel restrictions """
         with open('./data/userdata/config.json', 'w') as f:
             json.dump(config, f, ensure_ascii=False)
+
+    @commands.command(name="mute-role", aliases=["muterole"])
+    @commands.guild_only()
+    @commands.cooldown(1, 3, commands.BucketType.user)
+    @commands.has_permissions(manage_roles=True)
+    async def mute_role(self, ctx, *, role):
+        role = await self.bot.utils.get_role(ctx, role)
+        if not role:
+            return await ctx.send("Role not found")
+        if role.position >= ctx.author.top_role.position and not ctx.author.id == ctx.guild.owner.id:
+            return await ctx.send("That role's above your paygrade, take a seat.")
+        self.config[str(ctx.guild.id)]["mute_role"] = role.id
+        await ctx.send(f"Set the mute role to {role.name}")
+        self.save_data()
 
     @commands.command(name='restrict')
     @commands.guild_only()
@@ -476,7 +488,12 @@ class Moderation(commands.Cog):
                 if not role:
                     perms = ctx.guild.me.guild_permissions
                     if not perms.manage_channels or not perms.manage_roles:
-                        return await ctx.send('No muted role found, and I\'m missing manage_channel permissions to set one up')
+                        p = self.bot.utils.get_prefix(ctx)
+                        return await ctx.send(
+                            "No muted role found, and I\'m missing manage_role and manage_channel permissions to set "
+                            f"one up. You can set a mute role manually with `{p}mute-role @role` which of course doesn't "
+                            f"have to be a role mention, and can just the roles name."
+                        )
                     mute_role = await ctx.guild.create_role(name="Muted", color=discord.Color(colors.black()))
 
                     # Set the overwrites for the mute role
