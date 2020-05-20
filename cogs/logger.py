@@ -825,7 +825,7 @@ class Logger(commands.Cog):
                     "Channel": msg.channel.mention,
                     "Deleted by": dat['user']
                 })
-                for text_group in self.bot.utils.split(msg.content):
+                for text_group in self.bot.utils.split(msg.content, 1024):
                     e.add_field(name='◈ MSG Content', value=text_group, inline=False)
                 if msg.embeds:
                     e.set_footer(text='⇓ Embed ⇓')
@@ -1610,3 +1610,10 @@ class Logger(commands.Cog):
 
 def setup(bot):
     bot.add_cog(Logger(bot))
+
+
+def teardown(bot):
+    cog = bot.get_cog("Logger")  # type: Logger
+    for task in cog.tasks.values():
+        if not task.done():
+            task.cancel()
