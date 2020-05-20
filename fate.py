@@ -157,9 +157,10 @@ class Fate(commands.AutoShardedBot):
             elif level == 'INFO':
                 cprint(msg, color if color else 'green')
             elif level == 'CRITICAL':
+                cprint(msg, color if color else 'red')
                 owner = self.get_user(self.config["bot_owner_id"])
                 mention = f"{owner.mention} something went terribly wrong" if owner else "Critical Error\n"
-                cprint(mention + msg, color if color else 'red')
+                msg = mention + msg
             lines.append(msg)
         if tb:
             cprint(str(tb), color if color else 'red')
