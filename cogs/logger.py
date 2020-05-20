@@ -205,6 +205,18 @@ class Logger(commands.Cog):
                         for chunk in self.bot.utils.split(str(embed.to_dict()), 1900):
                             self.bot.log(chunk, "CRITICAL")
                         embed.fields[i].value = 'None'
+                    if len(field.value) > 1024:
+                        embed.remove_field(i)
+                        for iter, chunk in enumerate(self.bot.utils.split(field.value, 1024)):
+                            embed.insert_field_at(
+                                index=i + iter,
+                                name=field.name,
+                                value=chunk,
+                                inline=field.inline
+                            )
+                        self.bot.log(f"A log of type {channelType} had had a huge value", "CRITICAL")
+                        for chunk in self.bot.utils.split(str(embed.to_dict()), 1900):
+                            self.bot.log(chunk, "CRITICAL")
 
                 embed.timestamp = datetime.fromtimestamp(logged_at)
 
@@ -1002,7 +1014,7 @@ class Logger(commands.Cog):
                           f"\n**ID:** {after.owner.id}"
                 )
                 self.queue[guild_id].append([e, 'updates', time()])
-            if before.features != after.features:
+            if before.features != after.features and before.features or after.features:
                 e = create_template_embed()
                 e.description = f"> 》__**Features Changed**__《"
                 changes = ''
@@ -1012,8 +1024,9 @@ class Logger(commands.Cog):
                 for feature in after.features:
                     if feature not in before.features:
                         changes += f"<:plus:548465119462424595> {feature}"
-                e.add_field(name='◈ Changes', value=changes)
-                self.queue[guild_id].append([e, 'updates', time()])
+                if changes:
+                    e.add_field(name='◈ Changes', value=changes)
+                    self.queue[guild_id].append([e, 'updates', time()])
             if before.premium_tier != after.premium_tier:
                 e = discord.Embed(color=pink())
                 action = "lowered" if before.premium_tier > after.premium_tier else "raised"
