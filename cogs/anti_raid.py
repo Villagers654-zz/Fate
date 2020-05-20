@@ -123,6 +123,8 @@ class Anti_Raid(commands.Cog):
 
 	@commands.Cog.listener()
 	async def on_member_remove(self, m):
+		if m.author.id == self.bot.user.id:
+			return
 		guild_id = str(m.guild.id)
 		if not m.guild.me.guild_permissions.view_audit_log:
 			return
