@@ -46,8 +46,13 @@ def has_required_permissions(**kwargs):
             cls = globals()["cls"]  # type: Moderation
             config[str(ctx.guild.id)] = cls.template
         config = config[str(ctx.guild.id)]  # type: dict
-        if ctx.command.name in config['commands']:
-            allowed = config['commands'][ctx.command.name]  # type: dict
+        cmd = ctx.command.name
+        for command, dat in config['commands'].items():
+            if 'subs' in dat and cmd in dat['subs']:
+                cmd = command
+                break
+        if cmd in config['commands']:
+            allowed = config['commands'][cmd]  # type: dict
             if ctx.author.id in allowed['users']:
                 return True
             if any(role.id in allowed['roles'] for role in ctx.author.roles):
@@ -104,10 +109,9 @@ class Moderation(commands.Cog):
             "usermod": [],  # Users with access to all mod commands
             "rolemod": [],  # Roles with access to all mod commands
             "commands": {
-                "warn": {'users': [], 'roles': []},  # Users and roles that have access
+                "warn": {'users': [], 'roles': [], 'subs': ['delwarn', 'clearwarns']},
                 "purge": {'users': [], 'roles': []},
-                "mute": {'users': [], 'roles': []},
-                "unmute": {'users': [], 'roles': []},
+                "mute": {'users': [], 'roles': [], 'subs': ['unmute']},
                 "kick": {'users': [], 'roles': []},
                 "ban": {'users': [], 'roles': []}
             },
@@ -522,7 +526,7 @@ class Moderation(commands.Cog):
 
             # Setup the mute role in channels it's not in
             for i, channel in enumerate(ctx.guild.text_channels):
-                if not channel.permissions_for(ctx.guild.me).manage_channels:
+                if not channel.permissions_for(ctx.guild.me).manage_channels or mute_role in channel.overwrites:
                     continue
                 if mute_role not in channel.overwrites:
                     try:
@@ -532,7 +536,7 @@ class Moderation(commands.Cog):
                     if i + 1 >= len(ctx.guild.text_channels):  # Prevent sleeping after the last
                         await asyncio.sleep(0.5)
             for i, channel in enumerate(ctx.guild.voice_channels):
-                if not channel.permissions_for(ctx.guild.me).manage_channels:
+                if not channel.permissions_for(ctx.guild.me).manage_channels or mute_role in channel.overwrites:
                     continue
                 if mute_role not in channel.overwrites:
                     try:
