@@ -81,7 +81,7 @@ class Tasks:
 					await asyncio.sleep(15)
 					await self.bot.change_presence(status=discord.Status.dnd, activity=discord.Game(name=f'{stages[i]} | {random.choice(motds)}'))
 				except (discord.errors.Forbidden, discord.errors.HTTPException, websockets.exceptions.ConnectionClosedError):
-					self.bot.log(f'Error changing my status', 'INFO', traceback.format_exc())
+					self.bot.log(f'Error changing my status', 'DEBUG', traceback.format_exc())
 				await asyncio.sleep(15)
 
 	async def debug_log(self):
