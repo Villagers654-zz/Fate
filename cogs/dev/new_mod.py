@@ -81,6 +81,7 @@ class Moderation(commands.Cog):
         self.fp = './static/mod-cache.json'
         self.path = './data/userdata/moderation.json'
         self.config = {}
+        self.tasks = {}
         if path.isfile(self.path):
             with open(self.path, 'r') as f:
                 self.config = json.load(f)  # type: dict
@@ -95,7 +96,7 @@ class Moderation(commands.Cog):
                 if key not in self.template:
                     del config[key]
             self.config[guild_id] = config
-        self.tasks = {}
+
 
     @property
     def template(self):
@@ -106,6 +107,7 @@ class Moderation(commands.Cog):
                 "warn": {'users': [], 'roles': []},  # Users and roles that have access
                 "purge": {'users': [], 'roles': []},
                 "mute": {'users': [], 'roles': []},
+                "unmute": {'users': [], 'roles': []},
                 "kick": {'users': [], 'roles': []},
                 "ban": {'users': [], 'roles': []}
             },
@@ -495,8 +497,8 @@ class Moderation(commands.Cog):
                         p = self.bot.utils.get_prefix(ctx)
                         return await ctx.send(
                             "No muted role found, and I\'m missing manage_role and manage_channel permissions to set "
-                            f"one up. You can set a mute role manually with `{p}mute-role @role` which of course doesn't "
-                            f"have to be a role mention, and can just the roles name."
+                            f"one up. You can set a mute role manually with `{p}mute-role @role` which doesn't "
+                            f"have to be a role @mention, and can just be the roles name."
                         )
                     mute_role = await ctx.guild.create_role(name="Muted", color=discord.Color(colors.black()))
 
@@ -597,6 +599,37 @@ class Moderation(commands.Cog):
             if guild_id not in self.tasks:
                 self.tasks[guild_id] = {}
             self.tasks[guild_id][user_id] = task
+
+    @commands.command(name="unmute", description="Unblocks users from sending messages")
+    @commands.cooldown(1, 3, commands.BucketType.user)
+    @commands.guild_only()
+    @has_required_permissions(manage_roles=True)
+    @commands.bot_has_permissions(manage_roles=True)
+    async def unmute(self, ctx, user: discord.Member = None):
+        if not user:
+            return await ctx.send("**Unmute Usage:**\n.unmute {@user}")
+        if user.top_role.position >= ctx.author.top_role.position and ctx.author.id != ctx.guild.owner.id:
+            return await ctx.send("That user is above your paygrade, take a seat")
+        guild_id = str(ctx.guild.id)
+        user_id = str(user.id)
+        mute_role = None
+        if self.config[guild_id]["mute_role"]:
+            mute_role = ctx.guild.get_role(self.config[guild_id]["mute_role"])
+            if not mute_role:
+                await ctx.send("The configured mute role was deleted, so I'll try to find another")
+        if not mute_role:
+            mute_role = await self.bot.utils.get_role(ctx, "muted")
+        if not mute_role:
+            p = self.bot.utils.get_prefix(ctx)
+            return await ctx.send(f"No mute role found? If it doesn't have `muted` in the name use `{p}mute-role @role` "
+                                  f"which doesn't need to be a role @mention, and you can just the roles name.")
+        if mute_role not in user.roles:
+            return await ctx.send(f"{user.display_name} is not muted")
+        await user.remove_roles(mute_role)
+        if user_id in self.config[guild_id]['mute_timers']:
+            del self.config[guild_id]['mute_timers']
+            self.save_data()
+        await ctx.send(f"Unmuted {user.name}")
 
     @commands.command(name='kick')
     @commands.cooldown(*utils.default_cooldown())
