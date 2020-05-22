@@ -61,17 +61,16 @@ class Logger(commands.Cog):
         }
 
         self.static = {}
-        self.tasks = {}
         self.wait_queue = {}
 
         self.invites = {}
         if self.bot.is_ready():
             self.bot.loop.create_task(self.init_invites())
             for guild_id in self.config.keys():
-                if guild_id in self.tasks:
-                    self.tasks[guild_id].cancel()
+                if guild_id in bot.logger_tasks:
+                    bot.logger_tasks[guild_id].cancel()
                 task = self.bot.loop.create_task(self.start_queue(guild_id))
-                self.tasks[guild_id] = task
+                bot.logger_tasks[guild_id] = task
             # bot.tasks.start(self.ensure_tasks, task_id="keep-logs-alive", kill_existing=True)
 
     def save_data(self):
@@ -644,18 +643,19 @@ class Logger(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         for guild_id in self.config.keys():
-            if guild_id in self.tasks and not self.tasks[guild_id].done():
-                task = self.bot.loop.create_task(self.start_queue(guild_id))
-                self.tasks[guild_id] = task
+            if guild_id in self.bot.logger_tasks and not self.bot.logger_tasks[guild_id].done():
+                continue
+            task = self.bot.loop.create_task(self.start_queue(guild_id))
+            self.bot.logger_tasks[guild_id] = task
         self.bot.tasks.start(self.init_invites)
         channel = self.bot.get_channel(541520201926311986)
         while True:
-            for guild_id, task in self.tasks.items():
+            for guild_id, task in self.bot.logger_tasks.items():
                 if task.done():
                     guild = self.bot.get_guild(int(guild_id))
                     await channel.send(f"The queue task for {guild} unexpectedly completed, here's the result\n```python\n{str(task.result())[:1900]}```")
                     task = self.bot.loop.create_task(self.start_queue(guild_id))
-                    self.tasks[guild_id] = task
+                    self.bot.logger_tasks[guild_id] = task
             await asyncio.sleep(60)
 
     @commands.Cog.listener()
@@ -692,7 +692,8 @@ class Logger(commands.Cog):
                             "Channel": msg.channel.mention,
                             f"[Jump to MSG]({msg.jump_url})": None
                         })
-                        e.add_field(name='Content', value=m.content, inline=False)
+                        for group in self.bot.utils.split(m.content, 1024):
+                            e.add_field(name='Content', value=group, inline=False)
                         self.queue[guild_id].append([e, 'system+', time()])
 
     @commands.Cog.listener()
@@ -714,9 +715,9 @@ class Logger(commands.Cog):
                         "Channel": before.channel.mention,
                         f"[Jump to MSG]({before.jump_url})": None
                     })
-                    for group in [before.content[i:i + 1000] for i in range(0, len(before.content), 1000)]:
+                    for group in [before.content[i:i + 1024] for i in range(0, len(before.content), 1024)]:
                         e.add_field(name='◈ Before', value=group, inline=False)
-                    for group in [after.content[i:i + 1000] for i in range(0, len(after.content), 1000)]:
+                    for group in [after.content[i:i + 1024] for i in range(0, len(after.content), 1024)]:
                         e.add_field(name='◈ After', value=group, inline=False)
                     self.queue[guild_id].append([e, 'chat', time()])
 
@@ -779,7 +780,7 @@ class Logger(commands.Cog):
                     "Channel": channel.mention,
                     f"[Jump to MSG]({msg.jump_url})": None
                 })
-                for text_group in self.bot.utils.split(msg.content):
+                for text_group in self.bot.utils.split(msg.content, 1024):
                     e.add_field(name='◈ Content', value=text_group, inline=False)
                 self.queue[guild_id].append([e, 'chat', time()])
 

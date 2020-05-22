@@ -10,7 +10,7 @@ from typing import *
 from discord.ext import commands
 import discord
 import aiomysql
-from pymysql.err import OperationalError
+import pymysql
 from termcolor import cprint
 
 from utils import outh, utils, tasks, colors
@@ -21,11 +21,11 @@ class Fate(commands.AutoShardedBot):
         with open('./data/config.json', 'r') as f:
             self.config = json.load(f)  # type: dict
         self.debug_mode = self.config['debug_mode']
-        self.owner_id = self.config["bot_owner_id"]
-        # self.owner_ids = self.config["bot_owner_ids"]
+        self.owner_ids = {self.config["bot_owner_id"], *self.config["bot_owner_ids"]}
         self.pool = None                # MySQL Pool initialized on_ready
         self.login_errors = []          # Exceptions ignored during startup
         self.logs = []                  # Logs to send to discord, empties out quickly
+        self.logger_tasks = {}
 
         self.initial_extensions = [     # Cogs to load before logging in
             'error_handler', 'config', 'menus', 'core', 'music', 'mod', 'welcome', 'farewell', 'notes', 'archive',
@@ -101,7 +101,7 @@ class Fate(commands.AutoShardedBot):
                 )
                 self.pool = pool
                 break
-            except (ConnectionRefusedError, OperationalError):
+            except (ConnectionRefusedError, pymysql.err.OperationalError):
                 self.log("Couldn't connect to SQL server, retrying in 25 seconds..", 'CRITICAL')
             await asyncio.sleep(25)
         else:
