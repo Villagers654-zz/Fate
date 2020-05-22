@@ -154,7 +154,7 @@ class Moderation(commands.Cog):
         with open('./data/userdata/config.json', 'w') as f:
             json.dump(config, f, ensure_ascii=False)
 
-    @commands.command(name="mute-role", aliases=["muterole"])
+    @commands.command(name="mute-role", aliases=["muterole", "set-mute-role", "setmuterole", "set-mute", "setmute"])
     @commands.guild_only()
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.has_permissions(manage_roles=True)
