@@ -6,6 +6,7 @@ import os
 import asyncio
 import logging
 from typing import *
+import aiohttp
 
 from discord.ext import commands
 import discord
@@ -167,6 +168,13 @@ class Fate(commands.AutoShardedBot):
             lines.append(str(tb))
         self.logs.append('\n'.join(lines))
         self.logs = self.logs[:1000]
+
+    async def download(self, url: str, timeout: int = 10):
+        async with aiohttp.ClientSession() as session:
+            async with session.get(str(url), timeout=timeout) as resp:
+                if resp.status != 200:
+                    return None
+                return await resp.read()
 
     async def wait_for_msg(self, ctx, timeout=60, action="Action") -> Optional[discord.Message]:
         def pred(m):
