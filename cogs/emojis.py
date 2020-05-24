@@ -111,10 +111,12 @@ class Emojis(commands.Cog):
 			if isinstance(emoji, str):
 				if "gif" in str(emoji) and max_a_emotes():
 					failed.append(emoji)
+					globals()['a_limit'] = True
 					await self.bot.utils.update_msg(msg, "**Reached the emoji limit**")
 					return False
 				elif max_emotes():
 					failed.append(emoji)
+					globals()['limit'] = True
 					await self.bot.utils.update_msg(msg, "**Reached the emoji limit**")
 					return False
 			elif emoji.animated and a_limit:
@@ -134,7 +136,7 @@ class Emojis(commands.Cog):
 
 		# Handle emoji limitations
 		if len(ctx.guild.emojis) == ctx.guild.emoji_limit * 2:
-			return await ctx.send("You're at the emoji limit for both emojis and animated emojis")
+			return await ctx.send("You're at the limit for both emojis and animated emojis")
 		limit = a_limit = False
 		failed = []  # Emojis that failed due to the emoji limit
 
