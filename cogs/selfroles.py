@@ -397,7 +397,12 @@ class SelfRoles(commands.Cog):
 		if isinstance(emoji, discord.PartialEmoji):
 			emoji_id = emoji.id
 		self.menus[guild_id][msg_id]['items'][str(role.id)] = emoji_id
-		msg = await self.edit_menu(guild_id, msg_id)
+		try:
+			msg = await self.edit_menu(guild_id, msg_id)
+		except AttributeError:
+			del self.menus[guild_id][msg_id]['items'][str(role.id)]
+			return await ctx.send(f"I couldn't find that menu on discord. Please try using `{p}update-menu {msg_id}` "
+			                      f"inside the same channel the menu is in as it's likely an old selfrole menu")
 		if isinstance(emoji, int):
 			emoji = self.bot.get_emoji(emoji)
 		await msg.add_reaction(emoji)
