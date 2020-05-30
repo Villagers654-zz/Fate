@@ -42,15 +42,16 @@ def has_required_permissions(**kwargs):
     async def predicate(ctx):
         with open('./data/userdata/moderation.json', 'r') as f:
             config = json.load(f)  # type: dict
+        cls = globals()["cls"]  # type: Moderation
         if str(ctx.guild.id) not in config:
-            cls = globals()["cls"]  # type: Moderation
             config[str(ctx.guild.id)] = cls.template
         config = config[str(ctx.guild.id)]  # type: dict
         cmd = ctx.command.name
         for command, dat in config['commands'].items():
-            if 'subs' in dat and cmd in dat['subs']:
-                cmd = command
-                break
+            for c, subs in cls.subs.items():
+                if cmd in subs:
+                    cmd = command
+                    break
         if cmd in config['commands']:
             allowed = config['commands'][cmd]  # type: dict
             if ctx.author.id in allowed['users']:
@@ -102,6 +103,11 @@ class Moderation(commands.Cog):
                     del config[key]
             self.config[guild_id] = config
 
+        self.subs = {
+            "warn": ['delwarn', 'clearwarns'],
+            "mute": ['unmute']
+        }
+
 
     @property
     def template(self):
@@ -109,13 +115,14 @@ class Moderation(commands.Cog):
             "usermod": [],  # Users with access to all mod commands
             "rolemod": [],  # Roles with access to all mod commands
             "commands": {
-                "warn": {'users': [], 'roles': [], 'subs': ['delwarn', 'clearwarns']},
+                "warn": {'users': [], 'roles': []},
                 "purge": {'users': [], 'roles': []},
-                "mute": {'users': [], 'roles': [], 'subs': ['unmute']},
+                "mute": {'users': [], 'roles': []},
                 "kick": {'users': [], 'roles': []},
                 "ban": {'users': [], 'roles': []}
             },
             "warns": {},
+            "warns_config": {},
             "mute_role": None,  # type: Optional[None, discord.Role.id]
             "timers": {},
             "mute_timers": {}
@@ -1017,6 +1024,64 @@ class Moderation(commands.Cog):
                 await ctx.send(f"You can't warn {user.mention} because they're a bot")
                 continue
             await self.warn_user(ctx.channel, user, reason)
+
+    @commands.command(name='delwarn')
+    @commands.cooldown(*utils.default_cooldown())
+    @check_if_running()
+    @has_warn_permission()
+    @commands.bot_has_permissions(add_reactions=True)
+    async def delwarn(self, ctx, user: Greedy[discord.Member], *, partial_reason):
+        def check(reaction, user):
+            return user == ctx.author and str(reaction.emoji) in ['✔', '❌']
+
+        guild_id = str(ctx.guild.id)
+        for user in list(set(user)):
+            user_id = str(user.id)
+            if user_id not in self.config[guild_id]["warns"]:
+                await ctx.send(f"{user} has no warns")
+                continue
+            for reason, warn_time in self.config[guild_id][user_id]["warns"]:
+                if partial_reason in reason:
+                    e = discord.Embed(color=colors.fate())
+                    e.set_author(name="Is this the right warn?")
+                    e.description = reason
+                    msg = await ctx.send(embed=e)
+                    await msg.add_reaction('✔')
+                    await asyncio.sleep(0.5)
+                    await msg.add_reaction('❌')
+                    try:
+                        reaction, user = await self.bot.wait_for('reaction_add', timeout=60.0, check=check)
+                    except asyncio.TimeoutError:
+                        await msg.edit(content="Inactive Message: timed out due to no response")
+                        if ctx.channel.permissions_for(ctx.guild.me).manage_messages:
+                            await msg.clear_reactions()
+                        return
+                    else:
+                        if str(reaction.emoji) == '✔':
+                            self.config[guild_id]["warns"][user_id].remove([reason, warn_time])
+                            self.save_data()
+                            await ctx.message.delete()
+                            await msg.delete()
+                        else:
+                            await msg.delete()
+                        break
+
+    @commands.command(name="clearwarns")
+    @commands.cooldown(*utils.default_cooldown())
+    @check_if_running()
+    @has_warn_permission()
+    async def clear_warns(self, ctx, user: Greedy[discord.Member]):
+        guild_id = str(ctx.guild.id)
+        for user in list(set(user)):
+            user_id = str(user.id)
+            if user_id not in self.config[guild_id]["warns"]:
+                await ctx.send(f"{user} has no warns")
+                continue
+            if user.position >= ctx.author.top_role.position and ctx.author.id != ctx.guild.owner.id:
+                await ctx.send(f"{user} is above your paygrade, take a seat")
+            del self.config[guild_id]["warns"][user_id]
+            await ctx.send(f"Cleared {user}'s warns")
+            self.save_data()
 
 
 def setup(bot):
