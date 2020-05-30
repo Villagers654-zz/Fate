@@ -119,6 +119,10 @@ class Tasks:
 				continue
 			message = '```'
 			for log in list(self.bot.logs):  # type: str
+				if "CRITICAL" in log:
+					owner = self.bot.get_user(self.bot.config["bot_owner_id"])
+					mention = f"{owner.mention} something went terribly wrong" if owner else "Critical Error\n"
+					log = mention + log
 				self.bot.logs.remove(log)
 				if len(log) >= 2000:
 					for group in self.bot.utils.split(log, 1990):

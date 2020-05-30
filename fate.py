@@ -22,7 +22,7 @@ class Fate(commands.AutoShardedBot):
         with open('./data/config.json', 'r') as f:
             self.config = json.load(f)  # type: dict
         self.debug_mode = self.config['debug_mode']
-        self.owner_ids = {self.config["bot_owner_id"], *self.config["bot_owner_ids"]}
+        self.owner_ids = set(list([self.config["bot_owner_id"], *self.config["bot_owner_ids"]]))
         self.pool = None                # MySQL Pool initialized on_ready
         self.login_errors = []          # Exceptions ignored during startup
         self.logs = []                  # Logs to send to discord, empties out quickly
@@ -159,9 +159,6 @@ class Fate(commands.AutoShardedBot):
                 cprint(msg, color if color else 'green')
             elif level == 'CRITICAL':
                 cprint(msg, color if color else 'red')
-                owner = self.get_user(self.config["bot_owner_id"])
-                mention = f"{owner.mention} something went terribly wrong" if owner else "Critical Error\n"
-                msg = mention + msg
             lines.append(msg)
         if tb:
             cprint(str(tb), color if color else 'red')
@@ -171,10 +168,13 @@ class Fate(commands.AutoShardedBot):
 
     async def download(self, url: str, timeout: int = 10):
         async with aiohttp.ClientSession() as session:
-            async with session.get(str(url), timeout=timeout) as resp:
-                if resp.status != 200:
-                    return None
-                return await resp.read()
+            try:
+                async with session.get(str(url), timeout=timeout) as resp:
+                    if resp.status != 200:
+                        return None
+                    return await resp.read()
+            except asyncio.TimeoutError:
+                return None
 
     async def wait_for_msg(self, ctx, timeout=60, action="Action") -> Optional[discord.Message]:
         def pred(m):
@@ -246,7 +246,6 @@ async def on_ready():
     bot.tasks.ensure_all()
     seconds = round(time() - start_time)
     bot.log(f"Startup took {seconds} seconds")
-    bot.owner_ids = set(bot.config["bot_owner_ids"])
     for error in bot.login_errors:
         bot.log("Error ignored during startup", level='CRITICAL', tb=error)
 

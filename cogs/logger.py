@@ -71,7 +71,17 @@ class Logger(commands.Cog):
                     bot.logger_tasks[guild_id].cancel()
                 task = self.bot.loop.create_task(self.start_queue(guild_id))
                 bot.logger_tasks[guild_id] = task
-            # bot.tasks.start(self.ensure_tasks, task_id="keep-logs-alive", kill_existing=True)
+            if "keep_alive_task" in bot.logger_tasks:
+                if bot.logger_tasks["keep_alive_task"].done():
+                    bot.log(
+                        message="Loggers keep alive task came to an end",
+                        level="CRITICAL",
+                        tb=bot.logger_tasks["keep_alive_tasks"].result()
+                    )
+                else:
+                    bot.logger_tasks["keep_alive_task"].cancel()
+            task = self.bot.loop.create_task(self.keep_alive_task())
+            bot.logger_tasks["keep_alive_task"] = task
 
     def save_data(self):
         """ Saves local variables """
@@ -95,6 +105,22 @@ class Logger(commands.Cog):
         guild_id = str(guild.id)
         self.config[guild_id]['channel'] = category.id
         return category
+
+    async def keep_alive_task(self):
+        self.bot.log("Loggers keep_alive_task was started")
+        channel = self.bot.get_channel(541520201926311986)
+        while True:
+            for guild_id, task in list(self.bot.logger_tasks.items()):
+                if task.done():
+                    guild = self.bot.get_guild(int(guild_id))
+                    if not guild:
+                        del self.bot.logger_tasks[guild_id]
+                        continue
+                    await channel.send(
+                        f"The queue task for {guild} unexpectedly completed, here's the result\n```python\n{str(task.result())[:1900]}```")
+                    task = self.bot.loop.create_task(self.start_queue(guild_id))
+                    self.bot.logger_tasks[guild_id] = task
+            await asyncio.sleep(60)
 
     async def wait_for_permission(self, guild, permission: str, channel=None):
         """Notify the owner of missing permissions and wait until they've been granted"""
@@ -185,6 +211,16 @@ class Logger(commands.Cog):
         while True:
             while not self.queue[guild_id]:
                 await asyncio.sleep(1.21)
+
+            guild = self.bot.get_guild(int(guild_id))
+            index = 1
+            while not guild:
+                await asyncio.sleep(60)
+                guild = self.bot.get_guild(int(guild_id))
+                index += 1
+                if index == 60 * 12:
+                    del self.config[guild_id]
+                    return
 
             log_type = self.config[guild_id]['type']  # type: str
 
@@ -284,6 +320,8 @@ class Logger(commands.Cog):
                             if os.path.isfile(file):
                                 os.remove(file)
                     self.queue[guild_id].remove(list_obj)
+                    if isinstance(self.recent_logs[guild_id], dict):
+                        self.recent_logs[guild_id] = []
                     self.recent_logs[guild_id].append([embed, logged_at])
 
                 for Type, channel_id in self.config[guild_id]['channels'].items():
@@ -472,7 +510,10 @@ class Logger(commands.Cog):
             "ignored_channels": [],
             "ignored_bots": []
         }
-        self.bot.loop.create_task(self.start_queue(guild_id))
+        if guild_id in self.bot.logger_tasks and not self.bot.logger_tasks[guild_id].done():
+            self.bot.logger_tasks[guild_id].cancel()
+        task = self.bot.loop.create_task(self.start_queue(guild_id))
+        self.bot.logger_tasks[guild_id] = task
         await ctx.send("Enabled Logger")
         self.save_data()
 
@@ -520,7 +561,10 @@ class Logger(commands.Cog):
                 "ignored_channels": [],
                 "ignored_bots": []
             }
-        self.bot.loop.create_task(self.start_queue(guild_id))
+        if guild_id in self.bot.logger_tasks and not self.bot.logger_tasks[guild_id].done():
+            self.bot.logger_tasks[guild_id].cancel()
+        task = self.bot.loop.create_task(self.start_queue(guild_id))
+        self.bot.logger_tasks[guild_id] = task
         await ctx.send(f"Enabled Logger in {channel.mention}")
         self.save_data()
 
@@ -642,21 +686,21 @@ class Logger(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        for guild_id in self.config.keys():
+        for guild_id in list(self.config.keys()):
             if guild_id in self.bot.logger_tasks and not self.bot.logger_tasks[guild_id].done():
                 continue
             task = self.bot.loop.create_task(self.start_queue(guild_id))
             self.bot.logger_tasks[guild_id] = task
+        if "keep_alive_task" in self.bot.logger_tasks:
+            if self.bot.logger_tasks["keep_alive_task"].done():
+                self.bot.log(
+                    message="Loggers keep alive task came to an end",
+                    level="CRITICAL",
+                    tb=self.bot.logger_tasks["keep_alive_tasks"].result()
+                )
+            task = self.bot.loop.create_task(self.keep_alive_task())
+            self.bot.logger_tasks["keep_alive_task"] = task
         self.bot.tasks.start(self.init_invites)
-        channel = self.bot.get_channel(541520201926311986)
-        while True:
-            for guild_id, task in self.bot.logger_tasks.items():
-                if task.done():
-                    guild = self.bot.get_guild(int(guild_id))
-                    await channel.send(f"The queue task for {guild} unexpectedly completed, here's the result\n```python\n{str(task.result())[:1900]}```")
-                    task = self.bot.loop.create_task(self.start_queue(guild_id))
-                    self.bot.logger_tasks[guild_id] = task
-            await asyncio.sleep(60)
 
     @commands.Cog.listener()
     async def on_message(self, msg):
