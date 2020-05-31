@@ -826,7 +826,7 @@ class Moderation(commands.Cog):
             e.set_author(name="Mass Updating Nicknames", icon_url=ctx.author.avatar_url)
             e.description = f"{iteration + 1}/{len(members)} complete" \
                             f"\n1 role per 1.21 seconds" \
-                            f"\nETA of {self.bot.utils.get_time(round(len(members) * 1.21))}"
+                            f"\nETA of {self.bot.utils.get_time(round((len(members) - (iteration + 1)) * 1.21))}"
             return e
 
         members = [
@@ -876,13 +876,13 @@ class Moderation(commands.Cog):
     @check_if_running()
     @has_required_permissions(manage_roles=True)
     @commands.bot_has_guild_permissions(manage_roles=True)
-    async def mass_role(self, ctx, *, role):
+    async def mass_role(self, ctx, *, role=None):
         def gen_embed(iteration):
             e = discord.Embed(color=colors.fate())
             e.set_author(name=f"Mass {action} Roles", icon_url=ctx.author.avatar_url)
             e.description = f"{iteration + 1}/{len(members)} complete" \
                             f"\n1 role per 1.21 seconds" \
-                            f"\nETA of {self.bot.utils.get_time(round(len(members) * 1.21))}"
+                            f"\nETA of {self.bot.utils.get_time(round((len(members) - (iteration + 1)) * 1.21))}"
 
             return e
 
