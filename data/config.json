@@ -2,13 +2,12 @@
   "bot_user_id": 506735111543193601,
   "bot_owner_id": 264838866480005122,
   "bot_owner_ids": [
-    264838866480005122,
     355026215137968129,
     611108193275478018
   ],
   "use_default_help": false,
   "startup_status": "Up and Running",
-  "debug_mode": true,
+  "debug_mode": false,
   "hub_server": 397415086295089155,
   "log_channel": 577661500802465813,
   "debug_channel": 675878044824764456,

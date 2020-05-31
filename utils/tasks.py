@@ -73,7 +73,7 @@ class Tasks:
 			stages = ['Serendipity', 'Euphoria', 'Singularity', 'Epiphany']
 			for i in range(len(stages)):
 				try:
-					await self.bot.change_presence(status=discord.Status.online, activity=discord.Game(name=f'Seeking For The Clock'))
+					await self.bot.change_presence(status=discord.Status.online, activity=discord.Game(name=f'Beginning of an End?'))
 					await asyncio.sleep(45)
 					await self.bot.change_presence(status=discord.Status.online, activity=discord.Game(name=f'{stages[i]} | use .help'))
 					await asyncio.sleep(15)
@@ -81,7 +81,7 @@ class Tasks:
 					await asyncio.sleep(15)
 					await self.bot.change_presence(status=discord.Status.dnd, activity=discord.Game(name=f'{stages[i]} | {random.choice(motds)}'))
 				except (discord.errors.Forbidden, discord.errors.HTTPException, websockets.exceptions.ConnectionClosedError):
-					self.bot.log(f'Error changing my status', 'CRITICAL', traceback.format_exc())
+					self.bot.log(f'Error changing my status', 'DEBUG', traceback.format_exc())
 				await asyncio.sleep(15)
 
 	async def debug_log(self):
@@ -119,6 +119,10 @@ class Tasks:
 				continue
 			message = '```'
 			for log in list(self.bot.logs):  # type: str
+				if "CRITICAL" in log:
+					owner = self.bot.get_user(self.bot.config["bot_owner_id"])
+					mention = f"{owner.mention} something went terribly wrong" if owner else "Critical Error\n"
+					log = mention + log
 				self.bot.logs.remove(log)
 				if len(log) >= 2000:
 					for group in self.bot.utils.split(log, 1990):
@@ -145,7 +149,7 @@ class Tasks:
 
 		run_automatic_backups = True  # Toggle automatic backups
 		# backup_interval = 21600     # Backup every 6 hours
-		backup_interval = 3600        # Backup interval in seconds
+		backup_interval = 3600 * 12    # Backup interval in seconds
 		keep_for = 7                  # Days to keep each backup
 		while run_automatic_backups:
 			await asyncio.sleep(backup_interval)
@@ -168,8 +172,11 @@ class Tasks:
 				for backup in sftp.listdir(root):
 					backup_time = datetime.strptime(backup.split('_')[1].strip('.zip'), '%Y-%m-%d %H:%M:%S.%f')
 					if (datetime.now() - backup_time).days > keep_for:
-						sftp.remove(backup)
-						self.bot.log(f"Removed backup {backup}")
+						try:
+							sftp.remove(backup)
+							self.bot.log(f"Removed backup {backup}")
+						except FileNotFoundError:
+							pass
 
 				# Transfer then remove the local backup
 				sftp.put(fp, os.path.join(root, fp))

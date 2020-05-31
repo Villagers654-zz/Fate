@@ -47,6 +47,7 @@ class HelpMenus():
                         '• **sinfo** - `sends server info`\n' \
                         '• **partners** - `fates partnered bots/servers`\n' \
                         '• **servers** - `featured server list`\n' \
+                        '• **statistics** - `how many use each module?`' \
                         '• **leaderboard** - `servers lvl/xp ranking`\n' \
                         '• **gleaderboard** - `global lvl/xp ranking`\n' \
                         '• **ggleaderboard** - `global server ranking`\n' \

@@ -68,7 +68,20 @@ class SelfRoles(commands.Cog):
 		""" Rebuilds a menu with its updated data """
 		embed = self.build_menu(guild_id, self.menus[guild_id][msg_id])
 		channel = self.bot.get_channel(self.menus[guild_id][msg_id]['channel'])
-		msg = await channel.fetch_message(int(msg_id))
+		try:
+			msg = await channel.fetch_message(int(msg_id))
+		except (AttributeError, discord.errors.NotFound):
+			guild = self.bot.get_guild(int(guild_id))
+			for c in guild.text_channels:
+				try:
+					msg = await c.fetch_message(int(msg_id))
+				except (AttributeError, discord.errors.NotFound):
+					continue
+				await msg.edit(embed=embed)
+				self.menus[guild_id][msg_id]['channel'] = c.id
+				self.save_data()
+				return msg
+			msg = await channel.fetch_message(int(msg_id))
 		await msg.edit(embed=embed)
 		return msg
 
@@ -397,7 +410,12 @@ class SelfRoles(commands.Cog):
 		if isinstance(emoji, discord.PartialEmoji):
 			emoji_id = emoji.id
 		self.menus[guild_id][msg_id]['items'][str(role.id)] = emoji_id
-		msg = await self.edit_menu(guild_id, msg_id)
+		try:
+			msg = await self.edit_menu(guild_id, msg_id)
+		except AttributeError:
+			del self.menus[guild_id][msg_id]['items'][str(role.id)]
+			return await ctx.send(f"I couldn't find that menu on discord. Please try using `{p}update-menu {msg_id}` "
+			                      f"inside the same channel the menu is in as it's likely an old selfrole menu")
 		if isinstance(emoji, int):
 			emoji = self.bot.get_emoji(emoji)
 		await msg.add_reaction(emoji)

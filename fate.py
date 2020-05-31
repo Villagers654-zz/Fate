@@ -6,11 +6,12 @@ import os
 import asyncio
 import logging
 from typing import *
+import aiohttp
 
 from discord.ext import commands
 import discord
 import aiomysql
-from pymysql.err import OperationalError
+import pymysql
 from termcolor import cprint
 
 from utils import outh, utils, tasks, colors
@@ -21,11 +22,11 @@ class Fate(commands.AutoShardedBot):
         with open('./data/config.json', 'r') as f:
             self.config = json.load(f)  # type: dict
         self.debug_mode = self.config['debug_mode']
-        self.owner_id = self.config["bot_owner_id"]
-        # self.owner_ids = self.config["bot_owner_ids"]
+        self.owner_ids = set(list([self.config["bot_owner_id"], *self.config["bot_owner_ids"]]))
         self.pool = None                # MySQL Pool initialized on_ready
         self.login_errors = []          # Exceptions ignored during startup
         self.logs = []                  # Logs to send to discord, empties out quickly
+        self.logger_tasks = {}
 
         self.initial_extensions = [     # Cogs to load before logging in
             'error_handler', 'config', 'menus', 'core', 'music', 'mod', 'welcome', 'farewell', 'notes', 'archive',
@@ -34,7 +35,7 @@ class Fate(commands.AutoShardedBot):
             'duel_chat', 'selfroles', 'lock', 'audit', 'cookies', 'server_list', 'emojis', 'giveaways',
             'logger', 'autorole', 'changelog', 'restore_roles', 'chatbot', 'anti_spam', 'anti_raid', 'chatfilter',
             'nsfw', 'minecraft', 'chatlock', 'rainbow', 'system', 'user', 'limiter', 'dm_channel', 'factions',
-            'secure_overwrites', 'server_setup', 'global-chat', 'beta', 'ranking'
+            'secure_overwrites', 'server_setup', 'global-chat', 'beta', 'ranking', 'statistics'
         ]
         self.awaited_extensions = []    # Cogs to load when the internal cache is ready
 
@@ -48,9 +49,8 @@ class Fate(commands.AutoShardedBot):
         self.memory = utils.MemoryInfo  # Class for easily accessing memory usage
         self.tasks = tasks.Tasks(self)  # Task Manager
 
-        self.invite_url = discord.utils.oauth_url(
-            self.config['bot_user_id'],
-            discord.Permissions(0).update(
+        perms = discord.Permissions(0)
+        perms.update(
                 embed_links=True, manage_messages=True,
                 view_audit_log=True, manage_webhooks=True,
                 manage_roles=True, manage_channels=True,
@@ -60,6 +60,9 @@ class Fate(commands.AutoShardedBot):
                 kick_members=True, ban_members=True,
                 read_message_history=True, add_reactions=True
             )
+        self.invite_url = discord.utils.oauth_url(
+            self.config['bot_user_id'],
+            perms
         )
 
         # deprecated shit
@@ -87,7 +90,7 @@ class Fate(commands.AutoShardedBot):
             await self.pool.wait_closed()
             self.log("Pool was successfully closed", "INFO")
         sql = outh.MySQL()
-        for _ in range(5):
+        for _attempt in range(5):
             try:
                 pool = await aiomysql.create_pool(
                     host=sql.host,
@@ -99,7 +102,7 @@ class Fate(commands.AutoShardedBot):
                 )
                 self.pool = pool
                 break
-            except (ConnectionRefusedError, OperationalError):
+            except (ConnectionRefusedError, pymysql.err.OperationalError):
                 self.log("Couldn't connect to SQL server, retrying in 25 seconds..", 'CRITICAL')
             await asyncio.sleep(25)
         else:
@@ -163,6 +166,16 @@ class Fate(commands.AutoShardedBot):
         self.logs.append('\n'.join(lines))
         self.logs = self.logs[:1000]
 
+    async def download(self, url: str, timeout: int = 10):
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.get(str(url), timeout=timeout) as resp:
+                    if resp.status != 200:
+                        return None
+                    return await resp.read()
+            except asyncio.TimeoutError:
+                return None
+
     async def wait_for_msg(self, ctx, timeout=60, action="Action") -> Optional[discord.Message]:
         def pred(m):
             return m.author.id == ctx.author.id and m.channel.id == ctx.channel.id
@@ -209,7 +222,6 @@ logger.addHandler(handler)
 bot = Fate(max_messages=16000, case_insensitive=True)
 bot.remove_command('help')  # Default help command
 
-
 @bot.event
 async def on_shard_ready(shard_id):
     bot.log(f"Shard {shard_id} connected")
@@ -234,7 +246,6 @@ async def on_ready():
     bot.tasks.ensure_all()
     seconds = round(time() - start_time)
     bot.log(f"Startup took {seconds} seconds")
-    bot.owner_ids = bot.config["bot_owner_ids"]
     for error in bot.login_errors:
         bot.log("Error ignored during startup", level='CRITICAL', tb=error)
 

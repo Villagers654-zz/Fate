@@ -10,6 +10,7 @@ from typing import *
 from datetime import datetime, timedelta
 import asyncio
 import re
+from time import time as now
 
 from discord.ext import commands
 import discord
@@ -20,7 +21,6 @@ from utils import utils, colors
 
 cache = {}  # Keep track of what commands are still being ran
             # This should empty out as quickly as it's filled
-
 
 def check_if_running():
     """ Checks if the command is already in progress """
@@ -42,9 +42,18 @@ def has_required_permissions(**kwargs):
     async def predicate(ctx):
         with open('./data/userdata/moderation.json', 'r') as f:
             config = json.load(f)  # type: dict
+        cls = globals()["cls"]  # type: Moderation
+        if str(ctx.guild.id) not in config:
+            config[str(ctx.guild.id)] = cls.template
         config = config[str(ctx.guild.id)]  # type: dict
-        if ctx.command.name in config['commands']:
-            allowed = config['commands'][ctx.command.name]  # type: dict
+        cmd = ctx.command.name
+        for command, dat in config['commands'].items():
+            for c, subs in cls.subs.items():
+                if cmd in subs:
+                    cmd = command
+                    break
+        if cmd in config['commands']:
+            allowed = config['commands'][cmd]  # type: dict
             if ctx.author.id in allowed['users']:
                 return True
             if any(role.id in allowed['roles'] for role in ctx.author.roles):
@@ -58,12 +67,27 @@ def has_required_permissions(**kwargs):
     return commands.check(predicate)
 
 
+def has_warn_permission():
+    async def predicate(ctx):
+        cls = globals()["cls"]  # type: Moderation
+        config = cls.template
+        guild_id = str(ctx.guild.id)
+        if guild_id in cls.config:
+            config = cls.config[guild_id]
+        if ctx.author.id in config['commands']['warn']:
+            return True
+        elif ctx.author.guild_permissions.administrator:
+            return True
+    return commands.check(predicate)
+
+
 class Moderation(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.fp = './static/mod-cache.json'
         self.path = './data/userdata/moderation.json'
         self.config = {}
+        self.tasks = {}
         if path.isfile(self.path):
             with open(self.path, 'r') as f:
                 self.config = json.load(f)  # type: dict
@@ -79,23 +103,28 @@ class Moderation(commands.Cog):
                     del config[key]
             self.config[guild_id] = config
 
+        self.subs = {
+            "warn": ['delwarn', 'clearwarns'],
+            "mute": ['unmute']
+        }
+
+
     @property
     def template(self):
         return {
             "usermod": [],  # Users with access to all mod commands
             "rolemod": [],  # Roles with access to all mod commands
             "commands": {
-                "warn": {'users': [], 'roles': []},  # Users and roles that have access
+                "warn": {'users': [], 'roles': []},
                 "purge": {'users': [], 'roles': []},
                 "mute": {'users': [], 'roles': []},
                 "kick": {'users': [], 'roles': []},
                 "ban": {'users': [], 'roles': []}
             },
             "warns": {},
-            "config": {
-                "mute_role": None  # type: Optional[None, discord.Role.id]
-            },
-            "timers": [],
+            "warns_config": {},
+            "mute_role": None,  # type: Optional[None, discord.Role.id]
+            "timers": {},
             "mute_timers": {}
         }
 
@@ -120,6 +149,7 @@ class Moderation(commands.Cog):
         if str(ctx.guild.id) not in self.config:
             self.config[str(ctx.guild.id)] = self.template
             self.save_data()
+        ctx.cls = self
 
     async def cog_after_invoke(self, ctx):
         """ Index commands that are running """
@@ -134,6 +164,20 @@ class Moderation(commands.Cog):
         """ Save things like channel restrictions """
         with open('./data/userdata/config.json', 'w') as f:
             json.dump(config, f, ensure_ascii=False)
+
+    @commands.command(name="mute-role", aliases=["muterole", "set-mute-role", "setmuterole", "set-mute", "setmute"])
+    @commands.guild_only()
+    @commands.cooldown(1, 3, commands.BucketType.user)
+    @commands.has_permissions(manage_roles=True)
+    async def mute_role(self, ctx, *, role):
+        role = await self.bot.utils.get_role(ctx, role)
+        if not role:
+            return await ctx.send("Role not found")
+        if role.position >= ctx.author.top_role.position and not ctx.author.id == ctx.guild.owner.id:
+            return await ctx.send("That role's above your paygrade, take a seat.")
+        self.config[str(ctx.guild.id)]["mute_role"] = role.id
+        await ctx.send(f"Set the mute role to {role.name}")
+        self.save_data()
 
     @commands.command(name='restrict')
     @commands.guild_only()
@@ -413,8 +457,7 @@ class Moderation(commands.Cog):
             await ctx.send(e)
 
     async def handle_mute_timer(self, guild_id: str, user_id: str, timer_info: dict):
-        end_time = datetime.strptime(timer_info["end_time"], "%Y-%m-%d %H:%M:%S.%f")
-        timer = (datetime.now() - end_time).seconds
+        timer = timer_info["end_time"] - now()
         await asyncio.sleep(timer)  # Switch this to a task
         if user_id in self.config[guild_id]['mute_timers']:
             guild = self.bot.get_guild(int(guild_id))
@@ -438,6 +481,9 @@ class Moderation(commands.Cog):
                 except discord.errors.Forbidden:
                     pass
         del self.config[guild_id]['mute_timers'][user_id]
+        del self.tasks[guild_id][user_id]
+        if not self.tasks[guild_id]:
+            del self.tasks[guild_id]
 
     @commands.command(name='mute', aliases=['shutup', 'fuckoff'])
     @commands.cooldown(*utils.default_cooldown())
@@ -445,7 +491,7 @@ class Moderation(commands.Cog):
     @has_required_permissions(mute_members=True)
     @commands.bot_has_permissions(embed_links=True)
     @commands.bot_has_guild_permissions(manage_roles=True)
-    async def mute(self, ctx, members: Greedy[discord.Member], *, reason):  # check for timers with regex
+    async def mute(self, ctx, members: Greedy[discord.Member], *, reason="Unspecified"):
         if not members:
             return await ctx.send("**Format:** `.mute {@user} {timer: 2m, 2h, or 2d}`")
 
@@ -455,12 +501,16 @@ class Moderation(commands.Cog):
             if self.config[guild_id]["mute_role"]:
                 mute_role = ctx.guild.get_role(self.config[guild_id]["mute_role"])
             if not mute_role:
-                role = self.bot.utils.get_role("muted")
-
-                if not role:
+                mute_role = await self.bot.utils.get_role(ctx, "muted")
+                if not mute_role:
                     perms = ctx.guild.me.guild_permissions
                     if not perms.manage_channels or not perms.manage_roles:
-                        return await ctx.send('No muted role found, and I\'m missing manage_channel permissions to set one up')
+                        p = self.bot.utils.get_prefix(ctx)
+                        return await ctx.send(
+                            "No muted role found, and I\'m missing manage_role and manage_channel permissions to set "
+                            f"one up. You can set a mute role manually with `{p}mute-role @role` which doesn't "
+                            f"have to be a role @mention, and can just be the roles name."
+                        )
                     mute_role = await ctx.guild.create_role(name="Muted", color=discord.Color(colors.black()))
 
                     # Set the overwrites for the mute role
@@ -483,7 +533,7 @@ class Moderation(commands.Cog):
 
             # Setup the mute role in channels it's not in
             for i, channel in enumerate(ctx.guild.text_channels):
-                if not channel.permissions_for(ctx.guild.me).manage_channels:
+                if not channel.permissions_for(ctx.guild.me).manage_channels or mute_role in channel.overwrites:
                     continue
                 if mute_role not in channel.overwrites:
                     try:
@@ -493,7 +543,7 @@ class Moderation(commands.Cog):
                     if i + 1 >= len(ctx.guild.text_channels):  # Prevent sleeping after the last
                         await asyncio.sleep(0.5)
             for i, channel in enumerate(ctx.guild.voice_channels):
-                if not channel.permissions_for(ctx.guild.me).manage_channels:
+                if not channel.permissions_for(ctx.guild.me).manage_channels or mute_role in channel.overwrites:
                     continue
                 if mute_role not in channel.overwrites:
                     try:
@@ -510,6 +560,7 @@ class Moderation(commands.Cog):
             if timers:
                 time_to_sleep = [0, []]
                 for timer in timers:
+                    reason = str(reason.replace(timer, "")).lstrip(" ").rstrip(" ")
                     raw = ''.join(x for x in list(timer) if x.isdigit())
                     if 'd' in timer:
                         time = int(timer.replace('d', '')) * 60 * 60 * 24
@@ -528,35 +579,68 @@ class Moderation(commands.Cog):
                 timer, expanded_timer = time_to_sleep
                 expanded_timer = ', '.join(expanded_timer)
 
+        if not reason:
+            reason = "Unspecified"
         for user in list(members):
             if user.top_role.position >= ctx.author.top_role.position:
                 return await ctx.send("That user is above your paygrade, take a seat")
             if mute_role in user.roles:
                 return await ctx.send(f'{user.display_name} is already muted')
 
-            async with ctx.channel.typing():
-                if not timers:
-                    await user.add_roles(mute_role)
-                    return await ctx.send(f'Muted {user.display_name}')
-
+            if not timers:
                 await user.add_roles(mute_role)
-                try:
-                    timer_info = {
-                        'channel': ctx.channel.id,
-                        'user': user.id,
-                        'end_time': str(datetime.now() + timedelta(seconds=round(timer))),
-                        'mute_role': mute_role.id
-                    }
-                except OverflowError:
-                    return await ctx.send("No way in hell I'm waiting that long to unmute!\n"
-                                          "You'll have to do it yourself >:(")
-                await ctx.send(f"Muted **{user.name}** for {expanded_timer}")
+                return await ctx.send(f'Muted {user.display_name} for {reason}')
 
-                user_id = str(user.id)
-                self.config[guild_id]['mute_timers'][user_id] = timer_info
-                self.save_data()
-            coro = self.handle_mute_timer(guild_id, user_id, timer_info)
-            await self.bot.tasks.start(coro, task_id=f"{guild_id}-{user_id}-mute_timer")
+            if timer > 15552000:  # 6 months
+                return await ctx.send("No way in hell I'm waiting that long to unmute\n"
+                                      "You'll have to do it yourself >:(")
+            await user.add_roles(mute_role)
+            timer_info = {
+                'channel': ctx.channel.id,
+                'user': user.id,
+                'end_time': now() + timer,
+                'mute_role': mute_role.id
+            }
+            await ctx.send(f"Muted **{user.name}** for {expanded_timer} for {reason}")
+
+            user_id = str(user.id)
+            self.config[guild_id]['mute_timers'][user_id] = timer_info
+            self.save_data()
+            task = self.bot.loop.create_task(self.handle_mute_timer(guild_id, user_id, timer_info))
+            if guild_id not in self.tasks:
+                self.tasks[guild_id] = {}
+            self.tasks[guild_id][user_id] = task
+
+    @commands.command(name="unmute", description="Unblocks users from sending messages")
+    @commands.cooldown(1, 3, commands.BucketType.user)
+    @commands.guild_only()
+    @has_required_permissions(manage_roles=True)
+    @commands.bot_has_permissions(manage_roles=True)
+    async def unmute(self, ctx, user: discord.Member = None):
+        if not user:
+            return await ctx.send("**Unmute Usage:**\n.unmute {@user}")
+        if user.top_role.position >= ctx.author.top_role.position and ctx.author.id != ctx.guild.owner.id:
+            return await ctx.send("That user is above your paygrade, take a seat")
+        guild_id = str(ctx.guild.id)
+        user_id = str(user.id)
+        mute_role = None
+        if self.config[guild_id]["mute_role"]:
+            mute_role = ctx.guild.get_role(self.config[guild_id]["mute_role"])
+            if not mute_role:
+                await ctx.send("The configured mute role was deleted, so I'll try to find another")
+        if not mute_role:
+            mute_role = await self.bot.utils.get_role(ctx, "muted")
+        if not mute_role:
+            p = self.bot.utils.get_prefix(ctx)
+            return await ctx.send(f"No mute role found? If it doesn't have `muted` in the name use `{p}mute-role @role` "
+                                  f"which doesn't need to be a role @mention, and you can just the roles name.")
+        if mute_role not in user.roles:
+            return await ctx.send(f"{user.display_name} is not muted")
+        await user.remove_roles(mute_role)
+        if user_id in self.config[guild_id]['mute_timers']:
+            del self.config[guild_id]['mute_timers']
+            self.save_data()
+        await ctx.send(f"Unmuted {user.name}")
 
     @commands.command(name='kick')
     @commands.cooldown(*utils.default_cooldown())
@@ -633,7 +717,7 @@ class Moderation(commands.Cog):
         if not e.fields:
             e.colour = colors.red()
             e.set_author(name="Couldn't ban any of the specified user(s)")
-            await msg.edit(embed=e)
+        await msg.edit(embed=e)
 
     @commands.command(name='unban')
     @commands.cooldown(*utils.default_cooldown())
@@ -679,9 +763,10 @@ class Moderation(commands.Cog):
             return e
 
         members = [
-            m for m in ctx.guild.members if m.top_role.position < ctx.author.top_role.position
-                                            and m.author.top_role.position < ctx.guild.me.top_role.position
-                                            and m.display_name != nick
+            m for m in ctx.guild.members
+            if m.top_role.position < ctx.author.top_role.position
+               and m.author.top_role.position < ctx.guild.me.top_role.position
+               and m.display_name != nick
         ]
         if len(members) > 3600:
             async with ctx.typing():
@@ -690,15 +775,18 @@ class Moderation(commands.Cog):
         else:
             msg = await ctx.send(embed=gen_embed(0))
         async with ctx.typing():
-            await msg.add_reaction("❌")
+            react = await msg.add_reaction("❌")
             for i, member in enumerate(members[:3600]):
-                for reaction in [r for r in msg.reactions if str(reaction.emoji) == "❌"] and reaction.count > 1:
+                for reaction in [r for r in msg.reactions if react is r]:
+                    if reaction.count == 1:
+                        continue
                     async for user in reaction.users():
-                        if not user.guild_permissions.manage_nicknames:
+                        if user.guild_permissions.manage_nicknames:
                             await msg.remove_reaction(reaction.emoji, user)
                             continue
                         return await msg.edit(content="Message Inactive: Operation Cancelled")
                 if (i + 1) % 5 == 0:
+                    msg = await ctx.channel.fetch_message(msg.id)
                     await msg.edit(embed=gen_embed(i))
                 try:
                     await member.edit(nick=nick)
@@ -714,13 +802,14 @@ class Moderation(commands.Cog):
                                 await msg.remove_reaction(reaction.emoji, user)
                                 continue
                             return await msg.edit(content="Message Inactive: Operation Cancelled")
+            await msg.edit(content="Operation Complete", embed=gen_embed(i))
 
     @commands.command(name='mass-role', aliases=['massrole'])  # Have +/- support
     @commands.cooldown(*utils.default_cooldown())
     @check_if_running()
     @has_required_permissions(manage_roles=True)
     @commands.bot_has_guild_permissions(manage_roles=True)
-    async def mass_role(self, ctx, *, role: Union[discord.Role, str]):
+    async def mass_role(self, ctx, *, role):
         def gen_embed(iteration):
             e = discord.Embed(color=colors.fate())
             e.set_author(name=f"Mass {action} Roles", icon_url=ctx.author.avatar_url)
@@ -750,6 +839,7 @@ class Moderation(commands.Cog):
 
         role = role.lstrip("+")
         action = "Adding"
+        i = 0
         if role.startswith("-"):
             action = "Removing"
             role = role.lstrip("-")
@@ -759,7 +849,7 @@ class Moderation(commands.Cog):
         members = [
             member for member in ctx.guild.members
             if member.top_role.position < ctx.author.top_role.position
-               and member.author.top_role.position < ctx.guild.me.top_role.position
+               and member.top_role.position < ctx.guild.me.top_role.position
                and (role not in member.roles if action == "Adding"
                     else role in member.roles)
         ]
@@ -770,15 +860,18 @@ class Moderation(commands.Cog):
         else:
             msg = await ctx.send(embed=gen_embed(0))
         async with ctx.typing():
-            await msg.add_reaction("❌")
+            react = await msg.add_reaction("❌")
             for i, member in enumerate(members[:3600]):
-                for reaction in [r for r in msg.reactions if str(reaction.emoji) == "❌"] and reaction.count > 1:
+                for reaction in [r for r in msg.reactions if react is r]:
+                    if reaction.count == 1:
+                        continue
                     async for user in reaction.users():
-                        if not user.guild_permissions.manage_nicknames:
+                        if user.guild_permissions.manage_roles:
                             await msg.remove_reaction(reaction.emoji, user)
                             continue
                         return await msg.edit(content="Message Inactive: Operation Cancelled")
                 if (i + 1) % 5 == 0:
+                    msg = await ctx.channel.fetch_message(msg.id)
                     await msg.edit(embed=gen_embed(i))
                 try:
                     if action == "Adding":
@@ -797,6 +890,7 @@ class Moderation(commands.Cog):
                                 await msg.remove_reaction(reaction.emoji, user)
                                 continue
                             return await msg.edit(content="Message Inactive: Operation Cancelled")
+            await msg.edit(content="Operation Complete", embed=gen_embed(i))
 
     async def warn_user(self, channel, user, reason):
         guild = channel.guild
@@ -805,7 +899,8 @@ class Moderation(commands.Cog):
         if guild_id not in self.config:
             self.config[guild_id] = self.template
         warns = self.config[guild_id]["warns"]
-        config = self.bot.utils.get_config()  # type: dict
+        with open("./data/userdata/config.json", "r") as f:
+            config = json.load(f)  # type: dict
         punishments = ['None', 'None', 'Mute', 'Kick', 'Softban', 'Ban']
         if guild_id in config['warns']['punishments']:
             punishments = config['warns']['punishments'][guild_id]
@@ -825,21 +920,21 @@ class Moderation(commands.Cog):
             total_warns += 1
         self.save_data()
 
-        if warns > len(punishments):
+        if total_warns > len(punishments):
             punishment = punishments[-1:][0]
         else:
-            punishment = punishments[warns - 1]
-        if warns >= len(punishments):
+            punishment = punishments[total_warns - 1]
+        if total_warns >= len(punishments):
             next_punishment = punishments[-1:][0]
         else:
-            next_punishment = punishments[warns]
+            next_punishment = punishments[total_warns]
 
         e = discord.Embed(color=colors.fate())
         url = self.bot.user.avatar_url
         if user.avatar_url:
             url = user.avatar_url
         e.set_author(name=f'{user.name} has been warned', icon_url=url)
-        e.description = f'**Warns:** [`{warns}`] '
+        e.description = f'**Warns:** [`{total_warns}`] '
         if punishment != 'None':
             e.description += f'**Punishment:** [`{punishment}`]'
         if punishment == 'None' and next_punishment != 'None':
@@ -919,26 +1014,77 @@ class Moderation(commands.Cog):
             except:
                 await channel.send('Failed to ban this user')
 
-    def has_warn_permission(self):
-        async def predicate(ctx):
-            config = self.template
-            guild_id = str(ctx.guild.id)
-            if guild_id in self.config:
-                config = self.config[guild_id]
-            if ctx.author.id in config['commands']['warn']:
-                return True
-            elif ctx.author.guild_permissions.administrator:
-                return True
-        return commands.check(predicate)
-
     @commands.command(name='warn')
     @commands.cooldown(*utils.default_cooldown())
     @check_if_running()
     @has_warn_permission()
-    async def warn(self, ctx, user: Greedy[discord.User], *, reason):
+    async def warn(self, ctx, user: Greedy[discord.Member], *, reason):
         for user in list(user):
+            if user.bot:
+                await ctx.send(f"You can't warn {user.mention} because they're a bot")
+                continue
             await self.warn_user(ctx.channel, user, reason)
+
+    @commands.command(name='delwarn')
+    @commands.cooldown(*utils.default_cooldown())
+    @check_if_running()
+    @has_warn_permission()
+    @commands.bot_has_permissions(add_reactions=True)
+    async def delwarn(self, ctx, user: Greedy[discord.Member], *, partial_reason):
+        def check(reaction, user):
+            return user == ctx.author and str(reaction.emoji) in ['✔', '❌']
+
+        guild_id = str(ctx.guild.id)
+        for user in list(set(user)):
+            user_id = str(user.id)
+            if user_id not in self.config[guild_id]["warns"]:
+                await ctx.send(f"{user} has no warns")
+                continue
+            for reason, warn_time in self.config[guild_id][user_id]["warns"]:
+                if partial_reason in reason:
+                    e = discord.Embed(color=colors.fate())
+                    e.set_author(name="Is this the right warn?")
+                    e.description = reason
+                    msg = await ctx.send(embed=e)
+                    await msg.add_reaction('✔')
+                    await asyncio.sleep(0.5)
+                    await msg.add_reaction('❌')
+                    try:
+                        reaction, user = await self.bot.wait_for('reaction_add', timeout=60.0, check=check)
+                    except asyncio.TimeoutError:
+                        await msg.edit(content="Inactive Message: timed out due to no response")
+                        if ctx.channel.permissions_for(ctx.guild.me).manage_messages:
+                            await msg.clear_reactions()
+                        return
+                    else:
+                        if str(reaction.emoji) == '✔':
+                            self.config[guild_id]["warns"][user_id].remove([reason, warn_time])
+                            self.save_data()
+                            await ctx.message.delete()
+                            await msg.delete()
+                        else:
+                            await msg.delete()
+                        break
+
+    @commands.command(name="clearwarns")
+    @commands.cooldown(*utils.default_cooldown())
+    @check_if_running()
+    @has_warn_permission()
+    async def clear_warns(self, ctx, user: Greedy[discord.Member]):
+        guild_id = str(ctx.guild.id)
+        for user in list(set(user)):
+            user_id = str(user.id)
+            if user_id not in self.config[guild_id]["warns"]:
+                await ctx.send(f"{user} has no warns")
+                continue
+            if user.position >= ctx.author.top_role.position and ctx.author.id != ctx.guild.owner.id:
+                await ctx.send(f"{user} is above your paygrade, take a seat")
+            del self.config[guild_id]["warns"][user_id]
+            await ctx.send(f"Cleared {user}'s warns")
+            self.save_data()
 
 
 def setup(bot):
-    bot.add_cog(Moderation(bot))
+    cls = Moderation(bot)
+    globals()["cls"] = cls
+    bot.add_cog(cls)

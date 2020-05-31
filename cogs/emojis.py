@@ -5,6 +5,8 @@ Module for viewing and managing emojis
 import requests
 import discord
 import asyncio
+import aiohttp
+import aiofiles
 
 from discord.ext import commands
 from discord.ext.commands import Greedy
@@ -106,7 +108,18 @@ class Emojis(commands.Cog):
 			return len([e for e in ctx.guild.emojis if e.animated]) == ctx.guild.emoji_limit
 
 		async def not_at_limit(emoji) -> bool:
-			if emoji.animated and a_limit:
+			if isinstance(emoji, str):
+				if "gif" in str(emoji) and max_a_emotes():
+					failed.append(emoji)
+					globals()['a_limit'] = True
+					await self.bot.utils.update_msg(msg, "**Reached the emoji limit**")
+					return False
+				elif max_emotes():
+					failed.append(emoji)
+					globals()['limit'] = True
+					await self.bot.utils.update_msg(msg, "**Reached the emoji limit**")
+					return False
+			elif emoji.animated and a_limit:
 				failed.append(emoji.name)
 				return False
 			elif not emoji.animated and limit:
@@ -123,7 +136,7 @@ class Emojis(commands.Cog):
 
 		# Handle emoji limitations
 		if len(ctx.guild.emojis) == ctx.guild.emoji_limit * 2:
-			return await ctx.send("You're at the emoji limit for both emojis and animated emojis")
+			return await ctx.send("You're at the limit for both emojis and animated emojis")
 		limit = a_limit = False
 		failed = []  # Emojis that failed due to the emoji limit
 
@@ -143,15 +156,22 @@ class Emojis(commands.Cog):
 				if self.is_blacklisted(emoji):
 					await self.bot.utils.update_msg(msg, f"ERR: {emoji.name} - Invalid Emoji")
 					continue
-				name = emoji.name; img = requests.get(emoji.url).content
+				name = emoji.name
+				img = await self.bot.download(emoji.url)
 				await self.upload_emoji(ctx, name=name, img=img, reason=str(ctx.author), msg=msg)
 
 		# PartialEmoji IDS
 		for emoji_id in ids:
 			emoji = self.bot.get_emoji(emoji_id)
-			if not emoji:
+			if emoji:
+				emoji = emoji.url
+			else:
+				emoji = f"https://cdn.discordapp.com/emojis/{emoji_id}.png"
+			img = await self.bot.download(emoji)
+			if not img:
 				await self.bot.utils.update_msg(msg, f"{emoji_id} - Couldn't Fetch")
 				continue
+
 			if await not_at_limit(emoji):
 				# Get any optional 'name' arguments
 				argsv = ctx.message.content.split()
@@ -162,7 +182,6 @@ class Emojis(commands.Cog):
 					if not new_name.isdigit():
 						name = new_name
 
-				img = requests.get(emoji.url).content
 				await self.upload_emoji(ctx, name=str(name), img=img, reason=str(ctx.author), msg=msg)
 
 		# Image/GIF URLS
@@ -171,7 +190,7 @@ class Emojis(commands.Cog):
 				return '.'
 			return args[iter + 1]
 		mappings = {
-			requests.get(arg).content: check(iter) if '.' not in check(iter) else 'new_emoji'
+			await self.bot.download(arg): check(iter) if '.' not in check(iter) else 'new_emoji'
 				for iter, arg in enumerate(args) if '.' in arg
 		}
 		for img, name in mappings.items():

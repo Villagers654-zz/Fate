@@ -16,7 +16,6 @@ import json
 import os
 from datetime import datetime, timedelta
 import requests
-import traceback
 from time import time
 
 from discord.ext import commands
@@ -62,19 +61,27 @@ class Logger(commands.Cog):
         }
 
         self.static = {}
-        self.tasks = {}
         self.wait_queue = {}
-        self.last_checkin = {}
 
         self.invites = {}
         if self.bot.is_ready():
             self.bot.loop.create_task(self.init_invites())
             for guild_id in self.config.keys():
-                if guild_id in self.tasks:
-                    self.tasks[guild_id].cancel()
+                if guild_id in bot.logger_tasks:
+                    bot.logger_tasks[guild_id].cancel()
                 task = self.bot.loop.create_task(self.start_queue(guild_id))
-                self.tasks[guild_id] = task
-            # bot.tasks.start(self.ensure_tasks, task_id="keep-logs-alive", kill_existing=True)
+                bot.logger_tasks[guild_id] = task
+            if "keep_alive_task" in bot.logger_tasks:
+                if bot.logger_tasks["keep_alive_task"].done():
+                    bot.log(
+                        message="Loggers keep alive task came to an end",
+                        level="CRITICAL",
+                        tb=bot.logger_tasks["keep_alive_tasks"].result()
+                    )
+                else:
+                    bot.logger_tasks["keep_alive_task"].cancel()
+            task = self.bot.loop.create_task(self.keep_alive_task())
+            bot.logger_tasks["keep_alive_task"] = task
 
     def save_data(self):
         """ Saves local variables """
@@ -99,7 +106,23 @@ class Logger(commands.Cog):
         self.config[guild_id]['channel'] = category.id
         return category
 
-    async def wait_for_permission(self, guild, permission: str):
+    async def keep_alive_task(self):
+        self.bot.log("Loggers keep_alive_task was started")
+        channel = self.bot.get_channel(541520201926311986)
+        while True:
+            for guild_id, task in list(self.bot.logger_tasks.items()):
+                if task.done():
+                    guild = self.bot.get_guild(int(guild_id))
+                    if not guild:
+                        del self.bot.logger_tasks[guild_id]
+                        continue
+                    await channel.send(
+                        f"The queue task for {guild} unexpectedly completed, here's the result\n```python\n{str(task.result())[:1900]}```")
+                    task = self.bot.loop.create_task(self.start_queue(guild_id))
+                    self.bot.logger_tasks[guild_id] = task
+            await asyncio.sleep(60)
+
+    async def wait_for_permission(self, guild, permission: str, channel=None):
         """Notify the owner of missing permissions and wait until they've been granted"""
 
         # Keep a 'process list' of sorts to prevent multiple events using this
@@ -115,12 +138,20 @@ class Logger(commands.Cog):
 
         for _attempt in range(12 * 60):  # Timeout of 12 hours
             # Check if you have the required permission
-            if eval(f"guild.me.guild_permissions.{permission}"):
-                if parent:
-                    self.wait_queue[guild_id].remove(permission)
-                    if not self.wait_queue[guild_id]:
-                        del self.wait_queue[guild_id]
-                break
+            if channel:
+                if eval(f"channel.permissions_for(guild.me).{permission}"):
+                    if parent:
+                        self.wait_queue[guild_id].remove(permission)
+                        if not self.wait_queue[guild_id]:
+                            del self.wait_queue[guild_id]
+                    break
+            else:
+                if eval(f"guild.me.guild_permissions.{permission}"):
+                    if parent:
+                        self.wait_queue[guild_id].remove(permission)
+                        if not self.wait_queue[guild_id]:
+                            del self.wait_queue[guild_id]
+                    break
 
             # See if the bot can send a dm notice
             # This is only used by the parent to prevent API spam
@@ -158,7 +189,6 @@ class Logger(commands.Cog):
         + can wait to send logs
         + archives the last 50-175 logs to
         be able to resend if deleted """
-
         guild = self.bot.get_guild(int(guild_id))
         index = 1
         while not guild:
@@ -180,13 +210,21 @@ class Logger(commands.Cog):
 
         while True:
             while not self.queue[guild_id]:
-                self.last_checkin[guild_id] = time()
                 await asyncio.sleep(1.21)
+
+            guild = self.bot.get_guild(int(guild_id))
+            index = 1
+            while not guild:
+                await asyncio.sleep(60)
+                guild = self.bot.get_guild(int(guild_id))
+                index += 1
+                if index == 60 * 12:
+                    del self.config[guild_id]
+                    return
 
             log_type = self.config[guild_id]['type']  # type: str
 
             for embed, channelType, logged_at in self.queue[guild_id][-175:]:
-                self.last_checkin[guild_id] = time()
                 list_obj = [embed, channelType, logged_at]
                 file_paths = []
                 files = []
@@ -197,126 +235,144 @@ class Logger(commands.Cog):
                     files = [discord.File(file) for file in file_paths if os.path.isfile(file)]
 
                 for i, field in enumerate(embed.fields):
-                    if not field.value:
+                    if not field.value or field.value is discord.Embed.Empty:
+                        self.bot.log(f"A log of type {channelType} had no value", "CRITICAL")
+                        for chunk in self.bot.utils.split(str(embed.to_dict()), 1900):
+                            self.bot.log(chunk, "CRITICAL")
                         embed.fields[i].value = 'None'
+                    if len(field.value) > 1024:
+                        embed.remove_field(i)
+                        for iter, chunk in enumerate(self.bot.utils.split(field.value, 1024)):
+                            embed.insert_field_at(
+                                index=i + iter,
+                                name=field.name,
+                                value=chunk,
+                                inline=field.inline
+                            )
+                        self.bot.log(f"A log of type {channelType} had had a huge value", "CRITICAL")
+                        for chunk in self.bot.utils.split(str(embed.to_dict()), 1900):
+                            self.bot.log(chunk, "CRITICAL")
 
                 embed.timestamp = datetime.fromtimestamp(logged_at)
 
-                if self.config[guild_id]['secure'] and not guild.me.guild_permissions.administrator:
-                    del self.last_checkin[guild_id]
+                # Permission checks to ensure the secure features can function
+                if self.config[guild_id]['secure']:
                     result = await self.wait_for_permission(guild, "administrator")
                     if not result:
                         del self.config[guild_id]
-                        del self.last_checkin[guild_id]
                         return self.save_data()
-                    self.last_checkin[guild_id] = time()
 
+                # Ensure the channel still exists
                 category = self.bot.get_channel(self.config[guild_id]['channel'])
-                cant_find = False
-                while not category:
-                    self.last_checkin[guild_id] = time()
+                if not category:
+                    if not guild.me.guild_permissions.manage_channels:
+                        result = await self.wait_for_permission(guild, "manage_channels")
+                        if not result:
+                            del self.config[guild_id]
+                            return self.save_data()
                     try:
                         category = await self.bot.fetch_channel(self.config[guild_id]['channel'])
-                    except (discord.errors.Forbidden, discord.errors.NotFound):
-                        try:
-                            if log_type == 'multi':
-                                category = await self.initiate_category(guild)
-                                self.save_data()
-                            elif log_type == 'single':
-                                category = await guild.create_text_channel(name='bot-logs')
-                                self.config[guild_id]['channel'] = category.id
+                    except discord.errors.NotFound:
+                        if log_type == 'multi':
+                            category = await self.initiate_category(guild)
                             self.save_data()
-                            break
-                        except discord.errors.Forbidden:
-                            cant_find = True
-                            break
-                    else:
-                        break
+                        elif log_type == 'single':
+                            category = await guild.create_text_channel(name='bot-logs')
+                            self.config[guild_id]['channel'] = category.id
+                        self.save_data()
 
-                if cant_find:
-                    del self.last_checkin[guild_id]
-                    dm = None
-                    for _attempt in range(24 * 60):
-                        try:
-                            category = await self.bot.fetch_channel(self.config[guild_id]['channel'])
-                        except (discord.errors.NotFound, discord.errors.Forbidden):
-                            pass
-                        else:
-                            break
-                        if guild.me.guild_permissions.manage_channels:
-                            if log_type == 'multi':
-                                category = await self.initiate_category(guild)
-                                self.save_data()
-                            elif log_type == 'single':
-                                category = await guild.create_text_channel(name='bot-logs')
-                                self.config[guild_id]['channel'] = category.id
-                            self.save_data()
-                            break
-                        try:
-                            if not dm:
-                                dm = guild.owner.dm_channel
-                            if not dm:
-                                dm = await guild.owner.create_dm()
-                            async for msg in dm.history(limit=1):
-                                if "I can't access my log channel" not in msg.content:
-                                    await guild.owner.send(
-                                        f"I can't access my log channel in {guild}, or create a new one. "
-                                        f"Until I can, I'll keep a maximum 12 hours of logs in queue"
-                                    )
-                        except (discord.errors.Forbidden, discord.errors.NotFound):
-                            pass
-                        await asyncio.sleep(60)
-                    else:
+                # Ensure basic send-embed level permissions
+                if isinstance(category, discord.TextChannel):
+                    result = await self.wait_for_permission(guild, "send_messages", category)
+                    if not result:
+                        del self.config[guild_id]
+                        return self.save_data()
+                    result = await self.wait_for_permission(guild, "embed_links", category)
+                    if not result:
                         del self.config[guild_id]
                         return self.save_data()
 
-                self.last_checkin[guild_id] = time()
+                # Ensure this still exists
+                if guild_id not in self.recent_logs:
+                    if self.config[guild_id]['type'] == 'single':
+                        self.recent_logs[guild_id] = []
+                    else:
+                        self.recent_logs[guild_id] = {
+                            Type: [] for Type in self.channel_types
+                        }
 
-                try:
-                    if isinstance(category, discord.TextChannel):  # single channel log
+                if isinstance(category, discord.TextChannel):  # single channel log
+                    try:
+                        await category.send(embed=embed, files=files)
+                    except (discord.errors.Forbidden, discord.errors.NotFound):
+                        e = discord.Embed(title='Failed to send embed')
+                        e.set_author(name=guild if guild else "Unknown Guild")
+                        for text_group in self.bot.utils.split(str(json.dumps(embed.to_dict(), indent=2)), 1990):
+                            e.add_field(name="Embed Data", value=text_group, inline=False)
+                        e.set_footer(text=str(guild.id) if guild else "Unknown Guild")
                         try:
-                            await category.send(embed=embed, files=files)
+                            await category.send(embed=e)
+                        except (discord.errors.Forbidden, discord.errors.NotFound):
+                            break
+                        continue
+                    if file_paths:
+                        for file in file_paths:
+                            if os.path.isfile(file):
+                                os.remove(file)
+                    self.queue[guild_id].remove(list_obj)
+                    if isinstance(self.recent_logs[guild_id], dict):
+                        self.recent_logs[guild_id] = []
+                    self.recent_logs[guild_id].append([embed, logged_at])
+
+                for Type, channel_id in self.config[guild_id]['channels'].items():
+                    if Type == channelType:
+                        channel = self.bot.get_channel(channel_id)
+
+                        # Ensure send-embed level permissions
+                        if not channel:
+                            if not guild.me.guild_permissions.manage_channels:
+                                result = await self.wait_for_permission(guild, "manage_channels")
+                                if not result:
+                                    del self.config[guild_id]
+                                    return self.save_data()
+                            result = await self.wait_for_permission(guild, "send_messages", channel)
+                            if not result:
+                                del self.config[guild_id]
+                                return self.save_data()
+                            result = await self.wait_for_permission(guild, "embed_links", channel)
+                            if not result:
+                                del self.config[guild_id]
+                                return self.save_data()
+
+                            channel = await guild.create_text_channel(
+                                name=channelType,
+                                category=category
+                            )
+                            self.config[guild_id]['channels'][Type] = channel.id
+                            self.save_data()
+                        try:
+                            await channel.send(embed=embed, files=files)
                         except (discord.errors.Forbidden, discord.errors.NotFound):
                             e = discord.Embed(title='Failed to send embed')
-                            e.description = f'```{json.dumps(embed.to_dict(), indent=2)}```'
-                            await category.send(embed=e)
+                            e.set_author(name=guild if guild else "Unknown Guild")
+                            for text_group in self.bot.utils.split(str(json.dumps(embed.to_dict(), indent=2)), 1990):
+                                e.add_field(name="Embed Data", value=text_group, inline=False)
+                            e.set_footer(text=str(guild.id) if guild else "Unknown Guild")
+                            try:
+                                await channel.send(embed=e)
+                            except (discord.errors.Forbidden, discord.errors.NotFound):
+                                break
+                            continue
                         if file_paths:
                             for file in file_paths:
                                 if os.path.isfile(file):
                                     os.remove(file)
-                        self.queue[guild_id].remove(list_obj)
-                        self.recent_logs[guild_id].append([embed, logged_at])
-
-                    for Type, channel_id in self.config[guild_id]['channels'].items():
-                        if Type == channelType:
-                            channel = self.bot.get_channel(channel_id)
-                            if not channel:
-                                channel = await guild.create_text_channel(
-                                    name=channelType,
-                                    category=category
-                                )
-                                self.config[guild_id]['channels'][Type] = channel.id
-                                self.save_data()
-                            try:
-                                await channel.send(embed=embed, files=files)
-                            except (discord.errors.NotFound, discord.errors.Forbidden):
-                                e = discord.Embed(title='Failed to send embed')
-                                e.description = f'```json\n{json.dumps(embed.to_dict(), indent=2)}```'
-                                await channel.send(embed=e)
-                            if file_paths:
-                                for file in file_paths:
-                                    if os.path.isfile(file):
-                                        os.remove(file)
+                        try:
                             self.queue[guild_id].remove(list_obj)
-                            self.recent_logs[guild_id][channelType].append([embed, logged_at])
-                            break
-                except (discord.errors.HTTPException, discord.errors.Forbidden, discord.errors.NotFound):
-                    err_channel = self.bot.get_channel(577661461543780382)
-                    await err_channel.send(f"Secure Log Error\n{str(traceback.format_exc())[-1980:]}")
-                    for text_group in self.bot.utils.split(str(json.dumps(embed.to_dict(), indent=2)), 1980):
-                        await err_channel.send(f'```json\n{text_group}```')
-                    self.queue[guild_id].remove([embed, channelType, logged_at])
-                self.last_checkin[guild_id] = time()
+                        except IndexError:
+                            pass
+                        self.recent_logs[guild_id][channelType].append([embed, logged_at])
+                        break
 
                 if log_type == 'multi':
                     # noinspection PyUnboundLocalVariable
@@ -347,9 +403,6 @@ class Logger(commands.Cog):
 
     async def search_audit(self, guild, *actions):
         """ Returns the latest entry from a list of actions """
-        async def search():
-
-            return dat
         dat = {
             'user': 'Unknown',
             'actual_user': None,
@@ -457,7 +510,10 @@ class Logger(commands.Cog):
             "ignored_channels": [],
             "ignored_bots": []
         }
-        self.bot.loop.create_task(self.start_queue(guild_id))
+        if guild_id in self.bot.logger_tasks and not self.bot.logger_tasks[guild_id].done():
+            self.bot.logger_tasks[guild_id].cancel()
+        task = self.bot.loop.create_task(self.start_queue(guild_id))
+        self.bot.logger_tasks[guild_id] = task
         await ctx.send("Enabled Logger")
         self.save_data()
 
@@ -505,7 +561,10 @@ class Logger(commands.Cog):
                 "ignored_channels": [],
                 "ignored_bots": []
             }
-        self.bot.loop.create_task(self.start_queue(guild_id))
+        if guild_id in self.bot.logger_tasks and not self.bot.logger_tasks[guild_id].done():
+            self.bot.logger_tasks[guild_id].cancel()
+        task = self.bot.loop.create_task(self.start_queue(guild_id))
+        self.bot.logger_tasks[guild_id] = task
         await ctx.send(f"Enabled Logger in {channel.mention}")
         self.save_data()
 
@@ -627,21 +686,21 @@ class Logger(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        for guild_id in self.config.keys():
+        for guild_id in list(self.config.keys()):
+            if guild_id in self.bot.logger_tasks and not self.bot.logger_tasks[guild_id].done():
+                continue
             task = self.bot.loop.create_task(self.start_queue(guild_id))
-            self.tasks[guild_id] = task
+            self.bot.logger_tasks[guild_id] = task
+        if "keep_alive_task" in self.bot.logger_tasks:
+            if self.bot.logger_tasks["keep_alive_task"].done():
+                self.bot.log(
+                    message="Loggers keep alive task came to an end",
+                    level="CRITICAL",
+                    tb=self.bot.logger_tasks["keep_alive_tasks"].result()
+                )
+            task = self.bot.loop.create_task(self.keep_alive_task())
+            self.bot.logger_tasks["keep_alive_task"] = task
         self.bot.tasks.start(self.init_invites)
-        channel = self.bot.get_channel(541520201926311986)
-        while True:
-            now = time()
-            for guild_id, last_checkin in list(self.last_checkin.items()):
-                if last_checkin < now - 60:
-                    guild = self.bot.get_guild(int(guild_id))
-                    await channel.send(f"The queue for {guild} failed to check in after 1 minute, closing and restarting")
-                    self.tasks[guild_id].cancel()
-                    task = self.bot.loop.create_task(self.start_queue(guild_id))
-                    self.tasks[guild_id] = task
-            await asyncio.sleep(10)
 
     @commands.Cog.listener()
     async def on_message(self, msg):
@@ -677,7 +736,8 @@ class Logger(commands.Cog):
                             "Channel": msg.channel.mention,
                             f"[Jump to MSG]({msg.jump_url})": None
                         })
-                        e.add_field(name='Content', value=m.content, inline=False)
+                        for group in self.bot.utils.split(m.content, 1024):
+                            e.add_field(name='Content', value=group, inline=False)
                         self.queue[guild_id].append([e, 'system+', time()])
 
     @commands.Cog.listener()
@@ -699,9 +759,9 @@ class Logger(commands.Cog):
                         "Channel": before.channel.mention,
                         f"[Jump to MSG]({before.jump_url})": None
                     })
-                    for group in [before.content[i:i + 1000] for i in range(0, len(before.content), 1000)]:
+                    for group in [before.content[i:i + 1024] for i in range(0, len(before.content), 1024)]:
                         e.add_field(name='◈ Before', value=group, inline=False)
-                    for group in [after.content[i:i + 1000] for i in range(0, len(after.content), 1000)]:
+                    for group in [after.content[i:i + 1024] for i in range(0, len(after.content), 1024)]:
                         e.add_field(name='◈ After', value=group, inline=False)
                     self.queue[guild_id].append([e, 'chat', time()])
 
@@ -764,7 +824,7 @@ class Logger(commands.Cog):
                     "Channel": channel.mention,
                     f"[Jump to MSG]({msg.jump_url})": None
                 })
-                for text_group in self.bot.utils.split(msg.content):
+                for text_group in self.bot.utils.split(msg.content, 1024):
                     e.add_field(name='◈ Content', value=text_group, inline=False)
                 self.queue[guild_id].append([e, 'chat', time()])
 
@@ -810,7 +870,7 @@ class Logger(commands.Cog):
                     "Channel": msg.channel.mention,
                     "Deleted by": dat['user']
                 })
-                for text_group in self.bot.utils.split(msg.content):
+                for text_group in self.bot.utils.split(msg.content, 1024):
                     e.add_field(name='◈ MSG Content', value=text_group, inline=False)
                 if msg.embeds:
                     e.set_footer(text='⇓ Embed ⇓')
@@ -999,7 +1059,7 @@ class Logger(commands.Cog):
                           f"\n**ID:** {after.owner.id}"
                 )
                 self.queue[guild_id].append([e, 'updates', time()])
-            if before.features != after.features:
+            if before.features != after.features and before.features or after.features:
                 e = create_template_embed()
                 e.description = f"> 》__**Features Changed**__《"
                 changes = ''
@@ -1009,13 +1069,13 @@ class Logger(commands.Cog):
                 for feature in after.features:
                     if feature not in before.features:
                         changes += f"<:plus:548465119462424595> {feature}"
-                e.add_field(name='◈ Changes', value=changes)
-                self.queue[guild_id].append([e, 'updates', time()])
+                if changes:
+                    e.add_field(name='◈ Changes', value=changes)
+                    self.queue[guild_id].append([e, 'updates', time()])
             if before.premium_tier != after.premium_tier:
-                e = create_template_embed()
-                e.description = f"> 》__**Premium Tier Changed**__《" \
-                                f"\n**Before:** [{before.premium_tier}]" \
-                                f"\n**After:** [{after.premium_tier}]"
+                e = discord.Embed(color=pink())
+                action = "lowered" if before.premium_tier > after.premium_tier else "raised"
+                e.description = f"Servers boost level {action} to {after.premium_tier}"
                 self.queue[guild_id].append([e, 'updates', time()])
             if before.premium_subscription_count != after.premium_subscription_count:
                 e = create_template_embed()
@@ -1595,3 +1655,10 @@ class Logger(commands.Cog):
 
 def setup(bot):
     bot.add_cog(Logger(bot))
+
+
+def teardown(bot):
+    cog = bot.get_cog("Logger")  # type: Logger
+    for task in cog.tasks.values():
+        if not task.done():
+            task.cancel()

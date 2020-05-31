@@ -167,6 +167,9 @@ class Ranking(commands.Cog):
 				# 		await cur.execute(f"update global_msg set xp = {xp} where user_id = {user_id};")
 				# 		await conn.commit()
 
+			if not self.bot.pool:
+				return
+
 			# anti spam
 			now = int(time() / 5)
 			if guild_id not in self.spam_cd:
