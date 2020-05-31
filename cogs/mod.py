@@ -825,7 +825,8 @@ class Moderation(commands.Cog):
             e = discord.Embed(color=colors.fate())
             e.set_author(name="Mass Updating Nicknames", icon_url=ctx.author.avatar_url)
             e.description = f"{iteration}/{len(members)} complete" \
-                            f"\nETA of {self.bot.utils.get_time(len(members))}"
+                            f"\nETA of {self.bot.utils.get_time(round(len(members) * 1.21))}" \
+                            f"\nCD: 1 role per 1.21 seconds"
             return e
 
         members = [
@@ -860,7 +861,7 @@ class Moderation(commands.Cog):
                     if not ctx.guild.me.guild_permissions.manage_nicknames:
                         await msg.edit(content="Message Inactive: Missing Permissions")
                         return await ctx.send("I'm missing permissions to manage nicknames. Canceling the operation :[")
-                await asyncio.sleep(1)
+                await asyncio.sleep(1.21)
                 for reaction in msg.reactions:
                     if str(reaction.emoji) == "❌" and reaction.count > 1:
                         async for user in reaction.users():
@@ -880,7 +881,8 @@ class Moderation(commands.Cog):
             e = discord.Embed(color=colors.fate())
             e.set_author(name=f"Mass {action} Roles", icon_url=ctx.author.avatar_url)
             e.description = f"{iteration}/{len(members)} complete" \
-                            f"\nETA of {self.bot.utils.get_time(len(members))}"
+                            f"\nETA of {self.bot.utils.get_time(round(len(members) * 1.21))}" \
+                            f"\nCD: 1 role per 1.21 seconds"
             return e
 
         if not role:
@@ -948,7 +950,7 @@ class Moderation(commands.Cog):
                     if not ctx.guild.me.guild_permissions.manage_roles:
                         await msg.edit(content="Message Inactive: Missing Permissions")
                         return await ctx.send("I'm missing permissions to manage roles. Canceling the operation :[")
-                await asyncio.sleep(1)
+                await asyncio.sleep(1.21)
                 for reaction in msg.reactions:
                     if str(reaction.emoji) == "❌" and reaction.count > 1:
                         async for user in reaction.users():
