@@ -703,7 +703,7 @@ class Moderation(commands.Cog):
             return await ctx.send(f"{user.display_name} is not muted")
         await user.remove_roles(mute_role)
         if user_id in self.config[guild_id]['mute_timers']:
-            del self.config[guild_id]['mute_timers']
+            del self.config[guild_id]['mute_timers']['user_id']
             self.save_data()
         await ctx.send(f"Unmuted {user.name}")
 
