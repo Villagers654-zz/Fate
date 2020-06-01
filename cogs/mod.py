@@ -703,8 +703,14 @@ class Moderation(commands.Cog):
             return await ctx.send(f"{user.display_name} is not muted")
         await user.remove_roles(mute_role)
         if user_id in self.config[guild_id]['mute_timers']:
-            del self.config[guild_id]['mute_timers']['user_id']
+            del self.config[guild_id]['mute_timers'][user_id]
             self.save_data()
+        if guild_id in self.tasks and user_id in self.tasks[guild_id]:
+            if not self.tasks[guild_id][user_id].done():
+                self.tasks[guild_id][user_id].cancel()
+            del self.tasks[guild_id][user_id]
+            if not self.tasks[guild_id]:
+                del self.tasks[guild_id]
         await ctx.send(f"Unmuted {user.name}")
 
     @commands.command(name='kick')
