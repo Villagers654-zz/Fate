@@ -153,7 +153,8 @@ class ChatFilter(commands.Cog):
 								await m.delete()
 							else:
 								if phrase in m.content.replace(" ", ""):
-									await m.delete(delay=0.5)
+									await asyncio.sleep(0.5)
+									await m.delete()
 						except discord.errors.NotFound:
 							pass
 

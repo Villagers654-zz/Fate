@@ -1,6 +1,7 @@
 import traceback
 from discord.ext import commands
 import discord
+import os; os.system("echo yee")
 # ~
 
 class Console(commands.Cog):
