@@ -239,7 +239,7 @@ async def on_ready():
     )
     if not bot.pool:
         await bot.create_pool()
-    bot.owner_ids = (bot.config["owner_id"], bot.config["owner_ids"])
+    bot.owner_ids = set(list([bot.config["bot_owner_id"], *bot.config["bot_owner_ids"]]))
     if bot.awaited_extensions:
         bot.log("Loading awaited cogs", color='yellow')
         bot.load(*bot.awaited_extensions)
