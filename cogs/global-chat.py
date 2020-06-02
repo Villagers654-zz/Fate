@@ -277,7 +277,7 @@ class GlobalChat(commands.Cog):
 								content = msg.content
 							if msg.author.id == self.last_user and msg.channel.id == self.last_channel and not msg.attachments:
 								async for m in channel.history(limit=5):
-									if m.author.id == self.bot.user.id:
+									if m.author.id == self.bot.user.id and m.embeds:
 										e = m.embeds[0]
 										e.description += f'\n{content}'
 										await m.edit(embed=e)
