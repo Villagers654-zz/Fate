@@ -55,12 +55,6 @@ class Reactions(commands.Cog):
 	async def intimidate(self, ctx, *, content=None):
 		await self.send_webhook(ctx, 'apple', content)
 
-	@commands.command(name="powerup")
-	@commands.cooldown(1, 5, commands.BucketType.user)
-	@commands.bot_has_permissions(attach_files=True, manage_messages=True, manage_webhooks=True)
-	async def powerup(self, ctx, *, content=None):
-		await self.send_webhook(ctx, 'powerup', content)
-
 	@commands.command(name="observe")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.bot_has_permissions(attach_files=True, manage_messages=True, manage_webhooks=True)
