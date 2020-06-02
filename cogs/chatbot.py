@@ -102,7 +102,7 @@ class ChatBot(commands.Cog):
 			               "but some things can slip through. If you go through with it, and something does, you can "
 			               "join the support server and request its removal\nReply with '`yes`' or '`confirm`' to "
 			               "accept and switch to using global cache, or anything else to deny")
-			msg = await self.bot.utils.wait_for_msg(ctx)
+			msg = await self.bot.utils.wait_for_msg(self, ctx)
 			if not msg:
 				return
 			if "yes" in str(msg.content).lower() or "confirm" in str(msg.content).lower():
