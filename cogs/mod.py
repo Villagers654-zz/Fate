@@ -838,7 +838,7 @@ class Moderation(commands.Cog):
         members = [
             m for m in ctx.guild.members
             if m.top_role.position < ctx.author.top_role.position
-               and m.author.top_role.position < ctx.guild.me.top_role.position
+               and m.top_role.position < ctx.guild.me.top_role.position
                and m.display_name != nick
         ]
         if len(members) > 3600:
