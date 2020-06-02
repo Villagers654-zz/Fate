@@ -431,18 +431,6 @@ class Core(commands.Cog):
                                                   content=msg.content, embed=e)
                     await webhook.send(username=msg.author.name, avatar_url=msg.author.avatar_url, content=msg.content)
 
-    @commands.Cog.listener()
-    async def on_member_update(self, before, after):
-        if before.id == 537398938781876242:
-            c = self.bot.get_channel(712530700481462294)
-            await c.send(f"member {before} was updated")
-
-    @commands.Cog.listener()
-    async def on_user_update(self, before, after):
-        if before.id == 537398938781876242:
-            c = self.bot.get_channel(712530700481462294)
-            await c.send(f"user {before} was updated")
-
 
 def setup(bot):
     bot.add_cog(Core(bot))
