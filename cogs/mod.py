@@ -1152,7 +1152,7 @@ class Moderation(commands.Cog):
             if user_id not in self.config[guild_id]["warns"]:
                 await ctx.send(f"{user} has no warns")
                 continue
-            if user.position >= ctx.author.top_role.position and ctx.author.id != ctx.guild.owner.id:
+            if user.top_role.position >= ctx.author.top_role.position and ctx.author.id != ctx.guild.owner.id:
                 await ctx.send(f"{user} is above your paygrade, take a seat")
             del self.config[guild_id]["warns"][user_id]
             await ctx.send(f"Cleared {user}'s warns")
