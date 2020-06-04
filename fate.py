@@ -41,15 +41,14 @@ class Fate(commands.AutoShardedBot):
 
         if not self.config["original"]:
             original_only = ['polis', 'dev', 'backup']
-            for ext in original_only:
-                self.initial_extensions.remove(ext)
+            [self.initial_extensions.remove(ext) for ext in original_only]
 
         self.utils = utils              # Custom utility functions
         self.result = utils.Result      # Custom Result Object Creator
         self.memory = utils.MemoryInfo  # Class for easily accessing memory usage
         self.tasks = tasks.Tasks(self)  # Task Manager
 
-        perms = discord.Permissions(0)
+        perms = discord.Permissions()
         perms.update(
                 embed_links=True, manage_messages=True,
                 view_audit_log=True, manage_webhooks=True,
