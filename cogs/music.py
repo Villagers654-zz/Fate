@@ -6,18 +6,17 @@ import asyncio
 import math
 import json
 import re
-from fate import bot
+
 time_rx = re.compile('[0-9]+')
 url_rx = re.compile('https?:\/\/(?:www\.)?.+')  # noqa: W605
 
 class Music(commands.Cog):
-    def __init__(self, bot: bot):
+    def __init__(self, bot):
         self.bot = bot
         self.map = []
         if not hasattr(bot, 'lavalink'):
             creds = outh.Lavalink()
-            c = lavalink.Client(loop=bot.loop, user_id=bot.user.id)
-            c.add_node(host=creds.host, port=creds.port, password=creds.password, region="us-central")
+            lavalink.Client(password=creds.password, loop=bot.loop, ws_port=creds.ws_port, rest_port=creds.ws_port)
             self.bot.lavalink.register_hook(self._track_hook)
         self.skips = {}
         self.bot.tasks.start(self.cleanup_task, task_id="music_cleanup")
