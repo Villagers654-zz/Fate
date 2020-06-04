@@ -6,56 +6,19 @@ import asyncio
 import math
 import json
 import re
-
+from fate import bot
 time_rx = re.compile('[0-9]+')
 url_rx = re.compile('https?:\/\/(?:www\.)?.+')  # noqa: W605
 
-regions = {
-    "us-central",
-    "amsterdam",
-    "brazil",
-    "dubai",
-    "eu-central",
-    "eu-west",
-    "europe",
-    "frankfurt",
-    "hongkong",
-    "india",
-    "japan",
-    "london",
-    "russia",
-    "singapore",
-    "southafrica",
-    "sydney",
-    "us-east",
-    "us-south",
-    "us-west",
-    "vip-amsterdam",
-    "vip-us-east",
-    "vip-us-west",
-}
-
 class Music(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot: bot):
         self.bot = bot
         self.map = []
-        creds = outh.Lavalink()
-        if not hasattr(bot, "lavalink") or bot.lavalink is None:
-            self.bot.lavalink = lavalink.Client(
-                user_id=int(bot.user.id),
-                shard_count=int(len(bot.shards)),
-            )
-            for key in regions:
-                self.bot.lavalink.add_node(
-                    host=str(creds.host),
-                    port=int(creds.port),
-                    password=str(creds.password),
-                    region=key,
-                    resume_timeout=3,
-                    name=key,
-                )
-            bot.add_listener(bot.lavalink.voice_update_handler,
-                             "on_socket_response")
+        if not hasattr(bot, 'lavalink'):
+            creds = outh.Lavalink()
+            c = lavalink.Client(user_id=bot.user.id)
+            c.add_node(host=creds.host, port=creds.port, password=creds.password, region="us-central")
+            self.bot.lavalink.register_hook(self._track_hook)
         self.skips = {}
         self.bot.tasks.start(self.cleanup_task, task_id="music_cleanup")
 
