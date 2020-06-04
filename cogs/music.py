@@ -16,7 +16,7 @@ class Music(commands.Cog):
         self.map = []
         if not hasattr(bot, 'lavalink'):
             creds = outh.Lavalink()
-            c = lavalink.Client(user_id=bot.user.id)
+            c = lavalink.Client(loop=bot.loop, user_id=bot.user.id)
             c.add_node(host=creds.host, port=creds.port, password=creds.password, region="us-central")
             self.bot.lavalink.register_hook(self._track_hook)
         self.skips = {}
