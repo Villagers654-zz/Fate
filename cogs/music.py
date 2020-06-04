@@ -6,7 +6,7 @@ import asyncio
 import math
 import json
 import re
-from fate import bot
+
 time_rx = re.compile('[0-9]+')
 url_rx = re.compile('https?:\/\/(?:www\.)?.+')  # noqa: W605
 
@@ -36,7 +36,7 @@ regions = {
 }
 
 class Music(commands.Cog):
-    def __init__(self, bot: bot):
+    def __init__(self, bot):
         self.bot = bot
         self.map = []
         creds = outh.Lavalink()

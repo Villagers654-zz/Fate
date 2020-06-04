@@ -67,7 +67,6 @@ class Fate(commands.AutoShardedBot):
         # deprecated shit
         self.get_stats = utils.get_stats()
         self.get_config = utils.get_config()
-        self.lavalink = None
 
         super().__init__(
             command_prefix=utils.get_prefixes,
