@@ -355,7 +355,7 @@ class Logger(commands.Cog):
                         except (discord.errors.Forbidden, discord.errors.NotFound):
                             e = discord.Embed(title='Failed to send embed')
                             e.set_author(name=guild if guild else "Unknown Guild")
-                            for text_group in self.bot.utils.split(str(json.dumps(embed.to_dict(), indent=2)), 1990):
+                            for text_group in self.bot.utils.split(str(json.dumps(embed.to_dict(), indent=2)), 1024):
                                 e.add_field(name="Embed Data", value=text_group, inline=False)
                             e.set_footer(text=str(guild.id) if guild else "Unknown Guild")
                             try:
