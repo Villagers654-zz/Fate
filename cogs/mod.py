@@ -826,7 +826,7 @@ class Moderation(commands.Cog):
     @check_if_running()
     @has_required_permissions(manage_nicknames=True)
     @commands.bot_has_guild_permissions(manage_nicknames=True)
-    async def mass_nick(self, ctx, *, nick):
+    async def mass_nick(self, ctx, *, nick=''):
         def gen_embed(iteration):
             e = discord.Embed(color=colors.fate())
             e.set_author(name="Mass Updating Nicknames", icon_url=ctx.author.avatar_url)
@@ -835,11 +835,13 @@ class Moderation(commands.Cog):
                             f"\nETA of {self.bot.utils.get_time(round((len(members) - (iteration + 1)) * 1.21))}"
             return e
 
+        if len(nick) > 32:
+            return await ctx.send("Nicknames cannot exceed 32 characters in length")
         members = [
             m for m in ctx.guild.members
             if m.top_role.position < ctx.author.top_role.position
                and m.top_role.position < ctx.guild.me.top_role.position
-               and m.display_name != nick
+               and (m.nick if not nick else m.display_name != nick)
         ]
         if len(members) > 3600:
             async with ctx.typing():
@@ -849,6 +851,7 @@ class Moderation(commands.Cog):
             msg = await ctx.send(embed=gen_embed(0))
         async with ctx.typing():
             react = await msg.add_reaction("❌")
+            i = 0
             for i, member in enumerate(members[:3600]):
                 for reaction in [r for r in msg.reactions if react is r]:
                     if reaction.count == 1:
@@ -936,6 +939,7 @@ class Moderation(commands.Cog):
             msg = await ctx.send(embed=gen_embed(0))
         async with ctx.typing():
             react = await msg.add_reaction("❌")
+            i = 0
             for i, member in enumerate(members[:3600]):
                 for reaction in [r for r in msg.reactions if react is r]:
                     if reaction.count == 1:
@@ -1115,7 +1119,7 @@ class Moderation(commands.Cog):
             if user_id not in self.config[guild_id]["warns"]:
                 await ctx.send(f"{user} has no warns")
                 continue
-            for reason, warn_time in self.config[guild_id][user_id]["warns"]:
+            for reason, warn_time in self.config[guild_id]["warns"]["user_id"]:
                 if partial_reason in reason:
                     e = discord.Embed(color=colors.fate())
                     e.set_author(name="Is this the right warn?")
