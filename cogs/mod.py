@@ -1119,7 +1119,7 @@ class Moderation(commands.Cog):
             if user_id not in self.config[guild_id]["warns"]:
                 await ctx.send(f"{user} has no warns")
                 continue
-            for reason, warn_time in self.config[guild_id]["warns"]["user_id"]:
+            for reason, warn_time in self.config[guild_id]["warns"][user_id]:
                 if partial_reason in reason:
                     e = discord.Embed(color=colors.fate())
                     e.set_author(name="Is this the right warn?")

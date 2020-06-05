@@ -80,6 +80,10 @@ class Logger(commands.Cog):
                     )
                 else:
                     bot.logger_tasks["keep_alive_task"].cancel()
+                    bot.log(
+                        message="Canceled existing keep_alive_task in logger",
+                        level="INFO"
+                    )
             task = self.bot.loop.create_task(self.keep_alive_task())
             bot.logger_tasks["keep_alive_task"] = task
 
@@ -120,6 +124,7 @@ class Logger(commands.Cog):
                         f"The queue task for {guild} unexpectedly completed, here's the result\n```python\n{str(task.result())[:1900]}```")
                     task = self.bot.loop.create_task(self.start_queue(guild_id))
                     self.bot.logger_tasks[guild_id] = task
+            self.bot.log("keep_alive_task still running", "DEBUG")
             await asyncio.sleep(60)
 
     async def wait_for_permission(self, guild, permission: str, channel=None):
