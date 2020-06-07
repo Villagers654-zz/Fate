@@ -224,7 +224,7 @@ class UtilityBeta(commands.Cog):
 
             while True:
                 try:
-                    reaction, _user = await self.bot.wait_for('reaction_add', check=predicate, timeout=60)
+                    reaction, user = await self.bot.wait_for('reaction_add', check=predicate, timeout=60)
                 except asyncio.TimeoutError:
                     if ctx.channel.permissions_for(ctx.guild.me).manage_messages and msg:
                         await msg.clear_reactions()
@@ -239,11 +239,14 @@ class UtilityBeta(commands.Cog):
                     emojis.remove("🖥")
                 elif str(reaction.emoji) == "♻":  # Requested channel history
                     if not bot_has_audit_access:
+                        if ctx.channel.permissions_for(ctx.guild.me).manage_messages:
+                            await msg.remove_reaction(reaction, user)
                         err = "Missing view_audit_log permission(s)"
                         if any(field.value == err for field in e.fields):
                             continue
                         e.add_field(name="◈ Channel History", value=err, inline=False)
                     else:
+                        e.set_footer()
                         history = {}
                         e.add_field(name="◈ Channel History", value="Fetching..", inline=False)
                         await msg.edit(embed=e)
@@ -286,7 +289,87 @@ class UtilityBeta(commands.Cog):
             pass
 
         elif roles:
-            pass
+            e = discord.Embed(color=colors.fate())
+            e.set_author(name="Alright, here's what I got..", icon_url=self.bot.user.avatar_url)
+            role = roles[0]  # type: discord.Role
+
+            core = {}
+            core["Name"] = role.name
+            core["Mention"] = role.mention
+            core["ID"] = role.id
+            core["Members"] = len(role.members) if role.members else "None"
+            core["Created at"] = datetime.date(role.created_at).strftime("%m/%d/%Y %I%p")
+
+            extra = {}
+            extra["Mentionable"] = str(role.mentionable)
+            extra["HEX Color"] = role.color
+            extra["RGB Color"] = role.colour.to_rgb()
+            if role.hoist:
+                extra["**Shows Above Other Roles**"] = None
+            if role.managed:
+                extra["**And Is An Integrated Role**"] = None
+
+            e.add_field(name="◈ Role Information", value=self.bot.utils.format_dict(core), inline=False)
+            e.add_field(name="◈ Extra", value=self.bot.utils.format_dict(extra), inline=False)
+            e.set_footer(text="React With ♻ For History")
+
+            msg = await ctx.send(embed=e)
+            emojis = ["♻"]
+
+            for emoji in emojis:
+                await msg.add_reaction(emoji)
+
+            def predicate(r, u):
+                return str(r.emoji) in emojis and r.message.id == msg.id and not u.bot
+
+            while True:
+                try:
+                    reaction, user = await self.bot.wait_for('reaction_add', check=predicate, timeout=60)
+                except asyncio.TimeoutError:
+                    if ctx.channel.permissions_for(ctx.guild.me).manage_messages and msg:
+                        await msg.clear_reactions()
+                    return
+                if not bot_has_audit_access:
+                    if ctx.channel.permissions_for(ctx.guild.me).manage_messages:
+                        await msg.remove_reaction(reaction, user)
+                    err = "Missing view_audit_log permission(s)"
+                    if any(field.value == err for field in e.fields):
+                        continue
+                    e.add_field(name="◈ Role History", value=err, inline=False)
+                else:
+                    e.set_footer()
+                    history = {}
+                    e.add_field(name="◈ Role History", value="Fetching..", inline=False)
+                    await msg.edit(embed=e)
+
+                    action = discord.AuditLogAction.role_create
+                    async for entry in ctx.guild.audit_logs(limit=500, action=action):
+                        if role.id == entry.target.id:
+                            history["Creator"] = f"{entry.user}\n"
+                            break
+
+                    action = discord.AuditLogAction.role_update
+                    async for entry in ctx.guild.audit_logs(limit=500, action=action):
+                        if role.id == entry.target.id:
+                            if entry.before.name != entry.after.name:
+                                minute = str(entry.created_at.minute)
+                                if len(minute) == 1:
+                                    minute = "0" + minute
+                                when = datetime.date(entry.created_at).strftime(f"%m/%d/%Y %I:{minute}%p")
+                                history[f"**Name Changed on {when}**"] = None
+                                history[f"**Old Name:** `{entry.before.name}`\n"] = None
+
+                    if not history:
+                        history["None Found"] = None
+                    e.set_field_at(
+                        index=len(e.fields) - 1,
+                        name="◈ Role History", value=self.bot.utils.format_dict(dict(list(history.items())[:6])),
+                        inline=False
+                    )
+                    emojis.remove("♻")
+                    return await msg.edit(embed=e)
+                await msg.edit(embed=e)
+
 
     def collect_invite_info(self, invite, guild=None):
         if not guild:
