@@ -251,12 +251,9 @@ class Moderation(commands.Cog):
         if 'restricted' not in config:
             config['restricted'] = {}
         unrestricted = '**Unrestricted:**'
-        dat = config['restricted'][guild_id]
         if guild_id not in config['restricted']:
-            config['restricted'][guild_id] = {
-                'channels': [],
-                'users': []
-            }
+            return await ctx.send("Nothing's currently restricted")
+        dat = config['restricted'][guild_id]
         for channel in ctx.message.channel_mentions:
             if channel.id in dat['channels']:
                 config['restricted'][guild_id]['channels'].remove(channel.id)
@@ -1179,7 +1176,7 @@ class Moderation(commands.Cog):
             self.config[guild_id]["warns"][user_id] = []
         warns = 0
         reasons = ''
-        conf = self.bot.utils.get_config
+        conf = self.bot.utils.get_config()
         for reason, time in self.config[guild_id]["warns"][user_id]:
             time = datetime.strptime(time, '%Y-%m-%d %H:%M:%S.%f')
             if (datetime.now() - time).days > 30:
