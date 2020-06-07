@@ -328,8 +328,8 @@ class Utility(commands.Cog):
 						if channel.permissions_for(ctx.guild.me).read_messages:
 							async for m in channel.history(limit=1):
 								seconds = (datetime.utcnow() - m.created_at).total_seconds()
-								total_time = self.bot.utils.get_time(seconds)
-								history["Last Message"] = f"{round(total_time)} ago\n"
+								total_time = self.bot.utils.get_time(round(seconds))
+								history["Last Message"] = f"{total_time} ago\n"
 
 						action = discord.AuditLogAction.channel_update
 						async for entry in ctx.guild.audit_logs(limit=500, action=action):
