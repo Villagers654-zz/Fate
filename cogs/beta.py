@@ -28,28 +28,31 @@ class UtilityBeta(commands.Cog):
         }
         if path.isfile(self.path):
             with open(self.path, 'r') as f:
-                dat = json.load(f)  # type: dict
+                try:
+                    dat = json.load(f)  # type: dict
+                except json.JSONDecodeError:
+                    bot.log("Utility is retreating to a backup file. The previous is corrupt", "CRITICAL")
+                    with open(self.path + '.old') as f:
+                        dat = json.load(f)
                 self.guild_logs = dat['guild_logs']
                 self.user_logs = dat['user_logs']
                 self.misc_logs = dat['misc_logs']
         self.cache = {}
-        for guild_id, data in self.guild_logs.items():
-            if 'bots' in data:
-                del self.guild_logs[guild_id]['bots']
+
+    def cog_unload(self):
+        self.bot.loop.create_task(self.save_data())
 
     async def save_data(self):
-        while True:
-            await asyncio.sleep(60*5)  # save every 5mins
-            async with aiofiles.open(self.path+'.temp', 'w+') as f:
-                await f.write(
-                    json.dumps(
-                        {'guild_logs': self.guild_logs, 'user_logs': self.user_logs, 'misc_logs': self.misc_logs},
-                        indent=2, sort_keys=True, ensure_ascii=False
-                    )
+        async with aiofiles.open(self.path+'.temp', 'w+') as f:
+            await f.write(
+                json.dumps(
+                    {'guild_logs': self.guild_logs, 'user_logs': self.user_logs, 'misc_logs': self.misc_logs},
+                    indent=2, sort_keys=True, ensure_ascii=False
                 )
-                os.rename(self.path, self.path+'.old')
-                os.rename(self.path+'.temp', self.path)
-                os.remove(self.path+'.old')
+            )
+        os.rename(self.path, self.path+'.old')
+        os.rename(self.path+'.temp', self.path)
+        os.remove(self.path+'.old')
 
     def setup_if_not_exists(self, *args):
         for arg in args:
@@ -57,7 +60,7 @@ class UtilityBeta(commands.Cog):
                 guild_id = str(arg.id)
                 if guild_id not in self.guild_logs:
                     self.guild_logs[guild_id] = {
-                        'joins': {},
+                        'joins': [],
                         'names': []
                     }
             if isinstance(arg, (discord.User, discord.Member)):
@@ -79,7 +82,9 @@ class UtilityBeta(commands.Cog):
 
     @commands.command(name='xinfo')
     @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.guild_only()
     async def xinfo(self, ctx, users: g[User], roles: g[Role], channels: g[TextChannel]):
+        bot_has_audit_access = ctx.guild.me.guild_permissions.view_audit_log  # type: bool
         if users:
             user = users[0]
             if ctx.guild:
@@ -94,13 +99,12 @@ class UtilityBeta(commands.Cog):
             e.description = ''
             emojis = self.bot.utils.emojis
             user_id = str(user.id)
-            guild_id = str(ctx.guild.id)
 
             # User Information
             user_info = {
                 'Profile': f'{user.mention}',
                 'ID': user.id,
-                'Created at': datetime.date(user.created_at).strftime("%m-%d-%Y")
+                'Created at': datetime.date(user.created_at).strftime("%m/%d/%Y %I%p")
             }
             nicks = []
             for guild in self.bot.guilds:
@@ -147,7 +151,7 @@ class UtilityBeta(commands.Cog):
                 # Bot Information
                 if user.bot:  # search the audit log to see who invited the bot
                     inviter = "Unknown"
-                    if ctx.guild.me.guild_permissions.view_audit_log:
+                    if bot_has_audit_access:
                         async for entry in ctx.guild.audit_logs(limit=250, action=discord.AuditLogAction.bot_add):
                             if entry.target and entry.target.id == user.id:
                                  inviter = entry.user
@@ -189,13 +193,99 @@ class UtilityBeta(commands.Cog):
                 e.description += f"◈ Activity Information{self.bot.utils.format_dict(activity_info)}\n\n"
             await ctx.send(embed=e)
 
-        elif ctx.message.channel_mentions:
-            pass
+        elif channels:
+            e = discord.Embed(color=colors.fate())
+            e.set_author(name="Alright, here's what I got..", icon_url=self.bot.user.avatar_url)
+
+            channel = channels[0]  # type: discord.TextChannel
+            channel_info = {}
+
+            channel_info["Name"] = channel.name
+            channel_info["ID"] = channel.id
+            channel_info["Members"] = str(len(channel.members))
+            if channel.category:
+                channel_info["Category"] = f"`{channel.category}`"
+            if channel.is_nsfw():
+                channel_info["Marked as NSFW"] = None
+            if channel.is_news():
+                channel_info["Is the servers news channel"] = None
+            channel_info["Created at"] = datetime.date(channel.created_at).strftime("%m/%d/%Y %I%p")
+
+            e.add_field(name="◈ Channel Information", value=self.bot.utils.format_dict(channel_info), inline=False)
+            e.set_footer(text="🖥 Topic | ♻ History")
+
+            msg = await ctx.send(embed=e)
+            emojis = ["🖥", "♻"]
+            for emoji in emojis:
+                await msg.add_reaction(emoji)
+
+            def predicate(r, u):
+                return str(r.emoji) in emojis and r.message.id == msg.id and not u.bot
+
+            while True:
+                try:
+                    reaction, _user = await self.bot.wait_for('reaction_add', check=predicate, timeout=60)
+                except asyncio.TimeoutError:
+                    if ctx.channel.permissions_for(ctx.guild.me).manage_messages and msg:
+                        await msg.clear_reactions()
+                    return
+
+                if str(reaction.emoji) == "🖥":  # Requested topic information
+                    topic = channel.topic
+                    if not topic:
+                        topic = "None set."
+                    for group in self.bot.utils.split(topic, 1024):
+                        e.add_field(name="◈ Channel Topic", value=group, inline=False)
+                    emojis.remove("🖥")
+                elif str(reaction.emoji) == "♻":  # Requested channel history
+                    if not bot_has_audit_access:
+                        err = "Missing view_audit_log permission(s)"
+                        if any(field.value == err for field in e.fields):
+                            continue
+                        e.add_field(name="◈ Channel History", value=err, inline=False)
+                    else:
+                        history = {}
+                        e.add_field(name="◈ Channel History", value="Fetching..", inline=False)
+                        await msg.edit(embed=e)
+
+                        action = discord.AuditLogAction.channel_create
+                        async for entry in ctx.guild.audit_logs(limit=500, action=action):
+                            if channel.id == entry.target.id:
+                                history["Creator"] = entry.user
+                                break
+
+                        if channel.permissions_for(ctx.guild.me).read_messages:
+                            async for m in channel.history(limit=1):
+                                seconds = (datetime.utcnow() - m.created_at).total_seconds()
+                                total_time = self.bot.utils.get_time(seconds)
+                                history["Last Message"] = f"{total_time} ago\n"
+
+                        action = discord.AuditLogAction.channel_update
+                        async for entry in ctx.guild.audit_logs(limit=500, action=action):
+                            if channel.id == entry.target.id:
+                                if entry.before.name != entry.after.name:
+                                    minute = str(entry.created_at.minute)
+                                    if len(minute) == 1:
+                                        minute = "0" + minute
+                                    when = datetime.date(entry.created_at).strftime(f"%m/%d/%Y %I:{minute}%p")
+                                    history[f"**Name Changed on {when}**"] = None
+                                    history[f"**Old Name:** `{entry.before.name}`\n"] = None
+
+                        if not history:
+                            history["None Found"] = None
+                        print("finished gathering history")
+                        e.set_field_at(
+                            index=len(e.fields) - 1,
+                            name="◈ Channel History", value=self.bot.utils.format_dict(dict(list(history.items())[:6])),
+                            inline=False
+                        )
+                        emojis.remove("♻")
+                await msg.edit(embed=e)
 
         elif 'discord.gg' in ctx.message.content:
             pass
 
-        elif ctx.message.role_mentions:
+        elif roles:
             pass
 
     def collect_invite_info(self, invite, guild=None):
@@ -234,7 +324,9 @@ class UtilityBeta(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        self.bot.tasks.start(self.save_data, task_id='save-info-data')
+        while True:
+            await asyncio.sleep(60 * 5)
+            await self.save_data()
 
     @commands.Cog.listener()
     async def on_message(self, msg):
@@ -298,7 +390,7 @@ class UtilityBeta(commands.Cog):
         guild = member.guild
         guild_id = str(guild.id)
         self.setup_if_not_exists(guild)
-        self.guild_logs[guild_id]['joins'][str(member.id)] = time()
+        self.guild_logs[guild_id]['joins'].append([member.id, time()])
 
     @commands.Cog.listener()
     async def on_member_leave(self, member):
