@@ -555,6 +555,8 @@ class SelfRoles(commands.Cog):
 						emoji = self.bot.get_emoji(emoji)
 					if str(emoji) == str(payload.emoji):
 						role = guild.get_role(int(role_id))
+						if not target:
+							return
 						if role in target.roles:
 							await target.remove_roles(role)
 
