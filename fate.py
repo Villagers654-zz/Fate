@@ -35,7 +35,7 @@ class Fate(commands.AutoShardedBot):
             'duel_chat', 'selfroles', 'lock', 'audit', 'cookies', 'server_list', 'emojis', 'giveaways',
             'logger', 'autorole', 'changelog', 'restore_roles', 'chatbot', 'anti_spam', 'anti_raid', 'chatfilter',
             'nsfw', 'minecraft', 'chatlock', 'rainbow', 'system', 'user', 'limiter', 'dm_channel', 'factions',
-            'secure_overwrites', 'server_setup', 'global-chat', 'beta', 'ranking', 'statistics'
+            'secure_overwrites', 'server_setup', 'global-chat', 'ranking', 'statistics'
         ]
         self.awaited_extensions = []    # Cogs to load when the internal cache is ready
 
