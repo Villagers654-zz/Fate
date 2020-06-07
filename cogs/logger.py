@@ -17,6 +17,7 @@ import os
 from datetime import datetime, timedelta
 import requests
 from time import time
+from aiohttp.client_exceptions import ClientOSError
 
 from discord.ext import commands
 import discord
@@ -309,7 +310,7 @@ class Logger(commands.Cog):
                 if isinstance(category, discord.TextChannel):  # single channel log
                     try:
                         await category.send(embed=embed, files=files)
-                    except (discord.errors.Forbidden, discord.errors.NotFound):
+                    except (discord.errors.Forbidden, discord.errors.NotFound, ConnectionResetError):
                         e = discord.Embed(title='Failed to send embed')
                         e.set_author(name=guild if guild else "Unknown Guild")
                         for text_group in self.bot.utils.split(str(json.dumps(embed.to_dict(), indent=2)), 1990):
@@ -357,7 +358,7 @@ class Logger(commands.Cog):
                             self.save_data()
                         try:
                             await channel.send(embed=embed, files=files)
-                        except (discord.errors.Forbidden, discord.errors.NotFound):
+                        except (discord.errors.Forbidden, discord.errors.NotFound, ClientOSError):
                             e = discord.Embed(title='Failed to send embed')
                             e.set_author(name=guild if guild else "Unknown Guild")
                             for text_group in self.bot.utils.split(str(json.dumps(embed.to_dict(), indent=2)), 1024):
@@ -365,7 +366,7 @@ class Logger(commands.Cog):
                             e.set_footer(text=str(guild.id) if guild else "Unknown Guild")
                             try:
                                 await channel.send(embed=e)
-                            except (discord.errors.Forbidden, discord.errors.NotFound):
+                            except (discord.errors.Forbidden, discord.errors.NotFound, ClientOSError):
                                 break
                             continue
                         if file_paths:
