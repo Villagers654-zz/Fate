@@ -332,8 +332,10 @@ class Utility(commands.Cog):
 								history["Last Message"] = f"{total_time} ago\n"
 
 						action = discord.AuditLogAction.channel_update
-						async for entry in ctx.guild.audit_logs(limit=500, action=action):
+						async for entry in ctx.guild.audit_logs(limit=750, action=action):
 							if channel.id == entry.target.id:
+								if not hasattr(entry.before, "name") or not hasattr(entry.after, "name"):
+									continue
 								if entry.before.name != entry.after.name:
 									minute = str(entry.created_at.minute)
 									if len(minute) == 1:
@@ -1218,3 +1220,5 @@ class Utility(commands.Cog):
 
 def setup(bot):
 	bot.add_cog(Utility(bot))
+
+
