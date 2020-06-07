@@ -968,6 +968,56 @@ class Moderation(commands.Cog):
                             return await msg.edit(content="Message Inactive: Operation Cancelled")
             await msg.edit(content="Operation Complete", embed=gen_embed(i))
 
+    @commands.command(name="nick")
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.guild_only()
+    @commands.has_permissions(manage_nicknames=True)
+    @commands.bot_has_permissions(manage_nicknames=True)
+    async def nick(self, ctx, user, *, nick=''):
+        user = utils.get_user(ctx, user)
+        if not user:
+            return await ctx.send('User not found')
+        if user.top_role.position >= ctx.author.top_role.position:
+            return await ctx.send('That user is above your paygrade, take a seat')
+        if user.top_role.position >= ctx.guild.me.top_role.position:
+            return await ctx.send('I can\'t edit that users nick ;-;')
+        if len(nick) > 32:
+            return await ctx.send('That nickname is too long! Must be `32` or fewer in length')
+        await user.edit(nick=nick)
+        await ctx.message.add_reaction('👍')
+
+    @commands.command(name='role')
+    @commands.cooldown(1, 3, commands.BucketType.user)
+    @commands.guild_only()
+    @commands.has_permissions(manage_roles=True)
+    @commands.bot_has_permissions(manage_roles=True)
+    async def role(self, ctx, user, *, role):
+        user = self.bot.utils.get_user(ctx, user)
+        if not user:
+            return await ctx.send('User not found')
+        converter = commands.RoleConverter()
+        try:
+            result = await converter.convert(ctx, role)
+            role = result  # type: discord.Role
+        except:
+            pass
+        if not isinstance(role, discord.Role):
+            role = await utils.get_role(ctx, role)
+        if not role:
+            return await ctx.send('Role not found')
+
+        if user.top_role.position >= ctx.author.top_role.position:
+            return await ctx.send('This user is above your paygrade, take a seat')
+        if role.position >= ctx.author.top_role.position:
+            return await ctx.send('This role is above your paygrade, take a seat')
+        if role in user.roles:
+            await user.remove_roles(role)
+            msg = f'Removed **{role.name}** from @{user.name}'
+        else:
+            await user.add_roles(role)
+            msg = f'Gave **{role.name}** to **@{user.name}**'
+        await ctx.send(msg)
+
     async def warn_user(self, channel, user, reason):
         guild = channel.guild
         guild_id = str(guild.id)
