@@ -67,7 +67,14 @@ class Utility(commands.Cog):
 				self.guild_logs = dat['guild_logs']
 				self.user_logs = dat['user_logs']
 				self.misc_logs = dat['misc_logs']
+		else:
+			bot.log("info.json is missing, and cogs.Utility was loaded without any data", "CRITICAL")
 		self.cache = {}
+		if "info" not in bot.task:
+			bot.task["info"] = bot.loop.create_task(self.save_data_task())
+		else:
+			bot.task["info"].cancel()
+			bot.task["info"] = bot.loop.create_task(self.save_data_task())
 
 	def save_timers(self):
 		with open(self.timer_path, 'w') as f:
@@ -107,20 +114,27 @@ class Utility(commands.Cog):
 			await asyncio.sleep(0.21)
 			await reply.delete()
 
-	def cog_unload(self):
-		self.bot.loop.create_task(self.save_data())
+	# def cog_unload(self):
+	# 	self.bot.loop.create_task(self.save_data())
 
-	async def save_data(self):
-		async with aiofiles.open(self.path + '.temp', 'w+') as f:
-			await f.write(
-				json.dumps(
-					{'guild_logs': self.guild_logs, 'user_logs': self.user_logs, 'misc_logs': self.misc_logs},
-					indent=2, sort_keys=True, ensure_ascii=False
+	async def save_data_task(self):
+		self.bot.log("Starting save task for info.json", "DEBUG")
+		while True:
+			await asyncio.sleep(60 * 5)
+			async with aiofiles.open(self.path + '.temp', 'w+') as f:
+				await f.write(
+					json.dumps(
+						{'guild_logs': self.guild_logs, 'user_logs': self.user_logs, 'misc_logs': self.misc_logs},
+						ensure_ascii=False
+					)
 				)
-			)
-		os.rename(self.path, self.path + '.old')
-		os.rename(self.path + '.temp', self.path)
-		os.remove(self.path + '.old')
+			if not path.exists(self.path):
+				self.bot.log("info.json was missing, and is being replaced with what's in memory", "CRITICAL")
+			if path.exists(self.path + '.old'):
+				os.remove(self.path + '.old')
+			os.rename(self.path, self.path + '.old')
+			os.rename(self.path + '.temp', self.path)
+			self.bot.log("Saved info.json successfully", "DEBUG")
 
 	def setup_if_not_exists(self, *args):
 		for arg in args:
@@ -146,7 +160,6 @@ class Utility(commands.Cog):
 			for name, changed_at in data['names'].items():
 				if changed_at > time() - 60 * 60 * 24 * 60:
 					del self.user_logs[user_id]['names'][name]
-		self.save_data()
 
 	@commands.command(name='info', aliases=["xinfo"])
 	@commands.cooldown(1, 5, commands.BucketType.user)
@@ -247,9 +260,9 @@ class Utility(commands.Cog):
 
 			# username history - broken (maybe)
 			names = [
-				name for name, name_time in self.user_logs[user_id]['names'].items() if (
-						                                                                        name_time > time() - 60 * 60 * 24 * 60
-				                                                                        ) and name != str(user)
+				name for name, name_time in self.user_logs[user_id]['names'].items()
+				if name_time > time() - 60 * 60 * 24 * 60
+					and name != str(user)
 			]
 			if names:
 				user_info['Usernames'] = ','.join(names)
@@ -559,13 +572,21 @@ class Utility(commands.Cog):
 		return invite_info
 
 	@commands.Cog.listener()
-	async def on_ready(self):
-		while True:
-			await asyncio.sleep(60 * 5)
-			await self.save_data()
-
-	@commands.Cog.listener()
 	async def on_message(self, msg):
+		# AFK Command
+		if msg.author.bot: return
+		user_id = str(msg.author.id)
+		if user_id in self.afk:
+			del self.afk[user_id]
+			await msg.channel.send('removed your afk', delete_after=3)
+		else:
+			for user in msg.mentions:
+				user_id = str(user.id)
+				if user_id in self.afk:
+					replies = ['shh', 'shush', 'shush child', 'stfu cunt', 'nO']
+					choice = random.choice(replies)
+					await msg.channel.send(f'{choice} he\'s {self.afk[user_id]}')
+
 		# Keep track of their last message time
 		self.setup_if_not_exists(msg.author)
 		await asyncio.sleep(1)  # avoid getting in the way of .info @user
@@ -1202,21 +1223,6 @@ class Utility(commands.Cog):
 		self.afk[str(ctx.author.id)] = reason
 		await asyncio.sleep(5)
 		await ctx.message.delete()
-
-	@commands.Cog.listener()
-	async def on_message(self, msg):
-		if msg.author.bot: return
-		user_id = str(msg.author.id)
-		if user_id in self.afk:
-			del self.afk[user_id]
-			await msg.channel.send('removed your afk', delete_after=3)
-		else:
-			for user in msg.mentions:
-				user_id = str(user.id)
-				if user_id in self.afk:
-					replies = ['shh', 'shush', 'shush child', 'stfu cunt', 'nO']
-					choice = random.choice(replies)
-					await msg.channel.send(f'{choice} he\'s {self.afk[user_id]}')
 
 def setup(bot):
 	bot.add_cog(Utility(bot))

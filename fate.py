@@ -27,6 +27,7 @@ class Fate(commands.AutoShardedBot):
         self.login_errors = []          # Exceptions ignored during startup
         self.logs = []                  # Logs to send to discord, empties out quickly
         self.logger_tasks = {}
+        self.task = {}
 
         self.initial_extensions = [     # Cogs to load before logging in
             'error_handler', 'config', 'menus', 'core', 'music', 'mod', 'welcome', 'farewell', 'notes', 'archive',

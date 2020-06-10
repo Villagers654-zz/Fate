@@ -77,7 +77,7 @@ class Logger(commands.Cog):
                     bot.log(
                         message="Loggers keep alive task came to an end",
                         level="CRITICAL",
-                        tb=bot.logger_tasks["keep_alive_tasks"].result()
+                        tb=bot.logger_tasks["keep_alive_task"].result()
                     )
                 else:
                     bot.logger_tasks["keep_alive_task"].cancel()
@@ -121,10 +121,10 @@ class Logger(commands.Cog):
                     if not guild:
                         del self.bot.logger_tasks[guild_id]
                         continue
-                    await channel.send(
-                        f"The queue task for {guild} unexpectedly completed, here's the result\n```python\n{str(task.result())[:1900]}```")
-                    task = self.bot.loop.create_task(self.start_queue(guild_id))
-                    self.bot.logger_tasks[guild_id] = task
+                    await channel.send(f"The queue task for {guild} unexpectedly completed, here's the result\n```python\n{str(task.result())[:1900]}```")
+                    if guild_id in self.config:
+                        task = self.bot.loop.create_task(self.start_queue(guild_id))
+                        self.bot.logger_tasks[guild_id] = task
             self.bot.log("keep_alive_task still running", "DEBUG")
             await asyncio.sleep(60)
 
