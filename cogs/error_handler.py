@@ -39,7 +39,6 @@ class ErrorHandler(commands.Cog):
 		elif isinstance(error, commands.MissingRequiredArgument):
 			return await ctx.send(error)
 		elif isinstance(error, commands.CheckFailure):
-			await ctx.send(error)
 			return await ctx.message.add_reaction('🚫')
 		elif isinstance(error, discord.errors.Forbidden):
 			bot = ctx.guild.get_member(self.bot.user.id)

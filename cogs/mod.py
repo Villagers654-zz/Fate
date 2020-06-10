@@ -76,8 +76,11 @@ def has_warn_permission():
             config = cls.config[guild_id]
         if ctx.author.id in config['commands']['warn']:
             return True
+        elif ctx.author.id in config["usermod"]:
+            return True
         elif ctx.author.guild_permissions.administrator:
             return True
+        await ctx.send("You lack administrator or usermod permissions to use this command")
     return commands.check(predicate)
 
 
