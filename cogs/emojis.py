@@ -2,11 +2,8 @@
 Module for viewing and managing emojis
 """
 
-import requests
 import discord
 import asyncio
-import aiohttp
-import aiofiles
 
 from discord.ext import commands
 from discord.ext.commands import Greedy
@@ -91,7 +88,7 @@ class Emojis(commands.Cog):
 			await ctx.send(embed=e)
 			await asyncio.sleep(1)
 
-	@commands.command(name='add-emoji', aliases=['add-emote', 'addemoji', 'addemote', 'stealemoji'])
+	@commands.command(name='add-emoji', aliases=['add-emote', 'addemoji', 'addemote', 'stealemoji', 'stealemote'])
 	@commands.cooldown(2, 5, commands.BucketType.user)
 	@commands.guild_only()
 	@commands.has_permissions(manage_emojis=True)
@@ -189,6 +186,7 @@ class Emojis(commands.Cog):
 			if iter + 2 > len(args):
 				return '.'
 			return args[iter + 1]
+
 		mappings = {
 			await self.bot.download(arg): check(iter) if '.' not in check(iter) else 'new_emoji'
 				for iter, arg in enumerate(args) if '.' in arg
