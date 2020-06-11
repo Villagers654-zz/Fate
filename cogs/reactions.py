@@ -12,15 +12,41 @@ class Reactions(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.webhook = {}
+		self.sent = {}
 
+	async def queue(self, ctx, reaction, path):
+		await asyncio.sleep(60 * 5)
+		if path in self.sent[reaction][ctx.guild.id]:
+			del self.sent[reaction][ctx.guild.id][path]
+		if not self.sent[reaction][ctx.guild.id]:
+			del self.sent[reaction][ctx.guild.id]
 
 	async def send_webhook(self, ctx, reaction, args, action=None):
+		# Prevent roles from being mentioned
 		if args:
 			if '<@&' in args or '@everyone' in args or '@here' in args:
 				return await ctx.send('biTcH nO')
 
-		path = os.getcwd() + f"/data/images/reactions/{reaction}/" + random.choice(
-			os.listdir(os.getcwd() + f"/data/images/reactions/{reaction}/"))
+		# Setup the sent GIFS index
+		options = os.listdir(f"./data/images/reactions/{reaction}/")
+		if reaction not in self.sent:
+			self.sent[reaction] = {}
+		if ctx.guild.id not in self.sent[reaction]:
+			self.sent[reaction][ctx.guild.id] = {}
+		if len(options) == len(self.sent[reaction][ctx.guild.id]):
+			for task in self.sent[reaction][ctx.guild.id].values():
+				if not task.done():
+					task.cancel()
+			self.sent[reaction][ctx.guild.id] = {}
+
+		# Remove sent gifs from possible options and choose which GIF to send
+		for sent_path in self.sent[reaction][ctx.guild.id].keys():
+			options.remove(sent_path)
+		filename = random.choice(options)
+		path = os.getcwd() + f"/data/images/reactions/{reaction}/" + filename
+
+		# Add and wait 5mins to remove the sent path
+		self.sent[reaction][ctx.guild.id][filename] = self.bot.loop.create_task(self.queue(ctx, reaction, filename))
 
 		if action and ctx.message.mentions:
 			if len(args.split()) == 1:
