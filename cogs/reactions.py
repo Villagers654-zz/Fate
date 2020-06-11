@@ -60,7 +60,7 @@ class Reactions(commands.Cog):
 			self.sent[reaction] = {}
 		if ctx.guild.id not in self.sent[reaction]:
 			self.sent[reaction][ctx.guild.id] = {}
-		if len(options) >= len(self.sent[reaction][ctx.guild.id]):
+		if len(self.sent[reaction][ctx.guild.id]) >= len(options):
 			for task in self.sent[reaction][ctx.guild.id].values():
 				if not task.done():
 					task.cancel()
