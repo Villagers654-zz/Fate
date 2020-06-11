@@ -78,6 +78,8 @@ def has_warn_permission():
             return True
         elif ctx.author.id in config["usermod"]:
             return True
+        elif any(r.id in config["rolemod"] for r in ctx.author.roles):
+            return True
         elif ctx.author.guild_permissions.administrator:
             return True
         await ctx.send("You lack administrator or usermod permissions to use this command")
@@ -274,18 +276,25 @@ class Moderation(commands.Cog):
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
     @commands.bot_has_permissions(embed_links=True)
-    async def addmod(self, ctx, *, user):
-        user = utils.get_user(ctx, user)
-        if not isinstance(user, discord.Member):
-            return await ctx.send('User not found')
-        if user.top_role.position >= ctx.author.top_role.position:
-            return await ctx.send("That user is above your paygrade, take a seat")
+    async def addmod(self, ctx, target: Union[discord.Member, discord.Role] = None):
+        if not target:
+            return await ctx.send('User or role not found')
+        if isinstance(target, discord.Member):
+            if target.top_role.position >= ctx.author.top_role.position:
+                return await ctx.send("That user is above your paygrade, take a seat")
+        elif target.position >= ctx.author.top_role.position:
+            return await ctx.send("That role is above your paygrade, take a seat")
         guild_id = str(ctx.guild.id)
-        if user.id in self.config[guild_id]["usermod"]:
-            return await ctx.send('That users already a mod')
-        self.config[guild_id]["usermod"].append(user.id)
+        if isinstance(target, discord.User):
+            if target.id in self.config[guild_id]["usermod"]:
+                return await ctx.send('That users already a mod')
+            self.config[guild_id]["usermod"].append(target.id)
+        else:
+            if target.id in self.config[guild_id]["rolemod"]:
+                return await ctx.send("That role's already a mod role")
+            self.config[guild_id]["rolemod"].append(target.id)
         e = discord.Embed(color=colors.fate())
-        e.description = f'Made {user.mention} a mod'
+        e.description = f'Made {target.mention} a mod'
         await ctx.send(embed=e)
         self.save_data()
 
@@ -294,18 +303,25 @@ class Moderation(commands.Cog):
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
     @commands.bot_has_permissions(embed_links=True)
-    async def delmod(self, ctx, *, user):
-        user = utils.get_user(ctx, user)
-        if not isinstance(user, discord.Member):
-            return await ctx.send('User not found')
-        if user.top_role.position >= ctx.author.top_role.position:
-            return await ctx.send("That user is above your paygrade, take a seat")
+    async def delmod(self, ctx, target: Union[discord.Member, discord.Role] = None):
+        if not target:
+            return await ctx.send('User or role not found')
+        if isinstance(target, discord.Member):
+            if target.top_role.position >= ctx.author.top_role.position:
+                return await ctx.send("That user is above your paygrade, take a seat")
+        elif target.position >= ctx.author.top_role.position:
+            return await ctx.send("That role is above your paygrade, take a seat")
         guild_id = str(ctx.guild.id)
-        if user.id not in self.config[guild_id]["usermod"]:
-            return await ctx.send('That user isn\'t a mod')
-        self.config[guild_id]["usermod"].remove(user.id)
+        if isinstance(target, discord.User):
+            if target.id not in self.config[guild_id]["usermod"]:
+                return await ctx.send("That user isn't a mod")
+            self.config[guild_id]["usermod"].remove(target.id)
+        else:
+            if target.id not in self.config[guild_id]["rolemod"]:
+                return await ctx.send("That role's isn't a mod role")
+            self.config[guild_id]["rolemod"].remove(target.id)
         e = discord.Embed(color=colors.fate())
-        e.description = f'{user.mention} is no longer a mod'
+        e.description = f'Removed {target.mention} mod'
         await ctx.send(embed=e)
         self.save_data()
 
