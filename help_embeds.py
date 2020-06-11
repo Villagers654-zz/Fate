@@ -63,7 +63,7 @@ class HelpMenus():
         e.set_author(name='~==🥂🍸🍷Mod🍷🍸🥂==~', icon_url=owner.avatar_url)
         e.set_thumbnail(url=self.bot.user.avatar_url)
         e.description = '• **addmod** - `add a user or role as mod`\n' \
-                        '• **delmod** - `remove a user or role as mod`' \
+                        '• **delmod** - `remove a user or role as mod`\n' \
                         '• **modlogs** - `shows active mutes/temp-bans`\n' \
                         '• **unmute** - `unmutes users so they can talk`\n' \
                         '• **warn** - `warns users and punishes`\n' \
