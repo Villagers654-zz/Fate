@@ -5,7 +5,6 @@ import asyncio
 from discord.ext import commands
 from discord import Webhook, AsyncWebhookAdapter
 import discord
-from utils import colors, checks
 
 
 class Reactions(commands.Cog):
@@ -27,13 +26,41 @@ class Reactions(commands.Cog):
 			if '<@&' in args or '@everyone' in args or '@here' in args:
 				return await ctx.send('biTcH nO')
 
-		# Setup the sent GIFS index
+		user = None
+		if action and ctx.message.mentions:
+			if len(args.split()) == 1:
+				if args.startswith('<@'):
+					argsv = args.split()
+					user = argsv[0]  # type: discord.Member.mention
+				args = f'*{action} {args}*'
+			elif args.startswith('<@'):
+				args = args.split()
+				user = args[0]  # type: discord.Member.mention
+				args.pop(0)
+				args = f'*{action} {user}*  {" ".join(args)}'
+		elif args.startswith('<@'):
+			argsv = args.split()
+			user = argsv[0]  # type: discord.Member.mention
+
 		options = os.listdir(f"./data/images/reactions/{reaction}/")
+
+		# Check gae percentages
+		if user and any("gay" in str(fn).lower() for fn in options):
+			try:
+				usr = await commands.UserConverter().convert(ctx, user)
+			except:
+				pass
+			else:
+				cog = self.bot.get_cog("Fun")
+				if str(ctx.author.id) in cog.gay["gay"] and str(usr.id) in cog.gay["gay"]:
+					if cog.gay["gay"][str(ctx.author.id)] > 50 and cog.gay["gay"][str(usr.id)] > 50:
+						options = [fn for fn in options if "gay" in str(fn).lower()]
+
 		if reaction not in self.sent:
 			self.sent[reaction] = {}
 		if ctx.guild.id not in self.sent[reaction]:
 			self.sent[reaction][ctx.guild.id] = {}
-		if len(options) == len(self.sent[reaction][ctx.guild.id]):
+		if len(options) >= len(self.sent[reaction][ctx.guild.id]):
 			for task in self.sent[reaction][ctx.guild.id].values():
 				if not task.done():
 					task.cancel()
@@ -47,15 +74,6 @@ class Reactions(commands.Cog):
 
 		# Add and wait 5mins to remove the sent path
 		self.sent[reaction][ctx.guild.id][filename] = self.bot.loop.create_task(self.queue(ctx, reaction, filename))
-
-		if action and ctx.message.mentions:
-			if len(args.split()) == 1:
-				args = f'*{action} {args}*'
-			elif args.startswith('<@'):
-				args = args.split()
-				user = args[0]  # type: discord.Member.mention
-				args.pop(0)
-				args = f'*{action} {user}*  {" ".join(args)}'
 
 		created_webhook = False
 		if ctx.channel.id not in self.webhook:
