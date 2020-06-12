@@ -285,7 +285,7 @@ class Moderation(commands.Cog):
         elif target.position >= ctx.author.top_role.position:
             return await ctx.send("That role is above your paygrade, take a seat")
         guild_id = str(ctx.guild.id)
-        if isinstance(target, discord.User):
+        if isinstance(target, discord.Member):
             if target.id in self.config[guild_id]["usermod"]:
                 return await ctx.send('That users already a mod')
             self.config[guild_id]["usermod"].append(target.id)
@@ -298,7 +298,7 @@ class Moderation(commands.Cog):
         await ctx.send(embed=e)
         self.save_data()
 
-    @commands.command(name='delmod')
+    @commands.command(name='delmod', aliases=["removemod", "del-mod", "remove-mod"])
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
@@ -312,7 +312,7 @@ class Moderation(commands.Cog):
         elif target.position >= ctx.author.top_role.position:
             return await ctx.send("That role is above your paygrade, take a seat")
         guild_id = str(ctx.guild.id)
-        if isinstance(target, discord.User):
+        if isinstance(target, discord.Member):
             if target.id not in self.config[guild_id]["usermod"]:
                 return await ctx.send("That user isn't a mod")
             self.config[guild_id]["usermod"].remove(target.id)
@@ -324,6 +324,36 @@ class Moderation(commands.Cog):
         e.description = f'Removed {target.mention} mod'
         await ctx.send(embed=e)
         self.save_data()
+
+    @commands.command(name="mods", aliases=["usermods", "rolemods"])
+    @commands.guild_only()
+    @commands.cooldown(1, 3, commands.BucketType.channel)
+    @commands.bot_has_permissions(embed_links=True)
+    async def mods(self, ctx):
+        config = self.config[str(ctx.guild.id)]
+        if not config["usermod"] and not config["rolemod"]:
+            return await ctx.send("There are no mod users or mod roles")
+        e = discord.Embed(color=colors.fate())
+        users = [self.bot.get_user(uid) for uid in config["usermod"]]
+        users = [u for u in users if u]
+        roles = [ctx.guild.get_role(rid) for rid in config["rolemod"]]
+        roles = [r for r in roles if r]
+        if not users and not roles:
+            return await ctx.send("There are no mod users or mod roles, the existing ones were removed")
+        if users:
+            e.add_field(
+                name="UserMods",
+                value="\n".join(u.mention for u in users),
+                inline=False
+            )
+        if roles:
+            e.add_field(
+                name="RoleMods",
+                value="\n".join(r.mention for r in roles),
+                inline=False
+            )
+        await ctx.send(embed=e)
+
 
     @commands.command(name='restricted')
     @commands.guild_only()
@@ -1028,7 +1058,7 @@ class Moderation(commands.Cog):
         if user.top_role.position >= ctx.author.top_role.position:
             return await ctx.send('This user is above your paygrade, take a seat')
         if role.position >= ctx.author.top_role.position:
-            return await ctx.send('This role is above your paygrade, take a seat')
+            return await ctx.send("This role is above your paygrade, take a seat")
         if role in user.roles:
             await user.remove_roles(role)
             msg = f'Removed **{role.name}** from @{user.name}'
