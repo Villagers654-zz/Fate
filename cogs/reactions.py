@@ -38,9 +38,6 @@ class Reactions(commands.Cog):
 				user = args[0]  # type: discord.Member.mention
 				args.pop(0)
 				args = f'*{action} {user}*  {" ".join(args)}'
-		elif args.startswith('<@'):
-			argsv = args.split()
-			user = argsv[0]  # type: discord.Member.mention
 
 		options = os.listdir(f"./data/images/reactions/{reaction}/")
 
