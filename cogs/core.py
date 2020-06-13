@@ -76,9 +76,9 @@ class Core(commands.Cog):
         if not isinstance(ctx.guild, discord.Guild):
             return await ctx.send("This command can't be used in dm")
         guild_id = str(ctx.guild.id)
-        with open("./data/config.json", "r") as f:
+        with open("./data/userdata/config.json", "r") as f:
             config = json.load(f)  # type: dict
-        with open("./data/config.json", "w") as f:
+        with open("./data/userdata/config.json", "w") as f:
             if 'prefix' not in config:
                 config['prefix'] = {}
             config['prefix'][guild_id] = prefix
@@ -89,14 +89,14 @@ class Core(commands.Cog):
     @commands.cooldown(*utils.default_cooldown())
     async def personal_prefix(self, ctx, *, prefix=''):
         user_id = str(ctx.author.id)
-        with open('./data/config.json', 'r') as f:
+        with open('./data/userdata/config.json', 'r') as f:
             config = json.load(f)  # type: dict
         if 'personal_prefix' not in config:
             config['personal_prefix'] = {}
         config['personal_prefix'][user_id] = prefix
         if prefix == '.':
             del config['personal_prefix'][user_id]
-        with open('./data/config.json', 'w') as f:
+        with open('./data/userdata/config.json', 'w') as f:
             json.dump(config, f, ensure_ascii=False)
         await ctx.send(f'Set your personal prefix as `{prefix}`\n'
                        f'Note you can still use my mention as a sub-prefix')

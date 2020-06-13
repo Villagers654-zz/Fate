@@ -5,31 +5,72 @@ import asyncio
 from discord.ext import commands
 from discord import Webhook, AsyncWebhookAdapter
 import discord
-from utils import colors, checks
 
 
 class Reactions(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.webhook = {}
+		self.sent = {}
 
+	async def queue(self, ctx, reaction, path):
+		await asyncio.sleep(60 * 5)
+		if path in self.sent[reaction][ctx.guild.id]:
+			del self.sent[reaction][ctx.guild.id][path]
+		if not self.sent[reaction][ctx.guild.id]:
+			del self.sent[reaction][ctx.guild.id]
 
 	async def send_webhook(self, ctx, reaction, args, action=None):
+		# Prevent roles from being mentioned
 		if args:
 			if '<@&' in args or '@everyone' in args or '@here' in args:
 				return await ctx.send('biTcH nO')
 
-		path = os.getcwd() + f"/data/images/reactions/{reaction}/" + random.choice(
-			os.listdir(os.getcwd() + f"/data/images/reactions/{reaction}/"))
-
+		user = None
 		if action and ctx.message.mentions:
 			if len(args.split()) == 1:
+				if args.startswith('<@'):
+					argsv = args.split()
+					user = argsv[0]  # type: discord.Member.mention
 				args = f'*{action} {args}*'
 			elif args.startswith('<@'):
 				args = args.split()
 				user = args[0]  # type: discord.Member.mention
 				args.pop(0)
 				args = f'*{action} {user}*  {" ".join(args)}'
+
+		options = os.listdir(f"./data/images/reactions/{reaction}/")
+
+		# Check gae percentages
+		if user and any("gay" in str(fn).lower() for fn in options):
+			try:
+				usr = await commands.UserConverter().convert(ctx, user)
+			except:
+				pass
+			else:
+				cog = self.bot.get_cog("Fun")
+				if str(ctx.author.id) in cog.gay["gay"] and str(usr.id) in cog.gay["gay"]:
+					if cog.gay["gay"][str(ctx.author.id)] > 50 and cog.gay["gay"][str(usr.id)] > 50:
+						options = [fn for fn in options if "gay" in str(fn).lower()]
+
+		if reaction not in self.sent:
+			self.sent[reaction] = {}
+		if ctx.guild.id not in self.sent[reaction]:
+			self.sent[reaction][ctx.guild.id] = {}
+		if len(self.sent[reaction][ctx.guild.id]) >= len(options):
+			for task in self.sent[reaction][ctx.guild.id].values():
+				if not task.done():
+					task.cancel()
+			self.sent[reaction][ctx.guild.id] = {}
+
+		# Remove sent gifs from possible options and choose which GIF to send
+		for sent_path in self.sent[reaction][ctx.guild.id].keys():
+			options.remove(sent_path)
+		filename = random.choice(options)
+		path = os.getcwd() + f"/data/images/reactions/{reaction}/" + filename
+
+		# Add and wait 5mins to remove the sent path
+		self.sent[reaction][ctx.guild.id][filename] = self.bot.loop.create_task(self.queue(ctx, reaction, filename))
 
 		created_webhook = False
 		if ctx.channel.id not in self.webhook:

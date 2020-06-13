@@ -446,6 +446,8 @@ class Fun(commands.Cog):
 				stripped = percentage.strip("%")
 				if not stripped.isdigit():
 					return await ctx.send("The percentage needs to be an integer")
+				if int(stripped) > 100:
+					return await ctx.send("That's too high of a percentage")
 				self.gay[invoked_with][user_id] = int(stripped)
 				self.save_gay()
 				await ctx.send(f"Use `{self.bot.utils.get_prefix(ctx)}{invoked_with} reset` to go back to random results")
