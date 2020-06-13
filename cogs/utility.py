@@ -70,11 +70,11 @@ class Utility(commands.Cog):
 		else:
 			bot.log("info.json is missing, and cogs.Utility was loaded without any data", "CRITICAL")
 		self.cache = {}
-		if "info" not in bot.task:
-			bot.task["info"] = bot.loop.create_task(self.save_data_task())
+		if "info" not in bot.tasks:
+			bot.tasks["info"] = bot.loop.create_task(self.save_data_task())
 		else:
-			bot.task["info"].cancel()
-			bot.task["info"] = bot.loop.create_task(self.save_data_task())
+			bot.tasks["info"].cancel()
+			bot.tasks["info"] = bot.loop.create_task(self.save_data_task())
 
 	def save_timers(self):
 		with open(self.timer_path, 'w') as f:
@@ -892,6 +892,7 @@ class Utility(commands.Cog):
 		if not self.timers[user_id]:
 			del self.timers[user_id]
 		self.save_timers()
+		del self.bot.tasks["timers"][f"timer-{dat['timer']}"]
 
 	@commands.command(name='reminder', aliases=['timer', 'remindme'])
 	@commands.cooldown(2, 5, commands.BucketType.user)
@@ -924,7 +925,6 @@ class Utility(commands.Cog):
 			time_to_sleep[1].append(f"{raw} {repr if raw == '1' else repr + 's'}")
 		timer, expanded_timer = time_to_sleep
 
-
 		user_id = str(ctx.author.id)
 		if user_id not in self.timers:
 			self.timers[user_id] = {}
@@ -940,10 +940,8 @@ class Utility(commands.Cog):
 			return await ctx.send("That's a bit.. *too far*  into the future")
 		await ctx.send(f"I'll remind you about {' '.join(args)} in {', '.join(expanded_timer)}")
 		self.save_timers()
-		self.bot.tasks.start(
-			self.remind, user_id, msg, self.timers[user_id][msg],
-			task_id=f"timer-{self.timers[user_id][msg]['timer']}"
-		)
+		task = self.bot.loop.create_task(self.remind(user_id, msg, self.timers[user_id][msg]))
+		self.bot.tasks["timers"][f"timer-{self.timers[user_id][msg]['timer']}"] = task
 
 	@commands.command(name='timers', aliases=['reminders'])
 	@commands.cooldown(*utils.default_cooldown())
@@ -971,11 +969,14 @@ class Utility(commands.Cog):
 
 	@commands.Cog.listener('on_ready')
 	async def resume_timers(self):
+		if "timers" not in self.bot.tasks:
+			self.bot.tasks["timers"] = {}
 		for user_id, timers in self.timers.items():
 			for timer, dat in timers.items():
-				self.bot.tasks.start(
-					self.remind, user_id, timer, dat, task_id=f"timer-{dat['timer']}"
-				)
+				if f"timer-{dat['timer']}" in self.bot.tasks["timers"]:
+					continue
+				task = self.bot.loop.create_task(self.remind(user_id, timer, dat))
+				self.bot.tasks["timers"][f"timer-{dat['timer']}"] = task
 
 	@commands.command(name='findmsg')
 	@commands.cooldown(1, 5, commands.BucketType.channel)

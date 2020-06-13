@@ -33,35 +33,6 @@ class Tasks:
 				new_task.set_name(coro.__name__)
 				self.bot.log(f'Started task {new_task.get_name()}', color='cyan')
 
-	def start(self, coro, *args, **kwargs):
-		"""Start a task without fear of duplicates"""
-		if 'task_id' in kwargs:
-			task_id = kwargs['task_id']  # type: str
-			del kwargs['task_id']
-		else:
-			task_id = coro.__name__
-		if 'kill_existing' in kwargs:
-			for task in self.running_tasks():
-				if task.get_name() == task_id:
-					self.bot.log(f'Attempting to kill task {task_id}', 'DEBUG')
-					task.cancel()
-			del kwargs['kill_existing']
-		else:
-			if task_id in self.running_task_names():
-				return None
-
-		new_task = self.bot.loop.create_task(coro(*args, **kwargs))
-		new_task.set_name(task_id)
-		self.bot.log(f'Started task {task_id}', 'DEBUG')
-		return new_task
-
-	def cancel(self, task_name):
-		"""Cancel a running task - doesn't work"""
-		for task in asyncio.all_tasks(self.bot.loop):
-			if task.get_name() == task_name:
-				task.cancel()
-				self.bot.log(f'Cancelled {task.get_name()} - {task.cancelled()}', 'DEBUG')
-
 	async def status_task(self):
 		await asyncio.sleep(10)
 		while True:

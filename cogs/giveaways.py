@@ -72,15 +72,20 @@ class Giveaways(commands.Cog):
         if not self.data[guild_id]:
             del self.data[guild_id]
         await self.save_data()
+        task_id = f"giveaway-{guild_id}-{giveaway_id}"
+        if task_id in self.bot.tasks["giveaways"]:
+            del self.bot.tasks["giveaways"][task_id]
 
     @commands.Cog.listener('on_ready')
     async def resume_tasks(self):
+        if "giveaways" not in self.bot.tasks:
+            self.bot.tasks["giveaways"] = {}
         for guild_id, giveaways in self.data.items():
             for giveaway_id in giveaways.keys():
-                self.bot.tasks.start(
-                    self.run_giveaway, guild_id, giveaway_id,
-                    task_id=f"giveaway-{guild_id}-{giveaway_id}"
-                )
+                task_id = f"giveaway-{guild_id}-{giveaway_id}"
+                if task_id not in self.bot.tasks["giveaways"] or self.bot.tasks["giveaways"][task_id].done():
+                    task = self.bot.loop.create_task(self.run_giveaway(guild_id, giveaway_id))
+                    self.bot.tasks[task_id] = task
 
     @commands.command(name="giveaway", aliases=["giveaways"])
     @commands.cooldown(1, 5, commands.BucketType.user)

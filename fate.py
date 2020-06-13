@@ -27,7 +27,7 @@ class Fate(commands.AutoShardedBot):
         self.login_errors = []          # Exceptions ignored during startup
         self.logs = []                  # Logs to send to discord, empties out quickly
         self.logger_tasks = {}
-        self.task = {}
+        self.tasks = {}
 
         self.initial_extensions = [     # Cogs to load before logging in
             'error_handler', 'config', 'menus', 'core', 'music', 'mod', 'welcome', 'farewell', 'notes', 'archive',
@@ -48,7 +48,7 @@ class Fate(commands.AutoShardedBot):
         self.utils = utils              # Custom utility functions
         self.result = utils.Result      # Custom Result Object Creator
         self.memory = utils.MemoryInfo  # Class for easily accessing memory usage
-        self.tasks = tasks.Tasks(self)  # Task Manager
+        self.core_tasks = tasks.Tasks(self)
 
         perms = discord.Permissions(0)
         perms.update(
@@ -245,7 +245,7 @@ async def on_ready():
         bot.log("Loading awaited cogs", color='yellow')
         bot.load(*bot.awaited_extensions)
         bot.log("Finished loading awaited cogs", color='yellow')
-    bot.tasks.ensure_all()
+    bot.core_tasks.ensure_all()
     seconds = round(time() - start_time)
     bot.log(f"Startup took {seconds} seconds")
     for error in bot.login_errors:

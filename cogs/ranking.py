@@ -78,6 +78,11 @@ class Ranking(commands.Cog):
 		self.vclb = {}
 		self.vc_counter = 0
 
+		if bot.is_ready():
+			if "cleanup_xp" in bot.tasks and bot.tasks["cleanup_xp"].done():
+				bot.tasks["cleanup_xp"].cancel()
+			bot.tasks["cleanup_xp"] = self.bot.loop.create_task(self.cleanup_task())
+
 	def save_config(self):
 		""" Saves per-server configuration """
 		with open(self.path, 'w') as f:
@@ -129,6 +134,7 @@ class Ranking(commands.Cog):
 		}
 
 	async def cleanup_task(self):
+		self.bot.log("Started xp cleanup task", "DEBUG")
 		if not self.bot.is_ready():
 			await self.bot.wait_until_ready()
 		while self.bot.pool is None:
@@ -145,7 +151,9 @@ class Ranking(commands.Cog):
 
 	@commands.Cog.listener()
 	async def on_ready(self):
-		self.bot.tasks.start(self.cleanup_task, task_id='xp-cleanup')
+		if "cleanup_xp" in self.bot.tasks and self.bot.tasks["cleanup_xp"].done():
+			self.bot.tasks["cleanup_xp"].cancel()
+		self.bot.tasks["cleanup_xp"] = self.bot.loop.create_task(self.cleanup_task())
 
 	@commands.Cog.listener()
 	async def on_message(self, msg):

@@ -706,7 +706,7 @@ class Logger(commands.Cog):
                 )
             task = self.bot.loop.create_task(self.keep_alive_task())
             self.bot.logger_tasks["keep_alive_task"] = task
-        self.bot.tasks.start(self.init_invites)
+        self.bot.loop.create_task(self.init_invites())
 
     @commands.Cog.listener()
     async def on_message(self, msg):

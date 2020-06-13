@@ -19,7 +19,9 @@ class Music(commands.Cog):
             lavalink.Client(bot=bot, password=creds.password, loop=bot.loop, ws_port=creds.ws_port, rest_port=creds.ws_port)
             self.bot.lavalink.register_hook(self._track_hook)
         self.skips = {}
-        self.bot.tasks.start(self.cleanup_task, task_id="music_cleanup")
+        if "music_cleanup" in bot.tasks and bot.tasks["music_cleanup"].done():
+            bot.tasks["music_cleanup"].cancel()
+        bot.tasks["music_cleanup"] = self.bot.loop.create_task(self.cleanup_task())
 
     def cog_unload(self):
         for guild_id, player in self.bot.lavalink.players:
@@ -48,10 +50,6 @@ class Music(commands.Cog):
                 if not player.is_playing:
                     await player.disconnect()
         await asyncio.sleep(30)
-
-    @commands.Cog.listener()
-    async def on_ready(self):
-        self.bot.tasks.start(self.cleanup_task, task_id="music_cleanup")
 
     def get_humans(self, channel):
         return len([m for m in channel.members if not m.bot])
@@ -398,7 +396,7 @@ class Music(commands.Cog):
             await asyncio.sleep(20)
             await ctx.message.delete()
 
-    @commands.command(name='stop')
+    @commands.command(name='stop', aliases=['sop'])
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
     async def _stop(self, ctx):
