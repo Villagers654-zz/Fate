@@ -32,7 +32,7 @@ class ChatBridge(commands.Cog):
 			664620517168513042: {  # crafting table  #general
 				"webhook": "https://discordapp.com/api/webhooks/667185061128306728/Jr24f_yvKwt42NzVdAYD_DyP7rPqOMzpJPQIWxaWiwDilT87uMAMnR_8JB3S-1TaYQkt",
 				"linked_webhook": "https://discordapp.com/api/webhooks/664620517797527562/hfvE3CBcGyMN-52wZ3Pqrw7ZRDwNcqCrRwzBvnyseuCCoTl1tMAtMmZUSReWEeNnJ4At",
-				"linked_channel": 614889263196143742
+				"linked_channel": 680450685413621827
 			},
 			675140804725178399: {  # 2b2tmcpe #general
 				"webhook": "https://discordapp.com/api/webhooks/675140914179735572/HQ5iOE_gQLLLHrcEnAG-8_MHzcpAlLMKDZKylDjouyCZ60Cd95_22618Hwwi5e3qks1b",
