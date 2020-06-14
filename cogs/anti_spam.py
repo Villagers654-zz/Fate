@@ -9,7 +9,7 @@ from utils import colors, utils
 
 
 class AntiSpam(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot):
         self.bot = bot
 
         # cache
@@ -37,11 +37,9 @@ class AntiSpam(commands.Cog):
                 self.sensitivity = dat['sensitivity']
                 self.blacklist = dat['blacklist']
 
-
-    def save_data(self):
-        with open(self.path, 'w+') as f:
-            json.dump({'toggle': self.toggle, 'sensitivity': self.sensitivity, 'blacklist': self.blacklist}, f)
-
+    async def save_data(self):
+        data = {'toggle': self.toggle, 'sensitivity': self.sensitivity, 'blacklist': self.blacklist}
+        await self.bot.save_json(self.path, data)
 
     def init(self, guild_id):
         if guild_id not in self.sensitivity:
@@ -52,7 +50,6 @@ class AntiSpam(commands.Cog):
             'Anti-Macro': False,
             'Duplicates': False
         }
-
 
     @commands.group(name='anti-spam', aliases=['antispam'])
     @commands.cooldown(1, 2, commands.BucketType.user)
@@ -83,7 +80,6 @@ class AntiSpam(commands.Cog):
                 e.add_field(name='◈ Config', value=conf, inline=False)
             await ctx.send(embed=e)
 
-
     @anti_spam.group(name='enable')
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True, manage_roles=True, manage_channels=True)
@@ -99,7 +95,7 @@ class AntiSpam(commands.Cog):
                 'Duplicates': True
             }
             await ctx.send('Enabled all anti-spam modules')
-            self.save_data()
+            await self.save_data()
 
     @_enable.command(name='rate-limit')
     @commands.has_permissions(manage_messages=True)
@@ -109,7 +105,7 @@ class AntiSpam(commands.Cog):
             self.init(guild_id)
         self.toggle[guild_id]['Rate-Limit'] = True
         await ctx.send('Enabled rate-limit module')
-        self.save_data()
+        await self.save_data()
 
     @_enable.command(name='mass-pings', aliases=['mass-ping'])
     @commands.has_permissions(manage_messages=True)
@@ -119,7 +115,7 @@ class AntiSpam(commands.Cog):
             self.init(guild_id)
         self.toggle[guild_id]['Mass-Pings'] = True
         await ctx.send('Enabled mass-pings module')
-        self.save_data()
+        await self.save_data()
 
     @_enable.command(name='anti-macro')
     @commands.has_permissions(manage_messages=True)
@@ -129,7 +125,7 @@ class AntiSpam(commands.Cog):
             self.init(guild_id)
         self.toggle[guild_id]['Anti-Macro'] = True
         await ctx.send('Enabled anti-macro module')
-        self.save_data()
+        await self.save_data()
 
     @_enable.command(name='duplicates')
     @commands.has_permissions(manage_messages=True)
@@ -139,8 +135,7 @@ class AntiSpam(commands.Cog):
             self.init(guild_id)
         self.toggle[guild_id]['Duplicates'] = True
         await ctx.send('Enabled duplicates module')
-        self.save_data()
-
+        await self.save_data()
 
     @anti_spam.group(name='disable')
     @commands.has_permissions(manage_messages=True)
@@ -152,7 +147,7 @@ class AntiSpam(commands.Cog):
             del self.toggle[guild_id]
             del self.sensitivity[guild_id]
             await ctx.send('Disabled anti-spam')
-            self.save_data()
+            await self.save_data()
 
     @_disable.command(name='rate-limit', aliases=['Rate-Limit', 'ratelimit', 'RateLimit'])
     @commands.has_permissions(manage_messages=True)
@@ -162,7 +157,7 @@ class AntiSpam(commands.Cog):
             self.init(guild_id)
         self.toggle[guild_id]['Rate-Limit'] = False
         await ctx.send('Disabled rate-limit module')
-        self.save_data()
+        await self.save_data()
 
     @_disable.command(name='anti-macro', aliases=['Anti-Macro', 'antimacro', 'AntiMacro'])
     @commands.has_permissions(manage_messages=True)
@@ -172,7 +167,7 @@ class AntiSpam(commands.Cog):
             self.init(guild_id)
         self.toggle[guild_id]['Anti-Macro'] = False
         await ctx.send('Disabled anti-macro module')
-        self.save_data()
+        await self.save_data()
 
     @_disable.command(name='mass-pings', aliases=['Mass-Pings', 'masspings', 'MassPings'])
     @commands.has_permissions(manage_messages=True)
@@ -182,7 +177,7 @@ class AntiSpam(commands.Cog):
             self.init(guild_id)
         self.toggle[guild_id]['Mass-Pings'] = False
         await ctx.send('Disabled mass-pings module')
-        self.save_data()
+        await self.save_data()
 
     @_disable.command(name='duplicates', aliases=['Duplicates', 'duplicate', 'Duplicate'])
     @commands.has_permissions(manage_messages=True)
@@ -192,8 +187,7 @@ class AntiSpam(commands.Cog):
             self.init(guild_id)
         self.toggle[guild_id]['Duplicates'] = False
         await ctx.send('Disabled duplicates module')
-        self.save_data()
-
+        await self.save_data()
 
     @anti_spam.command(name='alter-sensitivity')
     @commands.has_permissions(manage_messages=True)
@@ -218,7 +212,7 @@ class AntiSpam(commands.Cog):
             return await ctx.send('This channel is already ignored')
         self.blacklist[guild_id].append(channel.id)
         await ctx.send('👍')
-        self.save_data()
+        await self.save_data()
 
     @anti_spam.command(name='unignore')
     @commands.has_permissions(manage_messages=True)
@@ -233,7 +227,7 @@ class AntiSpam(commands.Cog):
         index = self.blacklist[guild_id].index(channel.id)
         self.blacklist[guild_id].pop(index)
         await ctx.send('👍')
-        self.save_data()
+        await self.save_data()
 
     @commands.Cog.listener()
     async def on_message(self, msg: discord.Message):
@@ -335,7 +329,7 @@ class AntiSpam(commands.Cog):
                         del self.toggle[guild_id]
                         del self.sensitivity[guild_id]
                         await msg.channel.send("Disabled anti spam, missing required permissions")
-                        self.save_data()
+                        await self.save_data()
                     return
                 messages = [m for m, mtime in self.msgs[user_id] if mtime > time() - 15 and m]
                 self.msgs[user_id] = []  # removes deleted messages from the list
@@ -371,7 +365,7 @@ class AntiSpam(commands.Cog):
                                 del self.toggle[guild_id]
                                 del self.sensitivity[guild_id]
                                 await msg.channel.send("Disabled anti spam, missing required permissions")
-                                self.save_data()
+                                await self.save_data()
                             return
                         mute_role = await msg.guild.create_role(name="Muted", color=discord.Color(colors.black()), hoist=True)
                         for channel in msg.guild.text_channels:

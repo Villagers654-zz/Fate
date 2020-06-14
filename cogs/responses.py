@@ -24,16 +24,14 @@ class Responses(commands.Cog):
 	async def disableresponses(self, ctx):
 		self.responses[str(ctx.guild.id)] = "disabled"
 		await ctx.send("Disabled responses")
-		with open("./data/userdata/config/toggles.json", "w") as outfile:
-			json.dump({"responses": self.responses}, outfile, ensure_ascii=False)
+		await self.bot.save_json("./data/userdata/config/toggles.json", {"responses": self.responses})
 
 	@commands.command()
 	@commands.has_permissions(manage_guild=True)
 	async def enableresponses(self, ctx):
 		self.responses[str(ctx.guild.id)] = "enabled"
 		await ctx.send("Enabled responses")
-		with open("./data/userdata/config/toggles.json", "w") as outfile:
-			json.dump({"responses": self.responses}, outfile, ensure_ascii=False)
+		await self.bot.save_json("./data/userdata/config/toggles.json", {"responses": self.responses})
 
 # ~== Main ==~
 
@@ -45,8 +43,7 @@ class Responses(commands.Cog):
 				# toggleable responses
 				if str(m.guild.id) not in self.responses:
 					self.responses[str(m.guild.id)] = 'disabled'
-					with open("./data/userdata/config/toggles.json", "w") as outfile:
-						json.dump({"responses": self.responses}, outfile, ensure_ascii=False)
+					await self.bot.save_json("./data/userdata/config/toggles.json", {"responses": self.responses})
 				if self.responses[str(m.guild.id)] == 'enabled':
 					# if list(filter(lambda x: m.content.startswith(x), ["<@506735111543193601>", "<@!506735111543193601>"])):
 					# 	m.content = m.content.replace("!", "").replace("<@506735111543193601> ", "")

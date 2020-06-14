@@ -23,9 +23,9 @@ class Utility(commands.Cog):
 				if 'duplicate_images' in dat:
 					self.dupe = dat['duplicate_images']
 
-	def save_data(self):
-		with open("./data/userdata/limiter.json", "w") as outfile:
-			json.dump({"images": self.images, 'boosters': self.boosters, 'duplicate_images': self.dupe}, outfile, ensure_ascii=False)
+	async def save_data(self):
+		data = {"images": self.images, 'boosters': self.boosters, 'duplicate_images': self.dupe}
+		await self.bot.save_json("./data/userdata/limiter.json", data)
 
 	@commands.group(name="limit", aliases=["limiter"])
 	@commands.has_permissions(manage_guild=True)
@@ -52,7 +52,7 @@ class Utility(commands.Cog):
 			del self.images[guild_id][channel_id]
 			await ctx.message.add_reaction("👍")
 			await ctx.send("Disabled channel limiter")
-		self.save_data()
+		await self.save_data()
 
 	@_limit.command(name="boosters")
 	@commands.has_permissions(manage_channels=True)
@@ -69,7 +69,7 @@ class Utility(commands.Cog):
 			del self.boosters[guild_id][channel_id]
 			await ctx.message.add_reaction("👍")
 			await ctx.send("Disabled channel limiter")
-		self.save_data()
+		await self.save_data()
 
 	@_limit.command(name="duplicateimages")
 	@commands.has_permissions(manage_channels=True)
@@ -86,7 +86,7 @@ class Utility(commands.Cog):
 			del self.dupe[guild_id][channel_id]
 			await ctx.message.add_reaction("👍")
 			await ctx.send("Disabled channel limiter")
-		self.save_data()
+		await self.save_data()
 
 	@commands.Cog.listener()
 	async def on_message(self, m: discord.Message):

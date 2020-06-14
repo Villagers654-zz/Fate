@@ -15,9 +15,8 @@ class Lock(commands.Cog):
 				if "lock" in dat:
 					self.lock = dat["lock"]
 
-	def save_data(self):
-		with open("./data/userdata/lock.json", "w") as outfile:
-			json.dump({"lock": self.lock}, outfile, ensure_ascii=False)
+	async def save_data(self):
+		await self.bot.save("./data/userdata/lock.json", {"lock": self.lock})
 
 	@commands.command(name="lock")
 	@commands.has_permissions(administrator=True)
@@ -25,16 +24,16 @@ class Lock(commands.Cog):
 		guild_id = str(ctx.guild.id)
 		if guild_id not in self.lock:
 			self.lock[guild_id] = "lock-kick"
-			self.save_data()
+			await self.save_data()
 			await ctx.send("Locked the server")
 			return await ctx.message.add_reaction("👍")
 		if self.lock[guild_id] is not "lock-kick":
 			self.lock[guild_id] = "lock-kick"
-			self.save_data()
+			await self.save_data()
 			await ctx.send("Changed the server lock type to kick")
 			return await ctx.message.add_reaction("👍")
 		del self.lock[guild_id]
-		self.save_data()
+		await self.save_data()
 		await ctx.send("Unlocked the server")
 		await ctx.message.add_reaction("👍")
 
@@ -44,16 +43,16 @@ class Lock(commands.Cog):
 		guild_id = str(ctx.guild.id)
 		if guild_id not in self.lock:
 			self.lock[guild_id] = "lock-ban"
-			self.save_data()
+			await self.save_data()
 			await ctx.send("Locked the server")
 			return await ctx.message.add_reaction("👍")
 		if self.lock[guild_id] is not "lock-ban":
 			self.lock[guild_id] = "lock-ban"
-			self.save_data()
+			await self.save_data()
 			await ctx.send("Changed the server lock type to ban")
 			return await ctx.message.add_reaction("👍")
 		del self.lock[guild_id]
-		self.save_data()
+		await self.save_data()
 		await ctx.send("Unlocked the server")
 		await ctx.message.add_reaction("👍")
 
@@ -70,18 +69,18 @@ class Lock(commands.Cog):
 			if check_roles() is False:
 				return await ctx.send("Failed to find a muted role")
 			self.lock[guild_id] = "lock-mute"
-			self.save_data()
+			await self.save_data()
 			await ctx.send("Locked the server")
 			return await ctx.message.add_reaction("👍")
 		if self.lock[guild_id] is not "lock-mute":
 			if check_roles() is False:
 				return await ctx.send("Failed to find a muted role")
 			self.lock[guild_id] = "lock-mute"
-			self.save_data()
+			await self.save_data()
 			await ctx.send("Changed the server lock type to mute")
 			return await ctx.message.add_reaction("👍")
 		del self.lock[guild_id]
-		self.save_data()
+		await self.save_data()
 		await ctx.send("Unlocked the server")
 		await ctx.message.add_reaction("👍")
 
@@ -136,7 +135,7 @@ class Lock(commands.Cog):
 		guild_id = str(guild.id)
 		if guild_id in self.lock:
 			del self.lock[guild_id]
-			self.save_data()
+			await self.save_data()
 
 def setup(bot):
 	bot.add_cog(Lock(bot))

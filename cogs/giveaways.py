@@ -23,8 +23,7 @@ class Giveaways(commands.Cog):
                 self.data = json.load(f)  # type: dict
 
     async def save_data(self):
-        with open(self.path, 'w') as f:
-            json.dump(self.data, f, ensure_ascii=False)
+        await self.bot.save_json(self.path, self.data)
 
     async def make_embed(self, dat):
         e = discord.Embed(color=colors.fate())

@@ -74,10 +74,12 @@ class Welcome(commands.Cog):
 					self.images = dat["images"]
 					self.format = dat["format"]
 
-	def save_data(self):
-		with open("./data/userdata/welcome.json", "w") as f:
-			json.dump({"toggle": self.toggle, "channel": self.channel, "useimages": self.useimages, "images": self.images,
-			    "format": self.format}, f, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
+	async def save_data(self):
+		data = {
+			"toggle": self.toggle, "channel": self.channel, "useimages": self.useimages,
+			"images": self.images, "format": self.format
+		}
+		await self.bot.save_json("./data/userdata/welcome.json", data)
 
 	@commands.group(name="welcome", usage=welcome_help())
 	@commands.cooldown(1, 3, commands.BucketType.channel)
@@ -184,7 +186,7 @@ class Welcome(commands.Cog):
 		e.set_author(name="Enabled Welcome Messages", icon_url=ctx.author.avatar_url)
 		await ctx.send(embed=e, delete_after=10)
 		await cleanup()
-		self.save_data()
+		await self.save_data()
 
 	@_welcome.command(name="disable")
 	@commands.has_permissions(manage_guild=True)
@@ -194,7 +196,7 @@ class Welcome(commands.Cog):
 			return await ctx.send("This module isn't enabled")
 		del self.toggle[guild_id]
 		await ctx.send("Disabled welcome messages")
-		self.save_data()
+		await self.save_data()
 
 	@_welcome.command(name="config")
 	async def _config(self, ctx):
@@ -246,20 +248,20 @@ class Welcome(commands.Cog):
 					except discord.errors.Forbidden:
 						del self.useimages[guild_id]
 						del self.images[guild_id]
-						self.save_data()
+						await self.save_data()
 			else:
 				e.set_image(url="attachment://" + os.path.basename(path))
 				try:
 					await channel.send(msg, file=discord.File(path, filename=os.path.basename(path)), embed=e)
 				except discord.errors.Forbidden:
 					del self.useimages[guild_id]
-					self.save_data()
+					await self.save_data()
 		else:
 			try:
 				await channel.send(msg)
 			except discord.errors.Forbidden:
 				del self.toggle[guild_id]
-				self.save_data()
+				await self.save_data()
 
 	@_welcome.command(name="setchannel")
 	@commands.has_permissions(manage_guild=True)
@@ -269,7 +271,7 @@ class Welcome(commands.Cog):
 			channel = ctx.channel
 		self.channel[guild_id] = channel.id
 		await ctx.send(f"Set the welcome message channel to {channel.mention}")
-		self.save_data()
+		await self.save_data()
 
 	@_welcome.command(name="toggleimages")
 	@commands.has_permissions(manage_guild=True)
@@ -286,7 +288,7 @@ class Welcome(commands.Cog):
 		else:
 			await ctx.send("Enabled Images. You have no custom "
 			    "images so I'll just use my own for now")
-		self.save_data()
+		await self.save_data()
 
 	@_welcome.command(name="addimages")
 	@commands.has_permissions(manage_guild=True)
@@ -312,7 +314,7 @@ class Welcome(commands.Cog):
 		else:
 			await ctx.send('No worries, I\'ll just keep using my own gifs for now')
 			del self.images[guild_id]
-		self.save_data()
+		await self.save_data()
 
 	@_welcome.command(name="delimages")
 	@commands.has_permissions(manage_guild=True)
@@ -322,7 +324,7 @@ class Welcome(commands.Cog):
 			return await ctx.send("No images >:(")
 		del self.images[guild_id]
 		await ctx.send("Purged images")
-		self.save_data()
+		await self.save_data()
 
 	@_welcome.command(name="listimages")
 	@commands.has_permissions(manage_guild=True)
@@ -350,7 +352,7 @@ class Welcome(commands.Cog):
 				msg = await ctx.channel.fetch_message(msg.id)
 				self.format[guild_id] = msg.content
 		await ctx.send("Set the welcome format 👍")
-		self.save_data()
+		await self.save_data()
 
 	@commands.Cog.listener()
 	async def on_member_join(self, m: discord.Member):
@@ -378,7 +380,7 @@ class Welcome(commands.Cog):
 						except discord.errors.Forbidden:
 							del self.useimages[guild_id]
 							del self.images[guild_id]
-							self.save_data()
+							await self.save_data()
 						else:
 							pass
 					else:
@@ -387,7 +389,7 @@ class Welcome(commands.Cog):
 							await channel.send(msg, file=discord.File(path, filename=os.path.basename(path)), embed=e)
 						except discord.errors.Forbidden:
 							del self.useimages[guild_id]
-							self.save_data()
+							await self.save_data()
 						else:
 							pass
 				else:
@@ -395,7 +397,7 @@ class Welcome(commands.Cog):
 						await channel.send(msg)
 					except discord.errors.Forbidden:
 						del self.toggle[guild_id]
-						self.save_data()
+						await self.save_data()
 					else:
 						pass
 

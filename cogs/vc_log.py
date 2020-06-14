@@ -23,9 +23,9 @@ class VcLog(commands.Cog):
 				if 'keep_clean' in dat:
 					self.keep_clean = dat['keep_clean']
 
-	def save_json(self):
-		with open(self.path, 'w') as f:
-			json.dump({'channel': self.channel, 'keep_clean': self.keep_clean}, f, ensure_ascii=False)
+	async def save_json(self):
+		data = {'channel': self.channel, 'keep_clean': self.keep_clean}
+		await self.bot.save_json(self.path, data)
 
 	async def ensure_permissions(self, guild_id, channel_id=None):
 		if channel_id:
@@ -40,13 +40,13 @@ class VcLog(commands.Cog):
 		if guild_id in self.channel:
 			if not channel:
 				del self.channel[guild_id]
-				self.save_json()
+				await self.save_json()
 				return False
 			send_messages = channel.permissions_for(bot).send_messages
 			manage_messages = channel.permissions_for(bot).manage_messages
 			if not send_messages or not manage_messages:
 				del self.channel[guild_id]
-				self.save_json()
+				await self.save_json()
 				return False
 		return True
 
@@ -95,7 +95,7 @@ class VcLog(commands.Cog):
 			self.keep_clean[guild_id] = 'enabled'
 			await ctx.send('Aight, i\'ll make sure it stays clean .-.')
 		await ctx.send('Enabled VcLog')
-		self.save_json()
+		await self.save_json()
 
 	@_vclog.command(name='disable')
 	@commands.has_permissions(manage_channels=True)
@@ -107,7 +107,7 @@ class VcLog(commands.Cog):
 		if guild_id in self.keep_clean:
 			del self.keep_clean[guild_id]
 		await ctx.send('Disabled VcLog')
-		self.save_json()
+		await self.save_json()
 
 	@commands.Cog.listener()
 	async def on_message(self, msg: discord.Message):
@@ -181,10 +181,10 @@ class VcLog(commands.Cog):
 		guild_id = str(guild.id)
 		if guild_id in self.channel:
 			del self.channel
-			self.save_json()
+			await self.save_json()
 		if guild_id in self.keep_clean:
 			del self.keep_clean[guild_id]
-			self.save_json()
+			await self.save_json()
 
 def setup(bot):
 	bot.add_cog(VcLog(bot))

@@ -7,6 +7,8 @@ import asyncio
 import logging
 from typing import *
 import aiohttp
+import aiofiles
+from time import monotonic
 
 from discord.ext import commands
 import discord
@@ -177,6 +179,21 @@ class Fate(commands.AutoShardedBot):
             except asyncio.TimeoutError:
                 return None
 
+    async def save_json(self, fp, data, mode="w+"):
+        self.log(f"Saving {fp}", "DEBUG")
+        before = monotonic()
+        async with aiofiles.open(fp + ".tmp", mode) as f:
+            await f.write(json.dumps(data))
+        ping = str(round((monotonic() - before) * 1000))
+        self.log(f"Wrote to tmp file in {ping}ms", "DEBUG")
+        before = monotonic()
+        if os.path.exists(fp + ".tmp"):
+            os.rename(fp + ".tmp", fp)
+        else:
+            self.log("Tmp file didn't exist, not renaming", "DEBUG")
+        ping = str(round((monotonic() - before) * 1000))
+        self.log(f"Replaced old file in {ping}ms", "DEBUG")
+
     async def wait_for_msg(self, ctx, timeout=60, action="Action") -> Optional[discord.Message]:
         def pred(m):
             return m.author.id == ctx.author.id and m.channel.id == ctx.channel.id
@@ -311,8 +328,7 @@ async def on_guild_remove(guild: discord.Guild):
 async def on_command(_ctx):
     stats = bot.utils.get_stats()  # type: dict
     stats['commands'].append(str(datetime.now()))
-    with open('./data/stats.json', 'w') as f:
-        json.dump(stats, f, ensure_ascii=False)
+    await bot.save_json("./data/stats.json", stats)
 
 
 if __name__ == '__main__':

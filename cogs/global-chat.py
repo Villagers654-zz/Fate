@@ -56,9 +56,8 @@ class GlobalChat(commands.Cog):
 		# 		del self.config[guild_id]
 		# 		self.save_data()
 
-	def save_data(self):
-		with open(self.path, 'w+') as f:
-			json.dump({"config": self.config, "banned": self.banned}, f)
+	async def save_data(self):
+		await self.bot.save_json(self.path, {"config": self.config, "banned": self.banned})
 
 	async def remove_webhook(self, guild_id, channel):
 		""" deletes the global chat webhook so they don't pile up """
@@ -109,7 +108,7 @@ class GlobalChat(commands.Cog):
 			"last": time()
 		}
 		await ctx.send(f"{'Re' if relinked else ''}Linked {channel.mention}")
-		self.save_data()
+		await self.save_data()
 
 	@global_chat.command(name='unlink')
 	@commands.has_permissions(administrator=True)
@@ -125,7 +124,7 @@ class GlobalChat(commands.Cog):
 				await self.remove_webhook(guild_id, channel)
 		del self.config[guild_id]
 		await ctx.send(f"Unlinked {channel.mention}")
-		self.save_data()
+		await self.save_data()
 
 	@global_chat.command(name='toggle-webhooks')
 	@toggle_webhook_check()
@@ -142,7 +141,7 @@ class GlobalChat(commands.Cog):
 			webhook = await channel.create_webhook(name='Global Chat')
 			self.config[guild_id]['webhook'] = webhook.url
 			await ctx.send('Enabled webhooks')
-		self.save_data()
+		await self.save_data()
 
 	@global_chat.command(name='ban')
 	async def _ban(self, ctx, *, user: discord.User):
@@ -150,7 +149,7 @@ class GlobalChat(commands.Cog):
 			return await ctx.send("You don't have permission to use this command")
 		self.banned.append(user.id)
 		await ctx.send(f"Banned {user} from global-chat")
-		self.save_data()
+		await self.save_data()
 
 	@global_chat.command(name='unban')
 	async def _unban(self, ctx, *, user: discord.User):
@@ -158,7 +157,7 @@ class GlobalChat(commands.Cog):
 			return await ctx.send("You don't have permission to use this command")
 		self.banned.remove(user.id)
 		await ctx.send(f"Unbanned {user} from global-chat")
-		self.save_data()
+		await self.save_data()
 
 	@commands.Cog.listener()
 	async def on_message(self, msg):
@@ -242,7 +241,7 @@ class GlobalChat(commands.Cog):
 					return await msg.delete()
 				msg = await msg.channel.fetch_message(msg.id)
 				self.config[guild_id]['last'] = time()
-				self.save_data()
+				await self.save_data()
 
 				# distribute the msg everywhere
 				async with aiohttp.ClientSession() as session:

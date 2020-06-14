@@ -13,9 +13,8 @@ class ChatLock(commands.Cog):
 			with open("./data/userdata/chatlock.json", "r") as f:
 				self.toggle = json.load(f)
 
-	def save_data(self):
-		with open("./data/userdata/chatlock.json", "w") as f:
-			json.dump(self.toggle, f, ensure_ascii=False)
+	async def save_data(self):
+		await self.bot.save_json("./data/userdata/chatlock.json", self.toggle)
 
 	@commands.group(name="chatlock", description="Deletes messages by users without the manage_messages permission")
 	@commands.cooldown(1, 3, commands.BucketType.channel)
@@ -52,7 +51,7 @@ class ChatLock(commands.Cog):
 			return await ctx.send("Chatlock is already enabled")
 		self.toggle[guild_id].append(ctx.channel.id)
 		await ctx.message.add_reaction("👍")
-		self.save_data()
+		await self.save_data()
 
 	@_chatlock.command(name="disable")
 	@commands.has_permissions(manage_messages=True)
@@ -66,7 +65,7 @@ class ChatLock(commands.Cog):
 		if len(self.toggle[guild_id]) < 1:
 			del self.toggle[guild_id]
 		await ctx.send("Disabled chatlock")
-		self.save_data()
+		await self.save_data()
 
 	@commands.Cog.listener()
 	async def on_message(self, m: discord.Message):

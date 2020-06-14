@@ -132,9 +132,8 @@ class Moderation(commands.Cog):
             "mute_timers": {}
         }
 
-    def save_data(self):
-        with open(self.path, 'w') as f:
-            json.dump(self.config, f)
+    async def save_data(self):
+        await self.bot.save_json(self.path, self.config)
 
     @commands.command(name="convert-mod")
     @commands.is_owner()
@@ -178,7 +177,7 @@ class Moderation(commands.Cog):
         #     json.dump(cache, f, indent=2)
         if str(ctx.guild.id) not in self.config:
             self.config[str(ctx.guild.id)] = self.template
-            self.save_data()
+            await self.save_data()
         ctx.cls = self
 
     async def cog_after_invoke(self, ctx):
@@ -207,7 +206,7 @@ class Moderation(commands.Cog):
             return await ctx.send("That role's above your paygrade, take a seat.")
         self.config[str(ctx.guild.id)]["mute_role"] = role.id
         await ctx.send(f"Set the mute role to {role.name}")
-        self.save_data()
+        await self.save_data()
 
     @commands.command(name='restrict')
     @commands.guild_only()
@@ -296,7 +295,7 @@ class Moderation(commands.Cog):
         e = discord.Embed(color=colors.fate())
         e.description = f'Made {target.mention} a mod'
         await ctx.send(embed=e)
-        self.save_data()
+        await self.save_data()
 
     @commands.command(name='delmod', aliases=["removemod", "del-mod", "remove-mod"])
     @commands.cooldown(1, 3, commands.BucketType.user)
@@ -323,7 +322,7 @@ class Moderation(commands.Cog):
         e = discord.Embed(color=colors.fate())
         e.description = f'Removed {target.mention} mod'
         await ctx.send(embed=e)
-        self.save_data()
+        await self.save_data()
 
     @commands.command(name="mods", aliases=["usermods", "rolemods"])
     @commands.guild_only()
@@ -716,7 +715,7 @@ class Moderation(commands.Cog):
 
             user_id = str(user.id)
             self.config[guild_id]['mute_timers'][user_id] = timer_info
-            self.save_data()
+            await self.save_data()
             task = self.bot.loop.create_task(self.handle_mute_timer(guild_id, user_id, timer_info))
             if guild_id not in self.tasks:
                 self.tasks[guild_id] = {}
@@ -750,7 +749,7 @@ class Moderation(commands.Cog):
         await user.remove_roles(mute_role)
         if user_id in self.config[guild_id]['mute_timers']:
             del self.config[guild_id]['mute_timers'][user_id]
-            self.save_data()
+            await self.save_data()
         if guild_id in self.tasks and user_id in self.tasks[guild_id]:
             if not self.tasks[guild_id][user_id].done():
                 self.tasks[guild_id][user_id].cancel()
@@ -1093,7 +1092,7 @@ class Moderation(commands.Cog):
                     warns[user_id].remove([reason, str(time)])
                     continue
             total_warns += 1
-        self.save_data()
+        await self.save_data()
 
         if total_warns > len(punishments):
             punishment = punishments[-1:][0]
@@ -1162,7 +1161,7 @@ class Moderation(commands.Cog):
             if user_id not in self.config[guild_id]['timers']:
                 self.config[guild_id]['timers'][user_id] = []
             self.config[guild_id]['timers'][user_id].append(timer_info)
-            self.save_data()
+            await self.save_data()
             await asyncio.sleep(7200)
             if mute_role in user.roles:
                 await user.remove_roles(mute_role)
@@ -1171,7 +1170,7 @@ class Moderation(commands.Cog):
                 self.config[guild_id]['timers'][user_id].remove(timer_info)
             if not self.config[guild_id]['timers'][user_id]:
                 del self.config[guild_id]['timers'][user_id]
-            self.save_data()
+            await self.save_data()
         if punishment == 'Kick':
             try:
                 await guild.kick(user, reason='Reached Sufficient Warns')
@@ -1234,7 +1233,7 @@ class Moderation(commands.Cog):
                     else:
                         if str(reaction.emoji) == '✔':
                             self.config[guild_id]["warns"][user_id].remove([reason, warn_time])
-                            self.save_data()
+                            await self.save_data()
                             await ctx.message.delete()
                             await msg.delete()
                         else:
@@ -1256,7 +1255,7 @@ class Moderation(commands.Cog):
                 await ctx.send(f"{user} is above your paygrade, take a seat")
             del self.config[guild_id]["warns"][user_id]
             await ctx.send(f"Cleared {user}'s warns")
-            self.save_data()
+            await self.save_data()
 
     @commands.command(name="warns")
     @commands.cooldown(1, 3, commands.BucketType.user)

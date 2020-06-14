@@ -21,7 +21,7 @@ from utils import colors, utils
 
 
 class SelfRoles(commands.Cog):
-	def __init__(self, bot: commands.Bot):
+	def __init__(self, bot):
 		self.bot = bot
 		self.menus = {}
 		self.path = './data/userdata/selfroles.json'
@@ -29,9 +29,8 @@ class SelfRoles(commands.Cog):
 			with open(self.path, 'r') as f:
 				self.menus = json.load(f)
 
-	def save_data(self):
-		with open(self.path, 'w+') as f:
-			json.dump(self.menus, f)
+	async def save_data(self):
+		await self.bot.save_json(self.path, self.menus)
 
 	def build_menu(self, guild_id: str, data: dict):
 		""" Creates an embed from menu data """
@@ -79,7 +78,7 @@ class SelfRoles(commands.Cog):
 					continue
 				await msg.edit(embed=embed)
 				self.menus[guild_id][msg_id]['channel'] = c.id
-				self.save_data()
+				await self.save_data()
 				return msg
 			msg = await channel.fetch_message(int(msg_id))
 		await msg.edit(embed=embed)
@@ -131,7 +130,7 @@ class SelfRoles(commands.Cog):
 				return await ctx.send("Use this cmd in the channel the menus in, as it has no channel_id saved")
 			self.menus[guild_id][msg_id]['channel'] = ctx.channel.id
 			dat['channel'] = ctx.channel.id
-			self.save_data()
+			await self.save_data()
 		for role_id, emoji in list(dat['items'].items()):
 			role = ctx.guild.get_role(int(role_id))
 			if not role:
@@ -310,7 +309,7 @@ class SelfRoles(commands.Cog):
 		self.menus[guild_id][str(msg.id)] = menu
 		await instructions.delete()
 		await ctx.send('Created your self-role menu 👍')
-		self.save_data()
+		await self.save_data()
 
 	@commands.command(name='set-color')
 	@commands.cooldown(2, 5, commands.BucketType.user)
@@ -337,7 +336,7 @@ class SelfRoles(commands.Cog):
 		self.menus[guild_id][msg_id]['color'] = hex
 		await self.edit_menu(guild_id, msg_id)
 		await ctx.send("Set the color 👍")
-		self.save_data()
+		await self.save_data()
 
 	@commands.command(name='set-name')
 	@commands.cooldown(2, 5, commands.BucketType.user)
@@ -358,7 +357,7 @@ class SelfRoles(commands.Cog):
 		self.menus[guild_id][msg_id]['name'] = new_name
 		await self.edit_menu(guild_id, msg_id)
 		await ctx.send("Set the name 👍")
-		self.save_data()
+		await self.save_data()
 
 	@commands.command(name='set-indent')
 	@commands.cooldown(2, 5, commands.BucketType.user)
@@ -382,7 +381,7 @@ class SelfRoles(commands.Cog):
 		self.menus[guild_id][msg_id]['indent'] = indent
 		await self.edit_menu(guild_id, msg_id)
 		await ctx.send(f"Set the menus indent to {indent}")
-		self.save_data()
+		await self.save_data()
 
 	@commands.command(name='add-role')
 	@commands.cooldown(2, 5, commands.BucketType.user)
@@ -420,7 +419,7 @@ class SelfRoles(commands.Cog):
 			emoji = self.bot.get_emoji(emoji)
 		await msg.add_reaction(emoji)
 		await ctx.send(f"Added {role.name}")
-		self.save_data()
+		await self.save_data()
 
 	@commands.command(name='remove-role')
 	@commands.cooldown(2, 5, commands.BucketType.user)
@@ -449,7 +448,7 @@ class SelfRoles(commands.Cog):
 				async for user in reaction.users():
 					await msg.remove_reaction(reaction, user)
 		await ctx.send(f"Removed {role.name}")
-		self.save_data()
+		await self.save_data()
 
 	@commands.command(name='set-limit')
 	@commands.cooldown(2, 5, commands.BucketType.user)
@@ -471,7 +470,7 @@ class SelfRoles(commands.Cog):
 		self.menus[guild_id][msg_id]['limit'] = limit
 		await self.edit_menu(guild_id, msg_id)
 		await ctx.send(f"Set the limit to {limit}")
-		self.save_data()
+		await self.save_data()
 
 	@commands.command(name='toggle-mentions')
 	@commands.cooldown(2, 5, commands.BucketType.user)
@@ -495,7 +494,7 @@ class SelfRoles(commands.Cog):
 		await self.edit_menu(guild_id, msg_id)
 		toggle = self.menus[guild_id][msg_id]['mentions']
 		await ctx.send(f"{'enabled' if toggle else 'disabled'} mentions")
-		self.save_data()
+		await self.save_data()
 
 	@commands.Cog.listener()
 	async def on_raw_reaction_add(self, payload):
@@ -545,12 +544,9 @@ class SelfRoles(commands.Cog):
 		if guild_id in self.menus:
 			msg_id = str(payload.message_id)
 			if msg_id in self.menus[guild_id]:
-
 				guild = self.bot.get_guild(payload.guild_id)
 				target = guild.get_member(payload.user_id)
-
 				for role_id, emoji in self.menus[guild_id][msg_id]['items'].items():
-
 					if isinstance(emoji, int):
 						emoji = self.bot.get_emoji(emoji)
 					if str(emoji) == str(payload.emoji):
@@ -567,7 +563,7 @@ class SelfRoles(commands.Cog):
 			if guild_id in self.menus:
 				if str(msg.id) in self.menus[guild_id]:
 					del self.menus[guild_id][str(msg.id)]
-					self.save_data()
+					await self.save_data()
 
 def setup(bot):
 	bot.add_cog(SelfRoles(bot))

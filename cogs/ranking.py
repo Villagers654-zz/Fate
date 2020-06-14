@@ -83,10 +83,9 @@ class Ranking(commands.Cog):
 				bot.tasks["cleanup_xp"].cancel()
 			bot.tasks["cleanup_xp"] = self.bot.loop.create_task(self.cleanup_task())
 
-	def save_config(self):
+	async def save_config(self):
 		""" Saves per-server configuration """
-		with open(self.path, 'w') as f:
-			json.dump(self.config, f)
+		await self.bot.save_json(self.path, self.config)
 
 	def static_config(self):
 		""" Default config """
@@ -98,10 +97,10 @@ class Ranking(commands.Cog):
 			"msgs_within_timeframe": 1
 		}
 
-	def init(self, guild_id: str):
-		""" Saves static config as the guilds initial config """
-		self.config[guild_id] = self.static_config()
-		self.save_config()
+	# async def init(self, guild_id: str):
+	# 	""" Saves static config as the guilds initial config """
+	# 	self.config[guild_id] = self.static_config()
+	# 	await self.save_config()
 
 	def calc_lvl(self, total_xp, config):
 		def x(level):
@@ -423,9 +422,8 @@ class Ranking(commands.Cog):
 		if user_id not in self.profile:
 			self.profile[user_id] = {}
 		self.profile[user_id]['title'] = title
-		with open(self.profile_path, 'w+') as f:
-			json.dump(self.profile, f)
 		await ctx.send('Set your title')
+		await self.bot.save_json(self.profile_path, self.profile)
 
 	@set.command(name='background')
 	async def _set_background(self, ctx, url=None):
@@ -442,9 +440,8 @@ class Ranking(commands.Cog):
 		if not url:
 			url = ctx.message.attachments[0].url
 		self.profile[user_id]['background'] = url
-		with open(self.profile_path, 'w+') as f:
-			json.dump(self.profile, f)
 		await ctx.send('Set your background image')
+		await self.bot.save_json(self.profile_path, self.profile)
 
 	@set.command(name='min-xp-per-msg')
 	@commands.has_permissions(administrator=True)
@@ -456,7 +453,7 @@ class Ranking(commands.Cog):
 		if amount > self.config[guild_id]['max_xp_per_msg']:
 			self.config[guild_id]['max_xp_per_msg'] = amount
 			await ctx.send(f"I also upped the maximum xp per msg to {amount}")
-		self.save_config()
+		await self.save_config()
 
 	@set.command(name='max-xp-per-msg')
 	@commands.has_permissions(administrator=True)
@@ -468,7 +465,7 @@ class Ranking(commands.Cog):
 		if amount < self.config[guild_id]['max_xp_per_msg']:
 			self.config[guild_id]['max_xp_per_msg'] = amount
 			await ctx.send(f"I also lowered the minimum xp per msg to {amount}")
-		self.save_config()
+		await self.save_config()
 
 	@set.command(name='timeframe')
 	@commands.has_permissions(administrator=True)
@@ -477,7 +474,7 @@ class Ranking(commands.Cog):
 		guild_id = str(ctx.guild.id)
 		self.config[guild_id]['timeframe'] = amount
 		await ctx.send(f"Set the timeframe that allows x messages to {amount}")
-		self.save_config()
+		await self.save_config()
 
 	@set.command(name='msgs-within-timeframe')
 	@commands.has_permissions(administrator=True)
@@ -486,7 +483,7 @@ class Ranking(commands.Cog):
 		guild_id = str(ctx.guild.id)
 		self.config[guild_id]['msgs_within_timeframe'] = amount
 		await ctx.send(f"Set msgs within timeframe limit to {amount}")
-		self.save_config()
+		await self.save_config()
 
 	@set.command(name='first-lvl-xp-req')
 	@commands.has_permissions(administrator=True)
@@ -495,7 +492,7 @@ class Ranking(commands.Cog):
 		guild_id = str(ctx.guild.id)
 		self.config[guild_id]['first_lvl_xp_req'] = amount
 		await ctx.send(f"Set the required xp to level up your first time to {amount}")
-		self.save_config()
+		await self.save_config()
 
 	@commands.command(name='profile', aliases=['rank'], usage=profile_help())
 	@commands.cooldown(1, 5, commands.BucketType.user)

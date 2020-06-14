@@ -6,7 +6,7 @@ from utils import colors
 
 
 class RestoreRoles(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot):
         self.bot = bot
         self.guilds = []
         self.allow_perms = []
@@ -20,10 +20,10 @@ class RestoreRoles(commands.Cog):
                 if 'allow_perms' in dat:
                     self.allow_perms = dat['allow_perms']
 
-    def save_data(self):
+    async def save_data(self):
         """ Saves any changes made """
-        with open(self.path, 'w') as f:
-            json.dump({'guilds': self.guilds, 'allow_perms': self.allow_perms}, f, ensure_ascii=False)
+        data = {'guilds': self.guilds, 'allow_perms': self.allow_perms}
+        await self.bot.save_json(self.path, data)
 
     def disable_module(self, guild_id: str):
         """ Disables the module and resets guild data """
@@ -79,7 +79,7 @@ class RestoreRoles(commands.Cog):
         else:
             self.allow_perms.append(guild_id)
             await ctx.send('Allowed perms')
-        self.save_data()
+        await self.save_data()
 
     @commands.Cog.listener()
     async def on_member_join(self, member):

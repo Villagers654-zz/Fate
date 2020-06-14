@@ -120,7 +120,7 @@ class Tasks:
 
 		run_automatic_backups = True  # Toggle automatic backups
 		# backup_interval = 21600     # Backup every 6 hours
-		backup_interval = 3600 * 12    # Backup interval in seconds
+		backup_interval = 3600 * 2    # Backup interval in seconds
 		keep_for = 7                  # Days to keep each backup
 		while run_automatic_backups:
 			await asyncio.sleep(backup_interval)
@@ -137,7 +137,7 @@ class Tasks:
 				for file in file_paths:
 					zip.write(file)
 
-			with pysftp.Connection(creds.host, username=creds.username, password=creds.password, port=7822, cnopts=cnopts) as sftp:
+			with pysftp.Connection(creds.host, username=creds.username, password=creds.password, port=creds.port, cnopts=cnopts) as sftp:
 				# Remove older backups
 				root = "/home/fate/Backups"
 				for backup in sftp.listdir(root):

@@ -8,7 +8,7 @@ import json
 import os
 
 class Notepad(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot):
         self.bot = bot
         self.notes = {}
         self.timestamp = {}
@@ -19,9 +19,9 @@ class Notepad(commands.Cog):
                     self.notes = dat["notes"]
                     self.timestamp = dat["timestamp"]
 
-    def save(self):
-        with open("./data/userdata/notes.json", "w") as outfile:
-            return json.dump({"notes": self.notes, "timestamp": self.timestamp}, outfile, ensure_ascii=False)
+    async def save(self):
+        data = {"notes": self.notes, "timestamp": self.timestamp}
+        await self.bot.save_json("./data/userdata/notes.json", data)
 
     @commands.command(name="note")
     @commands.cooldown(1, 1, commands.BucketType.user)
@@ -41,7 +41,7 @@ class Notepad(commands.Cog):
                 self.timestamp[author_id].append(datetime.datetime.now().strftime("%m-%d-%Y %I:%M%p"))
                 if len(self.timestamp[author_id]) > 5:
                     del self.timestamp[author_id][0]
-                self.save()
+                await self.save()
                 path = os.getcwd() + "/data/images/reactions/notes/" + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/notes/"))
                 e = discord.Embed(color=0xFFC923)
                 e.set_author(name='Noted..', icon_url=ctx.author.avatar_url)
@@ -77,7 +77,7 @@ class Notepad(commands.Cog):
         self.timestamp[author_id].append(datetime.datetime.now().strftime("%m-%d-%Y %I:%M%p"))
         if len(self.timestamp[author_id]) > 5:
             del self.timestamp[author_id][0]
-        self.save()
+        await self.save()
         await ctx.send('Noted..', delete_after=1)
         await asyncio.sleep(1)
         await ctx.message.delete()
@@ -93,7 +93,7 @@ class Notepad(commands.Cog):
             e.description = f"**You're last {len(self.notes[author_id])} note(s):**"
             note = len(self.notes[author_id]) - 1
             position = 1
-            for i in self.notes[author_id]:
+            for _i in self.notes[author_id]:
                 e.description += f"\n**{position}.** {self.notes[author_id][note].replace('`', '')}\n`{self.timestamp[author_id][note]}`\n"
                 note -= 1
                 position += 1

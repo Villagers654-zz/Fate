@@ -22,9 +22,10 @@ class Anti_Raid(commands.Cog):
 				if "toggle" in dat:
 					self.toggle = dat["toggle"]
 
-	def save_data(self):
-		with open("./data/userdata/anti_raid.json", "w") as f:
-			json.dump({"toggle": self.toggle}, f)
+	async def save_data(self):
+		fp = "./data/userdata/anti_raid.json"
+		data = {"toggle": self.toggle}
+		await self.bot.save_json(fp, data)
 
 	async def ensure_permissions(self, guild):
 		guild_id = str(guild.id)
@@ -34,7 +35,7 @@ class Anti_Raid(commands.Cog):
 		for perm in required:
 			if perm not in perms:
 				del self.toggle[guild_id]
-				self.save_data()
+				await self.save_data()
 				for channel in guild.text_channels:
 					if channel.permissions_for(guild.me).send_messages:
 						await guild.owner.send(f'Disabled anti raid, missing {perm} permissions')
@@ -69,7 +70,7 @@ class Anti_Raid(commands.Cog):
 			return await ctx.send("Anti raid is already enabled")
 		self.toggle[guild_id] = ctx.guild.name
 		await ctx.send("Enabled anti raid")
-		self.save_data()
+		await self.save_data()
 
 	@_anti_raid.command(name="disable")
 	@commands.has_permissions(administrator=True)
@@ -81,7 +82,7 @@ class Anti_Raid(commands.Cog):
 			return await ctx.send("Anti raid is not enabled")
 		del self.toggle[guild_id]
 		await ctx.send("Disabled anti raid")
-		self.save_data()
+		await self.save_data()
 
 	@commands.Cog.listener()
 	async def on_member_join(self, m: discord.Member):

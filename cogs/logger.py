@@ -88,10 +88,9 @@ class Logger(commands.Cog):
             task = self.bot.loop.create_task(self.keep_alive_task())
             bot.logger_tasks["keep_alive_task"] = task
 
-    def save_data(self):
+    async def save_data(self):
         """ Saves local variables """
-        with open(self.path, 'w+') as f:
-            json.dump(self.config, f)
+        await self.bot.save_json(self.path, self.config)
 
     async def initiate_category(self, guild):
         """ Sets up a new multi-log category"""
@@ -281,11 +280,11 @@ class Logger(commands.Cog):
                     except discord.errors.NotFound:
                         if log_type == 'multi':
                             category = await self.initiate_category(guild)
-                            self.save_data()
+                            await self.save_data()
                         elif log_type == 'single':
                             category = await guild.create_text_channel(name='bot-logs')
                             self.config[guild_id]['channel'] = category.id
-                        self.save_data()
+                        await self.save_data()
 
                 # Ensure basic send-embed level permissions
                 if isinstance(category, discord.TextChannel):
@@ -355,7 +354,7 @@ class Logger(commands.Cog):
                                 category=category
                             )
                             self.config[guild_id]['channels'][Type] = channel.id
-                            self.save_data()
+                            await self.save_data()
                         try:
                             await channel.send(embed=embed, files=files)
                         except (discord.errors.Forbidden, discord.errors.NotFound, ClientOSError):
@@ -521,7 +520,7 @@ class Logger(commands.Cog):
         task = self.bot.loop.create_task(self.start_queue(guild_id))
         self.bot.logger_tasks[guild_id] = task
         await ctx.send("Enabled Logger")
-        self.save_data()
+        await self.save_data()
 
     @logger.command(name='disable')
     @commands.has_permissions(administrator=True)
@@ -535,7 +534,7 @@ class Logger(commands.Cog):
                 return await ctx.send("Due to security settings, only the owner of the server can use this")
         del self.config[guild_id]
         await ctx.send('Disabled Logger')
-        self.save_data()
+        await self.save_data()
 
     @logger.group(name='setchannel', aliases=["set-channel"])
     @commands.has_permissions(administrator=True)
@@ -572,7 +571,7 @@ class Logger(commands.Cog):
         task = self.bot.loop.create_task(self.start_queue(guild_id))
         self.bot.logger_tasks[guild_id] = task
         await ctx.send(f"Enabled Logger in {channel.mention}")
-        self.save_data()
+        await self.save_data()
 
     @logger.command(name='switch')
     @commands.has_permissions(administrator=True)
@@ -596,7 +595,7 @@ class Logger(commands.Cog):
             self.config[guild_id]['type'] = 'single'
             self.recent_logs[guild_id] = []
             await ctx.send('Switched to Single-Log')
-        self.save_data()
+        await self.save_data()
 
     @logger.command(name='security')
     @is_guild_owner()
@@ -612,6 +611,7 @@ class Logger(commands.Cog):
         else:
             self.config[guild_id]['secure'] = True
             await ctx.send('Enabled secure features')
+        await self.save_data()
 
     @logger.command(name='ignore')
     @commands.has_permissions(administrator=True)
@@ -636,7 +636,7 @@ class Logger(commands.Cog):
             else:
                 self.config[guild_id]['ignored_channels'].append(channel.id)
                 await ctx.send(f"I'll now ignore chat related events from {channel.mention}")
-        self.save_data()
+        await self.save_data()
 
     @logger.command(name='unignore')
     @commands.has_permissions(administrator=True)
@@ -658,7 +658,7 @@ class Logger(commands.Cog):
             else:
                 self.config[guild_id]['ignored_channels'].remove(channel.id)
                 await ctx.send(f"I'll no longer ignore chat related events from {channel.mention}")
-        self.save_data()
+        await self.save_data()
 
     @logger.command(name='config')
     async def _config(self, ctx):
@@ -1664,7 +1664,7 @@ def setup(bot):
 
 
 def teardown(bot):
-    cog = bot.get_cog("Logger")  # type: Logger
-    for task in cog.tasks.values():
+    for task_id, task in bot.logger_tasks.items():
         if not task.done():
             task.cancel()
+        del bot.logger_tasks[task_id]

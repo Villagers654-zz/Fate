@@ -20,9 +20,9 @@ class ChatFilter(commands.Cog):
 				if 'ignored' in dat:
 					self.ignored = dat['ignored']
 
-	def save_data(self):
-		with open("./data/userdata/chatfilter.json", "w") as f:
-			json.dump({"toggle": self.toggle, "blacklist": self.blacklist, "ignored": self.ignored}, f)
+	async def save_data(self):
+		data = {"toggle": self.toggle, "blacklist": self.blacklist, "ignored": self.ignored}
+		await self.bot.save_json("./data/userdata/chatfilter.json", data)
 
 	@commands.group(name="chatfilter", description="Deletes messages containing blocked words/phrases")
 	@commands.bot_has_permissions(embed_links=True)
@@ -68,7 +68,7 @@ class ChatFilter(commands.Cog):
 			return await ctx.send("Chatfilter is already enabled")
 		self.toggle.append(ctx.guild.id)
 		await ctx.send("Enabled chatfilter")
-		self.save_data()
+		await self.save_data()
 
 	@_chatfilter.command(name="disable")
 	@commands.has_permissions(manage_messages=True)
@@ -78,7 +78,7 @@ class ChatFilter(commands.Cog):
 			return await ctx.send("Chatfilter is not enabled")
 		self.toggle.pop(self.toggle.index(ctx.guild.id))
 		await ctx.send("Disabled chatfilter")
-		self.save_data()
+		await self.save_data()
 
 	@_chatfilter.command(name="ignore")
 	@commands.has_permissions(manage_messages=True)
@@ -89,7 +89,7 @@ class ChatFilter(commands.Cog):
 			self.ignored[guild_id] = []
 		self.ignored[guild_id].append(channel.id)
 		await ctx.send(f"I'll now ignore {channel.mention}")
-		self.save_data()
+		await self.save_data()
 
 	@_chatfilter.command(name="unignore")
 	@commands.has_permissions(manage_messages=True)
@@ -104,7 +104,7 @@ class ChatFilter(commands.Cog):
 		await ctx.send(f"I'll no longer ignore {channel.mention}")
 		if not self.ignored[guild_id]:
 			del self.ignored[guild_id]
-		self.save_data()
+		await self.save_data()
 
 	@_chatfilter.command(name="add")
 	@commands.has_permissions(manage_messages=True)
@@ -117,7 +117,7 @@ class ChatFilter(commands.Cog):
 			return await ctx.send("That word/phrase is already blacklisted")
 		self.blacklist[guild_id].append(phrase)
 		await ctx.send(f"Added `{phrase}`")
-		self.save_data()
+		await self.save_data()
 
 	@_chatfilter.command(name="remove")
 	@commands.has_permissions(manage_messages=True)
@@ -132,7 +132,7 @@ class ChatFilter(commands.Cog):
 		await ctx.send(f"Removed `{phrase}`")
 		if len(self.blacklist[guild_id]) < 1:
 			del self.blacklist[guild_id]
-		self.save_data()
+		await self.save_data()
 
 	@commands.Cog.listener()
 	async def on_message(self, m: discord.Message):
