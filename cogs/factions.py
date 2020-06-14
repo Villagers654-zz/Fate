@@ -337,7 +337,7 @@ class Factions(commands.Cog):
 				f'__**Access:**__ [`{"Public" if f["access"] == "public" else "Invite-Only"}`] ' \
 				f'__**Members:**__ [`{len(f["members"])}/{f["limit"]}`]' \
 				f'{bio if bio else ""}{active_boosts if active_boosts else ""}'
-		members = self.get_members(ctx, faction)
+		members = await self.get_members(ctx, faction)
 		e.add_field(name='◈ Members ◈', value=members if members else 'none')
 		claims = self.get_claims(guild_id, faction)
 		claims = claims if claims else "None"
