@@ -626,24 +626,34 @@ class Music(commands.Cog):
     @_old_play.before_invoke
     async def ensure_voice(self, ctx):
         """ A few checks to make sure the bot can join a voice channel. """
+        perms = ctx.channel.permissions_for(ctx.guild.me)  # type: discord.Permissions
+        if not ctx.author.voice or not ctx.author.voice.channel:
+            msg = await ctx.send('You aren\'t connected to any voice channel.')
+            if perms.manage_messages:
+                await asyncio.sleep(20)
+                await ctx.message.delete()
+                await msg.delete()
+            return
         player = self.bot.lavalink.players.get(ctx.guild.id)
         if not player.is_connected:
-            if not ctx.author.voice or not ctx.author.voice.channel:
-                await ctx.send('You aren\'t connected to any voice channel.', delete_after=20)
-                await asyncio.sleep(20)
-                return await ctx.message.delete()
             permissions = ctx.author.voice.channel.permissions_for(ctx.me)
             if not permissions.connect or not permissions.speak:
-                await ctx.send('Missing permissions `CONNECT` and/or `SPEAK`.', delete_after=20)
-                await asyncio.sleep(20)
-                return await ctx.message.delete()
+                msg = await ctx.send('Missing permissions `CONNECT` and/or `SPEAK`.')
+                if perms.manage_messages:
+                    await asyncio.sleep(20)
+                    await ctx.message.delete()
+                    await msg.delete()
+                return
             player.store('channel', ctx.channel.id)
             await player.connect(ctx.author.voice.channel.id)
         else:
-            if player.connected_channel.id != ctx.author.voice.channel.id:
-                await ctx.send('Join my voice channel!', delete_after=20)
-                await asyncio.sleep(20)
-                await ctx.message.delete()
+            cid = ctx.author.voice.channel.id if ctx.author.voice else 0
+            if player.connected_channel.id != cid:
+                msg = await ctx.send('Join my voice channel!')
+                if perms.manage_messages:
+                    await asyncio.sleep(20)
+                    await ctx.message.delete()
+                    await msg.delete()
 
 def setup(bot):
     bot.add_cog(Music(bot))
