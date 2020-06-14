@@ -187,9 +187,9 @@ class Fate(commands.AutoShardedBot):
         ping = str(round((monotonic() - before) * 1000))
         self.log(f"Wrote to tmp file in {ping}ms", "DEBUG")
         before = monotonic()
-        if os.path.exists(fp + ".tmp"):
+        try:
             os.rename(fp + ".tmp", fp)
-        else:
+        except FileNotFoundError:
             self.log("Tmp file didn't exist, not renaming", "DEBUG")
         ping = str(round((monotonic() - before) * 1000))
         self.log(f"Replaced old file in {ping}ms", "DEBUG")
