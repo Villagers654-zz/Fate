@@ -139,7 +139,7 @@ class Tasks:
 
 			with pysftp.Connection(creds.host, username=creds.username, password=creds.password, port=creds.port, cnopts=cnopts) as sftp:
 				# Remove older backups
-				root = "/home/fate/Backups"
+				root = "/home/luck/Backups"
 				for backup in sftp.listdir(root):
 					backup_time = datetime.strptime(backup.split('_')[1].strip('.zip'), '%Y-%m-%d %H:%M:%S.%f')
 					if (datetime.now() - backup_time).days > keep_for:
