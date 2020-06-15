@@ -19,50 +19,57 @@ class ErrorHandler(commands.Cog):
 		if hasattr(ctx.command, 'on_error'):
 			return
 		ignored = (commands.CommandNotFound, commands.NoPrivateMessage, discord.errors.NotFound)
+		perms = ctx.channel.permissions_for(ctx.guild.me)
+		if not perms.send_messages and not perms.add_reactions:
+			return
+
 		error = getattr(error, 'original', error)
 		err = str(error)
-		if isinstance(error, ignored):
-			return
-		elif isinstance(error, commands.DisabledCommand):
-			return await ctx.send(f'`{ctx.command}` has been disabled.')
-		elif isinstance(error, commands.BadArgument):
-			return await ctx.send(f"Bad Argument: {error}")
-		elif isinstance(error, commands.CommandOnCooldown):
-			user_id = str(ctx.author.id)
-			await ctx.message.add_reaction('⏳')
-			if user_id not in self.cd:
-				self.cd[user_id] = 0
-			if self.cd[user_id] < time() - 10:
-				await ctx.send(error)
-			self.cd[user_id] = time() + 10
-			return
-		elif isinstance(error, commands.MissingRequiredArgument):
-			return await ctx.send(error)
-		elif isinstance(error, commands.CheckFailure):
-			return await ctx.message.add_reaction('🚫')
-		elif isinstance(error, discord.errors.Forbidden):
-			if not ctx.guild:
+		try:
+			if isinstance(error, ignored):
 				return
-			bot = ctx.guild.get_member(self.bot.user.id)
-			if ctx.channel.permissions_for(bot).send_messages:
+			elif isinstance(error, commands.DisabledCommand):
+				return await ctx.send(f'`{ctx.command}` has been disabled.')
+			elif isinstance(error, commands.BadArgument):
+				return await ctx.send(f"Bad Argument: {error}")
+			elif isinstance(error, commands.CommandOnCooldown):
+				user_id = str(ctx.author.id)
+				await ctx.message.add_reaction('⏳')
+				if user_id not in self.cd:
+					self.cd[user_id] = 0
+				if self.cd[user_id] < time() - 10:
+					await ctx.send(error)
+				self.cd[user_id] = time() + 10
+				return
+			elif isinstance(error, commands.MissingRequiredArgument):
 				return await ctx.send(error)
-			if ctx.channel.permissions_for(bot).add_reactions:
-				return await ctx.message.add_reaction("⚠")
-			try:
-				await ctx.author.send(f"I don't have permission to reply to you in {ctx.guid.name}")
-			except discord.errors.Forbidden:
-				pass
+			elif isinstance(error, commands.CheckFailure):
+				return await ctx.message.add_reaction('🚫')
+			elif isinstance(error, discord.errors.Forbidden):
+				if not ctx.guild:
+					return
+				bot = ctx.guild.get_member(self.bot.user.id)
+				if ctx.channel.permissions_for(bot).send_messages:
+					return await ctx.send(error)
+				if ctx.channel.permissions_for(bot).add_reactions:
+					return await ctx.message.add_reaction("⚠")
+				try:
+					await ctx.author.send(f"I don't have permission to reply to you in {ctx.guid.name}")
+				except discord.errors.Forbidden:
+					pass
+				return
+			elif isinstance(error, KeyError):
+				if 'content-type' in str(error):
+					return await ctx.send("Oop-\nDiscord shit in the bed\nIt's not my fault, it's theirs")
+				err = f'No Data: {error}'
+			print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
+			traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
+			e = discord.Embed(color=colors.red())
+			e.description = f'[{err}](https://www.youtube.com/watch?v=t3otBjVZzT0)'
+			e.set_footer(text='This error has been logged, and will be fixed soon')
+			await ctx.send(embed=e)
+		except discord.errors.Forbidden:
 			return
-		elif isinstance(error, KeyError):
-			if 'content-type' in str(error):
-				return await ctx.send("Oop-\nDiscord shit in the bed\nIt's not my fault, it's theirs")
-			err = f'No Data: {error}'
-		print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
-		traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
-		e = discord.Embed(color=colors.red())
-		e.description = f'[{err}](https://www.youtube.com/watch?v=t3otBjVZzT0)'
-		e.set_footer(text='This error has been logged, and will be fixed soon')
-		await ctx.send(embed=e)
 		p = subprocess.Popen("cat  /home/luck/.pm2/logs/fate-error.log", stdout=subprocess.PIPE, shell=True)
 		(output, err) = p.communicate()
 		output = str(output).replace("\\t", "    ").replace("b'", "").replace("`", "").split("\\n")
