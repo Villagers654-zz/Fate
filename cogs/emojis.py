@@ -16,7 +16,9 @@ class Emojis(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 
-	def is_blacklisted(self, emoji) -> bool:
+	def is_blacklisted(self, ctx, emoji) -> bool:
+		if ctx.author.id in self.bot.owner_ids:
+			return False
 		servers = [470961230362837002, 397415086295089155]
 		blacklist = []
 		for server_id in servers:
@@ -150,8 +152,8 @@ class Emojis(commands.Cog):
 		# PartialEmoji objects
 		for emoji in custom:
 			if await not_at_limit(emoji):
-				if self.is_blacklisted(emoji):
-					await self.bot.utils.update_msg(msg, f"ERR: {emoji.name} - Invalid Emoji")
+				if self.is_blacklisted(ctx, emoji):
+					msg = await self.bot.utils.update_msg(msg, f"ERR: {emoji.name} - Invalid Emoji")
 					continue
 				name = emoji.name
 				img = await self.bot.download(emoji.url)
@@ -166,7 +168,7 @@ class Emojis(commands.Cog):
 				emoji = f"https://cdn.discordapp.com/emojis/{emoji_id}.png"
 			img = await self.bot.download(emoji)
 			if not img:
-				await self.bot.utils.update_msg(msg, f"{emoji_id} - Couldn't Fetch")
+				msg = await self.bot.utils.update_msg(msg, f"{emoji_id} - Couldn't Fetch")
 				continue
 
 			if await not_at_limit(emoji):
@@ -199,7 +201,7 @@ class Emojis(commands.Cog):
 		for attachment in ctx.message.attachments:
 			file_is_allowed = any(not attachment.filename.endswith(ext) for ext in allowed_extensions)
 			if not attachment.height or not file_is_allowed:
-				await self.bot.utils.update_msg(msg, f"{attachment.filename} - Not an image or gif")
+				msg = await self.bot.utils.update_msg(msg, f"{attachment.filename} - Not an image or gif")
 				continue
 
 			file = await attachment.read()  # Raw bytes file
@@ -210,7 +212,7 @@ class Emojis(commands.Cog):
 			await self.upload_emoji(ctx, name=name, img=file, reason=str(ctx.author), msg=msg)
 
 		if not len(msg.content.split('\n')) > 1:
-			await self.bot.utils.update_msg(msg, "No proper formats I can work with were provided")
+			msg = await self.bot.utils.update_msg(msg, "No proper formats I can work with were provided")
 
 	@commands.command(name="delemoji", aliases=["delemote"])
 	@commands.cooldown(1, 5, commands.BucketType.guild)
