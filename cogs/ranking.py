@@ -266,8 +266,7 @@ class Ranking(commands.Cog):
 			if cmd not in self.cmds:
 				self.cmds[cmd] = []
 			self.cmds[cmd].append(time())
-			async with aio.open(self.clb_path, 'w') as f:
-				await f.write(json.dumps(self.cmds))
+			await self.bot.save_json(self.clb_path, self.cmds)
 			await asyncio.sleep(5)
 			self.cmd_cd[user_id].remove(cmd)
 

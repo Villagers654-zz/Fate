@@ -31,10 +31,9 @@ class ChatBot(commands.Cog):
 					self.dir = dat["dir"]
 		self.blocked = []
 
-	def save_data(self):
-		with open("./data/userdata/chatbot.json", "w") as outfile:
-			json.dump({"toggle": self.toggle, "cache": self.cache, "prefixes": self.prefixes, "dir": self.dir},
-			          outfile, sort_keys=True, indent=4, separators=(',', ': '))
+	async def save_data(self):
+		data = {"toggle": self.toggle, "cache": self.cache, "prefixes": self.prefixes, "dir": self.dir}
+		await self.bot.save_json("./data/userdata/chatbot.json", data)
 
 	@commands.group(name="chatbot")
 	@commands.cooldown(1, 3, commands.BucketType.user)
@@ -78,7 +77,7 @@ class ChatBot(commands.Cog):
 			if guild_id not in self.dir:
 				self.dir[guild_id] = "guilded"
 			await ctx.send("Enabled chatbot")
-			return self.save_data()
+			return await self.save_data()
 		await ctx.send("Chatbot is already enabled")
 
 	@_chatbot.command(name="disable")
@@ -88,7 +87,7 @@ class ChatBot(commands.Cog):
 		if guild_id not in self.toggle:
 			return await ctx.send("Chatbot is not enabled")
 		del self.toggle[guild_id]
-		self.save_data()
+		await self.save_data()
 		await ctx.send("Disabled chatbot")
 
 	@_chatbot.command(name="swap_cache")
@@ -112,7 +111,7 @@ class ChatBot(commands.Cog):
 		else:
 			self.dir[guild_id] = "guilded"
 		await ctx.send(f"Swapped cache location to {self.dir[guild_id]}")
-		self.save_data()
+		await self.save_data()
 
 	@_chatbot.command(name="clear_cache")
 	@commands.has_permissions(manage_messages=True)
@@ -122,7 +121,7 @@ class ChatBot(commands.Cog):
 			return await ctx.send("No cached data found")
 		del self.cache[guild_id]
 		await ctx.send("Cleared cache")
-		self.save_data()
+		await self.save_data()
 
 	@_chatbot.command(name="load_preset")
 	@commands.has_permissions(manage_messages=True)
@@ -137,7 +136,7 @@ class ChatBot(commands.Cog):
 			if response not in self.cache[guild_id]:
 				self.cache[guild_id].append(response)
 		await ctx.send("Loaded preset")
-		self.save_data()
+		await self.save_data()
 
 	@commands.command(name="pop")
 	@commands.check(checks.luck)
@@ -235,7 +234,7 @@ class ChatBot(commands.Cog):
 				self.cache[guild_id] = []
 			self.cache[guild_id].append(msg.content)
 			self.cache['global'].append(msg.content)
-			self.save_data()
+			await self.save_data()
 
 			choice = None
 			index = 0
