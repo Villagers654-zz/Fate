@@ -20,7 +20,7 @@ class ErrorHandler(commands.Cog):
 			return
 		ignored = (commands.CommandNotFound, commands.NoPrivateMessage, discord.errors.NotFound)
 		perms = ctx.channel.permissions_for(ctx.guild.me)
-		if not perms.send_messages and not perms.add_reactions:
+		if not ctx.guild or (not perms.send_messages and not perms.add_reactions):
 			return
 
 		error = getattr(error, 'original', error)
@@ -44,7 +44,10 @@ class ErrorHandler(commands.Cog):
 			elif isinstance(error, commands.MissingRequiredArgument):
 				return await ctx.send(error)
 			elif isinstance(error, commands.CheckFailure):
-				return await ctx.message.add_reaction('🚫')
+				if "check functions" in str(error):
+					return await ctx.message.add_reaction('🚫')
+				else:
+					return await ctx.send(error)
 			elif isinstance(error, discord.errors.Forbidden):
 				if not ctx.guild:
 					return
