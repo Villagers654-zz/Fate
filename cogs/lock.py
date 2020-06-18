@@ -16,7 +16,7 @@ class Lock(commands.Cog):
 					self.lock = dat["lock"]
 
 	async def save_data(self):
-		await self.bot.save("./data/userdata/lock.json", {"lock": self.lock})
+		await self.bot.save_json("./data/userdata/lock.json", {"lock": self.lock})
 
 	@commands.command(name="lock")
 	@commands.has_permissions(administrator=True)
