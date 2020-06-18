@@ -21,51 +21,6 @@ from utils.colors import purple, cyan, fate
 from utils import utils, checks
 
 
-class Faction(object):
-	def __init__(self, outer_instance, guild_id: str, name: str):
-		self.instance = outer_instance  # type: Factions
-		self.bot = self.instance.bot  # type: commands.AutoShardedBot
-		if not self.bot.is_ready():
-			raise EnvironmentError("You can't initialize a faction object when the bot isn't ready")
-
-		self.guild_id = guild_id
-		self._name = name
-
-		self.guild = self.bot.get_guild(int(guild_id))
-		self.owner = self.guild.get_member(self.data['owner'])
-		self.members = [self.guild.get_member(uid) for uid in self.data['members']]
-
-	@property
-	def name(self):
-		return self._name
-
-	@name.setter
-	def name(self, value):
-		if value in self.instance.factions[self.guild_id]:
-			raise ValueError(f"Faction {value} already exists")
-		self.instance.factions[self.guild_id][value] = self.data
-		del self.instance.factions[self.guild_id][self.name]
-		self._name = value
-		self.instance.save_data()
-
-	@property
-	def data(self):
-		return self.instance.factions[self.guild_id][self.name]
-
-	def add_member(self, member: discord.Member):
-		if member.id in self.data['members'] or member.id == self.owner.id:
-			raise ValueError("That member is already in the faction")
-		self.instance.factions[self.guild_id][self.name]['members'].append(member.id)
-		self.instance.save_data()
-
-	def remove_member(self, member: discord.Member):
-		if member.id == self.owner.id:
-			raise PermissionError("You can't remove the faction owner")
-		if member.id not in self.data['members']:
-			raise ValueError("That member isn't in the faction")
-		self.instance.factions[self.guild_id][self.name]['members'].remove(member.id)
-		self.instance.save_data()
-
 class MiniGames:
 	def __init__(self, *users):
 		self.users = users
@@ -116,10 +71,9 @@ class Factions(commands.Cog):
 			with open(self.path, 'r') as f:
 				self.factions = json.load(f)  # type: dict
 
-	def save_data(self) -> None:
+	async def save_data(self) -> None:
 		""" Saves the current variables """
-		# with open(self.path, 'w+') as f:
-		# 	json.dump(self.factions, f)
+		# await self.bot.save_json(self.path, self.factions)
 		return
 
 	def init(self, guild_id: str):
@@ -162,6 +116,8 @@ class Factions(commands.Cog):
 		guild_id = str(ctx.guild.id)
 		for faction, data in self.factions[guild_id].items():
 			if user.id == data['owner']:
+				return faction
+			if user.id in data['co-owners']:
 				return faction
 		return None
 
@@ -288,6 +244,7 @@ class Factions(commands.Cog):
 					"balance": metadata['balance'],
 					"claims": claims,
 					"public": True,
+					"allies": [],
 					"limit": 15,
 					"income": {},
 					"bio": None
@@ -379,7 +336,7 @@ class Factions(commands.Cog):
 		faction = self.get_users_faction(ctx)
 		if faction:
 			return await ctx.send('You must leave your current faction to create a new one')
-		if ctx.message.mentions or ctx.message.role_mentions or '@everyone' in name or '@here' in name:
+		if ctx.message.raw_mentions or ctx.message.raw_role_mentions or '@' in name or "#" in name:
 			return await ctx.send('biTcH nO')
 		self.init(guild_id)  # make sure the key is setup properly
 		if str(name).lower() in [str(f).lower() for f in self.factions[guild_id].keys()]:
@@ -391,12 +348,13 @@ class Factions(commands.Cog):
 			'balance': 0,
 			'limit': 15,
 			'public': True,
+			"allies": [],
 			'claims': [],
 			'bio': None,
 			'income': {}
 		}
 		await ctx.send('Created your faction')
-		self.save_data()
+		await self.save_data()
 
 	@factions.command(name='disband')
 	@commands.cooldown(1, 10, commands.BucketType.user)
@@ -406,11 +364,9 @@ class Factions(commands.Cog):
 			return msg.author.id == ctx.author.id and msg.channel.id == msg.channel.id and (
 				'yes' in msg.content or 'no' in msg.content)
 
-		faction = self.get_owned_faction(ctx)
-		if not faction:
-			return await ctx.send("You need to be owner to use this cmd")
 		guild_id = str(ctx.guild.id)
-		if ctx.author.id != self.factions[guild_id][faction]['owner']:
+		faction = self.get_owned_faction(ctx)
+		if not faction or ctx.author.id != self.factions[guild_id][faction]["owner"]:
 			return await ctx.send("You need to be owner to use this cmd")
 
 		instruction = await ctx.send("Are you sure you want to delete your faction?\nReply with 'yes' or 'no'")
@@ -421,9 +377,12 @@ class Factions(commands.Cog):
 			return await ctx.message.delete()
 		else:
 			if 'yes' in msg.content.lower():
+				for fac, data in self.factions[guild_id].items():
+					if faction in data["allies"]:
+						self.factions[guild_id][fac]["allies"].remove(faction)
 				del self.factions[guild_id][faction]
 				await ctx.send("Ok.. deleted your faction")
-				self.save_data()
+				await self.save_data()
 			else:
 				await ctx.send("Ok, I won't delet")
 
@@ -446,7 +405,7 @@ class Factions(commands.Cog):
 		e.description = f"{ctx.author.display_name} joined\nMember Count: " \
 		                f"[`{len(self.factions[guild_id][faction]['members'])}`]"
 		await ctx.send(embed=e)
-		self.save_data()
+		await self.save_data()
 
 	@factions.command(name='invite')
 	async def invite(self, ctx, user: discord.Member):
@@ -457,7 +416,7 @@ class Factions(commands.Cog):
 
 		faction = self.get_owned_faction(ctx)
 		if not faction:
-			return await ctx.send("You need to have at least co-owner to use this cmd")
+			return await ctx.send("You need to have owner level permissions to use this cmd")
 		users_in_faction = self.get_users_faction(ctx, user)
 		if users_in_faction:
 			return await ctx.send("That users already in a faction :[")
@@ -476,7 +435,7 @@ class Factions(commands.Cog):
 			if 'yes' in msg.content.lower():
 				self.factions[str(ctx.guild.id)][faction]['members'].append(ctx.author.id)
 				await ctx.send(f"{user.display_name} joined {faction}")
-				self.save_data()
+				await self.save_data()
 			else:
 				await ctx.send("Alrighty then :[")
 		self.pending.remove(user.id)
@@ -495,7 +454,7 @@ class Factions(commands.Cog):
 		if ctx.author.id in self.factions[guild_id]['co-owners']:
 			self.factions[guild_id]['co-owners'].remove(ctx.author.id)
 		await ctx.send('👍')
-		self.save_data()
+		await self.save_data()
 
 	@factions.command(name='kick')
 	async def kick(self, ctx, *, user):
@@ -520,8 +479,8 @@ class Factions(commands.Cog):
 		self.factions[guild_id][faction]['members'].remove(user.id)
 		if user.id in self.factions[guild_id]['co-owners']:
 			self.factions[guild_id]['co-owners'].remove(user.id)
-		await ctx.send(f"Kicked {user.display_name} from {faction}")
-		self.save_data()
+		await ctx.send(f"Kicked {user.mention} from {faction}")
+		await self.save_data()
 
 	@factions.command(name='promote')
 	async def promote(self, ctx, *, user):
@@ -529,17 +488,15 @@ class Factions(commands.Cog):
 		user = await utils.get_user(ctx, user)
 		if not user:
 			return await ctx.send("User not found")
-		faction = self.get_owned_faction(ctx)
-		if not faction:
-			return await ctx.send("You need to be owner of a faction to use this cmd")
 		guild_id = str(ctx.guild.id)
-		if ctx.author.id != self.factions[guild_id][faction]['owner']:
+		faction = self.get_owned_faction(ctx)
+		if not faction or ctx.author.id != self.factions[guild_id][faction]['owner']:
 			return await ctx.send("You need to be owner of a faction to use this cmd")
 		if user.id in self.factions[guild_id][faction]['co-owners']:
-			return await ctx.send("That users already co-owner")
+			return await ctx.send("That users already a co-owner")
 		self.factions[guild_id][faction]['co-owners'].append(user.id)
-		await ctx.send(f"Promoted {user.display_name} to co-owner")
-		self.save_data()
+		await ctx.send(f"Promoted {user.mention} to co-owner")
+		await self.save_data()
 
 	@factions.command(name='demote')
 	async def demote(self, ctx, *, user):
@@ -556,7 +513,7 @@ class Factions(commands.Cog):
 		if user.id not in self.factions[guild_id][faction]['co-owners']:
 			return await ctx.send("That users not co-owner")
 		self.factions[guild_id][faction]['co-owners'].remove(user.id)
-		await ctx.send(f"Demoted {user.display_name} from co-owner")
+		await ctx.send(f"Demoted {user.mention} from co-owner")
 
 	@factions.command(name='annex', enabled=False)
 	async def annex(self, ctx, *, faction):
@@ -575,9 +532,15 @@ class Factions(commands.Cog):
 			return await ctx.send("You need to be owner of a faction to use this cmd")
 		if str(name).lower() in [str(fac).lower() for fac in self.factions[guild_id].keys()]:
 			return await ctx.send("That names already taken")
+		if ctx.message.raw_mentions or ctx.message.raw_role_mentions or '@' in name or "#" in name:
+			return await ctx.send('biTcH nO')
+		for fac, data in self.factions[guild_id].items():
+			if faction in data["allies"]:
+				self.factions[guild_id][fac]["allies"].remove(faction)
+				self.factions[guild_id][fac]["allies"].append(name)
 		self.factions[guild_id][name] = self.factions[guild_id].pop(faction)
 		await ctx.send(f"Changed your factions name from {faction} to {name}")
-		self.save_data()
+		await self.save_data()
 
 	@factions.command(name='info')
 	async def info(self, ctx, *, faction=None):
@@ -634,7 +597,7 @@ class Factions(commands.Cog):
 			user = self.bot.get_user(user_id)
 			if not isinstance(user, discord.User):
 				self.factions[guild_id][faction].remove(user_id)
-				self.save_data()
+				await self.save_data()
 				continue
 
 			income = 0
@@ -731,7 +694,7 @@ class Factions(commands.Cog):
 			self.factions[guild_id][faction]['income'][ctx.author.id] = pay
 
 		await ctx.send(embed=e)
-		self.save_data()
+		await self.save_data()
 
 		await asyncio.sleep(60)
 		del self.cooldowns[guild_id][ctx.author.id]
@@ -743,6 +706,41 @@ class Factions(commands.Cog):
 	@factions.command(name='pay', enabled=False)
 	async def pay(self, ctx, faction, amount):
 		""" Pays a faction from the author factions balance """
+
+	@factions.command(name="ally")
+	async def ally(self, ctx, *, target_faction):
+		ally_name = self.get_faction_named(ctx, name=target_faction)  # type: Optional[None, str]
+		faction_name = self.get_owned_faction(ctx, user=ctx.author)  # type: Optional[None, str]
+		if not ally_name:
+			return await ctx.send("Target faction not found")
+		if not faction_name:
+			return await ctx.send("You need owner permissions in a faction to use this command")
+
+		guild_id = str(ctx.guild.id)
+		if faction_name in self.factions[guild_id][ally_name]["allies"]:
+			return await ctx.send(f"You're already allied with `{ally_name}`")
+		if len(self.factions[guild_id][faction_name]["allies"]) == 3:
+			return await ctx.send(f"At the moment, you can't exceed 3 alliances")
+		if len(self.factions[guild_id][ally_name]["allies"]) == 3:
+			return await ctx.send("That faction has already reached its limit of alliances")
+
+		def predicate(m):
+			return m.channel.id == ctx.channel.id and ".accept" in str(m.content)
+
+		message = await ctx.send("Someone with ownership level permissions in {ally_name} "
+		                         "reply with `.accept` to agree to the alliance")
+		while True:
+			try:
+				msg = await self.bot.wait_for("on_message", check=predicate, timeout=60)
+			except asyncio.TimeoutError:
+				if message:
+					await message.edit(content=f"Action expired due to 1 minute timeout.```{message.content}```")
+				return
+			if self.get_owned_faction(ctx, user=msg.author) == ally_name:
+				self.factions[guild_id][faction_name]["allies"].append(ally_name)
+				self.factions[guild_id][ally_name]["allies"].append(faction_name)
+				await ctx.send(f"Successfully created an alliance between `{faction_name}` and `{ally_name}`")
+				return await self.save_data()
 
 	@commands.Cog.listener()
 	async def on_message(self, msg):
@@ -756,6 +754,10 @@ class Factions(commands.Cog):
 					pay = random.randint(1, 5)
 					self.factions[guild_id][faction]['balance'] += pay
 					self.update_income_board(guild_id, faction, land_claims=pay)
+					ally_pay = round(pay / 2) if pay > 1 else 0
+					for ally in self.factions[guild_id][faction]["allies"]:
+						self.factions[guild_id][ally]["balance"] += ally_pay
+						self.update_income_board(guild_id, ally, alliances=ally_pay)
 
 def setup(bot):
 	bot.add_cog(Factions(bot))
