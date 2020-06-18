@@ -13,7 +13,6 @@ def luck(ctx):
     return ctx.message.author.id in [
         264838866480005122,  # Luck
         355026215137968129,  # Tother
-        611108193275478018  # EppyPrime
     ]
 
 

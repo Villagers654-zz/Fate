@@ -18,7 +18,6 @@ class ErrorHandler(commands.Cog):
 	async def on_command_error(self, ctx, error):
 		if hasattr(ctx.command, 'on_error'):
 			return
-		ignored = (commands.CommandNotFound, commands.NoPrivateMessage, discord.errors.NotFound)
 		perms = ctx.channel.permissions_for(ctx.guild.me)
 		if not ctx.guild or (not perms.send_messages and not perms.add_reactions):
 			return
@@ -26,10 +25,11 @@ class ErrorHandler(commands.Cog):
 		error = getattr(error, 'original', error)
 		err = str(error)
 		try:
+			ignored = (commands.CommandNotFound, commands.NoPrivateMessage, discord.errors.NotFound)
 			if isinstance(error, ignored):
 				return
 			elif isinstance(error, commands.DisabledCommand):
-				return await ctx.send(f'`{ctx.command}` has been disabled.')
+				return await ctx.send(f'`{ctx.command}` is disabled.')
 			elif isinstance(error, commands.BadArgument):
 				return await ctx.send(f"Bad Argument: {error}")
 			elif isinstance(error, commands.CommandOnCooldown):
@@ -51,19 +51,20 @@ class ErrorHandler(commands.Cog):
 			elif isinstance(error, discord.errors.Forbidden):
 				if not ctx.guild:
 					return
-				bot = ctx.guild.get_member(self.bot.user.id)
-				if ctx.channel.permissions_for(bot).send_messages:
+				if ctx.channel.permissions_for(ctx.guild.me).send_messages:
 					return await ctx.send(error)
-				if ctx.channel.permissions_for(bot).add_reactions:
+				if ctx.channel.permissions_for(ctx.guild.me).add_reactions:
 					return await ctx.message.add_reaction("⚠")
 				try:
 					await ctx.author.send(f"I don't have permission to reply to you in {ctx.guid.name}")
 				except discord.errors.Forbidden:
 					pass
 				return
-			elif isinstance(error, KeyError):
-				if 'content-type' in str(error):
+			elif isinstance(error, discord.errors.HTTPException):
+				error_str = str(error).lower()
+				if "internal" in error_str or "service unavailable" in error_str:
 					return await ctx.send("Oop-\nDiscord shit in the bed\nIt's not my fault, it's theirs")
+			elif isinstance(error, KeyError):
 				err = f'No Data: {error}'
 			print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
 			traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
