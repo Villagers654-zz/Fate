@@ -27,7 +27,7 @@ class Lock(commands.Cog):
 			await self.save_data()
 			await ctx.send("Locked the server")
 			return await ctx.message.add_reaction("👍")
-		if self.lock[guild_id] is not "lock-kick":
+		if self.lock[guild_id] != "lock-kick":
 			self.lock[guild_id] = "lock-kick"
 			await self.save_data()
 			await ctx.send("Changed the server lock type to kick")
@@ -46,7 +46,7 @@ class Lock(commands.Cog):
 			await self.save_data()
 			await ctx.send("Locked the server")
 			return await ctx.message.add_reaction("👍")
-		if self.lock[guild_id] is not "lock-ban":
+		if self.lock[guild_id] != "lock-ban":
 			self.lock[guild_id] = "lock-ban"
 			await self.save_data()
 			await ctx.send("Changed the server lock type to ban")
@@ -72,7 +72,7 @@ class Lock(commands.Cog):
 			await self.save_data()
 			await ctx.send("Locked the server")
 			return await ctx.message.add_reaction("👍")
-		if self.lock[guild_id] is not "lock-mute":
+		if self.lock[guild_id] != "lock-mute":
 			if check_roles() is False:
 				return await ctx.send("Failed to find a muted role")
 			self.lock[guild_id] = "lock-mute"
@@ -92,7 +92,7 @@ class Lock(commands.Cog):
 			await ctx.send("there is currently no active lock")
 			return await ctx.message.add_reaction("⚠")
 		del self.lock[guild_id]
-		self.save_data()
+		await self.save_data()
 		await ctx.send("Unlocked the server")
 		await ctx.message.add_reaction("👍")
 
