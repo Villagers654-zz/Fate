@@ -18,8 +18,8 @@ class ErrorHandler(commands.Cog):
 	async def on_command_error(self, ctx, error):
 		if hasattr(ctx.command, 'on_error'):
 			return
-		perms = ctx.channel.permissions_for(ctx.guild.me)
-		if not ctx.guild or (not perms.send_messages and not perms.add_reactions):
+		perms = None if not ctx.guild else ctx.channel.permissions_for(ctx.guild.me)
+		if not ctx.guild or (not perms.send_messages or not perms.add_reactions):
 			return
 
 		error = getattr(error, 'original', error)
