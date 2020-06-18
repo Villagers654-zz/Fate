@@ -6,6 +6,7 @@ import asyncio
 import math
 import json
 import re
+import os
 
 time_rx = re.compile('[0-9]+')
 url_rx = re.compile('https?:\/\/(?:www\.)?.+')  # noqa: W605
@@ -14,10 +15,20 @@ class Music(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.map = []
-        if not hasattr(bot, 'lavalink'):
+        if not hasattr(bot, 'lavalink') or not bot.lavalink:
             creds = outh.Lavalink()
-            lavalink.Client(bot=bot, password=creds.password, loop=bot.loop, ws_port=creds.ws_port, rest_port=creds.ws_port)
-            self.bot.lavalink.register_hook(self._track_hook)
+            bot.lavalink = lavalink.Client(
+                user_id=bot.user.id,
+                shard_count=bot.shard_count
+            )
+            bot.lavalink.add_node(
+                host="127.0.0.1",
+                password=creds.password,
+                port=creds.ws_port,
+                resume_timeout=1
+            )
+            bot.add_listener(bot.lavalink.voice_update_handler, "on_socket_response")
+        bot.lavalink.add_event_hook(self._track_hook)
         self.skips = {}
         if "music_cleanup" in bot.tasks and bot.tasks["music_cleanup"].done():
             bot.tasks["music_cleanup"].cancel()
@@ -30,6 +41,48 @@ class Music(commands.Cog):
         # Clear the players from Lavalink's internal cache
         self.bot.lavalink.players.clear()
         self.bot.lavalink.unregister_hook(self._track_hook)
+
+    # async def lavalink_track_hook(self, event):
+    #     try:
+    #         if isinstance(event, lavalink.events.TrackStartEvent):
+    #             c = event.player.fetch("channel")
+    #             if c:
+    #                 c = await self.bot.fetch_channel(c)
+    #                 embed = discord.Embed(color=self.bot.EMBED_COLOR,
+    #                                       title="▶ | Now Playing")
+    #                 if c:
+    #                     if (url_rx.match(event.track.uri) or event.track.uri in self.stream_urls.values()):
+    #                         if event.track.uri not in self.stream_urls.values():
+    #                             embed.description = event.track.title
+    #                             embed.url = event.track.uri
+    #                         else:
+    #                             embed.description = event.track.title
+    #                         if "youtube" in event.track.uri:
+    #                             embed.set_thumbnail(url=event.track.thumbnail)
+    #                     else:
+    #                         embed.description = ".".join(
+    #                             os.path.basename(event.track.uri).split(".")[:-1])
+    #                     await c.send(embed=embed)
+    #         elif isinstance(event, lavalink.events.TrackEndEvent):
+    #             event.player.store('previous', event.track.uri)
+    #         elif isinstance(event, lavalink.events.QueueEndEvent):
+    #             global sent_to
+    #             guild_id = int(event.player.guild_id)
+    #             await self.connect_to(guild_id, None)
+    #             c = event.player.fetch("channel")
+    #             if c:
+    #                 c = await self.bot.fetch_channel(c)  # type: discord.TextChannel
+    #                 if c:
+    #                     if c.id not in sent_to:
+    #                         sent_to.append(c.id)
+    #                         async for msg in c.history(limit=1):
+    #                             if msg.content.count("Playback ended!") > 0:
+    #                                 return
+    #                         await c.send("⏹ | Playback ended!")
+    #                 # await asyncio.sleep(10)
+    #                 # sent_to.remove(c.id)
+    #     except Exception:
+    #         pass
 
     async def _track_hook(self, event):
         if isinstance(event, lavalink.Events.StatsUpdateEvent):
