@@ -17,7 +17,7 @@ import discord
 
 
 class ChatBridge(commands.Cog):
-	def __init__(self, bot: commands.Bot):
+	def __init__(self, bot):
 		self.bot = bot
 		self.locations = {}
 		self.spam_cd = {}
@@ -102,12 +102,19 @@ class ChatBridge(commands.Cog):
 					try:
 						await webhook.send(msg.content, username=msg.author.display_name,
 						                   avatar_url=msg.author.avatar_url, files=files, embed=embed)
+					except discord.errors.NotFound:
+						self.bot.log(
+							f"A chatbridges webhook was deleted\n"
+							f"Guild: {msg.guild}",
+							level="CRITICAL"
+						)
 					except discord.errors.HTTPException:
 						await webhook.send(msg.content, username=msg.author.display_name,
 						                   avatar_url=msg.author.avatar_url, embed=embed)
 
 			for attachment in msg.attachments:
 				os.remove(os.path.join('static', attachment.filename))
+
 
 def setup(bot):
 	bot.add_cog(ChatBridge(bot))
