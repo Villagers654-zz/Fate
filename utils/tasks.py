@@ -153,4 +153,4 @@ class Tasks:
 				sftp.put(fp, os.path.join(root, fp))
 				os.remove(fp)
 			ping = round((time.monotonic() - before) * 1000)
-			print(f'Ran Automatic Backup: {ping}ms')
+			self.bot.log(f'Ran Automatic Backup: {ping}ms')

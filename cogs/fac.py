@@ -702,6 +702,20 @@ class Factions(commands.Cog):
 	@factions.command(name='balance', aliases=['bal'], enabled=False)
 	async def balance(self, ctx, *, faction=None):
 		""" Sends a factions balance """
+		guild_id = str(ctx.guild.id)
+		if guild_id not in self.factions:
+			return await ctx.send("This server has no factions")
+		if not faction:
+			faction = self.get_users_faction(ctx, user=ctx.author)
+		else:
+			faction = self.get_faction_named(ctx, name=faction)
+		if not faction:
+			return await ctx.send("You need to either be in a faction or specify a faction")
+		guild_id = str(ctx.guild.id)
+		e = discord.Embed(color=purple())
+		e.set_author(name=str(faction), icon_url=self.faction_icon(ctx, str(faction)))
+		e.description = f"${self.factions[guild_id][faction]['balance']}"
+		await ctx.send(embed=e)
 
 	@factions.command(name='pay', enabled=False)
 	async def pay(self, ctx, faction, amount):
