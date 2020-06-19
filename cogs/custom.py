@@ -153,5 +153,13 @@ class Custom(commands.Cog):
 		files = os.listdir('./data/images/custom/orange_emotes')
 		await ctx.send(file=discord.File(f'./data/images/custom/orange_emotes/{random.choice(files)}'))
 
+	@commands.command(name="hack")
+	@commands.cooldown(2, 5, commands.BucketType.user)
+	@commands.cooldown(3, 5, commands.BucketType.channel)
+	@commands.bot_has_permissions(attach_files=True)
+	async def hack(self, ctx):
+		await ctx.send("Ender will tamper with your files")
+
+
 def setup(bot):
 	bot.add_cog(Custom(bot))
