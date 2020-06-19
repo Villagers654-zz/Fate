@@ -31,7 +31,9 @@ class MiniGames:
 			return m.channel.id == ctx.channel.id and m.author in self.users and (
 				str(m.content).lower() == word)
 
-		words = ['whore', 'faggot', 'penis']  # stay wholesome uwu
+		words = [
+			"fate", "bait", "rock", "anime", "milkshake", "water", "computer", "server"
+		]  # stay wholesome uwu
 		word = random.choice(words)
 		scrambled_word = list(str(word).lower())
 		random.shuffle(scrambled_word)
