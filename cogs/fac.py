@@ -193,16 +193,44 @@ class Factions(commands.Cog):
 				global_claims[claim] = data
 		return global_claims
 
-	def get_faction_rankings(self, guild_id):
-		factions = []
-		def get_value(kv):
+	def get_faction_rankings(self, guild_id: str) -> dict:
+		def get_value(kv, net=True):
 			value = kv[1]['balance']
-			for i in range(len(kv[1]['claims'])):
-				value += 500
+			if net:
+				for i in range(len(kv[1]['claims'])):
+					value += 500
 			return value
-		for faction, data in sorted(self.factions[guild_id].items(), key=get_value, reverse=True):
-			factions.append([faction, get_value([faction, data])])
-		return factions
+
+		factions = []
+		factions_net = []
+		allies_bal = []
+		allies_net = []
+
+		for faction, data in self.factions[guild_id].items():
+			factions_net.append([faction, get_value([faction, data], net=True)])
+			factions.append([faction, get_value([faction, data], net=False)])
+			if data["allies"] and not any(faction in List for List in allies_net):
+				alliance_net = [(faction, get_value([faction, data], net=True))]
+				alliance_bal = [(faction, get_value([faction, data], net=False))]
+				for ally in data["allies"]:
+					fac, value = get_value([ally, self.factions[guild_id][ally]], net=True)
+					alliance_net.append([fac, value])
+					fac, value = get_value([ally, self.factions[guild_id][ally]], net=False)
+					alliance_bal.append([fac, value])
+				allies_net.append(alliance_net)
+				allies_bal.append(alliance_bal)
+
+		factions_net = sorted(factions, key=lambda kv: kv[1], reverse=True)
+		factions = sorted(factions, key=lambda kv: kv[1], reverse=True)
+		allies_net = sorted(allies_net, key=lambda kv: sum(kv[1] for kv in allies_net), reverse=True)
+		allies_bal = sorted(allies_bal, key=lambda kv: sum(kv[1] for kv in allies_bal), reverse=True)
+
+		return {
+			"net": factions_net,
+			"bal": factions,
+			"ally_net": allies_net,
+			"ally_bal": allies_bal
+		}
 
 	def update_income_board(self, guild_id, faction, **kwargs) -> None:
 		for key, value in kwargs.items():
@@ -264,7 +292,7 @@ class Factions(commands.Cog):
 		await ctx.send("Conversion Would Succeed")
 
 	@commands.group(name='fac')
-	@commands.cooldown(2, 5, commands.BucketType.user)
+	@commands.cooldown(3, 5, commands.BucketType.user)
 	@commands.guild_only()
 	@commands.bot_has_permissions(send_messages=True, embed_links=True)
 	async def factions(self, ctx):
@@ -556,7 +584,7 @@ class Factions(commands.Cog):
 		dat = self.factions[guild_id][faction]  # type: dict
 		owner = self.bot.get_user(dat['owner'])
 		icon_url = self.faction_icon(ctx, faction)
-		rankings = self.get_faction_rankings(guild_id)  # type: list
+		rankings = self.get_faction_rankings(guild_id)["net"]  # type: list
 		rank = 1
 		for fac, value in rankings:
 			if fac == faction:
@@ -720,6 +748,79 @@ class Factions(commands.Cog):
 	@factions.command(name='pay', enabled=False)
 	async def pay(self, ctx, faction, amount):
 		""" Pays a faction from the author factions balance """
+
+	@factions.command(name="top", aliases=["leaderboard", "lb"])
+	async def top(self, ctx):
+		def predicate(r, u) -> bool:
+			m = r.message  # type: discord.Message
+			return m.id == msg.id and str(r.emoji) in emojis and not u.bot
+
+		async def add_emojis_task():
+			for emoji in emojis:
+				await msg.add_reaction(emoji)
+
+		guild_id = str(ctx.guild.id)
+		dat = self.get_faction_rankings(guild_id)
+		e = discord.Embed(description="Collecting Leaderboard Data..")
+		msg = await ctx.send(embed=e)
+		emojis = ["💰", "⚔"]
+		self.bot.loop.create_task(add_emojis_task())
+
+		net_leaderboard = discord.Embed(color=purple())
+		net_leaderboard.set_author(name="Net Worth Leaderboard")
+		net_leaderboard.set_thumbnail(url="https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png")
+		net_leaderboard.description = ""
+		for i, (faction, value) in enumerate(dat["net"][:9]):
+			net_leaderboard.description += f"#{i}. {faction} - ${value}"
+
+		bal_leaderboard = discord.Embed(color=purple())
+		bal_leaderboard.set_author(name="Balance Leaderboard")
+		bal_leaderboard.set_thumbnail(url=ctx.guild.icon_url)
+		bal_leaderboard.description = ""
+		for i, (faction, balance) in enumerate(dat["bal"][:9]):
+			bal_leaderboard.description += f"#{i}. {faction} - ${balance}"
+
+		alliance_net_leaderboard = discord.Embed(color=purple())
+		alliance_net_leaderboard.set_author(name="Alliance Net Leaderboard")
+		alliance_net_leaderboard.set_thumbnail(url="https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png")
+		alliance_net_leaderboard.description = ""
+		for alliance in dat["ally_net"][:9]:
+			factions = ", ".join(f[0] for f in alliance)
+			value = sum(f[1] for f in alliance)
+			alliance_net_leaderboard.description += f"\n\n${value} from {factions}"
+
+		alliance_bal_leaderboard = discord.Embed(color=purple())
+		alliance_bal_leaderboard.set_author(name="Alliance Bal Leaderboard")
+		alliance_bal_leaderboard.set_thumbnail(url=ctx.guild.icon_url)
+		alliance_bal_leaderboard.description = ""
+		for alliance in dat["ally_bal"][:9]:
+			factions = ", ".join(f[0] for f in alliance)
+			value = sum(f[1] for f in alliance)
+			alliance_bal_leaderboard.description += f"\n\n${value} from {factions}"
+
+		leaderboards = {
+			True: {
+				True: net_leaderboard,
+				False: alliance_net_leaderboard
+			},
+			False: {
+				True: bal_leaderboard,
+				False: alliance_bal_leaderboard
+			}
+		}
+		net = True
+		normal_lb = True
+		while True:
+			await msg.edit(embed=leaderboards[net][normal_lb])
+			try:
+				reaction, user = await self.bot.wait_for("reaction_add", check=predicate, timeout=60)
+			except asyncio.TimeoutError:
+				return await msg.clear_reactions()
+			if str(reaction.emoji) == "💰":
+				net = False if net else True
+			elif str(reaction.emoji) == "⚔":
+				normal_lb = False if normal_lb else True
+			await msg.remove_reaction(reaction, user)
 
 	@factions.command(name="ally")
 	async def ally(self, ctx, *, target_faction):
