@@ -102,6 +102,16 @@ class Ranking(commands.Cog):
 	# 	self.config[guild_id] = self.static_config()
 	# 	await self.save_config()
 
+	async def init(self, guild_id: str):
+		""" Saves static config as the guilds initial config """
+		self.config[guild_id] = self.static_config()
+		await self.save_config()
+
+	# async def init(self, guild_id: str):
+	# 	""" Saves static config as the guilds initial config """
+	# 	self.config[guild_id] = self.static_config()
+	# 	await self.save_config()
+
 	def calc_lvl(self, total_xp, config):
 		def x(level):
 			x = 1; y = 0.125; lmt = 3
@@ -1111,7 +1121,7 @@ class Ranking(commands.Cog):
 		""" Make sure the guild has a config """
 		guild_id = str(ctx.guild.id)
 		if guild_id not in self.config:
-			self.init(guild_id)
+			await self.init(guild_id)
 
 def setup(bot):
 	bot.add_cog(Ranking(bot))
