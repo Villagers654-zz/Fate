@@ -209,9 +209,15 @@ def cleanup_msg(msg, content=None):
 	content = ' '.join(content) if len(content) > 1 else content[0]
 	return content
 
-def get_user(ctx, user=None):
+def get_user(ctx, user: str =None):
 	if not user:
 		return ctx.author
+	if str(user).isdigit():
+		user = str(user)
+		usr = None
+		if ctx.guild:
+			usr = ctx.guild.get_member(int(user))
+		return usr if usr else ctx.bot.get_user(int(user))
 	if user.startswith("<@"):
 		for char in list(user):
 			if char not in list('1234567890'):
