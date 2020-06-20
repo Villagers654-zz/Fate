@@ -93,7 +93,9 @@ class Menus(commands.Cog, HelpMenus):
         while True:
             reaction, emoji = await wait_for_reaction()
             if not reaction:
-                return await msg.clear_reactions()
+                if ctx.channel.permissions_for(ctx.guild.me).manage_messages:
+                    await msg.clear_reactions()
+                return
             if emoji == emojis[0]:  # home
                 index = 0; sub_index = None
             if emoji == emojis[1]:
