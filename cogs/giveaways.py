@@ -84,7 +84,7 @@ class Giveaways(commands.Cog):
                 task_id = f"giveaway-{guild_id}-{giveaway_id}"
                 if task_id not in self.bot.tasks["giveaways"] or self.bot.tasks["giveaways"][task_id].done():
                     task = self.bot.loop.create_task(self.run_giveaway(guild_id, giveaway_id))
-                    self.bot.tasks[task_id] = task
+                    self.bot.tasks["giveaways"][task_id] = task
 
     @commands.command(name="giveaway", aliases=["giveaways"])
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -201,7 +201,11 @@ class Giveaways(commands.Cog):
             **dat, "message": message.id
         }
         await self.save_data()
-        self.bot.tasks.start(self.run_giveaway, guild_id, key, task_id=f"giveaway-{guild_id}-{key}")
+        task_id = f"giveaway-{guild_id}-{key}"
+        task = self.bot.loop.create_task(self.run_giveaway(guild_id, key))
+        if "giveaways" not in self.bot.tasks:
+            self.bot.tasks["giveaways"] = {}
+        self.bot.tasks["giveaways"][task_id] = task
         await ctx.send("Started your giveaway")
         await message.add_reaction("🎉")
 
