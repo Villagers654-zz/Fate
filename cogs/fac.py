@@ -40,11 +40,11 @@ class MiniGames:
 
 		e = discord.Embed(color=fate())
 		e.description = f"Scrambled word: `{''.join(scrambled_word)}`"
-		e.set_footer(text="You have 20 seconds..", icon_url=ctx.bot.user.avatar_url)
+		e.set_footer(text="You have 10 seconds..", icon_url=ctx.bot.user.avatar_url)
 		await ctx.send(embed=e)
 
 		try:
-			msg = await ctx.bot.wait_for('message', check=pred, timeout=25)
+			msg = await ctx.bot.wait_for('message', check=pred, timeout=10)
 		except asyncio.TimeoutError:
 			await ctx.send("You failed :/")
 			return None
