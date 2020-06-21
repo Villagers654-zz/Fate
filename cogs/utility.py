@@ -76,9 +76,8 @@ class Utility(commands.Cog):
 			bot.tasks["info"].cancel()
 			bot.tasks["info"] = bot.loop.create_task(self.save_data_task())
 
-	def save_timers(self):
-		with open(self.timer_path, 'w') as f:
-			json.dump(self.timers, f, indent=2, ensure_ascii=False)
+	async def save_timers(self):
+		await self.bot.save_json(self.timer_path, self.timers)
 
 	@staticmethod
 	def avg_color(url):
@@ -891,7 +890,7 @@ class Utility(commands.Cog):
 		del self.timers[user_id][msg]
 		if not self.timers[user_id]:
 			del self.timers[user_id]
-		self.save_timers()
+		await self.save_timers()
 		del self.bot.tasks["timers"][f"timer-{dat['timer']}"]
 
 	@commands.command(name='reminder', aliases=['timer', 'remindme'])
@@ -939,7 +938,7 @@ class Utility(commands.Cog):
 		except OverflowError:
 			return await ctx.send("That's a bit.. *too far*  into the future")
 		await ctx.send(f"I'll remind you about {' '.join(args)} in {', '.join(expanded_timer)}")
-		self.save_timers()
+		await self.save_timers()
 		task = self.bot.loop.create_task(self.remind(user_id, msg, self.timers[user_id][msg]))
 		self.bot.tasks["timers"][f"timer-{self.timers[user_id][msg]['timer']}"] = task
 
@@ -956,13 +955,13 @@ class Utility(commands.Cog):
 			end_time = datetime.strptime(dat['timer'], "%Y-%m-%d %H:%M:%S.%f")
 			if datetime.utcnow() > end_time:
 				del self.timers[user_id][msg]
-				self.save_timers()
+				await self.save_timers()
 				continue
 			expanded_time = timedelta(seconds=(end_time - datetime.utcnow()).seconds)
 			channel = self.bot.get_channel(dat['channel'])
 			if not channel:
 				del self.timers[user_id][msg]
-				self.save_timers()
+				await self.save_timers()
 				continue
 			e.add_field(name=f'Ending in {expanded_time}', value=f'{channel.mention} - `{msg}`', inline=False)
 		await ctx.send(embed=e)
