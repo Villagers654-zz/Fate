@@ -397,9 +397,12 @@ class Logger(commands.Cog):
             if isinstance(guild, discord.Guild):
                 if guild_id not in self.invites:
                     self.invites[guild_id] = {}
-                invites = await guild.invites()
-                for invite in invites:
-                    self.invites[guild_id][invite.url] = invite.uses
+                try:
+                    invites = await guild.invites()
+                    for invite in invites:
+                        self.invites[guild_id][invite.url] = invite.uses
+                except discord.errors.Forbidden:
+                    pass
 
     @property
     def past(self):
