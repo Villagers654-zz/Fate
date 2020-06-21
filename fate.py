@@ -26,6 +26,7 @@ class Fate(commands.AutoShardedBot):
         self.debug_mode = self.config['debug_mode']
         self.owner_ids = set(list([self.config["bot_owner_id"], *self.config["bot_owner_ids"]]))
         self.pool = None                # MySQL Pool initialized on_ready
+        self.lavalink = None            # Music server
         self.login_errors = []          # Exceptions ignored during startup
         self.logs = []                  # Logs to send to discord, empties out quickly
         self.logger_tasks = {}
