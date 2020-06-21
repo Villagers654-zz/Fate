@@ -47,8 +47,9 @@ class Notepad(commands.Cog):
                 e.set_author(name='Noted..', icon_url=ctx.author.avatar_url)
                 e.set_image(url="attachment://" + os.path.basename(path))
                 await ctx.send(file=discord.File(path, filename=os.path.basename(path)), embed=e, delete_after=10)
-            await asyncio.sleep(10)
-            await ctx.message.delete()
+            if ctx.channel.permissions_for(ctx.guild.me).manage_messages:
+                await asyncio.sleep(10)
+                await ctx.message.delete()
         else:
             if str(ctx.author.id) in self.notes:
                 async with ctx.typing():

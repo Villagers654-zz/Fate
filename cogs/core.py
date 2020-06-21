@@ -50,19 +50,24 @@ class Core(commands.Cog):
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.bot_has_permissions(attach_files=True)
     async def say(self, ctx, *, content: commands.clean_content = None):
+        has_perms = ctx.channel.permissions_for(ctx.guild.me).manage_messages
         if len(str(content).split('\n')) > 4:
             await ctx.send(f'{ctx.author.mention} too many lines')
-            return await ctx.message.delete()
+            if has_perms:
+                await ctx.message.delete()
+            return
         if content:
             content = utils.cleanup_msg(ctx.message, content)
         if ctx.message.attachments and ctx.channel.is_nsfw():
             file_data = [(f.filename, BytesIO(requests.get(f.url).content)) for f in ctx.message.attachments]
             files = [discord.File(file, filename=filename) for filename, file in file_data]
             await ctx.send(content, files=files)
-            await ctx.message.delete()
+            if has_perms:
+                await ctx.message.delete()
         elif content and not ctx.message.attachments:
             await ctx.send(content)
-            await ctx.message.delete()
+            if has_perms:
+                await ctx.message.delete()
         elif ctx.message.attachments:
             await ctx.send('You can only attach files if the channel\'s nsfw')
         else:
