@@ -9,12 +9,14 @@ from typing import *
 import aiohttp
 import aiofiles
 from time import monotonic
+import random
 
 from discord.ext import commands
 import discord
 import aiomysql
 import pymysql
 from termcolor import cprint
+from PIL import Image, ImageDraw, ImageFont
 
 from utils import outh, utils, tasks, colors
 
@@ -212,6 +214,40 @@ class Fate(commands.AutoShardedBot):
 
             self.loop.create_task(remove_msg(msg))
             return msg
+
+    async def verify(self, ctx, user=None):
+        if not user:
+            user = ctx.author
+        abcs = "abcdefghijklmnopqrstuvwxyz"
+        chars = " ".join([random.choice(list(abcs)).upper() for _i in range(6)])
+        font = ImageFont.truetype("./utils/fonts/Modern_Sans_Light.otf", 30)
+        size = font.getsize(chars)
+
+        card = Image.new("RGBA", size=(size[0] + 20, 50), color=(255, 255, 255, 0))
+        draw = ImageDraw.Draw(card)
+        draw.text((10, 10), chars, fill="blue", font=font)
+        line_positions = (5, random.choice(range(10, 40)), size[0] + 15, random.choice(range(10, 40)))
+        draw.line(line_positions, fill="blue", width=5)
+
+        fp = os.path.basename("./static/captcha.png")
+        card.save(fp)
+        e = discord.Embed(color=colors.fate())
+        e.set_author(name="Verify you're human", icon_url=user.avatar_url)
+        e.set_image(url="attachment://" + fp)
+        e.set_footer(text="You have 45 seconds")
+        message = await ctx.send(embed=e, file=discord.File(fp))
+
+        def pred(m):
+            return m.author.id == user.id and str(m.content).lower() == chars.lower().replace(" ", "")
+
+        try:
+            await self.wait_for("message", check=pred, timeout=45)
+        except asyncio.TimeoutError:
+            await message.edit(content="Captcha Failed")
+            return False
+        else:
+            await message.edit(content="Captcha Passed")
+            return True
 
     def run(self):
         if bot.initial_extensions:
