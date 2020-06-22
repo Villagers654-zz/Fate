@@ -1197,6 +1197,8 @@ class Moderation(commands.Cog):
             if user.bot:
                 await ctx.send(f"You can't warn {user.mention} because they're a bot")
                 continue
+            if user.top_role.position >= ctx.author.top_role.position:
+                await ctx.send(f"{user.name} is above your paygrade, take a seat")
             await self.warn_user(ctx.channel, user, reason)
 
     @commands.command(name='delwarn')
