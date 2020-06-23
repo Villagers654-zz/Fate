@@ -6,7 +6,7 @@ import sys
 from discord.ext import commands
 import discord
 
-from utils import colors, config
+from utils import colors, config, checks
 
 
 class ErrorHandler(commands.Cog):
@@ -44,7 +44,9 @@ class ErrorHandler(commands.Cog):
 			elif isinstance(error, commands.MissingRequiredArgument):
 				return await ctx.send(error)
 			elif isinstance(error, commands.CheckFailure):
-				if "check functions" in str(error):
+				if not checks.command_is_enabled(ctx):
+					return await ctx.send(f"{ctx.command} is disabled")
+				elif "check functions" in str(error):
 					return await ctx.message.add_reaction('🚫')
 				else:
 					return await ctx.send(error)

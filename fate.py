@@ -19,7 +19,7 @@ import pymysql
 from termcolor import cprint
 from PIL import Image, ImageDraw, ImageFont
 
-from utils import outh, utils, tasks, colors
+from utils import outh, utils, tasks, colors, checks
 
 
 class Fate(commands.AutoShardedBot):
@@ -282,6 +282,7 @@ logger.addHandler(handler)
 # Initialize the bot
 bot = Fate(max_messages=16000, case_insensitive=True)
 bot.remove_command('help')  # Default help command
+bot.add_check(checks.command_is_enabled)
 
 @bot.event
 async def on_shard_ready(shard_id):
