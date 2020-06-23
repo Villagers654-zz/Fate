@@ -215,7 +215,7 @@ class Fate(commands.AutoShardedBot):
             self.loop.create_task(remove_msg(msg))
             return msg
 
-    async def verify(self, ctx, user=None):
+    async def verify(self, ctx, user=None, timeout=45):
         if not user:
             user = ctx.author
         abcs = "abcdefghijklmnopqrstuvwxyz"
@@ -234,19 +234,21 @@ class Fate(commands.AutoShardedBot):
         e = discord.Embed(color=colors.fate())
         e.set_author(name="Verify you're human", icon_url=user.avatar_url)
         e.set_image(url="attachment://" + fp)
-        e.set_footer(text="You have 45 seconds")
+        e.set_footer(text=f"You have {self.utils.get_time(timeout)}")
         message = await ctx.send(embed=e, file=discord.File(fp))
 
         def pred(m):
             return m.author.id == user.id and str(m.content).lower() == chars.lower().replace(" ", "")
 
         try:
-            await self.wait_for("message", check=pred, timeout=45)
+            await self.wait_for("message", check=pred, timeout=timeout)
         except asyncio.TimeoutError:
-            await message.edit(content="Captcha Failed")
+            e.set_footer(text="Captcha Failed")
+            await message.edit(embed=e)
             return False
         else:
-            await message.edit(content="Captcha Passed")
+            e.set_footer(text="Captcha Passed")
+            await message.edit(embed=e)
             return True
 
     def run(self):
