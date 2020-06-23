@@ -10,6 +10,7 @@ import aiohttp
 import aiofiles
 from time import monotonic
 import random
+from concurrent.futures import ThreadPoolExecutor
 
 from discord.ext import commands
 import discord
@@ -218,19 +219,22 @@ class Fate(commands.AutoShardedBot):
     async def verify(self, ctx, user=None, timeout=45):
         if not user:
             user = ctx.author
+        fp = os.path.basename(f"./static/captcha-{time()}.png")
         abcs = "abcdefghijklmnopqrstuvwxyz"
         chars = " ".join([random.choice(list(abcs)).upper() for _i in range(6)])
-        font = ImageFont.truetype("./utils/fonts/Modern_Sans_Light.otf", 30)
-        size = font.getsize(chars)
 
-        card = Image.new("RGBA", size=(size[0] + 20, 50), color=(255, 255, 255, 0))
-        draw = ImageDraw.Draw(card)
-        draw.text((10, 10), chars, fill="blue", font=font)
-        line_positions = (5, random.choice(range(10, 40)), size[0] + 15, random.choice(range(10, 40)))
-        draw.line(line_positions, fill="blue", width=5)
+        def create_card():
+            font = ImageFont.truetype("./utils/fonts/Modern_Sans_Light.otf", 30)
+            size = font.getsize(chars)
+            card = Image.new("RGBA", size=(size[0] + 20, 50), color=(255, 255, 255, 0))
+            draw = ImageDraw.Draw(card)
+            draw.text((10, 10), chars, fill="blue", font=font)
+            line_positions = (5, random.choice(range(10, 40)), size[0] + 15, random.choice(range(10, 40)))
+            draw.line(line_positions, fill="blue", width=5)
+            card.save(fp)
 
-        fp = os.path.basename("./static/captcha.png")
-        card.save(fp)
+        await self.loop.run_in_executor(None, create_card)
+
         e = discord.Embed(color=colors.fate())
         e.set_author(name="Verify you're human", icon_url=user.avatar_url)
         e.set_image(url="attachment://" + fp)

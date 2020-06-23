@@ -9,11 +9,11 @@ from datetime import timedelta
 import requests
 from io import BytesIO
 from datetime import datetime
+import aiohttp
 
 from discord.ext import commands
 import discord
 from PIL import Image, ImageFont, ImageDraw, ImageSequence, UnidentifiedImageError
-import aiofiles as aio
 
 from utils import colors, utils
 
@@ -611,112 +611,123 @@ class Ranking(commands.Cog):
 
 		# Prepare the profile card
 		url = 'https://cdn.discordapp.com/attachments/632084935506788385/666158201867075585/rank-card.png'
-		card = Image.open(BytesIO(requests.get(url).content))
-		draw = ImageDraw.Draw(card)
-		data = []
-		for r, g, b, c in card.getdata():
-			if c == 0:
-				data.append((r, g, b, c))
-			elif r == 0 and g == 174 and b == 239:  # blue
-				data.append((r, g, b, 100))
-			elif r == 48 and g == 48 and b == 48:  # dark gray
-				data.append((r, g, b, 225))
-			elif r == 218 and g == 218 and b == 218:  # light gray
-				data.append((r, g, b, 150))
-			else:
-				data.append((r, g, b, c))
-		card.putdata(data)
-
-		# user vanity
 		try:
-			avatar = Image.open(BytesIO(requests.get(user.avatar_url).content)).convert('RGBA')
+			async with aiohttp.ClientSession() as session:
+				async with session.get(str(user.avatar_url)) as resp:
+					avatar = Image.open(BytesIO(await resp.read())).convert('RGBA')
 		except UnidentifiedImageError:
 			return await ctx.send("Sorry, but I seem to be having issues using your avatar")
-		avatar = add_corners(avatar.resize((175, 175), Image.BICUBIC), 87)
-		card.paste(avatar, (75, 85), avatar)
-		draw.ellipse((75, 85, 251, 261), outline='black', width=6)
-		status = Image.open(BytesIO(requests.get(status).content)).convert('RGBA')
-		status = status.resize((75, 75), Image.BICUBIC)
-		card.paste(status, (190, 190), status)
-
-		# leveling / ranking
-		rank_pos = [865, 85]
-		rank_font = 30
-		for i in range(len(str(guild_rank))):
-			if i > 1:
-				rank_pos[1] += 1
-				rank_font -= 5
-		draw.text(tuple(rank_pos), f'Rank #{guild_rank}', (255, 255, 255), font=font(rank_font))
-
-		level_pos = [640, 145]
-		text = f'Level {level}'
-		for i in range(len(str(level))):
-			if i == 1:
-				text = f'Lvl. {level}'
-				level_pos[0] += 15
-			if i == 2:
-				level_pos[0] -= 5
-			if i == 3:
-				level_pos[0] -= 5
-		draw.text(tuple(level_pos), text, (0, 0, 0), font=font(100))
-
-		draw.text((10, 320), title, (0, 0, 0), font=font(50))
-		draw.text((25, 415), misc, (255, 255, 255), font=font(50))
-		draw.line((0, 500, length, 500), fill=user.color.to_rgb(), width=10)
-
-		# backgrounds and saving
 		if background_url:
 			try:
-				background = Image.open(BytesIO(requests.get(background_url).content))
+				async with aiohttp.ClientSession() as session:
+					async with session.get(str(background_url)) as resp:
+						background = Image.open(BytesIO(await resp.read()))
 			except UnidentifiedImageError:
 				return await ctx.send("Sorry, but I seem to be having issues using your current background"
-				                      "\nYou can use `.set background` to reset it, or attach a file while using that command to change it")
-			if 'gif' in str(background_url):
-				dur = background.info['duration']
-				count = len(list(ImageSequence.Iterator(background)))
-				skip = False
-				skip_two = False
-				skipped = 0
-				frames = []
-				index = 0
-				for frame in ImageSequence.Iterator(background):
-					if count > 40 and count < 100:
-						if skip:
-							skip = False
-							continue
-						elif skip_two:
-							skip_two = False
-							continue
-						else:
-							skip = True
-							skip_two = True
-					elif count > 100:
-						skip = int(str(count)[:1]) + 2
-						if skipped <= skip:
-							skipped += 1
-							continue
-						else:
-							skipped = 0
+				                      "\nYou can use `.set background` to reset it, or attach a file while "
+				                      "using that command to change it")
 
-					frame = frame.convert('RGBA')
-					frame = frame.resize((1000, 500), Image.BICUBIC)
-					frame.paste(card, (0, 0), card)
-					b = BytesIO()
-					frame.save(b, format="GIF")
-					frame = Image.open(b)
-					frames.append(frame)
-					index += 1
-					if index == 50:
-						break
-				path = path.replace('png', 'gif')
-				frames[0].save(path, save_all=True, append_images=frames[1:], loop=0, duration=dur, optimize=False)
+		def create_card(avatar, status, path, background):
+			card = Image.open(BytesIO(requests.get(url).content))
+			draw = ImageDraw.Draw(card)
+			data = []
+			for r, g, b, c in card.getdata():
+				if c == 0:
+					data.append((r, g, b, c))
+				elif r == 0 and g == 174 and b == 239:  # blue
+					data.append((r, g, b, 100))
+				elif r == 48 and g == 48 and b == 48:  # dark gray
+					data.append((r, g, b, 225))
+				elif r == 218 and g == 218 and b == 218:  # light gray
+					data.append((r, g, b, 150))
+				else:
+					data.append((r, g, b, c))
+			card.putdata(data)
+
+			# user vanity
+			avatar = add_corners(avatar.resize((175, 175), Image.BICUBIC), 87)
+			card.paste(avatar, (75, 85), avatar)
+			draw.ellipse((75, 85, 251, 261), outline='black', width=6)
+			status = Image.open(BytesIO(requests.get(status).content)).convert('RGBA')
+			status = status.resize((75, 75), Image.BICUBIC)
+			card.paste(status, (190, 190), status)
+
+			# leveling / ranking
+			rank_pos = [865, 85]
+			rank_font = 30
+			for i in range(len(str(guild_rank))):
+				if i > 1:
+					rank_pos[1] += 1
+					rank_font -= 5
+			draw.text(tuple(rank_pos), f'Rank #{guild_rank}', (255, 255, 255), font=font(rank_font))
+
+			level_pos = [640, 145]
+			text = f'Level {level}'
+			for i in range(len(str(level))):
+				if i == 1:
+					text = f'Lvl. {level}'
+					level_pos[0] += 15
+				if i == 2:
+					level_pos[0] -= 5
+				if i == 3:
+					level_pos[0] -= 5
+			draw.text(tuple(level_pos), text, (0, 0, 0), font=font(100))
+
+			draw.text((10, 320), title, (0, 0, 0), font=font(50))
+			draw.text((25, 415), misc, (255, 255, 255), font=font(50))
+			draw.line((0, 500, length, 500), fill=user.color.to_rgb(), width=10)
+
+			# backgrounds and saving
+			if background_url:
+				if 'gif' in str(background_url):
+					dur = background.info['duration']
+					count = len(list(ImageSequence.Iterator(background)))
+					skip = False
+					skip_two = False
+					skipped = 0
+					frames = []
+					index = 0
+					for frame in ImageSequence.Iterator(background):
+						if count > 40 and count < 100:
+							if skip:
+								skip = False
+								continue
+							elif skip_two:
+								skip_two = False
+								continue
+							else:
+								skip = True
+								skip_two = True
+						elif count > 100:
+							skip = int(str(count)[:1]) + 2
+							if skipped <= skip:
+								skipped += 1
+								continue
+							else:
+								skipped = 0
+
+						frame = frame.convert('RGBA')
+						frame = frame.resize((1000, 500), Image.BICUBIC)
+						frame.paste(card, (0, 0), card)
+						b = BytesIO()
+						frame.save(b, format="GIF")
+						frame = Image.open(b)
+						frames.append(frame)
+						index += 1
+						if index == 50:
+							break
+					path = path.replace('png', 'gif')
+					frames[0].save(path, save_all=True, append_images=frames[1:], loop=0, duration=dur, optimize=False)
+				else:
+					background = background.convert('RGBA')
+					background = background.resize((1000, 500), Image.BICUBIC)
+					background.paste(card, (0, 0), card)
+					background.save(path, format='PNG')
 			else:
-				background = background.convert('RGBA')
-				background = background.resize((1000, 500), Image.BICUBIC)
-				background.paste(card, (0, 0), card)
-				background.save(path, format='PNG')
-		else:
-			card.save(path, format='PNG')
+				card.save(path, format='PNG')
+			return path
+
+		path = await self.bot.loop.run_in_executor(None, create_card, avatar, status, path, background)
 		type = 'Profile' if 'profile' in ctx.message.content.lower() else 'Rank'
 		await ctx.send(f"> **{type} card for {user}**", file=discord.File(path))
 
