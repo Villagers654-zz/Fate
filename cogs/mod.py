@@ -969,6 +969,8 @@ class Moderation(commands.Cog):
         role = await self.bot.utils.get_role(ctx, role)
         if not role:
             return
+        if role.position >= ctx.guild.me.top_role.position:
+            return await ctx.send("That role's higher than I can manage")
         members = [
             member for member in ctx.guild.members
             if member.top_role.position < ctx.author.top_role.position
@@ -1015,6 +1017,8 @@ class Moderation(commands.Cog):
                                 continue
                             return await msg.edit(content="Message Inactive: Operation Cancelled")
             await msg.edit(content="Operation Complete", embed=gen_embed(i))
+            if ctx.channel.permissions_for(ctx.guild.me).manage_messages:
+                await msg.clear_reactions()
 
     @commands.command(name="nick")
     @commands.cooldown(1, 5, commands.BucketType.user)
