@@ -490,6 +490,10 @@ class Utility(commands.Cog):
 				await msg.edit(embed=e)
 
 		else:
+			def get_bot_cpu(pid):
+				process = psutil.Process(pid)
+				return round(process.cpu_percent(interval=1))
+
 			e = discord.Embed()
 			e.set_author(name='Collecting Information..', icon_url='https://cdn.discordapp.com/attachments/514213558549217330/514345278669848597/8yx98C.gif')
 			msg = await ctx.send(embed=e)
@@ -523,7 +527,7 @@ class Utility(commands.Cog):
 			e.add_field(name="◈ Statistics ◈",
 			            value=f'Commands: [{len(self.bot.commands)}]\nModules: [{len(self.bot.extensions)}]\nServers: [{guilds}]\nUsers: [{users}]')
 			e.add_field(name="◈ Credits ◈", value="• Tothy ~ `rival`\n• Cortex ~ `teacher`\n• Discord.py ~ `existing`")
-			bot_cpu = await self.bot.memory.cpu()
+			bot_cpu = await self.bot.loop.run_in_executor(None, get_bot_cpu, os.getpid())
 			e.add_field(name="◈ Memory ◈",
 			            value=f"__**Storage**__: [{p.bytes2human(psutil.disk_usage('/').used)}/{p.bytes2human(psutil.disk_usage('/').total)}]\n"
 			                  f"__**RAM**__: [{p.bytes2human(psutil.virtual_memory().used)}/{p.bytes2human(psutil.virtual_memory().total)}] ({psutil.virtual_memory().percent}%)\n"

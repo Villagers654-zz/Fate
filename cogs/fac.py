@@ -21,7 +21,7 @@ from utils.colors import purple, cyan, fate
 from utils import utils, checks
 
 
-class MiniGames:
+class Game:
 	def __init__(self, *users):
 		self.users = users
 
@@ -69,6 +69,7 @@ class Factions(commands.Cog):
 		self.pending = []
 		self.factions = {}
 		self.cooldowns = {}
+		self.counter = {}
 		if path.isfile(self.path):
 			with open(self.path, 'r') as f:
 				self.factions = json.load(f)  # type: dict
@@ -704,9 +705,9 @@ class Factions(commands.Cog):
 		self.cooldowns[guild_id][ctx.author.id] = time()
 
 		require_game_completion = True if random.randint(1, 4) == 4 else False
-		g = MiniGames(ctx.author)
+		game = Game(ctx.author)
 		if require_game_completion:
-			is_winner = await g.scrabble(ctx)
+			is_winner = await game.scrabble(ctx)
 			if not is_winner:
 				return await ctx.send("Maybe next time :[")
 

@@ -17,6 +17,8 @@ class Factions(commands.Cog):
 		self.factions = {}
 		self.land_claims = {}
 		self.notifs = []
+		self.counter = {}
+		self.blocked = []
 
 		self.dir = './data/userdata/factions.json'
 		if isfile(self.dir):
@@ -694,6 +696,26 @@ class Factions(commands.Cog):
 		faction = self.get_faction(ctx.author)
 		if not faction:
 			return await ctx.send('You need to be in a faction to use this command')
+
+		if ctx.author.id in self.blocked:
+			passed_verification = await self.bot.verify(ctx, user=ctx.author)
+			if passed_verification:
+				self.blocked.remove(ctx.author.id)
+			else:
+				return
+
+		if ctx.author.id not in self.counter:
+			self.counter[ctx.author.id] = 0
+		self.counter[ctx.author.id] += 1
+		if self.counter[ctx.author.id] >= 45:
+			passed_verification = await self.bot.verify(ctx, user=ctx.author)
+			if not passed_verification:
+				self.blocked.append(ctx.author.id)
+				self.counter[ctx.author.id] = 30
+				return
+
+			self.counter[ctx.author.id] = 0
+
 		guild_id = str(ctx.guild.id)
 		self.init(guild_id, faction)
 		paycheck = random.randint(15, 25)
