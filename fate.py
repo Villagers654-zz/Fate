@@ -216,7 +216,7 @@ class Fate(commands.AutoShardedBot):
             self.loop.create_task(remove_msg(msg))
             return msg
 
-    async def verify(self, ctx, user=None, timeout=45):
+    async def verify_user(self, ctx, user=None, timeout=45):
         if not user:
             user = ctx.author
         fp = os.path.basename(f"./static/captcha-{time()}.png")
@@ -254,6 +254,36 @@ class Fate(commands.AutoShardedBot):
             e.set_footer(text="Captcha Passed")
             await message.edit(embed=e)
             return True
+
+    async def get_choice(self, ctx, *options, user, timeout=30) -> Optional[object]:
+        """ Reaction based menu for users to choose between things """
+        async def add_reactions(message) -> None:
+            for emoji in emojis:
+                await message.add_reaction(emoji)
+                await asyncio.sleep(1)
+
+        def predicate(r, u) -> bool:
+            return u.id == user.id and str(r.emoji) in emojis
+
+        emojis = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️"][:len(options)]
+        if not user:
+            user = ctx.author
+
+        e = discord.Embed(color=colors.fate())
+        e.set_author(name="Select which option", icon_url=ctx.author.avatar_url)
+        e.description = "\n".join(f"{emojis[i]} {option}" for i, option in enumerate(options))
+        e.set_footer(text=f"You have {self.utils.get_time(timeout)}")
+        message = await ctx.send(embed=e)
+        self.loop.create_task(add_reactions(message))
+
+        try:
+            reaction, _user = await self.wait_for("reaction_add", check=predicate, timeout=timeout)
+        except asyncio.TimeoutError:
+            await message.delete()
+            return None
+        else:
+            await message.delete()
+            return options[emojis.index(str(reaction.emoji))]
 
     def run(self):
         if bot.initial_extensions:

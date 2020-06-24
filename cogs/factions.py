@@ -698,7 +698,7 @@ class Factions(commands.Cog):
 			return await ctx.send('You need to be in a faction to use this command')
 
 		if ctx.author.id in self.blocked:
-			passed_verification = await self.bot.verify(ctx, user=ctx.author)
+			passed_verification = await self.bot.verify_user(ctx, user=ctx.author)
 			if passed_verification:
 				self.blocked.remove(ctx.author.id)
 			else:
@@ -708,7 +708,7 @@ class Factions(commands.Cog):
 			self.counter[ctx.author.id] = 0
 		self.counter[ctx.author.id] += 1
 		if self.counter[ctx.author.id] >= 45:
-			passed_verification = await self.bot.verify(ctx, user=ctx.author)
+			passed_verification = await self.bot.verify_user(ctx, user=ctx.author)
 			if not passed_verification:
 				self.blocked.append(ctx.author.id)
 				self.counter[ctx.author.id] = 30
