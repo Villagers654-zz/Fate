@@ -267,7 +267,7 @@ class GlobalChat(commands.Cog):
 							if not channel:
 								try:
 									channel = await self.bot.fetch_channel(conf['channel'])
-								except discord.errors.NotFound:
+								except (discord.errors.NotFound, discord.errors.Forbidden):
 									del self.config[guild_id]
 									continue
 							if profanity and not channel.is_nsfw():
