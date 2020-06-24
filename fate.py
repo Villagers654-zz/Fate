@@ -259,6 +259,8 @@ class Fate(commands.AutoShardedBot):
         """ Reaction based menu for users to choose between things """
         async def add_reactions(message) -> None:
             for emoji in emojis:
+                if not message:
+                    return
                 await message.add_reaction(emoji)
                 await asyncio.sleep(1)
 
