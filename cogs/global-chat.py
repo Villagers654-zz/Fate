@@ -274,13 +274,18 @@ class GlobalChat(commands.Cog):
 								content = '`[filtered message]`'
 							else:
 								content = msg.content
-							if msg.author.id == self.last_user and msg.channel.id == self.last_channel and not msg.attachments:
-								async for m in channel.history(limit=5):
-									if m.author.id == self.bot.user.id and m.embeds:
-										e = m.embeds[0]
-										e.description += f'\n{content}'
-										await m.edit(embed=e)
-										break
+							username = str(msg.author)
+							last = channel.last_message
+							if last and last.embeds \
+									and last.embeds[0].author \
+									and username in str(last.embeds[0].author) \
+									and channel \
+									and not last.attachments\
+									and last.author.id == self.bot.user.id:
+								e = last.embeds[0]
+								e.description += f'\n{content}'
+								await last.edit(embed=e)
+								m = last
 							else:
 								e = discord.Embed(color=msg.author.color)
 								e.set_author(name=str(msg.author), icon_url=msg.author.avatar_url)
