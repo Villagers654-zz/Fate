@@ -281,7 +281,7 @@ class GlobalChat(commands.Cog):
 									and last.embeds[0].author \
 									and username in str(last.embeds[0].author) \
 									and channel \
-									and not last.attachments\
+									and not last.image \
 									and last.author.id == self.bot.user.id:
 								e = last.embeds[0]
 								e.description += f'\n{content}'
