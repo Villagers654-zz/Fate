@@ -15,9 +15,10 @@ from os import path
 import json
 import os
 from datetime import datetime, timedelta
-import requests
 from time import time
 from aiohttp.client_exceptions import ClientOSError
+import aiohttp
+import aiofiles
 
 from discord.ext import commands
 import discord
@@ -851,9 +852,11 @@ class Logger(commands.Cog):
                             files = []
                             for attachment in msg.attachments:
                                 fp = os.path.join('static', attachment.filename)
-                                file = requests.get(attachment.proxy_url).content
-                                with open(fp, 'wb') as f:
-                                    f.write(file)
+                                async with aiohttp.ClientSession() as session:
+                                    async with session.get(attachment.proxy_url) as resp:
+                                        file = await resp.read()
+                                async with aiofiles.open(fp, 'wb') as f:
+                                    await f.write(file)
                                 files.append(fp)
                             self.queue[guild_id].append([(msg.embeds[0], files), 'sudo', time()])
                         else:
@@ -887,9 +890,11 @@ class Logger(commands.Cog):
                     files = []
                     for attachment in msg.attachments:
                         fp = os.path.join('static', attachment.filename)
-                        file = requests.get(attachment.proxy_url).content
-                        with open(fp, 'wb') as f:
-                            f.write(file)
+                        async with aiohttp.ClientSession() as session:
+                            async with session.get(attachment.proxy_url) as resp:
+                                file = await resp.read()
+                        async with aiofiles.open(fp, 'wb') as f:
+                            await f.write(file)
                         files.append(fp)
                     self.queue[guild_id].append([(e, files), 'chat', time()])
                 else:
