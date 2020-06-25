@@ -1,4 +1,5 @@
 from random import randint, choice
+import aiohttp
 from discord.ext import commands
 from pybooru import Danbooru
 from utils import colors
@@ -49,9 +50,10 @@ class NSFW(commands.Cog):
 			if x in tag:
 				return await ctx.send('that tag is blacklisted')
 		try:
-			r = requests.get(f"https://gelbooru.com/index.php?page=dapi&s=post"
-			    f"&q=index&tags={tag}&json=1&limit=100&pid={randint(1, 3)}")
-			dat = json.loads(r.content)
+			async with aiohttp.ClientSession() as session:
+				url = f"https://gelbooru.com/index.php?page=dapi&s=post&q=index&tags={tag}&json=1&limit=100&pid={randint(1, 3)}"
+				async with session.get(url) as resp:
+					dat = await resp.json()
 			if send_all:
 				try:
 					for i in range(len(dat)):
