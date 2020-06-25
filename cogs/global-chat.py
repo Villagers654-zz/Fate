@@ -10,7 +10,7 @@ import re
 from discord.ext import commands
 from discord import Webhook, AsyncWebhookAdapter
 import discord
-from profanity_check import predict_prob
+# from profanity_check import predict_prob
 
 from utils import colors, utils, config
 
@@ -227,14 +227,14 @@ class GlobalChat(commands.Cog):
 					return await msg.delete()
 
 				# profanity filter
-				prob = predict_prob([msg.content])
-				new_prob = []
-				for i in prob:
-					if i >= 0.2:
-						new_prob.append(1)
-					elif i < 0.2:
-						new_prob.append(0)
-				profanity = any(prob == 1 for prob in new_prob)
+				# prob = predict_prob([msg.content])
+				# new_prob = []
+				# for i in prob:
+				# 	if i >= 0.2:
+				# 		new_prob.append(1)
+				# 	elif i < 0.2:
+				# 		new_prob.append(0)
+				# profanity = any(prob == 1 for prob in new_prob)
 
 				self.bot.loop.create_task(queue(msg))
 				if ignore:
@@ -270,10 +270,11 @@ class GlobalChat(commands.Cog):
 								except (discord.errors.NotFound, discord.errors.Forbidden):
 									del self.config[guild_id]
 									continue
-							if profanity and not channel.is_nsfw():
-								content = '`[filtered message]`'
-							else:
-								content = msg.content
+							# if profanity and not channel.is_nsfw():
+							# 	content = '`[filtered message]`'
+							# else:
+							# 	content = msg.content
+							content = msg.content
 							username = str(msg.author)
 							last = channel.last_message
 							if last and last.embeds \
