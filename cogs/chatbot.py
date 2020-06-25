@@ -7,7 +7,7 @@ import random
 
 from discord.ext import commands
 import discord
-# from profanity_check import predict_prob
+from profanity_check import predict_prob
 
 from utils import checks, colors
 
@@ -248,17 +248,17 @@ class ChatBot(commands.Cog):
 				if not matches:
 					return
 
-				# prob = predict_prob(matches)
-				# new_prob = []
-				# for i in prob:
-				# 	if i >= 0.2:
-				# 		new_prob.append(1)
-				# 	elif i < 0.2:
-				# 		new_prob.append(0)
+				prob = predict_prob(matches)
+				new_prob = []
+				for i in prob:
+					if i >= 0.2:
+						new_prob.append(1)
+					elif i < 0.2:
+						new_prob.append(0)
 
 				matches = [
-					match for i, match in enumerate(matches)  #if new_prob[i] == 0  (
-						if not any(phrase in str(match).lower() for phrase in blacklist)
+					match for i, match in enumerate(matches) if new_prob[i] == 0 and (
+						not any(phrase in str(match).lower() for phrase in blacklist))
 				]
 				if not matches and len(msg.content.split()) == 1:
 					return
