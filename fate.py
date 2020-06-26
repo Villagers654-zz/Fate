@@ -32,8 +32,10 @@ class Fate(commands.AutoShardedBot):
         self.lavalink = None            # Music server
         self.login_errors = []          # Exceptions ignored during startup
         self.logs = []                  # Logs to send to discord, empties out quickly
-        self.logger_tasks = {}
-        self.tasks = {}
+        self.tasks = {}                 # Task object storing for easy management
+        self.logger_tasks = {}          # Same as Fate.tasks except dedicated to cogs.logger
+
+        self.last_traceback = ""
 
         self.initial_extensions = [     # Cogs to load before logging in
             'error_handler', 'config', 'menus', 'core', 'music', 'mod', 'welcome', 'farewell', 'notes', 'archive',
@@ -46,7 +48,7 @@ class Fate(commands.AutoShardedBot):
         ]
         self.awaited_extensions = []    # Cogs to load when the internal cache is ready
 
-        if not self.config["original"]:
+        if not self.config["original_bot"]:
             original_only = ['polis', 'dev', 'backup']
             for ext in original_only:
                 self.initial_extensions.remove(ext)

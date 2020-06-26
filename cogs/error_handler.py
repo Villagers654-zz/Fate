@@ -23,7 +23,9 @@ class ErrorHandler(commands.Cog):
 			return
 
 		error = getattr(error, 'original', error)
-		err = str(error)
+		error_str = str(error)
+		self.bot.last_traceback = str(sys.exc_info())
+
 		try:
 			ignored = (commands.CommandNotFound, commands.NoPrivateMessage, discord.errors.NotFound)
 			if isinstance(error, ignored):
@@ -63,56 +65,53 @@ class ErrorHandler(commands.Cog):
 					pass
 				return
 			elif isinstance(error, discord.errors.HTTPException):
-				error_str = str(error).lower()
 				if "internal" in error_str or "service unavailable" in error_str:
 					return await ctx.send("Oop-\nDiscord shit in the bed\nIt's not my fault, it's theirs")
 			elif isinstance(error, KeyError):
-				err = f'No Data: {error}'
+				error_str = f'No Data: {error}'
 			print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
 			traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
 			e = discord.Embed(color=colors.red())
-			e.description = f'[{err}](https://www.youtube.com/watch?v=t3otBjVZzT0)'
+			e.description = f'[{error_str}](https://www.youtube.com/watch?v=t3otBjVZzT0)'
 			e.set_footer(text='This error has been logged, and will be fixed soon')
 			await ctx.send(embed=e)
-		except discord.errors.Forbidden:
+		except (discord.errors.Forbidden, discord.errors.NotFound):
 			return
-		p = subprocess.Popen("cat  /home/luck/.pm2/logs/fate-error.log", stdout=subprocess.PIPE, shell=True)
-		(output, err) = p.communicate()
-		output = str(output).replace("\\t", "    ").replace("b'", "").replace("`", "").split("\\n")
-		msg = ""
-		for i in output[:len(output) - 1]:
-			msg += f"{i}\n"
-		msg = msg[::-1]
-		msg = msg[:msg.find("Ignoring"[::-1])]
-		r = f"```Ignoring{msg[::-1][-1980:]}```"
+
+		channel = self.bot.get_channel(self.bot.config["error_channel"])
 		e = discord.Embed(color=colors.red())
 		e.description = ctx.message.content
-		e.set_author(name=f"| Fatal Error | {ctx.command}", icon_url=ctx.author.avatar_url)
+		e.set_author(name=f"| Fatal Error | in {ctx.command}", icon_url=ctx.author.avatar_url)
 		e.set_thumbnail(url=ctx.guild.icon_url)
-		e.add_field(name="◈ Error ◈", value=r, inline=False)
-		channel = self.bot.get_channel(577661392098820106)
-		async for msg in channel.history(limit=1):
+		e.add_field(name="◈ Error ◈", value=self.bot.last_traceback, inline=False)
+
+		# Check to make sure the error isn't already logged
+		async for msg in channel.history(limit=16):
 			for embed in msg.embeds:
+				if not embed.fields:
+					continue
 				if embed.fields[0].value == e.fields[0].value:
 					return
+
 		message = await channel.send(embed=e)
 		await message.add_reaction("✔")
 		if ctx.author.id == config.owner_id():
 			e = discord.Embed(color=colors.fate())
 			e.set_author(name=f"Here's the full traceback:", icon_url=ctx.author.avatar_url)
 			e.set_thumbnail(url=self.bot.user.avatar_url)
-			e.description = r
+			e.description = self.bot.last_traceback
 			await ctx.send(embed=e)
 
 	@commands.Cog.listener()
 	async def on_raw_reaction_add(self, data):
 		if not self.bot.get_user(data.user_id).bot:
-			if data.channel_id == 577661392098820106:
+			if data.channel_id == self.bot.config["error_channel"]:
 				if str(data.emoji) == "✔":
 					channel = self.bot.get_channel(data.channel_id)
 					msg = await channel.fetch_message(data.message_id)
 					for embed in msg.embeds:
-						await self.bot.get_channel(577661461543780382).send("Error Dismissed", embed=embed)
+						channel = self.bot.get_channel(self.bot.config["dump_channel"])
+						await channel.send("Error Dismissed", embed=embed)
 					await msg.delete()
 
 def setup(bot):
