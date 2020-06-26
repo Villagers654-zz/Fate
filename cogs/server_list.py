@@ -48,7 +48,8 @@ class ServerList(commands.Cog):
 				value = ''
 				for invite, size in sorted(values, key=lambda kv: kv[1], reverse=True):
 					value += invite
-				e.add_field(name=f'◈ {category} ◈', value=value, inline=False)
+				if value:
+					e.add_field(name=f'◈ {category} ◈', value=value, inline=False)
 			await msg.edit(embed=e)
 
 	@_serverlist.command(name='addserver', aliases=['add'])

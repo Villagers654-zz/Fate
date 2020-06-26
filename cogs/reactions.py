@@ -86,9 +86,10 @@ class Reactions(commands.Cog):
 			await ctx.message.delete()
 			if created_webhook:
 				await asyncio.sleep(120)
-				if self.webhook[ctx.channel.id]:
-					await self.webhook[ctx.channel.id].delete()
-					del self.webhook[ctx.channel.id]
+				if ctx.channel.id in self.webhook:
+					if self.webhook[ctx.channel.id]:
+						await self.webhook[ctx.channel.id].delete()
+						del self.webhook[ctx.channel.id]
 
 
 	@commands.command(name="intimidate")
