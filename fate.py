@@ -264,8 +264,10 @@ class Fate(commands.AutoShardedBot):
                 if not message:
                     return
                 await message.add_reaction(emoji)
-                if len(options) > 2:
+                if len(options) > 5:
                     await asyncio.sleep(1)
+                elif len(options) > 2:
+                    await asyncio.sleep(0.5)
 
         def predicate(r, u) -> bool:
             return u.id == user.id and str(r.emoji) in emojis

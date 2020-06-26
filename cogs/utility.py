@@ -276,6 +276,7 @@ class Utility(commands.Cog):
 				e.description += f"◈ Member Information{self.bot.utils.format_dict(member_info)}\n\n"
 			if activity_info:
 				e.description += f"◈ Activity Information{self.bot.utils.format_dict(activity_info)}\n\n"
+			# e.set_footer(text="🗑 | Erase User Data")
 			await ctx.send(embed=e)
 
 		elif channels:
@@ -497,6 +498,17 @@ class Utility(commands.Cog):
 			def get_bot_cpu(pid):
 				process = psutil.Process(pid)
 				return round(process.cpu_percent(interval=1))
+
+			options = ["User Info", "Bot Info", "Server Info", "Channel Info"]
+			choice = await self.bot.get_choice(ctx, *options, user=ctx.author)
+			if not choice:
+				return
+			if choice == "User Info":
+				return await ctx.command.__call__(ctx, [ctx.author], None, None)
+			elif choice == "Server Info":
+				return await self.bot.get_command("sinfo").__call__(ctx)
+			elif choice == "Channel Info":
+				return await ctx.command.__call__(ctx, None, None, [ctx.channel])
 
 			e = discord.Embed()
 			e.set_author(name='Collecting Information..', icon_url='https://cdn.discordapp.com/attachments/514213558549217330/514345278669848597/8yx98C.gif')
