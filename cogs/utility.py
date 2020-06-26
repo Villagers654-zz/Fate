@@ -363,7 +363,6 @@ class Utility(commands.Cog):
 
 						if not history:
 							history["None Found"] = None
-						print("finished gathering history")
 						e.set_field_at(
 							index=len(e.fields) - 1,
 							name="◈ Channel History", value=self.bot.utils.format_dict(dict(list(history.items())[:6])),
