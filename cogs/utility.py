@@ -167,6 +167,9 @@ class Utility(commands.Cog):
 		bot_has_audit_access = ctx.guild.me.guild_permissions.view_audit_log  # type: bool
 		if users:
 			user = users[0]
+			if ctx.author.id == 611108193275478018 and user.id == 264838866480005122:
+				await self.bot.get_channel(541520201926311986).send("<@264838866480005122> eppy tried using .info on yu")
+				return await ctx.send("https://cdn.discordapp.com/attachments/633866664252801024/725905903928213584/Screenshot_20181018-003209_Gallery.jpg")
 			if ctx.guild:
 				tmp = ctx.guild.get_member(user.id)
 				if isinstance(tmp, discord.Member):
@@ -199,11 +202,6 @@ class Utility(commands.Cog):
 			member_info = {}
 			if isinstance(user, discord.Member):
 				user_info['Profile'] = f'{user.mention} {self.bot.utils.emojis(user.status)}'
-				if user.status is discord.Status.online:
-					if user.is_on_mobile():
-						user_info["Active on Mobile 📱"] = None
-					else:
-						user_info["Active on PC 🖥"] = None
 
 				if user.name != user.display_name:
 					member_info['Display Name'] = user.display_name
@@ -256,6 +254,13 @@ class Utility(commands.Cog):
 					activity_info['Last Msg'] = f"{self.bot.utils.get_time(seconds)} ago"
 				else:
 					activity_info['Last Msg'] = 'Unknown'
+
+			if isinstance(user, discord.Member):
+				if user.status is discord.Status.online:
+					if user.is_on_mobile():
+						activity_info["Active on Mobile 📱"] = None
+					else:
+						activity_info["Active on PC 🖥"] = None
 
 			# username history - broken (maybe)
 			names = [
