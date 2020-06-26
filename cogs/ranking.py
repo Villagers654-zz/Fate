@@ -622,7 +622,7 @@ class Ranking(commands.Cog):
 				async with aiohttp.ClientSession() as session:
 					async with session.get(str(background_url)) as resp:
 						background = Image.open(BytesIO(await resp.read()))
-			except UnidentifiedImageError:
+			except (aiohttp.InvalidURL, UnidentifiedImageError):
 				return await ctx.send("Sorry, but I seem to be having issues using your current background"
 				                      "\nYou can use `.set background` to reset it, or attach a file while "
 				                      "using that command to change it")

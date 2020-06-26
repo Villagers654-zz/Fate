@@ -194,6 +194,9 @@ class Emojis(commands.Cog):
 				for iter, arg in enumerate(args) if '.' in arg
 		}
 		for img, name in mappings.items():
+			if not img:
+				msg = await self.bot.utils.update_msg(msg, f"{name} - Dead Link")
+				continue
 			await self.upload_emoji(ctx, name=name, img=img, reason=str(ctx.author), msg=msg)
 
 		# Attached Images/GIFs

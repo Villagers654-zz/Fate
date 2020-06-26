@@ -425,6 +425,7 @@ class Fun(commands.Cog):
 
 	@commands.command(name="sexuality", aliases=[s.strip(" ") for s in sexualities[::1]])
 	@commands.cooldown(3, 5, commands.BucketType.user)
+	@commands.guild_only()
 	@commands.bot_has_permissions(embed_links=True)
 	async def sexuality(self, ctx, percentage=None):
 		usage = f"Usage: `{self.bot.utils.get_prefix(ctx)}{ctx.invoked_with} percentage/reset/help`" \
@@ -433,8 +434,11 @@ class Fun(commands.Cog):
 		invoked_with = str(ctx.invoked_with).lower()
 		if invoked_with == "sexuality":
 			return await ctx.send(usage)
-		user_id = str(ctx.author.id)
-		if percentage:
+		user = ctx.author
+		if ctx.message.mentions:
+			user = ctx.message.mentions[0]
+		user_id = str(user.id)
+		if percentage and not ctx.message.mentions:
 			if percentage.lower() == "reset":
 				if user_id not in self.gay[invoked_with]:
 					return await ctx.send("You don't have a custom percentage set")
@@ -451,8 +455,8 @@ class Fun(commands.Cog):
 				self.gay[invoked_with][user_id] = int(stripped)
 				self.save_gay()
 				await ctx.send(f"Use `{self.bot.utils.get_prefix(ctx)}{invoked_with} reset` to go back to random results")
-		e = discord.Embed(color=ctx.author.color)
-		e.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
+		e = discord.Embed(color=user.color)
+		e.set_author(name=str(user), icon_url=user.avatar_url)
 		percentage = random.randint(0, 100)
 		if user_id in self.gay[invoked_with]:
 			percentage = self.gay[invoked_with][user_id]
