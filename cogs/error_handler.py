@@ -24,7 +24,8 @@ class ErrorHandler(commands.Cog):
 
 		error = getattr(error, 'original', error)
 		error_str = str(error)
-		self.bot.last_traceback = str(sys.exc_info())
+		formatted = "\n".join(traceback.format_tb(error.__traceback__))
+		self.bot.last_traceback = f"```python\n{formatted}\n{type(error).__name__}: {error}```"
 
 		try:
 			ignored = (commands.CommandNotFound, commands.NoPrivateMessage, discord.errors.NotFound)
