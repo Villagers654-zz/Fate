@@ -130,27 +130,31 @@ class Tasks:
 			cnopts = pysftp.CnOpts()
 			cnopts.hostkeys = None
 
-			# Copy all data to the ZipFile
-			file_paths = get_all_file_paths("./data")
-			fp = f'backup_{datetime.now()}.zip'
-			with ZipFile(fp, 'w') as zip:
-				for file in file_paths:
-					zip.write(file)
+			def copy_files():
+				# Copy all data to the ZipFile
+				file_paths = get_all_file_paths("./data")
+				fp = f'backup_{datetime.now()}.zip'
+				with ZipFile(fp, 'w') as zip:
+					for file in file_paths:
+						zip.write(file)
 
-			with pysftp.Connection(creds.host, username=creds.username, password=creds.password, port=creds.port, cnopts=cnopts) as sftp:
-				# Remove older backups
-				root = "/home/luck/Backups"
-				for backup in sftp.listdir(root):
-					backup_time = datetime.strptime(backup.split('_')[1].strip('.zip'), '%Y-%m-%d %H:%M:%S.%f')
-					if (datetime.now() - backup_time).days > keep_for:
-						try:
-							sftp.remove(backup)
-							self.bot.log(f"Removed backup {backup}")
-						except FileNotFoundError:
-							pass
+				with pysftp.Connection(creds.host, username=creds.username, password=creds.password, port=creds.port,
+				                       cnopts=cnopts) as sftp:
+					# Remove older backups
+					root = "/home/luck/Backups"
+					for backup in sftp.listdir(root):
+						backup_time = datetime.strptime(backup.split('_')[1].strip('.zip'), '%Y-%m-%d %H:%M:%S.%f')
+						if (datetime.now() - backup_time).days > keep_for:
+							try:
+								sftp.remove(backup)
+								self.bot.log(f"Removed backup {backup}")
+							except FileNotFoundError:
+								pass
 
-				# Transfer then remove the local backup
-				sftp.put(fp, os.path.join(root, fp))
-				os.remove(fp)
+					# Transfer then remove the local backup
+					sftp.put(fp, os.path.join(root, fp))
+					os.remove(fp)
+
+			await self.bot.loop.run_in_executor(copy_files)
 			ping = round((time.monotonic() - before) * 1000)
 			self.bot.log(f'Ran Automatic Backup: {ping}ms')
