@@ -123,7 +123,7 @@ class Fun(commands.Cog):
 
 		post = random.choice(reddit_posts)
 		e = discord.Embed(color=colors.red())
-		e.set_author(name=post.title, icon_url=post.author.icon_img)
+		e.set_author(name=post.title, icon_url=post.author.icon_img if post.author else None)
 		e.set_image(url=post.url)
 		e.set_footer(text=f'{post.author.name} | 👍 {post.score} | 💬 {post.num_comments}')
 		await ctx.send(embed=e)
