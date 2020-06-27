@@ -425,7 +425,7 @@ class Moderation(commands.Cog):
                 await ctx.message.channel.purge(limit=amount, before=ctx.message)
                 await ctx.send(f'{ctx.author.mention}, successfully purged {amount} messages', delete_after=5)
                 return await ctx.message.delete()
-            except discord.errors.Forbidden as e:
+            except (discord.errors.Forbidden, discord.errors.HTTPException) as e:
                 await ctx.send(e)
         if len(args) == 1:
             return await ctx.send(embed=help_embed())
