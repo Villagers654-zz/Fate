@@ -107,13 +107,9 @@ class Logger(commands.Cog):
 
     async def handle_echo(self, reader, writer) -> None:
         """ Manage requests from the web server """
-        raw_data = await reader.read(1000)
-        data = json.loads(raw_data.decode())  # type: dict
-        guild_id = data["target"]
-
-        # Get a guilds data
-        if data["request"] == "get":
-            return_data = {
+        async def get(guild_id: str):
+            """ Get a guilds config, or use a template if not exists """
+            return {
                 "enabled": guild_id in self.config,
                 "config": self.config[guild_id]
                           if guild_id in self.config
@@ -122,8 +118,8 @@ class Logger(commands.Cog):
                 "reason": None
             }
 
-        # Update a guilds data
-        elif data["request"] == "push":
+        async def push(guild_id: str, data):
+            """ Update or insert a new or updated config """
             requires_init = guild_id in self.config
             new_config = data["config"]
             self.config[guild_id] = new_config
@@ -133,13 +129,13 @@ class Logger(commands.Cog):
                     self.bot.logger_tasks[guild_id].cancel()
                 task = self.bot.loop.create_task(self.start_queue(guild_id))
                 self.bot.logger_tasks[guild_id] = task
-            return_data = {
+            return {
                 "successful": True,
                 "reason": None
             }
 
-        # Remove a guilds data
-        elif data["request"] == "remove":
+        async def remove(guild_id: str):
+            """ Remove a config """
             if guild_id not in self.config:
                 return_data = {
                     "successful": False,
@@ -156,13 +152,14 @@ class Logger(commands.Cog):
                     "successful": True,
                     "reason": None
                 }
+            return return_data
 
-        # Unknown request
-        else:
-            return_data = {"successful": False, "reason": "Unknown request"}
-
-        writer.write(json.dumps(return_data).encode())
-        await writer.drain()
+        await self.bot.handle_tcp(
+            reader, writer,
+            get_coro=get,
+            push_coro=push,
+            remove_coro=remove
+        )
 
     async def initiate_category(self, guild) -> discord.CategoryChannel:
         """ Sets up a new multi-log category"""
