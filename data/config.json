@@ -7,6 +7,8 @@
   "use_default_help": false,
   "startup_status": "Up and Running",
   "debug_mode": false,
+  "logger_port": 4000,
+  "levels_port": 4001,
   "hub_server": 397415086295089155,
   "log_channel": 577661500802465813,
   "debug_channel": 675878044824764456,

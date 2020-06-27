@@ -29,6 +29,10 @@ class Fate(commands.AutoShardedBot):
         self.debug_mode = self.config['debug_mode']
         self.owner_ids = set(list([self.config["bot_owner_id"], *self.config["bot_owner_ids"]]))
         self.pool = None                # MySQL Pool initialized on_ready
+        self.tcp_servers = {                # Socket servers for web panel
+            "logger": None,
+            "levels": None
+        }
         self.lavalink = None            # Music server
         self.login_errors = []          # Exceptions ignored during startup
         self.logs = []                  # Logs to send to discord, empties out quickly
@@ -38,7 +42,7 @@ class Fate(commands.AutoShardedBot):
         self.last_traceback = ""
 
         self.initial_extensions = [     # Cogs to load before logging in
-            'error_handler', 'config', 'menus', 'core', 'music', 'mod', 'welcome', 'farewell', 'notes', 'archive',
+            'error_handler', 'config', 'menus', 'core', 'mod', 'welcome', 'farewell', 'notes', 'archive',
             'coffeeshop', 'custom', 'actions', 'reactions', 'responses', 'textart', 'fun', 'dev', 'readme',
             'reload', 'embeds', 'polis', 'apis', 'chatbridges', 'clean_rythm', 'utility', 'psutil', 'rules',
             'duel_chat', 'selfroles', 'lock', 'audit', 'cookies', 'server_list', 'emojis', 'giveaways',

@@ -19,6 +19,7 @@ from time import time
 from aiohttp.client_exceptions import ClientOSError
 import aiohttp
 import aiofiles
+import aiomysql
 
 from discord.ext import commands
 import discord
@@ -89,9 +90,75 @@ class Logger(commands.Cog):
             task = self.bot.loop.create_task(self.keep_alive_task())
             bot.logger_tasks["keep_alive_task"] = task
 
+    @property
+    def template(self):
+        return {
+            "channel": None,
+            "channels": {},
+            "type": "single",
+            "secure": False,
+            "ignored_channels": [],
+            "ignored_bots": []
+        }
+
     async def save_data(self):
         """ Saves local variables """
         await self.bot.save_json(self.path, self.config)
+
+    async def handle_echo(self, reader, writer):
+        print("Handling echo")
+        raw_data = await reader.read(1000)
+        data = json.loads(raw_data.decode())  # type: dict
+        guild_id = data["target"]
+        if data["request"] == "get":
+            return_data = {
+                "enabled": guild_id in self.config,
+                "config": self.config[guild_id]
+                          if guild_id in self.config
+                          else self.template,
+                "successful": True,
+                "reason": None
+            }
+
+        elif data["request"] == "push":
+            requires_init = guild_id in self.config
+            new_config = data["config"]
+            self.config[guild_id] = new_config
+            await self.save_data()
+            if requires_init:  # Start or restart the queue for the guild
+                if guild_id in self.bot.logger_tasks and not self.bot.logger_tasks[guild_id].done():
+                    self.bot.logger_tasks[guild_id].cancel()
+                task = self.bot.loop.create_task(self.start_queue(guild_id))
+                self.bot.logger_tasks[guild_id] = task
+            return_data = {
+                "successful": True,
+                "reason": None
+            }
+
+        elif data["request"] == "remove":
+            if guild_id not in self.config:
+                return_data = {
+                    "successful": False,
+                    "reason": "No existing configuration"
+                }
+            else:
+                if guild_id in self.bot.logger_tasks:
+                    if not self.bot.logger_tasks[guild_id].done():
+                        self.bot.logger_tasks[guild_id].cancel()
+                    del self.bot.logger_tasks[guild_id]
+                del self.config[guild_id]
+                await self.save_data()
+                return_data = {
+                    "successful": True,
+                    "reason": None
+                }
+
+        else:
+            return_data = {"successful": False, "reason": "Unknown request"}
+        print("writing")
+        writer.write(json.dumps(return_data).encode())
+        await writer.drain()
+
 
     async def initiate_category(self, guild):
         """ Sets up a new multi-log category"""
@@ -710,6 +777,13 @@ class Logger(commands.Cog):
                 )
             task = self.bot.loop.create_task(self.keep_alive_task())
             self.bot.logger_tasks["keep_alive_task"] = task
+        if not self.bot.tcp_servers["logger"]:
+            self.bot.tcp_servers["logger"] = await asyncio.start_server(
+                self.handle_echo,
+                host="127.0.0.1",
+                port=self.bot.config["logger_port"],
+                loop=self.bot.loop
+            )
         self.bot.loop.create_task(self.init_invites())
 
     @commands.Cog.listener()
