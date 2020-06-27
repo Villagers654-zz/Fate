@@ -101,14 +101,17 @@ class Logger(commands.Cog):
             "ignored_bots": []
         }
 
-    async def save_data(self):
+    async def save_data(self) -> None:
         """ Saves local variables """
         await self.bot.save_json(self.path, self.config)
 
-    async def handle_echo(self, reader, writer):
+    async def handle_echo(self, reader, writer) -> None:
+        """ Manage requests from the web server """
         raw_data = await reader.read(1000)
         data = json.loads(raw_data.decode())  # type: dict
         guild_id = data["target"]
+
+        # Get a guilds data
         if data["request"] == "get":
             return_data = {
                 "enabled": guild_id in self.config,
@@ -119,6 +122,7 @@ class Logger(commands.Cog):
                 "reason": None
             }
 
+        # Update a guilds data
         elif data["request"] == "push":
             requires_init = guild_id in self.config
             new_config = data["config"]
@@ -134,6 +138,7 @@ class Logger(commands.Cog):
                 "reason": None
             }
 
+        # Remove a guilds data
         elif data["request"] == "remove":
             if guild_id not in self.config:
                 return_data = {
@@ -152,13 +157,14 @@ class Logger(commands.Cog):
                     "reason": None
                 }
 
+        # Unknown request
         else:
             return_data = {"successful": False, "reason": "Unknown request"}
+
         writer.write(json.dumps(return_data).encode())
         await writer.drain()
 
-
-    async def initiate_category(self, guild):
+    async def initiate_category(self, guild) -> discord.CategoryChannel:
         """ Sets up a new multi-log category"""
         if str(guild.id) not in self.config:
             self.config[str(guild.id)] = {
@@ -176,7 +182,7 @@ class Logger(commands.Cog):
         self.config[guild_id]['channel'] = category.id
         return category
 
-    async def keep_alive_task(self):
+    async def keep_alive_task(self) -> None:
         self.bot.log("Loggers keep_alive_task was started")
         channel = self.bot.get_channel(541520201926311986)
         while True:
@@ -193,7 +199,7 @@ class Logger(commands.Cog):
             self.bot.log("keep_alive_task still running", "DEBUG")
             await asyncio.sleep(60)
 
-    async def wait_for_permission(self, guild, permission: str, channel=None):
+    async def wait_for_permission(self, guild, permission: str, channel=None) -> bool:
         """Notify the owner of missing permissions and wait until they've been granted"""
 
         # Keep a 'process list' of sorts to prevent multiple events using this
@@ -253,7 +259,7 @@ class Logger(commands.Cog):
             return False
         return True
 
-    async def start_queue(self, guild_id: str):
+    async def start_queue(self, guild_id: str) -> None:
         """ Loop for managing the guilds queue
         + checks guild permissions
         + checks channel permissions
@@ -331,7 +337,7 @@ class Logger(commands.Cog):
                     result = await self.wait_for_permission(guild, "administrator")
                     if not result:
                         del self.config[guild_id]
-                        return self.save_data()
+                        return await self.save_data()
 
                 # Ensure the channel still exists
                 category = self.bot.get_channel(self.config[guild_id]['channel'])
@@ -340,7 +346,7 @@ class Logger(commands.Cog):
                         result = await self.wait_for_permission(guild, "manage_channels")
                         if not result:
                             del self.config[guild_id]
-                            return self.save_data()
+                            return await self.save_data()
                     try:
                         category = await self.bot.fetch_channel(self.config[guild_id]['channel'])
                     except discord.errors.NotFound:
@@ -357,11 +363,11 @@ class Logger(commands.Cog):
                     result = await self.wait_for_permission(guild, "send_messages", category)
                     if not result:
                         del self.config[guild_id]
-                        return self.save_data()
+                        return await self.save_data()
                     result = await self.wait_for_permission(guild, "embed_links", category)
                     if not result:
                         del self.config[guild_id]
-                        return self.save_data()
+                        return await self.save_data()
 
                 # Ensure this still exists
                 if guild_id not in self.recent_logs:
@@ -405,15 +411,15 @@ class Logger(commands.Cog):
                                 result = await self.wait_for_permission(guild, "manage_channels")
                                 if not result:
                                     del self.config[guild_id]
-                                    return self.save_data()
+                                    return await self.save_data()
                             result = await self.wait_for_permission(guild, "send_messages", channel)
                             if not result:
                                 del self.config[guild_id]
-                                return self.save_data()
+                                return await self.save_data()
                             result = await self.wait_for_permission(guild, "embed_links", channel)
                             if not result:
                                 del self.config[guild_id]
-                                return self.save_data()
+                                return await self.save_data()
 
                             channel = await guild.create_text_channel(
                                 name=channelType,
@@ -456,7 +462,7 @@ class Logger(commands.Cog):
                             self.recent_logs[guild_id].remove(log)
                 await asyncio.sleep(0.21)
 
-    async def init_invites(self):
+    async def init_invites(self) -> None:
         """ Indexes each servers invites """
         for guild_id in self.config.keys():
             guild = self.bot.get_guild(int(guild_id))
@@ -475,7 +481,7 @@ class Logger(commands.Cog):
         """ gets the time 2 seconds ago in utc for audit searching """
         return datetime.utcnow() - timedelta(seconds=10)
 
-    async def search_audit(self, guild, *actions):
+    async def search_audit(self, guild, *actions) -> dict:
         """ Returns the latest entry from a list of actions """
         dat = {
             'user': 'Unknown',
