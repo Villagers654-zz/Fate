@@ -106,7 +106,6 @@ class Logger(commands.Cog):
         await self.bot.save_json(self.path, self.config)
 
     async def handle_echo(self, reader, writer):
-        print("Handling echo")
         raw_data = await reader.read(1000)
         data = json.loads(raw_data.decode())  # type: dict
         guild_id = data["target"]
@@ -155,7 +154,6 @@ class Logger(commands.Cog):
 
         else:
             return_data = {"successful": False, "reason": "Unknown request"}
-        print("writing")
         writer.write(json.dumps(return_data).encode())
         await writer.drain()
 
