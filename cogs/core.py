@@ -177,9 +177,9 @@ class Core(commands.Cog):
                 channel_id = str(ctx.channel.id)
                 if channel_id not in conf["channels"]:
                     conf["channels"][channel_id] = []
-                if command in conf["channels"][channel_id]:
-                    return await ctx.send(f"{command} is already disabled in this channel")
-                conf["channels"][str(ctx.channel.id)].remove(command)
+                if command not in conf["channels"][channel_id]:
+                    return await ctx.send(f"{command} isn't disabled in this channel")
+                conf["channels"][channel_id].remove(command)
                 await ctx.send(f"Disabled {command} in {ctx.channel.mention}")
 
         elif isinstance(location, discord.TextChannel):

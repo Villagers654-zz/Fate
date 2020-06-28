@@ -208,18 +208,12 @@ class Fate(commands.AutoShardedBot):
         def pred(m):
             return m.author.id == ctx.author.id and m.channel.id == ctx.channel.id
 
-        now = time()
         try:
             msg = await self.wait_for('message', check=pred, timeout=timeout)
         except asyncio.TimeoutError:
             await ctx.send(f"{action} timed out!")
             return None
         else:
-            async def remove_msg(msg):
-                await asyncio.sleep(round(time() - now))
-                await msg.delete()
-
-            self.loop.create_task(remove_msg(msg))
             return msg
 
     async def verify_user(self, ctx, user=None, timeout=45):

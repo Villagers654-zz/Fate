@@ -8,21 +8,12 @@ import discord
 from utils import checks, colors
 
 
-def has_bot_owner_level_perms():
-	async def predicate(ctx):
-		authorized = checks.luck(ctx)
-		if not authorized:
-			await ctx.send("Sorry, this is an owner only command to load/unload/reload modules")
-			return False
-		return True
-	return commands.check(predicate)
-
 class Reload(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 
 	@commands.command(name='reload', description='reloads a cog', hidden=True)
-	@has_bot_owner_level_perms()
+	@commands.is_owner()
 	async def reload(self, ctx, *modules: lambda x: x.lower()):
 		if not modules:
 			modules = [*self.bot.initial_extensions, *self.bot.awaited_extensions]
@@ -55,7 +46,7 @@ class Reload(commands.Cog):
 		await ctx.send(embed=e)
 
 	@commands.command(name='unload')
-	@has_bot_owner_level_perms()
+	@commands.is_owner()
 	async def unload(self, ctx, *, module : str):
 		try:
 			self.bot.unload_extension("cogs." + module)
