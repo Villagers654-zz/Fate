@@ -876,7 +876,7 @@ class Moderation(commands.Cog):
             e = discord.Embed(color=colors.fate())
             e.set_author(name="Mass Updating Nicknames", icon_url=ctx.author.avatar_url)
             e.description = f"{iteration + 1}/{len(members)} complete" \
-                            f"\n1 role per 1.21 seconds" \
+                            f"\n1 nick per 1.21 seconds" \
                             f"\nETA of {self.bot.utils.get_time(round((len(members) - (iteration + 1)) * 1.21))}"
             return e
 
