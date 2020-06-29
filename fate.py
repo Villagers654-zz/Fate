@@ -299,6 +299,11 @@ class Fate(commands.AutoShardedBot):
         # Get a guilds data
         if data["request"] == "get":
             return_data = await get_coro(guild_id)
+            if not return_data:
+                return_data = {
+                    "successful": False,
+                    "reason": "No data"
+                }
 
         # Update a guilds data
         elif data["request"] == "push":

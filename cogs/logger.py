@@ -109,14 +109,13 @@ class Logger(commands.Cog):
         """ Manage requests from the web server """
         async def get(guild_id: str):
             """ Get a guilds config, or use a template if not exists """
-            return {
-                "enabled": guild_id in self.config,
-                "config": self.config[guild_id]
-                          if guild_id in self.config
-                          else self.template,
-                "successful": True,
-                "reason": None
-            }
+            if guild_id in self.config:
+                return {
+                    "config": self.config[guild_id],
+                    "successful": True,
+                    "reason": None
+                }
+            return None
 
         async def push(guild_id: str, data):
             """ Update or insert a new or updated config """
