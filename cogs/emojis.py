@@ -90,8 +90,8 @@ class Emojis(commands.Cog):
 			author_name = emoji.name
 			author_url = ctx.author.avatar_url
 			if isinstance(emoji, discord.Emoji):
-				perms = ctx.author.guild_permissions.manage_emojis
-				bot_perms = emoji.guild.me.guild_permissions.manage_emojis
+				perms = ctx.author.guild_permissions
+				bot_perms = emoji.guild.me.guild_permissions
 				if perms.manage_emojis and bot_perms.manage_emojis and emoji.guild.id == ctx.guild.id:
 					emoji = await emoji.guild.fetch_emoji(emoji.id)
 					author_name += f" by {emoji.user}"
