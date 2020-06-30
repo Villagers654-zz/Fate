@@ -4,6 +4,7 @@ Module for viewing and managing emojis
 
 import discord
 import asyncio
+from typing import Union
 
 from discord.ext import commands
 from discord.ext.commands import Greedy
@@ -78,14 +79,26 @@ class Emojis(commands.Cog):
 			else:
 				await ctx.send(f'Added {emoji} - {name}')
 
-	@commands.command(name="emoji", aliases=["emote"])
+	@commands.command(name="emoji", aliases=["emote", "jumbo"])
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.bot_has_permissions(embed_links=True, attach_files=True)
-	async def _emoji(self, ctx, *emoji: discord.PartialEmoji):
+	async def _emoji(self, ctx, *emoji: Union[discord.Emoji, discord.PartialEmoji]):
 		"""Sends the emoji in image form"""
-		for emoji in emoji:
+		for emoji in emoji[:3]:
 			e = discord.Embed(color=colors.fate())
-			e.set_author(name=emoji.name, icon_url=ctx.author.avatar_url)
+			e.description = str(emoji.id)
+			author_name = emoji.name
+			author_url = ctx.author.avatar_url
+			if isinstance(emoji, discord.Emoji):
+				perms = ctx.author.guild_permissions.manage_emojis
+				bot_perms = emoji.guild.me.guild_permissions.manage_emojis
+				if perms.manage_emojis and bot_perms.manage_emojis and emoji.guild.id == ctx.guild.id:
+					emoji = await emoji.guild.fetch_emoji(emoji.id)
+					author_name += f" by {emoji.user}"
+					e.description = f"ID: {emoji.id}"
+					author_url = emoji.user.avatar_url
+				e.set_footer(text=emoji.guild.name, icon_url=emoji.guild.icon_url)
+			e.set_author(name=author_name, icon_url=author_url)
 			e.set_image(url=emoji.url)
 			await ctx.send(embed=e)
 			await asyncio.sleep(1)
