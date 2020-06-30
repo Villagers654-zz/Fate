@@ -1,7 +1,7 @@
 from discord.ext import commands
 import discord
 import json
-from utils import colors, checks
+from utils import colors
 
 class User(commands.Cog):
 	def __init__(self, bot):
