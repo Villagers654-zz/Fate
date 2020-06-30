@@ -47,6 +47,8 @@ class Menus(commands.Cog, HelpMenus):
             try:
                 reaction, user = await self.bot.wait_for('reaction_add', timeout=60.0, check=check)
             except asyncio.TimeoutError:
+                if msg:
+                    await msg.edit(content="Menu inactive due to timeout")
                 return [None, None]
             else:
                 return [reaction, str(reaction.emoji)]
