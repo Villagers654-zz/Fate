@@ -120,7 +120,7 @@ class Emojis(commands.Cog):
 			return len([e for e in ctx.guild.emojis if e.animated]) == ctx.guild.emoji_limit
 
 		async def not_at_limit(emoji) -> bool:
-			if isinstance(emoji, str):
+			if isinstance(emoji, (str, discord.Asset)):
 				if "gif" in str(emoji) and max_a_emotes():
 					failed.append(emoji)
 					globals()['a_limit'] = True
