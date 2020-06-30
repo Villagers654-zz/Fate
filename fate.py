@@ -229,8 +229,20 @@ class Fate(commands.AutoShardedBot):
             card = Image.new("RGBA", size=(size[0] + 20, 50), color=(255, 255, 255, 0))
             draw = ImageDraw.Draw(card)
             draw.text((10, 10), chars, fill="blue", font=font)
-            line_positions = (5, random.choice(range(10, 40)), size[0] + 15, random.choice(range(10, 40)))
-            draw.line(line_positions, fill="blue", width=5)
+
+            lowest_range = 5
+            max_range = size[0] + 15
+            divide = (max_range - lowest_range) / 3
+            fix_points = [random.choice(range(10, 40)) for _i in range(4)]
+
+            for iteration in range(3):
+                line_positions = (
+                    # Beginning of line
+                    5 + (divide * iteration), fix_points[iteration],
+                    # End of line
+                    max_range - ((divide * 3) - sum([divide for _i in range(iteration + 1)])), fix_points[iteration + 1]
+                )
+                draw.line(line_positions, fill="blue", width=5)
             card.save(fp)
 
         await self.loop.run_in_executor(None, create_card)
