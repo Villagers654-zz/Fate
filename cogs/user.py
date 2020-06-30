@@ -17,7 +17,7 @@ class User(commands.Cog):
 			json.dump(config, f, ensure_ascii=False)
 
 	@commands.command(name='changepresence', aliases=['cp'])
-	@commands.check(checks.luck)
+	@commands.is_owner()
 	async def change_presence(self, ctx, *, presence):
 		config = self.get_config()  # type: dict
 		config['presence'] = presence
@@ -25,7 +25,7 @@ class User(commands.Cog):
 		await ctx.message.add_reaction('👍')
 
 	@commands.command(name='block')
-	@commands.check(checks.luck)
+	@commands.is_owner()
 	async def block(self, ctx, user):
 		if ctx.message.mentions:
 			user = ctx.message.mentions[0]
@@ -43,7 +43,7 @@ class User(commands.Cog):
 		await ctx.send(f'Blocked {user}')
 
 	@commands.command(name='unblock')
-	@commands.check(checks.luck)
+	@commands.is_owner()
 	async def unblock(self, ctx, user):
 		if ctx.message.mentions:
 			user_id = ctx.message.mentions[0].id
@@ -60,7 +60,7 @@ class User(commands.Cog):
 		await ctx.send(f'Unblocked {user}')
 
 	@commands.command(name='blocked')
-	@commands.check(checks.luck)
+	@commands.is_owner()
 	async def blocked(self, ctx):
 		config = self.get_config()  # type: dict
 		e = discord.Embed(color=colors.fate())
