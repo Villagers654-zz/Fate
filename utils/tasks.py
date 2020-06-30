@@ -126,9 +126,7 @@ class Tasks:
 			await asyncio.sleep(backup_interval)
 
 			before = time.monotonic()
-			creds = outh.Backups()
-			cnopts = pysftp.CnOpts()
-			cnopts.hostkeys = None
+
 
 			def copy_files():
 				# Copy all data to the ZipFile
@@ -138,6 +136,9 @@ class Tasks:
 					for file in file_paths:
 						zip.write(file)
 
+				creds = outh.Backups()
+				cnopts = pysftp.CnOpts()
+				cnopts.hostkeys = None
 				with pysftp.Connection(creds.host, username=creds.username, password=creds.password, port=creds.port,
 				                       cnopts=cnopts) as sftp:
 					# Remove older backups
@@ -155,6 +156,6 @@ class Tasks:
 					sftp.put(fp, os.path.join(root, fp))
 					os.remove(fp)
 
-			await self.bot.loop.run_in_executor(copy_files)
+			await self.bot.loop.run_in_executor(None, copy_files)
 			ping = round((time.monotonic() - before) * 1000)
 			self.bot.log(f'Ran Automatic Backup: {ping}ms')

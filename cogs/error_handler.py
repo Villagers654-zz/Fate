@@ -84,7 +84,8 @@ class ErrorHandler(commands.Cog):
 		e.description = ctx.message.content
 		e.set_author(name=f"| Fatal Error | in {ctx.command}", icon_url=ctx.author.avatar_url)
 		e.set_thumbnail(url=ctx.guild.icon_url)
-		e.add_field(name="◈ Error ◈", value=self.bot.last_traceback, inline=False)
+		for i, chunk in enumerate(self.bot.utils.split(self.bot.last_traceback, 980)):
+			e.add_field(name="◈ Error ◈", value=f"{chunk}```" if not i else f"```python\n{chunk}```", inline=False)
 
 		# Check to make sure the error isn't already logged
 		async for msg in channel.history(limit=16):
