@@ -165,8 +165,8 @@ class Factions(commands.Cog):
 				if time < 2 and boost == 'extra-income':
 					active_boosts['Extra-Income'] = utils.get_time(7200 - seconds)
 				time = (datetime.now() - date).seconds / 60 / 60
-				if time < 8 and boost == 'land-guard':
-					active_boosts['Land-Guard'] = utils.get_time(28800 - seconds)
+				if time < 2 and boost == 'land-guard':
+					active_boosts['Land-Guard'] = utils.get_time(7200 - seconds)
 		return active_boosts
 
 	def get_icon(self, user: discord.Member):
@@ -1060,7 +1060,7 @@ class Factions(commands.Cog):
 		e.add_field(name='◈ Upgrades ◈', value=upgrades)
 		boosts = '》2h extra-income\n• $50\n' \
 			'》24h anti-raid\n• $75\n' \
-		    '》8h land-guard\n• $100'
+		    '》2h land-guard\n• $100'
 		e.add_field(name='◈ Boosts ◈', value=boosts)
 		e.set_footer(text='Usage: .factions buy item_name', icon_url=self.bot.user.avatar_url)
 		msg = await ctx.send(embed=e)
@@ -1086,18 +1086,26 @@ class Factions(commands.Cog):
 		guild_id = str(ctx.guild.id)
 		if self.factions[guild_id][faction]['balance'] < cost:
 			return await ctx.send('You don\'t have enough money to purchase this')
+
 		if item == 'icon':
 			self.factions[guild_id][faction]['icon'] = ''
-		if item == 'banner':
+		elif item == 'banner':
 			self.factions[guild_id][faction]['banner'] = ''
-		if 'slots' in item:
+		elif 'slots' in item:
 			self.factions[guild_id][faction]['limit'] += 5
-		if 'anti-raid' in item:
-			self.factions[guild_id][faction]['boosts']['anti-raid'] = str(datetime.now())
-		if 'extra-income' in item:
-			self.factions[guild_id][faction]['boosts']['extra-income'] = str(datetime.now())
-		if 'land-guard' in item:
-			self.factions[guild_id][faction]['boosts']['land-guard'] = str(datetime.now())
+
+		else:  # Require verification
+			await ctx.send("To ensure this isn't automated, please verify")
+			result = await self.bot.verify(ctx, user=ctx.author)
+			if not result:
+				return
+			if 'anti-raid' in item:
+				self.factions[guild_id][faction]['boosts']['anti-raid'] = str(datetime.now())
+			if 'extra-income' in item:
+				self.factions[guild_id][faction]['boosts']['extra-income'] = str(datetime.now())
+			if 'land-guard' in item:
+				self.factions[guild_id][faction]['boosts']['land-guard'] = str(datetime.now())
+
 		self.factions[guild_id][faction]['balance'] -= cost
 		await ctx.send(f'Purchased {item}')
 		await self.save_data()
