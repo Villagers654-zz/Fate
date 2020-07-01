@@ -59,7 +59,7 @@ class Core(commands.Cog):
             return
         if content:
             content = utils.cleanup_msg(ctx.message, content)
-        content = content[:2000]
+            content = content[:2000]
         if ctx.message.attachments and ctx.channel.is_nsfw():
             file_data = [(f.filename, BytesIO(requests.get(f.url).content)) for f in ctx.message.attachments]
             files = [discord.File(file, filename=filename) for filename, file in file_data]

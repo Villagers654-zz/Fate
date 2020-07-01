@@ -1095,8 +1095,7 @@ class Factions(commands.Cog):
 			self.factions[guild_id][faction]['limit'] += 5
 
 		else:  # Require verification
-			await ctx.send("To ensure this isn't automated, please verify")
-			result = await self.bot.verify(ctx, user=ctx.author)
+			result = await self.bot.verify_user(ctx, user=ctx.author)
 			if not result:
 				return
 			if 'anti-raid' in item:
