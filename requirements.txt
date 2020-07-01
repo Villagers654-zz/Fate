@@ -1,4 +1,4 @@
-discord.py
+discord.py[voice]
 beautifulsoup4
 bs4
 colorama
