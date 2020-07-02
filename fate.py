@@ -38,8 +38,7 @@ class Fate(commands.AutoShardedBot):
         self.logs = []                  # Logs to send to discord, empties out quickly
         self.tasks = {}                 # Task object storing for easy management
         self.logger_tasks = {}          # Same as Fate.tasks except dedicated to cogs.logger
-
-        self.last_traceback = ""
+        self.last_traceback = ""        # Formatted string of the last error traceback
 
         self.initial_extensions = [     # Cogs to load before logging in
             'error_handler', 'config', 'menus', 'core', 'mod', 'welcome', 'farewell', 'notes', 'archive',
@@ -48,9 +47,26 @@ class Fate(commands.AutoShardedBot):
             'duel_chat', 'selfroles', 'lock', 'audit', 'cookies', 'server_list', 'emojis', 'giveaways',
             'logger', 'autorole', 'changelog', 'restore_roles', 'chatbot', 'anti_spam', 'anti_raid', 'chatfilter',
             'nsfw', 'minecraft', 'chatlock', 'rainbow', 'system', 'user', 'limiter', 'dm_channel', 'factions',
-            'secure_overwrites', 'server_setup', 'global-chat', 'ranking', 'statistics'
+            'secure_overwrites', 'server_setup', 'global-chat', 'ranking', 'statistics', 'toggles'
         ]
-        self.awaited_extensions = []    # Cogs to load when the internal cache is ready
+        self.awaited_extensions = []  # Cogs to load when the internal cache is ready
+        self.module_index = {
+            # Cog Name      Help command             Enable Command                   Disable command
+            "Welcome":      {"help": "welcome",      "enable": "welcome.enable",      "disable": "welcome.disable"},
+            "Leave":        {"help": "leave",        "enable": "leave.enable",        "disable": "leave.disable"},
+            "AntiRaid":     {"help": "antiraid",     "enable": "antiraid.enable",     "disable": "antiraid.disable"},
+            "AntiSpam":     {"help": "antispam",     "enable": "antispam.enable",     "disable": "antispam.disable"},
+            "ChatFilter":   {"help": "chatfilter",   "enable": "chatfilter.enable",   "disable": "chatfilter.disable"},
+            "ChatLock":     {"help": "chatlock",     "enable": "chatlock.enable",     "disable": "chatlock.disable"},
+            "ChatBot":      {"help": "chatbot",      "enable": "chatbot.enable",      "disable": "chatbot.disable"},
+            "GlobalChat":   {"help": "global-chat",  "enable": "global-chat.enable",  "disable": "global-chat.disable"},
+            "Lock":         {"help": None,           "enable": "lock",                "disable": "lock"},
+            "Lockb":        {"help": None,           "enable": "lockb",               "disable": "lockb"},
+            "Logger":       {"help": "logger",       "enable": "logger.enable",       "disable": "logger.disable"},
+            "Responses":    {"help": "responses",    "enable": "enableresponses",     "disable": "disableresponses"},
+            "RestoreRoles": {"help": "restoreroles", "enable": "restoreroles.enable", "disable": "restoreroles.disable"},
+            "SelfRoles":    {"help": "selfroles",    "enable": "create-menu",         "disable": None}
+        }
 
         if not self.config["original_bot"]:
             original_only = ['polis', 'dev', 'backup']

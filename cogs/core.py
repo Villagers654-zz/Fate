@@ -108,10 +108,10 @@ class Core(commands.Cog):
         await ctx.send(f'Set your personal prefix as `{prefix}`\n'
                        f'Note you can still use my mention as a sub-prefix')
 
-    @commands.command(name="enable")
+    @commands.command(name="enable-command", aliases=["enablecommand"])
     @commands.has_permissions(administrator=True)
     @commands.bot_has_permissions(embed_links=True)
-    async def enable(
+    async def enable_command(
             self,
             ctx,
             command,
@@ -208,10 +208,10 @@ class Core(commands.Cog):
         with open(self.path, 'w') as f:
             json.dump(config, f, ensure_ascii=False)
 
-    @commands.command(name="disable")
+    @commands.command(name="disable-command", aliases=["disablecommand"])
     @commands.has_permissions(administrator=True)
     @commands.bot_has_permissions(embed_links=True)
-    async def disable(
+    async def disable_command(
             self,
             ctx,
             command,
