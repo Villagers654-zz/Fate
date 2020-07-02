@@ -116,7 +116,7 @@ class ErrorHandler(commands.Cog):
 		# Check to make sure the error isn't already logged
 		async for msg in channel.history(limit=16):
 			for embed in msg.embeds:
-				if not embed.fields:
+				if not embed.fields or e.fields:
 					continue
 				if embed.fields[0].value == e.fields[0].value:
 					return

@@ -7,7 +7,7 @@ import discord
 import asyncio
 import json
 
-class Anti_Raid(commands.Cog):
+class AntiRaid(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.toggle = {}
@@ -199,4 +199,4 @@ class Anti_Raid(commands.Cog):
 						await guild.edit(name=before.name)
 
 def setup(bot):
-	bot.add_cog(Anti_Raid(bot))
+	bot.add_cog(AntiRaid(bot))
