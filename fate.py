@@ -10,7 +10,6 @@ import aiohttp
 import aiofiles
 from time import monotonic
 import random
-from concurrent.futures import ThreadPoolExecutor
 
 from discord.ext import commands
 import discord
@@ -145,11 +144,13 @@ class Fate(commands.AutoShardedBot):
         for cog in extensions:
             try:
                 self.load_extension(f"cogs.{cog}")
-                self.log(f"Loaded {cog}")
+                self.log(f"Loaded {cog}", end="\r")
             except commands.ExtensionNotFound:
-                self.log(f"Couldn't find {cog}")
+                self.log(f"Couldn't find {cog}", "CRITICAL")
+                self.log("Continuing..")
             except commands.ExtensionError:
-                self.log(f"Couldn't load {cog}", tb=traceback.format_exc())
+                self.log(f"Couldn't load {cog}", "CRITICAL", tb=traceback.format_exc())
+                self.log("Continuing..")
 
     def unload(self, *extensions, log=True):
         for cog in extensions:
@@ -173,7 +174,7 @@ class Fate(commands.AutoShardedBot):
             except commands.ExtensionError:
                 self.log(f"Ignoring exception in Cog: {cog}", tb=traceback.format_exc())
 
-    def log(self, message, level='INFO', tb=None, color=None):
+    def log(self, message, level='INFO', tb=None, color=None, end=None):
         if level == 'DEBUG' and not self.debug_mode:
             return
         now = str(datetime.now().strftime("%I:%M%p"))
@@ -183,17 +184,18 @@ class Fate(commands.AutoShardedBot):
         for line in message.split('\n'):
             msg = f"{now} | {level} | {line}"
             if level == 'DEBUG' and self.config['debug_mode']:
-                cprint(msg, color if color else 'cyan')
+                cprint(msg, color if color else 'cyan', end=end)
             elif level == 'INFO':
-                cprint(msg, color if color else 'green')
+                cprint(msg, color if color else 'green', end=end)
             elif level == 'CRITICAL':
-                cprint(msg, color if color else 'red')
+                cprint(msg, color if color else 'red', end=end)
             lines.append(msg)
         if tb:
-            cprint(str(tb), color if color else 'red')
+            cprint(str(tb), color if color else 'red', end=end)
             lines.append(str(tb))
         self.logs.append('\n'.join(lines))
         self.logs = self.logs[:1000]
+        return '\n'.join(lines)
 
     async def download(self, url: str, timeout: int = 10):
         async with aiohttp.ClientSession() as session:
@@ -389,17 +391,29 @@ bot.add_check(checks.command_is_enabled)
 async def on_shard_ready(shard_id):
     bot.log(f"Shard {shard_id} connected")
 
-
 @bot.event
-async def on_ready():
+async def on_connect():
     bot.log(
         '------------'
         '\nLogged in as'
         f'\n{bot.user}'
         f'\n{bot.user.id}'
         '\n------------',
-        color='yellow'
+        color='green'
     )
+    cprint("Initializing cache", "yellow", end="\r")
+    index = 0
+    chars = r"-/-\-"
+    while not bot.is_ready():
+        cprint(f"Initializing cache {chars[index]}", "yellow", end="\r")
+        index += 1
+        if index + 1 == len(chars):
+            index = 0
+        await asyncio.sleep(0.21)
+
+@bot.event
+async def on_ready():
+    bot.log("Finished initializing cache", color="yellow")
     if not bot.pool:
         await bot.create_pool()
     bot.owner_ids = set(list([bot.config["bot_owner_id"], *bot.config["bot_owner_ids"]]))
@@ -485,5 +499,5 @@ if __name__ == '__main__':
         print("Invalid Token")
     except asyncio.exceptions.CancelledError:
         pass
-    except Exception as e:
-        print(e)
+    except (RuntimeError, KeyboardInterrupt):
+        pass
