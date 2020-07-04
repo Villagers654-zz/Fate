@@ -30,7 +30,7 @@ class ErrorHandler(commands.Cog):
 		error = getattr(error, 'original', error)
 		error_str = str(error)
 		formatted = "\n".join(traceback.format_tb(error.__traceback__))
-		self.bot.last_traceback = f"```python\n{formatted}\n{type(error).__name__}: {error}```"
+		full_traceback = f"```python\n{formatted}\n{type(error).__name__}: {error}```"
 
 		# Send a user-friendly error and state that it'll be fixed soon
 		try:
@@ -95,6 +95,7 @@ class ErrorHandler(commands.Cog):
 		# Print everything to console to get the full traceback
 		print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
 		traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
+		self.bot.last_traceback = full_traceback
 
 		# Prepare to log the error to a dedicated error channel
 		channel = self.bot.get_channel(self.bot.config["error_channel"])
@@ -102,16 +103,13 @@ class ErrorHandler(commands.Cog):
 		e.description = f"[{ctx.message.content}]({ctx.message.jump_url})"
 		e.set_author(name=f"| Fatal Error | in {ctx.command}", icon_url=ctx.author.avatar_url)
 		e.set_thumbnail(url=ctx.guild.icon_url)
-		enum = enumerate(self.bot.utils.split(self.bot.last_traceback, 980))
-		if len(list(enum)) > 0:
-			for iteration, chunk in enum:
-				e.add_field(
-					name="◈ Error ◈",
-					value=f"{chunk}```" if not iteration else f"```python\n{chunk}```",
-					inline=False
-				)
-		else:
-			e.add_field(name="◈ Error ◈", value=self.bot.last_traceback, inline=False)
+		enum = enumerate(self.bot.utils.split(full_traceback, 980))
+		for iteration, chunk in enum:
+			e.add_field(
+				name="◈ Error ◈",
+				value=f"{chunk}" if not iteration else f"```python\n{chunk}```",
+				inline=False
+			)
 
 		# Check to make sure the error isn't already logged
 		async for msg in channel.history(limit=16):
@@ -128,7 +126,7 @@ class ErrorHandler(commands.Cog):
 			e = discord.Embed(color=colors.fate())
 			e.set_author(name=f"Here's the full traceback:", icon_url=ctx.author.avatar_url)
 			e.set_thumbnail(url=self.bot.user.avatar_url)
-			e.description = self.bot.last_traceback
+			e.description = full_traceback
 			await ctx.send(embed=e)
 
 	@commands.Cog.listener("on_raw_reaction_add")

@@ -410,6 +410,7 @@ async def on_connect():
         if index + 1 == len(chars):
             index = 0
         await asyncio.sleep(0.21)
+        bot.log("Iterated through cache initialization", "DEBUG")
 
 @bot.event
 async def on_ready():

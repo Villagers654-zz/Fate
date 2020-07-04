@@ -54,7 +54,7 @@ class Core(commands.Cog):
         has_perms = ctx.channel.permissions_for(ctx.guild.me).manage_messages
         if len(str(content).split('\n')) > 4:
             await ctx.send(f'{ctx.author.mention} too many lines')
-            if has_perms:
+            if has_perms and ctx.message:
                 await ctx.message.delete()
             return
         if content:
@@ -68,7 +68,7 @@ class Core(commands.Cog):
                 await ctx.message.delete()
         elif content and not ctx.message.attachments:
             await ctx.send(content)
-            if has_perms:
+            if has_perms and ctx.message:
                 await ctx.message.delete()
         elif ctx.message.attachments:
             await ctx.send('You can only attach files if the channel\'s nsfw')
