@@ -66,6 +66,10 @@ class ErrorHandler(commands.Cog):
 				else:
 					return await ctx.send(error)
 
+			# The bot tried to perform an action on a non existent or removed object
+			elif isinstance(error, discord.errors.NotFound):
+				await ctx.send(f"{error}. Seems whatever I was doing an action on was removed or doesn't exist..")
+
 			# An action by the bot failed due to missing access or lack of required permissions
 			elif isinstance(error, discord.errors.Forbidden):
 				if not ctx.guild:
@@ -85,10 +89,11 @@ class ErrorHandler(commands.Cog):
 			elif isinstance(error, KeyError):
 				error_str = f'No Data: {error}'
 
-			e = discord.Embed(color=colors.red())
-			e.description = f'[{error_str}](https://www.youtube.com/watch?v=t3otBjVZzT0)'
-			e.set_footer(text='This error has been logged, and will be fixed soon')
-			await ctx.send(embed=e)
+			if not isinstance(error, discord.errors.NotFound):
+				e = discord.Embed(color=colors.red())
+				e.description = f'[{error_str}](https://www.youtube.com/watch?v=t3otBjVZzT0)'
+				e.set_footer(text='This error has been logged, and will be fixed soon')
+				await ctx.send(embed=e)
 		except (discord.errors.Forbidden, discord.errors.NotFound):
 			return
 

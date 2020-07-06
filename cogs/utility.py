@@ -842,7 +842,7 @@ class Utility(commands.Cog):
 		if not user.avatar_url:
 			return await ctx.send(f'{utils.cleanup_msg(ctx.message, user.display_name)} doesn\'t have an avatar')
 		e=discord.Embed(color=0x80b0ff)
-		e.set_image(url=user.avatar_url)
+		e.set_image(url=user.avatar_url_as(format="png"))
 		await ctx.send(f'◈ {utils.cleanup_msg(ctx.message, user.display_name)}\'s avatar ◈', embed=e)
 
 	@commands.command(name='owner')

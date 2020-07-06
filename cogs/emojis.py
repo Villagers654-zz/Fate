@@ -68,7 +68,7 @@ class Emojis(commands.Cog):
 				img = image.read()
 			await ctx.guild.create_custom_emoji(name=name, image=img, roles=roles, reason=reason)
 			await ctx.bot.utils.update_msg(msg, f'{msg.content}\nAdded {name} successfully')
-		except AttributeError as e:
+		except (AttributeError, discord.errors.InvalidArgument) as e:
 			if msg:
 				await ctx.bot.utils.update_msg(msg, f'Failed to add {name}: [`{e}`]')
 			else:

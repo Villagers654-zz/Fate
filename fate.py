@@ -208,19 +208,20 @@ class Fate(commands.AutoShardedBot):
                 return None
 
     async def save_json(self, fp, data, mode="w+"):
-        self.log(f"Saving {fp}", "DEBUG")
-        before = monotonic()
+        # self.log(f"Saving {fp}", "DEBUG")
+        # before = monotonic()
         async with aiofiles.open(fp + ".tmp", mode) as f:
             await f.write(json.dumps(data))
-        ping = str(round((monotonic() - before) * 1000))
-        self.log(f"Wrote to tmp file in {ping}ms", "DEBUG")
-        before = monotonic()
+        # ping = str(round((monotonic() - before) * 1000))
+        # self.log(f"Wrote to tmp file in {ping}ms", "DEBUG")
+        # before = monotonic()
         try:
             os.rename(fp + ".tmp", fp)
         except FileNotFoundError:
-            self.log("Tmp file didn't exist, not renaming", "DEBUG")
-        ping = str(round((monotonic() - before) * 1000))
-        self.log(f"Replaced old file in {ping}ms", "DEBUG")
+            pass
+            # self.log("Tmp file didn't exist, not renaming", "DEBUG")
+        # ping = str(round((monotonic() - before) * 1000))
+        # self.log(f"Replaced old file in {ping}ms", "DEBUG")
 
     async def wait_for_msg(self, ctx, timeout=60, action="Action") -> Optional[discord.Message]:
         def pred(m):

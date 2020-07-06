@@ -150,7 +150,7 @@ class Fun(commands.Cog):
 		else:
 			e = discord.Embed(color=msg.author.color)
 			e.set_author(name=msg.author, icon_url=msg.author.avatar_url)
-			e.description = msg.content
+			e.description = msg.content[:2048]
 			e.set_footer(text=time)
 			await ctx.send(embed=e)
 

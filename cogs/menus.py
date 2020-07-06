@@ -47,8 +47,10 @@ class Menus(commands.Cog, HelpMenus):
             try:
                 reaction, user = await self.bot.wait_for('reaction_add', timeout=60.0, check=check)
             except asyncio.TimeoutError:
-                if msg:
+                try:
                     await msg.edit(content="Menu inactive due to timeout")
+                except discord.errors.NotFound:
+                    pass
                 return [None, None]
             else:
                 return [reaction, str(reaction.emoji)]
@@ -95,7 +97,7 @@ class Menus(commands.Cog, HelpMenus):
         while True:
             reaction, emoji = await wait_for_reaction()
             if not reaction:
-                if ctx.channel.permissions_for(ctx.guild.me).manage_messages:
+                if ctx.channel.permissions_for(ctx.guild.me).manage_messages and msg:
                     await msg.clear_reactions()
                 return
             if emoji == emojis[0]:  # home

@@ -45,6 +45,10 @@ class SelfRoles(commands.Cog):
 		e.set_author(name=f"Self-Role Menu{f': {name}' if name else ''}", icon_url=guild.owner.avatar_url)
 		e.set_thumbnail(url='https://cdn.discordapp.com/attachments/514213558549217330/514345278669848597/8yx98C.gif')
 		e.description = ''
+		data['items'] = {
+			role_id: emoji for role_id, emoji in data['items'].items()
+			if int(role_id) in list(r.id for r in guild.roles)
+		}
 		for role_id, emoji in sorted(data['items'].items(), key=role_position, reverse=True):
 			role = guild.get_role(int(role_id))
 			if not role:
@@ -413,11 +417,14 @@ class SelfRoles(commands.Cog):
 			msg = await self.edit_menu(guild_id, msg_id)
 		except AttributeError:
 			del self.menus[guild_id][msg_id]['items'][str(role.id)]
-			return await ctx.send(f"I couldn't find that menu on discord. Please try using `{p}update-menu {msg_id}` "
+			return await ctx.send(f"I couldn't find that menu in this server. Please try using `{p}update-menu {msg_id}` "
 			                      f"inside the same channel the menu is in as it's likely an old selfrole menu")
 		if isinstance(emoji, int):
 			emoji = self.bot.get_emoji(emoji)
-		await msg.add_reaction(emoji)
+		try:
+			await msg.add_reaction(emoji)
+		except discord.errors.HTTPException:
+			return await ctx.send("I can't find that emoji")
 		await ctx.send(f"Added {role.name}")
 		await self.save_data()
 

@@ -86,6 +86,14 @@ def has_warn_permission():
     return commands.check(predicate)
 
 
+class DiscordMember(commands.Converter):
+    async def convert(self, ctx, argument):
+        if not any(c.isdigit() for c in argument) and "#" not in argument:
+            raise commands.BadArgument(f"Couldn't convert '{argument}' into member")
+        converter = commands.UserConverter()
+        return await converter.convert(ctx, argument)
+
+
 class Moderation(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -788,9 +796,8 @@ class Moderation(commands.Cog):
     @commands.guild_only()
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(embed_links=True, ban_members=True)
-    async def ban(self, ctx, ids: Greedy[int], users: Greedy[discord.User], *, reason='Unspecified'):
+    async def ban(self, ctx, ids: Greedy[int], users: Greedy[DiscordMember], *, reason='Unspecified'):
         """ Ban cmd that supports more than just members """
-        reason = f"{ctx.author}: {reason}"
         users_to_ban = len(ids if ids else []) + len(users if users else [])
         e = discord.Embed(color=colors.fate())
         if users_to_ban == 0:
@@ -815,7 +822,7 @@ class Moderation(commands.Cog):
             except:
                 e.add_field(name=f'◈ Failed to ban {id}', value="That user doesn't exist", inline=False)
             else:
-                await ctx.guild.ban(user, reason=reason)
+                await ctx.guild.ban(user, reason=f"{ctx.author}: {reason}")
                 e.add_field(name=f'◈ Banned {user}', value=f'Reason: {reason}', inline=False)
             await msg.edit(embed=e)
         for user in users:
@@ -829,7 +836,7 @@ class Moderation(commands.Cog):
                     e.add_field(name=f'◈ Failed to ban {member}', value="I can't ban this user", inline=False)
                     await msg.edit(embed=e)
                     continue
-            await ctx.guild.ban(user, reason=reason)
+            await ctx.guild.ban(user, reason=f"{ctx.author}: {reason}")
             e.add_field(name=f'◈ Banned {user}', value=f'Reason: {reason}', inline=False)
         if not e.fields:
             e.colour = colors.red()
@@ -847,7 +854,10 @@ class Moderation(commands.Cog):
                users = entry.target,
         if len(users) == 1:
             user = users[0]
-            await ctx.guild.unban(user, reason=reason.replace(':author:', str(ctx.author)))
+            try:
+                await ctx.guild.unban(user, reason=reason.replace(':author:', str(ctx.author)))
+            except discord.errors.NotFound:
+                return await ctx.send("That user isn't banned")
             e = discord.Embed(color=colors.red())
             e.set_author(name=f'{user} unbanned', icon_url=user.avatar_url)
             await ctx.send(embed=e)
