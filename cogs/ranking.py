@@ -2,7 +2,7 @@
 
 from os import path
 import json
-from time import time
+from time import time, monotonic
 from random import *
 import asyncio
 from datetime import timedelta
@@ -50,6 +50,7 @@ class Ranking(commands.Cog):
 		self.vc_counter = 0
 		self.backup_counter = 0
 		self.cache = {}
+		self.leaderboards = {}
 
 		# xp config
 		self.config = {}
@@ -82,6 +83,9 @@ class Ranking(commands.Cog):
 			if "cleanup_xp" in bot.tasks and bot.tasks["cleanup_xp"].done():
 				bot.tasks["cleanup_xp"].cancel()
 			bot.tasks["cleanup_xp"] = self.bot.loop.create_task(self.cleanup_task())
+			if "leaderboard_cache" in bot.tasks and bot.tasks["leaderboard_cache"].done():
+				bot.tasks["leaderboard_cache"].cancel()
+			bot.tasks["leaderboard_cache"] = self.bot.loop.create_task(self.update_leaderboard_cache_task())
 
 	async def save_config(self):
 		""" Saves per-server configuration """
@@ -163,6 +167,9 @@ class Ranking(commands.Cog):
 		if "cleanup_xp" in self.bot.tasks and self.bot.tasks["cleanup_xp"].done():
 			self.bot.tasks["cleanup_xp"].cancel()
 		self.bot.tasks["cleanup_xp"] = self.bot.loop.create_task(self.cleanup_task())
+		if "leaderboard_cache" in self.bot.tasks and self.bot.tasks["leaderboard_cache"].done():
+			self.bot.tasks["leaderboard_cache"].cancel()
+		self.bot.tasks["leaderboard_cache"] = self.bot.loop.create_task(self.update_leaderboard_cache_task())
 
 	@commands.Cog.listener()
 	async def on_message(self, msg):
@@ -230,12 +237,12 @@ class Ranking(commands.Cog):
 						await cur.execute(f"select xp from global_msg where user_id = {user_id};")
 						results = await cur.fetchone()
 						if not results:
-							await cur.execute(f"insert into global_msg values ({user_id}, {new_xp});")
+							await cur.execute(f"insert into global_msg values ({user_id}, 1);")
 						else:
-							await cur.execute(f"update global_msg set xp={results[0]+new_xp} where user_id = {user_id};")
+							await cur.execute(f"update global_msg set xp={results[0]+1} where user_id = {user_id};")
 
 						# global monthly msg xp
-						await cur.execute(f"insert into global_monthly values ({user_id}, {time()}, {new_xp});")
+						await cur.execute(f"insert into global_monthly values ({user_id}, {time()}, 1);")
 						await conn.commit()
 
 			# per-server leveling
@@ -456,6 +463,8 @@ class Ranking(commands.Cog):
 	@commands.has_permissions(administrator=True)
 	async def _min_xp_per_msg(self, ctx, amount: int):
 		""" sets the minimum gained xp per msg """
+		if amount > 100:
+			return await ctx.send("biTcH nO, those heels are too high")
 		guild_id = str(ctx.guild.id)
 		self.config[guild_id]['min_xp_per_msg'] = amount
 		await ctx.send(f"Set the minimum xp gained per msg to {amount}")
@@ -468,6 +477,8 @@ class Ranking(commands.Cog):
 	@commands.has_permissions(administrator=True)
 	async def _max_xp_per_msg(self, ctx, amount: int):
 		""" sets the minimum gained xp per msg """
+		if amount > 100:
+			return await ctx.send("biTcH nO, those heels are too high")
 		guild_id = str(ctx.guild.id)
 		self.config[guild_id]['max_xp_per_msg'] = amount
 		await ctx.send(f"Set the maximum xp gained per msg to {amount}")
@@ -753,6 +764,34 @@ class Ranking(commands.Cog):
 				# for user_id, msg_times in Dict.items():
 				# 	for msg_time in sorted(msg_times):
 
+	async def update_leaderboard_cache_task(self) -> None:
+		while not self.bot.pool:
+			await asyncio.sleep(1)
+		while True:
+			await asyncio.sleep(1)
+			async with self.bot.pool.acquire() as conn:
+				async with conn.cursor() as cur:
+
+					await cur.execute("select guild_id, user_id, xp from msg;")
+					results = await cur.fetchall()
+					msg_xp = {}
+					for g_id, user_id, xp in results:
+						if g_id not in msg_xp:
+							msg_xp[g_id] = {}
+						msg_xp[g_id][user_id] = xp
+					self.leaderboards['Msg Leaderboard'] = msg_xp
+
+					await cur.execute("select user_id, xp from global_msg order by xp desc;")
+					results = await cur.fetchall()
+					self.leaderboards['Global Msg Leaderboard'] = {
+						user_id: xp for user_id, xp in results
+					}
+
+			self.leaderboards['Server Msg Leaderboard'] = {
+				guild_id: sum(xp for xp in dat.values()) for guild_id, dat in msg_xp.items()
+			}
+			self.bot.log("Updated leaderboard cache", "DEBUG")
+			await asyncio.sleep(30)
 
 	@commands.command(
 		name='leaderboard',
@@ -872,49 +911,50 @@ class Ranking(commands.Cog):
 
 		embeds = []
 		guild_id = ctx.guild.id
-		leaderboards = {}
-
 		if not self.bot.pool:
 			return await ctx.send("I'm not fully online yet, try again later")
-		async with self.bot.pool.acquire() as conn:
-			async with conn.cursor() as cur:
+		leaderboards = self.leaderboards
+		leaderboards["Msg Leaderboard"] = leaderboards["Msg Leaderboard"][guild_id]
 
-				await cur.execute("select * from msg;")
-				results = await cur.fetchall()
-				msg_xp = {}
-				for g_id, user_id, xp in results:
-					if g_id not in msg_xp:
-						msg_xp[g_id] = {}
-					msg_xp[g_id][user_id] = xp
-				leaderboards['Msg Leaderboard'] = {
-					user_id: xp for user_id, xp in msg_xp[guild_id].items()
-				}
-
-				await cur.execute("select * from vc_xp;")
-				results = await cur.fetchall()
-				vc_xp = {}
-				for g_id, user_id, xp in results:
-					if g_id not in vc_xp:
-						vc_xp[g_id] = {}
-					vc_xp[g_id][user_id] = xp
-
-				if guild_id not in vc_xp:
-					vc_xp[guild_id] = {ctx.guild.owner.id: 0}
-				leaderboards['Vc Leaderboard'] = {
-					user_id: timedelta(seconds=xp) for user_id, xp in vc_xp[guild_id].items()
-				}
-
-				await cur.execute("select * from global_msg;")
-				results = await cur.fetchall()
-				leaderboards['Global Msg Leaderboard'] = {
-					user_id: xp for user_id, xp in results
-				}
-
-				await cur.execute("select * from global_vc;")
-				results = await cur.fetchall()
-				leaderboards['Global Vc Leaderboard'] = {
-					user_id: timedelta(seconds=xp) for user_id, xp in results
-				}
+		# async with self.bot.pool.acquire() as conn:
+		# 	async with conn.cursor() as cur:
+#
+		# 		await cur.execute("select guild_id, user_id, xp from msg;")
+		# 		results = await cur.fetchall()
+		# 		msg_xp = {}
+		# 		for g_id, user_id, xp in results:
+		# 			if g_id not in msg_xp:
+		# 				msg_xp[g_id] = {}
+		# 			msg_xp[g_id][user_id] = xp
+		# 		leaderboards['Msg Leaderboard'] = {
+		# 			user_id: xp for user_id, xp in msg_xp[guild_id].items()
+		# 		}
+#
+		# 		await cur.execute("select guild_id, user_id, xp from vc_xp;")
+		# 		results = await cur.fetchall()
+		# 		vc_xp = {}
+		# 		for g_id, user_id, xp in results:
+		# 			if g_id not in vc_xp:
+		# 				vc_xp[g_id] = {}
+		# 			vc_xp[g_id][user_id] = xp
+#
+		# 		if guild_id not in vc_xp:
+		# 			vc_xp[guild_id] = {ctx.guild.owner.id: 0}
+		# 		leaderboards['Vc Leaderboard'] = {
+		# 			user_id: timedelta(seconds=xp) for user_id, xp in vc_xp[guild_id].items()
+		# 		}
+#
+		# 		await cur.execute("select user_id, xp from global_msg order by xp desc;")
+		# 		results = await cur.fetchall()
+		# 		leaderboards['Global Msg Leaderboard'] = {
+		# 			user_id: xp for user_id, xp in results
+		# 		}
+#
+		# 		await cur.execute("select user_id, xp from global_vc;")
+		# 		results = await cur.fetchall()
+		# 		leaderboards['Global Vc Leaderboard'] = {
+		# 			user_id: timedelta(seconds=xp) for user_id, xp in results
+		# 		}
 
 		# lmt = time() - 60 * 60 * 24 * 30
 		# results = await self.bot.select(
@@ -956,17 +996,17 @@ class Ranking(commands.Cog):
 		# 	user_id: xp for user_id, xp in global_monthly.items()
 		# }
 
-		leaderboards['Server Msg Leaderboard'] = {
-			guild_id: sum(xp for xp in dat.values()) for guild_id, dat in msg_xp.items()
-		}
+		# leaderboards['Server Msg Leaderboard'] = {
+		# 	guild_id: sum(xp for xp in dat.values()) for guild_id, dat in msg_xp.items()
+		# }
+#
+		# leaderboards['Server Vc Leaderboard'] = {
+		# 		guild_id: timedelta(
+		# 			seconds=sum(list(dat.values()))
+		# 		) for guild_id, dat in vc_xp.items()
+		# 	}
 
-		leaderboards['Server Vc Leaderboard'] = {
-				guild_id: timedelta(
-					seconds=sum(list(dat.values()))
-				) for guild_id, dat in vc_xp.items()
-			}
-
-		for name, data in leaderboards.items():
+		for name, data in self.leaderboards.items():
 			sorted_data = [
 				(user_id, xp) for user_id, xp in sorted(
 					list(data.items()), key=lambda kv: kv[1], reverse=True
