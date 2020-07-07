@@ -532,15 +532,12 @@ class Ranking(commands.Cog):
 			if id == user_id:
 				guild_rank = i + 1
 				break
-		before = monotonic()
 		if 'global' in ctx.message.content or 'profile' in ctx.message.content.lower():
 			if user_id not in self.global_xp:
 				return await ctx.send('somehow I have no xp for you .-.')
 			dat = await self.calc_lvl(self.global_xp[user_id], self.static_config())
 		else:
 			dat = await self.calc_lvl(self.guild_xp[guild_id][user_id], conf)
-		ping = str(round((monotonic() - before) * 1000)) + "ms"
-		await ctx.send(f"Collecting variables took {ping}")
 
 		base_req = self.config[guild_id]['first_lvl_xp_req']
 		level = dat['level']

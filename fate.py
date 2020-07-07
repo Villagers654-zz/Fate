@@ -292,7 +292,10 @@ class Fate(commands.AutoShardedBot):
             for emoji in emojis:
                 if not message:
                     return
-                await message.add_reaction(emoji)
+                try:
+                    await message.add_reaction(emoji)
+                except discord.errors.NotFound:
+                    return
                 if len(options) > 5:
                     await asyncio.sleep(1)
                 elif len(options) > 2:

@@ -499,7 +499,7 @@ class Utility(commands.Cog):
 				process = psutil.Process(pid)
 				return round(process.cpu_percent(interval=1))
 
-			options = ["User Info", "Bot Info", "Server Info", "Channel Info"]
+			options = ["Bot Info", "User Info", "Server Info", "Channel Info"]
 			choice = await self.bot.get_choice(ctx, *options, user=ctx.author)
 			if not choice:
 				return
