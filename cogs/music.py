@@ -6,57 +6,18 @@ import asyncio
 import math
 import json
 import re
-import os
 
 time_rx = re.compile('[0-9]+')
 url_rx = re.compile('https?:\/\/(?:www\.)?.+')  # noqa: W605
-
-regions = {
-    "us-central",
-    "amsterdam",
-    "brazil",
-    "dubai",
-    "eu-central",
-    "eu-west",
-    "europe",
-    "frankfurt",
-    "hongkong",
-    "india",
-    "japan",
-    "london",
-    "russia",
-    "singapore",
-    "southafrica",
-    "sydney",
-    "us-east",
-    "us-south",
-    "us-west",
-    "vip-amsterdam",
-    "vip-us-east",
-    "vip-us-west",
-}
 
 class Music(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.map = []
-        if not hasattr(bot, 'lavalink') or not bot.lavalink:
+        if not hasattr(bot, 'lavalink'):
             creds = outh.Lavalink()
-            bot.lavalink = lavalink.Client(
-                user_id=bot.user.id,
-                shard_count=bot.shard_count
-            )
-            for key in regions:
-                bot.lavalink.add_node(
-                    host="127.0.0.1",
-                    password=creds.password,
-                    port=creds.ws_port,
-                    resume_timeout=1,
-                    region=key,
-                    name=key,
-                )
-            bot.add_listener(bot.lavalink.voice_update_handler, "on_socket_response")
-        bot.lavalink.add_event_hook(self._track_hook)
+            lavalink.Client(bot=bot, password=creds.password, loop=bot.loop, ws_port=creds.ws_port, rest_port=creds.ws_port)
+            self.bot.lavalink.register_hook(self._track_hook)
         self.skips = {}
         if "music_cleanup" in bot.tasks and bot.tasks["music_cleanup"].done():
             bot.tasks["music_cleanup"].cancel()
@@ -70,59 +31,16 @@ class Music(commands.Cog):
         self.bot.lavalink.players.clear()
         self.bot.lavalink.unregister_hook(self._track_hook)
 
-    # async def lavalink_track_hook(self, event):
-    #     try:
-    #         if isinstance(event, lavalink.events.TrackStartEvent):
-    #             c = event.player.fetch("channel")
-    #             if c:
-    #                 c = await self.bot.fetch_channel(c)
-    #                 embed = discord.Embed(color=self.bot.EMBED_COLOR,
-    #                                       title="▶ | Now Playing")
-    #                 if c:
-    #                     if (url_rx.match(event.track.uri) or event.track.uri in self.stream_urls.values()):
-    #                         if event.track.uri not in self.stream_urls.values():
-    #                             embed.description = event.track.title
-    #                             embed.url = event.track.uri
-    #                         else:
-    #                             embed.description = event.track.title
-    #                         if "youtube" in event.track.uri:
-    #                             embed.set_thumbnail(url=event.track.thumbnail)
-    #                     else:
-    #                         embed.description = ".".join(
-    #                             os.path.basename(event.track.uri).split(".")[:-1])
-    #                     await c.send(embed=embed)
-    #         elif isinstance(event, lavalink.events.TrackEndEvent):
-    #             event.player.store('previous', event.track.uri)
-    #         elif isinstance(event, lavalink.events.QueueEndEvent):
-    #             global sent_to
-    #             guild_id = int(event.player.guild_id)
-    #             await self.connect_to(guild_id, None)
-    #             c = event.player.fetch("channel")
-    #             if c:
-    #                 c = await self.bot.fetch_channel(c)  # type: discord.TextChannel
-    #                 if c:
-    #                     if c.id not in sent_to:
-    #                         sent_to.append(c.id)
-    #                         async for msg in c.history(limit=1):
-    #                             if msg.content.count("Playback ended!") > 0:
-    #                                 return
-    #                         await c.send("⏹ | Playback ended!")
-    #                 # await asyncio.sleep(10)
-    #                 # sent_to.remove(c.id)
-    #     except Exception:
-    #         pass
-
     async def _track_hook(self, event):
         if isinstance(event, lavalink.Events.StatsUpdateEvent):
             return
         channel = self.bot.get_channel(event.player.fetch('channel'))
         if not channel:
             return
-        if isinstance(event, lavalink.TrackStartEvent):
+        if isinstance(event, lavalink.Events.TrackStartEvent):
             await channel.send(embed=discord.Embed(title='Now playing:',
-                                                   description=event.track.title, color=colors.green()),
-                               delete_after=20)
-        elif isinstance(event, lavalink.QueueEndEvent):
+                description=event.track.title, color=colors.green()), delete_after=20)
+        elif isinstance(event, lavalink.Events.QueueEndEvent):
             await channel.send('Queue ended', delete_after=5)
 
     async def cleanup_task(self):
@@ -175,14 +93,12 @@ class Music(commands.Cog):
                 tracks = results['tracks']
                 for track in tracks:
                     player.add(requester=ctx.author.id, track=track)
-                e.set_author(name="Playlist Enqueued!",
-                             icon_url="https://cdn.discordapp.com/attachments/498333830395199488/507136609897021455/Z23N.gif")
+                e.set_author(name="Playlist Enqueued!", icon_url="https://cdn.discordapp.com/attachments/498333830395199488/507136609897021455/Z23N.gif")
                 e.description = f'{results["playlistInfo"]["name"]} - {len(tracks)} tracks'
                 await ctx.send(embed=e, delete_after=20)
             else:
                 track = results['tracks'][0]
-                e.set_author(name="Track Enqueued",
-                             icon_url="https://cdn.discordapp.com/attachments/498333830395199488/507136609897021455/Z23N.gif")
+                e.set_author(name="Track Enqueued", icon_url="https://cdn.discordapp.com/attachments/498333830395199488/507136609897021455/Z23N.gif")
                 e.description = f'[{track["info"]["title"]}]({track["info"]["uri"]})'
                 await ctx.send(embed=e, delete_after=20)
                 player.add(requester=ctx.author.id, track=track)
@@ -221,10 +137,8 @@ class Music(commands.Cog):
                     await message.delete()
                     if msg:
                         await msg.delete()
-
             def pred(m):
                 return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
-
             try:
                 msg = await self.bot.wait_for('message', check=pred, timeout=60)
             except asyncio.TimeoutError:
@@ -263,14 +177,12 @@ class Music(commands.Cog):
                     tracks = results['tracks']
                     for track in tracks:
                         player.add(requester=ctx.author.id, track=track)
-                    embed.set_author(name="Playlist Enqueued!",
-                                     icon_url="https://cdn.discordapp.com/attachments/498333830395199488/507136609897021455/Z23N.gif")
+                    embed.set_author(name="Playlist Enqueued!", icon_url="https://cdn.discordapp.com/attachments/498333830395199488/507136609897021455/Z23N.gif")
                     embed.description = f'{results["playlistInfo"]["name"]} - {len(tracks)} tracks'
                     await ctx.send(embed=embed, delete_after=20)
                 else:
                     track = results['tracks'][0]
-                    embed.set_author(name="Track Enqueued",
-                                     icon_url="https://cdn.discordapp.com/attachments/498333830395199488/507136609897021455/Z23N.gif")
+                    embed.set_author(name="Track Enqueued", icon_url="https://cdn.discordapp.com/attachments/498333830395199488/507136609897021455/Z23N.gif")
                     embed.description = f'[{track["info"]["title"]}]({track["info"]["uri"]})'
                     await ctx.send(embed=embed, delete_after=20)
                     player.add(requester=ctx.author.id, track=track)
@@ -299,14 +211,12 @@ class Music(commands.Cog):
             tracks = results['tracks']
             for track in tracks:
                 player.add(requester=ctx.author.id, track=track)
-            embed.set_author(name="Playlist Enqueued!",
-                             icon_url="https://cdn.discordapp.com/attachments/498333830395199488/507136609897021455/Z23N.gif")
+            embed.set_author(name="Playlist Enqueued!", icon_url="https://cdn.discordapp.com/attachments/498333830395199488/507136609897021455/Z23N.gif")
             embed.description = f'{results["playlistInfo"]["name"]} - {len(tracks)} tracks'
             await ctx.send(embed=embed, delete_after=20)
         else:
             track = results['tracks'][0]
-            embed.set_author(name="Track Enqueued",
-                             icon_url="https://cdn.discordapp.com/attachments/498333830395199488/507136609897021455/Z23N.gif")
+            embed.set_author(name="Track Enqueued", icon_url="https://cdn.discordapp.com/attachments/498333830395199488/507136609897021455/Z23N.gif")
             embed.description = f'[{track["info"]["title"]}]({track["info"]["uri"]})'
             await ctx.send(embed=embed, delete_after=20)
             player.add(requester=ctx.author.id, track=track)
@@ -384,7 +294,7 @@ class Music(commands.Cog):
                 await asyncio.sleep(20)
                 await ctx.message.delete()
             return
-        await player.play_at(index - 1)
+        await player.play_at(index-1)
         await ctx.message.add_reaction("👍")
         if ctx.channel.permissions_for(ctx.guild.me).manage_messages:
             await asyncio.sleep(20)
@@ -406,8 +316,7 @@ class Music(commands.Cog):
             if time.split(':') > 2:
                 return await ctx.send("Sorry, but I only support minutes:seconds format at the moment")
             minutes, seconds = time.split(':')
-            minutes = int(minutes);
-            seconds = int(seconds)
+            minutes = int(minutes); seconds = int(seconds)
             if minutes:
                 seconds += 60 * minutes
             seconds = seconds * 1000
@@ -548,10 +457,8 @@ class Music(commands.Cog):
         for index, track in enumerate(player.queue[start:end], start=start):
             queue_list += f'`{index + 1}.` [**{track.title}**]({track.uri})\n'
         embed = discord.Embed(colour=colors.green(), description=queue_list)
-        embed.set_author(name=f"Queue: {len(player.queue)}",
-                         icon_url="https://cdn.discordapp.com/attachments/498333830395199488/507136609897021455/Z23N.gif")
-        embed.set_thumbnail(
-            url="https://cdn.discordapp.com/attachments/498333830395199488/507170864614342676/75c21df998c0d0c97631853ea5619ea1.gif")
+        embed.set_author(name=f"Queue: {len(player.queue)}", icon_url="https://cdn.discordapp.com/attachments/498333830395199488/507136609897021455/Z23N.gif")
+        embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/498333830395199488/507170864614342676/75c21df998c0d0c97631853ea5619ea1.gif")
         embed.set_footer(text=f'Viewing page {page}/{pages}')
         await ctx.send(embed=embed, delete_after=60)
         if ctx.channel.permissions_for(ctx.guild.me).manage_messages:
@@ -747,7 +654,6 @@ class Music(commands.Cog):
                     await asyncio.sleep(20)
                     await ctx.message.delete()
                     await msg.delete()
-
 
 def setup(bot):
     bot.add_cog(Music(bot))
