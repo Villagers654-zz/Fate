@@ -5,6 +5,7 @@ Module for viewing and managing emojis
 import discord
 import asyncio
 from typing import Union
+from time import time
 
 from discord.ext import commands
 from discord.ext.commands import Greedy
@@ -45,13 +46,13 @@ class Emojis(commands.Cog):
 				result += char
 		return result if result else 'new_emoji'
 
-	async def upload_emoji(self, ctx, name, img, reason, roles=None, msg=None):
+	async def upload_emoji(self, ctx, name, img, reason, roles=None):
 		"""Creates partial emojis with a queue to prevent spammy messages"""
 		try:
 			emoji = await ctx.guild.create_custom_emoji(name=name, image=img, roles=roles, reason=reason)
 		except discord.errors.Forbidden as e:
-			if msg:
-				await ctx.bot.utils.update_msg(msg, f'Failed to add {name}: [`{e}`]')
+			if ctx.msg:
+				await ctx.bot.utils.update_msg(ctx.msg, f'Failed to add {name}: [`{e}`]')
 			else:
 				await ctx.send(f'Failed to add {name}: [`{e}`]')
 		except discord.errors.HTTPException as e:
@@ -59,23 +60,23 @@ class Emojis(commands.Cog):
 			try:
 				img = Image.open(img); img = img.resize((450, 450), Image.BICUBIC)
 			except:
-				if msg:
-					return await ctx.bot.utils.update_msg(msg, f'Failed to resize {name}')
+				if ctx.msg:
+					return await ctx.bot.utils.update_msg(ctx.msg, f'Failed to resize {name}')
 				else:
 					return await ctx.send(f'Failed to resize {name}')
 			img.save('emoji.png')
 			with open('emoji.png', 'rb') as image:
 				img = image.read()
 			await ctx.guild.create_custom_emoji(name=name, image=img, roles=roles, reason=reason)
-			await ctx.bot.utils.update_msg(msg, f'{msg.content}\nAdded {name} successfully')
+			await ctx.bot.utils.update_msg(ctx.msg, f'{ctx.msg.content}\nAdded {name} successfully')
 		except (AttributeError, discord.errors.InvalidArgument) as e:
-			if msg:
-				await ctx.bot.utils.update_msg(msg, f'Failed to add {name}: [`{e}`]')
+			if ctx.msg:
+				await ctx.bot.utils.update_msg(ctx.msg, f'Failed to add {name}: [`{e}`]')
 			else:
 				await ctx.send(f'Failed to add {name}: [`{e}`]')
 		else:
-			if msg:
-				await ctx.bot.utils.update_msg(msg, f'Added {emoji} - {name}')
+			if ctx.msg:
+				await ctx.bot.utils.update_msg(ctx.msg, f'Added {emoji} - {name}')
 			else:
 				await ctx.send(f'Added {emoji} - {name}')
 
@@ -124,12 +125,12 @@ class Emojis(commands.Cog):
 				if "gif" in str(emoji) and max_a_emotes():
 					failed.append(emoji)
 					globals()['a_limit'] = True
-					await self.bot.utils.update_msg(msg, "**Reached the emoji limit**")
+					await self.bot.utils.update_msg(ctx.msg, "**Reached the emoji limit**")
 					return False
 				elif max_emotes():
 					failed.append(emoji)
 					globals()['limit'] = True
-					await self.bot.utils.update_msg(msg, "**Reached the emoji limit**")
+					await self.bot.utils.update_msg(ctx.msg, "**Reached the emoji limit**")
 					return False
 			elif emoji.animated and a_limit:
 				failed.append(emoji.name)
@@ -142,7 +143,7 @@ class Emojis(commands.Cog):
 					globals()['limit'] = True
 				elif max_a_emotes():
 					globals()['a_limit'] = True
-				await self.bot.utils.update_msg(msg, "**Reached the emoji limit**")
+				await self.bot.utils.update_msg(ctx.msg, "**Reached the emoji limit**")
 				return False
 			return True
 
@@ -160,17 +161,17 @@ class Emojis(commands.Cog):
 			if arg.isdigit():
 				ids.append(int(arg))
 				args.remove(arg)
-		msg = await ctx.send("Uploading emoji(s)..")
+		ctx.msg = await ctx.send("Uploading emoji(s)..")
 
 		# PartialEmoji objects
 		for emoji in custom:
 			if await not_at_limit(emoji):
 				if self.is_blacklisted(ctx, emoji):
-					msg = await self.bot.utils.update_msg(msg, f"ERR: {emoji.name} - Invalid Emoji")
+					ctx.msg = await self.bot.utils.update_msg(ctx.msg, f"ERR: {emoji.name} - Invalid Emoji")
 					continue
 				name = emoji.name
 				img = await self.bot.download(emoji.url)
-				await self.upload_emoji(ctx, name=name, img=img, reason=str(ctx.author), msg=msg)
+				await self.upload_emoji(ctx, name=name, img=img, reason=str(ctx.author))
 
 		# PartialEmoji IDS
 		for emoji_id in ids:
@@ -181,7 +182,7 @@ class Emojis(commands.Cog):
 				emoji = f"https://cdn.discordapp.com/emojis/{emoji_id}.png"
 			img = await self.bot.download(emoji)
 			if not img:
-				msg = await self.bot.utils.update_msg(msg, f"{emoji_id} - Couldn't Fetch")
+				ctx.msg = await self.bot.utils.update_msg(ctx.msg, f"{emoji_id} - Couldn't Fetch")
 				continue
 
 			if await not_at_limit(emoji):
@@ -194,7 +195,7 @@ class Emojis(commands.Cog):
 					if not new_name.isdigit():
 						name = new_name
 
-				await self.upload_emoji(ctx, name=str(name), img=img, reason=str(ctx.author), msg=msg)
+				await self.upload_emoji(ctx, name=str(name), img=img, reason=str(ctx.author))
 
 		# Image/GIF URLS
 		def check(iter):
@@ -208,9 +209,9 @@ class Emojis(commands.Cog):
 		}
 		for img, name in mappings.items():
 			if not img:
-				msg = await self.bot.utils.update_msg(msg, f"{name} - Dead Link")
+				ctx.msg = await self.bot.utils.update_msg(ctx.msg, f"{name} - Dead Link")
 				continue
-			await self.upload_emoji(ctx, name=name, img=img, reason=str(ctx.author), msg=msg)
+			await self.upload_emoji(ctx, name=name, img=img, reason=str(ctx.author))
 
 		# Attached Images/GIFs
 		allowed_extensions = ['png', 'jpg', 'jpeg', 'gif']
@@ -225,10 +226,10 @@ class Emojis(commands.Cog):
 			if args and not custom and not ids and not mappings:
 				name = args[0]
 
-			await self.upload_emoji(ctx, name=name, img=file, reason=str(ctx.author), msg=msg)
+			await self.upload_emoji(ctx, name=name, img=file, reason=str(ctx.author))
 
-		if not len(msg.content.split('\n')) > 1:
-			msg = await self.bot.utils.update_msg(msg, "No proper formats I can work with were provided")
+		if not len(ctx.msg.content.split('\n')) > 1:
+			ctx.msg = await self.bot.utils.update_msg(msg, "No proper formats I can work with were provided")
 
 	@commands.command(name="delemoji", aliases=["delemote"])
 	@commands.cooldown(1, 5, commands.BucketType.guild)
