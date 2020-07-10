@@ -10,6 +10,7 @@ import os
 from ast import literal_eval
 from time import monotonic
 from typing import *
+import re
 
 from discord.ext import commands
 import discord
@@ -238,6 +239,38 @@ def get_user(ctx, user: str =None):
 			if user in member.display_name.lower():
 				return member
 	return None
+
+async def get_user_rewrite(ctx, target: str = None) -> Union[discord.User, discord.Member]:
+	""" Grab a user by id, name, or username, and convert to Member if possible """
+	if not target:
+		user = ctx.author
+	elif target.isdigit() or re.findall("<.@[0-9]*>", target):
+		user_id = int("".join(c for c in target if c.isdigit()))
+		user = await ctx.bot.fetch_user(user_id)
+	elif ctx.guild is None:
+		user = ctx.author
+	else:
+		for usr in ctx.bot.users:
+			if str(usr) == target:
+				user = usr
+				break
+		else:
+			target = re.sub("#[0-9]{4}", "", target.lower())
+			results = [
+				member for member in ctx.guild.members
+				if (target in member.display_name.lower() if not member.nick
+				    else target in member.name.lower())
+			]
+			if len(results) == 1:
+				user = results[0]  # type: discord.Member
+			elif len(results) > 1:
+				user = await ctx.bot.get_choice(ctx, *results, user=ctx.author)
+			else:
+				user = ctx.author
+	if ctx.guild is not None and not isinstance(user, discord.Member):
+		if user.id in [m.id for m in ctx.guild.members]:
+			user = ctx.guild.get_member(user.id)
+	return user
 
 def get_time(seconds):
 	result = ''
