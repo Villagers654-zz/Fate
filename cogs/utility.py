@@ -7,7 +7,7 @@ import json
 import os
 import requests
 import re
-from typing import Optional
+from typing import Optional, Union
 from os import path
 from time import time
 import aiofiles
@@ -17,7 +17,6 @@ import discord
 from discord import User, Role, TextChannel
 from PIL import Image
 from colormap import rgb2hex
-from discord.ext.commands import Greedy as g
 import psutil
 from discord.ext import commands
 
@@ -163,17 +162,17 @@ class Utility(commands.Cog):
 	@commands.command(name='info', aliases=["xinfo"])
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.guild_only()
-	async def info(self, ctx, users: g[User], roles: g[Role], channels: g[TextChannel]):
+	async def info(self, ctx, *, target: Union[User, Role, TextChannel, str]):
 		bot_has_audit_access = ctx.guild.me.guild_permissions.view_audit_log  # type: bool
-		if users:
-			user = users[0]
+		if isinstance(target, User):
+			user = target  # type: discord.User
 			if ctx.author.id == 611108193275478018 and user.id == 264838866480005122:
 				await self.bot.get_channel(541520201926311986).send("<@264838866480005122> eppy tried using .info on yu")
 				return await ctx.send("https://cdn.discordapp.com/attachments/633866664252801024/725905903928213584/Screenshot_20181018-003209_Gallery.jpg")
 			if ctx.guild:
 				tmp = ctx.guild.get_member(user.id)
 				if isinstance(tmp, discord.Member):
-					user = tmp
+					user = tmp  # type: discord.Member
 			self.setup_if_not_exists(user)
 
 			e = discord.Embed(color=colors.fate())
@@ -187,7 +186,7 @@ class Utility(commands.Cog):
 			user_info = {
 				'Profile': f'{user.mention}',
 				'ID': user.id,
-				'Created at': datetime.date(user.created_at).strftime("%m/%d/%Y %I%p")
+				'Created at': user.created_at.strftime("%m/%d/%Y %I%p")
 			}
 			nicks = []
 			for guild in self.bot.guilds:
@@ -279,11 +278,11 @@ class Utility(commands.Cog):
 			# e.set_footer(text="🗑 | Erase User Data")
 			await ctx.send(embed=e)
 
-		elif channels:
+		elif isinstance(target, TextChannel):
 			e = discord.Embed(color=colors.fate())
 			e.set_author(name="Alright, here's what I got..", icon_url=self.bot.user.avatar_url)
 
-			channel = channels[0]  # type: discord.TextChannel
+			channel = target  # type: discord.TextChannel
 			channel_info = {}
 
 			channel_info["Name"] = channel.name
@@ -295,7 +294,7 @@ class Utility(commands.Cog):
 				channel_info["Marked as NSFW"] = None
 			if channel.is_news():
 				channel_info["Is the servers news channel"] = None
-			channel_info["Created at"] = datetime.date(channel.created_at).strftime("%m/%d/%Y %I%p")
+			channel_info["Created at"] = channel.created_at.strftime("%m/%d/%Y %I%p")
 
 			e.add_field(name="◈ Channel Information", value=self.bot.utils.format_dict(channel_info), inline=False)
 			e.set_footer(text="🖥 Topic | ♻ History")
@@ -358,7 +357,7 @@ class Utility(commands.Cog):
 									minute = str(entry.created_at.minute)
 									if len(minute) == 1:
 										minute = "0" + minute
-									when = datetime.date(entry.created_at).strftime(f"%m/%d/%Y %I:{minute}%p")
+									when = entry.created_at.strftime(f"%m/%d/%Y %I:{minute}%p")
 									history[f"**Name Changed on {when}**"] = None
 									history[f"**Old Name:** `{entry.before.name}`\n"] = None
 
@@ -412,17 +411,17 @@ class Utility(commands.Cog):
 				e.add_field(name="◈ Inviters", value=", ".join(inviters[:16]), inline=False)
 			await ctx.send(embed=e)
 
-		elif roles:
+		elif isinstance(target, Role):
 			e = discord.Embed(color=colors.fate())
 			e.set_author(name="Alright, here's what I got..", icon_url=self.bot.user.avatar_url)
-			role = roles[0]  # type: discord.Role
+			role = target  # type: discord.Role
 
 			core = {}
 			core["Name"] = role.name
 			core["Mention"] = role.mention
 			core["ID"] = role.id
 			core["Members"] = len(role.members) if role.members else "None"
-			core["Created at"] = datetime.date(role.created_at).strftime("%m/%d/%Y %I%p")
+			core["Created at"] = role.created_at.strftime("%m/%d/%Y %I%p")
 
 			extra = {}
 			extra["Mentionable"] = str(role.mentionable)
