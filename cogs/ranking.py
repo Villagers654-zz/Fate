@@ -5,7 +5,7 @@ import json
 from time import time, monotonic
 from random import *
 import asyncio
-from datetime import timedelta
+from datetime import datetime, timedelta
 import requests
 from io import BytesIO
 from datetime import datetime
@@ -135,6 +135,15 @@ class Ranking(commands.Cog):
 			async with conn.cursor() as cur:
 
 				# Guilded XP
+				# guild_xp = {}
+				# for guild in self.bot.guilds:
+				# 	await cur.execute(f"select user_id, xp from msg where guild_id = {guild.id} order by xp desc limit 50;")
+				# 	results = await cur.fetchall()
+				# 	guild_xp[str(guild.id)] = {}
+				# 	for user_id, xp in results:
+				# 		guild_xp[str(guild.id)][user_id] = xp
+				# self.guild_xp = guild_xp
+
 				await cur.execute("select guild_id, user_id, xp from msg;")
 				results = await cur.fetchall()
 				msg_xp = {}
@@ -147,7 +156,7 @@ class Ranking(commands.Cog):
 				self.guild_xp = msg_xp
 
 				# Global XP
-				await cur.execute("select user_id, xp from global_msg;")
+				await cur.execute("select user_id, xp from global_msg order by xp desc limit 5000;")
 				results = await cur.fetchall()
 				self.global_xp = {
 					str(user_id): xp for user_id, xp in results
@@ -222,17 +231,6 @@ class Ranking(commands.Cog):
 
 			async def punish():
 				self.global_cd[user_id] = time() + 60
-				# async with self.bot.pool.acquire() as conn:
-				# 	async with conn.cursor() as cur:
-				# 		await cur.execute(f"select xp from global_msg where user_id = {user_id};")
-				# 		xp = await cur.fetchone()
-				# 		if not xp:
-				# 			return
-				# 		xp = xp[0]
-				# 		if xp > 1:
-				# 			xp -= 1
-				# 		await cur.execute(f"update global_msg set xp = {xp} where user_id = {user_id};")
-				# 		await conn.commit()
 
 			if not self.bot.pool:
 				return
@@ -265,6 +263,7 @@ class Ranking(commands.Cog):
 					if all(interval == intervals[0] for interval in intervals):
 						return await punish()
 
+			set_time = datetime.timestamp(datetime.utcnow().replace(microsecond=0, second=0, minute=0))
 			if user_id not in self.global_cd:
 				self.global_cd[user_id] = 0
 			if self.global_cd[user_id] < time():
@@ -282,7 +281,11 @@ class Ranking(commands.Cog):
 								await cur.execute(f"update global_msg set xp={results[0]+1} where user_id = {user_id};")
 
 							# global monthly msg xp
-							await cur.execute(f"insert into global_monthly values ({user_id}, {time()}, 1);")
+							await cur.execute(
+								f"INSERT INTO global_monthly "
+								f"VALUES ({user_id}, {set_time}, 1) "
+								f"ON DUPLICATE KEY UPDATE xp = xp + 1;"
+							)
 							await conn.commit()
 				except DataError as error:
 					self.bot.log(f"Error updating global xp\n{error}", "DEBUG")
@@ -315,7 +318,11 @@ class Ranking(commands.Cog):
 										break
 
 							# monthly guilded msg xp
-							await cur.execute(f"insert into monthly_msg values ({guild_id}, {user_id}, {time()}, {new_xp});")
+							await cur.execute(
+								f"INSERT INTO monthly_msg "
+								f"VALUES ({guild_id}, {user_id}, {set_time}, {new_xp}) "
+								f"ON DUPLICATE KEY UPDATE xp = xp + {new_xp};"
+							)
 							await conn.commit()
 				except DataError as error:
 					self.bot.log(f"Error updating guild xp\n{error}", "DEBUG")
@@ -704,6 +711,62 @@ class Ranking(commands.Cog):
 				# for user_id, msg_times in Dict.items():
 				# 	for msg_time in sorted(msg_times):
 
+	@commands.command(name="reset-monthly")
+	@commands.cooldown(2, 5, commands.BucketType.user)
+	@commands.is_owner()
+	async def reset_monthly_xp(self, ctx):
+		await ctx.send("Removing xp")
+		async with self.bot.pool.acquire() as conn:
+			async with conn.cursor() as cur:
+				lmt = time()
+				await cur.execute(f"delete from monthly_msg where msg_time < {lmt};")
+				await ctx.send("Removed monthly guilded xp")
+				await cur.execute(f"delete from global_monthly where msg_time < {lmt};")
+				await ctx.send("Removed monthly global xp")
+				await conn.commit()
+		async with self.bot.pool.acquire() as conn:
+			async with conn.cursor() as cur:
+				await cur.execute(f"select * from monthly_msg;")
+				results = await cur.fetchall()
+				await ctx.send(f"{len(results)} still exist")
+
+	@commands.command(name="yeet-exploiters")
+	@commands.is_owner()
+	async def yeet_exploiters(self, ctx):
+		async with self.bot.pool.acquire() as conn:
+			async with conn.cursor() as cur:
+				await cur.execute(f"delete from global_msg where xp > 175000")
+				await conn.commit()
+		await ctx.send("Done")
+
+	@commands.command(name="yeet-duplicates")
+	@commands.is_owner()
+	async def yeet_exploiters(self, ctx):
+		total = 0
+		async with self.bot.pool.acquire() as conn:
+			async with conn.cursor() as cur:
+				await cur.execute(f"select guild_id, user_id, xp from msg;")
+				results = await cur.fetchall()
+				index = {}
+				for guild_id, user_id, xp in results:
+					if guild_id not in index:
+						index[guild_id] = {}
+					if user_id in index[guild_id]:
+						if xp < index[guild_id][user_id]:
+							await cur.execute(
+								f"delete from msg "
+								f"where guild_id = {guild_id} "
+								f"and user_id = {user_id} "
+								f"and xp = {xp};"
+							)
+							total += 1
+						else:
+							index[guild_id][user_id] = xp
+					else:
+						index[guild_id][user_id] = xp
+				await conn.commit()
+		await ctx.send(f"Removed {total} duplicates")
+
 	@commands.command(
 		name='leaderboard',
 		aliases = [
@@ -803,9 +866,9 @@ class Ranking(commands.Cog):
 			# ('vclb', 'vcleaderboard'),
 			('glb', 'gleaderboard'),
 			# ('gvclb', 'gvcleaderboard'),
-			# ('mlb', 'mleaderboard'),
-			# ('gmlb', 'gmleaderboard'),
-			('gglb', 'ggleaderboard'),
+			('mlb', 'mleaderboard'),
+			('gmlb', 'gmleaderboard'),
+			# ('gglb', 'ggleaderboard'),
 			# ('ggvclb', 'ggvcleaderboard')
 		]
 		index = 0  # default
@@ -813,9 +876,6 @@ class Ranking(commands.Cog):
 			if target[-cut_length:] in [cmd, alias]:
 				index = i
 				break
-
-		if not self.bot.pool or not self.guild_xp or not guild_id in self.guild_xp or not self.global_xp:
-			return await ctx.send("My cache is still being prepared, try again in a few seconds")
 
 		default = discord.Embed()
 		default.description = 'Collecting Leaderboard Data..'
@@ -825,23 +885,52 @@ class Ranking(commands.Cog):
 
 		embeds = []
 		leaderboards = {}
-		leaderboards['Msg Leaderboard'] = self.guild_xp[guild_id]
-		leaderboards['Global Msg Leaderboard'] = self.global_xp
-		# leaderboards['Monthly Msg Leaderboard'] = {
-		# 	user_id: xp for user_id, xp in self.monthly_guild_xp.items()
-		# }
-		# leaderboards['Global Monthly Msg Leaderboard'] = {
-		# 	user_id: xp for user_id, xp in self.global_monthly_xp.items()
-		# }
-		leaderboards['Server Msg Leaderboard'] = {
-			guild_id: sum(xp for xp in dat.values()) for guild_id, dat in self.guild_xp.items()
-		}
+
+		async with self.bot.pool.acquire() as conn:
+			async with conn.cursor() as cur:
+
+				await cur.execute(
+					f"select user_id, xp from msg where guild_id = {guild_id} order by xp desc limit 256;"
+				)
+				results = await cur.fetchall()
+				leaderboards['Msg Leaderboard'] = {
+					user_id: xp for user_id, xp in results
+				}
+
+				await cur.execute("select user_id, xp from global_msg order by xp desc limit 256;")
+				results = await cur.fetchall()
+				leaderboards['Global Msg Leaderboard'] = {
+					user_id: xp for user_id, xp in results
+				}
+
+				lmt = time() - 60 * 60 * 24 * 30
+				await cur.execute(
+					f"select user_id, sum(xp) as total_xp "
+					f"from monthly_msg "
+					f"where guild_id = {guild_id} and msg_time > {lmt} "
+					f"group by user_id "
+					f"order by total_xp desc limit 256;"
+				)
+				results = await cur.fetchall()
+				leaderboards["Monthly Msg Leaderboard"] = {
+					user_id: xp for user_id, xp in results
+				}
+
+				await cur.execute(
+					f"select user_id, sum(xp) as total_xp "
+					f"from global_monthly "
+					f"where msg_time > {lmt} "
+					f"group by user_id "
+					f"order by total_xp desc limit 256;"
+				)
+				results = await cur.fetchall()
+				leaderboards["Globaly Monthly Leaderboard"] = {
+					user_id: xp for user_id, xp in results
+				}
 
 		for name, data in leaderboards.items():
 			sorted_data = [
-				(user_id, xp) for user_id, xp in sorted(
-					list(data.items()), key=lambda kv: kv[1], reverse=True
-				)[:175]
+				(user_id, xp) for user_id, xp in data.items() if self.bot.get_user(int(user_id))
 			]
 			ems = await create_embed(
 				name=name,
