@@ -14,7 +14,7 @@ import aiofiles
 import platform
 
 import discord
-from discord import User, Role, TextChannel
+from discord import User, Role, TextChannel, Member
 from PIL import Image
 from colormap import rgb2hex
 import psutil
@@ -162,9 +162,9 @@ class Utility(commands.Cog):
 	@commands.command(name='info', aliases=["xinfo"])
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.guild_only()
-	async def info(self, ctx, *, target: Union[User, Role, TextChannel, str]):
+	async def info(self, ctx, *, target: Union[User, Role, TextChannel, str] = None):
 		bot_has_audit_access = ctx.guild.me.guild_permissions.view_audit_log  # type: bool
-		if isinstance(target, User):
+		if isinstance(target, (User, Member)):
 			user = target  # type: discord.User
 			if ctx.author.id == 611108193275478018 and user.id == 264838866480005122:
 				await self.bot.get_channel(541520201926311986).send("<@264838866480005122> eppy tried using .info on yu")
@@ -503,11 +503,11 @@ class Utility(commands.Cog):
 			if not choice:
 				return
 			if choice == "User Info":
-				return await ctx.command.__call__(ctx, [ctx.author], None, None)
+				return await ctx.command.__call__(ctx, target=ctx.author)
 			elif choice == "Server Info":
 				return await self.bot.get_command("sinfo").__call__(ctx)
 			elif choice == "Channel Info":
-				return await ctx.command.__call__(ctx, None, None, [ctx.channel])
+				return await ctx.command.__call__(ctx, target=ctx.channel)
 
 			e = discord.Embed()
 			e.set_author(name='Collecting Information..', icon_url='https://cdn.discordapp.com/attachments/514213558549217330/514345278669848597/8yx98C.gif')
