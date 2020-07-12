@@ -10,6 +10,7 @@ import aiohttp
 import aiofiles
 from time import monotonic
 import random
+from contextlib import suppress
 
 from discord.ext import commands
 import discord
@@ -43,7 +44,7 @@ class Fate(commands.AutoShardedBot):
             'error_handler', 'config', 'menus', 'core', 'mod', 'welcome', 'farewell', 'notes', 'archive',
             'coffeeshop', 'custom', 'actions', 'reactions', 'responses', 'textart', 'fun', 'dev', 'readme',
             'reload', 'embeds', 'polis', 'apis', 'chatbridges', 'clean_rythm', 'utility', 'psutil', 'rules',
-            'duel_chat', 'selfroles', 'lock', 'audit', 'cookies', 'server_list', 'emojis', 'giveaways',
+            'duel_chat', 'selfroles', 'lock', 'audit', 'cookies', 'server_list', 'emojis', 'giveaways', 'music',
             'logger', 'autorole', 'changelog', 'restore_roles', 'chatbot', 'anti_spam', 'anti_raid', 'chatfilter',
             'nsfw', 'minecraft', 'chatlock', 'rainbow', 'system', 'user', 'limiter', 'dm_channel', 'factions',
             'secure_overwrites', 'server_setup', 'global-chat', 'ranking', 'statistics', 'toggles'
@@ -235,7 +236,7 @@ class Fate(commands.AutoShardedBot):
         else:
             return msg
 
-    async def verify_user(self, ctx, user=None, timeout=45):
+    async def verify_user(self, ctx, user=None, timeout=45, delete_after=False):
         if not user:
             user = ctx.author
         fp = os.path.basename(f"./static/captcha-{time()}.png")
@@ -278,12 +279,18 @@ class Fate(commands.AutoShardedBot):
         try:
             await self.wait_for("message", check=pred, timeout=timeout)
         except asyncio.TimeoutError:
-            e.set_footer(text="Captcha Failed")
-            await message.edit(embed=e)
+            if delete_after:
+                await message.delete()
+            else:
+                e.set_footer(text="Captcha Failed")
+                await message.edit(embed=e)
             return False
         else:
-            e.set_footer(text="Captcha Passed")
-            await message.edit(embed=e)
+            if delete_after:
+                await message.delete()
+            else:
+                e.set_footer(text="Captcha Passed")
+                await message.edit(embed=e)
             return True
 
     async def get_choice(self, ctx, *options, user, timeout=30) -> Optional[object]:
