@@ -36,6 +36,7 @@ class User(commands.Cog):
 				return await ctx.send('user not found')
 		config = self.get_config()  # type: dict
 		if 'blocked' not in config:
+			await ctx.send("Odd, blocked key didnt exist")
 			config['blocked'] = []
 		config['blocked'].append(user.id)
 		config['blocked'] = list(set(config['blocked']))

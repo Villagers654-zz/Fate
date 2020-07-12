@@ -56,6 +56,8 @@ def get_prefixes(bot, msg):
 	if 'blocked' in conf:
 		if msg.author.id in conf['blocked']:
 			return 'lsimhbiwfefmtalol'
+	else:
+		bot.log("Blocked key was non existant")
 	if not msg.guild:
 		return commands.when_mentioned_or(".")(bot, msg)
 	guild_id = str(msg.guild.id)

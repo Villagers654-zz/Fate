@@ -598,9 +598,10 @@ class Moderation(commands.Cog):
                     await channel.send(f"**Unmuted:** {user.name}")
                 except discord.errors.Forbidden:
                     pass
-        del self.config[guild_id]['mute_timers'][user_id]
-        del self.tasks[guild_id][user_id]
-        if not self.tasks[guild_id]:
+            del self.config[guild_id]['mute_timers'][user_id]
+        if guild_id in self.tasks and user_id in self.tasks[guild_id]:
+            del self.tasks[guild_id][user_id]
+        if guild_id in self.tasks and not self.tasks[guild_id]:
             del self.tasks[guild_id]
 
     @commands.command(name='mute', aliases=['shutup', 'fuckoff'])
