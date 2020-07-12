@@ -16,6 +16,11 @@ class Custom(commands.Cog):
 	def tm(ctx):
 		return ctx.author.id in [264838866480005122, 355026215137968129]
 
+	@commands.command(name="pog", aliases=["pog.", "poggers"])
+	@commands.cooldown(1, 5, commands.BucketType.channel)
+	async def pog(self, ctx):
+		await ctx.send(file=discord.File("./data/videos/brassmonkey.mp4"))
+
 	@commands.command(name='hernie')
 	async def hernie(self, ctx):
 		choices = [
