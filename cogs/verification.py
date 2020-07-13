@@ -79,6 +79,13 @@ class Verification(commands.Cog):
                 )
             await ctx.send(embed=e)
 
+    async def bulk_purge(self, collection_period: int = 5):
+        pass
+
+    @commands.Cog.listener("on_message")
+    async def channel_cleanup(self, msg):
+        pass
+
     @commands.Cog.listener("on_member_join")
     async def init_verification_process(self, member: discord.Member):
         guild_id = str(member.guild.id)
