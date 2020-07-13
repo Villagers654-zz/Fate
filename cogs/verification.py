@@ -16,6 +16,7 @@ from utils import utils, colors
 
 
 class Verification(commands.Cog):
+
     def __init__(self, bot: Fate):
         self.bot = bot
         self.path = "./data/userdata/verification.json"
@@ -27,9 +28,12 @@ class Verification(commands.Cog):
     @property
     def template_config(self):
         return {
-            "channel_id": int,                   # Verification channel, required incase the bot can't dm
-            "verified_role_id": int,             # Role to give whence verified
-            "temp_role_id": Optional[None, int]  # Role to remove whence verified
+            "channel_id":
+                int,  # Verification channel, required incase the bot can't dm
+            "verified_role_id":
+                int,  # Role to give whence verified
+            "temp_role_id":
+                Optional[None, int]  # Role to remove whence verified
         }
 
     async def save_data(self):
@@ -47,16 +51,15 @@ class Verification(commands.Cog):
             e.add_field(
                 name="◈ Usage",
                 value=f"{p}verification enable"
-                      f"\n`start a simple and guided setup process`"
-                      f"{p}verification disable"
-                      f"\n`wipes your current configuration`"
-                      f"\n{p}verification set-verified-role @role"
-                      f"\n`change the role given whence verified`"
-                      f"\n{p}verification set-temp-role @role"
-                      f"\n`set or change the role to remove whence verified. this is an optional feature, "
-                      f"and isn't required in order for verification to work`",
-                inline=False
-            )
+                f"\n`start a simple and guided setup process`"
+                f"{p}verification disable"
+                f"\n`wipes your current configuration`"
+                f"\n{p}verification set-verified-role @role"
+                f"\n`change the role given whence verified`"
+                f"\n{p}verification set-temp-role @role"
+                f"\n`set or change the role to remove whence verified. this is an optional feature, "
+                f"and isn't required in order for verification to work`",
+                inline=False)
             guild_id = str(ctx.guild.id)
             if guild_id in self.config:
                 conf = self.config[guild_id]
@@ -72,11 +75,14 @@ class Verification(commands.Cog):
                 e.add_field(
                     name="◈ Current Configuration",
                     value=self.bot.utils.format_dict({
-                        "Channel": channel.mention if channel else 'deleted-channel',
-                        "Verified Role": verified_role.mention if verified_role else 'deleted-role',
-                        "Temp Role": temp_role
-                    })
-                )
+                        "Channel":
+                            channel.mention if channel else 'deleted-channel',
+                        "Verified Role":
+                            verified_role.mention
+                            if verified_role else 'deleted-role',
+                        "Temp Role":
+                            temp_role
+                    }))
             await ctx.send(embed=e)
 
     async def bulk_purge(self, collection_period: int = 5):
@@ -108,7 +114,9 @@ class Verification(commands.Cog):
                     )
                 del self.config[guild_id]
                 return
-            msg = await channel.send(f"{member.mention} complete this captcha to be verified", delete_after=45)
+            msg = await channel.send(
+                f"{member.mention} complete this captcha to be verified",
+                delete_after=45)
             ctx = await self.bot.get_context(msg)
             verified = await self.bot.verify_user(ctx, user=member)
             if verified:
