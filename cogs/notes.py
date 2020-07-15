@@ -91,7 +91,7 @@ class Notepad(commands.Cog):
             e = discord.Embed(color=0xFFC923)
             e.title = "~~===🥂🍸🍷Notes🍷🍸🥂===~~"
             e.set_thumbnail(url=ctx.author.avatar_url)
-            e.description = f"**You're last {len(self.notes[author_id])} note(s):**"
+            e.description = f"**Your last {len(self.notes[author_id])} note(s):**"
             note = len(self.notes[author_id]) - 1
             position = 1
             for _i in self.notes[author_id]:
