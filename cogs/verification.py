@@ -39,7 +39,7 @@ class Verification(commands.Cog):
         await self.bot.save_json(fp=self.path, data=self.config)
 
     @commands.group(name="verification")
-    @commands.cooldown(2, 5, *utils.default_cooldown())
+    @commands.cooldown(*utils.default_cooldown())
     async def verification(self, ctx):
         if not ctx.invoked_subcommand:
             e = discord.Embed(color=colors.fate())
