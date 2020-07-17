@@ -147,6 +147,8 @@ class Emojis(commands.Cog):
 				return False
 			return True
 
+		ctx.message = ctx.channel.fetch_message(ctx.message.id)  # fix content being lowercase
+
 		# Handle emoji limitations
 		if len(ctx.guild.emojis) == ctx.guild.emoji_limit * 2:
 			return await ctx.send("You're at the limit for both emojis and animated emojis")
