@@ -68,7 +68,7 @@ class ErrorHandler(commands.Cog):
 
 			# The bot tried to perform an action on a non existent or removed object
 			elif isinstance(error, discord.errors.NotFound):
-				await ctx.send(f"{error}. Seems whatever I was doing an action on was removed or doesn't exist..")
+				await ctx.send(f"{error}. Seems it was removed or doesn't exist..")
 
 			# An action by the bot failed due to missing access or lack of required permissions
 			elif isinstance(error, discord.errors.Forbidden):
