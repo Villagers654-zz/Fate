@@ -213,12 +213,12 @@ class Emojis(commands.Cog):
 				continue
 			await self.upload_emoji(ctx, name=name, img=img, reason=str(ctx.author))
 
-		# Attached Images/GIFs
+		# Attached Images/GIFsK
 		allowed_extensions = ['png', 'jpg', 'jpeg', 'gif']
 		for attachment in ctx.message.attachments:
 			file_is_allowed = any(not attachment.filename.endswith(ext) for ext in allowed_extensions)
 			if not attachment.height or not file_is_allowed:
-				msg = await self.bot.utils.update_msg(ctx.msg, f"{attachment.filename} - Not an image or gif")
+				ctx.msg = await self.bot.utils.update_msg(ctx.msg, f"{attachment.filename} - Not an image or gif")
 				continue
 
 			file = await attachment.read()  # Raw bytes file
