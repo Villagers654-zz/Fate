@@ -922,6 +922,8 @@ class Moderation(commands.Cog):
                     await msg.edit(embed=gen_embed(i))
                 try:
                     await member.edit(nick=nick)
+                except discord.errors.NotFound:
+                    pass
                 except discord.errors.Forbidden:
                     if not ctx.guild.me.guild_permissions.manage_nicknames:
                         await msg.edit(content="Message Inactive: Missing Permissions")
@@ -1015,6 +1017,8 @@ class Moderation(commands.Cog):
                         await member.add_roles(role)
                     else:
                         await member.remove_roles(role)
+                except discord.errors.NotFound:
+                    pass
                 except discord.errors.Forbidden:
                     if not ctx.guild.me.guild_permissions.manage_roles:
                         await msg.edit(content="Message Inactive: Missing Permissions")
@@ -1151,10 +1155,10 @@ class Moderation(commands.Cog):
                 if "manage_channels" not in perms:
                     return await channel.send("No muted role found, and I'm missing manage_channel permissions to set one up")
                 mute_role = await guild.create_role(name="Muted", color=discord.Color(colors.black()))
-                for channel in guild.text_channels:
-                    await channel.set_permissions(mute_role, send_messages=False)
-                for channel in guild.voice_channels:
-                    await channel.set_permissions(mute_role, speak=False)
+                for chnl in guild.text_channels:
+                    await chnl.set_permissions(mute_role, send_messages=False)
+                for chnl in guild.voice_channels:
+                    await chnl.set_permissions(mute_role, speak=False)
             if mute_role in user.roles:
                 return await channel.send(f"{user.display_name} is already muted")
             user_roles = []

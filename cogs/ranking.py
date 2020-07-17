@@ -532,19 +532,26 @@ class Ranking(commands.Cog):
 				background_url = self.profile[user_id]['background']
 
 		# xp variables
-		if guild_id not in self.guild_xp:
-			return await ctx.send('somehow I have no xp for this server .-.')
-		sorted_data = sorted(self.guild_xp[guild_id].items(), key=lambda kv: kv[1], reverse=True)
-		for i, (id, xp) in enumerate(sorted_data):
-			if id == user_id:
-				guild_rank = i + 1
-				break
-		if 'global' in ctx.message.content or 'profile' in ctx.message.content.lower():
-			if user_id not in self.global_xp:
-				return await ctx.send('somehow I have no xp for you .-.')
-			dat = await self.calc_lvl(self.global_xp[user_id], self.static_config())
-		else:
-			dat = await self.calc_lvl(self.guild_xp[guild_id][user_id], conf)
+		guild_rank = "unranked"  # this is required, remember to get this here
+		async with self.bot.pool.acquire() as conn:
+			async with conn.cursor() as cur:
+				if 'global' in ctx.message.content or 'profile' in ctx.message.content.lower():
+					await cur.execute(f"select xp from global_msg where user_id = {user_id} limit 1;")
+					results = await cur.fetchone()  # type: tuple
+					if not results:
+						return await ctx.send("You currently have no global xp, try rerunning this command now")
+					dat = await self.calc_lvl(results[0], self.static_config())
+				else:
+					await cur.execute(
+						f"select xp from msg "
+						f"where guild_id = {guild_id} "
+						f"and user_id = {user_id} "
+						f"limit 1;"
+					)
+					results = await cur.fetchone()  # type: tuple
+					if not results:
+						return await ctx.send("You currently have no xp in this server, try rerunning this command now")
+					dat = await self.calc_lvl(results[0], conf)
 
 		base_req = self.config[guild_id]['first_lvl_xp_req']
 		level = dat['level']

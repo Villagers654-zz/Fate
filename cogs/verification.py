@@ -108,6 +108,8 @@ class Verification(commands.Cog):
 
     @commands.Cog.listener("on_message")
     async def channel_cleanup(self, msg):
+        if not msg.guild:
+            return
         guild_id = str(msg.guild.id)
         if not msg.author.bot and guild_id in self.config:
             if msg.channel.id == self.config[guild_id]["channel_id"]:

@@ -218,7 +218,7 @@ class Emojis(commands.Cog):
 		for attachment in ctx.message.attachments:
 			file_is_allowed = any(not attachment.filename.endswith(ext) for ext in allowed_extensions)
 			if not attachment.height or not file_is_allowed:
-				msg = await self.bot.utils.update_msg(msg, f"{attachment.filename} - Not an image or gif")
+				msg = await self.bot.utils.update_msg(ctx.msg, f"{attachment.filename} - Not an image or gif")
 				continue
 
 			file = await attachment.read()  # Raw bytes file
@@ -229,7 +229,7 @@ class Emojis(commands.Cog):
 			await self.upload_emoji(ctx, name=name, img=file, reason=str(ctx.author))
 
 		if not len(ctx.msg.content.split('\n')) > 1:
-			ctx.msg = await self.bot.utils.update_msg(msg, "No proper formats I can work with were provided")
+			ctx.msg = await self.bot.utils.update_msg(ctx.msg, "No proper formats I can work with were provided")
 
 	@commands.command(name="delemoji", aliases=["delemote"])
 	@commands.cooldown(1, 5, commands.BucketType.guild)
