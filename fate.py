@@ -29,7 +29,7 @@ class Fate(commands.AutoShardedBot):
         self.debug_mode = self.config['debug_mode']
         self.owner_ids = set(list([self.config["bot_owner_id"], *self.config["bot_owner_ids"]]))
         self.pool = None                # MySQL Pool initialized on_ready
-        self.tcp_servers = {                # Socket servers for web panel
+        self.tcp_servers = {            # Socket servers for web panel
             "logger": None,
             "levels": None
         }
@@ -44,7 +44,7 @@ class Fate(commands.AutoShardedBot):
             'error_handler', 'config', 'menus', 'core', 'mod', 'welcome', 'farewell', 'notes', 'archive',
             'coffeeshop', 'custom', 'actions', 'reactions', 'responses', 'textart', 'fun', 'dev', 'readme',
             'reload', 'embeds', 'polis', 'apis', 'chatbridges', 'clean_rythm', 'utility', 'psutil', 'rules',
-            'duel_chat', 'selfroles', 'lock', 'audit', 'cookies', 'server_list', 'emojis', 'giveaways', 'music',
+            'duel_chat', 'selfroles', 'lock', 'audit', 'cookies', 'server_list', 'emojis', 'giveaways',
             'logger', 'autorole', 'changelog', 'restore_roles', 'chatbot', 'anti_spam', 'anti_raid', 'chatfilter',
             'nsfw', 'minecraft', 'chatlock', 'rainbow', 'system', 'user', 'limiter', 'dm_channel', 'factions',
             'secure_overwrites', 'server_setup', 'global-chat', 'ranking', 'statistics', 'toggles', 'verification'
