@@ -463,7 +463,12 @@ class Fun(commands.Cog):
 		e.description = f"{percentage}% {invoked_with}"
 		await ctx.send(embed=e)
 
-	@commands.command(name="cringe", aliases=["based"])
+	@commands.command(
+		name="cringe", aliases=[
+			"based", "penis", "shit", "bruh", "high", "smart", "stupid", "dumb", "chad", "epic", "lucky",
+			"unlucky", "chill", "hot", "sexy", "ugly", "hitler"
+		]
+	)
 	@commands.cooldown(3, 5, commands.BucketType.user)
 	@commands.bot_has_permissions(embed_links=True)
 	async def cringe(self, ctx, user: discord.User = None):
@@ -472,6 +477,9 @@ class Fun(commands.Cog):
 		e = discord.Embed(color=user.color)
 		e.set_author(name=str(user), icon_url=user.avatar_url)
 		percentage = random.randint(0, 100)
+		if ctx.invoked_with == "hitler":
+			if random.randint(1, 4) == 1:
+				ctx.invoked_with = f"worse than {ctx.invoked_with}"
 		e.description = f"{percentage}% {ctx.invoked_with}"
 		await ctx.send(embed=e)
 
