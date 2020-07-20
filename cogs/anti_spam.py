@@ -321,6 +321,37 @@ class AntiSpam(commands.Cog):
                 if self.toggle[guild_id]['Duplicates']:
                     triggered = True
 
+            if msg.guild.id == 397415086295089155:  # currently in testing
+                abcs = "abcdefghijklmnopqrstuvwxyz"
+                content = str(msg.content).lower()
+                lines = content.split("\n")
+
+                total_abcs = len([c for c in content if c in abcs])
+                total_abcs = total_abcs if total_abcs else 1
+
+                total_spaces = content.count(" ")
+                total_spaces = total_spaces if total_spaces else 1
+
+                has_abcs = any(content.count(c) for c in abcs)
+
+                # non abc char spam
+                if len(msg.content) > 256 and not has_abcs:
+                    triggered = True
+                # Tall msg spam
+                elif len(content.split("\n")) > 8 and sum(len(line) for line in lines if line) < 21:
+                    triggered = True
+                elif len(content.split("\n")) > 5 and not has_abcs:
+                    triggered = True
+                # Empty lines spam
+                elif len([l for l in lines if not l]) > len([l for l in lines if l]) and len(lines) > 8:
+                    triggered = True
+                # Mostly unknown chars spam
+                elif len(content) > 128 and len(content) / total_abcs > 3:
+                    triggered = True
+                # ASCII / Spammed chars
+                elif len(content) > 128 and len(content) / total_spaces > 10:
+                    triggered = True
+
             if triggered:
                 bot = msg.guild.me
                 perms = [perm for perm, value in bot.guild_permissions]
