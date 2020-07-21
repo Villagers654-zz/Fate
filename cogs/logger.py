@@ -27,13 +27,12 @@ from discord import AuditLogAction as audit
 from PIL import Image
 
 from utils.colors import *
-from utils import utils, config
+from utils import utils
 
 
 def is_guild_owner():
     async def predicate(ctx):
-        has_perms = ctx.author.id == ctx.guild.owner.id or (
-            ctx.author.id == config.owner_id())  # for testing
+        has_perms = ctx.author.id == ctx.guild.owner.id
         if not has_perms:
             await ctx.send("You need to be the owner of the server to use this")
         return has_perms
