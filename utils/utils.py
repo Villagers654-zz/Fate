@@ -11,6 +11,7 @@ from ast import literal_eval
 from time import monotonic
 from typing import *
 import re
+import aiofiles
 
 from discord.ext import commands
 import discord
@@ -18,6 +19,41 @@ from PIL import Image
 from colormap import rgb2hex
 
 from utils import colors
+
+
+class SqlCursor:
+	def __init__(self, bot):
+		self.bot = bot
+		self.connection = None
+		self.cursor = None
+
+	async def __aenter__(self):
+		self.connection = await self.bot.pool.acquire()
+		self.cursor = await self.connection.cursor()
+		return self.cursor
+
+	async def __aexit__(self, _type, _value, _traceback):
+		self.connection.close()
+		await self.connection.ensure_closed()
+
+
+class AsyncFileManager:
+	def __init__(self, file: str, mode: str = "r", lock: asyncio.Lock = None):
+		self.file = file
+		self.mode = mode
+		self.fp_manager = None
+		self.lock = lock
+
+	async def __aenter__(self):
+		if self.lock and "r" not in self.mode:
+			await self.lock.acquire()
+		self.fp_manager = await aiofiles.open(file=self.file, mode=self.mode)
+		return self.fp_manager
+
+	async def __aexit__(self, _exc_type, _exc_value, _exc_traceback):
+		await self.fp_manager.close()
+		if self.lock and "r" not in self.mode:
+			self.lock.release()
 
 
 class Result:

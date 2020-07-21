@@ -73,9 +73,11 @@ class Fate(commands.AutoShardedBot):
             for ext in original_only:
                 self.initial_extensions.remove(ext)
 
-        self.utils = utils              # Custom utility functions
-        self.result = utils.Result      # Custom Result Object Creator
-        self.memory = utils.MemoryInfo  # Class for easily accessing memory usage
+        self.utils = utils                   # Custom utility functions
+        self.cursor = utils.SqlCursor(self)  # Quick access Cursor
+        self.open = utils.AsyncFileManager   # Async compatible open() with aiofiles
+        self.result = utils.Result           # Custom Result Object Creator
+        self.memory = utils.MemoryInfo       # Class for easily accessing memory usage
         self.core_tasks = tasks.Tasks(self)
 
         perms = discord.Permissions(0)
@@ -127,6 +129,7 @@ class Fate(commands.AutoShardedBot):
                     user=sql.user,
                     password=sql.password,
                     db=sql.db,
+                    autocommit=True,
                     loop=self.loop
                 )
                 self.pool = pool
@@ -141,7 +144,7 @@ class Fate(commands.AutoShardedBot):
             return await self.logout()
         self.log(f"Initialized db {sql.db} with {sql.user}@{sql.host}")
 
-    def load(self, *extensions):
+    def load(self, *extensions) -> None:
         for cog in extensions:
             try:
                 self.load_extension(f"cogs.{cog}")
@@ -153,7 +156,7 @@ class Fate(commands.AutoShardedBot):
                 self.log(f"Couldn't load {cog}", "CRITICAL", tb=traceback.format_exc())
                 self.log("Continuing..")
 
-    def unload(self, *extensions, log=True):
+    def unload(self, *extensions, log=True) -> None:
         for cog in extensions:
             try:
                 self.unload_extension(f"cogs.{cog}")
@@ -163,7 +166,7 @@ class Fate(commands.AutoShardedBot):
                 if log:
                     self.log(f"Failed to unload {cog}")
 
-    def reload(self, *extensions):
+    def reload(self, *extensions) -> None:
         for cog in extensions:
             try:
                 self.reload_extension(f"cogs.{cog}")
@@ -175,9 +178,9 @@ class Fate(commands.AutoShardedBot):
             except commands.ExtensionError:
                 self.log(f"Ignoring exception in Cog: {cog}", tb=traceback.format_exc())
 
-    def log(self, message, level='INFO', tb=None, color=None, end=None):
+    def log(self, message, level='INFO', tb=None, color=None, end=None) -> str:
         if level == 'DEBUG' and not self.debug_mode:
-            return
+            return ""
         now = str(datetime.now().strftime("%I:%M%p"))
         if now.startswith('0'):
             now = now.replace('0', '', 1)
@@ -208,11 +211,11 @@ class Fate(commands.AutoShardedBot):
             except asyncio.TimeoutError:
                 return None
 
-    async def save_json(self, fp, data, mode="w+"):
+    async def save_json(self, fp, data, mode="w+", **json_kwargs) -> None:
         # self.log(f"Saving {fp}", "DEBUG")
         # before = monotonic()
         async with aiofiles.open(fp + ".tmp", mode) as f:
-            await f.write(json.dumps(data))
+            await f.write(json.dumps(data, **json_kwargs))
         # ping = str(round((monotonic() - before) * 1000))
         # self.log(f"Wrote to tmp file in {ping}ms", "DEBUG")
         # before = monotonic()
