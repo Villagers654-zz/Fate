@@ -40,19 +40,24 @@ class SqlCursor:
 class AsyncFileManager:
 	def __init__(self, file: str, mode: str = "r", lock: asyncio.Lock = None):
 		self.file = file
+		self.temp_file = file
+		if "w" in mode:
+			self.temp_file += ".tmp"
 		self.mode = mode
 		self.fp_manager = None
 		self.lock = lock
 
 	async def __aenter__(self):
-		if self.lock and "r" not in self.mode:
+		if self.lock:
 			await self.lock.acquire()
-		self.fp_manager = await aiofiles.open(file=self.file, mode=self.mode)
+		self.fp_manager = await aiofiles.open(file=self.temp_file, mode=self.mode)
 		return self.fp_manager
 
 	async def __aexit__(self, _exc_type, _exc_value, _exc_traceback):
 		await self.fp_manager.close()
-		if self.lock and "r" not in self.mode:
+		if self.file != self.temp_file:
+			os.rename(self.temp_file, self.file)
+		if self.lock:
 			self.lock.release()
 
 
