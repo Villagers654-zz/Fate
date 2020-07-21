@@ -147,7 +147,7 @@ class Emojis(commands.Cog):
 				return False
 			return True
 
-		ctx.message = ctx.channel.fetch_message(ctx.message.id)  # fix content being lowercase
+		ctx.message = await ctx.channel.fetch_message(ctx.message.id)  # fix content being lowercase
 
 		# Handle emoji limitations
 		if len(ctx.guild.emojis) == ctx.guild.emoji_limit * 2:
@@ -238,6 +238,9 @@ class Emojis(commands.Cog):
 	@commands.has_permissions(manage_emojis=True)
 	async def _delemoji(self, ctx, *emoji: discord.Emoji):
 		for emoji in emoji:
+			if emoji.guild.id != ctx.guild.id:
+				await ctx.send(f"{emoji} doesn't belong to this server")
+				continue
 			await emoji.delete(reason=ctx.author.name)
 			await ctx.send(f"Deleted emote `{emoji.name}`")
 

@@ -466,7 +466,7 @@ class Fun(commands.Cog):
 	@commands.command(
 		name="cringe", aliases=[
 			"based", "penis", "shit", "bruh", "high", "smart", "stupid", "dumb", "chad", "epic", "lucky",
-			"unlucky", "chill", "hot", "sexy", "ugly", "hitler"
+			"unlucky", "hot", "sexy", "ugly", "hitler"
 		]
 	)
 	@commands.cooldown(3, 5, commands.BucketType.user)
