@@ -78,18 +78,31 @@ class Core(commands.Cog):
     @commands.command(name="prefix")
     @commands.cooldown(*utils.default_cooldown())
     @commands.guild_only()
-    @commands.has_permissions(manage_guild=True)
-    async def _prefix(self, ctx, *, prefix):
+    async def _prefix(self, ctx, *, prefix=None):
+        async with self.bot.open("./data/userdata/config.json", "r") as f:
+            config = json.loads(await f.read())  # type: dict
+        guild_id = str(ctx.guild.id)
+        if not prefix:
+            prefixes = ""
+            if guild_id in config["prefix"]:
+                prefixes += f"**Guild Prefix:** `{config['prefix'][guild_id]}`"
+            else:
+                prefixes += f"**Guild Prefix:** `.`"
+            if str(ctx.author.id) in config["personal_prefix"]:
+                prefixes += f"**Personal Prefix:** `{config['personal_prefix'][str(ctx.author.id)]}`"
+            e = discord.Embed(color=colors.fate())
+            e.set_author(name="Prefixes", icon_url=ctx.author.avatar_url)
+            e.description = prefixes
+            return await ctx.send(embed=e)
+        if not ctx.author.guild_permissions.manage_guild:
+            return await ctx.send(f"You need manage_server permission(s) to use this")
         if not isinstance(ctx.guild, discord.Guild):
             return await ctx.send("This command can't be used in dm")
-        guild_id = str(ctx.guild.id)
-        with open("./data/userdata/config.json", "r") as f:
-            config = json.load(f)  # type: dict
-        with open("./data/userdata/config.json", "w") as f:
+        async with self.bot.open("./data/userdata/config.json", "w") as f:
             if 'prefix' not in config:
                 config['prefix'] = {}
             config['prefix'][guild_id] = prefix
-            json.dump(config, f, ensure_ascii=False)
+            await f.write(json.dumps(config))
         await ctx.send(f"Changed the servers prefix to `{prefix}`")
 
     @commands.command(name='personal-prefix', aliases=['pp'])
