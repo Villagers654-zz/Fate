@@ -34,7 +34,6 @@ class SqlCursor:
 
 	async def __aexit__(self, _type, _value, _traceback):
 		self.connection.close()
-		await self.connection.ensure_closed()
 
 
 class AsyncFileManager:

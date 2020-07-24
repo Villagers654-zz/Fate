@@ -15,6 +15,7 @@ from contextlib import suppress
 from discord.ext import commands
 import discord
 import aiomysql
+from aiomysql import cursors
 import pymysql
 from termcolor import cprint
 from PIL import Image, ImageDraw, ImageFont
@@ -74,7 +75,7 @@ class Fate(commands.AutoShardedBot):
                 self.initial_extensions.remove(ext)
 
         self.utils = utils                   # Custom utility functions
-        self.cursor = utils.SqlCursor(self)  # Quick access Cursor
+        self.cursor = utils.SqlCursor        # Quick access Cursor
         self.open = utils.AsyncFileManager   # Async compatible open() with aiofiles
         self.result = utils.Result           # Custom Result Object Creator
         self.memory = utils.MemoryInfo       # Class for easily accessing memory usage

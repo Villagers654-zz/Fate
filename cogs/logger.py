@@ -884,7 +884,7 @@ class Logger(commands.Cog):
                         "Who Pinned": audit_dat['user'],
                         f"[Jump to MSG]({after.jump_url})": None
                     })
-                    for text_group in self.bot.utils.split(after.content):
+                    for text_group in self.bot.utils.split(after.content,1000):
                         e.add_field(name="◈ Content", value=text_group, inline=False)
                     self.queue[guild_id].append([e, 'chat', time()])
 
