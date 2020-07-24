@@ -876,6 +876,7 @@ class Logger(commands.Cog):
                     action = 'Unpinned' if before.pinned else 'Pinned'
                     audit_dat = await self.search_audit(after.guild, audit.message_pin)
                     e = discord.Embed(color=cyan())
+
                     e.set_author(name=f'~==🍸Msg {action}🍸==~', icon_url=after.author.avatar_url)
                     e.set_thumbnail(url=after.author.avatar_url)
                     e.description = self.bot.utils.format_dict({
