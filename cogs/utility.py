@@ -912,7 +912,7 @@ class Utility(commands.Cog):
 		await self.save_timers()
 		del self.bot.tasks["timers"][f"timer-{dat['timer']}"]
 
-	@commands.command(name='reminder', aliases=['timer', 'remindme'])
+	@commands.command(name='reminder', aliases=['timer', 'remindme', 'remind'])
 	@commands.cooldown(2, 5, commands.BucketType.user)
 	async def timer(self, ctx, *args):
 		p = self.bot.utils.get_prefixes(self.bot, ctx.message)[2]
