@@ -84,8 +84,8 @@ class Fate(commands.AutoShardedBot):
         # ContextManager for quick sql cursor access
         class Cursor:
             def __init__(cls):
-                self.conn = None
-                self.cursor = None
+                cls.conn = None
+                cls.cursor = None
 
             async def __aenter__(cls):
                 cls.conn = await self.pool.acquire()
