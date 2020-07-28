@@ -528,7 +528,7 @@ class Ranking(commands.Cog):
 
 		# xp variables
 		guild_rank = "unranked"  # this is required, remember to get this here
-		async with self.bot.cursor as cur:
+		async with self.bot.cursor() as cur:
 			if 'global' in ctx.message.content or 'profile' in ctx.message.content.lower():
 				await cur.execute(f"select xp from global_msg where user_id = {user_id} limit 1;")
 				results = await cur.fetchone()  # type: tuple
