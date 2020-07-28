@@ -269,24 +269,21 @@ class Ranking(commands.Cog):
 			if self.global_cd[user_id] < time():
 				self.global_cd[user_id] = time() + 10
 				try:
-					async with self.bot.pool.acquire() as conn:
-						async with conn.cursor() as cur:
+					async with self.bot.cursor() as cur:
+						# global msg xp
+						await cur.execute(f"select xp from global_msg where user_id = {user_id};")
+						results = await cur.fetchone()
+						if not results:
+							await cur.execute(f"insert into global_msg values ({user_id}, 1);")
+						else:
+							await cur.execute(f"update global_msg set xp={results[0]+1} where user_id = {user_id};")
 
-							# global msg xp
-							await cur.execute(f"select xp from global_msg where user_id = {user_id};")
-							results = await cur.fetchone()
-							if not results:
-								await cur.execute(f"insert into global_msg values ({user_id}, 1);")
-							else:
-								await cur.execute(f"update global_msg set xp={results[0]+1} where user_id = {user_id};")
-
-							# global monthly msg xp
-							await cur.execute(
-								f"INSERT INTO global_monthly "
-								f"VALUES ({user_id}, {set_time}, 1) "
-								f"ON DUPLICATE KEY UPDATE xp = xp + 1;"
-							)
-							await conn.commit()
+						# global monthly msg xp
+						await cur.execute(
+							f"INSERT INTO global_monthly "
+							f"VALUES ({user_id}, {set_time}, 1) "
+							f"ON DUPLICATE KEY UPDATE xp = xp + 1;"
+						)
 				except DataError as error:
 					self.bot.log(f"Error updating global xp\n{error}", "DEBUG")
 
@@ -304,26 +301,24 @@ class Ranking(commands.Cog):
 			if len(msgs) < conf['msgs_within_timeframe']:
 				self.cd[guild_id][user_id].append(time())
 				try:
-					async with self.bot.pool.acquire() as conn:
-						async with conn.cursor() as cur:
-							await cur.execute(f"select * from msg where guild_id = {guild_id} and user_id = {user_id};")
-							results = await cur.fetchall()
-							if not results:
-								await cur.execute(f"insert into msg values ({guild_id}, {user_id}, {new_xp});")
-							else:
-								for guild_id, uid, xp in results:
-									if uid == user_id:
-										sql = f"update msg set xp = {new_xp + xp} where guild_id = {guild_id} and user_id = {user_id};"
-										await cur.execute(sql)
-										break
+					async with self.bot.cursor() as cur:
+						await cur.execute(f"select * from msg where guild_id = {guild_id} and user_id = {user_id};")
+						results = await cur.fetchall()
+						if not results:
+							await cur.execute(f"insert into msg values ({guild_id}, {user_id}, {new_xp});")
+						else:
+							for guild_id, uid, xp in results:
+								if uid == user_id:
+									sql = f"update msg set xp = {new_xp + xp} where guild_id = {guild_id} and user_id = {user_id};"
+									await cur.execute(sql)
+									break
 
-							# monthly guilded msg xp
-							await cur.execute(
-								f"INSERT INTO monthly_msg "
-								f"VALUES ({guild_id}, {user_id}, {set_time}, {new_xp}) "
-								f"ON DUPLICATE KEY UPDATE xp = xp + {new_xp};"
-							)
-							await conn.commit()
+						# monthly guilded msg xp
+						await cur.execute(
+							f"INSERT INTO monthly_msg "
+							f"VALUES ({guild_id}, {user_id}, {set_time}, {new_xp}) "
+							f"ON DUPLICATE KEY UPDATE xp = xp + {new_xp};"
+						)
 				except DataError as error:
 					self.bot.log(f"Error updating guild xp\n{error}", "DEBUG")
 
@@ -533,25 +528,24 @@ class Ranking(commands.Cog):
 
 		# xp variables
 		guild_rank = "unranked"  # this is required, remember to get this here
-		async with self.bot.pool.acquire() as conn:
-			async with conn.cursor() as cur:
-				if 'global' in ctx.message.content or 'profile' in ctx.message.content.lower():
-					await cur.execute(f"select xp from global_msg where user_id = {user_id} limit 1;")
-					results = await cur.fetchone()  # type: tuple
-					if not results:
-						return await ctx.send("You currently have no global xp, try rerunning this command now")
-					dat = await self.calc_lvl(results[0], self.static_config())
-				else:
-					await cur.execute(
-						f"select xp from msg "
-						f"where guild_id = {guild_id} "
-						f"and user_id = {user_id} "
-						f"limit 1;"
-					)
-					results = await cur.fetchone()  # type: tuple
-					if not results:
-						return await ctx.send("You currently have no xp in this server, try rerunning this command now")
-					dat = await self.calc_lvl(results[0], conf)
+		async with self.bot.cursor as cur:
+			if 'global' in ctx.message.content or 'profile' in ctx.message.content.lower():
+				await cur.execute(f"select xp from global_msg where user_id = {user_id} limit 1;")
+				results = await cur.fetchone()  # type: tuple
+				if not results:
+					return await ctx.send("You currently have no global xp, try rerunning this command now")
+				dat = await self.calc_lvl(results[0], self.static_config())
+			else:
+				await cur.execute(
+					f"select xp from msg "
+					f"where guild_id = {guild_id} "
+					f"and user_id = {user_id} "
+					f"limit 1;"
+				)
+				results = await cur.fetchone()  # type: tuple
+				if not results:
+					return await ctx.send("You currently have no xp in this server, try rerunning this command now")
+				dat = await self.calc_lvl(results[0], conf)
 
 		base_req = self.config[guild_id]['first_lvl_xp_req']
 		level = dat['level']
@@ -893,47 +887,45 @@ class Ranking(commands.Cog):
 		embeds = []
 		leaderboards = {}
 
-		async with self.bot.pool.acquire() as conn:
-			async with conn.cursor() as cur:
+		async with self.bot.cursor() as cur:
+			await cur.execute(
+				f"select user_id, xp from msg where guild_id = {guild_id} order by xp desc limit 256;"
+			)
+			results = await cur.fetchall()
+			leaderboards['Msg Leaderboard'] = {
+				user_id: xp for user_id, xp in results
+			}
 
-				await cur.execute(
-					f"select user_id, xp from msg where guild_id = {guild_id} order by xp desc limit 256;"
-				)
-				results = await cur.fetchall()
-				leaderboards['Msg Leaderboard'] = {
-					user_id: xp for user_id, xp in results
-				}
+			await cur.execute("select user_id, xp from global_msg order by xp desc limit 256;")
+			results = await cur.fetchall()
+			leaderboards['Global Msg Leaderboard'] = {
+				user_id: xp for user_id, xp in results
+			}
 
-				await cur.execute("select user_id, xp from global_msg order by xp desc limit 256;")
-				results = await cur.fetchall()
-				leaderboards['Global Msg Leaderboard'] = {
-					user_id: xp for user_id, xp in results
-				}
+			lmt = time() - 60 * 60 * 24 * 30
+			await cur.execute(
+				f"select user_id, sum(xp) as total_xp "
+				f"from monthly_msg "
+				f"where guild_id = {guild_id} and msg_time > {lmt} "
+				f"group by user_id "
+				f"order by total_xp desc limit 256;"
+			)
+			results = await cur.fetchall()
+			leaderboards["Monthly Msg Leaderboard"] = {
+				user_id: xp for user_id, xp in results
+			}
 
-				lmt = time() - 60 * 60 * 24 * 30
-				await cur.execute(
-					f"select user_id, sum(xp) as total_xp "
-					f"from monthly_msg "
-					f"where guild_id = {guild_id} and msg_time > {lmt} "
-					f"group by user_id "
-					f"order by total_xp desc limit 256;"
-				)
-				results = await cur.fetchall()
-				leaderboards["Monthly Msg Leaderboard"] = {
-					user_id: xp for user_id, xp in results
-				}
-
-				await cur.execute(
-					f"select user_id, sum(xp) as total_xp "
-					f"from global_monthly "
-					f"where msg_time > {lmt} "
-					f"group by user_id "
-					f"order by total_xp desc limit 256;"
-				)
-				results = await cur.fetchall()
-				leaderboards["Globaly Monthly Leaderboard"] = {
-					user_id: xp for user_id, xp in results
-				}
+			await cur.execute(
+				f"select user_id, sum(xp) as total_xp "
+				f"from global_monthly "
+				f"where msg_time > {lmt} "
+				f"group by user_id "
+				f"order by total_xp desc limit 256;"
+			)
+			results = await cur.fetchall()
+			leaderboards["Globaly Monthly Leaderboard"] = {
+				user_id: xp for user_id, xp in results
+			}
 
 		for name, data in leaderboards.items():
 			sorted_data = [

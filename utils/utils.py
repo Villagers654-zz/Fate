@@ -21,21 +21,6 @@ from colormap import rgb2hex
 from utils import colors
 
 
-class SqlCursor:
-	def __init__(self, bot):
-		self.bot = bot
-		self.connection = None
-		self.cursor = None
-
-	async def __aenter__(self):
-		self.connection = await self.bot.pool.acquire()
-		self.cursor = await self.connection.cursor()
-		return self.cursor
-
-	async def __aexit__(self, _type, _value, _traceback):
-		self.connection.close()
-
-
 class AsyncFileManager:
 	def __init__(self, file: str, mode: str = "r", lock: asyncio.Lock = None):
 		self.file = file
