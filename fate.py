@@ -72,16 +72,17 @@ class Fate(commands.AutoShardedBot):
         if not self.config["original_bot"]:
             original_only = ['polis', 'dev', 'backup']
             for ext in original_only:
-                self.initial_extensions.remove(ext)
+                if ext in self.initial_extensions:
+                    self.initial_extensions.remove(ext)
 
         self.utils = utils                   # Custom utility functions
         self.open = utils.AsyncFileManager   # Async compatible open() with aiofiles
         self.result = utils.Result           # Custom Result Object Creator
         self.memory = utils.MemoryInfo       # Class for easily accessing memory usage
-        self.core_tasks = tasks.Tasks(self)
+        self.core_tasks = tasks.Tasks(self)  # Object to start the main tasks like `changing status`
 
+        # ContextManager for quick sql cursor access
         class Cursor:
-            """ ContextManager for quick sql cursor access """
             def __init__(cls):
                 self.conn = None
                 self.cursor = None
@@ -89,13 +90,14 @@ class Fate(commands.AutoShardedBot):
             async def __aenter__(cls):
                 cls.conn = await self.pool.acquire()
                 cls.cursor = await cls.conn.cursor()
-                return self.cursor
+                return cls.cursor
 
             async def __aexit__(cls, _type, _value, _tb):
-                await self.pool.release(cls.conn)
+                self.pool.release(cls.conn)
 
         self.cursor = Cursor
 
+        # Set the oauth_url for users to invite the bot with
         perms = discord.Permissions(0)
         perms.update(
                 embed_links=True, manage_messages=True,
