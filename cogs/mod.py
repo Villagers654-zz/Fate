@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 import asyncio
 import re
 from time import time as now
+from contextlib import suppress
 
 from discord.ext import commands
 import discord
@@ -634,20 +635,18 @@ class Moderation(commands.Cog):
 
                     # Set the overwrites for the mute role
                     for i, channel in enumerate(ctx.guild.text_channels):
-                        try:
+                        with suppress(discord.errors.Forbidden):
                             await channel.set_permissions(mute_role, send_messages=False)
-                        except discord.errors.Forbidden:
-                            pass
                         if i + 1 >= len(ctx.guild.text_channels):  # Prevent sleeping after the last
                             await asyncio.sleep(0.5)
                     for i, channel in enumerate(ctx.guild.voice_channels):
-                        try:
+                        with suppress(discord.errors.Forbidden):
                             await channel.set_permissions(mute_role, speak=False)
-                        except discord.errors.Forbidden:
-                            pass
                         if i + 1 >= len(ctx.guild.voice_channels):  # Prevent sleeping after the last
                             await asyncio.sleep(0.5)
 
+                if mute_role.position >= ctx.guild.me.top_role.position:
+                    return await ctx.send("My current role's not high enough for me to give, or remove the mute role to anyone")
                 self.config[guild_id]["mute_role"] = mute_role.id
 
             # Setup the mute role in channels it's not in
@@ -655,20 +654,16 @@ class Moderation(commands.Cog):
                 if not channel.permissions_for(ctx.guild.me).manage_channels or mute_role in channel.overwrites:
                     continue
                 if mute_role not in channel.overwrites:
-                    try:
+                    with suppress(discord.errors.Forbidden):
                         await channel.set_permissions(mute_role, send_messages=False)
-                    except discord.errors.Forbidden:
-                        pass
                     if i + 1 >= len(ctx.guild.text_channels):  # Prevent sleeping after the last
                         await asyncio.sleep(0.5)
             for i, channel in enumerate(ctx.guild.voice_channels):
                 if not channel.permissions_for(ctx.guild.me).manage_channels or mute_role in channel.overwrites:
                     continue
                 if mute_role not in channel.overwrites:
-                    try:
+                    with suppress(discord.errors.Forbidden):
                         await channel.set_permissions(mute_role, speak=False)
-                    except discord.errors.Forbidden:
-                        pass
                     if i + 1 >= len(ctx.guild.voice_channels):  # Prevent sleeping after the last
                         await asyncio.sleep(0.5)
 
