@@ -95,7 +95,8 @@ class Ranking(commands.Cog):
 
 	async def save_config(self):
 		""" Saves per-server configuration """
-		await self.bot.save_json(self.path, self.config)
+		async with self.bot.open(self.path, "w+") as f:
+			await f.write(json.dumps(self.config))
 
 	def static_config(self):
 		""" Default config """

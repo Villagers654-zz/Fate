@@ -15,14 +15,13 @@ class SafePolls(commands.Cog):
     def __init__(self, bot: Fate):
         self.bot = bot
         self.path = "./data/userdata/safe_polls.json"
-        self.lock = asyncio.Lock()
         self.polls = {}
         if path.isfile(self.path):
             with open(self.path, mode="r") as f:
                 self.polls = json.load(f)
 
     async def save_data(self) -> None:
-        async with self.bot.open(self.path, "w", lock=self.lock) as f:
+        async with self.bot.open(self.path, "w+") as f:
             await f.write(json.dumps(self.polls))
 
     @commands.command(name="safe-poll", aliases=["safepoll", "safe_poll"])

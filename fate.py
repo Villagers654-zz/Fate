@@ -8,14 +8,11 @@ import logging
 from typing import *
 import aiohttp
 import aiofiles
-from time import monotonic
 import random
-from contextlib import suppress
 
 from discord.ext import commands
 import discord
 import aiomysql
-from aiomysql import cursors
 import pymysql
 from termcolor import cprint
 from PIL import Image, ImageDraw, ImageFont
@@ -37,6 +34,7 @@ class Fate(commands.AutoShardedBot):
         self.lavalink = None            # Music server
         self.login_errors = []          # Exceptions ignored during startup
         self.logs = []                  # Logs to send to discord, empties out quickly
+        self.locks = {}
         self.tasks = {}                 # Task object storing for easy management
         self.logger_tasks = {}          # Same as Fate.tasks except dedicated to cogs.logger
         self.last_traceback = ""        # Formatted string of the last error traceback
@@ -76,7 +74,6 @@ class Fate(commands.AutoShardedBot):
                     self.initial_extensions.remove(ext)
 
         self.utils = utils                   # Custom utility functions
-        self.open = utils.AsyncFileManager   # Async compatible open() with aiofiles
         self.result = utils.Result           # Custom Result Object Creator
         self.memory = utils.MemoryInfo       # Class for easily accessing memory usage
         self.core_tasks = tasks.Tasks(self)  # Object to start the main tasks like `changing status`
@@ -96,6 +93,33 @@ class Fate(commands.AutoShardedBot):
                 self.pool.release(cls.conn)
 
         self.cursor = Cursor
+
+        # Async compatible file manager using aiofiles and asyncio.Lock
+        class AsyncFileManager:
+            def __init__(cls, file: str, mode: str = "r", lock: bool = True):
+                cls.file = cls.temp_file = file
+                if "w" in mode:
+                    cls.temp_file += ".tmp"
+                cls.mode = mode
+                cls.fp_manager = None
+                cls.lock = lock
+                if lock and file not in self.locks:
+                    self.locks[file] = asyncio.Lock()
+
+            async def __aenter__(cls):
+                if cls.lock:
+                    await self.locks[cls.file].acquire()
+                cls.fp_manager = await aiofiles.open(file=cls.temp_file, mode=cls.mode)
+                return cls.fp_manager
+
+            async def __aexit__(cls, _exc_type, _exc_value, _exc_traceback):
+                await cls.fp_manager.close()
+                if cls.file != cls.temp_file:
+                    os.rename(cls.temp_file, cls.file)
+                if cls.lock:
+                    self.locks[cls.file].release()
+
+        self.open = AsyncFileManager
 
         # Set the oauth_url for users to invite the bot with
         perms = discord.Permissions(0)

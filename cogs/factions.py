@@ -41,8 +41,10 @@ class Factions(commands.Cog):
 		}
 
 	async def save_data(self):
-		data = {'factions': self.factions, 'land_claims': self.land_claims, 'notifs': self.notifs}
-		await self.bot.save_json(fp=self.dir, data=data)
+		async with self.bot.open(self.dir, "w+") as f:
+			await f.write(json.dumps({
+				'factions': self.factions, 'land_claims': self.land_claims, 'notifs': self.notifs
+			}))
 
 	def init(self, guild_id: str, faction=None):
 		if guild_id not in self.factions:
