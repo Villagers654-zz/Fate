@@ -545,7 +545,8 @@ async def on_guild_remove(guild: discord.Guild):
 async def on_command(_ctx):
     stats = bot.utils.get_stats()  # type: dict
     stats['commands'].append(str(datetime.now()))
-    await bot.save_json("./data/stats.json", stats)
+    async with bot.open("./data/stats.json", "w") as f:
+        await f.write(json.dumps(stats))
 
 
 if __name__ == '__main__':

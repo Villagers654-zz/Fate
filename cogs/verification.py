@@ -35,7 +35,8 @@ class Verification(commands.Cog):
 
     async def save_data(self):
         """ Dump changes to the config to a file """
-        await self.bot.save_json(fp=self.path, data=self.config)
+        async with self.bot.open(self.path, "w+") as f:
+            await f.write(json.dumps(self.config))
 
     @commands.group(name="verification")
     @commands.cooldown(*utils.default_cooldown())

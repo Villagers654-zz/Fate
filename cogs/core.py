@@ -109,15 +109,15 @@ class Core(commands.Cog):
     @commands.cooldown(*utils.default_cooldown())
     async def personal_prefix(self, ctx, *, prefix=''):
         user_id = str(ctx.author.id)
-        with open('./data/userdata/config.json', 'r') as f:
-            config = json.load(f)  # type: dict
+        async with self.bot.open('./data/userdata/config.json', 'r') as f:
+            config = json.loads(await f.read())  # type: dict
         if 'personal_prefix' not in config:
             config['personal_prefix'] = {}
         config['personal_prefix'][user_id] = prefix
         if prefix == '.':
             del config['personal_prefix'][user_id]
-        with open('./data/userdata/config.json', 'w') as f:
-            json.dump(config, f, ensure_ascii=False)
+        async with self.bot.open('./data/userdata/config.json', 'w') as f:
+            await f.write(json.dumps(config))
         await ctx.send(f'Set your personal prefix as `{prefix}`\n'
                        f'Note you can still use my mention as a sub-prefix')
 
@@ -132,8 +132,8 @@ class Core(commands.Cog):
             location: Union[discord.TextChannel, discord.CategoryChannel] = None,
     ):
         """Enable or commands in a channel, or category"""
-        with open(self.path, 'r') as f:
-            config = json.load(f)  # type: dict
+        async with self.bot.open(self.path, 'r') as f:
+            config = json.loads(await f.read())  # type: dict
         guild_id = str(ctx.guild.id)
         if guild_id not in config:
             config[guild_id] = {
@@ -218,8 +218,8 @@ class Core(commands.Cog):
             if not values:
                 del conf['categories'][channel_id]
         config[guild_id] = conf
-        with open(self.path, 'w') as f:
-            json.dump(config, f, ensure_ascii=False)
+        async with self.bot.open(self.path, 'w') as f:
+            await f.write(json.dumps(config))
 
     @commands.command(name="disable-command", aliases=["disablecommand"])
     @commands.has_permissions(administrator=True)
@@ -237,8 +237,8 @@ class Core(commands.Cog):
             return await ctx.send("BiTcH nO")
         if command not in [cmd.name for cmd in self.bot.commands]:
             return await ctx.send("That's not a command")
-        with open(self.path, 'r') as f:
-            config = json.load(f)  # type: dict
+        async with self.bot.open(self.path, 'r') as f:
+            config = json.loads(await f.read())  # type: dict
         guild_id = str(ctx.guild.id)
         if guild_id not in config:
             config[guild_id] = {
@@ -296,15 +296,16 @@ class Core(commands.Cog):
             conf["categories"][str(location.id)].append(command)
             await ctx.send(f"Disabled {command} in that category")
         config[guild_id] = conf
-        await self.bot.save_json(self.path, config)
+        async with self.bot.open(self.path, 'w') as f:
+            await f.write(json.dumps(config))
 
     @commands.command(name='disabled')
     @commands.cooldown(1, 5, commands.BucketType.channel)
     @commands.has_permissions(administrator=True)
     async def disabled(self, ctx):
         """ Lists the guilds disabled commands """
-        with open(self.path, 'r') as f:
-            config = json.load(f)  # type: dict
+        async with self.bot.open(self.path, 'r') as f:
+            config = json.loads(await f.read())  # type: dict
         guild_id = str(ctx.guild.id)
         conf = config[guild_id]
         if guild_id not in config or not any(

@@ -23,9 +23,11 @@ class AntiRaid(commands.Cog):
 					self.toggle = dat["toggle"]
 
 	async def save_data(self):
+		"""Dump changes to the save file"""
 		fp = "./data/userdata/anti_raid.json"
 		data = {"toggle": self.toggle}
-		await self.bot.save_json(fp, data)
+		async with self.bot.open(fp, "w+") as f:
+			await f.write(json.dumps(data))
 
 	async def ensure_permissions(self, guild):
 		guild_id = str(guild.id)
