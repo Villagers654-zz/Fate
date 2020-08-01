@@ -1,6 +1,5 @@
 # Captcha human verification channels
 
-from time import time
 import asyncio
 from os import path
 import json
@@ -29,8 +28,8 @@ class Verification(commands.Cog):
     @property
     def template_config(self):
         return {
-            "channel_id": int,  # Verification channel, required incase the bot can't dm
-            "verified_role_id": int,  # Role to give whence verified
+            "channel_id": int,                   # Verification channel, required incase the bot can't dm
+            "verified_role_id": int,             # Role to give whence verified
             "temp_role_id": Optional[None, int]  # Role to remove whence verified
         }
 
@@ -50,13 +49,15 @@ class Verification(commands.Cog):
                 name="◈ Usage",
                 value=f"{p}verification enable"
                 f"\n`start a simple and guided setup process`"
-                f"{p}verification disable"
+                f"\n{p}verification disable"
                 f"\n`wipes your current configuration`"
-                f"\n~~{p}verification set-verified-role @role"
+                f"\n{p}verification set-channel #channel"
+                f"\n`changes the linked channel`"
+                f"\n{p}verification set-verified-role @role"
                 f"\n`change the role given whence verified`"
                 f"\n{p}verification set-temp-role @role"
                 f"\n`set or change the role to remove whence verified. this is an optional feature, "
-                f"and isn't required in order for verification to work`~~",
+                f"and isn't required in order for verification to work`",
                 inline=False)
             guild_id = str(ctx.guild.id)
             if guild_id in self.config:
@@ -83,6 +84,51 @@ class Verification(commands.Cog):
                     }))
             await ctx.send(embed=e)
 
+    @verification.group(name="enable")
+    @commands.has_permissions(administrator=True)
+    async def _enable(self, ctx):
+        guild_id = str(ctx.guild.id)
+        await ctx.send("Mention the channel I should use for each verification process")
+        msg = await self.bot.wait_for_msg(ctx)
+        if not msg:
+            return
+        if not msg.channel_mentions:
+            return await ctx.send("m, that's an invalid response\nRerun the command and try again")
+        channel = msg.channel_mentions[0]
+        perms = channel.permissions_for(ctx.guild.me)
+        if not perms.send_messages or not perms.embed_links or not perms.manage_messages:
+            return await ctx.send("Before you can enable verification I need permissions in that channel to send "
+                                  "messages, embed links, and manage messages")
+        await ctx.send("Send the name, or mention of the role I should give whence someone completes verification")
+        msg = await self.bot.wait_for_msg(ctx)
+        if not msg:
+            return
+        role = await self.bot.utils.get_role(ctx, msg.content)
+        if not role:
+            return await ctx.send("m, that's not a valid role\nRerun the command and try again")
+        if role.position >= ctx.guild.me.top_role.position:
+            return await ctx.send("That role's higher than I can access")
+        await ctx.send("Send the name, or mention of the role I should remove whence someone completes verification"
+                       "\nThis one's optional, so you can reply with `skip` if you don't wish to use one")
+        msg = await self.bot.wait_for_msg(ctx)
+        if not msg:
+            return
+        temp_role = None
+        if str(msg.content).lower() != "skip":
+            target = await self.bot.utils.get_role(ctx, msg.content)
+            if not target:
+                return await ctx.send("m, that's not a valid role\nRerun the command and try again")
+            if role.position >= ctx.guild.me.top_role.position:
+                return await ctx.send("That role's higher than I can access")
+            temp_role = target.id
+        self.config[guild_id] = {
+            "channel_id": channel.id,     # Verification channel, required incase the bot can't dm
+            "verified_role_id": role.id,  # Role to give whence verified
+            "temp_role_id": temp_role     # Role to remove whence verified
+        }
+        await ctx.send("Successfully setup the verification system")
+        await self.save_data()
+
     @verification.group(name="disable")
     @commands.has_permissions(administrator=True)
     async def _disable(self, ctx):
@@ -93,10 +139,56 @@ class Verification(commands.Cog):
         await ctx.send("Disabled verification")
         await self.save_data()
 
+    @verification.group(name="setchannel", aliases=["set-channel"])
+    @commands.has_permissions(administrator=True)
+    async def _set_channel(self, ctx, channel: discord.TextChannel):
+        guild_id = str(ctx.guild.id)
+        if guild_id not in self.config:
+            return await ctx.send("Verification isn't enabled")
+        perms = channel.permissions_for(ctx.guild.me)
+        if not perms.send_messages or not perms.embed_links or not perms.manage_messages:
+            return await ctx.send("Before you can enable verification I need permissions in that channel to send "
+                                  "messages, embed links, and manage messages")
+        self.config[guild_id]["channel_id"] = channel.id
+        await ctx.send("Set the verification channel")
+        await self.save_data()
+
+    @verification.group(name="set-verified-role")
+    @commands.has_permissions(administrator=True)
+    async def _set_verified_role(self, ctx, *, role):
+        guild_id = str(ctx.guild.id)
+        if guild_id not in self.config:
+            return await ctx.send("Verification isn't enabled")
+        role = await self.bot.utils.get_role(ctx, role)
+        if not role:
+            return await ctx.send("Role not found")
+        if role.position >= ctx.guild.me.top_role.position:
+            return await ctx.send("That role's higher than I can access")
+        self.config[guild_id]["verified_role_id"] = role.id
+        await ctx.send("Set the verified role")
+        await self.save_data()
+
+    @verification.group(name="set-temp-role")
+    @commands.has_permissions(administrator=True)
+    async def _set_temp_role(self, ctx, *, role=None):
+        guild_id = str(ctx.guild.id)
+        if guild_id not in self.config:
+            return await ctx.send("Verification isn't enabled")
+        if role is not None:
+            role = await self.bot.utils.get_role(ctx, role)
+            if not role:
+                return await ctx.send("Role not found")
+            if role.position >= ctx.guild.me.top_role.position:
+                return await ctx.send("That role's higher than I can access")
+            role = role.id
+        self.config[guild_id]["temp_role_id"] = role
+        await ctx.send("Set the temp role")
+        await self.save_data()
+
     async def bulk_purge(self, channel: discord.TextChannel, collection_period: int = 5):
         guild_id = str(channel.guild.id)
         await asyncio.sleep(collection_period)
-        target_messages = [msg for msg in self.queue[guild_id] if msg]
+        target_messages = list(set([msg for msg in self.queue[guild_id] if msg]))
         for message in target_messages:
             self.queue[guild_id].remove(message)
         try:

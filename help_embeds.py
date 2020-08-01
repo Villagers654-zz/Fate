@@ -79,6 +79,7 @@ class HelpMenus():
                         '• **restore-roles** - `gives roles back on rejoin`\n' \
                         '• **selfroles** - `gives roles via reaction menus`\n' \
                         '• **autorole** - `gives users roles on-join`\n' \
+                        '• **verification** - `verify users on_join`\n' \
                         '• **limit** - `limit channels to only allow messages with things like images`\n' \
                         '• **anti-spam** - `mutes users when they spam`\n' \
                         '• **audit** - `tools for searching through the audit log`\n' \
