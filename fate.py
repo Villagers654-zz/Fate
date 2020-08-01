@@ -270,7 +270,7 @@ class Fate(commands.AutoShardedBot):
         # ping = str(round((monotonic() - before) * 1000))
         # self.log(f"Replaced old file in {ping}ms", "DEBUG")
 
-    async def wait_for_msg(self, ctx, timeout=60, action="Action") -> Optional[discord.Message]:
+    async def wait_for_msg(self, ctx, timeout=60, action="Waiting for message") -> Optional[discord.Message]:
         def pred(m):
             return m.author.id == ctx.author.id and m.channel.id == ctx.channel.id
 
