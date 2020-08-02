@@ -56,6 +56,7 @@ class RestoreRoles(commands.Cog):
             return await ctx.send('Restore-Roles is already enabled')
         self.guilds.append(guild_id)
         await ctx.send('Enabled Restore-Roles')
+        await self.save_data()
 
     @restore_roles.command(name='disable')
     @commands.has_permissions(administrator=True)
