@@ -25,14 +25,14 @@ class RestoreRoles(commands.Cog):
         data = {'guilds': self.guilds, 'allow_perms': self.allow_perms}
         await self.bot.save_json(self.path, data)
 
-    def disable_module(self, guild_id: str):
+    async def disable_module(self, guild_id: str):
         """ Disables the module and resets guild data """
         self.guilds.pop(self.guilds.index(guild_id))
         if guild_id in self.allow_perms:
             self.allow_perms.pop(self.allow_perms.index(guild_id))
-        self.save_data()
+        await self.save_data()
 
-    @commands.group(name='restore-roles', aliases=['restore_roles'])
+    @commands.group(name='restore-roles', aliases=['restore_roles', 'restoreroles'])
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.bot_has_permissions(embed_links=True)
     async def restore_roles(self, ctx):
@@ -64,7 +64,7 @@ class RestoreRoles(commands.Cog):
         guild_id = str(ctx.guild.id)
         if guild_id not in self.guilds:
             return await ctx.send('Restore-Roles is not enabled')
-        self.disable_module(guild_id)
+        await self.disable_module(guild_id)
         await ctx.send('Disabled Restore-Roles')
 
     @restore_roles.command(name='allow-perms')
