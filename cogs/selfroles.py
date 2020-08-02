@@ -88,11 +88,11 @@ class SelfRoles(commands.Cog):
 		await msg.edit(embed=embed)
 		return msg
 
-	@commands.command(name='selfroles')
+	@commands.command(name='selfroles', aliases=['self-roles', 'selfrole', 'self-role'])
 	@commands.cooldown(2, 5, commands.BucketType.user)
 	@commands.guild_only()
 	@commands.bot_has_permissions(embed_links=True)
-	async def premium_selfroles(self, ctx):
+	async def selfroles(self, ctx):
 		""" Sends info & usage help on self roles """
 		e = discord.Embed(color=colors.fate())
 		e.set_author(name='Self-Role Menus', icon_url=ctx.author.avatar_url)
