@@ -363,7 +363,7 @@ class Welcome(commands.Cog):
 					channel = self.bot.get_channel(self.channel[guild_id])
 				except:
 					del self.toggle[guild_id]
-					return self.save_data()
+					return await self.save_data()
 				msg = self.format[guild_id]
 				msg = msg.replace("$MENTION", m.mention).replace("$SERVER", m.guild.name)
 				msg = msg.replace('!user', m.mention).replace('!server', m.guild.name)

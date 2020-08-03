@@ -128,31 +128,23 @@ class Fate(commands.AutoShardedBot):
 
         self.open = AsyncFileManager
 
-        class WaitForMessage:
-            def __init__(cls, ctx=None, user=None, channel=None, check=None, send_error=True, timeout=60):
+        class WaitForEvent:
+            def __init__(cls, event, ctx=None, channel=None, check=None, send_error=True, timeout=60):
+                cls.event = event
                 cls.ctx = ctx
-                cls.user = user
-                if not user and ctx:
-                    cls.user = ctx.author
                 cls.channel = channel
-                if not channel and ctx:
+                if not channel:
                     cls.channel = ctx.channel
                 cls.check = check
                 cls.send_error = send_error
                 cls.timeout = timeout
 
             async def __aenter__(cls):
-                def predicate(msg):
-                    if cls.channel and msg.channel.id != cls.channel.id:
-                        return False
-                    return msg.author.id == cls.user.id
-
-                check = cls.check if cls.check else predicate
                 try:
-                    message = await self.wait_for("message", check=check, timeout=cls.timeout)
+                    message = await self.wait_for(cls.event, check=cls.check, timeout=cls.timeout)
                 except asyncio.TimeoutError:
                     if cls.send_error:
-                        await cls.channel.send("Timed out waiting for msg")
+                        await cls.ctx.send(f"Timed out waiting for {cls.event}")
                     raise self.ignored_exit()
                 else:
                     return message
@@ -160,7 +152,7 @@ class Fate(commands.AutoShardedBot):
             async def __aexit__(cls, exc_type, exc_val, exc_tb):
                 pass
 
-        self.require_msg = WaitForMessage
+        self.require = WaitForEvent
 
         # Set the oauth_url for users to invite the bot with
         perms = discord.Permissions(0)

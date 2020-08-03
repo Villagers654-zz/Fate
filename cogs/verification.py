@@ -95,23 +95,22 @@ class Verification(commands.Cog):
     async def _enable(self, ctx):
         guild_id = str(ctx.guild.id)
 
+        def pred(m):
+            return m.author.id == ctx.author.id and m.channel.id == ctx.channel.id
+
         await ctx.send("Mention the channel I should use for each verification process")
-        msg = await self.bot.wait_for_msg(ctx)
-        if not msg:
-            return
-        if not msg.channel_mentions:
-            return await ctx.send("m, that's an invalid response\nRerun the command and try again")
-        channel = msg.channel_mentions[0]
+        async with self.bot.require('message', ctx, check=pred) as msg:
+            if not msg.channel_mentions:
+                return await ctx.send("m, that's an invalid response\nRerun the command and try again")
+            channel = msg.channel_mentions[0]
         perms = channel.permissions_for(ctx.guild.me)
         if not perms.send_messages or not perms.embed_links or not perms.manage_messages:
             return await ctx.send("Before you can enable verification I need permissions in that channel to send "
                                   "messages, embed links, and manage messages")
 
         await ctx.send("Send the name, or mention of the role I should give whence someone completes verification")
-        msg = await self.bot.wait_for_msg(ctx)
-        if not msg:
-            return
-        role = await self.bot.utils.get_role(ctx, msg.content)
+        async with self.bot.require('message', ctx, check=pred) as msg:
+            role = await self.bot.utils.get_role(ctx, msg.content)
         if not role:
             return await ctx.send("m, that's not a valid role\nRerun the command and try again")
         if role.position >= ctx.guild.me.top_role.position:
@@ -119,29 +118,25 @@ class Verification(commands.Cog):
 
         await ctx.send("Send the name, or mention of the role I should remove whence someone completes verification"
                        "\nThis one's optional, so you can reply with `skip` if you don't wish to use one")
-        msg = await self.bot.wait_for_msg(ctx)
-        if not msg:
-            return
-        temp_role = None
-        if str(msg.content).lower() != "skip":
-            target = await self.bot.utils.get_role(ctx, msg.content)
-            if not target:
-                return await ctx.send("m, that's not a valid role\nRerun the command and try again")
-            if role.position >= ctx.guild.me.top_role.position:
-                return await ctx.send("That role's higher than I can access")
-            temp_role = target.id
+        async with self.bot.require('message', ctx, check=pred) as msg:
+            temp_role = None
+            if str(msg.content).lower() != "skip":
+                target = await self.bot.utils.get_role(ctx, msg.content)
+                if not target:
+                    return await ctx.send("m, that's not a valid role\nRerun the command and try again")
+                if role.position >= ctx.guild.me.top_role.position:
+                    return await ctx.send("That role's higher than I can access")
+                temp_role = target.id
 
         await ctx.send("Should I delete the captcha message that shows if a user passed or failed verification after "
                        "completion? Reply with `yes` or `no`")
-        msg = await self.bot.wait_for_msg(ctx)
-        if not msg:
-            return
-        if 'ye' not in str(msg.content).lower() and 'no' not in str(msg.content).lower():
-            return await ctx.send("Invalid response, please rerun the command")
-        elif 'ye' in str(msg.content).lower():
-            delete_after = True
-        else:
-            delete_after = False
+        async with self.bot.require('message', ctx, check=pred) as msg:
+            if 'ye' not in str(msg.content).lower() and 'no' not in str(msg.content).lower():
+                return await ctx.send("Invalid response, please rerun the command")
+            elif 'ye' in str(msg.content).lower():
+                delete_after = True
+            else:
+                delete_after = False
         self.config[guild_id] = {
             "channel_id": channel.id,     # Verification channel, required incase the bot can't dm
             "verified_role_id": role.id,  # Role to give whence verified
