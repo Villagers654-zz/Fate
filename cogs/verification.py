@@ -30,7 +30,8 @@ class Verification(commands.Cog):
         return {
             "channel_id": int,                   # Verification channel, required incase the bot can't dm
             "verified_role_id": int,             # Role to give whence verified
-            "temp_role_id": Optional[None, int]  # Role to remove whence verified
+            "temp_role_id": Optional[None, int], # Role to remove whence verified
+            "delete_after": bool
         }
 
     async def save_data(self):
@@ -58,7 +59,9 @@ class Verification(commands.Cog):
                 f"\n`change the role given whence verified`"
                 f"\n{p}verification set-temp-role @role"
                 f"\n`set or change the role to remove whence verified. this is an optional feature, "
-                f"and isn't required in order for verification to work`",
+                f"and isn't required in order for verification to work`"
+                f"\n{p}verification delete-after"
+                f"\n`toggles whether or not to delete the captcha after a user completes verification`",
                 inline=False)
             guild_id = str(ctx.guild.id)
             if guild_id in self.config:
@@ -81,7 +84,9 @@ class Verification(commands.Cog):
                             verified_role.mention
                             if verified_role else 'deleted-role',
                         "Temp Role":
-                            temp_role
+                            temp_role,
+                        "Delete captcha after":
+                            str(conf["delete_after"])
                     }))
             await ctx.send(embed=e)
 
@@ -89,6 +94,7 @@ class Verification(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def _enable(self, ctx):
         guild_id = str(ctx.guild.id)
+
         await ctx.send("Mention the channel I should use for each verification process")
         msg = await self.bot.wait_for_msg(ctx)
         if not msg:
@@ -100,6 +106,7 @@ class Verification(commands.Cog):
         if not perms.send_messages or not perms.embed_links or not perms.manage_messages:
             return await ctx.send("Before you can enable verification I need permissions in that channel to send "
                                   "messages, embed links, and manage messages")
+
         await ctx.send("Send the name, or mention of the role I should give whence someone completes verification")
         msg = await self.bot.wait_for_msg(ctx)
         if not msg:
@@ -109,6 +116,7 @@ class Verification(commands.Cog):
             return await ctx.send("m, that's not a valid role\nRerun the command and try again")
         if role.position >= ctx.guild.me.top_role.position:
             return await ctx.send("That role's higher than I can access")
+
         await ctx.send("Send the name, or mention of the role I should remove whence someone completes verification"
                        "\nThis one's optional, so you can reply with `skip` if you don't wish to use one")
         msg = await self.bot.wait_for_msg(ctx)
@@ -122,10 +130,23 @@ class Verification(commands.Cog):
             if role.position >= ctx.guild.me.top_role.position:
                 return await ctx.send("That role's higher than I can access")
             temp_role = target.id
+
+        await ctx.send("Should I delete the captcha message that shows if a user passed or failed verification after "
+                       "completion? Reply with `yes` or `no`")
+        msg = await self.bot.wait_for_msg(ctx)
+        if not msg:
+            return
+        if 'ye' not in str(msg.content).lower() and 'no' not in str(msg.content).lower():
+            return await ctx.send("Invalid response, please rerun the command")
+        elif 'ye' in str(msg.content).lower():
+            delete_after = True
+        else:
+            delete_after = False
         self.config[guild_id] = {
             "channel_id": channel.id,     # Verification channel, required incase the bot can't dm
             "verified_role_id": role.id,  # Role to give whence verified
-            "temp_role_id": temp_role     # Role to remove whence verified
+            "temp_role_id": temp_role,    # Role to remove whence verified
+            "delete_after": delete_after
         }
         await ctx.send("Successfully setup the verification system")
         await self.save_data()
@@ -186,6 +207,19 @@ class Verification(commands.Cog):
         await ctx.send("Set the temp role")
         await self.save_data()
 
+    @verification.command(name="delete-after")
+    @commands.has_permissions(administrator=True)
+    async def _delete_after(self, ctx, toggle: bool = None):
+        guild_id = str(ctx.guild.id)
+        if guild_id not in self.config:
+            return await ctx.send("Verification isn't enabled")
+        new_toggle = not self.config[guild_id]["delete_after"]
+        if toggle:
+            new_toggle = toggle
+        self.config[guild_id]["delete_after"] = new_toggle
+        await ctx.send(f"{'enabled' if new_toggle else 'disabled'} delete-after")
+        await self.save_data()
+
     async def bulk_purge(self, channel: discord.TextChannel, collection_period: int = 5):
         guild_id = str(channel.guild.id)
         await asyncio.sleep(collection_period)
@@ -204,7 +238,7 @@ class Verification(commands.Cog):
         if not msg.guild:
             return
         guild_id = str(msg.guild.id)
-        if not msg.author.bot and guild_id in self.config:
+        if not msg.author.bot and guild_id in self.config and not msg.author.guild_permissions.administrator:
             if msg.channel.id == self.config[guild_id]["channel_id"]:
                 if guild_id not in self.queue:
                     self.queue[guild_id] = []
@@ -239,16 +273,11 @@ class Verification(commands.Cog):
                 del self.config[guild_id]
                 await self.save_data()
                 return
-            msg = await channel.send(
-                f"{member.mention} complete this captcha to be verified",
-                delete_after=45
-            )
-            ctx = await self.bot.get_context(msg)
-            verified = await self.bot.verify_user(ctx, user=member)
+            verified = await self.bot.verify_user(channel=channel, user=member, delete_after=conf["delete_after"])
             if verified:
                 await member.add_roles(verified_role)
                 if conf["temp_role_id"]:
-                    temp_role = ctx.guild.get_role(conf["temp_role_id"])
+                    temp_role = member.guild.get_role(conf["temp_role_id"])
                     if not temp_role:
                         with suppress(Forbidden, HTTPException):
                             await channel.send(
@@ -267,8 +296,6 @@ class Verification(commands.Cog):
                         await member.guid.owner.send(
                             f"I'm missing permissions to kick unverified members in {member.guild}"
                         )
-            with suppress(NotFound):
-                await msg.delete()
 
 
 def setup(bot):
