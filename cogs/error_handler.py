@@ -6,6 +6,7 @@ from discord.ext import commands
 import discord
 
 from utils import colors, checks
+from fate import EmptyException
 
 
 class ErrorHandler(commands.Cog):
@@ -20,6 +21,8 @@ class ErrorHandler(commands.Cog):
 		ignored = (commands.CommandNotFound, commands.NoPrivateMessage, discord.errors.NotFound)
 		if isinstance(error, ignored):
 			return
+		if not issubclass(type(error), EmptyException):
+			return await ctx.send("Timed out waiting for a response")
 
 		# Don't bother if completely missing access
 		perms = None if not ctx.guild else ctx.channel.permissions_for(ctx.guild.me)

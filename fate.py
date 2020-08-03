@@ -9,6 +9,8 @@ from typing import *
 import aiohttp
 import aiofiles
 import random
+import sys
+import inspect
 
 from discord.ext import commands
 import discord
@@ -18,6 +20,10 @@ from termcolor import cprint
 from PIL import Image, ImageDraw, ImageFont
 
 from utils import outh, utils, tasks, colors, checks
+
+
+class EmptyException(Exception):
+    pass
 
 
 class Fate(commands.AutoShardedBot):
@@ -38,6 +44,7 @@ class Fate(commands.AutoShardedBot):
         self.tasks = {}                 # Task object storing for easy management
         self.logger_tasks = {}          # Same as Fate.tasks except dedicated to cogs.logger
         self.last_traceback = ""        # Formatted string of the last error traceback
+        self.ignored_exit = EmptyException
 
         self.initial_extensions = [     # Cogs to load before logging in
             'error_handler', 'config', 'menus', 'core', 'mod', 'welcome', 'farewell', 'notes', 'archive',
@@ -120,6 +127,40 @@ class Fate(commands.AutoShardedBot):
                     self.locks[cls.file].release()
 
         self.open = AsyncFileManager
+
+        class WaitForMessage:
+            def __init__(cls, ctx=None, user=None, channel=None, check=None, send_error=True, timeout=60):
+                cls.ctx = ctx
+                cls.user = user
+                if not user and ctx:
+                    cls.user = ctx.author
+                cls.channel = channel
+                if not channel and ctx:
+                    cls.channel = ctx.channel
+                cls.check = check
+                cls.send_error = send_error
+                cls.timeout = timeout
+
+            async def __aenter__(cls):
+                def predicate(msg):
+                    if cls.channel and msg.channel.id != cls.channel.id:
+                        return False
+                    return msg.author.id == cls.user.id
+
+                check = cls.check if cls.check else predicate
+                try:
+                    message = await self.wait_for("message", check=check, timeout=cls.timeout)
+                except asyncio.TimeoutError:
+                    if cls.send_error:
+                        await cls.channel.send("Timed out waiting for msg")
+                    raise self.ignored_exit()
+                else:
+                    return message
+
+            async def __aexit__(cls, exc_type, exc_val, exc_tb):
+                pass
+
+        self.require_msg = WaitForMessage
 
         # Set the oauth_url for users to invite the bot with
         perms = discord.Permissions(0)
