@@ -28,10 +28,10 @@ class Verification(commands.Cog):
     @property
     def template_config(self):
         return {
-            "channel_id": int,                   # Verification channel, required incase the bot can't dm
-            "verified_role_id": int,             # Role to give whence verified
-            "temp_role_id": Optional[None, int], # Role to remove whence verified
-            "delete_after": bool
+            "channel_id": int,                    # Verification channel, required incase the bot can't dm
+            "verified_role_id": int,              # Role to give whence verified
+            "temp_role_id": Optional[None, int],  # Role to remove whence verified
+            "delete_after": bool                  # Delete captcha message after users are verified
         }
 
     async def save_data(self):
@@ -221,33 +221,38 @@ class Verification(commands.Cog):
         await self.save_data()
 
     async def bulk_purge(self, channel: discord.TextChannel, collection_period: int = 5):
+        """Collect messages for X seconds and bulk delete"""
         guild_id = str(channel.guild.id)
         await asyncio.sleep(collection_period)
+
         target_messages = list(set([msg for msg in self.queue[guild_id] if msg]))
         for message in target_messages:
             self.queue[guild_id].remove(message)
-        try:
+
+        try:  # Attempt to bulk delete the target messages
             await channel.delete_messages(target_messages)
-        except NotFound:
+        except NotFound:  # One, or more of the messages was already deleted
             for msg in target_messages:
+                # Delete individually
                 with suppress(NotFound):
                     await msg.delete()
+        return None
 
     @commands.Cog.listener("on_message")
     async def channel_cleanup(self, msg):
-        if not msg.guild:
-            return
-        guild_id = str(msg.guild.id)
-        if not msg.author.bot and guild_id in self.config and not msg.author.guild_permissions.administrator:
-            if msg.channel.id == self.config[guild_id]["channel_id"]:
-                if guild_id not in self.queue:
-                    self.queue[guild_id] = []
-                self.queue[guild_id].append(msg)
-                if guild_id not in self.running_tasks:
-                    self.running_tasks.append(guild_id)
-                    with suppress(IndexError, NotFound, Forbidden, HTTPException):
-                        await self.bulk_purge(msg.channel, collection_period=5)
-                    self.running_tasks.remove(guild_id)
+        """Trigger the task for bulk deleting messages in verification channels"""
+        if not isinstance(msg.channel, discord.DMChannel) and not msg.author.bot:
+            if not msg.author.guild_permissions.administrator:
+                guild_id = str(msg.guild.id)
+                if guild_id in self.config and msg.channel.id == self.config[guild_id]["channel_id"]:
+                    if guild_id not in self.queue:
+                        self.queue[guild_id] = []
+                    self.queue[guild_id].append(msg)
+                    if guild_id not in self.running_tasks:
+                        self.running_tasks.append(guild_id)
+                        with suppress(IndexError, NotFound, Forbidden, HTTPException):
+                            await self.bulk_purge(msg.channel, collection_period=5)
+                        self.running_tasks.remove(guild_id)
 
     @commands.Cog.listener("on_member_join")
     async def init_verification_process(self, member: discord.Member):
