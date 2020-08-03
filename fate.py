@@ -282,9 +282,16 @@ class Fate(commands.AutoShardedBot):
         else:
             return msg
 
-    async def verify_user(self, ctx, user=None, timeout=45, delete_after=False):
+    async def verify_user(self, context=None, channel=None, user=None, timeout=45, delete_after=False):
+        if not user and not context:
+            raise TypeError("verify_user() requires either 'context' or 'user', and neither was given")
+        if not channel and not context:
+            raise TypeError("verify_user() requires either 'context' or 'channel', and neither was given")
         if not user:
-            user = ctx.author
+            user = context.author
+        if not channel:
+            channel = context.channel
+
         fp = os.path.basename(f"./static/captcha-{time()}.png")
         abcs = "abcdefghijklmnopqrstuvwxyz"
         chars = " ".join([random.choice(list(abcs)).upper() for _i in range(6)])
@@ -314,10 +321,10 @@ class Fate(commands.AutoShardedBot):
         await self.loop.run_in_executor(None, create_card)
 
         e = discord.Embed(color=colors.fate())
-        e.set_author(name="Verify you're human", icon_url=user.avatar_url)
+        e.set_author(name=str(user), icon_url=user.avatar_url)
         e.set_image(url="attachment://" + fp)
         e.set_footer(text=f"You have {self.utils.get_time(timeout)}")
-        message = await ctx.send(embed=e, file=discord.File(fp))
+        message = await channel.send(f"{user.mention} please verify you're human", embed=e, file=discord.File(fp))
 
         def pred(m):
             return m.author.id == user.id and str(m.content).lower() == chars.lower().replace(" ", "")
@@ -336,7 +343,7 @@ class Fate(commands.AutoShardedBot):
                 await message.delete()
             else:
                 e.set_footer(text="Captcha Passed")
-                await message.edit(embed=e)
+                await message.edit(content=None, embed=e)
             return True
 
     async def get_choice(self, ctx, *options, user, timeout=30) -> Optional[object]:
