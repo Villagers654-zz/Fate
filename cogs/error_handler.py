@@ -18,11 +18,14 @@ class ErrorHandler(commands.Cog):
 	async def on_command_error(self, ctx, error):
 		if hasattr(ctx.command, 'on_error'):
 			return
-		ignored = (commands.CommandNotFound, commands.NoPrivateMessage, discord.errors.NotFound)
+		ignored = (
+			commands.CommandNotFound,
+			commands.NoPrivateMessage,
+			discord.errors.NotFound,
+			commands.CommandInvokeError
+		)
 		if isinstance(error, ignored):
 			return
-		if not issubclass(type(error), EmptyException):
-			return await ctx.send("Timed out waiting for a response")
 
 		# Don't bother if completely missing access
 		perms = None if not ctx.guild else ctx.channel.permissions_for(ctx.guild.me)
@@ -101,6 +104,7 @@ class ErrorHandler(commands.Cog):
 			return
 
 		# Print everything to console to get the full traceback
+		await ctx.send(type(error))
 		print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
 		traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
 		self.bot.last_traceback = full_traceback
