@@ -50,7 +50,7 @@ class Fate(commands.AutoShardedBot):
             'error_handler', 'config', 'menus', 'core', 'mod', 'welcome', 'farewell', 'notes', 'archive',
             'coffeeshop', 'custom', 'actions', 'reactions', 'responses', 'textart', 'fun', 'dev', 'readme',
             'reload', 'embeds', 'polis', 'apis', 'chatbridges', 'clean_rythm', 'utility', 'psutil', 'rules',
-            'duel_chat', 'selfroles', 'lock', 'audit', 'cookies', 'server_list', 'emojis', 'giveaways',
+            'duel_chat', 'selfroles', 'lock', 'audit', 'cookies', 'server_list', 'emojis', 'giveaways', 'polls',
             'logger', 'autorole', 'changelog', 'restore_roles', 'chatbot', 'anti_spam', 'anti_raid', 'chatfilter',
             'nsfw', 'minecraft', 'chatlock', 'rainbow', 'system', 'user', 'limiter', 'dm_channel', 'factions',
             'secure_overwrites', 'server_setup', 'global-chat', 'ranking', 'statistics', 'toggles', 'verification'
@@ -92,6 +92,8 @@ class Fate(commands.AutoShardedBot):
                 cls.cursor = None
 
             async def __aenter__(cls):
+                while not self.pool:
+                    await asyncio.sleep(0.21)
                 cls.conn = await self.pool.acquire()
                 cls.cursor = await cls.conn.cursor()
                 return cls.cursor
@@ -129,22 +131,25 @@ class Fate(commands.AutoShardedBot):
         self.open = AsyncFileManager
 
         class WaitForEvent:
-            def __init__(cls, event, ctx=None, channel=None, check=None, send_error=True, timeout=60):
+            def __init__(cls, event, check=None, channel=None, send_error=True, timeout=60):
                 cls.event = event
-                cls.ctx = ctx
                 cls.channel = channel
-                if not channel:
-                    cls.channel = ctx.channel
                 cls.check = check
                 cls.send_error = send_error
                 cls.timeout = timeout
+
+                ctx = check if isinstance(check, commands.Context) else None
+                if ctx and not cls.channel:
+                    cls.channel = cls.channel
+                if ctx and cls.event == 'message':
+                    cls.check = lambda m: m.author.id == ctx.author.id and m.channel.id == ctx.channel.id
 
             async def __aenter__(cls):
                 try:
                     message = await self.wait_for(cls.event, check=cls.check, timeout=cls.timeout)
                 except asyncio.TimeoutError:
-                    if cls.send_error:
-                        await cls.ctx.send(f"Timed out waiting for {cls.event}")
+                    if cls.send_error and cls.channel:
+                        await cls.channel.send(f"Timed out waiting for {cls.event}")
                     raise self.ignored_exit()
                 else:
                     return message

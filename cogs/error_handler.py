@@ -19,10 +19,9 @@ class ErrorHandler(commands.Cog):
 		if hasattr(ctx.command, 'on_error'):
 			return
 		ignored = (
-			commands.CommandNotFound,
-			commands.NoPrivateMessage,
 			discord.errors.NotFound,
-			commands.CommandInvokeError
+			commands.CommandNotFound,
+			commands.NoPrivateMessage
 		)
 		if isinstance(error, ignored):
 			return
@@ -37,8 +36,9 @@ class ErrorHandler(commands.Cog):
 		error_str = str(error)
 		formatted = "\n".join(traceback.format_tb(error.__traceback__))
 		full_traceback = f"```python\n{formatted}\n{type(error).__name__}: {error}```"
+		if 'EmptyException' in full_traceback:
+			return
 
-		# Send a user-friendly error and state that it'll be fixed soon
 		try:
 			# Disabled globally in the code
 			if isinstance(error, commands.DisabledCommand):
@@ -95,6 +95,7 @@ class ErrorHandler(commands.Cog):
 			elif isinstance(error, KeyError):
 				error_str = f'No Data: {error}'
 
+			# Send a user-friendly error and state that it'll be fixed soon
 			if not isinstance(error, discord.errors.NotFound):
 				e = discord.Embed(color=colors.red())
 				e.description = f'[{error_str}](https://www.youtube.com/watch?v=t3otBjVZzT0)'
@@ -104,7 +105,6 @@ class ErrorHandler(commands.Cog):
 			return
 
 		# Print everything to console to get the full traceback
-		await ctx.send(type(error))
 		print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
 		traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
 		self.bot.last_traceback = full_traceback
