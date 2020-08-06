@@ -364,6 +364,28 @@ async def get_role(ctx, name):
 				await msg.delete()
 				return roles[role - 1]
 
+def extract_timer(string):
+	timers = re.findall('[0-9]+[smhd]', string)
+	if not timers:
+		return None
+	time_to_sleep = [0, []]
+	for timer in timers:
+		raw = ''.join(x for x in list(timer) if x.isdigit())
+		if 'd' in timer:
+			time = int(timer.replace('d', '')) * 60 * 60 * 24
+			repr = 'day'
+		elif 'h' in timer:
+			time = int(timer.replace('h', '')) * 60 * 60
+			repr = 'hour'
+		elif 'm' in timer:
+			time = int(timer.replace('m', '')) * 60
+			repr = 'minute'
+		else:  # 's' in timer
+			time = int(timer.replace('s', ''))
+			repr = 'second'
+		time_to_sleep[0] += time
+		time_to_sleep[1].append(f"{raw} {repr if raw == '1' else repr + 's'}")
+	return time_to_sleep
 
 async def wait_for_msg(self, ctx, user=None):
 	if not user:
