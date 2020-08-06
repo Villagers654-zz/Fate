@@ -24,7 +24,7 @@ class SafePolls(commands.Cog):
             bot.loop.create_task(self.cache_msg_ids())
         if "polls" not in self.bot.tasks:
             self.bot.tasks["polls"] = {}
-        self.emojis = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️"]
+        self.emojis = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣"]
         self.cache = {}
         self.waiting = {}
 
@@ -118,10 +118,10 @@ class SafePolls(commands.Cog):
                     await ctx.send(
                         f"Couldn't find any timers in that, remember {instructions}. Please retry", delete_after=30
                     )
-                elif result > 60 * 60 * 24 * 30:  # 30 Days
+                elif result[0] > 60 * 60 * 24 * 30:  # 30 Days
                     await ctx.send("You can't pick a time greater than 30 days, please retry", delete_after=16)
                 else:
-                    timer = result
+                    timer = result[0]
                 await msg.delete()
 
         await message.delete()
@@ -154,7 +154,10 @@ class SafePolls(commands.Cog):
                 elif not msg.channel_mentions[0].permissions_for(ctx.guild.me).add_reactions:
                     await ctx.send("I'm missing perms to add reactions there, you can fix and retry", delete_after=16)
                 else:
-                    channel = msg.channel_mentions[0]
+                    if channel.permissions_for(ctx.author).send_messages:
+                        channel = msg.channel_mentions[0]
+                    else:
+                        await ctx.send("You can't send in that channel, please select another", delete_after=16)
                 await msg.delete()
         await message.delete()
 
