@@ -43,7 +43,6 @@ class SafePolls(commands.Cog):
         async with self.bot.cursor() as cur:
             await cur.execute("select msg_id from polls;")
             results = await cur.fetchall()
-            print(results)
         self.polls = list(set(self.polls + [r[0] for r in results]))
 
     async def update_poll(self, msg_id: int) -> None:
@@ -154,7 +153,7 @@ class SafePolls(commands.Cog):
                 elif not msg.channel_mentions[0].permissions_for(ctx.guild.me).add_reactions:
                     await ctx.send("I'm missing perms to add reactions there, you can fix and retry", delete_after=16)
                 else:
-                    if channel.permissions_for(ctx.author).send_messages:
+                    if msg.channel_mentions[0].permissions_for(ctx.author).send_messages:
                         channel = msg.channel_mentions[0]
                     else:
                         await ctx.send("You can't send in that channel, please select another", delete_after=16)
@@ -226,6 +225,13 @@ class SafePolls(commands.Cog):
                 self.waiting[msg_id] = ['host']
             for key, users in self.cache[msg_id].items():
                 if payload.user_id in users:
+                    if key == str(payload.emoji):
+                        if len(self.waiting[msg_id]) == 1:
+                            del self.waiting[msg_id]
+                            del self.cache[msg_id]
+                        elif host:
+                            self.waiting[msg_id].remove('host')
+                        return
                     self.cache[msg_id][key].remove(payload.user_id)
             if str(payload.emoji) in self.cache[msg_id]:
                 self.cache[msg_id][str(payload.emoji)].append(payload.user_id)
