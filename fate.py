@@ -99,6 +99,7 @@ class Fate(commands.AutoShardedBot):
                 return cls.cursor
 
             async def __aexit__(cls, _type, _value, _tb):
+                await cls.conn.commit()
                 self.pool.release(cls.conn)
 
         self.cursor = Cursor

@@ -95,9 +95,6 @@ class Verification(commands.Cog):
     async def _enable(self, ctx):
         guild_id = str(ctx.guild.id)
 
-        def pred(m):
-            return m.author.id == ctx.author.id and m.channel.id == ctx.channel.id
-
         await ctx.send("Mention the channel I should use for each verification process")
         async with self.bot.require('message', ctx) as msg:
             if not msg.channel_mentions:
