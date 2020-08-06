@@ -99,7 +99,7 @@ class Verification(commands.Cog):
             return m.author.id == ctx.author.id and m.channel.id == ctx.channel.id
 
         await ctx.send("Mention the channel I should use for each verification process")
-        async with self.bot.require('message', ctx, check=pred) as msg:
+        async with self.bot.require('message', ctx) as msg:
             if not msg.channel_mentions:
                 return await ctx.send("m, that's an invalid response\nRerun the command and try again")
             channel = msg.channel_mentions[0]
@@ -109,7 +109,7 @@ class Verification(commands.Cog):
                                   "messages, embed links, and manage messages")
 
         await ctx.send("Send the name, or mention of the role I should give whence someone completes verification")
-        async with self.bot.require('message', ctx, check=pred) as msg:
+        async with self.bot.require('message', ctx) as msg:
             role = await self.bot.utils.get_role(ctx, msg.content)
         if not role:
             return await ctx.send("m, that's not a valid role\nRerun the command and try again")
@@ -118,7 +118,7 @@ class Verification(commands.Cog):
 
         await ctx.send("Send the name, or mention of the role I should remove whence someone completes verification"
                        "\nThis one's optional, so you can reply with `skip` if you don't wish to use one")
-        async with self.bot.require('message', ctx, check=pred) as msg:
+        async with self.bot.require('message', ctx) as msg:
             temp_role = None
             if str(msg.content).lower() != "skip":
                 target = await self.bot.utils.get_role(ctx, msg.content)
@@ -130,7 +130,7 @@ class Verification(commands.Cog):
 
         await ctx.send("Should I delete the captcha message that shows if a user passed or failed verification after "
                        "completion? Reply with `yes` or `no`")
-        async with self.bot.require('message', ctx, check=pred) as msg:
+        async with self.bot.require('message', ctx) as msg:
             if 'ye' not in str(msg.content).lower() and 'no' not in str(msg.content).lower():
                 return await ctx.send("Invalid response, please rerun the command")
             elif 'ye' in str(msg.content).lower():
