@@ -1066,21 +1066,6 @@ class Utility(commands.Cog):
 		})
 		await ctx.send(embed=e)
 
-	@commands.command(name='poll')
-	@commands.cooldown(1, 3, commands.BucketType.user)
-	@commands.guild_only()
-	@commands.bot_has_permissions(embed_links=True, add_reactions=True)
-	async def poll(self, ctx, *, arg):
-		e = discord.Embed(description=arg, color=0x80b0ff)
-		e.set_author(name="| {} |".format(ctx.author.name), icon_url=ctx.author.avatar_url)
-		message = await ctx.send(embed=e)
-		await message.add_reaction(':approve:506020668241084416')
-		await asyncio.sleep(0.5)
-		await message.add_reaction(':unapprove:506020690584010772')
-		await asyncio.sleep(0.5)
-		await message.add_reaction('🤷')
-		await ctx.message.delete()
-
 	@commands.command(name='id')
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.guild_only()
