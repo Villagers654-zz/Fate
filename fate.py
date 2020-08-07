@@ -9,8 +9,6 @@ from typing import *
 import aiohttp
 import aiofiles
 import random
-import sys
-import inspect
 
 from discord.ext import commands
 import discord
@@ -185,6 +183,18 @@ class Fate(commands.AutoShardedBot):
             command_prefix=utils.get_prefixes,
             activity=discord.Game(name=self.config['startup_status']), **options
         )
+
+    async def on_error(self, event_method, *args, **kwargs):
+        full_error = str(traceback.format_exc())
+        ignored = ("NotFound")
+        level = "CRITICAL"
+
+        if any(Type in full_error for Type in ignored):
+            return
+        elif "Forbidden" in full_error:
+            level = "INFO"
+
+        self.log(traceback.format_exc(), level)
 
     def get_message(self, message_id: int):
         """ Return a message from the internal cache if it exists """

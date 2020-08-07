@@ -89,25 +89,29 @@ class Tasks:
 			if not self.bot.logs:
 				continue
 			message = '```'
+			mention = ""
+			if any("CRITICAL" in log for log in self.bot.logs):
+				owner = self.bot.get_user(self.bot.config["bot_owner_id"])
+				mention = f"{owner.mention} something went terribly wrong" if owner else "Critical Error\n"
 			for log in list(self.bot.logs):  # type: str
 				original = str(log)
+				mention = ""
 				if "CRITICAL" in log:
 					owner = self.bot.get_user(self.bot.config["bot_owner_id"])
 					mention = f"{owner.mention} something went terribly wrong" if owner else "Critical Error\n"
-					log = mention + log
 				if original in self.bot.logs:
 					self.bot.logs.remove(original)
 				if len(log) >= 2000:
 					for group in self.bot.utils.split(log, 1990):
-						await channel.send(f"```{group}```")
+						await channel.send(f"{mention}```{group}```")
 					continue
 				if len(message) + len(log) >= 1990:
 					message += '```'
-					await channel.send(message)
+					await channel.send(mention + message)
 					message = '```'
 				message += log + '\n'
 			message += '```'
-			await channel.send(message)
+			await channel.send(mention + message)
 
 	async def auto_backup(self):
 		"""Backs up files every x seconds and keeps them for x days"""
