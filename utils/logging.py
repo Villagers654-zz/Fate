@@ -31,6 +31,7 @@ class Logging:
         channel = self.bot.get_channel(self.bot.config["log_channel"])
         for log in list(self.queue):
             await channel.send(log)
+            self.queue.remove(log)
 
     def debug(self, log, *args, **kwargs):
         if self.bot.config["debug"]:
