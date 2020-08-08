@@ -19,7 +19,6 @@ class ErrorHandler(commands.Cog):
 		if hasattr(ctx.command, 'on_error'):
 			return
 		ignored = (
-			discord.errors.NotFound,
 			commands.CommandNotFound,
 			commands.NoPrivateMessage
 		)
@@ -46,7 +45,7 @@ class ErrorHandler(commands.Cog):
 
 			# Unaccepted, or improperly used arg was passed
 			elif isinstance(error, (commands.BadArgument, commands.errors.BadUnionArgument)):
-				return await ctx.send(f"Bad Option Used: {error}")
+				return await ctx.send(error)
 
 			# Too fast, sMh
 			elif isinstance(error, commands.CommandOnCooldown):
@@ -73,8 +72,8 @@ class ErrorHandler(commands.Cog):
 					return await ctx.send(error)
 
 			# The bot tried to perform an action on a non existent or removed object
-			elif isinstance(error, discord.errors.NotFound):
-				await ctx.send(f"{error}. Seems it was removed or doesn't exist..")
+			elif 'NotFound' in error_str:
+				await ctx.send(f"Something I tried to do an operation on was removed or doesn't exist")
 
 			# An action by the bot failed due to missing access or lack of required permissions
 			elif isinstance(error, discord.errors.Forbidden):
@@ -90,6 +89,10 @@ class ErrorHandler(commands.Cog):
 			elif isinstance(error, discord.errors.HTTPException):
 				if "internal" in error_str or "service unavailable" in error_str:
 					return await ctx.send("Oop-\nDiscord shit in the bed\nIt's not my fault, it's theirs")
+
+			# Failed while parsing an argument that contains a "'"
+			elif isinstance(error, commands.UnexpectedQuoteError):
+				return await ctx.send("You can't use `'` in that argument")
 
 			# bAd cOdE, requires fix if occurs
 			elif isinstance(error, KeyError):
