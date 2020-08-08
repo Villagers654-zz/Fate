@@ -828,7 +828,7 @@ class Utility(commands.Cog):
 		emb.set_footer(text='Powered by tinyurl.com', icon_url='http://cr-api.com/static/img/branding/cr-api-logo.png')
 		await ctx.send(embed=emb)
 
-	@commands.command(name='avatar', aliases=['av'])
+	@commands.command(name='avatar', aliases=['av', 'pfp'])
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	@commands.guild_only()
 	@commands.bot_has_permissions(embed_links=True)
