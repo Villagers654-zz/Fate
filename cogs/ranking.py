@@ -87,11 +87,9 @@ class Ranking(commands.Cog):
 		self.vc_counter = 0
 
 		self.xp_cleanup_task.start()
-		self.batch_update_xp_task.start()
 
 	def cog_unload(self):
 		self.xp_cleanup_task.cancel()
-		self.batch_update_xp_task.cancel()
 
 	async def save_config(self):
 		""" Saves per-server configuration """
@@ -115,7 +113,7 @@ class Ranking(commands.Cog):
 
 	@tasks.loop(hours=1)
 	async def xp_cleanup_task(self):
-		self.bot.log("Started xp cleanup task", "DEBUG")
+		self.bot.log.debug("Started xp cleanup task")
 		if not self.bot.is_ready():
 			await self.bot.wait_until_ready()
 		while self.bot.pool is None:
@@ -126,70 +124,7 @@ class Ranking(commands.Cog):
 				await cur.execute(f"delete from monthly_msg where msg_time < {limit};")
 				await cur.execute(f"delete from global_monthly where msg_time < {limit};")
 				await conn.commit()
-				self.bot.log("Removed expired messages from monthly leaderboards", "DEBUG")
-
-	@tasks.loop(seconds=5)
-	async def batch_update_xp_task(self):
-		if not self.bot.is_ready() or not self.bot.pool:
-			return
-		async with self.bot.pool.acquire() as conn:
-			async with conn.cursor() as cur:
-
-				# Guilded XP
-				# guild_xp = {}
-				# for guild in self.bot.guilds:
-				# 	await cur.execute(f"select user_id, xp from msg where guild_id = {guild.id} order by xp desc limit 50;")
-				# 	results = await cur.fetchall()
-				# 	guild_xp[str(guild.id)] = {}
-				# 	for user_id, xp in results:
-				# 		guild_xp[str(guild.id)][user_id] = xp
-				# self.guild_xp = guild_xp
-
-				await cur.execute("select guild_id, user_id, xp from msg;")
-				results = await cur.fetchall()
-				msg_xp = {}
-				for g_id, user_id, xp in results:
-					g_id = str(g_id)
-					user_id = str(user_id)
-					if g_id not in msg_xp:
-						msg_xp[g_id] = {}
-					msg_xp[g_id][user_id] = xp
-				self.guild_xp = msg_xp
-
-				# Global XP
-				await cur.execute("select user_id, xp from global_msg order by xp desc limit 5000;")
-				results = await cur.fetchall()
-				self.global_xp = {
-					str(user_id): xp for user_id, xp in results
-				}
-
-				# # Monthly XP
-				# lmt = time() - 60 * 60 * 24 * 30
-				# await cur.execute(f"select guild_id, user_id, msg_time, xp from monthly_msg;")
-				# results = await cur.fetchall()
-				# monthly_data = {}
-				# for guild_id, user_id, msg_time, xp in results:
-				# 	if msg_time > lmt:
-				# 		continue
-				# 	if guild_id not in monthly_data:
-				# 		monthly_data[guild_id] = {}
-				# 	if user_id not in monthly_data[guild_id]:
-				# 		monthly_data[guild_id][user_id] = 0
-				# 	monthly_data[guild_id][user_id] += 1
-				# self.monthly_guild_xp = monthly_data
-
-				# Global Monthly XP
-				# await cur.execute(f"select user_id, msg_time, xp from global_monthly;")
-				# results = await cur.fetchall()
-				# monthly_data = {}
-				# for user_id, msg_time, xp in results:
-				# 	if msg_time > lmt:
-				# 		continue
-				# 	if user_id not in monthly_data:
-				# 		monthly_data[user_id] = 0
-				# 	monthly_data[user_id] += xp
-				# self.global_monthly_xp = monthly_data
-		self.bot.log("Updated xp cache", "DEBUG")
+				self.bot.log.debug("Removed expired messages from monthly leaderboards")
 
 	async def calc_lvl(self, total_xp, config):
 		def x(level):
@@ -286,7 +221,7 @@ class Ranking(commands.Cog):
 							f"ON DUPLICATE KEY UPDATE xp = xp + 1;"
 						)
 				except DataError as error:
-					self.bot.log(f"Error updating global xp\n{error}", "DEBUG")
+					self.bot.log(f"Error updating global xp\n{error}")
 
 			# per-server leveling
 			conf = self.static_config()  # type: dict
@@ -321,7 +256,7 @@ class Ranking(commands.Cog):
 							f"ON DUPLICATE KEY UPDATE xp = xp + {new_xp};"
 						)
 				except DataError as error:
-					self.bot.log(f"Error updating guild xp\n{error}", "DEBUG")
+					self.bot.log(f"Error updating guild xp\n{error}")
 
 	@commands.Cog.listener()
 	async def on_command_completion(self, ctx):

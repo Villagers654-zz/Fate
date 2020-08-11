@@ -18,6 +18,7 @@ from termcolor import cprint
 from PIL import Image, ImageDraw, ImageFont
 
 from utils import outh, utils, tasks, colors, checks
+from utils.custom_logging import Logging
 
 
 class EmptyException(Exception):
@@ -82,6 +83,7 @@ class Fate(commands.AutoShardedBot):
         self.result = utils.Result           # Custom Result Object Creator
         self.memory = utils.MemoryInfo       # Class for easily accessing memory usage
         self.core_tasks = tasks.Tasks(self)  # Object to start the main tasks like `changing status`
+        self.log = Logging(bot=self)         # Class to handle printing/logging
 
         # ContextManager for quick sql cursor access
         class Cursor:
@@ -187,14 +189,9 @@ class Fate(commands.AutoShardedBot):
     async def on_error(self, event_method, *args, **kwargs):
         full_error = str(traceback.format_exc())
         ignored = ("NotFound")
-        level = "CRITICAL"
-
         if any(Type in full_error for Type in ignored):
             return
-        elif "Forbidden" in full_error:
-            level = "INFO"
-
-        self.log(traceback.format_exc(), level)
+        self.log.critical(full_error)
 
     def get_message(self, message_id: int):
         """ Return a message from the internal cache if it exists """
@@ -205,12 +202,12 @@ class Fate(commands.AutoShardedBot):
 
     async def create_pool(self, force=False):
         if self.pool and not force:
-            return self.log("bot.create_pool was called when one was already initialized", "INFO")
+            return self.log.info("bot.create_pool was called when one was already initialized")
         elif self.pool:
-            self.log("Closing the existing pool to start a new connection", "CRITICAL")
+            self.log.critical("Closing the existing pool to start a new connection")
             self.pool.close()
             await self.pool.wait_closed()
-            self.log("Pool was successfully closed", "INFO")
+            self.log.info("Pool was successfully closed")
         sql = outh.MySQL()
         for _attempt in range(5):
             try:
@@ -227,71 +224,71 @@ class Fate(commands.AutoShardedBot):
                 self.pool = pool
                 break
             except (ConnectionRefusedError, pymysql.err.OperationalError):
-                self.log("Couldn't connect to SQL server, retrying in 25 seconds..", 'CRITICAL')
+                self.log.critical("Couldn't connect to SQL server, retrying in 25 seconds..")
             await asyncio.sleep(25)
         else:
-            self.log("Couldn't connect to SQL server, reached max attempts", 'CRITICAL', tb=traceback.format_exc())
+            self.log.critical(f"Couldn't connect to SQL server, reached max attempts``````{traceback.format_exc()}")
             self.unload(*self.initial_extensions, log=False)
-            self.log("Logging out..")
+            self.log.critical("Logging out..")
             return await self.logout()
-        self.log(f"Initialized db {sql.db} with {sql.user}@{sql.host}")
+        self.log.info(f"Initialized db {sql.db} with {sql.user}@{sql.host}")
 
     def load(self, *extensions) -> None:
         for cog in extensions:
             try:
                 self.load_extension(f"cogs.{cog}")
-                self.log(f"Loaded {cog}", end="\r")
+                self.log.info(f"Loaded {cog}", end="\r")
             except commands.ExtensionNotFound:
-                self.log(f"Couldn't find {cog}", "CRITICAL")
-                self.log("Continuing..")
+                self.log.critical(f"Couldn't find {cog}")
+                self.log.info("Continuing..")
             except commands.ExtensionError:
-                self.log(f"Couldn't load {cog}", "CRITICAL", tb=traceback.format_exc())
-                self.log("Continuing..")
+                self.log.critical(f"Couldn't load {cog}``````{traceback.format_exc()}")
+                self.log.info("Continuing..")
 
     def unload(self, *extensions, log=True) -> None:
         for cog in extensions:
             try:
                 self.unload_extension(f"cogs.{cog}")
                 if log:
-                    self.log(f"Unloaded {cog}")
+                    self.log.info(f"Unloaded {cog}")
             except commands.ExtensionNotLoaded:
                 if log:
-                    self.log(f"Failed to unload {cog}")
+                    self.log.info(f"Failed to unload {cog}")
 
     def reload(self, *extensions) -> None:
         for cog in extensions:
             try:
                 self.reload_extension(f"cogs.{cog}")
-                self.log(f"Reloaded {cog}")
+                self.log.info(f"Reloaded {cog}")
             except commands.ExtensionNotFound:
-                self.log(f"Reloaded {cog}")
+                self.log.info(f"Reloaded {cog}")
             except commands.ExtensionNotLoaded:
-                self.log(f"{cog} isn't loaded")
+                self.log.info(f"{cog} isn't loaded")
             except commands.ExtensionError:
-                self.log(f"Ignoring exception in Cog: {cog}", tb=traceback.format_exc())
+                self.log.info(f"Ignoring exception in Cog: {cog}``````{traceback.format_exc()}")
 
-    def log(self, message, level='INFO', tb=None, color=None, end=None) -> str:
-        if level == 'DEBUG' and not self.debug_mode:
-            return ""
-        now = str(datetime.now().strftime("%I:%M%p"))
-        if now.startswith('0'):
-            now = now.replace('0', '', 1)
-        lines = []
-        for line in message.split('\n'):
-            msg = f"{now} | {level} | {line}"
-            if level == 'DEBUG' and self.config['debug_mode']:
-                cprint(msg, color if color else 'cyan', end=end)
-            elif level == 'INFO':
-                cprint(msg, color if color else 'green', end=end)
-            elif level == 'CRITICAL':
-                cprint(msg, color if color else 'red', end=end)
-            lines.append(msg)
-        if tb:
-            cprint(str(tb), color if color else 'red', end=end)
-            lines.append(str(tb))
-        self.logs.append('\n'.join(lines))
-        self.logs = self.logs[:1000]
-        return '\n'.join(lines)
+    # def log(self, message, level='INFO', tb=None, color=None, end=None) -> str:
+    #     if level == 'DEBUG' and not self.debug_mode:
+    #         return ""
+    #     now = str(datetime.now().strftime("%I:%M%p"))
+    #     if now.startswith('0'):
+    #         now = now.replace('0', '', 1)
+    #     lines = []
+    #     for line in message.split('\n'):
+    #         msg = f"{now} | {level} | {line}"
+    #         if level == 'DEBUG' and self.config['debug_mode']:
+    #             cprint(msg, color if color else 'cyan', end=end)
+    #         elif level == 'INFO':
+    #             cprint(msg, color if color else 'green', end=end)
+    #         elif level == 'CRITICAL':
+    #             cprint(msg, color if color else 'red', end=end)
+    #         lines.append(msg)
+    #     if tb:
+    #         cprint(str(tb), color if color else 'red', end=end)
+    #         lines.append(str(tb))
+    #     self.logs.append('\n'.join(lines))
+    #     self.logs = self.logs[:1000]
+    #     return '\n'.join(lines)
 
     async def download(self, url: str, timeout: int = 10):
         async with aiohttp.ClientSession() as session:
@@ -473,9 +470,9 @@ class Fate(commands.AutoShardedBot):
 
     def run(self):
         if bot.initial_extensions:
-            self.log("Loading initial cogs", color='yellow')
+            self.log.info("Loading initial cogs", color='yellow')
             self.load(*self.initial_extensions)
-            self.log("Finished loading initial cogs\nLogging in..", color='yellow')
+            self.log.info("Finished loading initial cogs\nLogging in..", color='yellow')
         super().run(outh.tokens('fatezero'))
 
 
@@ -500,13 +497,15 @@ bot = Fate(max_messages=16000, case_insensitive=True)
 bot.remove_command('help')  # Default help command
 bot.add_check(checks.command_is_enabled)
 
+
 @bot.event
 async def on_shard_ready(shard_id):
-    bot.log(f"Shard {shard_id} connected")
+    bot.log.info(f"Shard {shard_id} connected")
+
 
 @bot.event
 async def on_connect():
-    bot.log(
+    bot.log.info(
         '------------'
         '\nLogged in as'
         f'\n{bot.user}'
@@ -523,23 +522,24 @@ async def on_connect():
         if index + 1 == len(chars):
             index = 0
         await asyncio.sleep(0.21)
-        bot.log("Iterated through cache initialization", "DEBUG")
+        bot.log.debug("Iterated through cache initialization")
+
 
 @bot.event
 async def on_ready():
-    bot.log("Finished initializing cache", color="yellow")
+    bot.log.info("Finished initializing cache", color="yellow")
     if not bot.pool:
         await bot.create_pool()
     bot.owner_ids = set(list([bot.config["bot_owner_id"], *bot.config["bot_owner_ids"]]))
     if bot.awaited_extensions:
-        bot.log("Loading awaited cogs", color='yellow')
+        bot.log.info("Loading awaited cogs", color='yellow')
         bot.load(*bot.awaited_extensions)
-        bot.log("Finished loading awaited cogs", color='yellow')
+        bot.log.info("Finished loading awaited cogs", color='yellow')
     bot.core_tasks.ensure_all()
     seconds = round(time() - start_time)
-    bot.log(f"Startup took {seconds} seconds")
+    bot.log.info(f"Startup took {seconds} seconds")
     for error in bot.login_errors:
-        bot.log("Error ignored during startup", level='CRITICAL', tb=error)
+        bot.log.critical(f"Error ignored during startup:\n{error}")
 
 
 @bot.event
@@ -606,7 +606,7 @@ async def on_command(_ctx):
 
 
 if __name__ == '__main__':
-    bot.log("Starting Bot", color='yellow')
+    bot.log.info("Starting Bot", color='yellow')
     bot.start_time = datetime.now()
     try:
         bot.run()

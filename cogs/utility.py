@@ -116,7 +116,7 @@ class Utility(commands.Cog):
 	# 	self.bot.loop.create_task(self.save_data())
 
 	async def save_data_task(self):
-		self.bot.log("Starting save task for info.json", "DEBUG")
+		self.bot.log.debug("Starting save task for info.json")
 		while True:
 			await asyncio.sleep(60 * 5)
 			async with aiofiles.open(self.path + '.temp', 'w+') as f:
@@ -127,12 +127,12 @@ class Utility(commands.Cog):
 					)
 				)
 			if not path.exists(self.path):
-				self.bot.log("info.json was missing, and is being replaced with what's in memory", "CRITICAL")
+				self.bot.log.critical("info.json was missing, and is being replaced with what's in memory")
 			if path.exists(self.path + '.old'):
 				os.remove(self.path + '.old')
 			os.rename(self.path, self.path + '.old')
 			os.rename(self.path + '.temp', self.path)
-			self.bot.log("Saved info.json successfully", "DEBUG")
+			self.bot.log.debug("Saved info.json successfully")
 
 	def setup_if_not_exists(self, *args):
 		for arg in args:
