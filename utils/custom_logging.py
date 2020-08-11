@@ -42,8 +42,9 @@ class Logging:
         for log in list(self.queue):
             if len(msg) + len(log) > 1900:
                 await channel.send(msg)
-                continue
+                msg = ""
             msg += f"{log}"
+            msg = msg.replace("``````", "\n")
             self.queue.remove(log)
         await channel.send(msg)
 
