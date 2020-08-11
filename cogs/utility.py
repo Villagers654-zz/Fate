@@ -74,6 +74,8 @@ class Utility(commands.Cog):
 		else:
 			bot.tasks["info"].cancel()
 			bot.tasks["info"] = bot.loop.create_task(self.save_data_task())
+		if "timers" not in bot.tasks:
+			bot.tasks["timers"] = {}
 
 	async def save_timers(self):
 		await self.bot.save_json(self.timer_path, self.timers)
