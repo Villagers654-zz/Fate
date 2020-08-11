@@ -494,6 +494,7 @@ logger.addHandler(handler)
 
 # Initialize the bot
 bot = Fate(max_messages=16000, case_insensitive=True)
+discord.AllowedMentions(everyone=False, roles=False, users=False)
 bot.remove_command('help')  # Default help command
 bot.add_check(checks.command_is_enabled)
 
