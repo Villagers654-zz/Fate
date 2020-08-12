@@ -197,7 +197,7 @@ class Utility(commands.Cog):
 						if member.display_name != user.display_name:
 							nicks = list(set(list([member.display_name, *nicks])))
 			if nicks:
-				user_info['Nicks'] = ', '.join(nicks)
+				user_info['Nicks'] = ', '.join(nicks[:5])
 
 			# Member Information
 			member_info = {}
