@@ -35,7 +35,7 @@ class ErrorHandler(commands.Cog):
 		error_str = str(error)
 		formatted = "\n".join(traceback.format_tb(error.__traceback__))
 		full_traceback = f"```python\n{formatted}\n{type(error).__name__}: {error}```"
-		if 'EmptyException' in full_traceback:
+		if 'EmptyException' in full_traceback or 'NotFound' in full_traceback:
 			return
 
 		try:
