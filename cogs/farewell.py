@@ -209,7 +209,8 @@ class Leave(commands.Cog):
 		if guild_id in self.toggle:
 			toggle = "enabled"
 		if guild_id in self.channel:
-			channel = self.bot.get_channel(self.channel[guild_id]).mention
+			channel = self.bot.get_channel(self.channel[guild_id])
+			channel = channel.mention if channel else "deleted-channel"
 		if guild_id in self.useimages:
 			useimages = self.useimages[guild_id]
 		if guild_id in self.format:
