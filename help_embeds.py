@@ -109,6 +109,7 @@ class HelpMenus():
                         '• **logger** - `logs actions to a channel`\n' \
                         '• **color** - `tests a hex or changes a roles color`\n' \
                         '• **emoji** - `sends an emojis full image`\n' \
+                        '• **emojis** - `shows the available emoji slots`\n' \
                         '• **addemoji** - `adds emojis from links or files`\n' \
                         '• **stealemoji** - `steals an emoji from another server`\n' \
                         '• **delemoji** - `deletes an emoji`\n' \

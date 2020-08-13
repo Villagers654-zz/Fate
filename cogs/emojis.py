@@ -104,6 +104,31 @@ class Emojis(commands.Cog):
 			await ctx.send(embed=e)
 			await asyncio.sleep(1)
 
+	@commands.command(name="emojis")
+	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.guild_only()
+	@commands.has_permissions(manage_emojis=True)
+	async def emojis(self, ctx):
+		e = discord.Embed(color=colors.orange())
+		e.set_author(name="| Emoji Count", icon_url=ctx.guild.icon_url)
+		emojis = [e for e in ctx.guild.emojis if not e.animated]
+		a_emojis = [e for e in ctx.guild.emojis if e.animated]
+		max = ctx.guild.emoji_limit
+		e.description = f"🆓 | {len(emojis)}/{max} Normal emotes" \
+		                f"\n💵 | {len(a_emojis)}/{max} Animated emotes"
+		restricted = [e for e in ctx.guild.emojis if e.roles]
+		if restricted:
+			e.description += f"\n🛑 | {len(restricted)} Restricted emotes"
+			index = {}
+			for emoji in restricted:
+				for role in emoji.roles:
+					if role not in index:
+						index[role] = []
+					index[role].append(emoji)
+			for role, emojis in index.items():
+				e.add_field(name=f"◈ @{role}", value=" ".join(list(set(emojis))), inline=False)
+		await ctx.send(embed=e)
+
 	@commands.command(name='add-emoji', aliases=['add-emote', 'addemoji', 'addemote', 'stealemoji', 'stealemote'])
 	@commands.cooldown(2, 5, commands.BucketType.user)
 	@commands.guild_only()
