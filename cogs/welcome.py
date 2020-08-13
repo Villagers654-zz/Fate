@@ -377,7 +377,7 @@ class Welcome(commands.Cog):
 					if guild_id in self.images:
 						e.set_image(url=random.choice(self.images[guild_id]))
 						try:
-							await channel.send(msg, embed=e)
+							await channel.send(msg, embed=e, allowed_mentions=self.bot.allow_user_mentions)
 						except discord.errors.Forbidden:
 							del self.useimages[guild_id]
 							del self.images[guild_id]
@@ -387,7 +387,10 @@ class Welcome(commands.Cog):
 					else:
 						e.set_image(url="attachment://" + os.path.basename(path))
 						try:
-							await channel.send(msg, file=discord.File(path, filename=os.path.basename(path)), embed=e)
+							await channel.send(
+								msg, file=discord.File(path, filename=os.path.basename(path)), embed=e,
+								allowed_mentions=self.bot.allow_user_mentions
+							)
 						except discord.errors.Forbidden:
 							del self.useimages[guild_id]
 							await self.save_data()
@@ -395,7 +398,7 @@ class Welcome(commands.Cog):
 							pass
 				else:
 					try:
-						await channel.send(msg)
+						await channel.send(msg, allowed_mentions=self.bot.allow_user_mentions)
 					except discord.errors.Forbidden:
 						del self.toggle[guild_id]
 						await self.save_data()

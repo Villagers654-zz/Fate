@@ -44,6 +44,7 @@ class Fate(commands.AutoShardedBot):
         self.logger_tasks = {}          # Same as Fate.tasks except dedicated to cogs.logger
         self.last_traceback = ""        # Formatted string of the last error traceback
         self.ignored_exit = EmptyException
+        self.allow_user_mentions = discord.AllowedMentions(users=True, roles=False, everyone=False)
 
         self.initial_extensions = [     # Cogs to load before logging in
             'error_handler', 'config', 'menus', 'core', 'mod', 'welcome', 'farewell', 'notes', 'archive',
