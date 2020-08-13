@@ -79,7 +79,8 @@ class Welcome(commands.Cog):
 			"toggle": self.toggle, "channel": self.channel, "useimages": self.useimages,
 			"images": self.images, "format": self.format
 		}
-		await self.bot.save_json("./data/userdata/welcome.json", data)
+		async with self.bot.open("./data/userdata/welcome.json", "w+") as f:
+			await f.write(json.dumps(data))
 
 	@commands.group(name="welcome", usage=welcome_help())
 	@commands.cooldown(1, 3, commands.BucketType.channel)
@@ -141,7 +142,7 @@ class Welcome(commands.Cog):
 		while not completed:
 			msg = await wait_for_msg()
 			if not msg:
-				return cleanup()
+				return await cleanup()
 			messages.append(msg)
 			if 'cancel' in msg.content.lower():
 				return await cleanup()
@@ -156,7 +157,7 @@ class Welcome(commands.Cog):
 		while not completed:
 			msg = await wait_for_msg()
 			if not msg:
-				return cleanup()
+				return await cleanup()
 			messages.append(msg)
 			if 'cancel' in msg.content.lower():
 				return await cleanup()
@@ -174,7 +175,7 @@ class Welcome(commands.Cog):
 		while not completed:
 			msg = await wait_for_msg()
 			if not msg:
-				return cleanup()
+				return await cleanup()
 			messages.append(msg)
 			if 'cancel' in msg.content.lower():
 				return await cleanup()
@@ -281,7 +282,7 @@ class Welcome(commands.Cog):
 		if guild_id in self.useimages:
 			del self.useimages[guild_id]
 			await ctx.send("Disabled Images")
-			return self.save_data()
+			return await self.save_data()
 		self.useimages[guild_id] = "enabled"
 		if guild_id in self.images:
 			await ctx.send("Enabled Images")

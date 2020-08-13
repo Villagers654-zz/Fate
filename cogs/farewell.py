@@ -141,7 +141,7 @@ class Leave(commands.Cog):
 		while not completed:
 			msg = await wait_for_msg()
 			if not msg:
-				return cleanup()
+				return await cleanup()
 			messages.append(msg)
 			if 'cancel' in msg.content.lower():
 				return await cleanup()
@@ -156,7 +156,7 @@ class Leave(commands.Cog):
 		while not completed:
 			msg = await wait_for_msg()
 			if not msg:
-				return cleanup()
+				return await cleanup()
 			messages.append(msg)
 			if 'cancel' in msg.content.lower():
 				return await cleanup()
@@ -174,7 +174,7 @@ class Leave(commands.Cog):
 		while not completed:
 			msg = await wait_for_msg()
 			if not msg:
-				return cleanup()
+				return await cleanup()
 			messages.append(msg)
 			if 'cancel' in msg.content.lower():
 				return await cleanup()
