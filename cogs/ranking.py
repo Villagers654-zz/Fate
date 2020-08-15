@@ -829,7 +829,7 @@ class Ranking(commands.Cog):
 			)
 			results = await cur.fetchall()
 			leaderboards['Msg Leaderboard'] = {
-				user_id: xp for user_id, xp in results
+				user_id: xp for user_id, xp in results if ctx.guild.get_member(int(user_id))
 			}
 
 			await cur.execute("select user_id, xp from global_msg order by xp desc limit 256;")
