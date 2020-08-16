@@ -1537,7 +1537,7 @@ class Logger(commands.Cog):
                 changes = ''
                 for i, (perm, value) in enumerate(iter(before.permissions)):
                     if value != list(after.permissions)[i][1]:
-                        changes += f"\n• {perm} {'allowed' if value else 'unallowed'}"
+                        changes += f"\n• {perm} {'unallowed' if value else 'allowed'}"
                 e.add_field(name='◈ Permissions Changed', value=changes, inline=False)
             if e.fields:
                 if fp:
