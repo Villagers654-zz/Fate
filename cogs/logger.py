@@ -191,7 +191,7 @@ class Logger(commands.Cog):
                     if guild_id in self.config:
                         task = self.bot.loop.create_task(self.start_queue(guild_id))
                         self.bot.logger_tasks[guild_id] = task
-            self.bot.log("keep_alive_task still running", "DEBUG")
+            self.bot.log.debug("keep_alive_task still running")
             await asyncio.sleep(60)
 
     async def wait_for_permission(self, guild, permission: str, channel=None) -> bool:

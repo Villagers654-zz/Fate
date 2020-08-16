@@ -1,6 +1,7 @@
 
 import asyncio
 from datetime import datetime
+import traceback
 
 from discord.ext import tasks
 from termcolor import cprint
@@ -37,16 +38,20 @@ class Logging:
         if not self.bot.is_ready():
             await self.bot.wait_until_ready()
             await asyncio.sleep(1)
-        channel = self.bot.get_channel(self.bot.config["log_channel"])
-        msg = ""
-        for log in list(self.queue):
-            if len(msg) + len(log) > 1900:
-                await channel.send(msg)
-                msg = ""
-            msg += f"{log}"
-            msg = msg.replace("``````", "\n")
-            self.queue.remove(log)
-        await channel.send(msg)
+        try:
+            channel = self.bot.get_channel(self.bot.config["log_channel"])
+            msg = ""
+            for log in list(self.queue):
+                if len(msg) + len(log) > 1900:
+                    await channel.send(msg)
+                    msg = ""
+                msg += f"{log}"
+                msg = msg.replace("``````", "\n")
+                self.queue.remove(log)
+            await channel.send(msg)
+        except:
+            self.info(f"There was an error in the log queue\n{traceback.format_exc()}")
+            await asyncio.sleep(5)
 
     def debug(self, log, *args, **kwargs):
         if "color" not in kwargs:
