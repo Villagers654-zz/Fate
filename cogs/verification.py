@@ -249,7 +249,7 @@ class Verification(commands.Cog):
     @commands.Cog.listener("on_member_join")
     async def init_verification_process(self, member: discord.Member):
         guild_id = str(member.guild.id)
-        if guild_id in self.config:
+        if guild_id in self.config and not member.bot:
             conf = self.config[guild_id]  # type: Verification.template_config
             try:
                 channel = await self.bot.fetch_channel(conf["channel_id"])
