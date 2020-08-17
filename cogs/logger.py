@@ -376,7 +376,10 @@ class Logger(commands.Cog):
                 if isinstance(category, discord.TextChannel):  # single channel log
                     try:
                         await category.send(embed=embed, files=files)
-                    except (discord.errors.Forbidden, discord.errors.NotFound, ConnectionResetError):
+                    except (
+                        discord.errors.HTTPException, discord.errors.Forbidden, discord.errors.NotFound,
+                        ConnectionResetError
+                    ):
                         e = discord.Embed(title='Failed to send embed')
                         e.set_author(name=guild if guild else "Unknown Guild")
                         for text_group in self.bot.utils.split(str(json.dumps(embed.to_dict(), indent=2)), 1990):
@@ -424,7 +427,10 @@ class Logger(commands.Cog):
                             await self.save_data()
                         try:
                             await channel.send(embed=embed, files=files)
-                        except (discord.errors.Forbidden, discord.errors.NotFound, ClientOSError):
+                        except (
+                            discord.errors.HTTPException, discord.errors.Forbidden, discord.errors.NotFound,
+                            ConnectionResetError, ClientOSError
+                        ):
                             e = discord.Embed(title='Failed to send embed')
                             e.set_author(name=guild if guild else "Unknown Guild")
                             for text_group in self.bot.utils.split(str(json.dumps(embed.to_dict(), indent=2)), 1024):
@@ -963,6 +969,8 @@ class Logger(commands.Cog):
                 if msg.attachments:
                     files = []
                     for attachment in msg.attachments:
+                        if attachment.size > 8000000:
+                            continue
                         fp = os.path.join('static', attachment.filename)
                         async with aiohttp.ClientSession() as session:
                             async with session.get(attachment.proxy_url) as resp:
