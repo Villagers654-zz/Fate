@@ -26,7 +26,6 @@ class SafePolls(commands.Cog):
             self.bot.tasks["polls"] = {}
         self.emojis = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣"]
         self.cache = {}
-        self.waiting = {}
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -45,30 +44,40 @@ class SafePolls(commands.Cog):
             results = await cur.fetchall()
         self.polls = list(set(self.polls + [r[0] for r in results]))
 
-    async def update_poll(self, msg_id: int) -> None:
+    async def cache_poll(self, message_id) -> None:
         async with self.bot.cursor() as cur:
             await cur.execute(
-                f"select channel_id, user_id, question, reaction_count, votes "
+                f"select channel_id, user_id, question, votes "
                 f"from polls "
-                f"where msg_id = {msg_id} "
+                f"where msg_id = {message_id} "
                 f"limit 1;"
             )
             results = await cur.fetchone()
-        if not results:
-            raise IndexError(f"{msg_id} isn't stored in 'polls'")
+        channel_id, user_id, question, votes = results
+        self.cache[message_id] = {
+            "channel_id": channel_id,
+            "user_id": user_id,
+            "question": decode64(question.encode()).decode(),
+            "votes": json.loads(decode64(votes.encode()).decode())
+        }
 
-        channel_id, user_id, question, reaction_count, votes = results
-        channel = self.bot.get_channel(channel_id)
+    async def update_poll(self, msg_id: int) -> None:
+        if msg_id not in self.cache:
+            await self.cache_poll(msg_id)
+        payload = self.cache[msg_id]
+
+        channel = self.bot.get_channel(payload["channel_id"])
         msg = await channel.fetch_message(msg_id)
-        user = await self.bot.fetch_user(user_id)
-        question = decode64(question.encode()).decode()
-        votes = json.loads(decode64(votes.encode()).decode())
+        user = await self.bot.fetch_user(payload["user_id"])
+        question = payload["question"]
+        votes = payload["votes"]
+        emojis = votes.keys()
 
         e = discord.Embed(color=colors.fate())
         e.set_author(name=f"Poll by {user}", icon_url=user.avatar_url if user else None)
         e.description = question
         e.set_footer(
-            text=" | ".join(f"{emoji} {len(votes[emoji])}" for emoji in self.emojis[:reaction_count])
+            text=" | ".join(f"{emoji} {len(votes[emoji])}" for emoji in emojis)
         )
         await msg.edit(embed=e)
 
@@ -79,6 +88,8 @@ class SafePolls(commands.Cog):
                 await cur.execute(f"delete from polls where msg_id = {msg_id} limit 1;")
             if msg_id in self.polls:
                 self.polls.remove(msg_id)
+            if msg_id in self.cache:
+                del self.cache[msg_id]
 
         channel = self.bot.get_channel(channel_id)
         if not channel:
@@ -213,45 +224,31 @@ class SafePolls(commands.Cog):
             if user.bot:
                 return
             msg_id = payload.message_id
-            host = False
-            if msg_id in self.cache:
-                self.waiting[msg_id].append(time())
-            else:
-                host = True
-                async with self.bot.cursor() as cur:
-                    await cur.execute(f"select votes from polls where msg_id = {payload.message_id} limit 1;")
-                    result = await cur.fetchone()
-                self.cache[msg_id] = json.loads(decode64(result[0].encode()).decode())  # type: dict
-                self.waiting[msg_id] = ['host']
-            for key, users in self.cache[msg_id].items():
+            if msg_id not in self.cache:
+                await self.cache_poll(payload.message_id)
+            print(self.cache[msg_id]["votes"])
+            for key, users in self.cache[msg_id]["votes"].items():
                 if payload.user_id in users:
                     if key == str(payload.emoji):
-                        if len(self.waiting[msg_id]) == 1:
-                            del self.waiting[msg_id]
-                            del self.cache[msg_id]
-                        elif host:
-                            self.waiting[msg_id].remove('host')
                         return
-                    self.cache[msg_id][key].remove(payload.user_id)
-            if str(payload.emoji) in self.cache[msg_id]:
-                self.cache[msg_id][str(payload.emoji)].append(payload.user_id)
-                vote_index = encode64(json.dumps(self.cache[msg_id]).encode()).decode()
-                async with self.bot.pool.acquire() as conn:
-                    async with conn.cursor() as cur:
-                        await cur.execute(
-                            f"update polls "
-                            f"set votes = '{vote_index}' "
-                            f"where msg_id = {payload.message_id};"
-                        )
-                if len(self.waiting[msg_id]) == 1:
-                    del self.waiting[msg_id]
-                    del self.cache[msg_id]
-                elif host:
-                    self.waiting[msg_id].remove('host')
-                await self.update_poll(payload.message_id)
-                channel = self.bot.get_channel(payload.channel_id)
-                msg = await channel.fetch_message(payload.message_id)
-                await msg.remove_reaction(payload.emoji, user)
+                    self.cache[msg_id]["votes"][key].remove(payload.user_id)
+            self.cache[msg_id]["votes"][str(payload.emoji)].append(payload.user_id)
+            print(self.cache[msg_id]["votes"])
+
+            await self.update_poll(payload.message_id)
+            channel = self.bot.get_channel(payload.channel_id)
+            msg = await channel.fetch_message(payload.message_id)
+            await msg.remove_reaction(payload.emoji, user)
+
+            # Dump changes to sql
+            vote_index = encode64(json.dumps(self.cache[msg_id]["votes"]).encode()).decode()
+            async with self.bot.pool.acquire() as conn:
+                async with conn.cursor() as cur:
+                    await cur.execute(
+                        f"update polls "
+                        f"set votes = '{vote_index}' "
+                        f"where msg_id = {payload.message_id};"
+                    )
 
 
 def setup(bot: Fate):
