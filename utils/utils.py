@@ -591,7 +591,7 @@ async def configure(self, ctx, options: dict) -> Union[dict, None]:
 
 class Filter:
 	def __init__(self):
-		self.blacklist = []
+		self._blacklist = []
 		self.index = {
 			"a": [], "b": [], "c": [], "d": [], "e": [],
 			"f": [], "g": [], "h": [], "i": [], "j": [],
@@ -609,7 +609,7 @@ class Filter:
 
 	@blacklist.setter
 	def blacklist(self, value):
-		self._blacklist = value
+		self._blacklist = value.lower()
 
 	def __call__(self, message: str) -> bool:
 		esc = "\\"
@@ -640,9 +640,10 @@ class Filter:
 				if re.search(replaced, message):
 					return True
 
-				for s in [s for s in sections if s != section and s != "."]:
-					if re.search(str(replaced).replace(s, ".*"), message):
-						return True
+				if len(phrase) > 3:
+					for s in [s for s in sections if s != section and s != "."]:
+						if re.search(str(replaced).replace(s, ".*"), message):
+							return True
 
 		return False
 
