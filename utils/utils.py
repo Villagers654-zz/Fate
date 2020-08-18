@@ -614,6 +614,8 @@ class Filter:
 	def __call__(self, message: str) -> bool:
 		esc = "\\"
 		for phrase in self.blacklist:
+			if not len(list(filter(lambda char: char in message, list(phrase)))) > 2:
+				continue
 			pattern = ""
 			for char in str(phrase).lower():
 				if char in self.index and self.index[char]:
@@ -624,28 +626,27 @@ class Filter:
 			if re.search(pattern, message):
 				return True  # Flagged
 
-			sections = []
-			tmp_pattern = str(pattern)
-			matches = re.findall(r"\[.*]", tmp_pattern)
-			if matches:
-				for match in matches:
-					sections.append(match)
-					tmp_pattern.replace(match, "")
-			for char in tmp_pattern:
-				sections.append(char)
+			if len(message) > 3:
+				sections = []
+				tmp_pattern = str(pattern)
+				matches = re.findall(r"\[.*]", tmp_pattern)
+				if matches:
+					for match in matches:
+						sections.append(match)
+						tmp_pattern.replace(match, "")
+				for char in tmp_pattern:
+					sections.append(char)
 
-			for section in sections:
-				replaced = str(pattern).replace(section, ".*")
-				if re.search(replaced, message):
-					return True
+				for section in sections:
+					replaced = str(pattern).replace(section, ".*")
+					if re.search(replaced, message):
+						return True
 
-				if len(phrase) > 3:
 					for s in [s for s in sections if s != section and s != "."]:
 						if re.search(str(replaced).replace(s, ".*"), message):
 							return True
 
 		return False
-
 
 class MemoryInfo:
 	@staticmethod

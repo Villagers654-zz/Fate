@@ -142,13 +142,14 @@ class ChatFilter(commands.Cog):
 				if guild_id in self.ignored:
 					if m.channel.id in self.ignored[guild_id]:
 						return
-				filter = self.bot.utils.Filter()
-				filter.blacklist = self.blacklist[guild_id]
-				if filter(m.content):
-					if not m.author.guild_permissions.manage_messages:
+					m.content = m.content.replace('\\', '')
+					filter = self.bot.utils.Filter()
+					filter.blacklist = self.blacklist[guild_id]
+					if filter(m.content):
 						try:
+							await asyncio.sleep(0.5)
 							await m.delete()
-						except (discord.errors.NotFound, discord.errors.Forbidden):
+						except discord.errors.NotFound:
 							pass
 
 	@commands.Cog.listener()
@@ -157,14 +158,15 @@ class ChatFilter(commands.Cog):
 			guild_id = str(before.guild.id)
 			if before.guild.id in self.toggle:
 				if guild_id in self.blacklist:
+					after.content = after.content.replace('\\', '')
 					filter = self.bot.utils.Filter()
 					filter.blacklist = self.blacklist[guild_id]
 					if filter(after.content):
-						if not after.author.guild_permissions.manage_messages:
-							try:
-								await after.delete()
-							except (discord.errors.NotFound, discord.errors.Forbidden):
-								pass
+						try:
+							await asyncio.sleep(0.5)
+							await after.delete()
+						except discord.errors.NotFound:
+							pass
 
 def setup(bot):
 	bot.add_cog(ChatFilter(bot))
