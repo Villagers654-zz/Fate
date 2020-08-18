@@ -589,6 +589,64 @@ async def configure(self, ctx, options: dict) -> Union[dict, None]:
 				await message.add_reaction("✅")
 
 
+class Filter:
+	def __init__(self):
+		self.blacklist = []
+		self.index = {
+			"a": [], "b": [], "c": [], "d": [], "e": [],
+			"f": [], "g": [], "h": [], "i": [], "j": [],
+			"k": [], "l": [], "m": [], "n": [], "o": [],
+			"p": [], "q": [], "r": [], "s": [], "t": [],
+			"u": [], "v": [], "w": [], "x": [], "y": [],
+			"z": [], "0": [], "1": [], "2": [], "3": [],
+			"4": [], "5": [], "6": [], "7": [], "8": [],
+			"9": []
+		}
+
+	@property
+	def blacklist(self):
+		return self._blacklist
+
+	@blacklist.setter
+	def blacklist(self, value):
+		self._blacklist = value
+
+	def __call__(self, message: str) -> bool:
+		esc = "\\"
+		for phrase in self.blacklist:
+			pattern = ""
+			for char in str(phrase).lower():
+				if char in self.index and self.index[char]:
+					main_char = char if char in self.index.keys() else f"\\{char}"
+					pattern += f"[{main_char}{''.join(f'{esc}{c}' for c in self.index[char])}]"
+				else:
+					pattern += char
+			print(pattern)
+			if re.search(pattern, message):
+				return True  # Flagged
+
+			sections = []
+			tmp_pattern = str(pattern)
+			matches = re.findall(r"\[.*]", tmp_pattern)
+			if matches:
+				for match in matches:
+					sections.append(match)
+					tmp_pattern.replace(match, "")
+			for char in tmp_pattern:
+				sections.append(char)
+
+			for section in sections:
+				replaced = str(pattern).replace(section, ".*")
+				if re.search(replaced, message):
+					return True
+
+				for s in [s for s in sections if s != section and s != "."]:
+					if re.search(str(replaced).replace(s, ".*"), message):
+						return True
+
+		return False
+
+
 class MemoryInfo:
 	@staticmethod
 	async def __coro_fetch(interval=0):
