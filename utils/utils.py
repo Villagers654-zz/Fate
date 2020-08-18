@@ -608,8 +608,8 @@ class Filter:
 		return self._blacklist
 
 	@blacklist.setter
-	def blacklist(self, value):
-		self._blacklist = value.lower()
+	def blacklist(self, value: list):
+		self._blacklist = [item.lower() for item in value]
 
 	def __call__(self, message: str) -> bool:
 		esc = "\\"
@@ -621,7 +621,6 @@ class Filter:
 					pattern += f"[{main_char}{''.join(f'{esc}{c}' for c in self.index[char])}]"
 				else:
 					pattern += char
-			print(pattern)
 			if re.search(pattern, message):
 				return True  # Flagged
 

@@ -142,20 +142,13 @@ class ChatFilter(commands.Cog):
 				if guild_id in self.ignored:
 					if m.channel.id in self.ignored[guild_id]:
 						return
-				for phrase in self.blacklist[guild_id]:
-					if '\\' in phrase:
-						m.content = m.content.replace('\\', '')
-					perms = [perm for perm, value in m.author.guild_permissions if value]
-					if "manage_messages" not in perms:
+				filter = self.bot.utils.Filter()
+				filter.blacklist = self.blacklist[guild_id]
+				if filter(m.content):
+					if not m.author.guild_permissions.manage_messages:
 						try:
-							if phrase in m.content:
-								await asyncio.sleep(0.5)
-								await m.delete()
-							else:
-								if phrase in m.content.replace(" ", ""):
-									await asyncio.sleep(0.5)
-									await m.delete()
-						except discord.errors.NotFound:
+							await m.delete()
+						except (discord.errors.NotFound, discord.errors.Forbidden):
 							pass
 
 	@commands.Cog.listener()
@@ -164,18 +157,14 @@ class ChatFilter(commands.Cog):
 			guild_id = str(before.guild.id)
 			if before.guild.id in self.toggle:
 				if guild_id in self.blacklist:
-					for phrase in self.blacklist[guild_id]:
-						if '\\' not in phrase:
-							after.content = after.content.replace('\\', '')
-						perms = [perm for perm, value in after.author.guild_permissions if value]
-						if "manage_messages" not in perms:
-							if phrase.lower() in after.content.lower():
-								await asyncio.sleep(0.5)
+					filter = self.bot.utils.Filter()
+					filter.blacklist = self.blacklist[guild_id]
+					if filter(after.content):
+						if not after.author.guild_permissions.manage_messages:
+							try:
 								await after.delete()
-							else:
-								if phrase.lower() in after.content.replace(" ", "").lower():
-									await asyncio.sleep(0.5)
-									await after.delete()
+							except (discord.errors.NotFound, discord.errors.Forbidden):
+								pass
 
 def setup(bot):
 	bot.add_cog(ChatFilter(bot))
