@@ -139,7 +139,7 @@ class ChatFilter(commands.Cog):
 		if isinstance(m.author, discord.Member):
 			guild_id = str(m.guild.id)
 			if m.guild.id in self.toggle and guild_id in self.blacklist:
-				if guild_id in self.ignored:
+				if guild_id in self.ignored and not m.author.guild_permissions.manage_messages:
 					if m.channel.id in self.ignored[guild_id]:
 						return
 					m.content = m.content.replace('\\', '')
@@ -156,7 +156,7 @@ class ChatFilter(commands.Cog):
 	async def on_message_edit(self, before, after):
 		if isinstance(before.author, discord.Member) and isinstance(after.author, discord.Member):
 			guild_id = str(before.guild.id)
-			if before.guild.id in self.toggle:
+			if before.guild.id in self.toggle and not after.author.guild_permissions.manage_messages:
 				if guild_id in self.blacklist:
 					after.content = after.content.replace('\\', '')
 					filter = self.bot.utils.Filter()
