@@ -614,10 +614,13 @@ class Filter:
 	def __call__(self, message: str) -> bool:
 		esc = "\\"
 		for phrase in self.blacklist:
+			phrase = phrase.lower()
+			if phrase in str(message).lower():
+				return True
 			if not len(list(filter(lambda char: char in message, list(phrase)))) > 2:
 				continue
 			pattern = ""
-			for char in str(phrase).lower():
+			for char in phrase:
 				if char in self.index and self.index[char]:
 					main_char = char if char in self.index.keys() else f"\\{char}"
 					pattern += f"[{main_char}{''.join(f'{esc}{c}' for c in self.index[char])}]"
@@ -626,7 +629,7 @@ class Filter:
 			if re.search(pattern, message):
 				return True  # Flagged
 
-			if len(message) > 3:
+			if len(message) > 3 and len(phrase) > 3:
 				sections = []
 				tmp_pattern = str(pattern)
 				matches = re.findall(r"\[.*]", tmp_pattern)
@@ -638,13 +641,20 @@ class Filter:
 					sections.append(char)
 
 				for section in sections:
-					replaced = str(pattern).replace(section, ".*")
-					if re.search(replaced, message):
-						return True
-
-					for s in [s for s in sections if s != section and s != "."]:
-						if re.search(str(replaced).replace(s, ".*"), message):
+					chars = list(pattern)
+					index = pattern.index(section)
+					left_index = index - 1 if index else index
+					right_index = index + 1 if index < len(chars) - 1 else len(chars) - 1
+					if '.' != chars[left_index] and '.' != chars[right_index]:
+						replaced = str(pattern).replace(section, ".*")
+						if re.search(replaced, message):
 							return True
+
+					# for s in [s for s in sections if s != section and s != "."]:
+					# 	if re.search(str(replaced).replace(s, ".*"), message):
+					# 		print("Double replaced pattern: " + str(replaced).replace(s, ".*"))
+					# 		print(f"{phrase} was flagged in {message} with 2 chars removed")
+					# 		return True
 
 		return False
 
