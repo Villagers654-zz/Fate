@@ -593,10 +593,10 @@ class Filter:
 	def __init__(self):
 		self._blacklist = []
 		self.index = {
-			"a": [], "b": [], "c": [], "d": [], "e": [],
-			"f": [], "g": [], "h": [], "i": [], "j": [],
-			"k": [], "l": [], "m": [], "n": [], "o": [],
-			"p": [], "q": [], "r": [], "s": [], "t": [],
+			"a": ['@'], "b": [], "c": [], "d": [], "e": ['3'],
+			"f": [], "g": [], "h": [], "i": ['!', '1'], "j": [],
+			"k": [], "l": [], "m": [], "n": [], "o": ["0", "\\(\\)", "\\[\\]"],
+			"p": [], "q": [], "r": [], "s": ['$'], "t": [],
 			"u": [], "v": [], "w": [], "x": [], "y": [],
 			"z": [], "0": [], "1": [], "2": [], "3": [],
 			"4": [], "5": [], "6": [], "7": [], "8": [],
@@ -611,23 +611,29 @@ class Filter:
 	def blacklist(self, value: list):
 		self._blacklist = [item.lower() for item in value]
 
-	def __call__(self, message: str) -> bool:
-		esc = "\\"
+	def __call__(self, message: str):
 		for phrase in self.blacklist:
 			phrase = phrase.lower()
 			if phrase in str(message).lower():
-				return True
-			if not len(list(filter(lambda char: char in message, list(phrase)))) > 2:
+				return True, phrase
+			if not len(list(filter(lambda char: char in message, list(phrase)))) > 1:
 				continue
 			pattern = ""
 			for char in phrase:
 				if char in self.index and self.index[char]:
 					main_char = char if char in self.index.keys() else f"\\{char}"
-					pattern += f"[{main_char}{''.join(f'{esc}{c}' for c in self.index[char])}]"
+					singles = [c for c in self.index[char] if len(c) == 1]
+					multi = [c for c in self.index[char] if len(c) > 1]
+					pattern += f"[{main_char}{''.join(f'{c}' for c in singles)}]"
+					if singles and multi:
+						pattern += "|"
+					if multi:
+						pattern += "|".join(f"({c})" for c in multi)
+					print(pattern)
 				else:
 					pattern += char
 			if re.search(pattern, message):
-				return True  # Flagged
+				return True, phrase  # Flagged
 
 			if len(message) > 3 and len(phrase) > 3:
 				sections = []
@@ -648,7 +654,7 @@ class Filter:
 					if '.' != chars[left_index] and '.' != chars[right_index]:
 						replaced = str(pattern).replace(section, ".*")
 						if re.search(replaced, message):
-							return True
+							return True, phrase
 
 					# for s in [s for s in sections if s != section and s != "."]:
 					# 	if re.search(str(replaced).replace(s, ".*"), message):
@@ -656,7 +662,7 @@ class Filter:
 					# 		print(f"{phrase} was flagged in {message} with 2 chars removed")
 					# 		return True
 
-		return False
+		return False, None
 
 class MemoryInfo:
 	@staticmethod

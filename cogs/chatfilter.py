@@ -4,6 +4,7 @@ from utils import colors
 import discord
 import asyncio
 import json
+from time import time
 
 class ChatFilter(commands.Cog):
 	def __init__(self, bot):
@@ -136,16 +137,26 @@ class ChatFilter(commands.Cog):
 
 	@commands.Cog.listener()
 	async def on_message(self, m: discord.Message):
-		if isinstance(m.author, discord.Member):
+		if isinstance(m.author, discord.Member) and not m.author.bot:
 			guild_id = str(m.guild.id)
 			if m.guild.id in self.toggle and guild_id in self.blacklist:
-				if guild_id in self.ignored and not m.author.guild_permissions.manage_messages:
-					if m.channel.id in self.ignored[guild_id]:
-						return
+				if not m.channel.permissions_for(m.author).manage_messages:
+					if guild_id in self.ignored:
+						if m.channel.id in self.ignored[guild_id]:
+							return
 					m.content = m.content.replace('\\', '')
 					filter = self.bot.utils.Filter()
 					filter.blacklist = self.blacklist[guild_id]
-					if filter(m.content):
+					flagged, phrase = filter(m.content)
+					if flagged:
+						cog = self.bot.get_cog("Logger")
+						if cog and guild_id in cog.queue and isinstance(cog.queue[guild_id], list):
+							e = discord.Embed(color=colors.light_gray())
+							e.set_author(name=f"~==🍸Msg Filtered🍸==~", icon_url=m.author.avatar_url)
+							e.set_thumbnail(url=m.author.avatar_url)
+							e.add_field(name="◈ Content", value=m.content, inline=False)
+							e.add_field(name="◈ Triggered by", value=phrase, inline=False)
+							cog.queue[guild_id].append([e, 'chat', time()])
 						try:
 							await asyncio.sleep(0.5)
 							await m.delete()
