@@ -629,7 +629,6 @@ class Filter:
 						pattern += "|"
 					if multi:
 						pattern += "|".join(f"({c})" for c in multi)
-					print(pattern)
 				else:
 					pattern += char
 			if re.search(pattern, message):
