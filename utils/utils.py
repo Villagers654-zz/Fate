@@ -593,7 +593,7 @@ class Filter:
 	def __init__(self):
 		self._blacklist = []
 		self.index = {
-			"a": ['@'], "b": [], "c": [], "d": [], "e": ['3'],
+			"a": ['@', '4'], "b": [], "c": [], "d": [], "e": ['3'],
 			"f": [], "g": [], "h": [], "i": ['!', '1'], "j": [],
 			"k": [], "l": [], "m": [], "n": [], "o": ["0", "\\(\\)", "\\[\\]"],
 			"p": [], "q": [], "r": [], "s": ['$'], "t": [],
@@ -613,8 +613,10 @@ class Filter:
 
 	def __call__(self, message: str):
 		for phrase in self.blacklist:
-			phrase = phrase.lower()
-			if phrase in str(message).lower():
+			if len(phrase) > 3:
+				message=message.replace(' ', '')
+			chunks = str(message).replace(' ', '').lower().split()
+			if phrase in chunks:
 				return True, phrase
 			if not len(list(filter(lambda char: char in message, list(phrase)))) > 1:
 				continue
@@ -624,36 +626,41 @@ class Filter:
 					main_char = char if char in self.index.keys() else f"\\{char}"
 					singles = [c for c in self.index[char] if len(c) == 1]
 					multi = [c for c in self.index[char] if len(c) > 1]
-					pattern += f"[{main_char}{''.join(f'{c}' for c in singles)}]"
+					pattern += f"([{main_char}{''.join(f'{c}' for c in singles)}]"
 					if singles and multi:
 						pattern += "|"
 					if multi:
 						pattern += "|".join(f"({c})" for c in multi)
+					pattern += ")"
 				else:
 					pattern += char
+				pattern += "+"
+			print(pattern)
 			if re.search(pattern, message):
-				return True, phrase  # Flagged
+				return True, pattern  # Flagged
 
-			if len(message) > 3 and len(phrase) > 3:
-				sections = []
-				tmp_pattern = str(pattern)
-				matches = re.findall(r"\[.*]", tmp_pattern)
-				if matches:
-					for match in matches:
-						sections.append(match)
-						tmp_pattern.replace(match, "")
-				for char in tmp_pattern:
-					sections.append(char)
+			#if len(message) > 3 and len(phrase) > 3:
+				#if phrase == "inane":
+					#print("going into special for inane")
+				#sections = []
+				#tmp_pattern = str(pattern)
+				#matches = re.findall(r"\[.*]", tmp_pattern)
+				#if matches:
+					#for match in matches:
+						#sections.append(match)
+						#tmp_pattern.replace(match, "")
+				#for char in tmp_pattern:
+					#sections.append(char)
 
-				for section in sections:
-					chars = list(pattern)
-					index = pattern.index(section)
-					left_index = index - 1 if index else index
-					right_index = index + 1 if index < len(chars) - 1 else len(chars) - 1
-					if '.' != chars[left_index] and '.' != chars[right_index]:
-						replaced = str(pattern).replace(section, ".*")
-						if re.search(replaced, message):
-							return True, phrase
+				#for section in sections:
+					#chars = list(pattern)
+					#index = pattern.index(section)
+					#left_index = index - 1 if index else index
+					#right_index = index + 1 if index < len(chars) - 1 else len(chars) - 1
+					#if '.' != chars[left_index] and '.' != chars[right_index] and chars[index] != '.':
+						#replaced = str(pattern).replace(section, f"{chars[index]}*")
+						#if re.search(replaced, message):
+							#return True, replaced
 
 					# for s in [s for s in sections if s != section and s != "."]:
 					# 	if re.search(str(replaced).replace(s, ".*"), message):

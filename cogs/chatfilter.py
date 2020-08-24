@@ -135,8 +135,7 @@ class ChatFilter(commands.Cog):
 			del self.blacklist[guild_id]
 		await self.save_data()
 
-	@commands.Cog.listener()
-	async def on_message(self, m: discord.Message):
+	async def filter(self, m: discord.Message):
 		if isinstance(m.author, discord.Member) and not m.author.bot:
 			guild_id = str(m.guild.id)
 			if m.guild.id in self.toggle and guild_id in self.blacklist:
@@ -164,20 +163,13 @@ class ChatFilter(commands.Cog):
 							pass
 
 	@commands.Cog.listener()
+	async def on_message(self, m: discord.Message):
+		await self.filter(m)
+
+	@commands.Cog.listener()
 	async def on_message_edit(self, before, after):
-		if isinstance(before.author, discord.Member) and isinstance(after.author, discord.Member):
-			guild_id = str(before.guild.id)
-			if before.guild.id in self.toggle and not after.author.guild_permissions.manage_messages:
-				if guild_id in self.blacklist:
-					after.content = after.content.replace('\\', '')
-					filter = self.bot.utils.Filter()
-					filter.blacklist = self.blacklist[guild_id]
-					if filter(after.content):
-						try:
-							await asyncio.sleep(0.5)
-							await after.delete()
-						except discord.errors.NotFound:
-							pass
+		await self.filter(after)
+
 
 def setup(bot):
 	bot.add_cog(ChatFilter(bot))
