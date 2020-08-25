@@ -144,7 +144,7 @@ class ChatFilter(commands.Cog):
 						if m.channel.id in self.ignored[guild_id]:
 							return
 					m.content = m.content.replace('\\', '')
-					filter = self.bot.utils.Filter()
+					filter = self.bot.utils.filter()
 					filter.blacklist = self.blacklist[guild_id]
 					flagged, phrase = filter(m.content)
 					if flagged:

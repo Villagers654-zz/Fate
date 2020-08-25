@@ -17,8 +17,9 @@ import pymysql
 from termcolor import cprint
 from PIL import Image, ImageDraw, ImageFont
 
-from utils import outh, utils, tasks, colors, checks
+from utils import outh, tasks, colors, checks
 from utils.custom_logging import Logging
+from cogs.utils import Utils
 
 
 class EmptyException(Exception):
@@ -46,8 +47,8 @@ class Fate(commands.AutoShardedBot):
         self.ignored_exit = EmptyException
         self.allow_user_mentions = discord.AllowedMentions(users=True, roles=False, everyone=False)
 
-        self.initial_extensions = [     # Cogs to load before logging in
-            'error_handler', 'config', 'menus', 'core', 'mod', 'welcome', 'farewell', 'notes', 'archive',
+        self.initial_extensions = [        # Cogs to load before logging in
+            'utils', 'error_handler', 'config', 'menus', 'core', 'mod', 'welcome', 'farewell', 'notes', 'archive',
             'coffeeshop', 'custom', 'actions', 'reactions', 'responses', 'textart', 'fun', 'dev', 'readme',
             'reload', 'embeds', 'polis', 'apis', 'chatbridges', 'clean_rythm', 'utility', 'psutil', 'rules',
             'duel_chat', 'selfroles', 'lock', 'audit', 'cookies', 'server_list', 'emojis', 'giveaways', 'polls',
@@ -80,9 +81,6 @@ class Fate(commands.AutoShardedBot):
                 if ext in self.initial_extensions:
                     self.initial_extensions.remove(ext)
 
-        self.utils = utils                   # Custom utility functions
-        self.result = utils.Result           # Custom Result Object Creator
-        self.memory = utils.MemoryInfo       # Class for easily accessing memory usage
         self.core_tasks = tasks.Tasks(self)  # Object to start the main tasks like `changing status`
         self.log = Logging(bot=self)         # Class to handle printing/logging
 
@@ -178,21 +176,23 @@ class Fate(commands.AutoShardedBot):
             perms
         )
 
-        # deprecated shit
-        self.get_stats = utils.get_stats()
-        self.get_config = utils.get_config()
-
         super().__init__(
-            command_prefix=utils.get_prefixes,
+            command_prefix=Utils.get_prefixes,
             activity=discord.Game(name=self.config['startup_status']), **options
         )
 
-    async def on_error(self, event_method, *args, **kwargs):
-        full_error = str(traceback.format_exc())
-        ignored = ("NotFound")
-        if any(Type in full_error for Type in ignored):
-            return
-        self.log.critical(full_error)
+    @property
+    def utils(self) -> Utils:
+        if "Utils" not in self.cogs:
+            raise ModuleNotFoundError("The utils cog hasn't been loaded yet")
+        return self.get_cog("Utils")
+
+    # async def on_error(self, event_method, *args, **kwargs):
+    #     full_error = str(traceback.format_exc())
+    #     ignored = ("NotFound")
+    #     if any(Type in full_error for Type in ignored):
+    #         return
+    #     self.log.critical(full_error)
 
     def get_message(self, message_id: int):
         """ Return a message from the internal cache if it exists """

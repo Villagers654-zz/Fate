@@ -2,10 +2,9 @@
 
 from os import path
 import json
-from time import time, monotonic
+from time import time
 from random import *
 import asyncio
-from datetime import datetime, timedelta
 import requests
 from io import BytesIO
 from datetime import datetime
@@ -16,7 +15,8 @@ from discord.ext import commands, tasks
 import discord
 from PIL import Image, ImageFont, ImageDraw, ImageSequence, UnidentifiedImageError
 
-from utils import colors, utils
+from utils import colors
+from cogs.utils import Utils as utils
 
 
 def profile_help():

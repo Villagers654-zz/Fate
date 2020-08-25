@@ -12,7 +12,8 @@ from discord import Webhook, AsyncWebhookAdapter
 import discord
 from profanity_check import predict_prob
 
-from utils import colors, utils, config
+from utils import colors, config
+from cogs.utils import Utils as utils
 
 
 def toggle_webhook_check():

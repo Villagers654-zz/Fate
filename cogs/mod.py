@@ -17,7 +17,8 @@ from discord.ext import commands
 import discord
 from discord.ext.commands import Greedy
 
-from utils import utils, colors
+from utils import colors
+from cogs.utils import Utils as utils
 
 
 cache = {}  # Keep track of what commands are still being ran

@@ -18,12 +18,12 @@ import wikipedia
 import wikipedia.exceptions
 from profanity_check import predict_prob
 
-from utils import config, colors, utils, checks
-from fate import Fate
+from utils import config, colors
+from cogs.utils import Utils as utils
 
 
 class Core(commands.Cog):
-    def __init__(self, bot: Fate):
+    def __init__(self, bot):
         self.bot = bot
         self.last = {}
         self.spam_cd = {}

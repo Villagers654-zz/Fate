@@ -11,7 +11,8 @@ import discord
 from discord.errors import *
 
 from fate import Fate
-from utils import utils, colors
+from utils import colors
+from cogs.utils import Utils as utils
 
 
 class Verification(commands.Cog):

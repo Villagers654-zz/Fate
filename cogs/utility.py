@@ -20,8 +20,8 @@ from colormap import rgb2hex
 import psutil
 from discord.ext import commands
 
-from utils.utils import bytes2human
-from utils import colors, utils, bytes2human as p, config
+from utils import colors, bytes2human as p, config
+from cogs.utils import Utils as utils
 
 
 class SatisfiableChannel(commands.Converter):
@@ -717,8 +717,8 @@ class Utility(commands.Cog):
 			perks = f'• Boost Level [`{ctx.guild.premium_tier}`]\n' \
 				f'• Total Boosts [`{ctx.guild.premium_subscription_count}`]\n' \
 				f'• Max Emoji\'s [`{ctx.guild.emoji_limit}`]\n' \
-				f'• Max Bitrate [`{bytes2human(ctx.guild.bitrate_limit).replace(".0", "")}`]\n' \
-				f'• Max Filesize [`{bytes2human(ctx.guild.filesize_limit).replace(".0", "")}`]'
+				f'• Max Bitrate [`{utils.bytes2human(ctx.guild.bitrate_limit).replace(".0", "")}`]\n' \
+				f'• Max Filesize [`{utils.bytes2human(ctx.guild.filesize_limit).replace(".0", "")}`]'
 			e.add_field(name='◈ Perks ◈', value=perks, inline=False)
 		created = datetime.date(ctx.guild.created_at)
 		e.add_field(name='◈ Created ◈', value=created.strftime('%m/%d/%Y'), inline=False)

@@ -1,8 +1,12 @@
-from utils.utils import bytes2human
+from cogs.utils import Utils
 from discord.ext import commands
 import discord
 import psutil
 import os
+
+
+bytes2human = Utils.bytes2human
+
 
 class Psutil(commands.Cog):
 	def __init__(self, bot):
@@ -27,25 +31,6 @@ class Psutil(commands.Cog):
 		e.set_footer(text=f'{[round(i) for i in psutil.cpu_percent(interval=1, percpu=True)]}')
 		await ctx.send(embed=e)
 
-	@commands.command()
-	async def freq(self, ctx):
-		await ctx.send(bytes2human(psutil.cpu_freq()))
-
-	@commands.command()
-	async def pids(self, ctx):
-		await ctx.send(psutil.pids())
-
-	@commands.command()
-	async def temp(self, ctx):
-		await ctx.send(psutil.sensors_temperatures(fahrenheit=True))
-
-	@commands.command(name='ram', aliases=['wam'])
-	async def ram(self, ctx):
-		await ctx.send(f'[{bytes2human(psutil.virtual_memory())}, {p.bytes2human(psutil.virtual_memory().total)}]')
-
-	@commands.command()
-	async def cpu(self, ctx):
-		await ctx.send(f"{psutil.cpu_percent(interval=1)}")
 
 def setup(bot):
 	bot.add_cog(Psutil(bot))
