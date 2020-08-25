@@ -23,12 +23,12 @@ from utils import colors
 
 
 class Utils(commands.Cog):
-    def __init__(self, bot, AsyncFileManager, Filter, MemoryInfo):
+    def __init__(self, bot, Filter, MemoryInfo, Result):
         self.bot = bot
         self.colors = colors
-        self.open = AsyncFileManager
         self.filter = Filter
         self.MemoryInfo = MemoryInfo
+        self.Result = Result
 
     @staticmethod
     async def update_msg(msg, new) -> discord.Message:
@@ -568,34 +568,11 @@ class Utils(commands.Cog):
                 if "✅" not in [str(r.emoji) for r in message.reactions]:
                     await message.add_reaction("✅")
 
-class AsyncFileManager:
-    def __init__(self, file: str, mode: str = "r", lock: asyncio.Lock = None):
-        self.file = file
-        self.temp_file = file
-        if "w" in mode:
-            self.temp_file += ".tmp"
-        self.mode = mode
-        self.fp_manager = None
-        self.lock = lock
-
-    async def __aenter__(self):
-        if self.lock:
-            await self.lock.acquire()
-        self.fp_manager = await aiofiles.open(file=self.temp_file, mode=self.mode)
-        return self.fp_manager
-
-    async def __aexit__(self, _exc_type, _exc_value, _exc_traceback):
-        await self.fp_manager.close()
-        if self.file != self.temp_file:
-            os.rename(self.temp_file, self.file)
-        if self.lock:
-            self.lock.release()
-
-    class Result:
-        def __init__(self, result, errored=False, traceback=None):
-            self.result = result
-            self.errored = errored
-            self.traceback = traceback
+class Result:
+    def __init__(self, result, errored=False, traceback=None):
+        self.result = result
+        self.errored = errored
+        self.traceback = traceback
 
 
 class Filter:
@@ -698,5 +675,5 @@ class MemoryInfo:
 
 def setup(bot):
     bot.add_cog(Utils(
-        bot, AsyncFileManager, Filter, MemoryInfo
+        bot, Filter, MemoryInfo, Result
     ))
