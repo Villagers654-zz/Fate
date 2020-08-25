@@ -9,22 +9,26 @@ from io import BytesIO
 import re
 from typing import Union, Optional
 from time import time, monotonic
+import os
+import subprocess
 
 from discord.ext import commands
 import discord
 from colormap import rgb2hex
 from PIL import Image
 from ast import literal_eval
+import aiofiles
 
-from utils import utils, colors
+from utils import colors
 
 
 class Utils(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot, AsyncFileManager, Filter, MemoryInfo):
         self.bot = bot
         self.colors = colors
-        self.open = utils.AsyncFileManager
-        self.filter = utils.Filter
+        self.open = AsyncFileManager
+        self.filter = Filter
+        self.MemoryInfo = MemoryInfo
 
     @staticmethod
     async def update_msg(msg, new) -> discord.Message:
@@ -564,5 +568,135 @@ class Utils(commands.Cog):
                 if "✅" not in [str(r.emoji) for r in message.reactions]:
                     await message.add_reaction("✅")
 
+class AsyncFileManager:
+    def __init__(self, file: str, mode: str = "r", lock: asyncio.Lock = None):
+        self.file = file
+        self.temp_file = file
+        if "w" in mode:
+            self.temp_file += ".tmp"
+        self.mode = mode
+        self.fp_manager = None
+        self.lock = lock
+
+    async def __aenter__(self):
+        if self.lock:
+            await self.lock.acquire()
+        self.fp_manager = await aiofiles.open(file=self.temp_file, mode=self.mode)
+        return self.fp_manager
+
+    async def __aexit__(self, _exc_type, _exc_value, _exc_traceback):
+        await self.fp_manager.close()
+        if self.file != self.temp_file:
+            os.rename(self.temp_file, self.file)
+        if self.lock:
+            self.lock.release()
+
+    class Result:
+        def __init__(self, result, errored=False, traceback=None):
+            self.result = result
+            self.errored = errored
+            self.traceback = traceback
+
+
+class Filter:
+    def __init__(self):
+        self._blacklist = []
+        self.index = {
+            "a": ['@', '4'], "b": [], "c": [], "d": [], "e": ['3'],
+            "f": [], "g": [], "h": [], "i": ['!', '1'], "j": [],
+            "k": [], "l": [], "m": [], "n": [], "o": ["0", "\\(\\)", "\\[\\]"],
+            "p": [], "q": [], "r": [], "s": ['$'], "t": [],
+            "u": [], "v": [], "w": [], "x": [], "y": [],
+            "z": [], "0": [], "1": [], "2": [], "3": [],
+            "4": [], "5": [], "6": [], "7": [], "8": [],
+            "9": []
+        }
+
+    @property
+    def blacklist(self):
+        return self._blacklist
+
+    @blacklist.setter
+    def blacklist(self, value: list):
+        self._blacklist = [item.lower().replace("|", "") for item in value]
+
+    def __call__(self, message: str):
+        for phrase in self.blacklist:
+            pattern = ""
+            try:
+                if len(phrase) > 3:
+                    message = message.replace(' ', '')
+                chunks = str(message).replace(' ', '').lower().split()
+                if phrase in chunks:
+                    return True, phrase
+                if not len(list(filter(lambda char: char in message, list(phrase)))) > 1:
+                    continue
+                pattern = ""
+                for char in phrase:
+                    if char in self.index and self.index[char]:
+                        main_char = char if char in self.index.keys() else f"\\{char}"
+                        singles = [c for c in self.index[char] if len(c) == 1]
+                        multi = [c for c in self.index[char] if len(c) > 1]
+                        pattern += f"([{main_char}{''.join(f'{c}' for c in singles)}]"
+                        if singles and multi:
+                            pattern += "|"
+                        if multi:
+                            pattern += "|".join(f"({c})" for c in multi)
+                        pattern += ")"
+                    else:
+                        pattern += char
+                    pattern += "+"
+                if re.search(pattern, message):
+                    return True, pattern  # Flagged
+            except Exception as e:
+                print(f"{e}\n{pattern}")
+        return False, None
+
+class MemoryInfo:
+    @staticmethod
+    async def __coro_fetch(interval=0):
+        p = subprocess.Popen(f'python3 memory_info.py {os.getpid()} {interval}', stdout=subprocess.PIPE, shell=True)
+        await asyncio.sleep(1)
+        (output, err) = p.communicate()
+        output = output.decode()
+        return json.loads(output)
+
+    @staticmethod
+    def __fetch(interval=1):
+        p = subprocess.Popen(f'python3 memory_info.py {os.getpid()} {interval}', stdout=subprocess.PIPE, shell=True)
+        (output, err) = p.communicate()
+        output = output.decode()
+        return json.loads(output)
+
+    @staticmethod
+    async def full(interval=1):
+        return await MemoryInfo.__coro_fetch(interval)
+
+    @staticmethod
+    async def cpu(interval=1):
+        mem = await MemoryInfo.__coro_fetch(interval)
+        return mem['PID']['CPU']
+
+    @staticmethod
+    def ram(interval=0):
+        return MemoryInfo.__fetch(interval)['PID']['RAM']['RSS']
+
+    @staticmethod
+    async def cpu_info(interval=1):
+        mem = await MemoryInfo.__coro_fetch(interval)
+        return {'global': mem['GLOBAL']['CPU'], 'bot': mem['PID']['CPU']}
+
+    @staticmethod
+    def global_cpu(interval=1):
+        return MemoryInfo.__fetch(interval)['GLOBAL']['CPU']
+
+    @staticmethod
+    def global_ram(interval=0):
+        return MemoryInfo.__fetch()['GLOBAL']['RAM']['USED']
+
+
+
 def setup(bot):
-    bot.add_cog(Utils(bot))
+    bot.add_cog(Utils(
+        bot, AsyncFileManager, Filter, MemoryInfo
+    ))

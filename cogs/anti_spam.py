@@ -424,7 +424,7 @@ class AntiSpam(commands.Cog):
                             index = self.mutes[guild_id][user_id].index(mute_time)
                             self.mutes[guild_id][user_id].pop(index)
                     timer = 150 * multiplier
-                    timer_str = utils.get_time(timer)
+                    timer_str = self.bot.utils.get_time(timer)
                     await msg.author.add_roles(mute_role)
                     messages = [m for m, mtime in self.msgs[user_id]]
                     await msg.channel.delete_messages(messages)
