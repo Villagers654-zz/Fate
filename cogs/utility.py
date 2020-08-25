@@ -519,7 +519,7 @@ class Utility(commands.Cog):
 			bot_pid = psutil.Process(os.getpid())
 			e = discord.Embed(color=colors.fate())
 			e.set_author(name="Fate [Zerø]: Core Info", icon_url=self.bot.get_user(config.owner_id()).avatar_url)
-			stats = self.bot.get_stats  # type: dict
+			stats = self.bot.utils.get_stats()  # type: dict
 			commands = 0; lines = 0
 			for command_date in stats['commands']:
 				date = datetime.strptime(command_date, '%Y-%m-%d %H:%M:%S.%f')

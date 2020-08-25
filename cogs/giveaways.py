@@ -30,7 +30,7 @@ class Giveaways(commands.Cog):
         user = await self.bot.fetch_user(dat['user'])
         e.set_author(name=f"Giveaway by {user}", icon_url=user.avatar_url)
         e.description = dat["giveaway"]
-        end_time = utils.get_time(dat["end_time"] - timestamp())
+        end_time = self.bot.utils.get_time(dat["end_time"] - timestamp())
         if timestamp() >= dat['end_time']:
             e.set_footer(text=f"Giveaway Ended")
         else:

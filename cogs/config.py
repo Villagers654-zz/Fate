@@ -118,7 +118,7 @@ class Config(commands.Cog):
 	async def _warns(self, ctx):
 		guild_id = str(ctx.guild.id)
 		emojis = ['1⃣', '2⃣', '3⃣', '4⃣', '5⃣']
-		config = self.bot.get_config  # type: dict
+		config = self.bot.utils.get_config()  # type: dict
 		if 'warns' not in config:
 			config['warns'] = {}
 		if 'expire' not in config['warns']:
@@ -158,7 +158,7 @@ class Config(commands.Cog):
 			reaction = await wait_for_reaction()
 			if reaction == emoji(1):
 				await msg.clear_reactions()
-				config = self.bot.get_config  # type: dict
+				config = self.bot.utils.get_config()  # type: dict
 				if guild_id not in config['warns']:
 					config['warns'][guild_id] = {}
 				dat = config['warns']
@@ -190,7 +190,7 @@ class Config(commands.Cog):
 				await msg.add_reaction('✔')
 				await msg.add_reaction('❌')
 				reaction = await wait_for_reaction()
-				config = self.bot.get_config  # type: dict
+				config = self.bot.utils.get_config()  # type: dict
 				if reaction == '✔':
 					if guild_id not in config['warns']['expire']:
 						config['warns']['expire'].append(guild_id)
@@ -207,7 +207,7 @@ class Config(commands.Cog):
 				await msg.add_reaction('❌')
 				reaction = await wait_for_reaction()
 				if reaction == '❌':
-					config = self.bot.get_config  # type: dict
+					config = self.bot.utils.get_config()  # type: dict
 					if guild_id in config['warns']['punishments']:
 						del config['warns']['punishments'][guild_id]
 						self.save_config(config)
@@ -215,7 +215,7 @@ class Config(commands.Cog):
 					await msg.clear_reactions()
 					punishments = []
 					def dump():
-						config = self.bot.get_config  # type: dict
+						config = self.bot.utils.get_config()  # type: dict
 						if guild_id not in config['warns']:
 							config['warns'][guild_id] = {}
 						if punishments:
@@ -259,6 +259,7 @@ class Config(commands.Cog):
 			break
 		await ctx.message.delete()
 		await msg.delete()
+
 
 def setup(bot):
 	bot.add_cog(Config(bot))

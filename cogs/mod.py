@@ -231,7 +231,7 @@ class Moderation(commands.Cog):
                                             '.unrestrict #channel_mention\n.restricted')
             return await ctx.send(embed=e)
         guild_id = str(ctx.guild.id)
-        config = self.bot.get_config  # type: dict
+        config = self.bot.utils.get_config()  # type: dict
         if 'restricted' not in config:
             config['restricted'] = {}
         if guild_id not in config['restricted']:
@@ -261,7 +261,7 @@ class Moderation(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def unrestrict(self, ctx):
         guild_id = str(ctx.guild.id)
-        config = self.bot.get_config  # type: dict
+        config = self.bot.utils.get_config()  # type: dict
         if 'restricted' not in config:
             config['restricted'] = {}
         unrestricted = '**Unrestricted:**'

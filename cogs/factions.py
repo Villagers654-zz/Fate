@@ -162,13 +162,13 @@ class Factions(commands.Cog):
 				seconds = (datetime.now() - date).seconds
 				time = (datetime.now() - date).days
 				if time < 1 and boost == 'anti-raid':
-					active_boosts['Anti-Raid'] = utils.get_time(86400 - seconds)
+					active_boosts['Anti-Raid'] = self.bot.utils.get_time(86400 - seconds)
 				time = (datetime.now() - date).seconds / 60 / 60
 				if time < 2 and boost == 'extra-income':
-					active_boosts['Extra-Income'] = utils.get_time(7200 - seconds)
+					active_boosts['Extra-Income'] = self.bot.utils.get_time(7200 - seconds)
 				time = (datetime.now() - date).seconds / 60 / 60
 				if time < 2 and boost == 'land-guard':
-					active_boosts['Land-Guard'] = utils.get_time(7200 - seconds)
+					active_boosts['Land-Guard'] = self.bot.utils.get_time(7200 - seconds)
 		return active_boosts
 
 	def get_icon(self, user: discord.Member):
@@ -532,7 +532,7 @@ class Factions(commands.Cog):
 		if 'banner' not in self.factions[guild_id][faction]:
 			await ctx.send(f'Buying access to banners will cost you $500\n'
 			    'Reply with .confirm to purchase')
-			msg = await utils.wait_for_msg(self, ctx)
+			msg = await self.bot.utils.wait_for_msg(self, ctx)
 			if not msg: return
 			if '.confirm' not in msg.content.lower():
 				return await ctx.send('Maybe next time ;-;')
@@ -594,7 +594,7 @@ class Factions(commands.Cog):
 	@_factions.command(name='invite')
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	async def _invite(self, ctx, *, user):
-		user = utils.get_user(ctx, user)
+		user = self.bot.utils.get_user(ctx, user)
 		if not user:
 			return await ctx.send('User not found')
 		if user.bot:
@@ -615,7 +615,7 @@ class Factions(commands.Cog):
 		self.factions[guild_id][faction]['members'].append(ctx.author.id)
 		await ctx.send(f'{user.mention}, {ctx.author.name} wants to invite you to {faction}. Reply with `.accept` to join')
 		self.appending[user.id] = 'yeet'
-		msg = await utils.wait_for_msg(self, ctx, user)
+		msg = await self.bot.utils.wait_for_msg(self, ctx, user)
 		if not msg:
 			del self.appending[user.id]
 			return
@@ -636,7 +636,7 @@ class Factions(commands.Cog):
 	@_factions.command(name='kick')
 	@commands.cooldown(1, 3, commands.BucketType.user)
 	async def _kick(self, ctx, *, user):
-		user = utils.get_user(ctx, user)
+		user = self.bot.utils.get_user(ctx, user)
 		if not user:
 			return await ctx.send('User not found')
 		guild_id = str(ctx.guild.id)
@@ -807,7 +807,7 @@ class Factions(commands.Cog):
 		await ctx.send(f'{target_owner.mention}, {ctx.author.name} wants to merge factions with him/her as the owner\n'
 		    f'Reply with .confirm to accept the offer')
 		self.appending[target_owner.id] = 'yeet'
-		msg = await utils.wait_for_msg(self, ctx, target_owner)
+		msg = await self.bot.utils.wait_for_msg(self, ctx, target_owner)
 		if not msg:
 			del self.appending[target_owner.id]
 			return
@@ -902,7 +902,7 @@ class Factions(commands.Cog):
 				cost += 250; old_claim = fac; break
 		await ctx.send(f'Claiming this channel will cost you ${cost}\n'
 			'Reply with .confirm to purchase')
-		msg = await utils.wait_for_msg(self, ctx)
+		msg = await self.bot.utils.wait_for_msg(self, ctx)
 		if not msg: return
 		if '.confirm' not in msg.content.lower():
 			return await ctx.send('Maybe next time ;-;')
@@ -941,7 +941,7 @@ class Factions(commands.Cog):
 			return await ctx.send('You need to claim this channel in order to unclaim it')
 		await ctx.send(f'Unclaiming this channel will give you $250\n'
 			'Reply with .confirm to unclaim')
-		msg = await utils.wait_for_msg(self, ctx)
+		msg = await self.bot.utils.wait_for_msg(self, ctx)
 		if not msg: return
 		if '.confirm' not in msg.content.lower():
 			return await ctx.send('Maybe next time ;-;')

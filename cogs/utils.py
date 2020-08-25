@@ -352,6 +352,21 @@ class Utils(commands.Cog):
                     await msg.delete()
                     return roles[role - 1]
 
+    async def wait_for_msg(self, ctx, user=None):
+        if not user:
+            user = ctx.author
+
+        def pred(m):
+            return m.channel.id == ctx.channel.id and m.author.id == user.id
+
+        try:
+            msg = await self.bot.wait_for('message', check=pred, timeout=60)
+        except asyncio.TimeoutError:
+            await ctx.send("Timeout error")
+            return False
+        else:
+            return msg
+
     @staticmethod
     def extract_timer(string):
         timers = re.findall('[0-9]+[smhd]', string)
@@ -626,7 +641,7 @@ class Filter:
                 if re.search(pattern, message):
                     return True, pattern  # Flagged
             except Exception as e:
-                print(f"{e}\n{pattern}")
+                print(f"{e}\nMsg: {message}\nPattern: {pattern}")
         return False, None
 
 class MemoryInfo:
