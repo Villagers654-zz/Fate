@@ -615,7 +615,7 @@ class Factions(commands.Cog):
 		self.factions[guild_id][faction]['members'].append(ctx.author.id)
 		await ctx.send(f'{user.mention}, {ctx.author.name} wants to invite you to {faction}. Reply with `.accept` to join')
 		self.appending[user.id] = 'yeet'
-		msg = await self.bot.utils.wait_for_msg(self, ctx, user)
+		msg = await self.bot.utils.wait_for_msg(ctx, user)
 		if not msg:
 			del self.appending[user.id]
 			return
@@ -807,7 +807,7 @@ class Factions(commands.Cog):
 		await ctx.send(f'{target_owner.mention}, {ctx.author.name} wants to merge factions with him/her as the owner\n'
 		    f'Reply with .confirm to accept the offer')
 		self.appending[target_owner.id] = 'yeet'
-		msg = await self.bot.utils.wait_for_msg(self, ctx, target_owner)
+		msg = await self.bot.utils.wait_for_msg(ctx, target_owner)
 		if not msg:
 			del self.appending[target_owner.id]
 			return
