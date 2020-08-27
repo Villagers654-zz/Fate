@@ -26,6 +26,7 @@ discord.log
 /utils/outh.py
 /utils/ServerStatus.py
 /utils/ssh.py
+/utils/window_gen.py
 
 /venv/*
 /venv/
