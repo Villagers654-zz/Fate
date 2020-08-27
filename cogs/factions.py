@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import asyncio
 from discord.ext import commands
 import discord
-from utils import utils, colors, checks
+from utils import colors, checks
 
 
 class Factions(commands.Cog):
@@ -503,7 +503,7 @@ class Factions(commands.Cog):
 		if 'icon' not in self.factions[guild_id][faction]:
 			await ctx.send(f'Buying access to icons will cost you $250\n'
 			    'Reply with .confirm to purchase')
-			msg = await utils.wait_for_msg(self, ctx)
+			msg = await self.bot.utils.wait_for_msg(ctx)
 			if not msg: return
 			if '.confirm' not in msg.content.lower():
 				return await ctx.send('Maybe next time ;-;')
@@ -902,7 +902,7 @@ class Factions(commands.Cog):
 				cost += 250; old_claim = fac; break
 		await ctx.send(f'Claiming this channel will cost you ${cost}\n'
 			'Reply with .confirm to purchase')
-		msg = await self.bot.utils.wait_for_msg(self, ctx)
+		msg = await self.bot.utils.wait_for_msg(ctx)
 		if not msg: return
 		if '.confirm' not in msg.content.lower():
 			return await ctx.send('Maybe next time ;-;')
@@ -941,7 +941,7 @@ class Factions(commands.Cog):
 			return await ctx.send('You need to claim this channel in order to unclaim it')
 		await ctx.send(f'Unclaiming this channel will give you $250\n'
 			'Reply with .confirm to unclaim')
-		msg = await self.bot.utils.wait_for_msg(self, ctx)
+		msg = await self.bot.utils.wait_for_msg(ctx)
 		if not msg: return
 		if '.confirm' not in msg.content.lower():
 			return await ctx.send('Maybe next time ;-;')
