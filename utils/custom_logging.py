@@ -74,4 +74,4 @@ class Logging:
         log = "\n".join(f"{self.time} | CRITICAL | {line}" for line in log.split("\n"))
         cprint(log, *args, **kwargs)
         owner = self.bot.get_user(self.bot.config["bot_owner_id"])
-        self.queue.append(f"{owner.mention} something went wrong```{log}```")
+        self.queue.append(f"{owner.mention if owner else 'Frick,'} something went wrong```{log}```")

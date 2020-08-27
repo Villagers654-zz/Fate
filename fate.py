@@ -242,7 +242,7 @@ class Fate(commands.AutoShardedBot):
             except commands.ExtensionNotFound:
                 self.log.critical(f"Couldn't find {cog}")
                 self.log.info("Continuing..")
-            except commands.ExtensionError:
+            except (commands.ExtensionError, commands.ExtensionFailed, Exception):
                 self.log.critical(f"Couldn't load {cog}``````{traceback.format_exc()}")
                 self.log.info("Continuing..")
 

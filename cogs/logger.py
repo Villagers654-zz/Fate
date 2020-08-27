@@ -27,7 +27,6 @@ from discord import AuditLogAction as audit
 from PIL import Image
 
 from utils.colors import *
-from utils import utils
 
 
 def is_guild_owner():
@@ -544,7 +543,7 @@ class Logger(commands.Cog):
                 value="> Sorts logs into multiple channels within a category like 'chat', 'actions', and 'updates'",
                 inline=False
             )
-            p = utils.get_prefix(ctx)
+            p = self.bot.utils.get_prefix(ctx)
             e.add_field(
                 name='◈ Commands',
                 value=f"{p}log enable - `creates a log`"

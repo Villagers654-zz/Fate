@@ -12,7 +12,7 @@ from discord.ext import commands
 import discord
 from discord import Webhook, AsyncWebhookAdapter
 
-from utils import colors, utils, outh
+from utils import colors, outh
 
 code = "```py\n{0}\n```"
 sexualities = [
@@ -231,7 +231,7 @@ class Fun(commands.Cog):
 			else:
 				return await ctx.send(f'Invalid decoder:\n{usage}')
 			try:
-				await ctx.send(utils.cleanup_msg(str(decode.decode())))
+				await ctx.send(self.bot.utils.cleanup_msg(str(decode.decode())))
 			except:
 				await ctx.send(f'That\'s not properly encoded in {decoder}')
 

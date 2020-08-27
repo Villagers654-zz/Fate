@@ -1,6 +1,6 @@
 from discord.ext import commands
 from os.path import isfile
-from utils import colors, utils
+from utils import colors
 import discord
 import asyncio
 import random
@@ -301,7 +301,7 @@ class Welcome(commands.Cog):
 			complete = False
 			await ctx.send('Send the image(s) you\'d like to use\nReply with "done" when finished')
 			while complete is False:
-				msg = await utils.Bot(self.bot).wait_for_msg(ctx)  # type: discord.Message
+				msg = await self.bot.utils.wait_for_msg(ctx)  # type: discord.Message
 				if msg:
 					if msg.content:
 						if "done" in msg.content.lower():

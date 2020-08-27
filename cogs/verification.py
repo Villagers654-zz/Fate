@@ -262,6 +262,9 @@ class Verification(commands.Cog):
                 del self.config[guild_id]
                 await self.save_data()
                 return
+            bconf = self.bot.utils.get_config()  # type: dict
+            if member.id in bconf["blocked"]:
+                return await channel.send(f"{member.mention} you are blocked from using this bot", delete_after=45)
             verified_role = member.guild.get_role(conf["verified_role_id"])
             if not verified_role:
                 with suppress(Forbidden, HTTPException):

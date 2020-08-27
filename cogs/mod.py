@@ -370,7 +370,7 @@ class Moderation(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def restricted(self, ctx):
         guild_id = str(ctx.guild.id)
-        config = self.bot.get_config  # type: dict
+        config = self.bot.utils.get_config()  # type: dict
         if guild_id not in config['restricted']:
             return await ctx.send('No restricted channels/users')
         dat = config['restricted'][guild_id]

@@ -10,7 +10,7 @@ import random
 from discord.ext import commands
 import discord
 
-from utils import colors, utils
+from utils import colors
 
 
 class Giveaways(commands.Cog):

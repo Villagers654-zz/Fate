@@ -17,7 +17,7 @@ import json
 from discord.ext import commands
 import discord
 
-from utils import colors, utils
+from utils import colors
 
 
 class SelfRoles(commands.Cog):
@@ -268,7 +268,7 @@ class SelfRoles(commands.Cog):
 					if not emoji:
 						await ctx.send(f'Emoji not found for {emoji}', delete_after=5)
 						continue
-					role = await utils.get_role(ctx, role)
+					role = await self.bot.utils.get_role(ctx, role)
 					if not role:
 						await ctx.send('Role not found', delete_after=5)
 						continue
@@ -325,7 +325,7 @@ class SelfRoles(commands.Cog):
 		guild_id = str(ctx.guild.id)
 		if guild_id not in self.menus:
 			return await ctx.send(f"This guild has no self-role menus")
-		p = utils.get_prefix(ctx)
+		p = self.bot.utils.get_prefix(ctx)
 		usage = f"{p}set-color msg_id hex"
 		if not msg_id:
 			return await ctx.send(usage)
@@ -352,7 +352,7 @@ class SelfRoles(commands.Cog):
 		guild_id = str(ctx.guild.id)
 		if guild_id not in self.menus:
 			return await ctx.send(f"This guild has no self-role menus")
-		p = utils.get_prefix(ctx)
+		p = self.bot.utils.get_prefix(ctx)
 		usage = f"{p}set-name msg_id new_name"
 		if not msg_id:
 			return await ctx.send(usage)
@@ -372,7 +372,7 @@ class SelfRoles(commands.Cog):
 		guild_id = str(ctx.guild.id)
 		if guild_id not in self.menus:
 			return await ctx.send(f"This guild has no self-role menus")
-		p = utils.get_prefix(ctx)
+		p = self.bot.utils.get_prefix(ctx)
 		usage = f"{p}set-indent msg_id 0-2"
 		if not msg_id:
 			return await ctx.send(usage)
@@ -394,7 +394,7 @@ class SelfRoles(commands.Cog):
 	@commands.has_permissions(manage_roles=True)
 	async def add_role(self, ctx, msg_id, emoji=None, *, role=None):
 		""" Adds a role to an existing menu """
-		p = utils.get_prefix(ctx)
+		p = self.bot.utils.get_prefix(ctx)
 		usage = f"{p}add-role msg_id emoji rolename"
 		if not emoji or not role:
 			return await ctx.send(usage)
@@ -406,7 +406,7 @@ class SelfRoles(commands.Cog):
 		emoji = self.get_emojis(emoji)
 		if not emoji:
 			return await ctx.send('Emoji not found')
-		role = await utils.get_role(ctx, role)
+		role = await self.bot.utils.get_role(ctx, role)
 		if not role:
 			return await ctx.send('Role not found')
 		emoji_id = f'{emoji}'
@@ -440,7 +440,7 @@ class SelfRoles(commands.Cog):
 			return await ctx.send(f"This guild has no self-role menus")
 		if msg_id not in self.menus[guild_id]:
 			return await ctx.send("That menu doesn't exist")
-		role = await utils.get_role(ctx, role)
+		role = await self.bot.utils.get_role(ctx, role)
 		if not role:
 			return await ctx.send("Role not found, if its a deleted role, try adding a reaction to it on the menu")
 		if str(role.id) not in self.menus[guild_id][msg_id]['items']:
@@ -466,7 +466,7 @@ class SelfRoles(commands.Cog):
 		guild_id = str(ctx.guild.id)
 		if guild_id not in self.menus:
 			return await ctx.send(f"This guild has no self-role menus")
-		p = utils.get_prefix(ctx)
+		p = self.bot.utils.get_prefix(ctx)
 		usage = f"{p}set-limit msg_id limit"
 		if not msg_id:
 			return await ctx.send(usage)
@@ -488,7 +488,7 @@ class SelfRoles(commands.Cog):
 		guild_id = str(ctx.guild.id)
 		if guild_id not in self.menus:
 			return await ctx.send(f"This guild has no self-role menus")
-		p = utils.get_prefix(ctx)
+		p = self.bot.utils.get_prefix(ctx)
 		usage = f"{p}toggle-mentions msg_id"
 		if not msg_id:
 			return await ctx.send(usage)

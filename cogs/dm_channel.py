@@ -1,6 +1,6 @@
 from discord import Webhook, AsyncWebhookAdapter
 from discord.ext import commands
-from utils import checks, utils
+from utils import checks
 from io import BytesIO
 import requests
 import discord
@@ -34,7 +34,7 @@ class DMChannel(commands.Cog):
 			user = ctx.message.mentions[0]
 		else:
 			try: user = self.bot.get_user(int(user))
-			except: user = utils.get_user(ctx, user)
+			except: user = self.bot.utils.get_user(ctx, user)
 		if not isinstance(user, discord.User) and not isinstance(user, discord.Member):
 			return await ctx.send('Improper args or user isn\'t cached')
 		await user.create_dm()
