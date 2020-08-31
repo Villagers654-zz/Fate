@@ -427,6 +427,7 @@ class Moderation(commands.Cog):
         if amount_to_purge > 1000:
             return await ctx.send("You can't purge more than 1000 messages")
         check = None
+        msgs = []
         if len(args) > 1:
             if ctx.message.raw_mentions:
                 special_check = lambda msg: msg.author.id in ctx.message.raw_mentions
@@ -449,6 +450,16 @@ class Moderation(commands.Cog):
             old_amount = int(amount_to_purge)
             amount_to_purge = 250
 
+            if "reaction" in args or "reactions" in args:
+                deleted = 0
+                async for msg in ctx.channel.history(before=ctx.message, limit=250):
+                    if deleted == old_amount:
+                        break
+                    if msg.reactions:
+                        await msg.clear_reactions()
+                        msgs.append(msg)
+                        deleted += 1
+
             def check(msg):
                 if ctx.counter == old_amount:
                     return False
@@ -457,22 +468,24 @@ class Moderation(commands.Cog):
                     return True
                 return False
 
-        task = self.bot.loop.create_task(
-            ctx.channel.purge(limit=amount_to_purge, check=check, before=ctx.message,)
-        )
-        for _ in range(round(5 / 0.21)):
-            await asyncio.sleep(0.21)
-            if task.done():
-                break
-        else:
-            await ctx.send("It seems this purge is gonna take awhile..", delete_after=20)
-        while not task.done():
-            await asyncio.sleep(0.21)
-        msgs = task.result()
+        if "reaction" not in args and "reactions" not in args:
+            task = self.bot.loop.create_task(
+                ctx.channel.purge(limit=amount_to_purge, check=check, before=ctx.message,)
+            )
+            for _iteration in range(round(5 / 0.21)):
+                await asyncio.sleep(0.21)
+                if task.done():
+                    break
+            else:
+                await ctx.send("It seems this purge is gonna take awhile..", delete_after=20)
+            while not task.done():
+                await asyncio.sleep(0.21)
+            msgs = task.result()
         e = discord.Embed(
-            description=f"♻ Cleared {len(msgs)} message{'s' if len(msgs) > 1 else ''}"
+            description=f"♻ Cleared {len(msgs)} message{'s' if len(msgs) > 1 else ''}", delete_after=10
         )
         await ctx.send(embed=e)
+        await ctx.message.delete(delay=10)
 
     async def handle_mute_timer(self, guild_id: str, user_id: str, timer_info: dict):
         timer = timer_info["end_time"] - now()
