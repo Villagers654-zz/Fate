@@ -262,9 +262,6 @@ class Verification(commands.Cog):
                 del self.config[guild_id]
                 await self.save_data()
                 return
-            bconf = self.bot.utils.get_config()  # type: dict
-            if member.id in bconf["blocked"]:
-                return await channel.send(f"{member.mention} you are blocked from using this bot", delete_after=45)
             verified_role = member.guild.get_role(conf["verified_role_id"])
             if not verified_role:
                 with suppress(Forbidden, HTTPException):
@@ -273,6 +270,8 @@ class Verification(commands.Cog):
                     )
                 del self.config[guild_id]
                 await self.save_data()
+                return
+            if verified_role in member.roles:
                 return
             verified = await self.bot.verify_user(channel=channel, user=member, delete_after=conf["delete_after"])
             if verified:
@@ -290,13 +289,14 @@ class Verification(commands.Cog):
                         if temp_role in member.roles:
                             await member.remove_roles(temp_role)
             else:
-                try:
-                    await member.kick(reason="Failed Captcha Verification")
-                except Forbidden:
-                    with suppress(Forbidden, HTTPException):
-                        await member.guid.owner.send(
-                            f"I'm missing permissions to kick unverified members in {member.guild}"
-                        )
+                if verified_role not in member.roles:
+                    try:
+                        await member.kick(reason="Failed Captcha Verification")
+                    except Forbidden:
+                        with suppress(Forbidden, HTTPException):
+                            await member.guid.owner.send(
+                                f"I'm missing permissions to kick unverified members in {member.guild}"
+                            )
 
 
 def setup(bot):
