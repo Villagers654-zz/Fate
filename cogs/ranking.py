@@ -433,9 +433,6 @@ class Ranking(commands.Cog):
 		def font(size):
 			return ImageFont.truetype("./utils/fonts/Modern_Sans_Light.otf", size)
 
-		if not self.guild_xp or not self.global_xp:
-			return await ctx.send("I haven't prepared my cache yet, try again in a few seconds")
-
 		# core
 		path = './static/card.png'
 		user = ctx.author
@@ -488,7 +485,7 @@ class Ranking(commands.Cog):
 		xp = dat['xp']
 		max_xp = base_req if level == 0 else dat['level_up']
 		length = ((100 * (xp / max_xp)) * 1000) / 100
-		total = f'Total: {self.guild_xp[guild_id][user_id]}'
+		total = f'Total: {xp}'
 		required = f'Required: {max_xp - xp}'
 		progress = f'{xp} / {max_xp} xp'
 		misc = f'{progress} | {total} | {required}'
@@ -667,9 +664,10 @@ class Ranking(commands.Cog):
 				results = await cur.fetchall()
 				await ctx.send(f"{len(results)} still exist")
 
-	@commands.command(name="yeet-exploiters")
+	@commands.command(name="yeet-pls")
 	@commands.is_owner()
-	async def yeet_exploiters(self, ctx):
+	async def yeet_pls(self, ctx):
+		await ctx.send("beginning the yeeting")
 		async with self.bot.pool.acquire() as conn:
 			async with conn.cursor() as cur:
 				await cur.execute(f"delete from global_msg where xp > 175000")
