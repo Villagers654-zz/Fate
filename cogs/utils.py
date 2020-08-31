@@ -610,7 +610,7 @@ class Filter:
 
     @blacklist.setter
     def blacklist(self, value: list):
-        self._blacklist = [item.lower().replace("|", "") for item in value]
+        self._blacklist = [item.lower().replace("|", "").replace(".", "") for item in value]
 
     def __call__(self, message: str):
         for phrase in self.blacklist:
