@@ -165,6 +165,11 @@ class Custom(commands.Cog):
 	async def hack(self, ctx):
 		await ctx.send("Ender will tamper with your files")
 
+	@commands.command(name="rick")
+	@commands.cooldown(1, 500, commands.BucketType.user)
+	@commands.bot_has_permissions(attach_files=True)
+	async def _rick(self, ctx):
+		await ctx.send(embed=discord.Embed(color=0x64ff00, image_url="https://cdn.discordapp.com/attachments/732085276733603974/732156247243227176/image0.jpg"))
 
 def setup(bot):
 	bot.add_cog(Custom(bot))

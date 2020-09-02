@@ -484,8 +484,8 @@ class Moderation(commands.Cog):
         e = discord.Embed(
             description=f"♻ Cleared {len(msgs)} message{'s' if len(msgs) > 1 else ''}", delete_after=10
         )
-        await ctx.send(embed=e)
-        await ctx.message.delete(delay=10)
+        await ctx.send(embed=e, delete_after=5)
+        await ctx.message.delete(delay=5)
 
     async def handle_mute_timer(self, guild_id: str, user_id: str, timer_info: dict):
         timer = timer_info["end_time"] - now()
