@@ -18,7 +18,7 @@ class Readme(commands.Cog):
 		channel = self.bot.get_channel(609954735138799636)
 		msg = await channel.fetch_message(609962984357363762)
 		e = discord.Embed(color=0x40E0D0)
-		e.set_author(name='💎 Fates Official Discord Server 💎')
+		e.set_author(name='💎 Fate\'s Official Discord Server 💎')
 		e.description = '■ **key Functions:** `Moderation, AutoMod, Utility, ReactionImages, Music`'
 		e.add_field(name="-~===🌹🥂🍸🍷Links🍷🍸🥂🌹===~-", value="■ [Discord Invite](http://discord.gg/ksesabz) | [Bot Invite](https://discordapp.com/oauth2/authorize?client_id=506735111543193601&permissions=1551232246&scope=bot) | [Vote](https://google.com/)", inline=False)
 		e.add_field(name='-~===🌹🥂🍸🍷Bio🍷🍸🥂🌹===~-', value='Fate is a ~~multipurpose~~ hybrid bot created for ~~sexual assault~~ fun')
@@ -34,7 +34,7 @@ class Readme(commands.Cog):
 		e.add_field(name="~==🌹🥂🍸🍷Global Rules🍷🍸🥂🌹==~", value='■ This server abides by discords TOS, therefore breaking the TOS counts as an offense\n'
 		    '■ No pinging @everyone, use the proper notification role instead\n'
 			'■ Leaving to avoid mute results in a higher grade punishment of our choice\n'
-			'■ No doxxing (limited to this discord)\n'
+			'■ No doxxing (part of discord TOS)\n'
 			'■ No gifs / videos with flashing lights that may trigger epilepsy\n'
 			'■ Be respectful with handling the music bots, (no earrape, no skipping to annoy people, and no skipping inconsideratly)\n'
 		    '■ No spamming or sending spammy message\n'
