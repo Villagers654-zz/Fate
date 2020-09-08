@@ -153,8 +153,10 @@ class ChatFilter(commands.Cog):
 							e = discord.Embed(color=colors.light_gray())
 							e.set_author(name=f"~==🍸Msg Filtered🍸==~", icon_url=m.author.avatar_url)
 							e.set_thumbnail(url=m.author.avatar_url)
-							e.add_field(name="◈ Content", value=m.content, inline=False)
-							e.add_field(name="◈ Triggered by", value=phrase, inline=False)
+							for chunk in self.bot.utils.split(m.content, 1000):
+								e.add_field(name="◈ Content", value=chunk, inline=False)
+							for chunk in self.bot.utils.split(phrase, 1000):
+								e.add_field(name="◈ Triggered by", value=chunk, inline=False)
 							cog.queue[guild_id].append([e, 'chat', time()])
 						try:
 							await asyncio.sleep(0.5)
