@@ -594,10 +594,10 @@ class Filter:
     def __init__(self):
         self._blacklist = []
         self.index = {
-            "a": ['@', '4'], "b": [], "c": [], "d": [], "e": ['3'],
-            "f": [], "g": [], "h": [], "i": ['!', '1'], "j": [],
+            "a": ['\\@', '4'], "b": [], "c": [], "d": [], "e": ['3'],
+            "f": [], "g": [], "h": [], "i": ['\\!', '1'], "j": [],
             "k": [], "l": [], "m": [], "n": [], "o": ["0", "\\(\\)", "\\[\\]"],
-            "p": [], "q": [], "r": [], "s": ['$'], "t": [],
+            "p": [], "q": [], "r": [], "s": ['\\$'], "t": [],
             "u": [], "v": [], "w": [], "x": [], "y": [],
             "z": [], "0": [], "1": [], "2": [], "3": [],
             "4": [], "5": [], "6": [], "7": [], "8": [],
@@ -610,7 +610,12 @@ class Filter:
 
     @blacklist.setter
     def blacklist(self, value: list):
-        self._blacklist = [item.lower().replace("|", "").replace(".", "") for item in value]
+        items = [item.lower() for item in value]
+        escaped = ["|", ".", "$", "["]
+        for i in range(len(items) - 1):
+            for char in escaped:
+                items[i].replace(char, f"\\{char}")
+        self._blacklist = items
 
     def __call__(self, message: str):
         for phrase in self.blacklist:
@@ -637,7 +642,9 @@ class Filter:
                         pattern += ")"
                     else:
                         pattern += char
-                    pattern += "+"
+                    if char in self.index.keys():
+                        pattern += "+"
+                pattern = pattern.replace("++", "+")
                 if re.search(pattern, message):
                     return True, pattern  # Flagged
             except Exception as e:
