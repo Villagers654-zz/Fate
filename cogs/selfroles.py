@@ -63,7 +63,7 @@ class SelfRoles(commands.Cog):
 		""" Gets the custom emoji id or unicode emote """
 		if not any(char.isdigit() for char in list(string)):
 			return string  # unicode emoji
-		string = ''.join(char for char in list(string) if char.isdigit())
+		string = "".join(char for char in list(string[-20:]) if char.isdigit())
 		emoji = self.bot.get_emoji(int(string))
 		return emoji
 
@@ -263,10 +263,11 @@ class SelfRoles(commands.Cog):
 						await msg.delete()
 						await ctx.send('Not enough args', delete_after=5)
 						continue
-					emoji, role = args
-					emoji = self.get_emojis(emoji)
+					emote, role = args
+					emoji = self.get_emojis(emote)
 					if not emoji:
-						await ctx.send(f'Emoji not found for {emoji}', delete_after=5)
+						print(emote)
+						await ctx.send(f'Emoji not found for {emote}', delete_after=5)
 						continue
 					role = await self.bot.utils.get_role(ctx, role)
 					if not role:
