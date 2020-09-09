@@ -610,12 +610,7 @@ class Filter:
 
     @blacklist.setter
     def blacklist(self, value: list):
-        items = [item.lower() for item in value]
-        escaped = ["|", ".", "$", "["]
-        for i in range(len(items) - 1):
-            for char in escaped:
-                items[i].replace(char, f"\\{char}")
-        self._blacklist = items
+        self._blacklist = [item.lower() for item in value]
 
     def __call__(self, message: str):
         for phrase in self.blacklist:
@@ -628,23 +623,25 @@ class Filter:
                     return True, phrase
                 if not len(list(filter(lambda char: char in message, list(phrase)))) > 1:
                     continue
-                pattern = ""
-                for char in phrase:
-                    if char in self.index and self.index[char]:
-                        main_char = char if char in self.index.keys() else f"\\{char}"
-                        singles = [c for c in self.index[char] if len(c) == 1]
-                        multi = [c for c in self.index[char] if len(c) > 1]
-                        pattern += f"([{main_char}{''.join(f'{c}' for c in singles)}]"
-                        if singles and multi:
-                            pattern += "|"
-                        if multi:
-                            pattern += "|".join(f"({c})" for c in multi)
-                        pattern += ")"
-                    else:
-                        pattern += char
-                    if char in self.index.keys():
-                        pattern += "+"
-                pattern = pattern.replace("++", "+")
+                if any(char not in self.index.keys() for char in phrase):
+                    pattern = ""
+                    for char in phrase:
+                        if char in self.index and self.index[char]:
+                            main_char = char if char in self.index.keys() else f"\\{char}"
+                            singles = [c for c in self.index[char] if len(c) == 1]
+                            multi = [c for c in self.index[char] if len(c) > 1]
+                            pattern += f"([{main_char}{''.join(f'{c}' for c in singles)}]"
+                            if singles and multi:
+                                pattern += "|"
+                            if multi:
+                                pattern += "|".join(f"({c})" for c in multi)
+                            pattern += ")"
+                        else:
+                            pattern += char
+                        if char in self.index.keys():
+                            pattern += "+"
+                else:
+                    pattern = phrase
                 if re.search(pattern, message):
                     return True, pattern  # Flagged
             except Exception as e:
