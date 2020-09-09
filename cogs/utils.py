@@ -618,7 +618,8 @@ class Filter:
             try:
                 if len(phrase) > 3:
                     message = message.replace(' ', '')
-                chunks = str(message).replace(' ', '').lower().split()
+                message = str(message).lower()
+                chunks = message.replace(' ', '').split()
                 if phrase in chunks:
                     return True, phrase
                 if not len(list(filter(lambda char: char in message, list(phrase)))) > 1:
