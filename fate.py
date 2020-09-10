@@ -372,6 +372,7 @@ class Fate(commands.AutoShardedBot):
         e.set_image(url="attachment://" + fp)
         e.set_footer(text=f"You have {self.utils.get_time(timeout)}")
         message = await channel.send(f"{user.mention} please verify you're human", embed=e, file=discord.File(fp))
+        os.remove(fp)
 
         def pred(m):
             return m.author.id == user.id and str(m.content).lower() == chars.lower().replace(" ", "")
