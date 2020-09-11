@@ -356,6 +356,7 @@ class Fate(commands.AutoShardedBot):
             max_range = size[0] + 15
             divide = (max_range - lowest_range) / 3
             fix_points = [random.choice(range(10, 40)) for _i in range(4)]
+            color = random.choice(["red", "orange", "yellow", "green"])
 
             for iteration in range(3):
                 line_positions = (
@@ -364,7 +365,8 @@ class Fate(commands.AutoShardedBot):
                     # End of line
                     max_range - ((divide * 3) - sum([divide for _i in range(iteration + 1)])), fix_points[iteration + 1]
                 )
-                draw.line(line_positions, fill="blue", width=5)
+
+                draw.line(line_positions, fill=color, width=3)
             card.save(fp)
 
         await self.loop.run_in_executor(None, create_card)
