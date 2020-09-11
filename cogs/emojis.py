@@ -132,20 +132,17 @@ class Emojis(commands.Cog):
 		ctx.message = await ctx.channel.fetch_message(ctx.message.id)  # fix content being lowercase
 		limit = ctx.guild.emoji_limit
 
-		@property
 		def at_emoji_limit() -> bool:
 			return len(ctx.guild.emojis) >= limit * 2
 
-		@property
 		def total_emotes() -> int:
 			return len([emoji for emoji in ctx.guild.emojis if not emoji.animated])
 
-		@property
 		def total_animated() -> int:
 			return len([emoji for emoji in ctx.guild.emojis if emoji.animated])
 
 		# Handle emoji limitations
-		if at_emoji_limit:
+		if at_emoji_limit():
 			return await ctx.send("You're at the limit for both emojis and animated emojis")
 
 		# initialization
@@ -160,12 +157,12 @@ class Emojis(commands.Cog):
 
 		# PartialEmoji objects
 		for emoji in custom:
-			if not at_emoji_limit:
-				if emoji.animated and total_animated == limit:
+			if not at_emoji_limit():
+				if emoji.animated and total_animated() == limit:
 					if "Animated Limit Reached" not in ctx.msg:
 						self.bot.utils.update_msg(ctx.msg, f"Animated Limit Reached")
 					continue
-				elif not emoji.animated and total_emotes == limit:
+				elif not emoji.animated and total_emotes() == limit:
 					if "Emote Limit Reached" not in ctx.msg:
 						self.bot.utils.update_msg(ctx.msg, f"Emote Limit Reached")
 					continue
@@ -188,12 +185,12 @@ class Emojis(commands.Cog):
 				ctx.msg = await self.bot.utils.update_msg(ctx.msg, f"{emoji_id} - Couldn't Fetch")
 				continue
 
-			if not at_emoji_limit:
-				if emoji.animated and total_animated == limit:
+			if not at_emoji_limit():
+				if emoji.animated and total_animated() == limit:
 					if "Animated Limit Reached" not in ctx.msg:
 						self.bot.utils.update_msg(ctx.msg, f"Animated Limit Reached")
 					continue
-				elif not emoji.animated and total_emotes == limit:
+				elif not emoji.animated and total_emotes() == limit:
 					if "Emote Limit Reached" not in ctx.msg:
 						self.bot.utils.update_msg(ctx.msg, f"Emote Limit Reached")
 					continue
