@@ -687,6 +687,8 @@ class Moderation(commands.Cog):
         msg = await ctx.send(embed=e)
         e.description = ""
         for i, member in enumerate(members):
+            if member not in ctx.guild.members:  # Was kicked already
+                continue
             if member.top_role.position >= ctx.author.top_role.position:
                 e.description += f"\n❌ {member} is Higher Than You"
             elif member.top_role.position >= ctx.guild.me.top_role.position:
