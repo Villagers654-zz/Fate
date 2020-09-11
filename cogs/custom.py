@@ -5,6 +5,8 @@ import requests
 import json
 import os
 from utils import colors
+import asyncio
+
 
 class Custom(commands.Cog):
 	def __init__(self, bot):
@@ -141,6 +143,28 @@ class Custom(commands.Cog):
 			f"You've been muted for spam in {ctx.guild.name} for 2 minutes and 30 seconds"
 		]
 		await ctx.send(random.choice(choices))
+
+	@commands.command()
+	async def eppy(self, ctx: commands.Context):
+		"""the best command"""
+		await ctx.send(embed=discord.Embed(color=6536612, title="Fate > BMO", description=f"[Invite]({self.bot.invite_url})"))
+
+	@commands.command(name="thot", aliases=["noofy"])
+	@commands.cooldown(1, 10, commands.BucketType.channel)
+	async def thot(self, ctx):
+		async with ctx.channel.typing():
+			await ctx.message.delete()
+			await ctx.send("*inhales*")
+			await asyncio.sleep(2)
+			await ctx.send("*exhales*")
+			await asyncio.sleep(1)
+			await ctx.send("THOT")
+
+	@commands.command(name="chaos")
+	@commands.cooldown(1, 10, commands.BucketType.channel)
+	async def chaos(self, ctx):
+		await ctx.send("*calling the chaotic god*")
+		await ctx.send(self.bot.get_user(493082973906927616).mention)
 
 	@commands.command(name='trash')
 	@commands.cooldown(2, 5, commands.BucketType.user)
