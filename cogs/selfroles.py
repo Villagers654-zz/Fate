@@ -11,7 +11,7 @@ Self Roles / Reaction Roles
 """
 
 import asyncio
-from os import path
+from os import path, mkdir
 import json
 
 from discord.ext import commands
@@ -312,9 +312,9 @@ class SelfRoles(commands.Cog):
 		if guild_id not in self.menus:
 			self.menus[guild_id] = {}
 		self.menus[guild_id][str(msg.id)] = menu
+		await self.save_data()
 		await instructions.delete()
 		await ctx.send('Created your self-role menu 👍')
-		await self.save_data()
 
 	@commands.command(name='set-color')
 	@commands.cooldown(2, 5, commands.BucketType.user)
@@ -508,9 +508,13 @@ class SelfRoles(commands.Cog):
 	async def on_raw_reaction_add(self, payload):
 		guild_id = str(payload.guild_id)
 		if guild_id in self.menus:
+			if payload.user_id == 264838866480005122:
+				print("guild exists")
 			msg_id = str(payload.message_id)
 			if msg_id in self.menus[guild_id]:
 
+				if payload.user_id == 264838866480005122:
+					print("msg id is saved")
 				guild = self.bot.get_guild(payload.guild_id)
 				channel = self.bot.get_channel(payload.channel_id)
 				msg = await channel.fetch_message(msg_id)
@@ -523,6 +527,8 @@ class SelfRoles(commands.Cog):
 					if isinstance(emoji, int):
 						emoji = self.bot.get_emoji(emoji)
 					if str(emoji) == str(payload.emoji):
+						if payload.user_id == 264838866480005122:
+							print("emoji matches")
 						role = guild.get_role(int(role_id))
 						if not role:
 							try:
@@ -532,6 +538,7 @@ class SelfRoles(commands.Cog):
 								)
 							except discord.errors.Forbidden:
 								pass
+							print("Deleting role")
 							del self.menus[guild_id][msg_id]['items'][role_id]
 							return await self.edit_menu(guild_id, msg_id)
 						await target.add_roles(role)

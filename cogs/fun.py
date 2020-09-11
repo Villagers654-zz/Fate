@@ -12,7 +12,7 @@ from discord.ext import commands
 import discord
 from discord import Webhook, AsyncWebhookAdapter
 
-from utils import colors, outh
+from utils import colors, auth
 
 code = "```py\n{0}\n```"
 sexualities = [
@@ -59,7 +59,7 @@ class Fun(commands.Cog):
 		await ctx.send('I might as well..')
 
 		try:
-			creds = outh.Reddit()
+			creds = auth.Reddit()
 			reddit = praw.Reddit(
 				client_id=creds.client_id, client_secret=creds.client_secret,
 				user_agent=creds.user_agent
@@ -107,7 +107,7 @@ class Fun(commands.Cog):
 	@commands.bot_has_permissions(embed_links=True)
 	async def meme(self, ctx):
 		""" fetches a random meme from a random meme subreddit """
-		creds = outh.Reddit()
+		creds = auth.Reddit()
 		reddit = praw.Reddit(
 			client_id=creds.client_id, client_secret=creds.client_secret,
 			user_agent=creds.user_agent

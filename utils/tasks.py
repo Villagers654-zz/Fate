@@ -8,7 +8,7 @@ from datetime import datetime
 from zipfile import ZipFile
 import discord
 import pysftp
-from utils import outh
+from utils import auth
 
 
 class Tasks:
@@ -126,7 +126,7 @@ class Tasks:
 
 		run_automatic_backups = True  # Toggle automatic backups
 		# backup_interval = 21600     # Backup every 6 hours
-		backup_interval = 3600 * 2    # Backup interval in seconds
+		backup_interval = 3600 * 6    # Backup interval in seconds
 		keep_for = 7                  # Days to keep each backup
 		while run_automatic_backups:
 			await asyncio.sleep(backup_interval)
@@ -142,7 +142,7 @@ class Tasks:
 					for file in file_paths:
 						zip.write(file)
 
-				creds = outh.Backups()
+				creds = auth.Backups()
 				cnopts = pysftp.CnOpts()
 				cnopts.hostkeys = None
 				with pysftp.Connection(creds.host, username=creds.username, password=creds.password, port=creds.port,

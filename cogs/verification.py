@@ -347,7 +347,7 @@ class Verification(commands.Cog):
     @commands.Cog.listener("on_message")
     async def channel_cleanup(self, msg):
         """Trigger the task for bulk deleting messages in verification channels"""
-        if not isinstance(msg.channel, discord.DMChannel) and not msg.author.bot:
+        if isinstance(msg.guild, discord.Guild) and not msg.author.bot:
             if not msg.author.guild_permissions.administrator:
                 guild_id = str(msg.guild.id)
                 if guild_id in self.config and msg.channel.id == self.config[guild_id]["channel_id"]:

@@ -19,7 +19,7 @@ import pymysql
 from termcolor import cprint
 from PIL import Image, ImageDraw, ImageFont
 
-from utils import outh, tasks, colors, checks
+from utils import auth, tasks, colors, checks
 from utils.custom_logging import Logging
 from cogs.utils import Utils
 
@@ -211,7 +211,7 @@ class Fate(commands.AutoShardedBot):
             self.pool.close()
             await self.pool.wait_closed()
             self.log.info("Pool was successfully closed")
-        sql = outh.MySQL()
+        sql = auth.MySQL()
         for _attempt in range(5):
             try:
                 pool = await aiomysql.create_pool(
@@ -477,10 +477,8 @@ class Fate(commands.AutoShardedBot):
             self.log.info("Loading initial cogs", color='yellow')
             self.load(*self.initial_extensions)
             self.log.info("Finished loading initial cogs\nLogging in..", color='yellow')
-        key = getpass()  # type: str
-        cipher = Fernet(key=key)
-        token = cipher.decrypt(outh.tokens("fate")).decode()
-        super().run(token)
+        cipher = auth.Tokens()
+        super().run(cipher.decrypt("fate"))
 
 
 # Reset log files on startup so they don't fill up and cause lag
