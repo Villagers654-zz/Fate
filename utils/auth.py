@@ -35,8 +35,6 @@ class Lavalink:
 
 class Tokens:
 	def __init__(self):
-		key = getpass().encode()
-		self.cipher = Fernet(key)
 		self.tokens = {
 			"fate": b"gAAAAABfWsZNdiH6wDwPAQ3n2jTNL1zugFGfqDT-MlwE4UyCw0il15rw6PDvP-Vw4zZ-crCrG2mpRDjO75nExuZ1qmFT51Duh"
 			        b"8kNezXA67AjM_Q2QG_nv9kuSSRg-ttf7vk2TcQlXmQUCh7L-4D-jyfT_fS_I7o7IA==",
@@ -47,5 +45,6 @@ class Tokens:
 	def decrypt(self, token_id) -> str:
 		if token_id not in self.tokens:
 			raise KeyError(f"{token_id} doesn't exist in {list(self.tokens.keys())}")
-		return self.cipher.decrypt(self.tokens[token_id]).decode()
+		cipher = Fernet(getpass().encode())
+		return cipher.decrypt(self.tokens[token_id]).decode()
 

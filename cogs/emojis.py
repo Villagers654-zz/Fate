@@ -5,7 +5,7 @@ Module for viewing and managing emojis
 import discord
 import asyncio
 from typing import Union
-from time import time
+import traceback
 
 from discord.ext import commands
 from discord.ext.commands import Greedy
@@ -46,39 +46,29 @@ class Emojis(commands.Cog):
 				result += char
 		return result if result else 'new_emoji'
 
-	async def upload_emoji(self, ctx, name, img, reason, roles=None):
+	async def upload_emoji(self, ctx, name, img, reason, roles=None) -> None:
 		"""Creates partial emojis with a queue to prevent spammy messages"""
 		try:
 			emoji = await ctx.guild.create_custom_emoji(name=name, image=img, roles=roles, reason=reason)
+
+		# Missing required permissions to add emojis
 		except discord.errors.Forbidden as e:
-			if ctx.msg:
-				await ctx.bot.utils.update_msg(ctx.msg, f'Failed to add {name}: [`{e}`]')
-			else:
-				await ctx.send(f'Failed to add {name}: [`{e}`]')
-		except discord.errors.HTTPException as e:
-			await ctx.send(e)
-			try:
-				img = Image.open(img); img = img.resize((450, 450), Image.BICUBIC)
-			except:
-				if ctx.msg:
-					return await ctx.bot.utils.update_msg(ctx.msg, f'Failed to resize {name}')
-				else:
-					return await ctx.send(f'Failed to resize {name}')
-			img.save('emoji.png')
-			with open('emoji.png', 'rb') as image:
-				img = image.read()
-			await ctx.guild.create_custom_emoji(name=name, image=img, roles=roles, reason=reason)
-			await ctx.bot.utils.update_msg(ctx.msg, f'{ctx.msg.content}\nAdded {name} successfully')
-		except (AttributeError, discord.errors.InvalidArgument) as e:
-			if ctx.msg:
-				await ctx.bot.utils.update_msg(ctx.msg, f'Failed to add {name}: [`{e}`]')
-			else:
-				await ctx.send(f'Failed to add {name}: [`{e}`]')
-		else:
-			if ctx.msg:
-				await ctx.bot.utils.update_msg(ctx.msg, f'Added {emoji} - {name}')
-			else:
-				await ctx.send(f'Added {emoji} - {name}')
+			await ctx.bot.utils.update_msg(ctx.msg, f'Failed to add {name}: [`{e}`]')
+			return None
+
+		# Something went wrong uploading the emoji
+		except discord.errors.HTTPException:
+			error = str(traceback.format_exc()).lower()
+			# Emoji Limit Reached
+			if "limit" in error:
+				await self.bot.utils.update_msg(ctx.msg, f"{name} - Emoji Limit Reached")
+			# 256KB Filesize Limit
+			elif "256" in error:
+				await ctx.bot.utils.update_msg(ctx.msg, f'{name} - File Too Large')
+			return None
+
+		await ctx.bot.utils.update_msg(ctx.msg, f'Added {emoji} - {name}')
+		return None
 
 	@commands.command(name="emoji", aliases=["emote", "jumbo"])
 	@commands.cooldown(1, 3, commands.BucketType.user)
