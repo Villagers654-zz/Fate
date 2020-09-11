@@ -139,46 +139,24 @@ class Emojis(commands.Cog):
 			ids: Greedy[int], *args
 	):
 		""" Uploads Emojis Via Various Methods """
-		def max_emotes() -> bool:
-			return len([e for e in ctx.guild.emojis if not e.animated]) == ctx.guild.emoji_limit
-
-		def max_a_emotes() -> bool:
-			return len([e for e in ctx.guild.emojis if e.animated]) == ctx.guild.emoji_limit
-
-		async def not_at_limit(emoji) -> bool:
-			if isinstance(emoji, (str, discord.Asset)):
-				if "gif" in str(emoji) and max_a_emotes():
-					failed.append(emoji)
-					globals()['a_limit'] = True
-					await self.bot.utils.update_msg(ctx.msg, "**Reached the emoji limit**")
-					return False
-				elif max_emotes():
-					failed.append(emoji)
-					globals()['limit'] = True
-					await self.bot.utils.update_msg(ctx.msg, "**Reached the emoji limit**")
-					return False
-			elif emoji.animated and a_limit:
-				failed.append(emoji.name)
-				return False
-			elif not emoji.animated and limit:
-				failed.append(emoji.name)
-				return False
-			elif max_emotes() or max_a_emotes():
-				if max_emotes():
-					globals()['limit'] = True
-				elif max_a_emotes():
-					globals()['a_limit'] = True
-				await self.bot.utils.update_msg(ctx.msg, "**Reached the emoji limit**")
-				return False
-			return True
-
 		ctx.message = await ctx.channel.fetch_message(ctx.message.id)  # fix content being lowercase
+		limit = ctx.guild.emoji_limit
+
+		@property
+		def at_emoji_limit() -> bool:
+			return len(ctx.guild.emojis) != limit * 2
+
+		@property
+		def total_emotes() -> int:
+			return len([emoji for emoji in ctx.guild.emojis if not emoji.animated])
+
+		@property
+		def total_animated() -> int:
+			return len([emoji for emoji in ctx.guild.emojis if emoji.animated])
 
 		# Handle emoji limitations
-		if len(ctx.guild.emojis) == ctx.guild.emoji_limit * 2:
+		if at_emoji_limit:
 			return await ctx.send("You're at the limit for both emojis and animated emojis")
-		limit = a_limit = False
-		failed = []  # Emojis that failed due to the emoji limit
 
 		# initialization
 		if not custom and not ids and not args and not ctx.message.attachments:
@@ -192,9 +170,17 @@ class Emojis(commands.Cog):
 
 		# PartialEmoji objects
 		for emoji in custom:
-			if await not_at_limit(emoji):
+			if not at_emoji_limit:
+				if emoji.animated and total_animated == limit:
+					if "Animated Limit Reached" not in ctx.msg:
+						self.bot.utils.update_msg(ctx.msg, f"Animated Limit Reached")
+					continue
+				elif not emoji.animated and total_emotes == limit:
+					if "Emote Limit Reached" not in ctx.msg:
+						self.bot.utils.update_msg(ctx.msg, f"Emote Limit Reached")
+					continue
 				if self.is_blacklisted(ctx, emoji):
-					ctx.msg = await self.bot.utils.update_msg(ctx.msg, f"ERR: {emoji.name} - Invalid Emoji")
+					ctx.msg = await self.bot.utils.update_msg(ctx.msg, f"{emoji.name} - Blacklisted Emoji")
 					continue
 				name = emoji.name
 				img = await self.bot.download(emoji.url)
@@ -212,7 +198,16 @@ class Emojis(commands.Cog):
 				ctx.msg = await self.bot.utils.update_msg(ctx.msg, f"{emoji_id} - Couldn't Fetch")
 				continue
 
-			if await not_at_limit(emoji):
+			if not at_emoji_limit:
+				if emoji.animated and total_animated == limit:
+					if "Animated Limit Reached" not in ctx.msg:
+						self.bot.utils.update_msg(ctx.msg, f"Animated Limit Reached")
+					continue
+				elif not emoji.animated and total_emotes == limit:
+					if "Emote Limit Reached" not in ctx.msg:
+						self.bot.utils.update_msg(ctx.msg, f"Emote Limit Reached")
+					continue
+
 				# Get any optional 'name' arguments
 				argsv = ctx.message.content.split()
 				index = argsv.index(str(emoji_id)) + 1
@@ -246,6 +241,14 @@ class Emojis(commands.Cog):
 			file_is_allowed = any(not attachment.filename.endswith(ext) for ext in allowed_extensions)
 			if not attachment.height or not file_is_allowed:
 				ctx.msg = await self.bot.utils.update_msg(ctx.msg, f"{attachment.filename} - Not an image or gif")
+				continue
+			if "gif" in attachment.filename and total_animated == limit:
+				if "Animated Limit Reached" not in ctx.msg:
+					self.bot.utils.update_msg(ctx.msg, f"Animated Limit Reached")
+				continue
+			elif "gif" not in attachment.filename and total_emotes == limit:
+				if "Emote Limit Reached" not in ctx.msg:
+					self.bot.utils.update_msg(ctx.msg, f"Emote Limit Reached")
 				continue
 
 			file = await attachment.read()  # Raw bytes file
