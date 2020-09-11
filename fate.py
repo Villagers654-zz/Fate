@@ -9,6 +9,8 @@ from typing import *
 import aiohttp
 import aiofiles
 import random
+from cryptography.fernet import Fernet
+from getpass import getpass
 
 from discord.ext import commands
 import discord
@@ -49,7 +51,7 @@ class Fate(commands.AutoShardedBot):
 
         self.initial_extensions = [        # Cogs to load before logging in
             'utils', 'error_handler', 'config', 'menus', 'core', 'mod', 'welcome', 'farewell', 'notes', 'archive',
-            'coffeeshop', 'custom', 'actions', 'reactions', 'responses', 'textart', 'fun', 'dev', 'readme', 'music',
+            'coffeeshop', 'custom', 'actions', 'reactions', 'responses', 'textart', 'fun', 'dev', 'readme',
             'reload', 'embeds', 'polis', 'apis', 'chatbridges', 'clean_rythm', 'utility', 'psutil', 'rules',
             'duel_chat', 'selfroles', 'lock', 'audit', 'cookies', 'server_list', 'emojis', 'giveaways', 'polls',
             'logger', 'autorole', 'changelog', 'restore_roles', 'chatbot', 'anti_spam', 'anti_raid', 'chatfilter',
@@ -475,7 +477,10 @@ class Fate(commands.AutoShardedBot):
             self.log.info("Loading initial cogs", color='yellow')
             self.load(*self.initial_extensions)
             self.log.info("Finished loading initial cogs\nLogging in..", color='yellow')
-        super().run(outh.tokens('fatezero'))
+        key = getpass()  # type: str
+        cipher = Fernet(key=key)
+        token = cipher.decrypt(outh.tokens("fate")).decode()
+        super().run(token)
 
 
 # Reset log files on startup so they don't fill up and cause lag
