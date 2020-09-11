@@ -134,7 +134,7 @@ class Emojis(commands.Cog):
 
 		@property
 		def at_emoji_limit() -> bool:
-			return len(ctx.guild.emojis) != limit * 2
+			return len(ctx.guild.emojis) >= limit * 2
 
 		@property
 		def total_emotes() -> int:

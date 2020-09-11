@@ -550,7 +550,6 @@ async def on_ready():
 
 @bot.event
 async def on_message(msg):
-    msg.original_content = str(msg.content)
     if '@everyone' in msg.content or '@here' in msg.content:
         msg.content = msg.content.replace('@', '!')
     blacklist = [
