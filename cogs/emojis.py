@@ -160,11 +160,11 @@ class Emojis(commands.Cog):
 			if not at_emoji_limit():
 				if emoji.animated and total_animated() == limit:
 					if "Animated Limit Reached" not in ctx.msg:
-						self.bot.utils.update_msg(ctx.msg, f"Animated Limit Reached")
+						ctx.msg = await self.bot.utils.update_msg(ctx.msg, f"Animated Limit Reached")
 					continue
 				elif not emoji.animated and total_emotes() == limit:
 					if "Emote Limit Reached" not in ctx.msg:
-						self.bot.utils.update_msg(ctx.msg, f"Emote Limit Reached")
+						ctx.msg = await self.bot.utils.update_msg(ctx.msg, f"Emote Limit Reached")
 					continue
 				if self.is_blacklisted(ctx, emoji):
 					ctx.msg = await self.bot.utils.update_msg(ctx.msg, f"{emoji.name} - Blacklisted Emoji")
@@ -188,11 +188,11 @@ class Emojis(commands.Cog):
 			if not at_emoji_limit():
 				if emoji.animated and total_animated() == limit:
 					if "Animated Limit Reached" not in ctx.msg:
-						self.bot.utils.update_msg(ctx.msg, f"Animated Limit Reached")
+						ctx.msg = await self.bot.utils.update_msg(ctx.msg, f"Animated Limit Reached")
 					continue
 				elif not emoji.animated and total_emotes() == limit:
 					if "Emote Limit Reached" not in ctx.msg:
-						self.bot.utils.update_msg(ctx.msg, f"Emote Limit Reached")
+						ctx.msg = await self.bot.utils.update_msg(ctx.msg, f"Emote Limit Reached")
 					continue
 
 				# Get any optional 'name' arguments
@@ -231,11 +231,11 @@ class Emojis(commands.Cog):
 				continue
 			if "gif" in attachment.filename and total_animated == limit:
 				if "Animated Limit Reached" not in ctx.msg:
-					self.bot.utils.update_msg(ctx.msg, f"Animated Limit Reached")
+					ctx.msg = await self.bot.utils.update_msg(ctx.msg, f"Animated Limit Reached")
 				continue
 			elif "gif" not in attachment.filename and total_emotes == limit:
-				if "Emote Limit Reached" not in ctx.msg:
-					self.bot.utils.update_msg(ctx.msg, f"Emote Limit Reached")
+				if "Emote Limit Reached" not in ctx.msg.content:
+					ctx.msg = await self.bot.utils.update_msg(ctx.msg, f"Emote Limit Reached")
 				continue
 
 			file = await attachment.read()  # Raw bytes file
