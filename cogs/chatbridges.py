@@ -96,7 +96,7 @@ class ChatBridge(commands.Cog):
 					msg.content = msg.content.replace(f"<@!{user_id}>", username)
 				msg.content = msg.content.replace('@e', '!everyone').replace('@here', '!here')
 
-			if any(obj for obj in [msg.content, files, embed]):
+			if any([msg.content, files, embed]):
 				async with aiohttp.ClientSession() as session:
 					webhook = Webhook.from_url(webhook_url, adapter=AsyncWebhookAdapter(session))
 					try:
