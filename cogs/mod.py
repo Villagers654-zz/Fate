@@ -637,6 +637,21 @@ class Moderation(commands.Cog):
                 self.tasks[guild_id] = {}
             self.tasks[guild_id][user_id] = task
 
+    @commands.Cog.listener()
+    async def on_ready(self):
+        for guild_id, tasks in list(self.tasks.items()):
+            for user_id, task in tasks.items():
+                if task.done():
+                    self.bot.log.critical(f"A mute task errored\n```python\n{task.result()}```")
+                    del self.tasks[guild_id][user_id]
+        for guild_id, data in list(self.config.items()):
+            for user_id, timer_info in data["mute_timers"].items():
+                if guild_id not in self.tasks or user_id not in self.tasks[guild_id]:
+                    task = self.bot.loop.create_task(self.handle_mute_timer(guild_id, user_id, timer_info))
+                    if guild_id not in self.tasks:
+                        self.tasks[guild_id] = {}
+                    self.tasks[guild_id][user_id] = task
+
     @commands.command(name="unmute", description="Unblocks users from sending messages")
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
