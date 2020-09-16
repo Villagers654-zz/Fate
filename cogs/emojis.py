@@ -48,12 +48,18 @@ class Emojis(commands.Cog):
 
 	async def upload_emoji(self, ctx, name, img, reason, roles=None) -> None:
 		"""Creates partial emojis with a queue to prevent spammy messages"""
+		emoji = None
 		try:
 			emoji = await ctx.guild.create_custom_emoji(name=name, image=img, roles=roles, reason=reason)
 
 		# Missing required permissions to add emojis
 		except discord.errors.Forbidden as e:
-			await ctx.bot.utils.update_msg(ctx.msg, f'Failed to add {name}: [`{e}`]')
+			await ctx.bot.utils.update_msg(ctx.msg, "I'm missing manage_emoji permission(s)")
+			return None
+
+		# Not a proper image
+		except discord.errors.InvalidArgument:
+			await ctx.bot.utils.update_msg(ctx.msg, f"{name} - Unsupported Image Type")
 			return None
 
 		# Something went wrong uploading the emoji
@@ -159,11 +165,11 @@ class Emojis(commands.Cog):
 		for emoji in custom:
 			if not at_emoji_limit():
 				if emoji.animated and total_animated() == limit:
-					if "Animated Limit Reached" not in ctx.msg:
+					if "Animated Limit Reached" not in ctx.msg.content:
 						ctx.msg = await self.bot.utils.update_msg(ctx.msg, f"Animated Limit Reached")
 					continue
 				elif not emoji.animated and total_emotes() == limit:
-					if "Emote Limit Reached" not in ctx.msg:
+					if "Emote Limit Reached" not in ctx.msg.content:
 						ctx.msg = await self.bot.utils.update_msg(ctx.msg, f"Emote Limit Reached")
 					continue
 				if self.is_blacklisted(ctx, emoji):
@@ -187,11 +193,11 @@ class Emojis(commands.Cog):
 
 			if not at_emoji_limit():
 				if emoji.animated and total_animated() == limit:
-					if "Animated Limit Reached" not in ctx.msg:
+					if "Animated Limit Reached" not in ctx.msg.content:
 						ctx.msg = await self.bot.utils.update_msg(ctx.msg, f"Animated Limit Reached")
 					continue
 				elif not emoji.animated and total_emotes() == limit:
-					if "Emote Limit Reached" not in ctx.msg:
+					if "Emote Limit Reached" not in ctx.msg.content:
 						ctx.msg = await self.bot.utils.update_msg(ctx.msg, f"Emote Limit Reached")
 					continue
 
