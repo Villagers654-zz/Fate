@@ -968,10 +968,11 @@ class Moderation(commands.Cog):
         user = utils.get_user(ctx, user)
         if not user:
             return await ctx.send('User not found')
-        if user.top_role.position >= ctx.author.top_role.position:
-            return await ctx.send('That user is above your paygrade, take a seat')
-        if user.top_role.position >= ctx.guild.me.top_role.position:
-            return await ctx.send('I can\'t edit that users nick ;-;')
+        if ctx.author.id != ctx.guild.owner.id:
+            if user.top_role.position >= ctx.author.top_role.position:
+                return await ctx.send('That user is above your paygrade, take a seat')
+            if user.top_role.position >= ctx.guild.me.top_role.position:
+                return await ctx.send('I can\'t edit that users nick ;-;')
         if len(nick) > 32:
             return await ctx.send('That nickname is too long! Must be `32` or fewer in length')
         await user.edit(nick=nick)
@@ -997,10 +998,11 @@ class Moderation(commands.Cog):
         if not role:
             return await ctx.send('Role not found')
 
-        if user.top_role.position >= ctx.author.top_role.position:
-            return await ctx.send('This user is above your paygrade, take a seat')
-        if role.position >= ctx.author.top_role.position:
-            return await ctx.send("This role is above your paygrade, take a seat")
+        if ctx.author.id != ctx.guild.owner.id:
+            if user.top_role.position >= ctx.author.top_role.position:
+                return await ctx.send('This user is above your paygrade, take a seat')
+            if role.position >= ctx.author.top_role.position:
+                return await ctx.send("This role is above your paygrade, take a seat")
         if role in user.roles:
             await user.remove_roles(role)
             msg = f'Removed **{role.name}** from @{user.name}'
@@ -1140,8 +1142,9 @@ class Moderation(commands.Cog):
             if user.bot:
                 await ctx.send(f"You can't warn {user.mention} because they're a bot")
                 continue
-            if user.top_role.position >= ctx.author.top_role.position:
-                await ctx.send(f"{user.name} is above your paygrade, take a seat")
+            if ctx.author.id != ctx.guild.owner.id:
+                if user.top_role.position >= ctx.author.top_role.position:
+                    await ctx.send(f"{user.name} is above your paygrade, take a seat")
             await self.warn_user(ctx.channel, user, reason)
 
     @commands.command(name='delwarn')
