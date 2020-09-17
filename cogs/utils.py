@@ -12,6 +12,8 @@ from time import time, monotonic
 import os
 import subprocess
 import random
+import aiohttp
+import aiofiles
 
 from discord.ext import commands
 import discord
@@ -138,6 +140,44 @@ class Utils(commands.Cog):
         else:
             await message.delete()
             return options[emojis.index(str(reaction.emoji))]
+
+    async def download(self, url: str, timeout: int = 10):
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.get(str(url), timeout=timeout) as resp:
+                    if resp.status != 200:
+                        return None
+                    return await resp.read()
+            except asyncio.TimeoutError:
+                return None
+
+    async def save_json(self, fp, data, mode="w+", **json_kwargs) -> None:
+        # self.log(f"Saving {fp}", "DEBUG")
+        # before = monotonic()
+        async with aiofiles.open(fp + ".tmp", mode) as f:
+            await f.write(json.dumps(data, **json_kwargs))
+        # ping = str(round((monotonic() - before) * 1000))
+        # self.log(f"Wrote to tmp file in {ping}ms", "DEBUG")
+        # before = monotonic()
+        try:
+            os.rename(fp + ".tmp", fp)
+        except FileNotFoundError:
+            pass
+            # self.log("Tmp file didn't exist, not renaming", "DEBUG")
+        # ping = str(round((monotonic() - before) * 1000))
+        # self.log(f"Replaced old file in {ping}ms", "DEBUG")
+
+    async def wait_for_msg(self, ctx, timeout=60, action="Waiting for message") -> Optional[discord.Message]:
+        def pred(m):
+            return m.author.id == ctx.author.id and m.channel.id == ctx.channel.id
+
+        try:
+            msg = await self.bot.wait_for('message', check=pred, timeout=timeout)
+        except asyncio.TimeoutError:
+            await ctx.send(f"{action} timed out!")
+            return None
+        else:
+            return msg
 
     @staticmethod
     async def update_msg(msg, new) -> discord.Message:

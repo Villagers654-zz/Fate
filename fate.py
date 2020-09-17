@@ -6,18 +6,13 @@ import os
 import asyncio
 import logging
 from typing import *
-import aiohttp
 import aiofiles
-import random
-from cryptography.fernet import Fernet
-from getpass import getpass
 
 from discord.ext import commands
 import discord
 import aiomysql
 import pymysql
 from termcolor import cprint
-from PIL import Image, ImageDraw, ImageFont
 
 from utils import auth, tasks, colors, checks
 from utils.custom_logging import Logging
@@ -270,73 +265,23 @@ class Fate(commands.AutoShardedBot):
             except commands.ExtensionError:
                 self.log.info(f"Ignoring exception in Cog: {cog}``````{traceback.format_exc()}")
 
-    # def log(self, message, level='INFO', tb=None, color=None, end=None) -> str:
-    #     if level == 'DEBUG' and not self.debug_mode:
-    #         return ""
-    #     now = str(datetime.now().strftime("%I:%M%p"))
-    #     if now.startswith('0'):
-    #         now = now.replace('0', '', 1)
-    #     lines = []
-    #     for line in message.split('\n'):
-    #         msg = f"{now} | {level} | {line}"
-    #         if level == 'DEBUG' and self.config['debug_mode']:
-    #             cprint(msg, color if color else 'cyan', end=end)
-    #         elif level == 'INFO':
-    #             cprint(msg, color if color else 'green', end=end)
-    #         elif level == 'CRITICAL':
-    #             cprint(msg, color if color else 'red', end=end)
-    #         lines.append(msg)
-    #     if tb:
-    #         cprint(str(tb), color if color else 'red', end=end)
-    #         lines.append(str(tb))
-    #     self.logs.append('\n'.join(lines))
-    #     self.logs = self.logs[:1000]
-    #     return '\n'.join(lines)
-
+    # Scheduled for removal whence all references are removed
     async def download(self, url: str, timeout: int = 10):
-        async with aiohttp.ClientSession() as session:
-            try:
-                async with session.get(str(url), timeout=timeout) as resp:
-                    if resp.status != 200:
-                        return None
-                    return await resp.read()
-            except asyncio.TimeoutError:
-                return None
+        return await self.utils.download(url, timeout)
 
     async def save_json(self, fp, data, mode="w+", **json_kwargs) -> None:
-        # self.log(f"Saving {fp}", "DEBUG")
-        # before = monotonic()
-        async with aiofiles.open(fp + ".tmp", mode) as f:
-            await f.write(json.dumps(data, **json_kwargs))
-        # ping = str(round((monotonic() - before) * 1000))
-        # self.log(f"Wrote to tmp file in {ping}ms", "DEBUG")
-        # before = monotonic()
-        try:
-            os.rename(fp + ".tmp", fp)
-        except FileNotFoundError:
-            pass
-            # self.log("Tmp file didn't exist, not renaming", "DEBUG")
-        # ping = str(round((monotonic() - before) * 1000))
-        # self.log(f"Replaced old file in {ping}ms", "DEBUG")
+        return await self.utils.save_json(fp, data, mode, **json_kwargs)
 
     async def wait_for_msg(self, ctx, timeout=60, action="Waiting for message") -> Optional[discord.Message]:
-        def pred(m):
-            return m.author.id == ctx.author.id and m.channel.id == ctx.channel.id
-
-        try:
-            msg = await self.wait_for('message', check=pred, timeout=timeout)
-        except asyncio.TimeoutError:
-            await ctx.send(f"{action} timed out!")
-            return None
-        else:
-            return msg
+        return await self.utils.wait_for_msg(ctx, timeout, action)
 
     async def verify_user(self, context=None, channel=None, user=None, timeout=45, delete_after=False):
         return await self.utils.verify_user(context, channel, user, timeout, delete_after)
 
     async def get_choice(self, ctx, *options, user, timeout=30) -> Optional[object]:
         """ Reaction based menu for users to choose between things """
-        return await self.utils.get_choice(ctx, *options, user, timeout)
+        return await self.utils.get_choice(ctx, *options, user=user, timeout=timeout)
+    # -------------------------------------------------------
 
     async def handle_tcp(self, reader, writer, get_coro, push_coro, remove_coro):
         """ Manage an echo """

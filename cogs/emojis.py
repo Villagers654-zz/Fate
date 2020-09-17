@@ -48,12 +48,11 @@ class Emojis(commands.Cog):
 
 	async def upload_emoji(self, ctx, name, img, reason, roles=None) -> None:
 		"""Creates partial emojis with a queue to prevent spammy messages"""
-		emoji = None
 		try:
 			emoji = await ctx.guild.create_custom_emoji(name=name, image=img, roles=roles, reason=reason)
 
 		# Missing required permissions to add emojis
-		except discord.errors.Forbidden as e:
+		except discord.errors.Forbidden:
 			await ctx.bot.utils.update_msg(ctx.msg, "I'm missing manage_emoji permission(s)")
 			return None
 
@@ -63,10 +62,10 @@ class Emojis(commands.Cog):
 			return None
 
 		# Something went wrong uploading the emoji
-		except discord.errors.HTTPException:
+		except discord.errors.HTTPException as e:
 			error = str(traceback.format_exc()).lower()
 			# Emoji Limit Reached
-			if "limit" in error:
+			if "maximum" in error:
 				await self.bot.utils.update_msg(ctx.msg, f"{name} - Emoji Limit Reached")
 			# 256KB Filesize Limit
 			elif "256" in error:

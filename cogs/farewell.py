@@ -360,9 +360,8 @@ class Leave(commands.Cog):
 		if isinstance(m.guild, discord.Guild):
 			guild_id = str(m.guild.id)
 			if guild_id in self.toggle:
-				try:
-					channel = self.bot.get_channel(self.channel[guild_id])
-				except:
+				channel = self.bot.get_channel(self.channel[guild_id])
+				if not channel:
 					del self.toggle[guild_id]
 					return self.save_data()
 				msg = self.format[guild_id]
