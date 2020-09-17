@@ -11,13 +11,13 @@ from typing import Union, Optional
 from time import time, monotonic
 import os
 import subprocess
+import random
 
 from discord.ext import commands
 import discord
 from colormap import rgb2hex
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 from ast import literal_eval
-import aiofiles
 
 from utils import colors
 
@@ -29,6 +29,115 @@ class Utils(commands.Cog):
         self.filter = Filter
         self.MemoryInfo = MemoryInfo
         self.Result = Result
+
+    async def verify_user(self, context=None, channel=None, user=None, timeout=45, delete_after=False):
+        if not user and not context:
+            raise TypeError("verify_user() requires either 'context' or 'user', and neither was given")
+        if not channel and not context:
+            raise TypeError("verify_user() requires either 'context' or 'channel', and neither was given")
+        if not user:
+            user = context.author
+        if not channel:
+            channel = context.channel
+
+        fp = os.path.basename(f"./static/captcha-{time()}.png")
+        abcs = "abcdefghijklmnopqrstuvwxyz"
+        chars = " ".join([random.choice(list(abcs)).upper() for _i in range(6)])
+
+        def create_card():
+            colors = ["orange", "green", "white", "cyan", "red"]
+            font = ImageFont.truetype("./utils/fonts/Modern_Sans_Light.otf", 75)
+            size = font.getsize(chars)
+            card = Image.new("RGBA", size=(size[0] + 20, 80), color=(255, 255, 255, 0))
+            draw = ImageDraw.Draw(card)
+            draw.text((10, 10), chars, fill=random.choice(colors), font=font)
+
+            redirections = 5
+            lowest_range = 5
+            max_range = size[0] + 15
+            divide = (max_range - lowest_range) / redirections
+
+            for _ in range(2):
+                fix_points = [random.choice(range(10, 65)) for _i in range(redirections + 1)]
+                color = random.choice(colors)
+                for iteration in range(redirections):
+                    line_positions = (
+                        # Beginning of line
+                        5 + (divide * iteration), fix_points[iteration],
+                        # End of line
+                        max_range - ((divide * redirections) - sum([divide for _i in range(iteration + 1)])),
+                        fix_points[iteration + 1]
+                    )
+                    draw.line(line_positions, fill=color, width=2)
+
+            card.save(fp)
+
+        await self.bot.loop.run_in_executor(None, create_card)
+
+        e = discord.Embed(color=colors.fate())
+        e.set_author(name=str(user), icon_url=user.avatar_url)
+        e.set_image(url="attachment://" + fp)
+        e.set_footer(text=f"You have {self.get_time(timeout)}")
+        message = await channel.send(f"{user.mention} please verify you're human", embed=e, file=discord.File(fp))
+        os.remove(fp)
+
+        def pred(m):
+            return m.author.id == user.id and str(m.content).lower() == chars.lower().replace(" ", "")
+
+        try:
+            await self.bot.wait_for("message", check=pred, timeout=timeout)
+        except asyncio.TimeoutError:
+            if delete_after:
+                await message.delete()
+            else:
+                e.set_footer(text="Captcha Failed")
+                await message.edit(embed=e)
+            return False
+        else:
+            if delete_after:
+                await message.delete()
+            else:
+                e.set_footer(text="Captcha Passed")
+                await message.edit(content=None, embed=e)
+            return True
+
+    async def get_choice(self, ctx, *options, user, timeout=30) -> Optional[object]:
+        """ Reaction based menu for users to choose between things """
+        async def add_reactions(message) -> None:
+            for emoji in emojis:
+                if not message:
+                    return
+                try:
+                    await message.add_reaction(emoji)
+                except discord.errors.NotFound:
+                    return
+                if len(options) > 5:
+                    await asyncio.sleep(1)
+                elif len(options) > 2:
+                    await asyncio.sleep(0.5)
+
+        def predicate(r, u) -> bool:
+            return u.id == user.id and str(r.emoji) in emojis
+
+        emojis = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️"][:len(options)]
+        if not user:
+            user = ctx.author
+
+        e = discord.Embed(color=colors.fate())
+        e.set_author(name="Select which option", icon_url=ctx.author.avatar_url)
+        e.description = "\n".join(f"{emojis[i]} {option}" for i, option in enumerate(options))
+        e.set_footer(text=f"You have {self.bot.utils.get_time(timeout)}")
+        message = await ctx.send(embed=e)
+        self.bot.loop.create_task(add_reactions(message))
+
+        try:
+            reaction, _user = await self.bot.wait_for("reaction_add", check=predicate, timeout=timeout)
+        except asyncio.TimeoutError:
+            await message.delete()
+            return None
+        else:
+            await message.delete()
+            return options[emojis.index(str(reaction.emoji))]
 
     @staticmethod
     async def update_msg(msg, new) -> discord.Message:
