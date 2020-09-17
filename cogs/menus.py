@@ -74,7 +74,7 @@ class Menus(commands.Cog, HelpMenus):
 
         emojis = ['🏡', '⏮', '⏪', '⏩', '⏭']
         index = 0; sub_index = None
-        ems = [self.default, self.core, self.mod, self.utility, self.fun, self.music]
+        ems = [self.default, self.core, self.mod, self.utility, self.fun]
         embeds = [*[embed_func() for embed_func in ems]]  # call the functions to get their embeds
         if args:
             ems = [e.__name__ for e in ems]

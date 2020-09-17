@@ -103,10 +103,9 @@ class ChatBridge(commands.Cog):
 						await webhook.send(msg.content, username=msg.author.display_name,
 						                   avatar_url=msg.author.avatar_url, files=files, embed=embed)
 					except discord.errors.NotFound:
-						self.bot.log(
+						self.bot.log.critical(
 							f"A chatbridges webhook was deleted\n"
-							f"Guild: {msg.guild}",
-							level="CRITICAL"
+							f"Guild: {msg.guild}"
 						)
 					except discord.errors.HTTPException:
 						await webhook.send(msg.content, username=msg.author.display_name,
