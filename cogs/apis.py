@@ -5,7 +5,7 @@ import aiohttp
 from praw import Reddit
 from discord.ext import commands
 import discord
-from utils import colors, outh
+from utils import colors, auth
 
 
 class APIS(commands.Cog):
@@ -81,7 +81,7 @@ class APIS(commands.Cog):
     @commands.bot_has_permissions(embed_links=True, attach_files=True)
     async def reddit(self, ctx, search):
         try:
-            dat = outh.reddit()  # type: dict
+            dat = auth.reddit()  # type: dict
             reddit = Reddit(client_id=dat['client_id'], client_secret=dat['client_secret'],
                             user_agent=dat['user_agent'])
         except Exception as e:
