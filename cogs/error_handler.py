@@ -65,7 +65,7 @@ class ErrorHandler(commands.Cog):
 			# Failed a decorator check
 			elif isinstance(error, commands.CheckFailure):
 				if not checks.command_is_enabled(ctx):
-					return await ctx.send(f"{ctx.command} is disabled")
+					return await ctx.send(f"{ctx.command} is disabled here")
 				elif "check functions" in str(error):
 					return await ctx.message.add_reaction('🚫')
 				else:
