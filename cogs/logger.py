@@ -1731,10 +1731,12 @@ class Logger(commands.Cog):
                     action = "Revoked"
                     roles = [role for role in before.roles if role not in after.roles]
                     e.description = f"{roles[0].mention} was taken from {before}"
-                else:
+                elif len(before.roles) < len(after.roles):
                     action = "Granted"
                     roles = [role for role in after.roles if role not in before.roles]
                     e.description = f"{roles[0].mention} was given to {before}"
+                else:
+                    return
                 e.set_author(name=f"~==🍸Role {action}🍸==~", icon_url=dat['icon_url'])
                 info = {
                     "User": after.mention,
