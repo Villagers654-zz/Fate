@@ -227,7 +227,7 @@ class Ranking(commands.Cog):
 			conf = self.static_config()  # type: dict
 			if guild_id in self.config:
 				conf = self.config[guild_id]
-			if conf['min_xp_per_msg'] == conf['max_xp_per_msg']:
+			if conf['min_xp_per_msg'] >= conf['max_xp_per_msg']:
 				new_xp = conf['min_xp_per_msg']
 			else:
 				new_xp = randint(conf['min_xp_per_msg'], conf['max_xp_per_msg'])
