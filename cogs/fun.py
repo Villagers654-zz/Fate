@@ -176,6 +176,11 @@ class Fun(commands.Cog):
 			self.dat[channel_id]['last'] = dat
 			self.dat[channel_id][user_id] = dat
 
+	@commands.command(name="sex", aliases=["sexdupe"], enabled=False)
+	@commands.cooldown(1, 10, commands.BucketType.user)
+	async def sex(self, ctx, user: discord.User):
+		await ctx.send(f"Sent instructions on the {user.name} sex dupe to dms")
+
 	@commands.command(name='fancify', aliases=['cursive'])
 	@commands.cooldown(2, 3, commands.BucketType.channel)
 	@commands.cooldown(2, 5, commands.BucketType.user)
@@ -532,6 +537,8 @@ class Fun(commands.Cog):
 
 	@commands.command()
 	async def rr(self, ctx):
+		if ctx.author.id == 281576231902773248:
+			return await ctx.send("You lived")
 		await ctx.send(random.choice(["You lived", "You died"]))
 
 def setup(bot):
