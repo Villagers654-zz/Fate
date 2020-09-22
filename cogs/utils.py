@@ -786,13 +786,13 @@ class Filter:
                             if multi:
                                 pattern += "|".join(f"({c})" for c in multi)
                             pattern += ")"
-                        elif char in self.index.keys():
-                            pattern += "+"
                         else:
                             pattern += char
-
+                        if char in self.index.keys():
+                            pattern += "+"
                 else:
                     pattern = phrase
+                pattern.replace("++", "+")
                 if re.search(pattern, message):
                     return True, pattern  # Flagged
             except Exception as e:
