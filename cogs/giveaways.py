@@ -23,7 +23,8 @@ class Giveaways(commands.Cog):
                 self.data = json.load(f)  # type: dict
 
     async def save_data(self):
-        await self.bot.save_json(self.path, self.data)
+        async with self.bot.open(self.path, "w+") as f:
+            await f.write(json.dumps(self.data))
 
     async def make_embed(self, dat):
         e = discord.Embed(color=colors.fate())
@@ -100,86 +101,78 @@ class Giveaways(commands.Cog):
                 "\n`d` represents days, `h` represents hours, `m` represents minutes"
         message = await ctx.send("How long should the giveaway last"+usage)
         for i in range(5):
-            msg = await self.bot.wait_for_msg(ctx, action="giveaway setup")
-            if not msg:
-                return
-            timers = []
-            for timer in [re.findall('[0-9]+[smhd]', arg) for arg in msg.content.split()]:
-                timers = [*timers, *timer]
-            if not timers:
-                await ctx.send(usage)
-                continue
-            time_to_sleep = [0, []]
-            for timer in timers:
-                raw = ''.join(x for x in list(timer) if x.isdigit())
-                if 'd' in timer:
-                    time = int(timer.replace('d', '')) * 60 * 60 * 24
-                    repr = 'day'
-                elif 'h' in timer:
-                    time = int(timer.replace('h', '')) * 60 * 60
-                    repr = 'hour'
-                elif 'm' in timer:
-                    time = int(timer.replace('m', '')) * 60
-                    repr = 'minute'
-                else:  # 's' in timer
-                    time = int(timer.replace('s', ''))
-                    repr = 'second'
-                time_to_sleep[0] += time
-                time_to_sleep[1].append(f"{raw} {repr if raw == '1' else repr + 's'}")
-            timer, expanded_timer = time_to_sleep
-            expanded_timer = ', '.join(expanded_timer)
-            await ctx.send(f"Alright, set the timer to {expanded_timer}", delete_after=10)
-            await message.delete()
-            await msg.delete()
-            attempts = 0
-            break
+            async with self.bot.require("message", ctx) as msg:
+                timers = []
+                for timer in [re.findall('[0-9]+[smhd]', arg) for arg in msg.content.split()]:
+                    timers = [*timers, *timer]
+                if not timers:
+                    await ctx.send(usage)
+                    continue
+                time_to_sleep = [0, []]
+                for timer in timers:
+                    raw = ''.join(x for x in list(timer) if x.isdigit())
+                    if 'd' in timer:
+                        time = int(timer.replace('d', '')) * 60 * 60 * 24
+                        repr = 'day'
+                    elif 'h' in timer:
+                        time = int(timer.replace('h', '')) * 60 * 60
+                        repr = 'hour'
+                    elif 'm' in timer:
+                        time = int(timer.replace('m', '')) * 60
+                        repr = 'minute'
+                    else:  # 's' in timer
+                        time = int(timer.replace('s', ''))
+                        repr = 'second'
+                    time_to_sleep[0] += time
+                    time_to_sleep[1].append(f"{raw} {repr if raw == '1' else repr + 's'}")
+                timer, expanded_timer = time_to_sleep
+                expanded_timer = ', '.join(expanded_timer)
+                await ctx.send(f"Alright, set the timer to {expanded_timer}", delete_after=10)
+                await message.delete()
+                await msg.delete()
+                attempts = 0
+                break
         else:
             return await ctx.send('oop')
 
         # Giveaway information
         message = await ctx.send("Send a description of what you're giving out")
-        msg = await self.bot.wait_for_msg(ctx, timeout=60*3, action="giveaway setup")
-        if not msg:
-            return
-        msg = await ctx.channel.fetch_message(msg.id)
-        giveaway = msg.content
-        await message.delete()
-        await msg.delete()
+        async with self.bot.require("message", ctx) as msg:
+            msg = await ctx.channel.fetch_message(msg.id)
+            giveaway = msg.content
+            await message.delete()
+            await msg.delete()
 
         # Winner count
         message = await ctx.send("How many winners should there be. Reply in number form")
         for i in range(5):
             attempts += 1
-            msg = await self.bot.wait_for_msg(ctx, action="giveaway setup")
-            if not msg:
-                return
-            if not msg.content.isdigit():
+            async with self.bot.require("message", ctx) as msg:
+                if not msg.content.isdigit():
+                    await message.delete()
+                    message = await ctx.send("That isn't a number, please retry")
+                    await msg.delete()
+                    continue
+                winners = int(msg.content)
                 await message.delete()
-                message = await ctx.send("That isn't a number, please retry")
                 await msg.delete()
-                continue
-            winners = int(msg.content)
-            await message.delete()
-            await msg.delete()
-            break
+                break
         else:
             return
 
         # Giveaway channel
         message = await ctx.send(f"#Mention the channel I should use in {ctx.channel.mention} format")
         for i in range(5):
-            msg = await self.bot.wait_for_msg(ctx, action="giveaway setup")
-            if not msg:
-                return
-            if not msg.channel_mentions:
+            async with self.bot.require("message", ctx) as msg:
+                if not msg.channel_mentions:
+                    await message.delete()
+                    message = await ctx.send(f"That isn't a channel mention, make sure it's in the {ctx.channel.mention} format")
+                    await msg.delete()
+                    continue
+                channel = msg.channel_mentions[0]
                 await message.delete()
-                message = await ctx.send(f"That isn't a channel mention, make sure it's in the {ctx.channel.mention} format")
                 await msg.delete()
-                continue
-            channel = msg.channel_mentions[0]
-            await message.delete()
-            await msg.delete()
-            break
+                break
         else:
             return
 

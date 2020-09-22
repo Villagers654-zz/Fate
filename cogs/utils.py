@@ -786,10 +786,11 @@ class Filter:
                             if multi:
                                 pattern += "|".join(f"({c})" for c in multi)
                             pattern += ")"
+                        elif char in self.index.keys():
+                            pattern += "+"
                         else:
                             pattern += char
-                        if char in self.index.keys():
-                            pattern += "+"
+
                 else:
                     pattern = phrase
                 if re.search(pattern, message):
