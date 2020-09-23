@@ -103,7 +103,7 @@ class Utils(commands.Cog):
                 await message.edit(content=None, embed=e)
             return True
 
-    async def get_choice(self, ctx, *options, user, timeout=30) -> Optional[object]:
+    async def get_choice(self, ctx, *options, user, name="Select which option", timeout=30) -> Optional[object]:
         """ Reaction based menu for users to choose between things """
         async def add_reactions(message) -> None:
             for emoji in emojis:
@@ -126,7 +126,7 @@ class Utils(commands.Cog):
             user = ctx.author
 
         e = discord.Embed(color=colors.fate())
-        e.set_author(name="Select which option", icon_url=ctx.author.avatar_url)
+        e.set_author(name=name, icon_url=ctx.author.avatar_url)
         e.description = "\n".join(f"{emojis[i]} {option}" for i, option in enumerate(options))
         e.set_footer(text=f"You have {self.bot.utils.get_time(timeout)}")
         message = await ctx.send(embed=e)
