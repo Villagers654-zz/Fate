@@ -499,6 +499,16 @@ class Moderation(commands.Cog):
             if not user:
                 del self.config[guild_id]['mute_timers'][user_id]
                 return
+            if "removed_roles" in timer_info and timer_info["removed_roles"]:
+                for role_id in timer_info["removed_roles"]:
+                    role = guild.get_role(role_id)
+                    if not role:
+                        continue
+                    if role not in user.roles:
+                        try:
+                            await user.add_roles(role)
+                        except discord.errors.Forbidden:
+                            pass
             mute_role = guild.get_role(self.config[guild_id]["mute_role"])
             if not mute_role:
                 self.config[guild_id]["mute_role"] = None
@@ -506,11 +516,12 @@ class Moderation(commands.Cog):
                 return
             if mute_role in user.roles:
                 channel = self.bot.get_channel(timer_info["channel"])
-                try:
-                    await user.remove_roles(mute_role)
-                    await channel.send(f"**Unmuted:** {user.name}")
-                except discord.errors.Forbidden:
-                    pass
+                if channel:
+                    try:
+                        await user.remove_roles(mute_role)
+                        await channel.send(f"**Unmuted:** {user.name}")
+                    except discord.errors.Forbidden:
+                        pass
             del self.config[guild_id]['mute_timers'][user_id]
         if guild_id in self.tasks and user_id in self.tasks[guild_id]:
             del self.tasks[guild_id][user_id]
@@ -612,20 +623,38 @@ class Moderation(commands.Cog):
                 return await ctx.send("That user is above your paygrade, take a seat")
             if mute_role in user.roles:
                 return await ctx.send(f'{user.display_name} is already muted')
+            removed_roles = []
+
+            async def ensure_muted():
+                if user.guild_permissions.administrator:
+                    choice = await self.bot.utils.get_choice(
+                        ctx, "Remove admin roles", "Leave as is",
+                        name=f"{user.name} can still talk", user=ctx.author
+                    )
+                    if choice == "Remove admin roles":
+                        for role in user.roles:
+                            if role.permissions.administrator:
+                                await user.remove_roles(role)
+                                removed_roles.append(role.id)
+                return None
 
             if not timers:
                 await user.add_roles(mute_role)
-                return await ctx.send(f'Muted {user.display_name} for {reason}')
+                await ctx.send(f'Muted {user.display_name} for {reason}')
+                await ensure_muted()
+                return None
 
             if timer > 15552000:  # 6 months
                 return await ctx.send("No way in hell I'm waiting that long to unmute\n"
                                       "You'll have to do it yourself >:(")
             await user.add_roles(mute_role)
+            await ensure_muted()
             timer_info = {
                 'channel': ctx.channel.id,
                 'user': user.id,
                 'end_time': now() + timer,
-                'mute_role': mute_role.id
+                'mute_role': mute_role.id,
+                'removed_roles': removed_roles
             }
             await ctx.send(f"Muted **{user.name}** for {expanded_timer} for {reason}")
 
