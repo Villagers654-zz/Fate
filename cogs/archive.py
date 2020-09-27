@@ -4,7 +4,7 @@ import discord
 import os
 from os.path import join
 from zipfile import ZipFile
-from utils import outh
+from utils import auth as outh
 
 
 # def is_guild_owner():
