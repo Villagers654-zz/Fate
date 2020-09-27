@@ -191,11 +191,11 @@ class Emojis(commands.Cog):
 				continue
 
 			if not at_emoji_limit():
-				if emoji.animated and total_animated() == limit:
+				if not isinstance(emoji, str) and emoji.animated and total_animated() == limit:
 					if "Animated Limit Reached" not in ctx.msg.content:
 						ctx.msg = await self.bot.utils.update_msg(ctx.msg, f"Animated Limit Reached")
 					continue
-				elif not emoji.animated and total_emotes() == limit:
+				elif not isinstance(emoji, str) and not emoji.animated and total_emotes() == limit:
 					if "Emote Limit Reached" not in ctx.msg.content:
 						ctx.msg = await self.bot.utils.update_msg(ctx.msg, f"Emote Limit Reached")
 					continue
