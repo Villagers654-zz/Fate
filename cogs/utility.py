@@ -526,16 +526,15 @@ class Utility(commands.Cog):
 				if (datetime.now() - date).days < 7:
 					commands += 1
 				else:
-					index = stats['commands'].index(command_date)
-					stats['commands'].pop(index)
-					with open('./data/stats.json', 'w') as f:
-						json.dump(stats, f, ensure_ascii=False)
-			with open('fate.py', 'r') as f:
-				lines += len(f.readlines())
+					stats['commands'].remove(command_date)
+			async with self.bot.open('./data/stats.json', 'w') as f:
+				await f.write(json.dumps(stats))
+			async with self.bot.open('fate.py', 'r') as f:
+				lines += len(await f.readlines())
 			for file in os.listdir('cogs'):
 				if file.endswith('.py'):
-					with open(f'./cogs/{file}', 'r') as f:
-						lines += len(f.readlines())
+					async with self.bot.open(f'./cogs/{file}', 'r') as f:
+						lines += len(await f.readlines())
 			e.description = f'Weekly Commands Used: {commands}\n' \
 			                f'Total lines of code: {lines}'
 			e.set_thumbnail(url=self.bot.user.avatar_url)
