@@ -23,7 +23,7 @@ discord.log
 
 
 /utils/livechat.py
-/utils/outh.py
+/utils/auth.py
 /utils/ServerStatus.py
 /utils/ssh.py
 /utils/window_gen.py
