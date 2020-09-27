@@ -670,7 +670,7 @@ class Moderation(commands.Cog):
     async def on_ready(self):
         for guild_id, tasks in list(self.tasks.items()):
             for user_id, task in tasks.items():
-                if task.done():
+                if task.done() and task.result():
                     self.bot.log.critical(f"A mute task errored\n```python\n{task.result()}```")
                     del self.tasks[guild_id][user_id]
         for guild_id, data in list(self.config.items()):
@@ -776,7 +776,7 @@ class Moderation(commands.Cog):
             except:
                 e.add_field(name=f'◈ Failed to ban {id}', value="That user doesn't exist", inline=False)
             else:
-                await ctx.guild.ban(user, reason=f"{ctx.author}: {reason}")
+                await ctx.guild.ban(user, reason=f"{ctx.author}: {reason}", delete_message_days=0)
                 e.add_field(name=f'◈ Banned {user}', value=f'Reason: {reason}', inline=False)
             await msg.edit(embed=e)
         for user in users:
@@ -790,7 +790,7 @@ class Moderation(commands.Cog):
                     e.add_field(name=f'◈ Failed to ban {member}', value="I can't ban this user", inline=False)
                     await msg.edit(embed=e)
                     continue
-            await ctx.guild.ban(user, reason=f"{ctx.author}: {reason}")
+            await ctx.guild.ban(user, reason=f"{ctx.author}: {reason}", delete_message_days=0)
             e.add_field(name=f'◈ Banned {user}', value=f'Reason: {reason}', inline=False)
         if not e.fields:
             e.colour = colors.red()
