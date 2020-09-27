@@ -16,7 +16,6 @@ import discord
 from discord import Webhook, AsyncWebhookAdapter
 import wikipedia
 import wikipedia.exceptions
-from profanity_check import predict_prob
 
 from utils import config, colors
 from cogs.utils import Utils as utils
@@ -423,7 +422,7 @@ class Core(commands.Cog):
         except Exception as e:
             await ctx.send(f'**```ERROR: {type(e).__name__} - {e}```**')
 
-    @commands.command(pass_context=True)
+    @commands.command(enabled=False)
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.bot_has_permissions(embed_links=True)
     async def ud(self, ctx, *, query: str):
