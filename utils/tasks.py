@@ -71,6 +71,9 @@ class Tasks:
 				for group in [msg[i:i + 1990] for i in range(0, len(msg), 1990)]:
 					group = group.replace(char, "")
 					if group:
+						while not channel:
+							channel = self.bot.get_channel(self.bot.config["debug_channel"])
+							await asyncio.sleep(5)
 						await channel.send(f'```{group}```')
 				log = [*log, *added_lines]
 			if reads == 1000:
