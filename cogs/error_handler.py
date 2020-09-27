@@ -4,6 +4,7 @@ import sys
 
 from discord.ext import commands
 import discord
+from aiohttp import ClientConnectorError
 
 from utils import colors, checks
 from fate import EmptyException
@@ -104,6 +105,12 @@ class ErrorHandler(commands.Cog):
 				e.description = f'[{error_str}](https://www.youtube.com/watch?v=t3otBjVZzT0)'
 				e.set_footer(text='This error has been logged, and will be fixed soon')
 				await ctx.send(embed=e)
+
+			# Temporarily can't connect to discord
+			if isinstance(error, ClientConnectorError):
+				await ctx.send("Temporarily failed to connect to discord; please re-run your command")
+				return
+
 		except (discord.errors.Forbidden, discord.errors.NotFound):
 			return
 
