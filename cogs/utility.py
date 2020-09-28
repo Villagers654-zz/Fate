@@ -836,11 +836,15 @@ class Utility(commands.Cog):
 	async def avatar(self, ctx, *, user=None):
 		if not user:
 			user = ctx.author.mention
-		user = utils.get_user(ctx, user)
-		if not isinstance(user, discord.Member):
-			return await ctx.send('User not found')
-		if not user.avatar_url:
-			return await ctx.send(f'{utils.cleanup_msg(ctx.message, user.display_name)} doesn\'t have an avatar')
+		if user.isdigit():
+			try:
+				user = await self.bot.fetch_user(int(user))
+			except discord.errors.NotFound:
+				return await ctx.send("User not found")
+		else:
+			user = self.bot.utils.get_user(ctx, user)
+			if not user:
+				return await ctx.send('User not found')
 		e=discord.Embed(color=0x80b0ff)
 		e.set_image(url=user.avatar_url_as(format="png"))
 		await ctx.send(f'◈ {utils.cleanup_msg(ctx.message, user.display_name)}\'s avatar ◈', embed=e)
