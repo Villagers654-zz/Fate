@@ -532,7 +532,7 @@ class Factions(commands.Cog):
 		if 'banner' not in self.factions[guild_id][faction]:
 			await ctx.send(f'Buying access to banners will cost you $500\n'
 			    'Reply with .confirm to purchase')
-			msg = await self.bot.utils.wait_for_msg(self, ctx)
+			msg = await self.bot.utils.wait_for_msg(ctx)
 			if not msg: return
 			if '.confirm' not in msg.content.lower():
 				return await ctx.send('Maybe next time ;-;')
