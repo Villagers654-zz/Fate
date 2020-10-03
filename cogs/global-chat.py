@@ -10,7 +10,6 @@ import re
 from discord.ext import commands
 from discord import Webhook, AsyncWebhookAdapter
 import discord
-from profanity_check import predict_prob
 
 from utils import colors, config
 from cogs.utils import Utils as utils
@@ -228,14 +227,15 @@ class GlobalChat(commands.Cog):
 					return await msg.delete()
 
 				# profanity filter
-				prob = predict_prob([msg.content])
-				new_prob = []
-				for i in prob:
-					if i >= 0.2:
-						new_prob.append(1)
-					elif i < 0.2:
-						new_prob.append(0)
-				profanity = any(prob == 1 for prob in new_prob)
+				# prob = predict_prob([msg.content])
+				# new_prob = []
+				# for i in prob:
+				# 	if i >= 0.2:
+				# 		new_prob.append(1)
+				# 	elif i < 0.2:
+				# 		new_prob.append(0)
+				# profanity = any(prob == 1 for prob in new_prob)
+				profanity = False
 
 				self.bot.loop.create_task(queue(msg))
 				if ignore:
