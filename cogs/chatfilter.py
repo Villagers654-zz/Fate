@@ -4,7 +4,6 @@ from utils import colors
 import discord
 import asyncio
 import json
-from time import time
 
 class ChatFilter(commands.Cog):
 	def __init__(self, bot):
@@ -135,43 +134,44 @@ class ChatFilter(commands.Cog):
 			del self.blacklist[guild_id]
 		await self.save_data()
 
-	async def filter(self, m: discord.Message):
-		if isinstance(m.author, discord.Member) and not m.author.bot:
+	@commands.Cog.listener()
+	async def on_message(self, m: discord.Message):
+		if isinstance(m.author, discord.Member):
 			guild_id = str(m.guild.id)
 			if m.guild.id in self.toggle and guild_id in self.blacklist:
-				if not m.channel.permissions_for(m.author).manage_messages:
-					if guild_id in self.ignored:
-						if m.channel.id in self.ignored[guild_id]:
-							return
-					m.content = m.content.replace('\\', '')
-					filter = self.bot.utils.filter()
-					filter.blacklist = self.blacklist[guild_id]
-					flagged, phrase = filter(m.content)
-					if flagged:
-						cog = self.bot.get_cog("Logger")
-						if cog and guild_id in cog.queue and isinstance(cog.queue[guild_id], list):
-							e = discord.Embed(color=colors.light_gray())
-							e.set_author(name=f"~==🍸Msg Filtered🍸==~", icon_url=m.author.avatar_url)
-							e.set_thumbnail(url=m.author.avatar_url)
-							for chunk in self.bot.utils.split(m.content, 1000):
-								e.add_field(name="◈ Content", value=chunk, inline=False)
-							for chunk in self.bot.utils.split(phrase, 1000):
-								e.add_field(name="◈ Triggered by", value=chunk, inline=False)
-							cog.queue[guild_id].append([e, 'chat', time()])
+				if guild_id in self.ignored:
+					if m.channel.id in self.ignored[guild_id]:
+						return
+				for phrase in self.blacklist[guild_id]:
+					if '\\' in phrase:
+						m.content = m.content.replace('\\', '')
+					perms = [perm for perm, value in m.author.guild_permissions if value]
+					if "manage_messages" not in perms:
 						try:
-							await asyncio.sleep(0.5)
-							await m.delete()
+							for chunk in m.content.split():
+								if phrase in chunk.lower():
+									await asyncio.sleep(0.5)
+									await m.delete()
+									return
 						except discord.errors.NotFound:
 							pass
 
 	@commands.Cog.listener()
-	async def on_message(self, m: discord.Message):
-		await self.filter(m)
-
-	@commands.Cog.listener()
 	async def on_message_edit(self, before, after):
-		await self.filter(after)
-
+		if isinstance(before.author, discord.Member) and isinstance(after.author, discord.Member):
+			guild_id = str(before.guild.id)
+			if before.guild.id in self.toggle:
+				if guild_id in self.blacklist:
+					for phrase in self.blacklist[guild_id]:
+						if '\\' not in phrase:
+							after.content = after.content.replace('\\', '')
+						perms = [perm for perm, value in after.author.guild_permissions if value]
+						if "manage_messages" not in perms:
+							for chunk in after.content.split():
+								if phrase in chunk.lower():
+									await asyncio.sleep(0.5)
+									await after.delete()
+									return
 
 def setup(bot):
 	bot.add_cog(ChatFilter(bot))
