@@ -49,7 +49,7 @@ class Fate(commands.AutoShardedBot):
             'coffeeshop', 'custom', 'actions', 'reactions', 'responses', 'textart', 'fun', 'dev', 'readme',
             'reload', 'embeds', 'apis', 'clean_rythm', 'utility', 'psutil', 'rules',
             'duel_chat', 'selfroles', 'lock', 'audit', 'cookies', 'server_list', 'emojis', 'giveaways', 'polls',
-            'logger', 'autorole', 'changelog', 'restore_roles', 'chatbot', 'anti_spam', 'anti_raid', 'chatfilter',
+            'logger', 'autorole', 'changelog', 'restore_roles', 'anti_spam', 'anti_raid', 'chatfilter',
             'nsfw', 'minecraft', 'chatlock', 'rainbow', 'system', 'user', 'limiter', 'dm_channel', 'factions',
             'secure_overwrites', 'server_setup', 'global-chat', 'ranking', 'statistics', 'toggles', 'verification'
         ]
@@ -62,7 +62,7 @@ class Fate(commands.AutoShardedBot):
             "AntiSpam":     {"help": "antispam",     "enable": "antispam.enable",     "disable": "antispam.disable"},
             "ChatFilter":   {"help": "chatfilter",   "enable": "chatfilter.enable",   "disable": "chatfilter.disable"},
             "ChatLock":     {"help": "chatlock",     "enable": "chatlock.enable",     "disable": "chatlock.disable"},
-            "ChatBot":      {"help": "chatbot",      "enable": "chatbot.enable",      "disable": "chatbot.disable"},
+            # "ChatBot":      {"help": "chatbot",      "enable": "chatbot.enable",      "disable": "chatbot.disable"},
             "GlobalChat":   {"help": "global-chat",  "enable": "global-chat.enable",  "disable": "global-chat.disable"},
             "Lock":         {"help": None,           "enable": "lock",                "disable": "lock"},
             "Lockb":        {"help": None,           "enable": "lockb",               "disable": "lockb"},
@@ -209,6 +209,7 @@ class Fate(commands.AutoShardedBot):
         sql = auth.MySQL()
         for _attempt in range(5):
             try:
+                self.log("Connecting to db")
                 pool = await aiomysql.create_pool(
                     host=sql.host,
                     port=sql.port,
@@ -223,6 +224,7 @@ class Fate(commands.AutoShardedBot):
                 break
             except (ConnectionRefusedError, pymysql.err.OperationalError):
                 self.log.critical("Couldn't connect to SQL server, retrying in 25 seconds..")
+                self.log.critical(traceback.format_exc())
             await asyncio.sleep(25)
         else:
             self.log.critical(f"Couldn't connect to SQL server, reached max attempts``````{traceback.format_exc()}")
