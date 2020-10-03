@@ -7,7 +7,8 @@ class Actions(commands.Cog):
 		self.bot = bot
 		self.protected = [
 			264838866480005122,  # luck
-			355026215137968129  # tother
+			355026215137968129,  # tother
+			243233669148442624  # opal
 		]
 
 	def luck(ctx):
