@@ -6,6 +6,7 @@ import discord
 import asyncio
 from typing import Union
 import traceback
+import aiohttp
 
 from discord.ext import commands
 from discord.ext.commands import Greedy
@@ -217,15 +218,18 @@ class Emojis(commands.Cog):
 				return '.'
 			return args[iter + 1]
 
-		mappings = {
-			await self.bot.download(arg): check(iter) if '.' not in check(iter) else 'new_emoji'
-				for iter, arg in enumerate(args) if '.' in arg
-		}
-		for img, name in mappings.items():
-			if not img:
-				ctx.msg = await self.bot.utils.update_msg(ctx.msg, f"{name} - Dead Link")
-				continue
-			await self.upload_emoji(ctx, name=name, img=img, reason=str(ctx.author))
+		try:
+			mappings = {
+				await self.bot.download(arg): check(iter) if '.' not in check(iter) else 'new_emoji'
+					for iter, arg in enumerate(args) if '.' in arg
+			}
+			for img, name in mappings.items():
+				if not img:
+					ctx.msg = await self.bot.utils.update_msg(ctx.msg, f"{name} - Dead Link")
+					continue
+				await self.upload_emoji(ctx, name=name, img=img, reason=str(ctx.author))
+		except aiohttp.InvalidURL as e:
+			await self.bot.utils.updat_msg(ctx.msg, str(e))
 
 		# Attached Images/GIFsK
 		allowed_extensions = ['png', 'jpg', 'jpeg', 'gif']
