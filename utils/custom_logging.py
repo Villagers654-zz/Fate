@@ -38,19 +38,23 @@ class Logging:
         if not self.bot.is_ready():
             await self.bot.wait_until_ready()
             await asyncio.sleep(1)
+        msg = ""
         try:
             channel = self.bot.get_channel(self.bot.config["log_channel"])
-            msg = ""
             for log in list(self.queue):
+                old = log
+                log = log[:1000]
                 if len(msg) + len(log) > 1900:
-                    await channel.send(msg)
+                    if channel:
+                        await channel.send(msg)
                     msg = ""
                 msg += f"{log}"
                 msg = msg.replace("``````", "\n")
-                self.queue.remove(log)
-            await channel.send(msg)
+                self.queue.remove(old)
+            if channel:
+                await channel.send(msg)
         except:
-            self.info(f"There was an error in the log queue\n{traceback.format_exc()}")
+            self.info(f"There was an error in the log queue\n{traceback.format_exc()}\n{msg}")
             await asyncio.sleep(5)
 
     def debug(self, log, *args, **kwargs):
