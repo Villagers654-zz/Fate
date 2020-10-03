@@ -229,7 +229,7 @@ class Emojis(commands.Cog):
 					continue
 				await self.upload_emoji(ctx, name=name, img=img, reason=str(ctx.author))
 		except aiohttp.InvalidURL as e:
-			await self.bot.utils.updat_msg(ctx.msg, str(e))
+			await self.bot.utils.update_msg(ctx.msg, str(e))
 
 		# Attached Images/GIFsK
 		allowed_extensions = ['png', 'jpg', 'jpeg', 'gif']
