@@ -259,7 +259,7 @@ class Fun(commands.Cog):
 		e=discord.Embed(color=random.choice([0xFF0000, 0xFF7F00, 0xFFFF00, 0x00FF00, 0x0000FF, 0x4B0082]))
 		e.set_author(name="{}'s Personality".format(member.name), icon_url=member.avatar_url)
 		e.set_thumbnail(url=member.avatar_url)
-		e.add_field(name="Type", value=f'{random.choice(["psychopath", "depressed", "cheerful", "faggotry", "bright", "dark", "god", "deceiver", "funny", "fishy", "cool", "insecure", "lonely", "optimistic", "brave", "brilliant", "dreamer", "Nurturer", "Peaceful", "Overthinker", "Idealist", "Pussy"])}', inline=False)
+		e.add_field(name="Type", value=f'{random.choice(["psychopath", "depressed", "cheerful","bright", "dark", "god", "deceiver", "funny", "fishy", "cool", "insecure", "lonely", "optimistic", "brave", "brilliant", "dreamer", "Nurturer", "Peaceful", "Overthinker", "Idealist", "Pussy"])}', inline=False)
 		e.add_field(name="Social Status", value=f'{random.choice(["Ho", "Slut", "Loser", "The nice guy", "The dick", "Dank memer"])}', inline=False)
 		e.add_field(name="Hobby", value=f'{random.choice(["Art", "Drawing", "Painting", "Singing", "Writing", "Anime", "Memes", "Minecraft", "Sucking dick"])}', inline=False)
 		e.add_field(name="Music Genre", value=f'{random.choice(["Nightcore", "Heavy Metal", "Alternative", "Electronic", "Classical", "Dubstep", "Jazz", "Pop", "Rap"])}', inline=False)
@@ -496,7 +496,7 @@ class Fun(commands.Cog):
 			await asyncio.sleep(0.5)
 			msg = await self.bot.wait_for('message', check=pred, timeout=10.0)
 		except asyncio.TimeoutError:
-			await ctx.send(f'you faggot, you took too long', delete_after=5)
+			await ctx.send(f'You took too long!', delete_after=5)
 		else:
 			result=discord.Embed(color=0x80b0ff)
 			result.set_author(name='Rock, Paper, Scissors', icon_url=ctx.author.avatar_url)
