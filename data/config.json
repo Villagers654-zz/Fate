@@ -2,7 +2,8 @@
   "bot_user_id": 506735111543193601,
   "bot_owner_id": 264838866480005122,
   "bot_owner_ids": [
-    355026215137968129
+    355026215137968129,
+    243233669148442624
   ],
   "use_default_help": false,
   "startup_status": "Up and Running",
