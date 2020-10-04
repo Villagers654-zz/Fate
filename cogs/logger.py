@@ -4,10 +4,6 @@ Discord.Py v1.3+ Action Logs Module:
 + key security features to protect the log
 - logs can't be deleted or purged by anyone
 - re-creates deleted log channel(s) and resends the last x logs
-
-Super Important To-Do list:
-+ recolor the embeds so there's no duplicate colors
-- try to match the colors for .logger
 """
 
 import asyncio
