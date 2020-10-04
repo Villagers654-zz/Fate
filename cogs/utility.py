@@ -542,7 +542,7 @@ class Utility(commands.Cog):
 			e.add_field(name="◈ Summary ◈", value="Fate is a ~~multipurpose~~ hybrid bot created for fun", inline=False)
 			e.add_field(name="◈ Statistics ◈",
 			            value=f'Commands: [{len(self.bot.commands)}]\nModules: [{len(self.bot.extensions)}]\nServers: [{guilds}]\nUsers: [{users}]')
-			e.add_field(name="◈ Credits ◈", value="• Tothy ~ `rival`\n• Cortex ~ `teacher`\n• Discord.py ~ `existing`")
+			e.add_field(name="◈ Credits ◈", value="• Tothy ~ `rival`\n• Cortex ~ `teacher`\n• Discord.py ~ `existing`\n• Opal ~ `Co-Dev`")
 			bot_cpu = await self.bot.loop.run_in_executor(None, get_bot_cpu, os.getpid())
 			e.add_field(name="◈ Memory ◈",
 			            value=f"__**Storage**__: [{p.bytes2human(psutil.disk_usage('/').used)}/{p.bytes2human(psutil.disk_usage('/').total)}]\n"
@@ -876,10 +876,11 @@ class Utility(commands.Cog):
 			e.set_author(name=f"#{color}", icon_url=ctx.author.avatar_url)
 			return await ctx.send(embed=e)
 		if len(args) == 1:
-			hex = args[0]
-			hex = hex.replace('#', '')
-			try: e = discord.Embed(color=eval(f"0x{hex}"))
-			except: return await ctx.send('Invalid Hex')
+			hex = args[0].strip("#")
+			color = int("0x" + hex, 0)
+			if color > 16777215:
+				return await ctx.send("That hex value is too large")
+			e = discord.Embed(color=color)
 			e.description = f'#{hex}'
 			return await ctx.send(embed=e)
 		if not ctx.author.guild_permissions.manage_roles:

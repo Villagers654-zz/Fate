@@ -11,7 +11,6 @@ class Statistics(commands.Cog):
             "Logger": "config",
             "SelfRoles": "menus",
             "GlobalChat": "config",
-            "ChatBot": "toggle",
             "AutoRole": "roles",
             "ChatFilter": "toggle",
             "Giveaways": "data",
