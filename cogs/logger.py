@@ -15,7 +15,6 @@ from time import time
 from aiohttp.client_exceptions import ClientOSError
 import aiohttp
 import aiofiles
-import aiomysql
 
 from discord.ext import commands
 import discord

@@ -285,44 +285,6 @@ class Fate(commands.AutoShardedBot):
         return await self.utils.get_choice(ctx, *options, user=user, timeout=timeout)
     # -------------------------------------------------------
 
-    async def handle_tcp(self, reader, writer, get_coro, push_coro, remove_coro):
-        """ Manage an echo """
-        raw_data = await reader.read(1024)
-        data = json.loads(raw_data.decode())  # type: dict
-        guild_id = data["target"]
-
-        # Get a guilds data
-        if data["request"] == "get":
-            return_data = await get_coro(guild_id)
-            if not return_data:
-                return_data = {
-                    "successful": False,
-                    "reason": "No data"
-                }
-
-        # Update a guilds data
-        elif data["request"] == "push":
-            result, reason = await push_coro(guild_id, data)
-            return_data = {
-                "successful": result,
-                "reason": reason
-            }
-
-        # Remove a guilds data
-        elif data["request"] == "remove":
-            result, reason = await remove_coro(guild_id)
-            return_data = {
-                "successful": result,
-                "reason": reason
-            }
-
-        # Unknown request
-        else:
-            return_data = {"successful": False, "reason": "Unknown request"}
-
-        writer.write(json.dumps(return_data).encode())
-        await writer.drain()
-
     def run(self):
         if bot.initial_extensions:
             self.log.info("Loading initial cogs", color='yellow')
