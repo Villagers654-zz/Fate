@@ -44,15 +44,17 @@ class Fate(commands.AutoShardedBot):
         self.ignored_exit = EmptyException
         self.allow_user_mentions = discord.AllowedMentions(users=True, roles=False, everyone=False)
 
-        self.initial_extensions = [        # Cogs to load before logging in
-            'utils', 'error_handler', 'config', 'menus', 'core', 'mod', 'welcome', 'farewell', 'notes', 'archive',
-            'coffeeshop', 'custom', 'actions', 'reactions', 'responses', 'textart', 'fun', 'dev', 'readme',
-            'reload', 'embeds', 'apis', 'clean_rythm', 'utility', 'psutil', 'rules',
-            'duel_chat', 'selfroles', 'lock', 'audit', 'cookies', 'server_list', 'emojis', 'giveaways', 'polls',
-            'logger', 'autorole', 'changelog', 'restore_roles', 'anti_spam', 'anti_raid', 'chatfilter',
-            'nsfw', 'minecraft', 'chatlock', 'rainbow', 'system', 'user', 'limiter', 'dm_channel', 'factions',
-            'secure_overwrites', 'server_setup', 'global-chat', 'ranking', 'statistics', 'toggles', 'verification'
+        self.initial_extensions = [ # Cogs to load pre-login
+            'actions', 'anti_raid', 'anti_spam', 'apis', 'archive', 'audit',
+            'autorole', 'changelog', 'chatfilter', 'chatlock', 'clean_rythm', 'coffeeshop',
+            'config', 'cookies', 'core', 'custom', 'dev', 'dm_channel', 'duel_chat', 'embeds',
+            'emojis', 'error_handler', 'factions', 'farewell', 'fun', 'giveaways', 'global-chat',
+            'limiter', 'lock', 'logger', 'menus', 'minecraft', 'mod', 'notes', 'nsfw', 'polls',
+            'psutil', 'rainbow', 'ranking', 'reactions', 'readme', 'reload', 'responses',
+            'restore_roles', 'rules', 'secure_overwrites', 'selfroles', 'server_list',
+            'server_setup', 'statistics', 'system', 'textart', 'toggles', 'user', 'utility', 'utils', 'verification', 'welcome'
         ]
+
         self.awaited_extensions = []  # Cogs to load when the internal cache is ready
         self.module_index = {
             # Cog Name      Help command             Enable Command                   Disable command
