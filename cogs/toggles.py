@@ -39,7 +39,7 @@ class Toggles(commands.Cog):
             cog = self.bot.get_cog(module)  # type: commands.Cog
             for command in cog.walk_commands():
                 if command.name == subcommand:
-                    await command.__call__(ctx)
+                    await command.invoke(ctx)
                     break
 
     @commands.command(name="enable")
