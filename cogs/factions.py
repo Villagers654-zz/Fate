@@ -805,13 +805,13 @@ class Factions(commands.Cog):
 		if target_owner.id in self.appending:
 			return await ctx.send('This user already has a pending request')
 		await ctx.send(f'{target_owner.mention}, {ctx.author.name} wants to merge factions with him/her as the owner\n'
-		    f'Reply with .confirm to accept the offer')
+		    f'Reply with `.confirm annex` to accept the offer')
 		self.appending[target_owner.id] = 'yeet'
 		msg = await self.bot.utils.wait_for_msg(ctx, target_owner)
 		if not msg:
 			del self.appending[target_owner.id]
 			return
-		if '.confirm' not in msg.content.lower():
+		if '.confirm annex' not in msg.content.lower():
 			del self.appending[target_owner.id]
 			return await ctx.send('Maybe next time')
 		for member_id in t['members']:
