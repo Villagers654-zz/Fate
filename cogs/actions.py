@@ -11,6 +11,7 @@ class Actions(commands.Cog):
             355026215137968129,  # tother
             243233669148442624,  # opal
         ]
+        self.mentions = discord.AllowedMentions(everyone=False, roles=False, users=True)
 
     @staticmethod
     def luck(ctx):
@@ -34,10 +35,10 @@ class Actions(commands.Cog):
         ]
         result = (
             random.choice(results)
-            .replace("$user", user.display_name)
-            .replace("$author", ctx.author.display_name)
+            .replace("$user", user.mention)
+            .replace("$author", ctx.author.mention)
         )
-        await ctx.send(f"🔫 | pew pew, {result}")
+        await ctx.send(f"🔫 | pew pew, {result}", allowed_mentions=self.mentions)
 
     @commands.command(description="Injects a user with something random")
     @commands.cooldown(1, 3, commands.BucketType.user)
@@ -67,10 +68,13 @@ class Actions(commands.Cog):
         ]
         choice = (
             random.choice(choices)
-            .replace("$user", user.display_name)
-            .replace("$author", ctx.author.display_name)
+            .replace("$user", user.mention)
+            .replace("$author", ctx.author.mention)
         )
-        await ctx.send(f"💉 | {choice.replace('$injection', random.choice(injections))}")
+        await ctx.send(
+            f"💉 | {choice.replace('$injection', random.choice(injections))}",
+            allowed_mentions=self.mentions
+        )
 
     @commands.command(description="Slices anything into bits")
     @commands.cooldown(1, 3, commands.BucketType.user)
@@ -80,15 +84,11 @@ class Actions(commands.Cog):
                 return await ctx.send("nO")
             return await ctx.send("*slices you instead*")
         await ctx.send(
-            "⚔ | {} {}".format(
-                user.display_name,
-                random.choice(
-                    [
-                        "just got sliced up into sushi",
-                        "just got sliced up into string cheese",
-                    ]
-                ),
-            )
+            "⚔ | {} {}".format(user.mention, random.choice([
+                "just got sliced up into sushi",
+                "just got sliced up into string cheese"
+            ])),
+            allowed_mentions=self.mentions
         )
 
     @commands.command(description="Boops a user")
@@ -101,14 +101,8 @@ class Actions(commands.Cog):
                     ["sneakily", "sexually", "forcefully", "gently", "softly"]
                 ),
                 user.name,
-            )
+            ), allowed_mentions=self.mentions
         )
-        await ctx.message.delete()
-
-    @commands.command(description="Gives a user anything of your choosing")
-    @commands.cooldown(1, 3, commands.BucketType.user)
-    async def give(self, ctx, *, item):
-        await ctx.send("<@{}> gives {}".format(ctx.author.id, item))
         await ctx.message.delete()
 
     @commands.command(description="Stabs a user")
@@ -120,45 +114,28 @@ class Actions(commands.Cog):
             return await ctx.send("*stabs you instead*")
         await ctx.send(
             "⚔ | {} {}, {}".format(
-                user.display_name,
-                random.choice(
-                    [
-                        "has been stabbed in the head",
-                        "has been stabbed in the shoulder",
-                        "has been stabbed in the chest",
-                        "has beeb stabbed in the arm",
-                        "has been stabbed in the gut",
-                        "has been stabbed in the dick",
-                        "has been stabbed in the leg",
-                        "has been stabbed in the foot",
-                    ]
-                ),
-                random.choice(
-                    [
-                        "you really shouldn't let a bot carry a blade :p",
-                        "you should let me stab people more often",
-                        "you should let me stab **it** more often",
-                        "this is fun",
-                        "poor thing didn't stand a chance",
-                        "whatever that **thing** is, it definitely deserved it",
-                        "poor thing dropped like a fly",
-                    ]
-                ),
-            )
+                user.mention,
+                random.choice([
+                    "has been stabbed in the head",
+                    "has been stabbed in the shoulder",
+                    "has been stabbed in the chest",
+                    "has been stabbed in the arm",
+                    "has been stabbed in the gut",
+                    "has been stabbed in the dick",
+                    "has been stabbed in the leg",
+                    "has been stabbed in the foot",
+                ]),
+                random.choice([
+                    "you really shouldn't let a bot carry a blade :p",
+                    "you should let me stab people more often",
+                    "you should let me stab **it** more often",
+                    "this is fun",
+                    "poor thing didn't stand a chance",
+                    "whatever that **thing** is, it definitely deserved it",
+                    "poor thing dropped like a fly",
+                ]),
+            ), allowed_mentions=self.mentions
         )
-
-    @commands.command(description="You simply die")
-    @commands.cooldown(1, 3, commands.BucketType.user)
-    async def die(self, ctx, *, member: discord.Member = None):
-        try:
-            if member is None:
-                member = ctx.author
-            await ctx.send(f"{member.name} dies")
-            await ctx.message.delete()
-        except Exception as e:
-            await ctx.send(
-                f"**```ERROR: {type(e).__name__} - {e}```**", delete_after=10
-            )
 
     @commands.command(name="kms", aliases=["suicide"], description="Textart")
     @commands.cooldown(1, 5, commands.BucketType.channel)
