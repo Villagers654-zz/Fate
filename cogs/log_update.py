@@ -80,6 +80,21 @@ class Logger(commands.Cog):
             task = self.bot.loop.create_task(self.keep_alive_task())
             bot.logger_tasks["keep_alive_task"] = task
 
+    @property
+    def template(self):
+        return {
+            "channel": None,
+            "redirects": {},
+            "secure": False,
+            "ignored_channels": [],
+            "ignored_bots": []
+        }
+
+    async def save_data(self) -> None:
+        """ Saves local variables """
+        async with self.bot.open(self.path, "w+") as f:
+            await f.write(json.dumps(self.config))
+
     async def keep_alive_task(self) -> None:
         self.bot.log("Loggers keep_alive_task was started")
         channel = self.bot.get_channel(541520201926311986)
@@ -197,8 +212,6 @@ class Logger(commands.Cog):
                 if index == 60 * 12:
                     del self.config[guild_id]
                     return
-
-            log_type = self.config[guild_id]['type']  # type: str
 
             for embed, channelType, logged_at in self.queue[guild_id][-175:]:
                 list_obj = [embed, channelType, logged_at]
@@ -625,13 +638,6 @@ class Logger(commands.Cog):
                 )
             task = self.bot.loop.create_task(self.keep_alive_task())
             self.bot.logger_tasks["keep_alive_task"] = task
-        if not self.bot.tcp_servers["logger"]:
-            self.bot.tcp_servers["logger"] = await asyncio.start_server(
-                self.handle_echo,
-                host="127.0.0.1",
-                port=self.bot.config["logger_port"],
-                loop=self.bot.loop
-            )
         self.bot.loop.create_task(self.init_invites())
 
     @commands.Cog.listener()
@@ -768,7 +774,7 @@ class Logger(commands.Cog):
             if guild_id in self.config:
                 if self.config[guild_id]['secure']:
                     if msg.embeds and msg.channel.id == self.config[guild_id]['channel'] or (
-                            msg.channel.id in self.config[guild_id]['channels'].values()):
+                            msg.channel.id in self.config[guild_id]['redirects'].keys()):
 
                         await msg.channel.send("OwO what's this", embed=msg.embeds[0])
                         if msg.attachments:
