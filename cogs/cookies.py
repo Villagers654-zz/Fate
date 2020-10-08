@@ -31,12 +31,12 @@ class Cookies(commands.Cog):
 		}
 		await self.bot.save_json("./data/userdata/cookies.json", data)
 
-	async def setup(self, id):
-		self.cookies[id] = 0
-		self.sent[id] = 0
-		self.received[id] = 0
-		self.eaten[id] = 0
-		self.cd[id] = 0
+	async def setup(self, _id):
+		self.cookies[_id] = 0
+		self.sent[_id] = 0
+		self.received[_id] = 0
+		self.eaten[_id] = 0
+		self.cd[_id] = 0
 		await self.save()
 
 	@commands.command(name="cookie")

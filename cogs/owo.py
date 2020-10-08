@@ -116,8 +116,8 @@ class OwOBot(commands.Cog):
     @commands.bot_has_permissions(embed_links=True)
     async def owo_bot(self, ctx):
         if not ctx.invoked_subcommand:
-            help = HelpMenu(self.bot)
-            e = await help.embed() if help.coro else help.embed()
+            _help = HelpMenu(self.bot)
+            e = await _help.embed() if _help.coro else _help.embed()
             await ctx.send(embed=e)
             await self.save_data()
 

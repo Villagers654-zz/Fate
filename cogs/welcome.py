@@ -206,7 +206,7 @@ class Welcome(commands.Cog):
 		channel = "none"
 		useimages = "disabled"
 		images = 0
-		format = "none"
+		form = "none"
 		if guild_id in self.toggle:
 			toggle = "enabled"
 		if guild_id in self.channel:
@@ -214,7 +214,7 @@ class Welcome(commands.Cog):
 		if guild_id in self.useimages:
 			useimages = self.useimages[guild_id]
 		if guild_id in self.format:
-			format = self.format[guild_id]
+			form = self.format[guild_id]
 		if guild_id in self.images:
 			images = len(self.images[guild_id])
 		e = discord.Embed(color=colors.tan())
@@ -224,7 +224,7 @@ class Welcome(commands.Cog):
 			f"**Channel:** {channel}\n" \
 			f"**Images:** {useimages}\n" \
 			f"**Custom Images:** {images}\n" \
-			f"**Format:** {format}\n"
+			f"**Format:** {form}\n"
 		await ctx.send(embed=e)
 
 	@_welcome.command(name='test')

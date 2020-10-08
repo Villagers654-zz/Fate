@@ -44,9 +44,9 @@ class Backup(commands.Cog):
 			e.description = "**Progress:** `75%`\nCompressing files"
 			await msg.edit(embed=e)
 			before = monotonic()
-			with ZipFile('Backup.zip', 'w') as zip:
+			with ZipFile('Backup.zip', 'w') as _zip:
 				for file in file_paths:
-					zip.write(file)
+					_zip.write(file)
 			ping = str(round((monotonic() - before) * 1000)) + 'ms'
 			e.description = f'**Backup Complete:** `{ping}`'
 			await msg.edit(embed=e)
@@ -59,9 +59,9 @@ class Backup(commands.Cog):
 			if os.path.isfile('Backup.zip'):
 				os.remove('Backup.zip')
 			file_paths = self.get_all_file_paths(os.getcwd())
-			with ZipFile('Backup.zip', 'w') as zip:
+			with ZipFile('Backup.zip', 'w') as _zip:
 				for file in file_paths:
-					zip.write(file)
+					_zip.write(file)
 			ping = round((monotonic() - before) * 1000)
 			await self.bot.get_channel(config.server("log")).send(f'Ran Scheduled Backup: {ping}ms')
 

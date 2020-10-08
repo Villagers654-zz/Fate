@@ -204,8 +204,8 @@ class SelfRoles(commands.Cog):
 					menu['color'] = colors.fate()
 					break
 				try:
-					hex = int(f'0x{msg.content}', 0)
-					menu['color'] = hex
+					_hex = int(f'0x{msg.content}', 0)
+					menu['color'] = _hex
 				except:
 					await msg.delete()
 					await ctx.send('Invalid hex', delete_after=5)
@@ -321,7 +321,7 @@ class SelfRoles(commands.Cog):
 	@commands.guild_only()
 	@commands.bot_has_permissions(embed_links=True)
 	@commands.has_permissions(manage_roles=True)
-	async def set_color(self, ctx, msg_id=None, hex=None):
+	async def set_color(self, ctx, msg_id=None, _hex=None):
 		""" Sets the embed color for an existing menu """
 		guild_id = str(ctx.guild.id)
 		if guild_id not in self.menus:
@@ -332,13 +332,13 @@ class SelfRoles(commands.Cog):
 			return await ctx.send(usage)
 		if msg_id not in self.menus[guild_id]:
 			return await ctx.send("That menu doesn't exist")
-		if not hex:
+		if not _hex:
 			return await ctx.send(usage)
 		try:
-			hex = int(f"0x{hex.replace('#', '')}", 0)
+			_hex = int(f"0x{_hex.replace('#', '')}", 0)
 		except:
 			return await ctx.send(f"Invalid hex\nExample: #9eafe3")
-		self.menus[guild_id][msg_id]['color'] = hex
+		self.menus[guild_id][msg_id]['color'] = _hex
 		await self.edit_menu(guild_id, msg_id)
 		await ctx.send("Set the color 👍")
 		await self.save_data()

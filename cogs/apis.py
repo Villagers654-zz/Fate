@@ -96,7 +96,7 @@ class APIS(commands.Cog):
                 exts = ['.png', '.jpg', '.jpeg', '.gif']
                 if submission.title and all(ext not in submission.url for ext in exts):
                     reddit_posts.append(submission)
-        except:
+        except discord.DiscordException:
             return await ctx.send(f"Error Searching r/{search}\nMake sure it's public and exists")
 
         post = random.choice(reddit_posts)

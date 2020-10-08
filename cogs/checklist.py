@@ -20,13 +20,14 @@ class Checklist(commands.Cog):
 
     @commands.command(name='checklist')
     async def checklist(self, ctx, *args):
-        user_id = str(ctx.author.id); args = list(args)
+        user_id = str(ctx.author.id);
+        args = list(args)
         if user_id not in self.data:
             self.data[user_id] = {}
         usage = '.checklist create name\n•Creates a checklist\n' \
-            '.checklist checklist_name\n• Views a checklist\n' \
-            '.checklist del checklist_name\n• Deletes a checklist\n' \
-            '.checklist checklist_name args\n• Adds a task to a checklist'
+                '.checklist checklist_name\n• Views a checklist\n' \
+                '.checklist del checklist_name\n• Deletes a checklist\n' \
+                '.checklist checklist_name args\n• Adds a task to a checklist'
         if not args:  # show cmd usage + checklists
             e = discord.Embed(color=colors.orange())
             e.description = usage
@@ -37,9 +38,12 @@ class Checklist(commands.Cog):
                 e.add_field(name='Checklists', value=checklists)
             await ctx.send(embed=e)
         elif len(args) == 1:  # show a checklist
-            try: checklist = self.data[user_id][args[0]]
-            except: return await ctx.send('Unknown checklist')
+            try:
+                checklist = self.data[user_id][args[0]]
+            except discord.DiscordException:
+                return await ctx.send('Unknown checklist')
             emojis = ['1⃣', '2⃣', '3⃣', '4⃣', '5⃣', '6⃣', '7⃣', '8⃣', '9⃣', '🔟']
+
             def get_checklist(checklist):
                 e = discord.Embed(color=colors.orange())
                 e.set_author(name=f'Checklist: {args[0]}', icon_url=ctx.author.avatar_url)
@@ -52,6 +56,7 @@ class Checklist(commands.Cog):
                     else:
                         e.description += f'\n**#{iteration + 1}**. ~~{task}~~'
                 return e
+
             msg = await ctx.send(embed=get_checklist(checklist))
             for iteration in range(len(checklist)):
                 await msg.add_reaction(emojis[iteration])
@@ -64,14 +69,17 @@ class Checklist(commands.Cog):
                 await ctx.send(embed=e)
                 self.save_data()
             elif args[0] == 'del':
-                try: del self.data[user_id][args[0]]
-                except: return await ctx.send('Unknown checklist')
+                try:
+                    del self.data[user_id][args[0]]
+                except IndexError:
+                    return await ctx.send('Unknown checklist')
                 await ctx.send('👍')
                 self.save_data()
             else:
                 await ctx.send('Unknown argument passed')
         elif len(args) >= 2:  # adding a task to a checklist
-            checklist = args[0]; args.pop(0)
+            checklist = args[0]
+            args.pop(0)
             if checklist not in self.data[user_id].keys():
                 return await ctx.send('Unknown checklist')
             self.data[user_id][checklist].append([' '.join(args), False])
@@ -79,12 +87,13 @@ class Checklist(commands.Cog):
             e.description = f'Added {" ".join(args)} to {checklist}'
             await ctx.send(embed=e)
             self.save_data()
-        else: # show cmd usage
+        else:  # show cmd usage
             e = discord.Embed(color=colors.orange())
             e.set_author(name='Checklist Usage', icon_url=ctx.author.avatar_url)
             e.set_thumbnail(url=self.bot.user.avatar_url)
             e.description = usage
             await ctx.send(embed=e)
+
 
 def setup(bot):
     bot.add_cog(Checklist(bot))

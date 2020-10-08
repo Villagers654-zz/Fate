@@ -177,12 +177,12 @@ class Events:
 					e.set_author(name=f'welcome {member.name} to {member.guild.name}')
 				if self.useimages[str(member.guild.id)] == 'True':
 					e.set_image(url="attachment://" + os.path.basename(path))
-					if message == None:
+					if message is None:
 						await channel.send(file=discord.File(path, filename=os.path.basename(path)), embed=e)
 					else:
 						await channel.send(message, file=discord.File(path, filename=os.path.basename(path)), embed=e)
 				else:
-					if message == None:
+					if message is None:
 						await channel.send(embed=e)
 					else:
 						await channel.send(message)

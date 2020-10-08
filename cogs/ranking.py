@@ -437,7 +437,7 @@ class Ranking(commands.Cog):
 			return ImageFont.truetype("./utils/fonts/Modern_Sans_Light.otf", size)
 
 		# core
-		path = './static/card.png'
+		_path = './static/card.png'
 		user = ctx.author
 		if ctx.message.mentions:
 			user = ctx.message.mentions[0]
@@ -583,7 +583,7 @@ class Ranking(commands.Cog):
 					frames = []
 					index = 0
 					for frame in ImageSequence.Iterator(background):
-						if count > 40 and count < 100:
+						if 40 < count < 100:
 							if skip:
 								skip = False
 								continue
@@ -622,9 +622,9 @@ class Ranking(commands.Cog):
 				card.save(path, format='PNG')
 			return path
 
-		path = await self.bot.loop.run_in_executor(None, create_card, avatar, status, path, background)
-		type = 'Profile' if 'profile' in ctx.message.content.lower() else 'Rank'
-		await ctx.send(f"> **{type} card for {user}**", file=discord.File(path))
+		_path = await self.bot.loop.run_in_executor(None, create_card, avatar, status, _path, background)
+		ty = 'Profile' if 'profile' in ctx.message.content.lower() else 'Rank'
+		await ctx.send(f"> **{ty} card for {user}**", file=discord.File(_path))
 
 	@commands.command(name="sub-from-lb")
 	@commands.is_owner()

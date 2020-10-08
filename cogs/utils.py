@@ -25,12 +25,12 @@ from utils import colors
 
 
 class Utils(commands.Cog):
-    def __init__(self, bot, Filter, MemoryInfo, Result):
+    def __init__(self, bot, _filter, memory_info, result):
         self.bot = bot
         self.colors = colors
-        self.filter = Filter
-        self.MemoryInfo = MemoryInfo
-        self.Result = Result
+        self.filter = _filter
+        self.MemoryInfo = memory_info
+        self.Result = result
 
     async def verify_user(self, context=None, channel=None, user=None, timeout=45, delete_after=False):
         if not user and not context:
@@ -542,18 +542,18 @@ class Utils(commands.Cog):
             raw = ''.join(x for x in list(timer) if x.isdigit())
             if 'd' in timer:
                 time = int(timer.replace('d', '')) * 60 * 60 * 24
-                repr = 'day'
+                _repr = 'day'
             elif 'h' in timer:
                 time = int(timer.replace('h', '')) * 60 * 60
-                repr = 'hour'
+                _repr = 'hour'
             elif 'm' in timer:
                 time = int(timer.replace('m', '')) * 60
-                repr = 'minute'
+                _repr = 'minute'
             else:  # 's' in timer
                 time = int(timer.replace('s', ''))
-                repr = 'second'
+                _repr = 'second'
             time_to_sleep[0] += time
-            time_to_sleep[1].append(f"{raw} {repr if raw == '1' else repr + 's'}")
+            time_to_sleep[1].append(f"{raw} {_repr if raw == '1' else _repr + 's'}")
         return time_to_sleep
 
     @staticmethod

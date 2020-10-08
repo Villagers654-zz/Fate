@@ -2,7 +2,7 @@ import discord
 from utils import colors, config
 
 
-class HelpMenus():
+class HelpMenus:
     def __init__(self, bot):
         self.bot = bot
 

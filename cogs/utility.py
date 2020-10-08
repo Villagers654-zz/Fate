@@ -61,8 +61,8 @@ class Utility(commands.Cog):
 					dat = json.load(f)  # type: dict
 				except json.JSONDecodeError:
 					bot.log("Utility is retreating to a backup file. The previous is corrupt", "CRITICAL")
-					with open(self.path + '.old') as f:
-						dat = json.load(f)
+					with open(self.path + '.old') as old:
+						dat = json.load(old)
 				self.guild_logs = dat['guild_logs']
 				self.user_logs = dat['user_logs']
 				self.misc_logs = dat['misc_logs']
@@ -285,11 +285,8 @@ class Utility(commands.Cog):
 			e.set_author(name="Alright, here's what I got..", icon_url=self.bot.user.avatar_url)
 
 			channel = target  # type: discord.TextChannel
-			channel_info = {}
+			channel_info = {"Name": channel.name, "ID": channel.id, "Members": str(len(channel.members))}
 
-			channel_info["Name"] = channel.name
-			channel_info["ID"] = channel.id
-			channel_info["Members"] = str(len(channel.members))
 			if channel.category:
 				channel_info["Category"] = f"`{channel.category}`"
 			if channel.is_nsfw():
@@ -394,11 +391,8 @@ class Utility(commands.Cog):
 			if code in self.misc_logs["invites"]:
 				logged = self.misc_logs["invites"][code]
 
-			core = {}
-			core["Guild"] = dat["guild"]["name"]
-			core["GuildID"] = dat["guild"]["id"]
-			core["Channel"] = dat["channel"]["name"]
-			core["ChannelID"] = dat["channel"]["id"]
+			core = {"Guild": dat["guild"]["name"], "GuildID": dat["guild"]["id"], "Channel": dat["channel"]["name"],
+					"ChannelID": dat["channel"]["id"]}
 
 			inviters = []
 			if logged:
@@ -418,17 +412,11 @@ class Utility(commands.Cog):
 			e.set_author(name="Alright, here's what I got..", icon_url=self.bot.user.avatar_url)
 			role = target  # type: discord.Role
 
-			core = {}
-			core["Name"] = role.name
-			core["Mention"] = role.mention
-			core["ID"] = role.id
-			core["Members"] = len(role.members) if role.members else "None"
-			core["Created at"] = role.created_at.strftime("%m/%d/%Y %I%p")
+			core = {"Name": role.name, "Mention": role.mention, "ID": role.id,
+					"Members": len(role.members) if role.members else "None",
+					"Created at": role.created_at.strftime("%m/%d/%Y %I%p")}
 
-			extra = {}
-			extra["Mentionable"] = str(role.mentionable)
-			extra["HEX Color"] = role.color
-			extra["RGB Color"] = role.colour.to_rgb()
+			extra = {"Mentionable": str(role.mentionable), "HEX Color": role.color, "RGB Color": role.colour.to_rgb()}
 			if role.hoist:
 				extra["**Shows Above Other Roles**"] = None
 			if role.managed:
@@ -876,12 +864,12 @@ class Utility(commands.Cog):
 			e.set_author(name=f"#{color}", icon_url=ctx.author.avatar_url)
 			return await ctx.send(embed=e)
 		if len(args) == 1:
-			hex = args[0].strip("#")
-			color = int("0x" + hex, 0)
+			_hex = args[0].strip("#")
+			color = int("0x" + _hex, 0)
 			if color > 16777215:
 				return await ctx.send("That hex value is too large")
 			e = discord.Embed(color=color)
-			e.description = f'#{hex}'
+			e.description = f'#{_hex}'
 			return await ctx.send(embed=e)
 		if not ctx.author.guild_permissions.manage_roles:
 			return await ctx.send('You need manage roles permissions to use this')
@@ -895,14 +883,14 @@ class Utility(commands.Cog):
 		if not role:
 			return await ctx.send('Unknown role')
 		try:
-			hex = discord.Color(int('0x' + args[1].strip('#').strip('0x'), 0))
+			_hex = discord.Color(int('0x' + args[1].strip('#').strip('0x'), 0))
 		except:
 			return await ctx.send('Invalid Hex')
 		if role.position >= ctx.author.top_role.position:
 			return await ctx.send('That roles above your paygrade, take a seat')
 		previous_color = role.color
-		await role.edit(color=hex)
-		await ctx.send(f'Changed {role.name}\'s color from {previous_color} to {hex}')
+		await role.edit(color=_hex)
+		await ctx.send(f'Changed {role.name}\'s color from {previous_color} to {_hex}')
 
 	async def remind(self, user_id, msg, dat):
 		end_time = datetime.strptime(dat['timer'], "%Y-%m-%d %H:%M:%S.%f")
@@ -935,18 +923,18 @@ class Utility(commands.Cog):
 			raw = ''.join(x for x in list(timer) if x.isdigit())
 			if 'd' in timer:
 				time = int(timer.replace('d', '')) * 60 * 60 * 24
-				repr = 'day'
+				_repr = 'day'
 			elif 'h' in timer:
 				time = int(timer.replace('h', '')) * 60 * 60
-				repr = 'hour'
+				_repr = 'hour'
 			elif 'm' in timer:
 				time = int(timer.replace('m', '')) * 60
-				repr = 'minute'
+				_repr = 'minute'
 			else:  # 's' in timer
 				time = int(timer.replace('s', ''))
-				repr = 'second'
+				_repr = 'second'
 			time_to_sleep[0] += time
-			time_to_sleep[1].append(f"{raw} {repr if raw == '1' else repr + 's'}")
+			time_to_sleep[1].append(f"{raw} {_repr if raw == '1' else _repr + 's'}")
 		timer, expanded_timer = time_to_sleep
 
 		user_id = str(ctx.author.id)

@@ -57,8 +57,8 @@ class Menus(commands.Cog, HelpMenus):
                     if isinstance(cmd.usage, discord.Embed):
                         e = cmd.usage
                     elif inspect.isclass(cmd.usage):
-                        help = cmd.usage(self.bot)
-                        e = await help.embed() if help.coro else help.embed()
+                        _help = cmd.usage(self.bot)
+                        e = await _help.embed() if _help.coro else _help.embed()
                     elif inspect.isfunction(cmd.usage):
                         e = cmd.usage()
                     else:

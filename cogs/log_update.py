@@ -231,9 +231,9 @@ class Logger(commands.Cog):
                         embed.fields[i].value = 'None'
                     if len(field.value) > 1024:
                         embed.remove_field(i)
-                        for iter, chunk in enumerate(self.bot.utils.split(field.value, 1024)):
+                        for it, chunk in enumerate(self.bot.utils.split(field.value, 1024)):
                             embed.insert_field_at(
-                                index=i + iter,
+                                index=i + it,
                                 name=field.name,
                                 value=chunk,
                                 inline=field.inline

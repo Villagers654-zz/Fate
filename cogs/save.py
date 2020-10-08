@@ -10,6 +10,7 @@ class ServerSave(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    @staticmethod
     def luck(ctx):
         return ctx.message.author.id == 264838866480005122
 
@@ -105,15 +106,9 @@ class ServerSave(commands.Cog):
                 pass
 
         for channel in ctx.guild.voice_channels:
-            channel_dict = {
-                "name": str(channel.name),
-                "position": str(channel.position),
-                "user_limit": int(channel.user_limit),
-                "bitrate": int(channel.bitrate),
-                "overwrites": [],
-                "category": str(channel.category.name) if channel.category else None
-            }
-            channel_dict["category"] = channel.category.name
+            channel_dict = {"name": str(channel.name), "position": str(channel.position),
+                            "user_limit": int(channel.user_limit), "bitrate": int(channel.bitrate), "overwrites": [],
+                            "category": channel.category.name}
             for overwrite, perms in channel.overwrites.items():
                 overwrite_dict = {
                     "name": str(overwrite.name),

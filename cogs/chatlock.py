@@ -27,11 +27,11 @@ class ChatLock(commands.Cog):
 			if guild_id in self.toggle:
 				toggle = "enabled"
 				channel = ""
-				for id in self.toggle[guild_id]:
+				for _id in self.toggle[guild_id]:
 					if not channel:
-						channel += f"{self.bot.get_channel(id).name}"
+						channel += f"{self.bot.get_channel(_id).name}"
 					else:
-						channel += f", {self.bot.get_channel(id).name}"
+						channel += f", {self.bot.get_channel(_id).name}"
 			e = discord.Embed(color=colors.fate())
 			e.set_author(name="| Chatlock", icon_url=ctx.author.avatar_url)
 			e.set_thumbnail(url=ctx.guild.icon_url)

@@ -46,7 +46,7 @@ class Audit(commands.Cog):
 				break
 			try:
 				e.description += "\n✦ {0.user.name} | {0.action} to {0.target.name}".format(entry).replace("AuditLogAction.", "")
-			except:
+			except discord.DiscordException:
 				e.description += "\n✦ {0.user} | {0.action} to {0.target}".format(entry).replace("AuditLogAction.", "")
 			audit_position += 1
 		e.set_footer(text=f"Total Found: {audit_position} {reached_char_limit}")
@@ -100,7 +100,7 @@ class Audit(commands.Cog):
 				break
 			try:
 				e.description += "\n✦ {0.user.name} | {0.action} to {0.target.name}".format(entry).replace("AuditLogAction.", "")
-			except:
+			except discord.DiscordException:
 				e.description += "\n✦ {0.user} | {0.action} to {0.target}".format(entry).replace("AuditLogAction.", "")
 			finally:
 				position += 1

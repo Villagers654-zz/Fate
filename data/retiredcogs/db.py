@@ -23,7 +23,7 @@ class Test(commands.Cog):
 			if arg:
 				await db.execute("INSERT INTO notes VALUES (:user_id, :note, :created_at)", {'user_id': ctx.author.id, 'note': arg, 'created_at': time()})
 				total_notes = 0
-				for tuple in rows:
+				for tup in rows:
 					total_notes += 1
 				if total_notes > 5:
 					pos = 0

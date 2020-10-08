@@ -61,16 +61,16 @@ class AntiSpam(commands.Cog):
             e.set_author(name='AntiSpam Usage', icon_url=ctx.author.avatar_url)
             e.set_thumbnail(url=ctx.guild.icon_url)
             e.description = '**.anti-spam enable**\n`• enables all anti-spam modules`\n' \
-                '**.anti-spam enable module**\n`• enables a single module`\n' \
-                '**.anti-spam disable**\n`• disables all anti-spam modules`\n' \
-                '**.anti-spam disable module**\n`• disables a single module`\n' \
-                '**.anti-spam alter-sensitivity**\n`• alters anti-spam sensitivity`\n' \
-                '**.anti-spam ignore #channel**\n`• ignores spam in a channel`\n' \
-                '**.anti-spam unignore #channel**\n`• no longer ignores a channels spam`'
+                            '**.anti-spam enable module**\n`• enables a single module`\n' \
+                            '**.anti-spam disable**\n`• disables all anti-spam modules`\n' \
+                            '**.anti-spam disable module**\n`• disables a single module`\n' \
+                            '**.anti-spam alter-sensitivity**\n`• alters anti-spam sensitivity`\n' \
+                            '**.anti-spam ignore #channel**\n`• ignores spam in a channel`\n' \
+                            '**.anti-spam unignore #channel**\n`• no longer ignores a channels spam`'
             modules = '**Rate-Limit:** `sending msgs fast`\n' \
-                '**Mass-Pings:** `mass mentioning users`\n' \
-                '**Anti-Macro:** `using macros for bots`\n' \
-                '**Duplicates:** `copying and pasting`'
+                      '**Mass-Pings:** `mass mentioning users`\n' \
+                      '**Anti-Macro:** `using macros for bots`\n' \
+                      '**Duplicates:** `copying and pasting`'
             e.add_field(name='◈ Modules', value=modules, inline=False)
             guild_id = str(ctx.guild.id)
             if guild_id in self.toggle:
@@ -199,7 +199,6 @@ class AntiSpam(commands.Cog):
             self.sensitivity[guild_id] = 'low'
         await ctx.send(f'Set the sensitivity to {self.sensitivity[guild_id]}')
 
-
     @anti_spam.command(name='ignore')
     @commands.has_permissions(manage_messages=True)
     async def _ignore(self, ctx, channel: discord.TextChannel = None):
@@ -304,10 +303,12 @@ class AntiSpam(commands.Cog):
             if msg.content in duplicates:
                 def pred(m):
                     return m.channel.id == msg.channel.id and m.author.bot
+
                 try:
                     msg = await self.bot.wait_for('message', check=pred, timeout=2)
                 except asyncio.TimeoutError:
-                    data = [(m, m_time) for m, m_time in self.dupez[guild_id] if msg.content == m.content and [m, m_time] in data]
+                    data = [(m, m_time) for m, m_time in self.dupez[guild_id] if
+                            msg.content == m.content and [m, m_time] in data]
                     for m, m_time in data:
                         self.dupez[guild_id].pop(self.dupez[guild_id].index([m, m_time]))
                         if m in self.msgs[str(m.author.id)]:
@@ -398,13 +399,14 @@ class AntiSpam(commands.Cog):
                                 await msg.channel.send("Disabled anti spam, missing required permissions")
                                 await self.save_data()
                             return
-                        mute_role = await msg.guild.create_role(name="Muted", color=discord.Color(colors.black()), hoist=True)
+                        mute_role = await msg.guild.create_role(name="Muted", color=discord.Color(colors.black()),
+                                                                hoist=True)
                         for channel in msg.guild.text_channels:
                             await channel.set_permissions(mute_role, send_messages=False)
                         for channel in msg.guild.voice_channels:
                             await channel.set_permissions(mute_role, speak=False)
-                    #self.roles[user_id] = []
-                    #for role in msg.author.roles:
+                    # self.roles[user_id] = []
+                    # for role in msg.author.roles:
                     #    try:
                     #        await msg.author.remove_roles(role)
                     #        self.roles[user_id].append(role)
@@ -431,7 +433,7 @@ class AntiSpam(commands.Cog):
                     self.msgs[user_id] = []
                     try:
                         await msg.author.send(f"You've been muted for spam in **{msg.guild.name}** for {timer_str}")
-                    except:
+                    except discord.DiscordException:
                         pass
                     await msg.channel.send(f"Temporarily muted `{msg.author.display_name}` for spam")
                 await asyncio.sleep(timer)
@@ -447,15 +449,8 @@ class AntiSpam(commands.Cog):
                             async with msg.channel.typing():
                                 try:
                                     await msg.author.remove_roles(mute_role)
-                                except:
+                                except discord.DiscordException:
                                     pass
-                        #for role in self.roles[user_id]:
-                        #    if role not in msg.author.roles:
-                        #        await asyncio.sleep(1)
-                        #        try:
-                        #            await msg.author.add_roles(role)
-                        #        except:
-                        #            pass
                         await msg.channel.send(f"Unmuted {msg.author.display_name}")
                     del self.status[guild_id][user_id]
 
@@ -467,11 +462,9 @@ class AntiSpam(commands.Cog):
             for role in before.roles:
                 if 'muted' in str(role.name).lower():
                     if role not in after.roles:
-                        #for role in self.roles[user_id]:
-                        #    await before.add_roles(role)
-                        #del self.roles[user_id]
                         del self.status[guild_id][user_id]
                         return
+
 
 def setup(bot):
     bot.add_cog(AntiSpam(bot))

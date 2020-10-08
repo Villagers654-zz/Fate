@@ -409,8 +409,8 @@ class Moderation(commands.Cog):
     @has_required_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True)
     async def beta_purge(self, ctx, *args):
-        help = discord.Embed(color=colors.fate())
-        help.description = '.purge amount\n' \
+        _help = discord.Embed(color=colors.fate())
+        _help.description = '.purge amount\n' \
                            '.purge @user amount\n' \
                            '.purge images amount\n' \
                            '.purge embeds amount\n' \
@@ -419,7 +419,7 @@ class Moderation(commands.Cog):
                            '.purge bots amount\n' \
                            '.purge word/phrase amount'
         if not args or not args[len(args) - 1].isdigit():
-            return await ctx.send(embed=help)
+            return await ctx.send(embed=_help)
 
         args = [str(arg).lower() for arg in args]
         amount_to_purge = int(args[len(args) - 1])
@@ -601,18 +601,18 @@ class Moderation(commands.Cog):
                     raw = ''.join(x for x in list(timer) if x.isdigit())
                     if 'd' in timer:
                         time = int(timer.replace('d', '')) * 60 * 60 * 24
-                        repr = 'day'
+                        _repr = 'day'
                     elif 'h' in timer:
                         time = int(timer.replace('h', '')) * 60 * 60
-                        repr = 'hour'
+                        _repr = 'hour'
                     elif 'm' in timer:
                         time = int(timer.replace('m', '')) * 60
-                        repr = 'minute'
+                        _repr = 'minute'
                     else:  # 's' in timer
                         time = int(timer.replace('s', ''))
-                        repr = 'second'
+                        _repr = 'second'
                     time_to_sleep[0] += time
-                    time_to_sleep[1].append(f"{raw} {repr if raw == '1' else repr + 's'}")
+                    time_to_sleep[1].append(f"{raw} {_repr if raw == '1' else _repr + 's'}")
                 timer, expanded_timer = time_to_sleep
                 expanded_timer = ', '.join(expanded_timer)
 
@@ -760,8 +760,8 @@ class Moderation(commands.Cog):
             e.set_author(name=f"Banning {users_to_ban} user{'' if users_to_ban > 1 else ''}", icon_url=ctx.author.avatar_url)
         e.set_thumbnail(url='https://cdn.discordapp.com/attachments/514213558549217330/514345278669848597/8yx98C.gif')
         msg = await ctx.send(embed=e)
-        for id in ids:
-            member = ctx.guild.get_member(id)
+        for _id in ids:
+            member = ctx.guild.get_member(_id)
             if isinstance(member, discord.Member):
                 if member.top_role.position >= ctx.author.top_role.position:
                     e.add_field(name=f'◈ Failed to ban {member}', value="This users is above your paygrade", inline=False)
@@ -772,9 +772,9 @@ class Moderation(commands.Cog):
                     await msg.edit(embed=e)
                     continue
             try:
-                user = await self.bot.fetch_user(id)
+                user = await self.bot.fetch_user(_id)
             except:
-                e.add_field(name=f'◈ Failed to ban {id}', value="That user doesn't exist", inline=False)
+                e.add_field(name=f'◈ Failed to ban {_id}', value="That user doesn't exist", inline=False)
             else:
                 await ctx.guild.ban(user, reason=f"{ctx.author}: {reason}", delete_message_days=0)
                 e.add_field(name=f'◈ Banned {user}', value=f'Reason: {reason}', inline=False)

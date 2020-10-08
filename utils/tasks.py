@@ -141,9 +141,9 @@ class Tasks:
 				# Copy all data to the ZipFile
 				file_paths = get_all_file_paths("./data")
 				fp = f'backup_{datetime.now()}.zip'
-				with ZipFile(fp, 'w') as zip:
+				with ZipFile(fp, 'w') as _zip:
 					for file in file_paths:
-						zip.write(file)
+						_zip.write(file)
 
 				creds = auth.Backups()
 				cnopts = pysftp.CnOpts()

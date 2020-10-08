@@ -108,9 +108,9 @@ class Emojis(commands.Cog):
         e.set_author(name="Emoji Count", icon_url=ctx.guild.icon_url)
         emojis = [e for e in ctx.guild.emojis if not e.animated]
         a_emojis = [e for e in ctx.guild.emojis if e.animated]
-        max = ctx.guild.emoji_limit
-        e.description = f"🆓 | {len(emojis)}/{max} Normal emotes" \
-                        f"\n💵 | {len(a_emojis)}/{max} Animated emotes"
+        _max = ctx.guild.emoji_limit
+        e.description = f"🆓 | {len(emojis)}/{_max} Normal emotes" \
+                        f"\n💵 | {len(a_emojis)}/{_max} Animated emotes"
         restricted = [e for e in ctx.guild.emojis if e.roles]
         if restricted:
             e.description += f"\n🛑 | {len(restricted)} Restricted emotes"
@@ -213,10 +213,10 @@ class Emojis(commands.Cog):
                 await self.upload_emoji(ctx, name=str(name), img=img, reason=str(ctx.author))
 
         # Image/GIF URLS
-        def check(iter):
-            if iter + 2 > len(args):
+        def check(it):
+            if it + 2 > len(args):
                 return '.'
-            return args[iter + 1]
+            return args[it + 1]
 
         try:
             mappings = {
