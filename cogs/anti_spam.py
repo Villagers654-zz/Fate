@@ -442,11 +442,14 @@ class AntiSpam(commands.Cog):
                     with suppress(Forbidden, NotFound, HTTPException):
                         await msg.channel.delete_messages(messages)
                     self.msgs[user_id] = []
-                    try:
+
+                    with suppress(NotFound, Forbidden, HTTPException):
                         await msg.author.send(f"You've been muted for spam in **{msg.guild.name}** for {timer_str}")
-                    except:
-                        pass
-                    await msg.channel.send(f"Temporarily muted `{msg.author.display_name}` for spam")
+                    mentions = discord.AllowedMentions(users=True)
+                    await msg.channel.send(
+                        f"Temporarily muted {msg.author.mention} for spam",
+                        allowed_mentions=mentions
+                    )
 
                 if "mutes" not in self.bot.tasks:
                     self.bot.tasks["mutes"] = {}
