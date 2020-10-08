@@ -233,6 +233,33 @@ class Utils(commands.Cog):
         return commands.when_mentioned_or(prefixes[guild_id])(bot, msg)
 
     @staticmethod
+    def generate_rainbow_rgb(amount: int) -> list:
+        fixed_colors = [
+            (255, 0, 0),  # Red
+            (255, 127, 0),  # Orange
+            (255, 255, 0),  # Yellow
+            (0, 255, 0),  # Green
+            (0, 0, 255),  # Blue
+            (75, 0, 130),  # Dark Purple
+            (148, 0, 211)  # Purple
+        ]
+        color_array = []
+        for iteration, (r, g, b) in enumerate(fixed_colors):
+            color_array.append((r, g, b))
+            if len(fixed_colors) != iteration + 1:
+                nr, ng, nb = fixed_colors[iteration + 1]
+                divide_into = int(amount / len(fixed_colors)) + 2
+                r_diff = (nr - r) / divide_into
+                g_diff = (ng - g) / divide_into
+                b_diff = (nb - b) / divide_into
+                for i in range(divide_into):
+                    r += r_diff
+                    g += g_diff
+                    b += b_diff
+                    color_array.append((int(r), int(g), int(b)))
+        return color_array
+
+    @staticmethod
     def emojis(emoji):
         if emoji is None:
             return '‎'
