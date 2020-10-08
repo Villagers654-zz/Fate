@@ -212,6 +212,9 @@ class Utility(commands.Cog):
                 "Profile": f"{user.mention}",
                 "ID": user.id,
                 "Created at": user.created_at.strftime("%m/%d/%Y %I%p"),
+                "Shared Servers": str(
+                    len([s for s in self.bot.guilds if user in s.members])
+                )
             }
             nicks = []
             for guild in self.bot.guilds:
@@ -271,10 +274,6 @@ class Utility(commands.Cog):
                         else perms
                     )
                     member_info["Notable Perms"] = f"`{', '.join(perms)}`"
-
-                member_info["Shared Servers"] = str(
-                    len([s for s in self.bot.guilds if user in s.members])
-                )
 
                 # Bot Information
                 if user.bot:  # search the audit log to see who invited the bot
