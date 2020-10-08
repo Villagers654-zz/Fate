@@ -413,6 +413,8 @@ class AntiSpam(commands.Cog):
                             return
 
                         mute_role = await msg.guild.create_role(name="Muted", color=discord.Color(colors.black()), hoist=True)
+                        if guild_id in mod.config:
+                            mod.config[guild_id]["mute_role"] = mute_role.id
                         for channel in msg.guild.text_channels:
                             if channel.permissions_for(bot).manage_channels:
                                 await channel.set_permissions(mute_role, send_messages=False)
