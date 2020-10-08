@@ -232,9 +232,7 @@ class Fate(commands.AutoShardedBot):
         self.open = AsyncFileManager
 
         class WaitForEvent:
-            def __init__(
-                this, event, check=None, channel=None, send_error=True, timeout=60
-            ):
+            def __init__(this, event, check=None, channel=None, send_error=True, timeout=60):
                 this.event = event
                 this.channel = channel
                 this.check = check
@@ -399,14 +397,10 @@ class Fate(commands.AutoShardedBot):
     async def save_json(self, fp, data, mode="w+", **json_kwargs) -> None:
         return await self.utils.save_json(fp, data, mode, **json_kwargs)
 
-    async def wait_for_msg(
-        self, ctx, timeout=60, action="Waiting for message"
-    ) -> Optional[discord.Message]:
+    async def wait_for_msg(self, ctx, timeout=60, action="Waiting for message") -> Optional[discord.Message]:
         return await self.utils.wait_for_msg(ctx, timeout, action)
 
-    async def verify_user(
-        self, context=None, channel=None, user=None, timeout=45, delete_after=False
-    ):
+    async def verify_user(self, context=None, channel=None, user=None, timeout=45, delete_after=False):
         return await self.utils.verify_user(
             context, channel, user, timeout, delete_after
         )
@@ -414,7 +408,6 @@ class Fate(commands.AutoShardedBot):
     async def get_choice(self, ctx, *options, user, timeout=30) -> Optional[object]:
         """ Reaction based menu for users to choose between things """
         return await self.utils.get_choice(ctx, *options, user=user, timeout=timeout)
-
     # -------------------------------------------------------
 
     def run(self):
