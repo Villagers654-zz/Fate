@@ -92,62 +92,8 @@ class Logger(commands.Cog):
 
     async def save_data(self) -> None:
         """ Saves local variables """
-        await self.bot.save_json(self.path, self.config)
-
-    async def handle_echo(self, reader, writer) -> None:
-        """ Manage requests from the web server """
-        async def get(guild_id: str):
-            """ Get a guilds config, or use a template if not exists """
-            if guild_id in self.config:
-                return {
-                    "config": self.config[guild_id],
-                    "successful": True,
-                    "reason": None
-                }
-            return None
-
-        async def push(guild_id: str, data):
-            """ Update or insert a new or updated config """
-            requires_init = guild_id in self.config
-            new_config = data["config"]
-            self.config[guild_id] = new_config
-            await self.save_data()
-            if requires_init:  # Start or restart the queue for the guild
-                if guild_id in self.bot.logger_tasks and not self.bot.logger_tasks[guild_id].done():
-                    self.bot.logger_tasks[guild_id].cancel()
-                task = self.bot.loop.create_task(self.start_queue(guild_id))
-                self.bot.logger_tasks[guild_id] = task
-            return {
-                "successful": True,
-                "reason": None
-            }
-
-        async def remove(guild_id: str):
-            """ Remove a config """
-            if guild_id not in self.config:
-                return_data = {
-                    "successful": False,
-                    "reason": "No existing configuration"
-                }
-            else:
-                if guild_id in self.bot.logger_tasks:
-                    if not self.bot.logger_tasks[guild_id].done():
-                        self.bot.logger_tasks[guild_id].cancel()
-                    del self.bot.logger_tasks[guild_id]
-                del self.config[guild_id]
-                await self.save_data()
-                return_data = {
-                    "successful": True,
-                    "reason": None
-                }
-            return return_data
-
-        await self.bot.handle_tcp(
-            reader, writer,
-            get_coro=get,
-            push_coro=push,
-            remove_coro=remove
-        )
+        async with self.bot.open(self.path, "w+") as f:
+            await f.write(json.dumps(self.config))
 
     async def keep_alive_task(self) -> None:
         self.bot.log("Loggers keep_alive_task was started")
@@ -266,8 +212,6 @@ class Logger(commands.Cog):
                 if index == 60 * 12:
                     del self.config[guild_id]
                     return
-
-            log_type = self.config[guild_id]['type']  # type: str
 
             for embed, channelType, logged_at in self.queue[guild_id][-175:]:
                 list_obj = [embed, channelType, logged_at]
@@ -694,13 +638,6 @@ class Logger(commands.Cog):
                 )
             task = self.bot.loop.create_task(self.keep_alive_task())
             self.bot.logger_tasks["keep_alive_task"] = task
-        if not self.bot.tcp_servers["logger"]:
-            self.bot.tcp_servers["logger"] = await asyncio.start_server(
-                self.handle_echo,
-                host="127.0.0.1",
-                port=self.bot.config["logger_port"],
-                loop=self.bot.loop
-            )
         self.bot.loop.create_task(self.init_invites())
 
     @commands.Cog.listener()
@@ -837,7 +774,7 @@ class Logger(commands.Cog):
             if guild_id in self.config:
                 if self.config[guild_id]['secure']:
                     if msg.embeds and msg.channel.id == self.config[guild_id]['channel'] or (
-                            msg.channel.id in self.config[guild_id]['channels'].values()):
+                            msg.channel.id in self.config[guild_id]['redirects'].keys()):
 
                         await msg.channel.send("OwO what's this", embed=msg.embeds[0])
                         if msg.attachments:
