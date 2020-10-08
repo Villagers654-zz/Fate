@@ -1,13 +1,9 @@
 
-from os import path
 import json
-from time import time, monotonic
-import asyncio
+from os import path
 
-from discord.ext import commands
 import discord
-
-from utils import colors
+from discord.ext import commands
 
 
 class AutoModeration(commands.Cog):

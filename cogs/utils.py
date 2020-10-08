@@ -105,6 +105,7 @@ class Utils(commands.Cog):
 
     async def get_choice(self, ctx, *options, user, name="Select which option", timeout=30) -> Optional[object]:
         """ Reaction based menu for users to choose between things """
+
         async def add_reactions(message) -> None:
             for emoji in emojis:
                 if not message:
@@ -166,18 +167,6 @@ class Utils(commands.Cog):
             # self.log("Tmp file didn't exist, not renaming", "DEBUG")
         # ping = str(round((monotonic() - before) * 1000))
         # self.log(f"Replaced old file in {ping}ms", "DEBUG")
-
-    async def wait_for_msg(self, ctx, timeout=60, action="Waiting for message") -> Optional[discord.Message]:
-        def pred(m):
-            return m.author.id == ctx.author.id and m.channel.id == ctx.channel.id
-
-        try:
-            msg = await self.bot.wait_for('message', check=pred, timeout=timeout)
-        except asyncio.TimeoutError:
-            await ctx.send(f"{action} timed out!")
-            return None
-        else:
-            return msg
 
     @staticmethod
     async def update_msg(msg, new) -> discord.Message:
@@ -732,6 +721,7 @@ class Utils(commands.Cog):
                 if "✅" not in [str(r.emoji) for r in message.reactions]:
                     await message.add_reaction("✅")
 
+
 class Result:
     def __init__(self, result, errored=False, traceback=None):
         self.result = result
@@ -799,6 +789,7 @@ class Filter:
                 print(f"{e}\nMsg: {message}\nPattern: {pattern}")
         return False, None
 
+
 class MemoryInfo:
     @staticmethod
     async def __coro_fetch(interval=0):
@@ -840,7 +831,6 @@ class MemoryInfo:
     @staticmethod
     def global_ram(interval=0):
         return MemoryInfo.__fetch()['GLOBAL']['RAM']['USED']
-
 
 
 def setup(bot):

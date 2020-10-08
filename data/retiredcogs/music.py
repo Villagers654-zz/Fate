@@ -16,11 +16,14 @@ if not discord.opus.is_loaded():
     """
     discord.opus.load_opus('opus')
 
+
 class YTDLError(Exception):
     pass
 
+
 class MusicError(Exception):
     pass
+
 
 class YTDLSource(discord.PCMVolumeTransformer):
     ytdl_opts = {
@@ -151,6 +154,7 @@ class Song:
         img = self.source.thumbnail
         return img
 
+
 class SongQueue(asyncio.Queue):
     def __iter__(self):
         return self._queue.__iter__()
@@ -239,7 +243,7 @@ class VoiceState:
 
 
 class Music:
-
+    @staticmethod
     def luck(ctx):
         return ctx.message.author.id == 264838866480005122
 
@@ -292,7 +296,7 @@ class Music:
         ctx.state.voice = await destination.connect()
 
     @commands.command(name='summon')
-    async def _summon(self, ctx, *, channel: discord.VoiceChannel=None):
+    async def _summon(self, ctx, *, channel: discord.VoiceChannel = None):
         if channel is None and not ctx.author.voice:
             await ctx.send('You are not connected to a voice channel nor specified a channel to join.', delete_after=20)
             await ctx.message.add_reaction("⚠")
@@ -340,7 +344,7 @@ class Music:
             await asyncio.sleep(20)
             return await ctx.message.delete()
         ctx.state.volume = volume / 100
-        e=discord.Embed(color=0x39ff14)
+        e = discord.Embed(color=0x39ff14)
         e.set_author(name=f'set the volume to {volume}%', icon_url=ctx.author.avatar_url)
         await ctx.send(embed=e)
         await ctx.message.delete()
@@ -410,7 +414,7 @@ class Music:
             await ctx.message.delete()
 
     @commands.command(name='queue')
-    async def _queue(self, ctx, *, page: int=1):
+    async def _queue(self, ctx, *, page: int = 1):
         if len(ctx.state.songs) == 0:
             queue = 'Theres nothing in the queue'
             page = 0
@@ -424,8 +428,10 @@ class Music:
             for index, song in enumerate(ctx.state.songs[start:end], start=start):
                 queue += f'**#{index + 1}.** [{song.source.title}]({song.source.url})\n'
         e = discord.Embed(description=f'Tracks: [{len(ctx.state.songs) + 1}]', color=0x39ff14)
-        e.set_author(name="{} Queue".format(ctx.guild.name), icon_url="https://cdn.discordapp.com/attachments/498333830395199488/507136609897021455/Z23N.gif")
-        e.set_thumbnail(url="https://cdn.discordapp.com/attachments/498333830395199488/507170864614342676/75c21df998c0d0c97631853ea5619ea1.gif")
+        e.set_author(name="{} Queue".format(ctx.guild.name),
+                     icon_url="https://cdn.discordapp.com/attachments/498333830395199488/507136609897021455/Z23N.gif")
+        e.set_thumbnail(
+            url="https://cdn.discordapp.com/attachments/498333830395199488/507170864614342676/75c21df998c0d0c97631853ea5619ea1.gif")
         e.add_field(name="◈ Upcoming ◈", value=f'{queue}')
         e.set_footer(text=f'Viewing page {page}/{pages}')
         await ctx.send(embed=e, delete_after=20)
@@ -499,6 +505,7 @@ class Music:
                 await ctx.message.add_reaction("⚠")
                 await asyncio.sleep(20)
                 return await ctx.message.delete()
+
 
 def setup(bot):
     bot.add_cog(Music(bot))

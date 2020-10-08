@@ -1,16 +1,9 @@
-import inspect
-from datetime import datetime
-import platform
 import asyncio
-import random
-import json
-import os
+import inspect
 
-from discord.ext import commands
 import discord
-import psutil
+from discord.ext import commands
 
-from utils import bytes2human as p, config, colors
 from help_embeds import HelpMenus
 
 

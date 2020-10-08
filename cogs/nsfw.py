@@ -1,12 +1,13 @@
+import random
 from random import randint, choice
+
 import aiohttp
+import discord
 from discord.ext import commands
 from pybooru import Danbooru
+
 from utils import colors
-import requests
-import discord
-import random
-import json
+
 
 class NSFW(commands.Cog):
 	def __init__(self, bot):

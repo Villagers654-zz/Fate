@@ -44,15 +44,14 @@ class Fate(commands.AutoShardedBot):
         self.ignored_exit = EmptyException
         self.allow_user_mentions = discord.AllowedMentions(users=True, roles=False, everyone=False)
 
-        self.initial_extensions = [ # Cogs to load pre-login
-            'actions', 'anti_raid', 'anti_spam', 'apis', 'archive', 'audit',
-            'autorole', 'changelog', 'chatfilter', 'chatlock', 'clean_rythm', 'coffeeshop',
-            'config', 'cookies', 'core', 'custom', 'dev', 'dm_channel', 'duel_chat', 'embeds',
-            'emojis', 'error_handler', 'factions', 'farewell', 'fun', 'giveaways', 'global-chat',
-            'limiter', 'lock', 'logger', 'menus', 'minecraft', 'mod', 'notes', 'nsfw', 'polls',
-            'psutil', 'rainbow', 'ranking', 'reactions', 'readme', 'reload', 'responses',
-            'restore_roles', 'rules', 'secure_overwrites', 'selfroles', 'server_list',
-            'server_setup', 'statistics', 'system', 'textart', 'toggles', 'user', 'utility', 'utils', 'verification', 'welcome'
+        self.initial_extensions = [  # Cogs to load pre-login
+            'actions', 'anti_raid', 'anti_spam', 'apis', 'archive', 'audit', 'autorole', 'changelog', 'chatfilter',
+            'chatlock', 'clean_rythm', 'coffeeshop', 'config', 'cookies', 'core', 'custom', 'dev', 'dm_channel',
+            'duel_chat', 'embeds', 'emojis', 'error_handler', 'factions', 'farewell', 'fun', 'giveaways', 'global-chat',
+            'limiter', 'lock', 'logger', 'menus', 'minecraft', 'mod', 'notes', 'nsfw', 'polls', 'psutil', 'rainbow',
+            'ranking', 'reactions', 'readme', 'reload', 'responses', 'restore_roles', 'rules', 'secure_overwrites',
+            'selfroles', 'server_list', 'server_setup', 'statistics', 'system', 'textart', 'toggles', 'user', 'utility',
+            'utils', 'verification', 'welcome'
         ]
 
         self.awaited_extensions = []  # Cogs to load when the internal cache is ready
@@ -64,7 +63,7 @@ class Fate(commands.AutoShardedBot):
             "AntiSpam":     {"help": "antispam",     "enable": "antispam.enable",     "disable": "antispam.disable"},
             "ChatFilter":   {"help": "chatfilter",   "enable": "chatfilter.enable",   "disable": "chatfilter.disable"},
             "ChatLock":     {"help": "chatlock",     "enable": "chatlock.enable",     "disable": "chatlock.disable"},
-            # "ChatBot":      {"help": "chatbot",      "enable": "chatbot.enable",      "disable": "chatbot.disable"},
+            # "ChatBot":    {"help": "chatbot",      "enable": "chatbot.enable",      "disable": "chatbot.disable"},
             "GlobalChat":   {"help": "global-chat",  "enable": "global-chat.enable",  "disable": "global-chat.disable"},
             "Lock":         {"help": None,           "enable": "lock",                "disable": "lock"},
             "Lockb":        {"help": None,           "enable": "lockb",               "disable": "lockb"},
@@ -85,75 +84,75 @@ class Fate(commands.AutoShardedBot):
 
         # ContextManager for quick sql cursor access
         class Cursor:
-            def __init__(cls):
-                cls.conn = None
-                cls.cursor = None
+            def __init__(this):
+                this.conn = None
+                this.cursor = None
 
-            async def __aenter__(cls):
+            async def __aenter__(this):
                 while not self.pool:
                     await asyncio.sleep(0.21)
-                cls.conn = await self.pool.acquire()
-                cls.cursor = await cls.conn.cursor()
-                return cls.cursor
+                this.conn = await self.pool.acquire()
+                this.cursor = await this.conn.cursor()
+                return this.cursor
 
-            async def __aexit__(cls, _type, _value, _tb):
-                await cls.conn.commit()
-                self.pool.release(cls.conn)
+            async def __aexit__(this, _type, _value, _tb):
+                await this.conn.commit()
+                self.pool.release(this.conn)
 
         self.cursor = Cursor
 
         # Async compatible file manager using aiofiles and asyncio.Lock
         class AsyncFileManager:
-            def __init__(cls, file: str, mode: str = "r", lock: bool = True):
-                cls.file = cls.temp_file = file
+            def __init__(this, file: str, mode: str = "r", lock: bool = True):
+                this.file = this.temp_file = file
                 if "w" in mode:
-                    cls.temp_file += ".tmp"
-                cls.mode = mode
-                cls.fp_manager = None
-                cls.lock = lock
+                    this.temp_file += ".tmp"
+                this.mode = mode
+                this.fp_manager = None
+                this.lock = lock
                 if lock and file not in self.locks:
                     self.locks[file] = asyncio.Lock()
 
-            async def __aenter__(cls):
-                if cls.lock:
-                    await self.locks[cls.file].acquire()
-                cls.fp_manager = await aiofiles.open(file=cls.temp_file, mode=cls.mode)
-                return cls.fp_manager
+            async def __aenter__(this):
+                if this.lock:
+                    await self.locks[this.file].acquire()
+                this.fp_manager = await aiofiles.open(file=this.temp_file, mode=this.mode)
+                return this.fp_manager
 
-            async def __aexit__(cls, _exc_type, _exc_value, _exc_traceback):
-                await cls.fp_manager.close()
-                if cls.file != cls.temp_file:
-                    os.rename(cls.temp_file, cls.file)
-                if cls.lock:
-                    self.locks[cls.file].release()
+            async def __aexit__(this, _exc_type, _exc_value, _exc_traceback):
+                await this.fp_manager.close()
+                if this.file != this.temp_file:
+                    os.rename(this.temp_file, this.file)
+                if this.lock:
+                    self.locks[this.file].release()
 
         self.open = AsyncFileManager
 
         class WaitForEvent:
-            def __init__(cls, event, check=None, channel=None, send_error=True, timeout=60):
-                cls.event = event
-                cls.channel = channel
-                cls.check = check
-                cls.send_error = send_error
-                cls.timeout = timeout
+            def __init__(this, event, check=None, channel=None, send_error=True, timeout=60):
+                this.event = event
+                this.channel = channel
+                this.check = check
+                this.send_error = send_error
+                this.timeout = timeout
 
                 ctx = check if isinstance(check, commands.Context) else None
-                if ctx and not cls.channel:
-                    cls.channel = cls.channel
-                if ctx and cls.event == 'message':
-                    cls.check = lambda m: m.author.id == ctx.author.id and m.channel.id == ctx.channel.id
+                if ctx and not this.channel:
+                    this.channel = this.channel
+                if ctx and this.event == 'message':
+                    this.check = lambda m: m.author.id == ctx.author.id and m.channel.id == ctx.channel.id
 
-            async def __aenter__(cls):
+            async def __aenter__(this):
                 try:
-                    message = await self.wait_for(cls.event, check=cls.check, timeout=cls.timeout)
+                    message = await self.wait_for(this.event, check=this.check, timeout=this.timeout)
                 except asyncio.TimeoutError:
-                    if cls.send_error and cls.channel:
-                        await cls.channel.send(f"Timed out waiting for {cls.event}")
+                    if this.send_error and this.channel:
+                        await this.channel.send(f"Timed out waiting for {this.event}")
                     raise self.ignored_exit()
                 else:
                     return message
 
-            async def __aexit__(cls, exc_type, exc_val, exc_tb):
+            async def __aexit__(this, exc_type, exc_val, exc_tb):
                 pass
 
         self.require = WaitForEvent

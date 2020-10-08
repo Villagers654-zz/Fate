@@ -51,7 +51,7 @@ class APIS(commands.Cog):
                 "https://api.tenor.com/v1/anonid?key=%s" % apikey
             ) as r:
                 if r.status == 200:
-                    anon_id = json.loads(r.content)["anon_id"]
+                    anon_id = json.loads(await r.content.read())["anon_id"]
                 else:
                     anon_id = ""
                 async with aiohttp.ClientSession() as session_2:
@@ -61,7 +61,7 @@ class APIS(commands.Cog):
                     ) as rr:
                         if rr.status == 200:
                             try:
-                                dat = json.loads(rr.content)
+                                dat = json.loads(await rr.content.read())
                                 e = discord.Embed(color=colors.random())
                                 e.set_image(
                                     url=dat["results"][

@@ -1,9 +1,10 @@
-from discord.ext import commands
-from os.path import isfile
-import discord
-import asyncio
-import random
 import json
+import random
+from os.path import isfile
+
+import discord
+from discord.ext import commands
+
 
 class Responses(commands.Cog):
 	def __init__(self, bot):

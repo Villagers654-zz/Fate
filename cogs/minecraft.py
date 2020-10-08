@@ -1,12 +1,9 @@
-import requests
-import json
 import os
-import codecs
 import random
-import asyncio
 
-from discord.ext import commands
 import discord
+import requests
+from discord.ext import commands
 
 from utils import colors
 

@@ -12,9 +12,11 @@ class Custom(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 
+	@staticmethod
 	def luck(ctx):
 		return ctx.message.author.id == 264838866480005122
 
+	@staticmethod
 	def tm(ctx):
 		return ctx.author.id in [264838866480005122, 355026215137968129]
 

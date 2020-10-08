@@ -1,3 +1,5 @@
+from typing import Optional
+
 from discord.ext import commands
 import discord
 import asyncio
@@ -93,7 +95,7 @@ class HopefulNoDiscordAPIRapeRainbowRoleCog(commands.Cog):
         try:
             guild = self.bot.get_guild(guild_id)
             if isinstance(guild, discord.Guild):
-                role = None  # type: discord.Role
+                role = None  # type: Optional[discord.Role]
                 for r_tmp in guild.roles:
                     if r_tmp.name == role_name:
                         role = r_tmp

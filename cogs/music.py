@@ -7,6 +7,7 @@ Usage of this cog requires Python 3.6 or higher due to the use of f-strings.
 Compatibility with Python 3.5 should be possible if f-strings are removed.
 """
 import re
+from typing import Optional
 
 import discord
 import lavalink
@@ -92,7 +93,7 @@ class Music(commands.Cog):
             guild_id = int(event.player.guild_id)
             await self.connect_to(guild_id, None)
 
-    async def connect_to(self, guild_id: int, channel_id: str):
+    async def connect_to(self, guild_id: int, channel_id: Optional[str]):
         """ Connects to the given voicechannel ID. A channel_id of `None` means disconnect. """
         ws = self.bot._connection._get_websocket(guild_id)
         await ws.voice_state(str(guild_id), channel_id)
@@ -151,8 +152,8 @@ class Music(commands.Cog):
 
             # You can attach additional information to audiotracks through kwargs, however this involves
             # constructing the AudioTrack class yourself.
-            track = lavalink.models.AudioTrack(track, ctx.author.id, recommended=True)
-            player.add(requester=ctx.author.id, track=track)
+            atrack = lavalink.models.AudioTrack(track, ctx.author.id, recommended=True)
+            player.add(requester=ctx.author.id, track=atrack)
 
         await ctx.send(embed=embed)
 

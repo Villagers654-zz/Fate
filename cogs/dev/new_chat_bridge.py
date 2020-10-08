@@ -74,7 +74,7 @@ class ChatBridge(commands.Cog):
             else:
                 return
 
-            files = [];
+            files = []
             embed = None
             for attachment in msg.attachments:
                 path = os.path.join('static', attachment.filename)

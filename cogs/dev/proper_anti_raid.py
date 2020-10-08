@@ -6,12 +6,6 @@ Discord.Py Cog to Prevent Raids:
 - Invite spam
 """
 
-import asyncio
-from time import time
-from os import path
-import json
-
-import discord
 from discord.ext import commands
 
 

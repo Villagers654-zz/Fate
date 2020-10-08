@@ -1,3 +1,5 @@
+from typing import Optional
+
 from discord.ext import commands
 from os.path import isfile
 import discord
@@ -118,7 +120,7 @@ class Lock(commands.Cog):
 						pass
 					self.cd[member_id] = time.time() + 25
 			if self.lock[guild_id] == "lock-mute":
-				role = None  # type: discord.Role
+				role = None  # type: Optional[discord.Role]
 				for i in m.guild.roles:
 					if i.name.lower() == "muted":
 						role = i

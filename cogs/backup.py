@@ -1,11 +1,13 @@
-from utils import checks, colors, ssh, config
-from discord.ext import commands
-from zipfile import ZipFile
-from time import monotonic
-import subprocess
-import discord
 import asyncio
 import os
+from time import monotonic
+from zipfile import ZipFile
+
+import discord
+from discord.ext import commands
+
+from utils import checks, colors, config
+
 
 class Backup(commands.Cog):
 	def __init__(self, bot):

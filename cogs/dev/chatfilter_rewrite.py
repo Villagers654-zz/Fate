@@ -1,10 +1,9 @@
 import json
-from os import path
-import asyncio
 import re
-from discord.ext import commands
+from os import path
+
 import discord
-from utils.colors import *
+from discord.ext import commands
 
 
 class ChatFilter(commands.Cog):

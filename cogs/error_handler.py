@@ -1,13 +1,12 @@
-from time import time
-import traceback
 import sys
+import traceback
+from time import time
 
-from discord.ext import commands
 import discord
 from aiohttp import ClientConnectorError
+from discord.ext import commands
 
 from utils import colors, checks
-from fate import EmptyException
 
 
 class ErrorHandler(commands.Cog):

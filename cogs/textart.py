@@ -1,9 +1,11 @@
 from discord.ext import commands
 
+
 class textartclass(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 
+	@staticmethod
 	def luck(ctx):
 		return ctx.message.author.id == 264838866480005122
 

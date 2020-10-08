@@ -945,7 +945,7 @@ class Logger(commands.Cog):
                 if msg.channel.id in self.config[guild_id]['ignored_channels']:
                     return
                 if msg.channel.id == self.config[guild_id]["channel"] and not self.config[guild_id]["secure"]:
-                	return
+                    return
 
                 e = discord.Embed(color=purple())
                 dat = await self.search_audit(msg.guild, audit.message_delete)

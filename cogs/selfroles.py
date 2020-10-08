@@ -11,11 +11,11 @@ Self Roles / Reaction Roles
 """
 
 import asyncio
-from os import path, mkdir
 import json
+from os import path
 
-from discord.ext import commands
 import discord
+from discord.ext import commands
 
 from utils import colors
 

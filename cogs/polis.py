@@ -1,10 +1,9 @@
 import asyncio
 import random
-import os
-import aiohttp
-from discord.ext import commands
+
 import discord
-from discord import Webhook, AsyncWebhookAdapter
+from discord.ext import commands
+
 from utils import checks, colors
 
 

@@ -1,10 +1,9 @@
-from discord.ext import commands
-from utils import config
-import discord
 import os
-from os.path import join
-from zipfile import ZipFile
-from utils import auth as outh
+
+import discord
+from discord.ext import commands
+
+from utils import config
 
 
 # def is_guild_owner():

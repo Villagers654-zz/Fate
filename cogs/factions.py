@@ -1,10 +1,13 @@
-from os.path import isfile
+import asyncio
 import json
 import random
-from datetime import datetime, timedelta
-import asyncio
-from discord.ext import commands
+from datetime import datetime
+from os.path import isfile
+from typing import Optional
+
 import discord
+from discord.ext import commands
+
 from utils import colors, checks
 
 
@@ -1125,7 +1128,7 @@ class Factions(commands.Cog):
 				del self.factions[guild_id]['category']
 				await ctx.send('Disabled faction bases')
 				return self.save_data()
-		category = None  # type: discord.CategoryChannel
+		category = None  # type: Optional[discord.CategoryChannel]
 		for channel in ctx.guild.categories:
 			if category_name.lower() in channel.name.lower():
 				category = channel; break

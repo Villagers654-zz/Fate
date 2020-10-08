@@ -1,12 +1,12 @@
-from discord.ext import commands
-from discord.utils import get
-import traceback
-import discord
 import asyncio
-import random
-import psutil
-import sys
 import os
+import random
+import sys
+import traceback
+
+import discord
+import psutil
+from discord.ext import commands
 
 # ~== Core ==~
 
