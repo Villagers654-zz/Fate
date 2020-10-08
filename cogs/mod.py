@@ -662,7 +662,12 @@ class Moderation(commands.Cog):
             if user.top_role.position >= ctx.author.top_role.position:
                 return await ctx.send("That user is above your paygrade, take a seat")
             if mute_role in user.roles:
-                return await ctx.send(f"{user.display_name} is already muted")
+                user_id = str(user.id)
+                if guild_id in self.bot.tasks["mutes"] and user_id in self.bot.tasks["mutes"][guild_id]:
+                    self.bot.tasks["mutes"][guild_id][user_id].cancel()
+                    del self.bot.tasks["mutes"][guild_id][user_id]
+                else:
+                    return await ctx.send(f'{user.display_name} is already muted')
             removed_roles = []
 
             async def ensure_muted():

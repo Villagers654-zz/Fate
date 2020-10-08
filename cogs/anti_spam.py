@@ -6,6 +6,8 @@ from datetime import datetime
 from discord.ext import commands
 import discord
 from utils import colors
+from contextlib import suppress
+from discord.errors import Forbidden, NotFound, HTTPException
 
 
 class AntiSpam(commands.Cog):
@@ -19,7 +21,7 @@ class AntiSpam(commands.Cog):
         self.dupes = {}
         self.dupez = {}
         self.roles = {}
-        self.status = {}
+        self.in_progress = {}
         self.mutes = {}
         self.msgs = {}
 
@@ -27,197 +29,180 @@ class AntiSpam(commands.Cog):
         self.toggle = {}
         self.sensitivity = {}
         self.blacklist = {}
-        self.path = "./data/userdata/anti_spam.json"
-        if not os.path.isdir("./data"):
-            os.mkdir("data")
+        self.path = './data/userdata/anti_spam.json'
+        if not os.path.isdir('./data'):
+            os.mkdir('data')
         if os.path.isfile(self.path):
-            with open(self.path, "r") as f:
+            with open(self.path, 'r') as f:
                 dat = json.load(f)
-                self.toggle = dat["toggle"]
-                self.sensitivity = dat["sensitivity"]
-                self.blacklist = dat["blacklist"]
+                self.toggle = dat['toggle']
+                self.sensitivity = dat['sensitivity']
+                self.blacklist = dat['blacklist']
 
     async def save_data(self):
-        data = {
-            "toggle": self.toggle,
-            "sensitivity": self.sensitivity,
-            "blacklist": self.blacklist,
-        }
+        data = {'toggle': self.toggle, 'sensitivity': self.sensitivity, 'blacklist': self.blacklist}
         await self.bot.save_json(self.path, data)
 
     def init(self, guild_id):
         if guild_id not in self.sensitivity:
-            self.sensitivity[guild_id] = "low"
+            self.sensitivity[guild_id] = 'low'
         self.toggle[guild_id] = {
-            "Rate-Limit": False,
-            "Mass-Pings": False,
-            "Anti-Macro": False,
-            "Duplicates": False,
+            'Rate-Limit': False,
+            'Mass-Pings': False,
+            'Anti-Macro': False,
+            'Duplicates': False
         }
 
-    @commands.group(name="anti-spam", aliases=["antispam"])
+    @commands.group(name='anti-spam', aliases=['antispam'])
     @commands.cooldown(1, 2, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
     async def anti_spam(self, ctx):
-        if not ctx.invoked_subcommand and "help" not in ctx.message.content:
+        if not ctx.invoked_subcommand and 'help' not in ctx.message.content:
             e = discord.Embed(color=colors.fate())
-            e.set_author(name="AntiSpam Usage", icon_url=ctx.author.avatar_url)
+            e.set_author(name='AntiSpam Usage', icon_url=ctx.author.avatar_url)
             e.set_thumbnail(url=ctx.guild.icon_url)
-            e.description = (
-                "**.anti-spam enable**\n`• enables all anti-spam modules`\n"
-                "**.anti-spam enable module**\n`• enables a single module`\n"
-                "**.anti-spam disable**\n`• disables all anti-spam modules`\n"
-                "**.anti-spam disable module**\n`• disables a single module`\n"
-                "**.anti-spam alter-sensitivity**\n`• alters anti-spam sensitivity`\n"
-                "**.anti-spam ignore #channel**\n`• ignores spam in a channel`\n"
-                "**.anti-spam unignore #channel**\n`• no longer ignores a channels spam`"
-            )
-            modules = (
-                "**Rate-Limit:** `sending msgs fast`\n"
-                "**Mass-Pings:** `mass mentioning users`\n"
-                "**Anti-Macro:** `using macros for bots`\n"
-                "**Duplicates:** `copying and pasting`"
-            )
-            e.add_field(name="◈ Modules", value=modules, inline=False)
+            e.description = '**.anti-spam enable**\n`• enables all anti-spam modules`\n' \
+                '**.anti-spam enable module**\n`• enables a single module`\n' \
+                '**.anti-spam disable**\n`• disables all anti-spam modules`\n' \
+                '**.anti-spam disable module**\n`• disables a single module`\n' \
+                '**.anti-spam alter-sensitivity**\n`• alters anti-spam sensitivity`\n' \
+                '**.anti-spam ignore #channel**\n`• ignores spam in a channel`\n' \
+                '**.anti-spam unignore #channel**\n`• no longer ignores a channels spam`'
+            modules = '**Rate-Limit:** `sending msgs fast`\n' \
+                '**Mass-Pings:** `mass mentioning users`\n' \
+                '**Anti-Macro:** `using macros for bots`\n' \
+                '**Duplicates:** `copying and pasting`'
+            e.add_field(name='◈ Modules', value=modules, inline=False)
             guild_id = str(ctx.guild.id)
             if guild_id in self.toggle:
-                conf = ""
+                conf = ''
                 for key, value in self.toggle[guild_id].items():
                     conf += f'**{key}:** `{"enabled" if value else "disabled"}`\n'
-                e.add_field(name="◈ Config", value=conf, inline=False)
+                e.add_field(name='◈ Config', value=conf, inline=False)
             await ctx.send(embed=e)
 
-    @anti_spam.group(name="enable")
+    @anti_spam.group(name='enable')
     @commands.has_permissions(manage_messages=True)
-    @commands.bot_has_permissions(
-        manage_messages=True, manage_roles=True, manage_channels=True
-    )
+    @commands.bot_has_permissions(manage_messages=True, manage_roles=True, manage_channels=True)
     async def _enable(self, ctx):
         if not ctx.invoked_subcommand:
             guild_id = str(ctx.guild.id)
             if guild_id not in self.sensitivity:
-                self.sensitivity[guild_id] = "low"
+                self.sensitivity[guild_id] = 'low'
             self.toggle[guild_id] = {
-                "Rate-Limit": True,
-                "Mass-Pings": True,
-                "Anti-Macro": True,
-                "Duplicates": True,
+                'Rate-Limit': True,
+                'Mass-Pings': True,
+                'Anti-Macro': True,
+                'Duplicates': True
             }
-            await ctx.send("Enabled all anti-spam modules")
+            await ctx.send('Enabled all anti-spam modules')
             await self.save_data()
 
-    @_enable.command(name="rate-limit")
+    @_enable.command(name='rate-limit')
     @commands.has_permissions(manage_messages=True)
     async def _enable_rate_limit(self, ctx):
         guild_id = str(ctx.guild.id)
         if guild_id not in self.toggle:
             self.init(guild_id)
-        self.toggle[guild_id]["Rate-Limit"] = True
-        await ctx.send("Enabled rate-limit module")
+        self.toggle[guild_id]['Rate-Limit'] = True
+        await ctx.send('Enabled rate-limit module')
         await self.save_data()
 
-    @_enable.command(name="mass-pings", aliases=["mass-ping"])
+    @_enable.command(name='mass-pings', aliases=['mass-ping'])
     @commands.has_permissions(manage_messages=True)
     async def _enable_mass_pings(self, ctx):
         guild_id = str(ctx.guild.id)
         if guild_id not in self.toggle:
             self.init(guild_id)
-        self.toggle[guild_id]["Mass-Pings"] = True
-        await ctx.send("Enabled mass-pings module")
+        self.toggle[guild_id]['Mass-Pings'] = True
+        await ctx.send('Enabled mass-pings module')
         await self.save_data()
 
-    @_enable.command(name="anti-macro")
+    @_enable.command(name='anti-macro')
     @commands.has_permissions(manage_messages=True)
     async def _enable_anti_macro(self, ctx):
         guild_id = str(ctx.guild.id)
         if guild_id not in self.toggle:
             self.init(guild_id)
-        self.toggle[guild_id]["Anti-Macro"] = True
-        await ctx.send("Enabled anti-macro module")
+        self.toggle[guild_id]['Anti-Macro'] = True
+        await ctx.send('Enabled anti-macro module')
         await self.save_data()
 
-    @_enable.command(name="duplicates")
+    @_enable.command(name='duplicates')
     @commands.has_permissions(manage_messages=True)
     async def _enable_duplicates(self, ctx):
         guild_id = str(ctx.guild.id)
         if guild_id not in self.toggle:
             self.init(guild_id)
-        self.toggle[guild_id]["Duplicates"] = True
-        await ctx.send("Enabled duplicates module")
+        self.toggle[guild_id]['Duplicates'] = True
+        await ctx.send('Enabled duplicates module')
         await self.save_data()
 
-    @anti_spam.group(name="disable")
+    @anti_spam.group(name='disable')
     @commands.has_permissions(manage_messages=True)
     async def _disable(self, ctx):
         if not ctx.invoked_subcommand:
             guild_id = str(ctx.guild.id)
             if guild_id not in self.toggle:
-                return await ctx.send("Anti-Spam is'nt enabled")
+                return await ctx.send('Anti-Spam is\'nt enabled')
             del self.toggle[guild_id]
             del self.sensitivity[guild_id]
-            await ctx.send("Disabled anti-spam")
+            await ctx.send('Disabled anti-spam')
             await self.save_data()
 
-    @_disable.command(
-        name="rate-limit", aliases=["Rate-Limit", "ratelimit", "RateLimit"]
-    )
+    @_disable.command(name='rate-limit', aliases=['Rate-Limit', 'ratelimit', 'RateLimit'])
     @commands.has_permissions(manage_messages=True)
     async def _disable_rate_limit(self, ctx):
         guild_id = str(ctx.guild.id)
         if guild_id not in self.toggle:
             self.init(guild_id)
-        self.toggle[guild_id]["Rate-Limit"] = False
-        await ctx.send("Disabled rate-limit module")
+        self.toggle[guild_id]['Rate-Limit'] = False
+        await ctx.send('Disabled rate-limit module')
         await self.save_data()
 
-    @_disable.command(
-        name="anti-macro", aliases=["Anti-Macro", "antimacro", "AntiMacro"]
-    )
+    @_disable.command(name='anti-macro', aliases=['Anti-Macro', 'antimacro', 'AntiMacro'])
     @commands.has_permissions(manage_messages=True)
     async def _disable_anti_macro(self, ctx):
         guild_id = str(ctx.guild.id)
         if guild_id not in self.toggle:
             self.init(guild_id)
-        self.toggle[guild_id]["Anti-Macro"] = False
-        await ctx.send("Disabled anti-macro module")
+        self.toggle[guild_id]['Anti-Macro'] = False
+        await ctx.send('Disabled anti-macro module')
         await self.save_data()
 
-    @_disable.command(
-        name="mass-pings", aliases=["Mass-Pings", "masspings", "MassPings"]
-    )
+    @_disable.command(name='mass-pings', aliases=['Mass-Pings', 'masspings', 'MassPings'])
     @commands.has_permissions(manage_messages=True)
     async def _disable_mass_pings(self, ctx):
         guild_id = str(ctx.guild.id)
         if guild_id not in self.toggle:
             self.init(guild_id)
-        self.toggle[guild_id]["Mass-Pings"] = False
-        await ctx.send("Disabled mass-pings module")
+        self.toggle[guild_id]['Mass-Pings'] = False
+        await ctx.send('Disabled mass-pings module')
         await self.save_data()
 
-    @_disable.command(
-        name="duplicates", aliases=["Duplicates", "duplicate", "Duplicate"]
-    )
+    @_disable.command(name='duplicates', aliases=['Duplicates', 'duplicate', 'Duplicate'])
     @commands.has_permissions(manage_messages=True)
     async def _disable_duplicates(self, ctx):
         guild_id = str(ctx.guild.id)
         if guild_id not in self.toggle:
             self.init(guild_id)
-        self.toggle[guild_id]["Duplicates"] = False
-        await ctx.send("Disabled duplicates module")
+        self.toggle[guild_id]['Duplicates'] = False
+        await ctx.send('Disabled duplicates module')
         await self.save_data()
 
-    @anti_spam.command(name="alter-sensitivity")
+    @anti_spam.command(name='alter-sensitivity')
     @commands.has_permissions(manage_messages=True)
     async def _alter_sensitivity(self, ctx):
         guild_id = str(ctx.guild.id)
-        if self.sensitivity[guild_id] == "low":
-            self.sensitivity[guild_id] = "high"
-        elif self.sensitivity[guild_id] == "high":
-            self.sensitivity[guild_id] = "low"
-        await ctx.send(f"Set the sensitivity to {self.sensitivity[guild_id]}")
+        if self.sensitivity[guild_id] == 'low':
+            self.sensitivity[guild_id] = 'high'
+        elif self.sensitivity[guild_id] == 'high':
+            self.sensitivity[guild_id] = 'low'
+        await ctx.send(f'Set the sensitivity to {self.sensitivity[guild_id]}')
 
-    @anti_spam.command(name="ignore")
+
+    @anti_spam.command(name='ignore')
     @commands.has_permissions(manage_messages=True)
     async def _ignore(self, ctx, channel: discord.TextChannel = None):
         guild_id = str(ctx.guild.id)
@@ -226,36 +211,52 @@ class AntiSpam(commands.Cog):
         if not channel:
             channel = ctx.channel
         if channel.id in self.blacklist[guild_id]:
-            return await ctx.send("This channel is already ignored")
+            return await ctx.send('This channel is already ignored')
         self.blacklist[guild_id].append(channel.id)
-        await ctx.send("👍")
+        await ctx.send('👍')
         await self.save_data()
 
-    @anti_spam.command(name="unignore")
+    @anti_spam.command(name='unignore')
     @commands.has_permissions(manage_messages=True)
     async def _unignore(self, ctx, channel: discord.TextChannel = None):
         guild_id = str(ctx.guild.id)
         if guild_id not in self.blacklist:
-            return await ctx.send("This server has no ignored channels")
+            return await ctx.send('This server has no ignored channels')
         if not channel:
             channel = ctx.channel
         if channel.id not in self.blacklist[guild_id]:
-            return await ctx.send("This channel isn't ignored")
+            return await ctx.send('This channel isn\'t ignored')
         index = self.blacklist[guild_id].index(channel.id)
         self.blacklist[guild_id].pop(index)
-        await ctx.send("👍")
+        await ctx.send('👍')
         await self.save_data()
+
+    async def handle_mute(self, channel, mute_role, user, sleep_time: int):
+        with suppress(Forbidden, NotFound, HTTPException):
+            await asyncio.sleep(sleep_time)
+            if user and mute_role and mute_role in user.roles:
+                await user.remove_roles(mute_role)
+                mentions = discord.AllowedMentions(users=True)
+                await channel.send(f"Unmuted **{user.mention}**", allowed_mentions=mentions)
+
+        # Clean up the tasks
+        guild_id = str(channel.guild.id)
+        if guild_id in self.bot.tasks["mutes"]:
+            user_id = str(user.id)
+            if user_id in self.bot.tasks["mutes"][guild_id]:
+                del self.bot.tasks[guild_id][user_id]
+            if not self.bot.tasks["mutes"][guild_id]:
+                del self.bot.tasks["mutes"][guild_id]
 
     @commands.Cog.listener()
     async def on_message(self, msg: discord.Message):
         if not isinstance(msg.guild, discord.Guild) or msg.author.bot:
             return
         guild_id = str(msg.guild.id)
-        channel_id = str(msg.channel.id)
         user_id = str(msg.author.id)
         triggered = False
         if guild_id in self.toggle:
-            sensitivity_level = 3 if self.sensitivity[guild_id] == "low" else 2
+            sensitivity_level = 3 if self.sensitivity[guild_id] == 'low' else 2
             if guild_id in self.blacklist:
                 if msg.channel.id in self.blacklist[guild_id]:
                     return
@@ -277,44 +278,34 @@ class AntiSpam(commands.Cog):
             else:
                 self.spam_cd[guild_id][user_id] = [now, 0]
             if self.spam_cd[guild_id][user_id][1] > sensitivity_level:
-                if self.toggle[guild_id]["Rate-Limit"]:
+                if self.toggle[guild_id]['Rate-Limit']:
                     triggered = True
 
             # mass pings
             mentions = [*msg.mentions, *msg.role_mentions]
-            if (
-                len(mentions) > sensitivity_level + 1
-                or msg.guild.default_role in mentions
-            ):
+            if len(mentions) > sensitivity_level + 1 or msg.guild.default_role in mentions:
                 if msg.guild.default_role in mentions:
-                    if (
-                        mentions.count(msg.guild.default_role) > 1
-                        or len(mentions) > sensitivity_level + 1
-                    ):
-                        if self.toggle[guild_id]["Mass-Pings"]:
+                    if mentions.count(msg.guild.default_role) > 1 or len(mentions) > sensitivity_level + 1:
+                        if self.toggle[guild_id]['Mass-Pings']:
                             triggered = True
                 else:
-                    if self.toggle[guild_id]["Mass-Pings"]:
+                    if self.toggle[guild_id]['Mass-Pings']:
                         triggered = True
 
             # anti macro
             if user_id not in self.macro_cd:
                 self.macro_cd[user_id] = {}
-                self.macro_cd[user_id]["intervals"] = []
-            if "last" not in self.macro_cd[user_id]:
-                self.macro_cd[user_id]["last"] = datetime.now()
+                self.macro_cd[user_id]['intervals'] = []
+            if 'last' not in self.macro_cd[user_id]:
+                self.macro_cd[user_id]['last'] = datetime.now()
             else:
-                last = self.macro_cd[user_id]["last"]
-                self.macro_cd[user_id]["intervals"].append(
-                    (datetime.now() - last).seconds
-                )
-                intervals = self.macro_cd[user_id]["intervals"]
-                self.macro_cd[user_id]["intervals"] = intervals[
-                    -sensitivity_level + 1 :
-                ]
+                last = self.macro_cd[user_id]['last']
+                self.macro_cd[user_id]['intervals'].append((datetime.now() - last).seconds)
+                intervals = self.macro_cd[user_id]['intervals']
+                self.macro_cd[user_id]['intervals'] = intervals[-sensitivity_level + 1:]
                 if len(intervals) > 2:
                     if all(interval == intervals[0] for interval in intervals):
-                        if self.toggle[guild_id]["Anti-Macro"]:
+                        if self.toggle[guild_id]['Anti-Macro']:
                             triggered = True
 
             # duplicate messages
@@ -325,39 +316,27 @@ class AntiSpam(commands.Cog):
             self.dupes[guild_id] = self.dupes[guild_id][:10]
             self.dupez[guild_id].append([msg, time()])
             self.dupez[guild_id] = self.dupes[guild_id][:10]
-            data = [
-                (m, m.content)
-                for m, m_time in self.dupes[guild_id]
-                if m_time > time() - 15
-            ]
+            data = [(m, m.content) for m, m_time in self.dupes[guild_id] if m_time > time() - 15]
             contents = [x[1] for x in data]
             duplicates = [m for m in contents if contents.count(m) > sensitivity_level]
             if msg.content in duplicates:
-
                 def pred(m):
                     return m.channel.id == msg.channel.id and m.author.bot
-
                 try:
-                    msg = await self.bot.wait_for("message", check=pred, timeout=2)
+                    msg = await self.bot.wait_for('message', check=pred, timeout=2)
                 except asyncio.TimeoutError:
-                    data = [
-                        (m, m_time)
-                        for m, m_time in self.dupez[guild_id]
-                        if msg.content == m.content and [m, m_time] in data
-                    ]
+                    data = [(m, m_time) for m, m_time in self.dupez[guild_id] if msg.content == m.content and [m, m_time] in data]
                     for m, m_time in data:
-                        self.dupez[guild_id].pop(
-                            self.dupez[guild_id].index([m, m_time])
-                        )
+                        self.dupez[guild_id].pop(self.dupez[guild_id].index([m, m_time]))
                         if m in self.msgs[str(m.author.id)]:
                             self.msgs[user_id].pop(self.msgs[user_id].index(m))
                     await msg.channel.delete_messages([m[1] for m in data])
-                    if self.toggle[guild_id]["Duplicates"]:
+                    if self.toggle[guild_id]['Duplicates']:
                         triggered = True
-            lines = msg.content.split("\n")
+            lines = msg.content.split('\n')
             lines = [line for line in lines if len(line) > 0]
             if any(lines.count(line) > sensitivity_level for line in lines):
-                if self.toggle[guild_id]["Duplicates"]:
+                if self.toggle[guild_id]['Duplicates']:
                     triggered = True
 
             if msg.guild.id == 397415086295089155:  # currently in testing
@@ -377,18 +356,12 @@ class AntiSpam(commands.Cog):
                 if len(msg.content) > 256 and not has_abcs:
                     triggered = True
                 # Tall msg spam
-                elif (
-                    len(content.split("\n")) > 8
-                    and sum(len(line) for line in lines if line) < 21
-                ):
+                elif len(content.split("\n")) > 8 and sum(len(line) for line in lines if line) < 21:
                     triggered = True
                 elif len(content.split("\n")) > 5 and not has_abcs:
                     triggered = True
                 # Empty lines spam
-                elif (
-                    len([l for l in lines if not l]) > len([l for l in lines if l])
-                    and len(lines) > 8
-                ):
+                elif len([l for l in lines if not l]) > len([l for l in lines if l]) and len(lines) > 8:
                     triggered = True
                 # Mostly unknown chars spam
                 elif len(content) > 128 and len(content) / total_abcs > 3:
@@ -399,78 +372,55 @@ class AntiSpam(commands.Cog):
 
             if triggered:
                 bot = msg.guild.me
-                perms = [perm for perm, value in bot.guild_permissions]
-                if "manage_roles" not in perms or "manage_messages" not in perms:
-                    if msg.channel.permissions_for(bot).send_messages:
-                        del self.toggle[guild_id]
-                        del self.sensitivity[guild_id]
-                        await msg.channel.send(
-                            "Disabled anti spam, missing required permissions"
-                        )
-                        await self.save_data()
+                perms = bot.guild_permissions
+                if not msg.channel.permissions_for(bot).manage_messages:
                     return
-                messages = [
-                    m for m, mtime in self.msgs[user_id] if mtime > time() - 15 and m
-                ]
-                self.msgs[user_id] = []  # removes deleted messages from the list
-                if (
-                    msg.author.top_role.position >= bot.top_role.position
-                    or msg.author.guild_permissions.administrator
-                ):
-                    return await msg.channel.delete_messages(messages)
-                try:
+
+                # Purge away spam
+                messages = [m for m, mtime in self.msgs[user_id] if mtime > time() - 15 and m]
+                self.msgs[user_id] = []  # Remove soon to be deleted messages from the list
+                with suppress(NotFound, Forbidden, HTTPException):
                     await msg.channel.delete_messages(messages)
-                except discord.errors.NotFound:
-                    pass
-                if "send_messages" not in perms:
+
+                # Don't mute users with Administrator
+                if msg.author.top_role.position >= bot.top_role.position or msg.author.guild_permissions.administrator:
                     return
-                if msg.guild.id == 632870495653593099:  # darks server
-                    return  # dont mute, just delete spam
-                if not msg.channel.permissions_for(msg.guild.me).send_messages:
+                # Don't continue if lacking permission(s) to operate
+                if not msg.channel.permissions_for(bot).send_messages or not perms.manage_roles:
                     return
+
                 async with msg.channel.typing():
-                    with open("./data/userdata/mod.json", "r") as f:
-                        dat = json.load(f)  # type: dict
-                        if "timers" in dat:
-                            if user_id in dat["timers"]:
-                                return
-                    if guild_id not in self.status:
-                        self.status[guild_id] = {}
-                    if user_id in self.status[guild_id]:
+                    if guild_id not in self.in_progress:
+                        self.in_progress[guild_id] = []
+                    if user_id in self.in_progress[guild_id]:
                         return
-                    self.status[guild_id][user_id] = "working"
-                    mute_role = discord.utils.get(msg.guild.roles, name="Muted")
+                    self.in_progress[guild_id].append(user_id)
+
+                    # Get, or setup the mute role
+                    mute_role = None
+                    mod = self.bot.cogs["Moderation"]
+                    if guild_id in mod.config and mod.config[guild_id]["mute_role"]:
+                        mute_role = msg.guild.get_role(mod.config[guild_id]["mute_role"])
+                    if not mute_role:
+                        mute_role = discord.utils.get(msg.guild.roles, name="Muted")
                     if not mute_role:
                         mute_role = discord.utils.get(msg.guild.roles, name="muted")
                     if not mute_role:
-                        if "manage_channels" not in perms:
-                            if msg.channel.permissions_for(bot).send_messages:
-                                del self.toggle[guild_id]
-                                del self.sensitivity[guild_id]
-                                await msg.channel.send(
-                                    "Disabled anti spam, missing required permissions"
-                                )
-                                await self.save_data()
+                        if not perms.manage_channels:
+                            del self.toggle[guild_id]
+                            del self.sensitivity[guild_id]
+                            await self.save_data()
                             return
-                        mute_role = await msg.guild.create_role(
-                            name="Muted",
-                            color=discord.Color(colors.black()),
-                            hoist=True,
-                        )
+
+                        mute_role = await msg.guild.create_role(name="Muted", color=discord.Color(colors.black()), hoist=True)
                         for channel in msg.guild.text_channels:
-                            await channel.set_permissions(
-                                mute_role, send_messages=False
-                            )
+                            if channel.permissions_for(bot).manage_channels:
+                                await channel.set_permissions(mute_role, send_messages=False)
                         for channel in msg.guild.voice_channels:
-                            await channel.set_permissions(mute_role, speak=False)
-                    # self.roles[user_id] = []
-                    # for role in msg.author.roles:
-                    #    try:
-                    #        await msg.author.remove_roles(role)
-                    #        self.roles[user_id].append(role)
-                    #        await asyncio.sleep(1)
-                    #    except:
-                    #        pass
+                            if channel.permissions_for(bot).manage_channels:
+                                await channel.set_permissions(mute_role, speak=False)
+
+                    # Increase the mute timer if multiple offenses in the last hour
                     multiplier = 0
                     if guild_id not in self.mutes:
                         self.mutes[guild_id] = {}
@@ -483,49 +433,59 @@ class AntiSpam(commands.Cog):
                         else:
                             index = self.mutes[guild_id][user_id].index(mute_time)
                             self.mutes[guild_id][user_id].pop(index)
+
+                    # Mute and purge any new messages
                     timer = 150 * multiplier
                     timer_str = self.bot.utils.get_time(timer)
                     await msg.author.add_roles(mute_role)
-                    messages = [m for m, mtime in self.msgs[user_id]]
-                    await msg.channel.delete_messages(messages)
+                    messages = [m for m, mtime in self.msgs[user_id] if m]
+                    with suppress(Forbidden, NotFound, HTTPException):
+                        await msg.channel.delete_messages(messages)
                     self.msgs[user_id] = []
                     try:
-                        await msg.author.send(
-                            f"You've been muted for spam in **{msg.guild.name}** for {timer_str}"
-                        )
-                    except discord.DiscordException:
+                        await msg.author.send(f"You've been muted for spam in **{msg.guild.name}** for {timer_str}")
+                    except:
                         pass
-                    await msg.channel.send(
-                        f"Temporarily muted `{msg.author.display_name}` for spam"
+                    await msg.channel.send(f"Temporarily muted `{msg.author.display_name}` for spam")
+
+                if "mutes" not in self.bot.tasks:
+                    self.bot.tasks["mutes"] = {}
+                if guild_id not in self.bot.tasks["mutes"]:
+                    self.bot.tasks["mutes"][guild_id] = {}
+                self.bot.tasks["mutes"][guild_id][user_id] = self.bot.loop.create_task(
+                    self.handle_mute(
+                        channel=msg.channel,
+                        mute_role=mute_role,
+                        user=msg.author,
+                        sleep_time=timer
                     )
-                await asyncio.sleep(timer)
-                if user_id in self.status[guild_id]:
-                    user = msg.guild.get_member(int(user_id))
-                    if isinstance(user, discord.Member):
-                        with open("./data/userdata/mod.json", "r") as f:
-                            dat = json.load(f)  # type: dict
-                            if "timers" in dat:
-                                if user_id in dat["timers"]:
-                                    return
-                        if mute_role in msg.author.roles:
-                            async with msg.channel.typing():
-                                try:
-                                    await msg.author.remove_roles(mute_role)
-                                except discord.DiscordException:
-                                    pass
-                        await msg.channel.send(f"Unmuted {msg.author.display_name}")
-                    del self.status[guild_id][user_id]
+                )
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
         guild_id = str(before.guild.id)
         user_id = str(before.id)
-        if user_id in self.roles:
-            for role in before.roles:
-                if "muted" in str(role.name).lower():
-                    if role not in after.roles:
-                        del self.status[guild_id][user_id]
-                        return
+        if "mutes" not in self.bot.tasks:
+            self.bot.tasks["mutes"] = {}
+        if guild_id in self.bot.tasks["mutes"]:
+            if user_id in self.bot.tasks["mutes"][guild_id]:
+                await asyncio.sleep(5)
+                mute_role = None
+                mod = self.bot.get_cog("Moderation")
+                if not mod:
+                    return
+                if guild_id in mod.config and mod.config[guild_id]["mute_role"]:
+                    mute_role = after.guild.get_role(mod.config[guild_id]["mute_role"])
+                if not mute_role:
+                    mute_role = discord.utils.get(after.guild.roles, name="Muted")
+                if not mute_role:
+                    mute_role = discord.utils.get(after.guild.roles, name="muted")
+                if mute_role not in after.roles:
+                    self.bot.tasks["mutes"][guild_id][user_id].cancel()
+                    del self.bot.tasks["mutes"][guild_id][user_id]
+                    print(f'Cancelled the task for {after}')
+            if not self.bot.tasks["mutes"][guild_id]:
+                del self.bot.tasks["mutes"][guild_id]
 
 
 def setup(bot):
