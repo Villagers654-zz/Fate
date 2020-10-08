@@ -31,8 +31,10 @@ class RestoreRoles(commands.Cog):
             await ctx.send("Disabled restore_roles")
             return self.save_data()
         self.data[guild_id] = {}
-        await ctx.send("**Enabled restore_roles:**\n"
-                       "Adds a users roles back if they leave and rejoin")
+        await ctx.send(
+            "**Enabled restore_roles:**\n"
+            "Adds a users roles back if they leave and rejoin"
+        )
         self.save_data()
 
     @commands.Cog.listener()

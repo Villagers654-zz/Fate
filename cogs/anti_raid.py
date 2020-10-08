@@ -34,19 +34,21 @@ class AntiRaid(commands.Cog):
         guild_id = str(guild.id)
         bot = guild.get_member(self.bot.user.id)
         perms = [perm for perm, value in bot.guild_permissions if value]
-        required = ['view_audit_log', 'ban_members']
+        required = ["view_audit_log", "ban_members"]
         for perm in required:
             if perm not in perms:
                 del self.toggle[guild_id]
                 await self.save_data()
                 for channel in guild.text_channels:
                     if channel.permissions_for(guild.me).send_messages:
-                        await guild.owner.send(f'Disabled anti raid, missing {perm} permissions')
+                        await guild.owner.send(
+                            f"Disabled anti raid, missing {perm} permissions"
+                        )
                         break
                 return False
         return True
 
-    @commands.group(name='antiraid', aliases=['anti_raid'])
+    @commands.group(name="antiraid", aliases=["anti_raid"])
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.has_permissions(embed_links=True)
     async def _anti_raid(self, ctx):
@@ -57,10 +59,12 @@ class AntiRaid(commands.Cog):
             e = discord.Embed(color=colors.red())
             e.set_author(name="Anti Raid", icon_url=ctx.author.avatar_url)
             e.set_thumbnail(url=ctx.guild.icon_url)
-            e.description = 'Prevents mass-join and mass-kick/ban raids'
-            e.add_field(name="Usage", value=
-            ".antiraid enable\n"
-            ".antiraid disable", inline=False)
+            e.description = "Prevents mass-join and mass-kick/ban raids"
+            e.add_field(
+                name="Usage",
+                value=".antiraid enable\n" ".antiraid disable",
+                inline=False,
+            )
             e.set_footer(text=f"Current Status: {toggle}")
             await ctx.send(embed=e)
 
@@ -79,7 +83,7 @@ class AntiRaid(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def _disable(self, ctx):
         if ctx.author.id != ctx.guild.owner.id:
-            return await ctx.send('Only the server owner can disable this')
+            return await ctx.send("Only the server owner can disable this")
         guild_id = str(ctx.guild.id)
         if guild_id not in self.toggle:
             return await ctx.send("Anti raid is not enabled")
@@ -90,7 +94,7 @@ class AntiRaid(commands.Cog):
     @commands.Cog.listener()
     async def on_member_join(self, m: discord.Member):
         """ Prevents mass-join raids """
-        guild_id = str(m.guild.id);
+        guild_id = str(m.guild.id)
         user_id = str(m.id)
         rate_limit = 15
         if guild_id in self.toggle:
@@ -98,10 +102,14 @@ class AntiRaid(commands.Cog):
             if not required_permission:
                 return
             if guild_id in self.locked:
-                await m.guild.ban(m, reason="Server locked due to raid", delete_message_days=0)
+                await m.guild.ban(
+                    m, reason="Server locked due to raid", delete_message_days=0
+                )
                 try:
-                    await m.send(f"**{m.guild.name}** is currently locked due to an "
-                                 f"attempted raid, you can try rejoining in an hour")
+                    await m.send(
+                        f"**{m.guild.name}** is currently locked due to an "
+                        f"attempted raid, you can try rejoining in an hour"
+                    )
                 except discord.DiscordException:
                     pass
                 await asyncio.sleep(3600)
@@ -121,10 +129,15 @@ class AntiRaid(commands.Cog):
             if self.join_cd[guild_id][1] > rate_limit:
                 self.locked.append(guild_id)
                 for junkie in list(
-                        filter(lambda _id: self.last[guild_id][_id] > time() - 15, self.last[guild_id].keys())):
+                    filter(
+                        lambda _id: self.last[guild_id][_id] > time() - 15,
+                        self.last[guild_id].keys(),
+                    )
+                ):
                     await m.guild.ban(junkie, reason="raid")
                     await junkie.send(
-                        f'**{m.guild.name}** is currently locked due to an attempted raid, you can try rejoining in an hour')
+                        f"**{m.guild.name}** is currently locked due to an attempted raid, you can try rejoining in an hour"
+                    )
                 await asyncio.sleep(3600)
                 self.locked.pop(self.locked.index(guild_id))
 
@@ -152,12 +165,16 @@ class AntiRaid(commands.Cog):
                     if self.cd[guild_id][user_id][1] > 2:
                         if m.id == self.bot.user.id:
                             await m.guild.leave()
-                            print(f'Left {m.guild.name} for my user attempting a purge')
+                            print(f"Left {m.guild.name} for my user attempting a purge")
                         if guild_id in self.toggle:
                             required_permission = await self.ensure_permissions(m.guild)
                             if not required_permission:
                                 return
-                            await m.guild.ban(entry.user, reason="Attempted Purge", delete_message_days=0)
+                            await m.guild.ban(
+                                entry.user,
+                                reason="Attempted Purge",
+                                delete_message_days=0,
+                            )
 
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, channel: discord.TextChannel):
@@ -182,9 +199,14 @@ class AntiRaid(commands.Cog):
                             self.cd[guild_id][user_id] = [now, 0]
                         if self.cd[guild_id][user_id][1] > 2:
                             try:
-                                await guild.ban(entry.user, reason="Attempted Purge", delete_message_days=0)
+                                await guild.ban(
+                                    entry.user,
+                                    reason="Attempted Purge",
+                                    delete_message_days=0,
+                                )
                                 await guild.owner.send(
-                                    f"Banned `{entry.user}` in **{guild.name}** for attempting a purge")
+                                    f"Banned `{entry.user}` in **{guild.name}** for attempting a purge"
+                                )
                             except discord.DiscordException:
                                 pass
 
@@ -197,13 +219,17 @@ class AntiRaid(commands.Cog):
                 required_permission = await self.ensure_permissions(guild)
                 if not required_permission:
                     return
-                if 'discord.gg' in guild.name or 'discord,gg' in guild.name:
-                    async for entry in guild.audit_logs(limit=1, action=discord.AuditLogAction.guild_update):
+                if "discord.gg" in guild.name or "discord,gg" in guild.name:
+                    async for entry in guild.audit_logs(
+                        limit=1, action=discord.AuditLogAction.guild_update
+                    ):
                         try:
-                            await guild.ban(entry.user, reason='Attempted Raid')
+                            await guild.ban(entry.user, reason="Attempted Raid")
                         except discord.DiscordException:
                             try:
-                                await guild.owner.send(f'Failed to ban {entry.user} for attempting a raid')
+                                await guild.owner.send(
+                                    f"Failed to ban {entry.user} for attempting a raid"
+                                )
                             except discord.DiscordException:
                                 pass
                         await guild.edit(name=before.name)

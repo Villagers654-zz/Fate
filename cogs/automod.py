@@ -1,4 +1,3 @@
-
 import json
 from os import path
 
@@ -14,11 +13,7 @@ class AutoModeration(commands.Cog):
         if path.isfile(self.path):
             with open(self.path, "r") as f:
                 self.config = json.load(f)
-        self.example_config = {
-            "toggle": False,
-            "spam": False,
-            "raids": False
-        }
+        self.example_config = {"toggle": False, "spam": False, "raids": False}
 
     def save_data(self):
         with open(self.path, "w") as f:
@@ -30,10 +25,13 @@ class AutoModeration(commands.Cog):
         if cog and isinstance(msg.guild, discord.Guild):
             await cog.warn_user(msg.channel, msg.author, "reason")
 
-    @commands.command(name="auto-moderation", aliases=['automod', 'automoderation', 'auto-mod'])
+    @commands.command(
+        name="auto-moderation", aliases=["automod", "automoderation", "auto-mod"]
+    )
     async def auto_moderation(self, ctx):
         await self.bot.utils.configure(self, ctx, self.example_config)
         await ctx.send("alright.")
+
 
 def setup(bot):
     bot.add_cog(AutoModeration(bot))

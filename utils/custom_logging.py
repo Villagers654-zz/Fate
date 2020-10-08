@@ -1,4 +1,3 @@
-
 import asyncio
 from datetime import datetime
 import traceback
@@ -27,8 +26,8 @@ class Logging:
     @property
     def time(self):
         now = str(datetime.now().strftime("%I:%M%p"))
-        if now.startswith('0'):
-            now = now.replace('0', '', 1)
+        if now.startswith("0"):
+            now = now.replace("0", "", 1)
         return now
 
     @tasks.loop(seconds=0.51)
@@ -54,7 +53,9 @@ class Logging:
             if channel:
                 await channel.send(msg)
         except:
-            self.info(f"There was an error in the log queue\n{traceback.format_exc()}\n{msg}")
+            self.info(
+                f"There was an error in the log queue\n{traceback.format_exc()}\n{msg}"
+            )
             await asyncio.sleep(5)
 
     def debug(self, log, *args, **kwargs):
@@ -78,4 +79,6 @@ class Logging:
         log = "\n".join(f"{self.time} | CRITICAL | {line}" for line in log.split("\n"))
         cprint(log, *args, **kwargs)
         owner = self.bot.get_user(self.bot.config["bot_owner_id"])
-        self.queue.append(f"{owner.mention if owner else 'Frick,'} something went wrong```{log}```")
+        self.queue.append(
+            f"{owner.mention if owner else 'Frick,'} something went wrong```{log}```"
+        )

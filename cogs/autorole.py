@@ -18,7 +18,9 @@ class AutoRole(commands.Cog):
     async def save_data(self):
         await self.bot.save_json("./data/userdata/autorole.json", {"roles": self.roles})
 
-    @commands.command(name="autorole", description="Adds x roles to a user when they join")
+    @commands.command(
+        name="autorole", description="Adds x roles to a user when they join"
+    )
     @commands.has_permissions(manage_roles=True)
     @commands.bot_has_permissions(embed_links=True, manage_roles=True)
     async def _autorole(self, ctx, item: commands.clean_content = None):
@@ -28,10 +30,11 @@ class AutoRole(commands.Cog):
         if item is None:
             e.set_author(name="Auto-Role Help", icon_url=self.bot.user.avatar_url)
             e.set_thumbnail(url=ctx.author.avatar_url)
-            e.add_field(name="◈ Usage ◈", value=
-            ".autorole {role}\n"
-            ".autorole list\n"
-            ".autorole clear", inline=False)
+            e.add_field(
+                name="◈ Usage ◈",
+                value=".autorole {role}\n" ".autorole list\n" ".autorole clear",
+                inline=False,
+            )
             return await ctx.send(embed=e)
         if item.lower() == "clear":
             if guild_id not in self.roles:
@@ -97,7 +100,8 @@ class AutoRole(commands.Cog):
                 if role.position >= m.guild.me.top_role.position:
                     try:
                         await m.guild.owner.send(
-                            f"**[AutoRole - {m.guild.name}] Error adding {role.name} to user. Its position is higher than mine")
+                            f"**[AutoRole - {m.guild.name}] Error adding {role.name} to user. Its position is higher than mine"
+                        )
                     except discord.errors.Forbidden:
                         pass
                 else:

@@ -25,10 +25,7 @@ class BetterInviteManager(commands.Cog):
             result = await cur.fetchone()
             if not result:
                 return None
-            data = {
-                "channel": result[0],
-                "format": result[1]
-            }
+            data = {"channel": result[0], "format": result[1]}
             if get_invites:
                 await cur.execute(
                     f"select code, inviters "
@@ -61,7 +58,7 @@ class BetterInviteManager(commands.Cog):
 
     async def add_invite(self, invite: discord.Invite):
         guild_id = invite.guild.id  # type: int
-        data = self.dump({'inviter': invite.inviter.id, 'joins': [], 'leaves': []})
+        data = self.dump({"inviter": invite.inviter.id, "joins": [], "leaves": []})
         async with self.bot.cursor() as cur:
             await cur.execute(
                 f"insert into invite_index "
@@ -87,7 +84,7 @@ class BetterInviteManager(commands.Cog):
                     config["invites"][code] = {
                         "inviter": invite.inviter.id,
                         "joins": [],
-                        "leaves": []
+                        "leaves": [],
                     }
                     if invite.uses:
                         if member.id not in config["invites"][code]:
@@ -100,20 +97,34 @@ class BetterInviteManager(commands.Cog):
                 self.bot.log.debug(f"Couldn't index {member} in {guild}")
             channel = self.bot.get_channel(config["channel"])
             if channel:
-                joins = len(list(filter(
-                    lambda dat: member.id in dat["joins"], config["invites"].values()
-                )))
-                leaves = len(list(filter(
-                    lambda dat: member.id in dat["leaves"], config["invites"].values()
-                )))
-                inviter = self.bot.get_user(config['invites'][code]["invites"])
+                joins = len(
+                    list(
+                        filter(
+                            lambda dat: member.id in dat["joins"],
+                            config["invites"].values(),
+                        )
+                    )
+                )
+                leaves = len(
+                    list(
+                        filter(
+                            lambda dat: member.id in dat["leaves"],
+                            config["invites"].values(),
+                        )
+                    )
+                )
+                inviter = self.bot.get_user(config["invites"][code]["invites"])
                 if not inviter:
-                    inviter = await self.bot.fetch_user(config["invites"][code]["inviter"])
+                    inviter = await self.bot.fetch_user(
+                        config["invites"][code]["inviter"]
+                    )
                 e = discord.Embed(color=colors.fate())
                 e.set_author(name=f"{member} has joined", icon_url=member.avatar_url)
                 e.set_thumbnail(url=inviter.avatar_url)
-                e.description = f"**Inviter:** @{inviter}" \
-                                f"\n**Joins:** `{joins}` **Leaves:** `{leaves}`"
+                e.description = (
+                    f"**Inviter:** @{inviter}"
+                    f"\n**Joins:** `{joins}` **Leaves:** `{leaves}`"
+                )
                 await channel.send(
                     f"{member} has joined, invited by {inviter if inviter else 'Unknown'}"
                 )
@@ -123,9 +134,13 @@ class BetterInviteManager(commands.Cog):
         if not invite.uses:
             config = await self.config(invite.guild.id, get_invites=True)
             if isinstance(config, dict):
-                if invite.code in config["invites"] and not config["invites"][invite.code]["joins"]:
+                if (
+                    invite.code in config["invites"]
+                    and not config["invites"][invite.code]["joins"]
+                ):
                     del config["invites"][invite.code]
                     await self.update_index(invite.guild.id, config["invites"])
+
 
 def setup(bot):
     bot.add_cog(BetterInviteManager(bot))

@@ -1,4 +1,6 @@
 # Fate
+![black](https://img.shields.io/badge/code%20style-black-black)
+
 A multipurpose discord bot
 ## Getting Started
 ### Compatibility

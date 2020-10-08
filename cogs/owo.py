@@ -20,19 +20,19 @@ class HelpMenu:
     async def embed(self):
         owo = await self.bot.fetch_user(408785106942164992)
         e = discord.Embed(color=colors.fate())
-        e.set_author(name='OwO Helper - Usage', icon_url=owo.avatar_url)
-        e.description = 'None yet :]'
+        e.set_author(name="OwO Helper - Usage", icon_url=owo.avatar_url)
+        e.description = "None yet :]"
         return e
 
 
 class OwOBot(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.path = './data/userdata/owo_bot.json'
+        self.path = "./data/userdata/owo_bot.json"
         self.enabled = [470961230362837002]
         self.owo_bot = 408785106942164992
         if path.isfile(self.path):
-            with open(self.path, 'r') as f:
+            with open(self.path, "r") as f:
                 self.enabled = json.load(f)
         self.hunt_bot = {}
         self.hunt = {}
@@ -40,13 +40,14 @@ class OwOBot(commands.Cog):
         self.action = {}
 
     async def save_data(self):
-        async with aiofiles.open('self.path', 'w') as f:
+        async with aiofiles.open("self.path", "w") as f:
             await f.write(json.dumps(self.enabled))
 
     @commands.Cog.listener()
     async def on_message(self, message):
         cooldown = 15
         if message.guild and message.guild.id in self.enabled:
+
             async def wait_for(user_id, *requires, timeout=5, has_embed=False):
                 def pred(m) -> bool:  # predicate
                     if requires and not any(arg in m.content for arg in requires):
@@ -62,30 +63,38 @@ class OwOBot(commands.Cog):
                     return m.author.id == user_id and m.channel.id == message.channel.id
 
                 try:
-                    msg = await self.bot.wait_for('message', check=pred, timeout=timeout)
+                    msg = await self.bot.wait_for(
+                        "message", check=pred, timeout=timeout
+                    )
                 except asyncio.TimeoutError:
                     return None
                 else:
                     return msg
 
             def has(*arguments) -> bool:
-                return any(str(message.content).lower().startswith(arg) for arg in arguments)
+                return any(
+                    str(message.content).lower().startswith(arg) for arg in arguments
+                )
 
-            if has('owoh', 'owohunt'):
-                msg = await wait_for(self.owo_bot, message.author.name + '**, hunt')
+            if has("owoh", "owohunt"):
+                msg = await wait_for(self.owo_bot, message.author.name + "**, hunt")
                 if msg:
-                    if 'increased' in msg.content:
+                    if "increased" in msg.content:
                         cooldown += 15
                     await asyncio.sleep(round(cooldown))
-                    await message.channel.send(f"{message.author.mention}, you can hunt again")
+                    await message.channel.send(
+                        f"{message.author.mention}, you can hunt again"
+                    )
 
-            if has('owob', 'owobattle'):
+            if has("owob", "owobattle"):
                 msg = await wait_for(self.owo_bot, message.author.name, has_embed=True)
                 if msg:
-                    if 'increased' in msg.content:
+                    if "increased" in msg.content:
                         cooldown += 15
                     await asyncio.sleep(round(cooldown))
-                    await message.channel.send(f"{message.author.mention}, you can battle again")
+                    await message.channel.send(
+                        f"{message.author.mention}, you can battle again"
+                    )
 
         # async def get_user(name, cmds):
         #     async for m in msg.channel.history(limit=5):
@@ -111,7 +120,7 @@ class OwOBot(commands.Cog):
         #         await asyncio.sleep(15+cd)
         #         await msg.channel.send(f"{user.mention}, you can hunt again")
 
-    @commands.group(name='owobot')
+    @commands.group(name="owobot")
     @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.bot_has_permissions(embed_links=True)
     async def owo_bot(self, ctx):
@@ -121,7 +130,7 @@ class OwOBot(commands.Cog):
             await ctx.send(embed=e)
             await self.save_data()
 
-    @owo_bot.command(name='enable')
+    @owo_bot.command(name="enable")
     @commands.has_permissions(manage_messages=True)
     async def enable(self, ctx):
         if ctx.guild.id in self.enabled:

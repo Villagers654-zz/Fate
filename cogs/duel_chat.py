@@ -26,8 +26,12 @@ class Owner(commands.Cog):
                             if channel.name == msg.channel.name:
                                 if msg.attachments:
                                     for attachment in msg.attachments:
-                                        await channel.send(f"**{msg.author.name}:** {msg.content}",
-                                                           file=discord.File(requests.get(attachment).content))
+                                        await channel.send(
+                                            f"**{msg.author.name}:** {msg.content}",
+                                            file=discord.File(
+                                                requests.get(attachment).content
+                                            ),
+                                        )
                                     return
                                 await channel.send(f"{msg.content}")
                                 await asyncio.sleep(0.5)
@@ -38,12 +42,19 @@ class Owner(commands.Cog):
                         if channel.name == msg.channel.name:
                             if msg.attachments:
                                 for attachment in msg.attachments:
-                                    await channel.send(f"**{msg.author.name}:** {msg.content}",
-                                                       file=discord.File(requests.get(attachment).content))
+                                    await channel.send(
+                                        f"**{msg.author.name}:** {msg.content}",
+                                        file=discord.File(
+                                            requests.get(attachment).content
+                                        ),
+                                    )
                                 return
                             if msg.embeds:
                                 for embed in msg.embeds:
-                                    await channel.send(f"**{msg.author.name}:** {msg.content}", embed=embed)
+                                    await channel.send(
+                                        f"**{msg.author.name}:** {msg.content}",
+                                        embed=embed,
+                                    )
                                 return
                             await channel.send(f"**{msg.author.name}:** {msg.content}")
             except:

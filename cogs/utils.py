@@ -32,11 +32,17 @@ class Utils(commands.Cog):
         self.MemoryInfo = memory_info
         self.Result = result
 
-    async def verify_user(self, context=None, channel=None, user=None, timeout=45, delete_after=False):
+    async def verify_user(
+        self, context=None, channel=None, user=None, timeout=45, delete_after=False
+    ):
         if not user and not context:
-            raise TypeError("verify_user() requires either 'context' or 'user', and neither was given")
+            raise TypeError(
+                "verify_user() requires either 'context' or 'user', and neither was given"
+            )
         if not channel and not context:
-            raise TypeError("verify_user() requires either 'context' or 'channel', and neither was given")
+            raise TypeError(
+                "verify_user() requires either 'context' or 'channel', and neither was given"
+            )
         if not user:
             user = context.author
         if not channel:
@@ -60,15 +66,22 @@ class Utils(commands.Cog):
             divide = (max_range - lowest_range) / redirections
 
             for _ in range(2):
-                fix_points = [random.choice(range(10, 65)) for _i in range(redirections + 1)]
+                fix_points = [
+                    random.choice(range(10, 65)) for _i in range(redirections + 1)
+                ]
                 color = random.choice(colors)
                 for iteration in range(redirections):
                     line_positions = (
                         # Beginning of line
-                        5 + (divide * iteration), fix_points[iteration],
+                        5 + (divide * iteration),
+                        fix_points[iteration],
                         # End of line
-                        max_range - ((divide * redirections) - sum([divide for _i in range(iteration + 1)])),
-                        fix_points[iteration + 1]
+                        max_range
+                        - (
+                            (divide * redirections)
+                            - sum([divide for _i in range(iteration + 1)])
+                        ),
+                        fix_points[iteration + 1],
                     )
                     draw.line(line_positions, fill=color, width=2)
 
@@ -80,11 +93,15 @@ class Utils(commands.Cog):
         e.set_author(name=str(user), icon_url=user.avatar_url)
         e.set_image(url="attachment://" + fp)
         e.set_footer(text=f"You have {self.get_time(timeout)}")
-        message = await channel.send(f"{user.mention} please verify you're human", embed=e, file=discord.File(fp))
+        message = await channel.send(
+            f"{user.mention} please verify you're human", embed=e, file=discord.File(fp)
+        )
         os.remove(fp)
 
         def pred(m):
-            return m.author.id == user.id and str(m.content).lower() == chars.lower().replace(" ", "")
+            return m.author.id == user.id and str(
+                m.content
+            ).lower() == chars.lower().replace(" ", "")
 
         try:
             await self.bot.wait_for("message", check=pred, timeout=timeout)
@@ -103,7 +120,9 @@ class Utils(commands.Cog):
                 await message.edit(content=None, embed=e)
             return True
 
-    async def get_choice(self, ctx, *options, user, name="Select which option", timeout=30) -> Optional[object]:
+    async def get_choice(
+        self, ctx, *options, user, name="Select which option", timeout=30
+    ) -> Optional[object]:
         """ Reaction based menu for users to choose between things """
 
         async def add_reactions(message) -> None:
@@ -122,19 +141,25 @@ class Utils(commands.Cog):
         def predicate(r, u) -> bool:
             return u.id == user.id and str(r.emoji) in emojis
 
-        emojis = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️"][:len(options)]
+        emojis = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️"][
+            : len(options)
+        ]
         if not user:
             user = ctx.author
 
         e = discord.Embed(color=colors.fate())
         e.set_author(name=name, icon_url=ctx.author.avatar_url)
-        e.description = "\n".join(f"{emojis[i]} {option}" for i, option in enumerate(options))
+        e.description = "\n".join(
+            f"{emojis[i]} {option}" for i, option in enumerate(options)
+        )
         e.set_footer(text=f"You have {self.bot.utils.get_time(timeout)}")
         message = await ctx.send(embed=e)
         self.bot.loop.create_task(add_reactions(message))
 
         try:
-            reaction, _user = await self.bot.wait_for("reaction_add", check=predicate, timeout=timeout)
+            reaction, _user = await self.bot.wait_for(
+                "reaction_add", check=predicate, timeout=timeout
+            )
         except asyncio.TimeoutError:
             await message.delete()
             return None
@@ -177,15 +202,15 @@ class Utils(commands.Cog):
 
     @staticmethod
     def split(text, amount=2000) -> list:
-        return [text[i:i + amount] for i in range(0, len(text), amount)]
+        return [text[i : i + amount] for i in range(0, len(text), amount)]
 
     @staticmethod
     def get_prefix(ctx):
         guild_id = str(ctx.guild.id)
         config = ctx.bot.utils.get_config()  # type: dict
-        p = '.'  # default command prefix
-        if guild_id in config['prefix']:
-            p = config['prefix'][guild_id]
+        p = "."  # default command prefix
+        if guild_id in config["prefix"]:
+            p = config["prefix"][guild_id]
         return p
 
     @staticmethod
@@ -193,32 +218,35 @@ class Utils(commands.Cog):
         conf = Utils.get_config()  # type: dict
         with open("./data/config.json", "r") as f:
             config = json.load(f)  # type: dict
-        if msg.author.id == config['bot_owner_id']:
+        if msg.author.id == config["bot_owner_id"]:
             return commands.when_mentioned_or(".")(bot, msg)
-        if 'blocked' in conf:
-            if msg.author.id in conf['blocked']:
-                return 'lsimhbiwfefmtalol'
+        if "blocked" in conf:
+            if msg.author.id in conf["blocked"]:
+                return "lsimhbiwfefmtalol"
         else:
             bot.log("Blocked key was non existant")
         if not msg.guild:
             return commands.when_mentioned_or(".")(bot, msg)
         guild_id = str(msg.guild.id)
-        if 'restricted' not in conf:
-            conf['restricted'] = {}
-        if guild_id in conf['restricted']:
-            if msg.channel.id in conf['restricted'][guild_id]['channels'] and (
-                    not msg.author.guild_permissions.administrator):
-                return 'lsimhbiwfefmtalol'
-        if 'personal_prefix' not in conf:
-            conf['personal_prefix'] = {}
+        if "restricted" not in conf:
+            conf["restricted"] = {}
+        if guild_id in conf["restricted"]:
+            if msg.channel.id in conf["restricted"][guild_id]["channels"] and (
+                not msg.author.guild_permissions.administrator
+            ):
+                return "lsimhbiwfefmtalol"
+        if "personal_prefix" not in conf:
+            conf["personal_prefix"] = {}
         user_id = str(msg.author.id)
-        if user_id in conf['personal_prefix']:
-            return commands.when_mentioned_or(conf['personal_prefix'][user_id])(bot, msg)
-        if 'prefix' not in conf:
-            conf['prefix'] = {}
-        prefixes = conf['prefix']
+        if user_id in conf["personal_prefix"]:
+            return commands.when_mentioned_or(conf["personal_prefix"][user_id])(
+                bot, msg
+            )
+        if "prefix" not in conf:
+            conf["prefix"] = {}
+        prefixes = conf["prefix"]
         if guild_id not in prefixes:
-            return commands.when_mentioned_or('.')(bot, msg)
+            return commands.when_mentioned_or(".")(bot, msg)
         return commands.when_mentioned_or(prefixes[guild_id])(bot, msg)
 
     @staticmethod
@@ -230,7 +258,7 @@ class Utils(commands.Cog):
             (0, 255, 0),  # Green
             (0, 0, 255),  # Blue
             (75, 0, 130),  # Dark Purple
-            (148, 0, 211)  # Purple
+            (148, 0, 211),  # Purple
         ]
         color_array = []
         for iteration, (r, g, b) in enumerate(fixed_colors):
@@ -251,49 +279,49 @@ class Utils(commands.Cog):
     @staticmethod
     def emojis(emoji):
         if emoji is None:
-            return '‎'
+            return "‎"
         if emoji == "plus":
             return "<:plus:548465119462424595>"
         if emoji == "edited":
             return "<:edited:550291696861315093>"
-        if emoji == 'arrow':
+        if emoji == "arrow":
             date = datetime.utcnow()
             if date.month == 1 and date.day == 26:  # Chinese New Year
-                return '🐉'
+                return "🐉"
             if date.month == 2 and date.day == 14:  # Valentines Day
-                return '❤'
+                return "❤"
             if date.month == 6:  # Pride Month
-                return '<a:arrow:679213991721173012>'
+                return "<a:arrow:679213991721173012>"
             if date.month == 7 and date.day == 4:  # July 4th
-                return '🎆'
+                return "🎆"
             if date.month == 10 and date.day == 31:  # Halloween
-                return '🎃'
+                return "🎃"
             if date.month == 11 and date.day == 26:  # Thanksgiving
-                return '🦃'
+                return "🦃"
             if datetime.month == 12 and date.day == 25:  # Christmas
-                return '🎄'
-            return '<:enter:673955417994559539>'
+                return "🎄"
+            return "<:enter:673955417994559539>"
 
-        if emoji == 'text_channel':
-            return '<:textchannel:679179620867899412>'
-        if emoji == 'voice_channel':
-            return '<:voicechannel:679179727994617881>'
+        if emoji == "text_channel":
+            return "<:textchannel:679179620867899412>"
+        if emoji == "voice_channel":
+            return "<:voicechannel:679179727994617881>"
 
-        if emoji == 'invisible' or emoji is discord.Status.offline:
-            return '<:status_offline:659976011651219462>'
-        if emoji == 'dnd' or emoji is discord.Status.dnd:
-            return '<:status_dnd:659976008627388438>'
-        if emoji == 'idle' or emoji is discord.Status.idle:
-            return '<:status_idle:659976006030983206>'
-        if emoji == 'online' or emoji is discord.Status.online:
-            return '<:status_online:659976003334045727>'
+        if emoji == "invisible" or emoji is discord.Status.offline:
+            return "<:status_offline:659976011651219462>"
+        if emoji == "dnd" or emoji is discord.Status.dnd:
+            return "<:status_dnd:659976008627388438>"
+        if emoji == "idle" or emoji is discord.Status.idle:
+            return "<:status_idle:659976006030983206>"
+        if emoji == "online" or emoji is discord.Status.online:
+            return "<:status_online:659976003334045727>"
 
     def format_dict(self, data: dict, emoji=None) -> str:
         if emoji is None:
-            emoji = self.emojis('arrow') + ' '
+            emoji = self.emojis("arrow") + " "
         elif emoji is False:
-            emoji = ''
-        result = ''
+            emoji = ""
+        result = ""
         for k, v in data.items():
             if v:
                 result += f"\n{emoji}**{k}:** {v}"
@@ -302,15 +330,13 @@ class Utils(commands.Cog):
         return result
 
     def add_field(self, embed, name: str, value: dict, inline=True):
-        embed.add_field(
-            name=f'◈ {name}', value=self.format_dict(value), inline=inline
-        )
+        embed.add_field(name=f"◈ {name}", value=self.format_dict(value), inline=inline)
 
     def avg_color(self, url):
         """Gets an image and returns the average color"""
         if not url:
             return self.colors.fate()
-        im = Image.open(BytesIO(requests.get(url).content)).convert('RGBA')
+        im = Image.open(BytesIO(requests.get(url).content)).convert("RGBA")
         pixels = list(im.getdata())
         r = g = b = c = 0
         for pixel in pixels:
@@ -323,27 +349,27 @@ class Utils(commands.Cog):
         r = r / c
         g = g / c
         b = b / c
-        return eval('0x' + rgb2hex(round(r), round(g), round(b)).replace('#', ''))
+        return eval("0x" + rgb2hex(round(r), round(g), round(b)).replace("#", ""))
 
     @staticmethod
     def total_seconds(now, before):
         secs = str((now - before).total_seconds())
-        return secs[:secs.find('.') + 2]
+        return secs[: secs.find(".") + 2]
 
     @staticmethod
     def get_stats():
-        if not isfile('./data/stats.json'):
-            with open('./data/stats.json', 'w') as f:
-                json.dump({'commands': []}, f, ensure_ascii=False)
-        with open('./data/stats.json', 'r') as stats:
+        if not isfile("./data/stats.json"):
+            with open("./data/stats.json", "w") as f:
+                json.dump({"commands": []}, f, ensure_ascii=False)
+        with open("./data/stats.json", "r") as stats:
             return json.load(stats)
 
     @staticmethod
     def get_config():
-        if not isfile('./data/userdata/config.json'):
-            with open('./data/userdata/config.json', 'w') as f:
+        if not isfile("./data/userdata/config.json"):
+            with open("./data/userdata/config.json", "w") as f:
                 json.dump({}, f, ensure_ascii=False)
-        with open('./data/userdata/config.json', 'r') as f:
+        with open("./data/userdata/config.json", "r") as f:
             return json.load(f)
 
     @staticmethod
@@ -352,14 +378,14 @@ class Utils(commands.Cog):
 
     @staticmethod
     def bytes2human(n):
-        symbols = ('KB', 'MB', 'GB', 'TB', 'PB', 'E', 'Z', 'Y')
+        symbols = ("KB", "MB", "GB", "TB", "PB", "E", "Z", "Y")
         prefix = {}
         for i, s in enumerate(symbols):
             prefix[s] = 1 << (i + 1) * 10
         for s in reversed(symbols):
             if n >= prefix[s]:
                 value = float(n) / prefix[s]
-                return '%.1f%s' % (value, s)
+                return "%.1f%s" % (value, s)
         return "%sB" % n
 
     @staticmethod
@@ -370,17 +396,17 @@ class Utils(commands.Cog):
             content = content if content else msg.content
             for mention in msg.role_mentions:
                 content = content.replace(str(mention), mention.name)
-        content = str(content).replace('@', '@ ')
-        extensions = ['.' + x for x in [c for c in list(content) if c != ' ']]
-        if len(content.split(' ')) > 1:
-            content = content.split(' ')
+        content = str(content).replace("@", "@ ")
+        extensions = ["." + x for x in [c for c in list(content) if c != " "]]
+        if len(content.split(" ")) > 1:
+            content = content.split(" ")
         else:
             content = [content]
         if isinstance(content, list):
             targets = [c for c in content if any(x in c for x in extensions)]
             for target in targets:
-                content[content.index(target)] = '**forbidden-link**'
-        content = ' '.join(content) if len(content) > 1 else content[0]
+                content[content.index(target)] = "**forbidden-link**"
+        content = " ".join(content) if len(content) > 1 else content[0]
         return content
 
     @staticmethod
@@ -395,8 +421,8 @@ class Utils(commands.Cog):
             return usr if usr else ctx.bot.get_user(int(user))
         if user.startswith("<@"):
             for char in list(user):
-                if char not in list('1234567890'):
-                    user = user.replace(str(char), '')
+                if char not in list("1234567890"):
+                    user = user.replace(str(char), "")
             return ctx.guild.get_member(int(user))
         else:
             user = user.lower()
@@ -415,7 +441,9 @@ class Utils(commands.Cog):
         return None
 
     @staticmethod
-    async def get_user_rewrite(ctx, target: str = None) -> Union[discord.User, discord.Member]:
+    async def get_user_rewrite(
+        ctx, target: str = None
+    ) -> Union[discord.User, discord.Member]:
         """ Grab a user by id, name, or username, and convert to Member if possible """
         if not target:
             user = ctx.author
@@ -432,9 +460,13 @@ class Utils(commands.Cog):
             else:
                 target = re.sub("#[0-9]{4}", "", target.lower())
                 results = [
-                    member for member in ctx.guild.members
-                    if (target in member.display_name.lower() if not member.nick
-                        else target in member.name.lower())
+                    member
+                    for member in ctx.guild.members
+                    if (
+                        target in member.display_name.lower()
+                        if not member.nick
+                        else target in member.name.lower()
+                    )
                 ]
                 if len(results) == 1:
                     user = results[0]  # type: discord.Member
@@ -449,15 +481,17 @@ class Utils(commands.Cog):
 
     @staticmethod
     def get_time(seconds):
-        result = ''
+        result = ""
         if seconds < 60:
-            return f'{seconds} seconds'
+            return f"{seconds} seconds"
         total_time = str(timedelta(seconds=seconds))
-        if ',' in total_time:
-            days = str(total_time).replace(' days,', '').split(' ')[0]
-            total_time = total_time.replace(f'{days} day{"s" if int(days) > 1 else ""}, ', '')
-            result += f'{days} days'
-        hours, minutes, seconds = total_time.split(':')
+        if "," in total_time:
+            days = str(total_time).replace(" days,", "").split(" ")[0]
+            total_time = total_time.replace(
+                f'{days} day{"s" if int(days) > 1 else ""}, ', ""
+            )
+            result += f"{days} days"
+        hours, minutes, seconds = total_time.split(":")
         hours = int(hours)
         minutes = int(minutes)
         if hours > 0:
@@ -471,7 +505,7 @@ class Utils(commands.Cog):
         if name.startswith("<@"):
             for char in list(name):
                 if not char.isdigit():
-                    name = name.replace(str(char), '')
+                    name = name.replace(str(char), "")
             return ctx.guild.get_role(int(name))
         else:
             roles = []
@@ -486,32 +520,34 @@ class Utils(commands.Cog):
                 if len(roles) == 1:
                     return roles[0]
                 index = 1
-                role_list = ''
+                role_list = ""
                 for role in roles:
-                    role_list += f'{index} : {role.mention}\n'
+                    role_list += f"{index} : {role.mention}\n"
                     index += 1
                 e = discord.Embed(color=colors.fate(), description=role_list)
-                e.set_author(name='Multiple Roles Found')
-                e.set_footer(text='Reply with the correct role number')
+                e.set_author(name="Multiple Roles Found")
+                e.set_footer(text="Reply with the correct role number")
                 embed = await ctx.send(embed=e)
 
                 def pred(m):
-                    return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+                    return (
+                        m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+                    )
 
                 try:
-                    msg = await ctx.bot.wait_for('message', check=pred, timeout=60)
+                    msg = await ctx.bot.wait_for("message", check=pred, timeout=60)
                 except asyncio.TimeoutError:
-                    await ctx.send('Timeout error', delete_after=5)
+                    await ctx.send("Timeout error", delete_after=5)
                     await embed.delete()
                     return None
                 else:
                     try:
                         role = int(msg.content)
                     except:
-                        await ctx.send('Invalid response')
+                        await ctx.send("Invalid response")
                         return None
                     if role > len(roles):
-                        await ctx.send('Invalid response')
+                        await ctx.send("Invalid response")
                         return None
                     await embed.delete()
                     await msg.delete()
@@ -525,7 +561,7 @@ class Utils(commands.Cog):
             return m.channel.id == ctx.channel.id and m.author.id == user.id
 
         try:
-            msg = await self.bot.wait_for('message', check=pred, timeout=60)
+            msg = await self.bot.wait_for("message", check=pred, timeout=60)
         except asyncio.TimeoutError:
             await ctx.send("Timeout error")
             return False
@@ -534,24 +570,24 @@ class Utils(commands.Cog):
 
     @staticmethod
     def extract_timer(string):
-        timers = re.findall('[0-9]+[smhd]', string)
+        timers = re.findall("[0-9]+[smhd]", string)
         if not timers:
             return None
         time_to_sleep = [0, []]
         for timer in timers:
-            raw = ''.join(x for x in list(timer) if x.isdigit())
-            if 'd' in timer:
-                time = int(timer.replace('d', '')) * 60 * 60 * 24
-                _repr = 'day'
-            elif 'h' in timer:
-                time = int(timer.replace('h', '')) * 60 * 60
-                _repr = 'hour'
-            elif 'm' in timer:
-                time = int(timer.replace('m', '')) * 60
-                _repr = 'minute'
+            raw = "".join(x for x in list(timer) if x.isdigit())
+            if "d" in timer:
+                time = int(timer.replace("d", "")) * 60 * 60 * 24
+                _repr = "day"
+            elif "h" in timer:
+                time = int(timer.replace("h", "")) * 60 * 60
+                _repr = "hour"
+            elif "m" in timer:
+                time = int(timer.replace("m", "")) * 60
+                _repr = "minute"
             else:  # 's' in timer
-                time = int(timer.replace('s', ''))
-                _repr = 'second'
+                time = int(timer.replace("s", ""))
+                _repr = "second"
             time_to_sleep[0] += time
             time_to_sleep[1].append(f"{raw} {_repr if raw == '1' else _repr + 's'}")
         return time_to_sleep
@@ -576,13 +612,13 @@ class Utils(commands.Cog):
                 for attachment in msg.attachments:
                     image_links.append(attachment.url)
             for embed in msg.embeds:
-                if 'image' in embed.to_dict():
-                    image_links.append(embed.to_dict()['image']['url'])
+                if "image" in embed.to_dict():
+                    image_links.append(embed.to_dict()["image"]["url"])
             args = msg.content.split()
             if not args:
                 args = [msg.content]
             for arg in args:
-                if 'https://cdn.discordapp.com/attachments/' in arg:
+                if "https://cdn.discordapp.com/attachments/" in arg:
                     image_links.append(arg)
             return image_links
 
@@ -593,7 +629,7 @@ class Utils(commands.Cog):
             image_links = scrape(msg)
             if image_links:
                 return image_links
-        await ctx.send('No images found in the last 10 msgs')
+        await ctx.send("No images found in the last 10 msgs")
         return image_links
 
     async def configure(self, ctx, options: dict) -> Union[dict, None]:
@@ -604,7 +640,9 @@ class Utils(commands.Cog):
                 return u.id == ctx.author.id and r.message.id == message.id
 
             try:
-                reaction, user = await self.bot.wait_for('reaction_add', check=pred, timeout=60)
+                reaction, user = await self.bot.wait_for(
+                    "reaction_add", check=pred, timeout=60
+                )
             except asyncio.TimeoutError:
                 await message.edit(content="Menu Inactive")
                 return None
@@ -617,11 +655,12 @@ class Utils(commands.Cog):
 
             now = time()
             try:
-                msg = await self.bot.wait_for('message', check=pred, timeout=30)
+                msg = await self.bot.wait_for("message", check=pred, timeout=30)
             except asyncio.TimeoutError:
                 await message.edit(content="Menu Inactive")
                 return None
             else:
+
                 async def remove_msg(msg):
                     await asyncio.sleep(round(time() - now))
                     await msg.delete()
@@ -648,7 +687,7 @@ class Utils(commands.Cog):
                     if i > 0:
                         await asyncio.sleep(1)
                     await message.add_reaction(emoji)
-            for emoji in emojis[:len(options)]:
+            for emoji in emojis[: len(options)]:
                 await message.add_reaction(emoji)
 
         emojis = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️"]
@@ -665,11 +704,11 @@ class Utils(commands.Cog):
         page = 0
 
         def overview():
-            e = discord.Embed(color=0x992d22)
+            e = discord.Embed(color=0x992D22)
             e.description = ""
             for i, (key, value) in enumerate(pages[page].items()):
                 if isinstance(value, list):
-                    value = ' '.join([str(v) for v in value])
+                    value = " ".join([str(v) for v in value])
                 e.description += f"\n{emojis[i]} | {key} - {value}"
             return e
 
@@ -707,19 +746,22 @@ class Utils(commands.Cog):
                     index = emojis.index(str(reaction.emoji))
                     value = pages[page][list(pages[page].keys())[index]]
                     if isinstance(value, bool):
-                        pages[page][list(pages[page].keys())[index]] = False if value else True
+                        pages[page][list(pages[page].keys())[index]] = (
+                            False if value else True
+                        )
                         await message.edit(embed=overview())
                         break
                     await ctx.send(
                         f"Send the new value for {list(pages[page].keys())[index]} in the same format as it's listed",
-                        delete_after=30)
+                        delete_after=30,
+                    )
                     msg = await wait_for_msg()
                     if not msg:
                         return None
                     msg = await ctx.channel.fetch_message(msg.id)
-                    if isinstance(value, list) and '[' not in msg.content:
-                        if ',' in msg.content:
-                            msg.content = msg.content.split(', ')
+                    if isinstance(value, list) and "[" not in msg.content:
+                        if "," in msg.content:
+                            msg.content = msg.content.split(", ")
                         else:
                             msg.content = msg.content.split()
                         new_value = [literal_eval(x) for x in msg.content]
@@ -735,7 +777,8 @@ class Utils(commands.Cog):
                             if type(v) != type(new_value[i]):
                                 await ctx.send(
                                     f"Invalid format at `{discord.utils.escape_markdown(new_value[i])}`\nPlease retry",
-                                    delete_after=5)
+                                    delete_after=5,
+                                )
                                 await msg.delete()
                                 invalid = True
                                 break
@@ -760,14 +803,42 @@ class Filter:
     def __init__(self):
         self._blacklist = []
         self.index = {
-            "a": ['\\@', '4'], "b": [], "c": [], "d": [], "e": ['3'],
-            "f": [], "g": [], "h": [], "i": ['\\!', '1'], "j": [],
-            "k": [], "l": [], "m": [], "n": [], "o": ["0", "\\(\\)", "\\[\\]"],
-            "p": [], "q": [], "r": [], "s": ['\\$'], "t": [],
-            "u": [], "v": [], "w": [], "x": [], "y": [],
-            "z": [], "0": [], "1": [], "2": [], "3": [],
-            "4": [], "5": [], "6": [], "7": [], "8": [],
-            "9": []
+            "a": ["\\@", "4"],
+            "b": [],
+            "c": [],
+            "d": [],
+            "e": ["3"],
+            "f": [],
+            "g": [],
+            "h": [],
+            "i": ["\\!", "1"],
+            "j": [],
+            "k": [],
+            "l": [],
+            "m": [],
+            "n": [],
+            "o": ["0", "\\(\\)", "\\[\\]"],
+            "p": [],
+            "q": [],
+            "r": [],
+            "s": ["\\$"],
+            "t": [],
+            "u": [],
+            "v": [],
+            "w": [],
+            "x": [],
+            "y": [],
+            "z": [],
+            "0": [],
+            "1": [],
+            "2": [],
+            "3": [],
+            "4": [],
+            "5": [],
+            "6": [],
+            "7": [],
+            "8": [],
+            "9": [],
         }
 
     @property
@@ -783,21 +854,28 @@ class Filter:
             pattern = ""
             try:
                 if len(phrase) > 3:
-                    message = message.replace(' ', '')
+                    message = message.replace(" ", "")
                 message = str(message).lower()
-                chunks = message.replace(' ', '').split()
+                chunks = message.replace(" ", "").split()
                 if phrase in chunks:
                     return True, phrase
-                if not len(list(filter(lambda char: char in message, list(phrase)))) > 1:
+                if (
+                    not len(list(filter(lambda char: char in message, list(phrase))))
+                    > 1
+                ):
                     continue
                 if any(char not in self.index.keys() for char in phrase):
                     pattern = ""
                     for char in phrase:
                         if char in self.index and self.index[char]:
-                            main_char = char if char in self.index.keys() else f"\\{char}"
+                            main_char = (
+                                char if char in self.index.keys() else f"\\{char}"
+                            )
                             singles = [c for c in self.index[char] if len(c) == 1]
                             multi = [c for c in self.index[char] if len(c) > 1]
-                            pattern += f"([{main_char}{''.join(f'{c}' for c in singles)}]"
+                            pattern += (
+                                f"([{main_char}{''.join(f'{c}' for c in singles)}]"
+                            )
                             if singles and multi:
                                 pattern += "|"
                             if multi:
@@ -820,7 +898,11 @@ class Filter:
 class MemoryInfo:
     @staticmethod
     async def __coro_fetch(interval=0):
-        p = subprocess.Popen(f'python3 memory_info.py {os.getpid()} {interval}', stdout=subprocess.PIPE, shell=True)
+        p = subprocess.Popen(
+            f"python3 memory_info.py {os.getpid()} {interval}",
+            stdout=subprocess.PIPE,
+            shell=True,
+        )
         await asyncio.sleep(1)
         (output, err) = p.communicate()
         output = output.decode()
@@ -828,7 +910,11 @@ class MemoryInfo:
 
     @staticmethod
     def __fetch(interval=1):
-        p = subprocess.Popen(f'python3 memory_info.py {os.getpid()} {interval}', stdout=subprocess.PIPE, shell=True)
+        p = subprocess.Popen(
+            f"python3 memory_info.py {os.getpid()} {interval}",
+            stdout=subprocess.PIPE,
+            shell=True,
+        )
         (output, err) = p.communicate()
         output = output.decode()
         return json.loads(output)
@@ -840,27 +926,25 @@ class MemoryInfo:
     @staticmethod
     async def cpu(interval=1):
         mem = await MemoryInfo.__coro_fetch(interval)
-        return mem['PID']['CPU']
+        return mem["PID"]["CPU"]
 
     @staticmethod
     def ram(interval=0):
-        return MemoryInfo.__fetch(interval)['PID']['RAM']['RSS']
+        return MemoryInfo.__fetch(interval)["PID"]["RAM"]["RSS"]
 
     @staticmethod
     async def cpu_info(interval=1):
         mem = await MemoryInfo.__coro_fetch(interval)
-        return {'global': mem['GLOBAL']['CPU'], 'bot': mem['PID']['CPU']}
+        return {"global": mem["GLOBAL"]["CPU"], "bot": mem["PID"]["CPU"]}
 
     @staticmethod
     def global_cpu(interval=1):
-        return MemoryInfo.__fetch(interval)['GLOBAL']['CPU']
+        return MemoryInfo.__fetch(interval)["GLOBAL"]["CPU"]
 
     @staticmethod
     def global_ram(interval=0):
-        return MemoryInfo.__fetch()['GLOBAL']['RAM']['USED']
+        return MemoryInfo.__fetch()["GLOBAL"]["RAM"]["USED"]
 
 
 def setup(bot):
-    bot.add_cog(Utils(
-        bot, Filter, MemoryInfo, Result
-    ))
+    bot.add_cog(Utils(bot, Filter, MemoryInfo, Result))

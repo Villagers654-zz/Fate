@@ -58,7 +58,7 @@ class SafePolls(commands.Cog):
             "channel_id": channel_id,
             "user_id": user_id,
             "question": decode64(question.encode()).decode(),
-            "votes": json.loads(decode64(votes.encode()).decode())
+            "votes": json.loads(decode64(votes.encode()).decode()),
         }
 
     async def update_poll(self, msg_id: int) -> None:
@@ -83,6 +83,7 @@ class SafePolls(commands.Cog):
 
     async def wait_for_termination(self, channel_id, msg_id, end_time: float) -> None:
         """Sleep until the timer ends and close the poll"""
+
         async def delete(msg_id) -> None:
             async with self.bot.cursor() as cur:
                 await cur.execute(f"delete from polls where msg_id = {msg_id} limit 1;")
@@ -112,13 +113,17 @@ class SafePolls(commands.Cog):
             await msg.clear_reactions()
         await delete(msg_id)
 
-    @commands.command(name="poll", aliases=["safepoll", "safe_poll", "createpoll", "create-poll"])
+    @commands.command(
+        name="poll", aliases=["safepoll", "safe_poll", "createpoll", "create-poll"]
+    )
     @commands.cooldown(2, 5, commands.BucketType.user)
     async def safe_poll(self, ctx, *, question):
         """Start the setup process for creating a poll"""
 
         # Get the wanted duration of the poll (Max 30 days)
-        message = await ctx.send("How long should the poll last? (in the format of 5m, 1h, 7d, etc)")
+        message = await ctx.send(
+            "How long should the poll last? (in the format of 5m, 1h, 7d, etc)"
+        )
         timer = None
         instructions = "the `m` in `5m` stands for 5 minutes, the `h` stands for hours, and the `d` stands for days"
         while not timer:
@@ -126,10 +131,14 @@ class SafePolls(commands.Cog):
                 result = self.bot.utils.extract_timer(msg.content)
                 if not result:
                     await ctx.send(
-                        f"Couldn't find any timers in that, remember {instructions}. Please retry", delete_after=30
+                        f"Couldn't find any timers in that, remember {instructions}. Please retry",
+                        delete_after=30,
                     )
                 elif result[0] > 60 * 60 * 24 * 30:  # 30 Days
-                    await ctx.send("You can't pick a time greater than 30 days, please retry", delete_after=16)
+                    await ctx.send(
+                        "You can't pick a time greater than 30 days, please retry",
+                        delete_after=16,
+                    )
                 else:
                     timer = result[0]
                 await msg.delete()
@@ -137,14 +146,19 @@ class SafePolls(commands.Cog):
         await message.delete()
 
         # Get the wanted amount of reactions to add for users to vote with
-        message = await ctx.send("How many reactions should I add? If set to '2' I'll use yes/no reactions")
+        message = await ctx.send(
+            "How many reactions should I add? If set to '2' I'll use yes/no reactions"
+        )
         reaction_count = None
         while not reaction_count:
             async with self.bot.require("message", ctx) as msg:
                 if not msg.content.isdigit():
                     await ctx.send("That's not a number, please retry", delete_after=30)
                 elif int(msg.content) > 9:
-                    await ctx.send("You can't choose a reaction count greater than 9", delete_after=16)
+                    await ctx.send(
+                        "You can't choose a reaction count greater than 9",
+                        delete_after=16,
+                    )
                 else:
                     reaction_count = int(msg.content)
                 await msg.delete()
@@ -156,18 +170,49 @@ class SafePolls(commands.Cog):
         while not channel:
             async with self.bot.require("message", ctx) as msg:
                 if not msg.channel_mentions:
-                    await ctx.send(f"Retry, but mention the channel like this: {ctx.channel.mention}", delete_after=16)
-                elif not msg.channel_mentions[0].permissions_for(ctx.guild.me).send_messages:
-                    await ctx.send("I'm missing perms to send messages in there, you can fix and retry", delete_after=16)
-                elif not msg.channel_mentions[0].permissions_for(ctx.guild.me).embed_links:
-                    await ctx.send("I'm missing perms to send embeds there, you can fix and retry", delete_after=16)
-                elif not msg.channel_mentions[0].permissions_for(ctx.guild.me).add_reactions:
-                    await ctx.send("I'm missing perms to add reactions there, you can fix and retry", delete_after=16)
+                    await ctx.send(
+                        f"Retry, but mention the channel like this: {ctx.channel.mention}",
+                        delete_after=16,
+                    )
+                elif (
+                    not msg.channel_mentions[0]
+                    .permissions_for(ctx.guild.me)
+                    .send_messages
+                ):
+                    await ctx.send(
+                        "I'm missing perms to send messages in there, you can fix and retry",
+                        delete_after=16,
+                    )
+                elif (
+                    not msg.channel_mentions[0]
+                    .permissions_for(ctx.guild.me)
+                    .embed_links
+                ):
+                    await ctx.send(
+                        "I'm missing perms to send embeds there, you can fix and retry",
+                        delete_after=16,
+                    )
+                elif (
+                    not msg.channel_mentions[0]
+                    .permissions_for(ctx.guild.me)
+                    .add_reactions
+                ):
+                    await ctx.send(
+                        "I'm missing perms to add reactions there, you can fix and retry",
+                        delete_after=16,
+                    )
                 else:
-                    if msg.channel_mentions[0].permissions_for(ctx.author).send_messages:
+                    if (
+                        msg.channel_mentions[0]
+                        .permissions_for(ctx.author)
+                        .send_messages
+                    ):
                         channel = msg.channel_mentions[0]
                     else:
-                        await ctx.send("You can't send in that channel, please select another", delete_after=16)
+                        await ctx.send(
+                            "You can't send in that channel, please select another",
+                            delete_after=16,
+                        )
                 await msg.delete()
         await message.delete()
 
@@ -200,13 +245,13 @@ class SafePolls(commands.Cog):
             await cur.execute(
                 f"insert into polls "
                 f"values ("
-                f"{channel.id}, "      # channel_id: int
-                f"{ctx.author.id}, "   # user_id: int
-                f"'{question}', "      # question: str
-                f"{poll_msg.id}, "     # msg_id: int
+                f"{channel.id}, "  # channel_id: int
+                f"{ctx.author.id}, "  # user_id: int
+                f"'{question}', "  # question: str
+                f"{poll_msg.id}, "  # msg_id: int
                 f"{reaction_count}, "  # reaction_count: int
-                f"{end_time}, "        # end_time: bool
-                f"'{vote_index}'"      # votes: str
+                f"{end_time}, "  # end_time: bool
+                f"'{vote_index}'"  # votes: str
                 f");"
             )
 
@@ -241,7 +286,9 @@ class SafePolls(commands.Cog):
             await msg.remove_reaction(payload.emoji, user)
 
             # Dump changes to sql
-            vote_index = encode64(json.dumps(self.cache[msg_id]["votes"]).encode()).decode()
+            vote_index = encode64(
+                json.dumps(self.cache[msg_id]["votes"]).encode()
+            ).decode()
             async with self.bot.pool.acquire() as conn:
                 async with conn.cursor() as cur:
                     await cur.execute(

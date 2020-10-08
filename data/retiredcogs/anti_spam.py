@@ -23,12 +23,12 @@ class AntiSpam(commands.Cog):
                 dat = json.load(f)
                 if "toggle" in dat:
                     self.toggle = dat["toggle"]
-                if 'blacklist' in dat:
-                    self.blacklist = dat['blacklist']
+                if "blacklist" in dat:
+                    self.blacklist = dat["blacklist"]
 
     def save_data(self):
         with open("./data/userdata/anti_spam.json", "w") as f:
-            json.dump({"toggle": self.toggle, 'blacklist': self.blacklist}, f)
+            json.dump({"toggle": self.toggle, "blacklist": self.blacklist}, f)
 
     @commands.group(name="anti-spam", aliases=["antispam"])
     @commands.bot_has_permissions(embed_links=True)
@@ -40,18 +40,22 @@ class AntiSpam(commands.Cog):
             e = discord.Embed(color=colors.fate())
             e.set_author(name="Anti Spam", icon_url=ctx.author.avatar_url)
             e.set_thumbnail(url=ctx.guild.icon_url)
-            e.add_field(name="Usage", value=
-            ".anti_spam enable\n"
-            ".anti_spam disable\n"
-            ".anti_spam ignore #channel\n"
-            ".anti_spam unignore #channel\n", inline=False)
+            e.add_field(
+                name="Usage",
+                value=".anti_spam enable\n"
+                ".anti_spam disable\n"
+                ".anti_spam ignore #channel\n"
+                ".anti_spam unignore #channel\n",
+                inline=False,
+            )
             e.set_footer(text=f"Current Status: {toggle}")
             await ctx.send(embed=e)
 
     @_anti_spam.command(name="enable")
     @commands.has_permissions(manage_messages=True)
-    @commands.bot_has_permissions(manage_messages=True,
-                                  manage_roles=True, manage_channels=True)
+    @commands.bot_has_permissions(
+        manage_messages=True, manage_roles=True, manage_channels=True
+    )
     async def _enable(self, ctx):
         guild_id = str(ctx.guild.id)
         if guild_id in self.toggle:
@@ -70,7 +74,7 @@ class AntiSpam(commands.Cog):
         await ctx.send("Disabled anti spam")
         self.save_data()
 
-    @_anti_spam.command(name='ignore')
+    @_anti_spam.command(name="ignore")
     @commands.has_permissions(manage_messages=True)
     async def _block_channel(self, ctx, channel: discord.TextChannel = None):
         guild_id = str(ctx.guild.id)
@@ -79,24 +83,24 @@ class AntiSpam(commands.Cog):
         if not channel:
             channel = ctx.channel
         if channel.id in self.blacklist[guild_id]:
-            return await ctx.send('This channel is already ignored')
+            return await ctx.send("This channel is already ignored")
         self.blacklist[guild_id].append(channel.id)
-        await ctx.send('👍')
+        await ctx.send("👍")
         self.save_data()
 
-    @_anti_spam.command(name='unignore')
+    @_anti_spam.command(name="unignore")
     @commands.has_permissions(manage_messages=True)
     async def _unblock_channel(self, ctx, channel: discord.TextChannel = None):
         guild_id = str(ctx.guild.id)
         if guild_id not in self.blacklist[guild_id]:
-            return await ctx.send('This server has no ignored channels')
+            return await ctx.send("This server has no ignored channels")
         if not channel:
             channel = ctx.channel
         if channel.id not in self.blacklist[guild_id]:
-            return await ctx.send('This channel isn\'t ignored')
+            return await ctx.send("This channel isn't ignored")
         index = self.blacklist[guild_id].index(channel.id)
         self.blacklist[guild_id].pop(index)
-        await ctx.send('👍')
+        await ctx.send("👍")
         self.save_data()
 
     @commands.Cog.listener()
@@ -132,7 +136,9 @@ class AntiSpam(commands.Cog):
                     if "manage_roles" not in perms or "manage_messages" not in perms:
                         if m.channel.permissions_for(bot).send_messages:
                             del self.toggle[guild_id]
-                            await m.channel.send("Disabled anti spam, missing required permissions")
+                            await m.channel.send(
+                                "Disabled anti spam, missing required permissions"
+                            )
                             self.save_data()
                         return
 
@@ -155,7 +161,7 @@ class AntiSpam(commands.Cog):
                         with open("./data/userdata/mod.json", "r") as f:
                             dat = json.load(f)  # type: dict
                             if "timers" in dat:
-                                if user_id in dat['timers']:
+                                if user_id in dat["timers"]:
                                     return
                         if guild_id not in self.status:
                             self.status[guild_id] = {}
@@ -169,13 +175,20 @@ class AntiSpam(commands.Cog):
                             if "manage_channels" not in perms:
                                 if m.channel.permissions_for(bot).send_messages:
                                     del self.toggle[guild_id]
-                                    await m.channel.send("Disabled anti spam, missing required permissions")
+                                    await m.channel.send(
+                                        "Disabled anti spam, missing required permissions"
+                                    )
                                     self.save_data()
                                 return
-                            mute_role = await m.guild.create_role(name="Muted", color=discord.Color(colors.black()),
-                                                                  hoist=True)
+                            mute_role = await m.guild.create_role(
+                                name="Muted",
+                                color=discord.Color(colors.black()),
+                                hoist=True,
+                            )
                             for channel in m.guild.text_channels:
-                                await channel.set_permissions(mute_role, send_messages=False)
+                                await channel.set_permissions(
+                                    mute_role, send_messages=False
+                                )
                             for channel in m.guild.voice_channels:
                                 await channel.set_permissions(mute_role, speak=False)
                         self.roles[user_id] = []
@@ -199,17 +212,21 @@ class AntiSpam(commands.Cog):
                                 index = self.mutes[guild_id][user_id].index(mute_time)
                                 self.mutes[guild_id][user_id].pop(index)
                         timer = 150 * multiplier
-                        timer_str = '2 minutes and 30 seconds'
+                        timer_str = "2 minutes and 30 seconds"
                         if multiplier == 2:
-                            timer_str = '3 minutes'
+                            timer_str = "3 minutes"
                         if multiplier > 2:
-                            timer_str = '3+ minutes'
+                            timer_str = "3+ minutes"
                         await m.author.add_roles(mute_role)
                         try:
-                            await m.author.send(f"You've been muted for spam in **{m.guild.name}** for {timer_str}")
+                            await m.author.send(
+                                f"You've been muted for spam in **{m.guild.name}** for {timer_str}"
+                            )
                         except discord.DiscordException:
                             pass
-                        await m.channel.send(f"Temporarily muted `{m.author.display_name}` for spam")
+                        await m.channel.send(
+                            f"Temporarily muted `{m.author.display_name}` for spam"
+                        )
                     await asyncio.sleep(timer)
                     if user_id in self.status[guild_id]:
                         user = m.guild.get_member(int(user_id))
@@ -217,7 +234,7 @@ class AntiSpam(commands.Cog):
                             with open("./data/userdata/mod.json", "r") as f:
                                 dat = json.load(f)  # type: dict
                                 if "timers" in dat:
-                                    if user_id in dat['timers']:
+                                    if user_id in dat["timers"]:
                                         return
                             if mute_role in m.author.roles:
                                 async with m.channel.typing():
@@ -241,7 +258,7 @@ class AntiSpam(commands.Cog):
         user_id = str(before.id)
         if user_id in self.roles:
             for role in before.roles:
-                if 'muted' in str(role.name).lower():
+                if "muted" in str(role.name).lower():
                     if role not in after.roles:
                         for role in self.roles[user_id]:
                             await before.add_roles(role)

@@ -14,10 +14,10 @@ class Menus(commands.Cog, HelpMenus):
 
     async def wait_for_dismissal(self, ctx, msg):
         def pred(m):
-            return m.channel.id == ctx.channel.id and m.content.lower().startswith('k')
+            return m.channel.id == ctx.channel.id and m.content.lower().startswith("k")
 
         try:
-            reply = await self.bot.wait_for('message', check=pred, timeout=25)
+            reply = await self.bot.wait_for("message", check=pred, timeout=25)
         except asyncio.TimeoutError:
             pass
         else:
@@ -28,7 +28,7 @@ class Menus(commands.Cog, HelpMenus):
             await asyncio.sleep(0.21)
             await reply.delete()
 
-    @commands.command(name='help')
+    @commands.command(name="help")
     @commands.cooldown(2, 10, commands.BucketType.user)
     @commands.cooldown(1, 3, commands.BucketType.channel)
     @commands.bot_has_permissions(embed_links=True, add_reactions=True)
@@ -38,7 +38,9 @@ class Menus(commands.Cog, HelpMenus):
                 return user == ctx.author
 
             try:
-                reaction, user = await self.bot.wait_for('reaction_add', timeout=60.0, check=check)
+                reaction, user = await self.bot.wait_for(
+                    "reaction_add", timeout=60.0, check=check
+                )
             except asyncio.TimeoutError:
                 try:
                     await msg.edit(content="Menu inactive due to timeout")
@@ -52,8 +54,10 @@ class Menus(commands.Cog, HelpMenus):
             for cmd in self.bot.commands:
                 if cmd.name.lower() == args.lower():
                     if not cmd.usage:
-                        return await ctx.send("That command doesn't have extra help information. "
-                                              f"Try using `.{cmd.name}` without any args for help")
+                        return await ctx.send(
+                            "That command doesn't have extra help information. "
+                            f"Try using `.{cmd.name}` without any args for help"
+                        )
                     if isinstance(cmd.usage, discord.Embed):
                         e = cmd.usage
                     elif inspect.isclass(cmd.usage):
@@ -62,18 +66,25 @@ class Menus(commands.Cog, HelpMenus):
                     elif inspect.isfunction(cmd.usage):
                         e = cmd.usage()
                     else:
-                        return await ctx.send("Oop, my help menu for that command is in an unknown format")
+                        return await ctx.send(
+                            "Oop, my help menu for that command is in an unknown format"
+                        )
                     return await ctx.send(embed=e)
 
-        emojis = ['🏡', '⏮', '⏪', '⏩', '⏭']
-        index = 0; sub_index = None
+        emojis = ["🏡", "⏮", "⏪", "⏩", "⏭"]
+        index = 0
+        sub_index = None
         ems = [self.default, self.core, self.mod, self.utility, self.fun]
-        embeds = [*[embed_func() for embed_func in ems]]  # call the functions to get their embeds
+        embeds = [
+            *[embed_func() for embed_func in ems]
+        ]  # call the functions to get their embeds
         if args:
             ems = [e.__name__ for e in ems]
             if args not in ems:
-                return await ctx.send("I don't have any commands, or category pages under that name. "
-                                      "Try locating it in the help menus then retry with its actual name")
+                return await ctx.send(
+                    "I don't have any commands, or category pages under that name. "
+                    "Try locating it in the help menus then retry with its actual name"
+                )
             index = ems.index(args)
         msg = await ctx.send(embed=embeds[index])
 
@@ -94,9 +105,11 @@ class Menus(commands.Cog, HelpMenus):
                     await msg.clear_reactions()
                 return
             if emoji == emojis[0]:  # home
-                index = 0; sub_index = None
+                index = 0
+                sub_index = None
             if emoji == emojis[1]:
-                index -= 2; sub_index = None
+                index -= 2
+                sub_index = None
                 if isinstance(embeds[index], list):
                     sub_index = 0
             if emoji == emojis[2]:
@@ -105,7 +118,8 @@ class Menus(commands.Cog, HelpMenus):
                         sub_index = len(embeds[index]) - 1
                     else:
                         if sub_index == 0:
-                            index -= 1; sub_index = None
+                            index -= 1
+                            sub_index = None
                             index = index_check(index)
                             if isinstance(embeds[index], list):
                                 sub_index = len(embeds[index]) - 1
@@ -121,7 +135,8 @@ class Menus(commands.Cog, HelpMenus):
                         sub_index = 0
                     else:
                         if sub_index == len(embeds[index]) - 1:
-                            index += 1; sub_index = None
+                            index += 1
+                            sub_index = None
                             index = index_check(index)
                             if isinstance(embeds[index], list):
                                 sub_index = 0
@@ -133,7 +148,8 @@ class Menus(commands.Cog, HelpMenus):
                     if isinstance(embeds[index], list):
                         sub_index = 0
             if emoji == emojis[4]:
-                index += 2; sub_index = None
+                index += 2
+                sub_index = None
                 index = index_check(index)
                 if isinstance(embeds[index], list):
                     sub_index = 0
@@ -142,19 +158,28 @@ class Menus(commands.Cog, HelpMenus):
             if index < 0:
                 index = 0
             if isinstance(embeds[index], list):
-                embeds[index][sub_index].set_footer(text=f'Page {index + 1}/{len(embeds)}')
+                embeds[index][sub_index].set_footer(
+                    text=f"Page {index + 1}/{len(embeds)}"
+                )
                 if index == len(embeds) - 1:
-                    embeds[index][sub_index].set_footer(text=f'Last Page! {index + 1}/{len(embeds)}')
+                    embeds[index][sub_index].set_footer(
+                        text=f"Last Page! {index + 1}/{len(embeds)}"
+                    )
                 await msg.edit(embed=embeds[index][sub_index])
             else:
-                embeds[index].set_footer(text=f'Page {index + 1}/{len(embeds)}')
+                embeds[index].set_footer(text=f"Page {index + 1}/{len(embeds)}")
                 if index == len(embeds) - 1:
-                    embeds[index].set_footer(text=f'Last Page! {index + 1}/{len(embeds)}')
+                    embeds[index].set_footer(
+                        text=f"Last Page! {index + 1}/{len(embeds)}"
+                    )
                 await msg.edit(embed=embeds[index])
-            if ctx.channel.permissions_for(self if not ctx.guild else ctx.guild.me).manage_messages:
+            if ctx.channel.permissions_for(
+                self if not ctx.guild else ctx.guild.me
+            ).manage_messages:
                 await msg.remove_reaction(reaction, ctx.author)
 
         # Old help command
+
     # @commands.group(name="help")
     # @commands.cooldown(1, 5, commands.BucketType.user)
     # @commands.bot_has_permissions(embed_links=True)

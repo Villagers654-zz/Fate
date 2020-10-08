@@ -36,7 +36,7 @@ CONFIG = {
                 "#ee9e9c",
             ],
             "CYCLE_DURATION": 32,
-            "STOP_AFTER_N_SECONDS": 50
+            "STOP_AFTER_N_SECONDS": 50,
         },
         5484614098102516: {
             "ROLE": "Adminn",
@@ -79,9 +79,9 @@ CONFIG = {
                 "#ff2b00",
             ],
             "CYCLE_DURATION": 40,
-            "STOP_AFTER_N_SECONDS": 80
-        }
-    }
+            "STOP_AFTER_N_SECONDS": 80,
+        },
+    },
 }
 
 
@@ -90,7 +90,14 @@ class HopefulNoDiscordAPIRapeRainbowRoleCog(commands.Cog):
         self.bot = bot
         self.cycling = False
 
-    async def cycle_colors(self, guild_id: int, role_name: str, colors: list, duration: int, stop_after: int):
+    async def cycle_colors(
+        self,
+        guild_id: int,
+        role_name: str,
+        colors: list,
+        duration: int,
+        stop_after: int,
+    ):
         delay = int(duration / len(colors))  # change color every n seconds
         try:
             guild = self.bot.get_guild(guild_id)
@@ -118,7 +125,9 @@ class HopefulNoDiscordAPIRapeRainbowRoleCog(commands.Cog):
                         if index >= len(colors):
                             index = 0
 
-                        await role.edit(color=discord.Color(int(color.replace("#", "0x"), 0)))
+                        await role.edit(
+                            color=discord.Color(int(color.replace("#", "0x"), 0))
+                        )
 
                         await asyncio.sleep(1)  # the loop is every 1 sec
                     await role.edit(color=original)  # revert to original
@@ -138,7 +147,7 @@ class HopefulNoDiscordAPIRapeRainbowRoleCog(commands.Cog):
                         conf["ROLE"],
                         conf["COLORS"],
                         conf["CYCLE_DURATION"],
-                        conf["STOP_AFTER_N_SECONDS"]
+                        conf["STOP_AFTER_N_SECONDS"],
                     )
                 )
 
