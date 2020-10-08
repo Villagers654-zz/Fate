@@ -306,7 +306,7 @@ class Core(commands.Cog):
                     return await ctx.send(
                         f"{command} is already disabled in this channel"
                     )
-                conf["channels"][str(ctx.channel.id)].append(command)
+                conf["channels"][channel_id].append(command)
                 await ctx.send(f"Disabled {command} in {ctx.channel.mention}")
 
         elif isinstance(location, discord.TextChannel):
