@@ -2,6 +2,7 @@ import aiohttp
 import os
 import random
 import asyncio
+from contextlib import suppress
 from discord.ext import commands
 from discord import Webhook, AsyncWebhookAdapter
 import discord
@@ -71,7 +72,8 @@ class Reactions(commands.Cog):
 
         # Remove sent gifs from possible options and choose which GIF to send
         for sent_path in self.sent[reaction][ctx.guild.id].keys():
-            options.remove(sent_path)
+            with suppress(IndexError):
+                options.remove(sent_path)
         filename = random.choice(options)
         path = os.getcwd() + f"/data/images/reactions/{reaction}/" + filename
 
