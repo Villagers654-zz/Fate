@@ -927,7 +927,8 @@ class Factions(commands.Cog):
         e = discord.Embed(color=colors.purple())
         e.set_author(name=f"{faction} Annexed {target}", icon_url=icon_url)
         await ctx.send(embed=e)
-        del self.appending[target_owner.id]
+        if target_owner.id in self.appending:
+            del self.appending[target_owner.id]
         await self.save_data()
 
     @_factions.command(name="raid")
