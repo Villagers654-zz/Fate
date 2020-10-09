@@ -135,7 +135,7 @@ class HelpMenus:
             "• **wiki** - `sends information on words/phrases`\n"
             "• **ud** - `sends a definition from urban dictionary`\n"
             "• **findmsg** - `searches msg history for a word/phase`\n"
-            "• **afk** - `tells users your're afk when mentioned`\n"
+            "• **afk** - `tells users you're afk when mentioned`\n"
             "• **id** - `sends your id & the channels id`\n"
             "• **perms** - `checks what users/roles has a perm`\n"
             "• **create-webhook** - `creates webhooks for mobile`\n"
@@ -161,11 +161,11 @@ class HelpMenus:
             "• **factions** - `work/claim/raid/grow`\n"
             "• **encode** - `encodes a msg in base64`\n"
             "• **decode** - `decodes a msg in base64`\n"
-            "• **notice** - `aknowledges depression`\n"
+            "• **notice** - `acknowledges depression`\n"
             "• **snipe** - `sends the last deleted msg`\n"
             "• **mock** - `mOcKs tExT fOr yOu`\n"
             "• **rate** - `rates the above msg`\n"
-            "• **roll** - `sends a number bwteen 1 & 6`\n"
+            "• **roll** - `sends a number beteen 1 & 6`\n"
             "• **sue** - `sues the mentioned user`\n"
             "• **ask** - `ask meh stuff ¯\_(ツ)_/¯`\n"
             "• **rps** - `play rock paper scissors`\n"
@@ -175,7 +175,7 @@ class HelpMenus:
             "• **slice** - `slices anything up`\n"
             "• **stab** - `stabs a user`\n"
             "• **boop** - `very kinky shit`\n"
-            "• **rr** - `play russion roulette`"
+            "• **rr** - `play Russian roulette`"
         )
         return e
 
