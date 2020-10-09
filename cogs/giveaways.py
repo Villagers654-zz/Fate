@@ -142,6 +142,9 @@ class Giveaways(commands.Cog):
                     )
                 timer, expanded_timer = time_to_sleep
                 expanded_timer = ", ".join(expanded_timer)
+                if timer > 60 * 60 * 24 * 60:
+                    await ctx.send("Hell. Fucking. No.\nI'm not waiting that long. Send a smaller timer")
+                    continue
                 await ctx.send(
                     f"Alright, set the timer to {expanded_timer}", delete_after=10
                 )
