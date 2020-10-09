@@ -23,9 +23,12 @@ class NSFW(commands.Cog):
     @commands.is_nsfw()
     @commands.bot_has_permissions(embed_links=True)
     async def danbooru(self, ctx, *tags):
-        client = Danbooru(
-            "danbooru", username="FrequencyX4", api_key="UKnXN9jBTYxrXUZvnk23NJ95"
-        )
+        try:
+            client = Danbooru(
+                "danbooru", username="FrequencyX4", api_key="UKnXN9jBTYxrXUZvnk23NJ95"
+            )
+        except Danbooru.PybooruHTTPError:
+            return await ctx.send("An internal server error occured; please retry")
         results = client.post_list(limit=100, tags=tags)
         results = [r for r in results if "file_url" in r]
         if not results:
