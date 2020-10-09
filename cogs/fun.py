@@ -371,6 +371,8 @@ class Fun(commands.Cog):
 
     @commands.command()
     async def choose(self, ctx, *choices: str):
+        if len(choices) < 2:
+            return await ctx.send("You need to provide at least 2 choices when running this command")
         await ctx.send(random.choice(choices))
 
     @commands.command(pass_context=True)
