@@ -97,7 +97,7 @@ class ErrorHandler(commands.Cog):
 
             # Failed while parsing an argument that contains a "'"
             elif isinstance(error, commands.UnexpectedQuoteError):
-                return await ctx.send("You can't use `'` in that argument")
+                return await ctx.send("You can't use quotes in that argument")
 
             # bAd cOdE, requires fix if occurs
             elif isinstance(error, KeyError):

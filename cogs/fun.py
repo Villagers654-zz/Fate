@@ -524,9 +524,10 @@ class Fun(commands.Cog):
     )
     @commands.cooldown(3, 5, commands.BucketType.user)
     @commands.bot_has_permissions(embed_links=True)
-    async def cringe(self, ctx, user: discord.User = None):
-        if not user:
-            user = ctx.author
+    async def cringe(self, ctx):
+        user = ctx.author
+        if ctx.message.mentions:
+            user = ctx.message.mentions[0]
         e = discord.Embed(color=user.color)
         e.set_author(name=str(user), icon_url=user.avatar_url)
         percentage = random.randint(0, 100)
