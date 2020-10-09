@@ -195,12 +195,13 @@ class AntiSpam(commands.Cog):
     @commands.has_permissions(manage_messages=True)
     async def _alter_sensitivity(self, ctx):
         guild_id = str(ctx.guild.id)
+        if guild_id not in self.toggle:
+            self.init(guild_id)
         if self.sensitivity[guild_id] == 'low':
             self.sensitivity[guild_id] = 'high'
         elif self.sensitivity[guild_id] == 'high':
             self.sensitivity[guild_id] = 'low'
         await ctx.send(f'Set the sensitivity to {self.sensitivity[guild_id]}')
-
 
     @anti_spam.command(name='ignore')
     @commands.has_permissions(manage_messages=True)
