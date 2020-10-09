@@ -61,12 +61,12 @@ class Emojis(commands.Cog):
             return None
 
         # Not a proper image
-        except discord.errors.InvalidArgument:
+        except (AttributeError, discord.errors.InvalidArgument):
             await ctx.bot.utils.update_msg(ctx.msg, f"{name} - Unsupported Image Type")
             return None
 
         # Something went wrong uploading the emoji
-        except discord.errors.HTTPException as e:
+        except discord.errors.HTTPException:
             error = str(traceback.format_exc()).lower()
             # Emoji Limit Reached
             if "maximum" in error:
