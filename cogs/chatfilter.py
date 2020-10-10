@@ -4,6 +4,7 @@ from utils import colors
 import discord
 import asyncio
 import json
+from contextlib import suppress
 
 
 class ChatFilter(commands.Cog):
@@ -162,14 +163,12 @@ class ChatFilter(commands.Cog):
                         perm for perm, value in m.author.guild_permissions if value
                     ]
                     if "manage_messages" not in perms:
-                        try:
+                        with suppress(discord.errors.NotFound):
                             for chunk in m.content.split():
                                 if phrase in chunk.lower():
                                     await asyncio.sleep(0.5)
                                     await m.delete()
                                     return
-                        except discord.errors.NotFound:
-                            pass
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
@@ -191,7 +190,8 @@ class ChatFilter(commands.Cog):
                             for chunk in after.content.split():
                                 if phrase in chunk.lower():
                                     await asyncio.sleep(0.5)
-                                    await after.delete()
+                                    with suppress(discord.errors.NotFound):
+                                        await after.delete()
                                     return
 
 
