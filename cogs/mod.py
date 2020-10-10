@@ -546,7 +546,7 @@ class Moderation(commands.Cog):
         if guild_id in self.tasks and not self.tasks[guild_id]:
             del self.tasks[guild_id]
 
-    @commands.command(name="mute", aliases=["shutup", "fuckoff", "shush", "shh"])
+    @commands.command(name="mute", aliases=["shutup", "fuckoff", "shush", "shh", "shut"])
     @commands.cooldown(*utils.default_cooldown())
     @check_if_running()
     @has_required_permissions(manage_roles=True)
