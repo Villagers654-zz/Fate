@@ -480,13 +480,22 @@ class Moderation(commands.Cog):
                 return False
 
         if "reaction" not in args and "reactions" not in args:
-            task = self.bot.loop.create_task(
-                ctx.channel.purge(
-                    limit=amount_to_purge,
-                    check=check,
-                    before=ctx.message,
-                )
-            )
+            async def purge_task():
+                try:
+                    messages = await ctx.channel.purge(
+                        limit=amount_to_purge,
+                        check=check,
+                        before=ctx.message,
+                    )
+                except discord.errors.HTTPException:  # Msgs too old
+                    messages = []
+                    async for msg in ctx.channel.history(before=ctx.message, limit=amount_to_purge):
+                        with suppress(discord.errors.Forbidden, discord.errors.NotFound):
+                            await msg.delete()
+                            messages.append(msg)
+                return messages
+
+            task = self.bot.loop.create_task(purge_task())
             for _iteration in range(round(5 / 0.21)):
                 await asyncio.sleep(0.21)
                 if task.done():
