@@ -487,7 +487,7 @@ class AntiSpam(commands.Cog):
                 if not mute_role:
                     mute_role = discord.utils.get(after.guild.roles, name="muted")
                 if mute_role not in after.roles:
-                    with suppress(IndexError):
+                    with suppress(KeyError):
                         self.bot.tasks["mutes"][guild_id][user_id].cancel()
                         del self.bot.tasks["mutes"][guild_id][user_id]
                         print(f'Cancelled the task for {after}')
