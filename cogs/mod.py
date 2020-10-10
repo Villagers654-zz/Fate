@@ -746,7 +746,10 @@ class Moderation(commands.Cog):
                         self.tasks[guild_id] = {}
                     self.tasks[guild_id][user_id] = task
 
-    @commands.command(name="unmute", description="Unblocks users from sending messages")
+    @commands.command(
+        name="unmute", description="Unblocks users from sending messages",
+        aliases=["unshutup", "unfuckoff", "unshh", "unshush", "unshut"]
+    )
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
     @has_required_permissions(manage_roles=True)
