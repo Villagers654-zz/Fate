@@ -23,9 +23,12 @@ class ErrorHandler(commands.Cog):
             return
 
         # Don't bother if completely missing access
-        perms = None if not ctx.guild else ctx.channel.permissions_for(ctx.guild.me)
-        if not ctx.guild or (not perms.send_messages or not perms.add_reactions):
-            return
+        if not isinstance(ctx.channel, discord.DMChannel):
+            if not ctx.guild or not ctx.guild.me or not ctx.channel:
+                return
+            perms = ctx.channel.permissions_for(ctx.guild.me)
+            if not perms.send_messages or not perms.add_reactions:
+                return
 
         # Parse the error object
         error = getattr(error, "original", error)
