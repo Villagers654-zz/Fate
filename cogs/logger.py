@@ -66,17 +66,16 @@ class Logger(commands.Cog):
                 bot.logger_tasks[guild_id] = task
             if "keep_alive_task" in bot.logger_tasks:
                 if bot.logger_tasks["keep_alive_task"].done():
-                    bot.log(
-                        message="Loggers keep alive task came to an end",
-                        level="CRITICAL",
-                        tb=bot.logger_tasks["keep_alive_task"].result(),
+                    try:
+                        result = bot.logger_tasks["keep_alive_task"].result()
+                    except asyncio.exceptions.CancelledError:
+                        result = "Task was cancelled"
+                    bot.log.critical(
+                        f"Loggers keep alive task came to an end\n{result}"
                     )
                 else:
                     bot.logger_tasks["keep_alive_task"].cancel()
-                    bot.log(
-                        message="Canceled existing keep_alive_task in logger",
-                        level="INFO",
-                    )
+                    bot.log.info("Canceled existing keep_alive_task in logger")
             task = self.bot.loop.create_task(self.keep_alive_task())
             bot.logger_tasks["keep_alive_task"] = task
 
