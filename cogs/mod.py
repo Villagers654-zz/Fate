@@ -546,10 +546,10 @@ class Moderation(commands.Cog):
         if guild_id in self.tasks and not self.tasks[guild_id]:
             del self.tasks[guild_id]
 
-    @commands.command(name="mute", aliases=["shutup", "fuckoff"])
+    @commands.command(name="mute", aliases=["shutup", "fuckoff", "shush", "shh"])
     @commands.cooldown(*utils.default_cooldown())
     @check_if_running()
-    @has_required_permissions(mute_members=True)
+    @has_required_permissions(manage_roles=True)
     @commands.bot_has_permissions(embed_links=True)
     @commands.bot_has_guild_permissions(manage_roles=True)
     async def mute(self, ctx, members: Greedy[discord.Member], *, reason="Unspecified"):
