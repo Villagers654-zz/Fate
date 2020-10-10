@@ -512,6 +512,7 @@ class Logger(commands.Cog):
     async def search_audit(self, guild, *actions) -> dict:
         """ Returns the latest entry from a list of actions """
         dat = {
+            "action": None,
             "user": "Unknown",
             "actual_user": None,
             "target": "Unknown",
@@ -1762,6 +1763,8 @@ class Logger(commands.Cog):
                 audit.webhook_delete,
                 audit.webhook_update,
             )
+            if not dat["action"]:
+                return
 
             who = dat["actual_user"]  # type: discord.Member
             if who and who.bot and who.id in self.config[guild_id]["ignored_bots"]:
