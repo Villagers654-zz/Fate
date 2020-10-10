@@ -1226,6 +1226,8 @@ class Factions(commands.Cog):
             result = await self.bot.verify_user(ctx, user=ctx.author)
             if not result:
                 return
+            if faction not in self.factions[guild_id]:
+                return await ctx.send("Tf happened to your faction..")
             if "anti-raid" in item:
                 self.factions[guild_id][faction]["boosts"]["anti-raid"] = str(
                     datetime.now()
