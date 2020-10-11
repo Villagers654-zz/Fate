@@ -14,12 +14,14 @@ import subprocess
 import random
 import aiohttp
 import aiofiles
+from contextlib import suppress
 
 from discord.ext import commands
 import discord
 from colormap import rgb2hex
 from PIL import Image, ImageDraw, ImageFont
 from ast import literal_eval
+from discord.errors import Forbidden, NotFound
 
 from utils import colors
 
@@ -110,14 +112,16 @@ class Utils(commands.Cog):
                 await message.delete()
             else:
                 e.set_footer(text="Captcha Failed")
-                await message.edit(embed=e)
+                with suppress(NotFound, Forbidden):
+                    await message.edit(embed=e)
             return False
         else:
             if delete_after:
                 await message.delete()
             else:
                 e.set_footer(text="Captcha Passed")
-                await message.edit(content=None, embed=e)
+                with suppress(NotFound, Forbidden):
+                    await message.edit(content=None, embed=e)
             return True
 
     async def get_choice(
