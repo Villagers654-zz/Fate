@@ -15,6 +15,7 @@ from time import time
 from aiohttp.client_exceptions import ClientOSError
 import aiohttp
 import aiofiles
+from contextlib import suppress
 
 from discord.ext import commands
 import discord
@@ -526,30 +527,31 @@ class Logger(commands.Cog):
         }
         can_run = await self.wait_for_permission(guild, "view_audit_log")
         if can_run:
-            async for entry in guild.audit_logs(limit=5):
-                if entry.created_at > self.past and any(
-                    entry.action.name == action.name for action in actions
-                ):
-                    dat["action"] = entry.action
-                    if entry.user:
-                        dat["user"] = entry.user.mention
-                        dat["actual_user"] = entry.user
-                        dat["thumbnail_url"] = entry.user.avatar_url
-                    if entry.target and isinstance(entry.target, discord.Member):
-                        dat["target"] = entry.target.mention
-                        dat["icon_url"] = entry.target.avatar_url
-                    elif entry.target:
-                        dat["target"] = entry.target
-                    else:
+            with suppress(discord.errors.Forbidden):
+                async for entry in guild.audit_logs(limit=5):
+                    if entry.created_at > self.past and any(
+                        entry.action.name == action.name for action in actions
+                    ):
+                        dat["action"] = entry.action
                         if entry.user:
-                            dat["icon_url"] = entry.user.avatar_url
-                    dat["reason"] = entry.reason
-                    dat["extra"] = entry.extra
-                    dat["changes"] = entry.changes
-                    dat["before"] = entry.before
-                    dat["after"] = entry.after
-                    dat["recent"] = True
-                    break
+                            dat["user"] = entry.user.mention
+                            dat["actual_user"] = entry.user
+                            dat["thumbnail_url"] = entry.user.avatar_url
+                        if entry.target and isinstance(entry.target, discord.Member):
+                            dat["target"] = entry.target.mention
+                            dat["icon_url"] = entry.target.avatar_url
+                        elif entry.target:
+                            dat["target"] = entry.target
+                        else:
+                            if entry.user:
+                                dat["icon_url"] = entry.user.avatar_url
+                        dat["reason"] = entry.reason
+                        dat["extra"] = entry.extra
+                        dat["changes"] = entry.changes
+                        dat["before"] = entry.before
+                        dat["after"] = entry.after
+                        dat["recent"] = True
+                        break
         return dat
 
     @commands.group(name="logger", aliases=["log", "secure-log"])
