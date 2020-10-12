@@ -990,7 +990,10 @@ class Logger(commands.Cog):
         if not isinstance(channel, discord.DMChannel):
             guild_id = str(channel.guild.id)
             if guild_id in self.config and not payload.cached_message:
-                msg = await channel.fetch_message(payload.message_id)
+                try:
+                    msg = await channel.fetch_message(payload.message_id)
+                except discord.errors.NotFound:
+                    return
                 if msg.author.id in self.config[guild_id]["ignored_bots"]:
                     return
                 if msg.channel.id in self.config[guild_id]["ignored_channels"]:
