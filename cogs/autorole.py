@@ -91,6 +91,18 @@ class AutoRole(commands.Cog):
     async def on_member_join(self, m: discord.Member):
         guild_id = str(m.guild.id)
         if guild_id in self.roles:
+            if not m.guild.me.guild_permissions.manage_roles:
+                history = await m.guild.owner.dm_channel.history(limit=1).flatten()
+                if history and "AutoRole" in history[0].content:
+                    return
+                try:
+                    await m.guild.owner.send(
+                        f"**[AutoRole - {m.guild.name}] I'm missing manage_roles permissions "
+                        f"in order to add roles to new users"
+                    )
+                except discord.errors.Forbidden:
+                    pass
+                return
             for role_id in self.roles[guild_id]:
                 role = m.guild.get_role(role_id)
                 if not role:
@@ -100,10 +112,12 @@ class AutoRole(commands.Cog):
                 if role.position >= m.guild.me.top_role.position:
                     try:
                         await m.guild.owner.send(
-                            f"**[AutoRole - {m.guild.name}] Error adding {role.name} to user. Its position is higher than mine"
+                            f"**[AutoRole - {m.guild.name}] can't add {role.name} to user. "
+                            f"Its position is higher than mine. You'll need to re-add it"
                         )
                     except discord.errors.Forbidden:
                         pass
+                    self.roles[guild_id].remove(role_id)
                 else:
                     try:
                         await m.add_roles(role)
