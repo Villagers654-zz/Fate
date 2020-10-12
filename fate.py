@@ -336,7 +336,13 @@ class Fate(commands.AutoShardedBot):
             self.load(*self.config["extensions"])
             self.log.info("Finished loading initial cogs\nLogging in..", color="yellow")
         cipher = auth.Tokens()
-        super().run(cipher.decrypt("fate"))
+        if self.config["token_encryption"]:
+            token = cipher.decrypt(self.config["token_id"])
+        else:
+            token = cipher.tokens[self.config["token_id"]]
+        if isinstance(token, bytes):
+            token = token.decode()
+        super().run(token)
 
 
 # Reset log files on startup so they don't fill up and cause lag

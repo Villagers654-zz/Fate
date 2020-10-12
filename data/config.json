@@ -5,6 +5,9 @@
     355026215137968129,
     243233669148442624
   ],
+  "token": "goes in /utils/auth.py",
+  "token_id": "fate",
+  "token_encryption": true,
 
   "hub_server": 397415086295089155,
   "log_channel": 577661500802465813,
