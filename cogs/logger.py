@@ -842,13 +842,6 @@ class Logger(commands.Cog):
                 )
             task = self.bot.loop.create_task(self.keep_alive_task())
             self.bot.logger_tasks["keep_alive_task"] = task
-        if not self.bot.tcp_servers["logger"]:
-            self.bot.tcp_servers["logger"] = await asyncio.start_server(
-                self.handle_echo,
-                host="127.0.0.1",
-                port=self.bot.config["logger_port"],
-                loop=self.bot.loop,
-            )
         self.bot.loop.create_task(self.init_invites())
 
     @commands.Cog.listener()

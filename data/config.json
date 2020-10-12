@@ -17,7 +17,7 @@
 
   "use_default_help": false,
   "startup_status": "Up and Running",
-  "max_message_cache": 250000,
+  "max_cached_messages": 250000,
   "debug_mode": false,
 
   "support_server": "https://discord.gg/wtjuznh",

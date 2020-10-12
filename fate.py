@@ -7,6 +7,7 @@ import asyncio
 import logging
 from typing import *
 import aiofiles
+from contextlib import suppress
 
 from discord.ext import commands
 import discord
@@ -121,15 +122,22 @@ class Fate(commands.AutoShardedBot):
 
         # ContextManager for quick sql cursor access
         class Cursor:
-            def __init__(this):
+            def __init__(this, max_retries: int = 10):
                 this.conn = None
                 this.cursor = None
+                this.retries = max_retries
 
             async def __aenter__(this):
                 while not self.pool:
-                    await asyncio.sleep(0.21)
-                this.conn = await self.pool.acquire()
-                this.cursor = await this.conn.cursor()
+                    await asyncio.sleep(10)
+                for _ in range(this.retries):
+                    with suppress(pymysql.OperationalError, RuntimeError):
+                        this.conn = await self.pool.acquire()
+                        this.cursor = await this.conn.cursor()
+                        break
+                    await asyncio.sleep(1.21)
+                else:
+                    raise pymysql.OperationalError("Can't connect to db")
                 return this.cursor
 
             async def __aexit__(this, _type, _value, _tb):
