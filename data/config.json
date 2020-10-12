@@ -20,6 +20,25 @@
   "support_server": "https://discord.gg/wtjuznh",
   "original_bot": true,
 
+  "bot_invite_permissions": {
+    "embed_links": true,
+    "manage_messages": true,
+    "view_audit_log": true,
+    "manage_webhooks": true,
+    "manage_roles": true,
+    "manage_channel": true,
+    "manage_guild": true,
+    "manage_emojis": true,
+    "change_nickname": true,
+    "manage_nicknames": true,
+    "external_emojis": true,
+    "attach_files": true,
+    "kick_members": true,
+    "ban_members": true,
+    "read_message_history": true,
+    "add_reactions": true
+  },
+
   "extensions": [
     "actions",
     "anti_raid",
