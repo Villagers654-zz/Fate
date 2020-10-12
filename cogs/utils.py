@@ -33,6 +33,7 @@ class Utils(commands.Cog):
         self.filter = _filter
         self.MemoryInfo = memory_info
         self.Result = result
+        self.templist = TempList
 
     async def verify_user(
         self, context=None, channel=None, user=None, timeout=45, delete_after=False
@@ -948,6 +949,26 @@ class MemoryInfo:
     @staticmethod
     def global_ram(interval=0):
         return MemoryInfo.__fetch()["GLOBAL"]["RAM"]["USED"]
+
+class TempList(list):
+    def __init__(self, bot, keep_for: int = 10):
+        self.bot = bot
+        self.keep_for = keep_for
+        super().__init__()
+
+    async def remove_after(self, value):
+        await asyncio.sleep(self.keep_for)
+        if value in super().__iter__():
+            super().remove(value)
+
+    def append(self, *args, **kwargs):
+        super().append(*args, **kwargs)
+        self.bot.loop.create_task(
+            self.remove_after(args[0])
+        )
+
+
+
 
 
 def setup(bot):
