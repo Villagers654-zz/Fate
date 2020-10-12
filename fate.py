@@ -48,68 +48,6 @@ class Fate(commands.AutoShardedBot):
             users=True, roles=False, everyone=False
         )
 
-        self.initial_extensions = [  # Cogs to load pre-login
-            "actions",
-            "anti_raid",
-            "anti_spam",
-            "apis",
-            "archive",
-            "audit",
-            "autorole",
-            "changelog",
-            "chatfilter",
-            "chatlock",
-            "clean_rythm",
-            "coffeeshop",
-            "config",
-            "cookies",
-            "core",
-            "custom",
-            "dev",
-            "dm_channel",
-            "duel_chat",
-            "embeds",
-            "emojis",
-            "error_handler",
-            "factions",
-            "farewell",
-            "fun",
-            "giveaways",
-            "global-chat",
-            "limiter",
-            "lock",
-            "logger",
-            "menus",
-            "minecraft",
-            "mod",
-            "notes",
-            "nsfw",
-            "polls",
-            "psutil",
-            "rainbow",
-            "ranking",
-            "reactions",
-            "readme",
-            "reload",
-            "responses",
-            "restore_roles",
-            "rules",
-            "secure_overwrites",
-            "selfroles",
-            "server_list",
-            "server_setup",
-            "statistics",
-            "system",
-            "textart",
-            "toggles",
-            "user",
-            "utility",
-            "utils",
-            "verification",
-            "welcome",
-        ]
-
-        self.awaited_extensions = []  # Cogs to load when the internal cache is ready
         self.module_index = {
             # Cog Name      Help command             Enable Command                   Disable command
             "Welcome": {
@@ -175,13 +113,11 @@ class Fate(commands.AutoShardedBot):
         if not self.config["original_bot"]:
             original_only = ["polis", "dev", "backup"]
             for ext in original_only:
-                if ext in self.initial_extensions:
-                    self.initial_extensions.remove(ext)
+                if ext in self.config["extensions"]:
+                    self.config["extensions"].remove(ext)
 
-        self.core_tasks = tasks.Tasks(
-            self
-        )  # Object to start the main tasks like `changing status`
-        self.log = Logging(bot=self)  # Class to handle printing/logging
+        self.core_tasks = tasks.Tasks(self)  # Object to start the main tasks like `changing status`
+        self.log = Logging(bot=self)         # Class to handle printing/logging
 
         # ContextManager for quick sql cursor access
         class Cursor:
@@ -290,6 +226,7 @@ class Fate(commands.AutoShardedBot):
         super().__init__(
             command_prefix=Utils.get_prefixes,
             activity=discord.Game(name=self.config["startup_status"]),
+            max_messages=self.config["max_cached_messages"],
             **options,
         )
 
@@ -349,7 +286,7 @@ class Fate(commands.AutoShardedBot):
             self.log.critical(
                 f"Couldn't connect to SQL server, reached max attempts``````{traceback.format_exc()}"
             )
-            self.unload(*self.initial_extensions, log=False)
+            self.unload(*self.config["extensions"], log=False)
             self.log.critical("Logging out..")
             return await self.logout()
         self.log.info(f"Initialized db {sql.db} with {sql.user}@{sql.host}")
@@ -397,8 +334,8 @@ class Fate(commands.AutoShardedBot):
     async def save_json(self, fp, data, mode="w+", **json_kwargs) -> None:
         return await self.utils.save_json(fp, data, mode, **json_kwargs)
 
-    async def wait_for_msg(self, ctx, timeout=60, action="Waiting for message") -> Optional[discord.Message]:
-        return await self.utils.wait_for_msg(ctx, timeout, action)
+    async def wait_for_msg(self, ctx, *_args, **_kwargs) -> Optional[discord.Message]:
+        return await self.utils.wait_for_msg(ctx)
 
     async def verify_user(self, context=None, channel=None, user=None, timeout=45, delete_after=False):
         return await self.utils.verify_user(
@@ -411,9 +348,9 @@ class Fate(commands.AutoShardedBot):
     # -------------------------------------------------------
 
     def run(self):
-        if bot.initial_extensions:
+        if self.config["extensions"]:
             self.log.info("Loading initial cogs", color="yellow")
-            self.load(*self.initial_extensions)
+            self.load(*self.config["extensions"])
             self.log.info("Finished loading initial cogs\nLogging in..", color="yellow")
         cipher = auth.Tokens()
         super().run(cipher.decrypt("fate"))
@@ -438,7 +375,7 @@ handler.setFormatter(
 logger.addHandler(handler)
 
 # Initialize the bot
-bot = Fate(max_messages=250000, case_insensitive=True)
+bot = Fate(case_insensitive=True)
 bot.allowed_mentions = discord.AllowedMentions(everyone=False, roles=False, users=False)
 bot.remove_command("help")  # Default help command
 bot.add_check(checks.command_is_enabled)
@@ -479,10 +416,6 @@ async def on_ready():
     bot.owner_ids = set(
         list([bot.config["bot_owner_id"], *bot.config["bot_owner_ids"]])
     )
-    if bot.awaited_extensions:
-        bot.log.info("Loading awaited cogs", color="yellow")
-        bot.load(*bot.awaited_extensions)
-        bot.log.info("Finished loading awaited cogs", color="yellow")
     bot.core_tasks.ensure_all()
     seconds = round(time() - start_time)
     bot.log.info(f"Startup took {seconds} seconds")
