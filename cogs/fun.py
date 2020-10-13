@@ -4,12 +4,14 @@ import json
 import random
 from os import path
 from random import random as rd
+from datetime import datetime, timedelta
 
 import aiohttp
 import discord
 import praw
 from discord import Webhook, AsyncWebhookAdapter
 from discord.ext import commands
+from discord.ext import tasks
 
 from utils import colors, auth
 
@@ -78,6 +80,7 @@ class Fun(commands.Cog):
         for sexuality in sexualities:
             if sexuality not in self.gay:
                 self.gay[sexuality] = {}
+        self.clear_old_messages_task.start()
 
     def save_gay(self):
         with open(self.gp, "w") as f:
@@ -213,6 +216,18 @@ class Fun(commands.Cog):
                 self.dat[channel_id] = {}
             self.dat[channel_id]["last"] = dat
             self.dat[channel_id][user_id] = dat
+
+    @tasks.loop(minutes=25)
+    async def clear_old_messages_task(self):
+        expiration = datetime.utcnow() - timedelta(hours=1)
+        for channel_id, data in list(self.dat.items()):
+            if data["last"][0].created_at < expiration:
+                del self.dat[channel_id]
+                continue
+            for key, value in data.items():
+                if key != "last":
+                    if value[0].created_at < expiration:
+                        del self.dat[channel_id][key]
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
