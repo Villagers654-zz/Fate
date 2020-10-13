@@ -175,9 +175,6 @@ class Ranking(commands.Cog):
             async def punish():
                 self.global_cd[user_id] = time() + 60
 
-            if not self.bot.pool:
-                return
-
             # anti spam
             now = int(time() / 5)
             if guild_id not in self.spam_cd:
@@ -239,6 +236,8 @@ class Ranking(commands.Cog):
                         )
                 except DataError as error:
                     self.bot.log(f"Error updating global xp\n{error}")
+                except RuntimeError:
+                    return
 
             # per-server leveling
             conf = self.static_config()  # type: dict
@@ -283,6 +282,8 @@ class Ranking(commands.Cog):
                         )
                 except DataError as error:
                     self.bot.log(f"Error updating guild xp\n{error}")
+                except RuntimeError:
+                    return
 
     @commands.Cog.listener()
     async def on_command_completion(self, ctx):
