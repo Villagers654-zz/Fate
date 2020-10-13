@@ -141,8 +141,9 @@ class Fate(commands.AutoShardedBot):
                 return this.cursor
 
             async def __aexit__(this, _type, _value, _tb):
-                await this.conn.commit()
-                self.pool.release(this.conn)
+                with suppress(RuntimeError):
+                    await this.conn.commit()
+                    self.pool.release(this.conn)
 
         self.cursor = Cursor
 
