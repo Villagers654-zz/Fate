@@ -13,6 +13,7 @@ Self Roles / Reaction Roles
 import asyncio
 import json
 from os import path
+from contextlib import suppress
 
 import discord
 from discord.ext import commands
@@ -543,6 +544,8 @@ class SelfRoles(commands.Cog):
             msg_id = str(payload.message_id)
             if msg_id in self.menus[guild_id]:
                 guild = self.bot.get_guild(payload.guild_id)
+                if not guild.me.guild_permissions.manage_roles:
+                    return
                 channel = self.bot.get_channel(payload.channel_id)
                 msg = await channel.fetch_message(msg_id)
                 target = guild.get_member(payload.user_id)
@@ -556,13 +559,19 @@ class SelfRoles(commands.Cog):
                     if str(emoji) == str(payload.emoji):
                         role = guild.get_role(int(role_id))
                         if not role:
-                            try:
+                            with suppress(discord.errors.Forbidden):
                                 await target.send(
                                     f"Sorry, but the role with the emoji {emoji} that you reacted to in "
                                     f"{guild} doesn't seem to exist anymore. I've just removed it from the menu"
                                 )
-                            except discord.errors.Forbidden:
-                                pass
+                            del self.menus[guild_id][msg_id]["items"][role_id]
+                            return await self.edit_menu(guild_id, msg_id)
+                        if role.position >= guild.me.top_role.position:
+                            with suppress(discord.errors.Forbidden):
+                                await target.send(
+                                    f"Sorry, but I'm missing permissions to give you the role with the emoji {emoji} "
+                                    f"that you reacted to in {guild}. I've just removed it from the menu"
+                                )
                             del self.menus[guild_id][msg_id]["items"][role_id]
                             return await self.edit_menu(guild_id, msg_id)
                         await target.add_roles(role)
