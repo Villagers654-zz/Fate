@@ -106,7 +106,13 @@ class Lock(commands.Cog):
         member_id = str(m.id)
         if guild_id in self.lock:
             if self.lock[guild_id] == "lock-kick":
-                await m.guild.kick(m, reason="Server locked")
+                try:
+                    await m.guild.kick(m, reason="Server locked")
+                except discord.errors.Forbidden:
+                    del self.lock[guild_id]
+                    return
+                except discord.errors.NotFound:
+                    return
                 try:
                     await m.send(
                         f"**{m.guild.name}** is currently locked. Contact an admin or try again later"
@@ -114,7 +120,13 @@ class Lock(commands.Cog):
                 except:
                     pass
             if self.lock[guild_id] == "lock-ban":
-                await m.guild.ban(m, reason="Server locked", delete_message_days=0)
+                try:
+                    await m.guild.ban(m, reason="Server locked", delete_message_days=0)
+                except discord.errors.Forbidden:
+                    del self.lock[guild_id]
+                    return
+                except discord.errors.NotFound:
+                    return
                 if member_id not in self.cd:
                     self.cd[member_id] = 0
                 if self.cd[member_id] < time.time():
