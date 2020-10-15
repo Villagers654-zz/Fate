@@ -15,7 +15,7 @@ import aiomysql
 import pymysql
 from termcolor import cprint
 
-from utils import auth, tasks, colors, checks
+from utils import auth, colors, checks
 from utils.custom_logging import Logging
 from cogs.utils import Utils
 
@@ -117,7 +117,6 @@ class Fate(commands.AutoShardedBot):
                 if ext in self.config["extensions"]:
                     self.config["extensions"].remove(ext)
 
-        self.core_tasks = tasks.Tasks(self)  # Object to start the main tasks like `changing status`
         self.log = Logging(bot=self)         # Class to handle printing/logging
 
         # ContextManager for quick sql cursor access
@@ -229,6 +228,12 @@ class Fate(commands.AutoShardedBot):
         if "Utils" not in self.cogs:
             raise ModuleNotFoundError("The utils cog hasn't been loaded yet")
         return self.get_cog("Utils")
+
+    @property
+    def core_tasks(self):
+        if "Tasks" not in self.cogs:
+            raise ModuleNotFoundError("The Tasks cog hasn't been loaded yet")
+        return self.get_cog("Tasks")
 
     # async def on_error(self, event_method, *args, **kwargs):
     #     full_error = str(traceback.format_exc())
