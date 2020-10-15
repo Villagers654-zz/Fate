@@ -346,7 +346,7 @@ class GlobalChat(commands.Cog):
                     if guild_id in self.index[msg.id] and self.index[msg.id][guild_id]:
                         try:
                             await self.index[msg.id][guild_id].delete()
-                        except discord.errors.Forbidden:
+                        except (discord.errors.Forbidden, discord.errors.NotFound):
                             pass
 
     @commands.Cog.listener()
