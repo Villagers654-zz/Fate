@@ -605,36 +605,6 @@ class Fun(commands.Cog):
         await ctx.message.delete()
 
     @commands.command()
-    async def fap(self, ctx):
-        e = discord.Embed(
-            description=">{} starts fapping {}".format(
-                ctx.author.name,
-                random.choice(
-                    [
-                        "to trump",
-                        "to beddy",
-                        "infront of rogue",
-                        "to rogue",
-                        "to furries",
-                        "to pornhub.com videos",
-                        "to illegal porn",
-                        "to gay porn",
-                        "to lesbian porn",
-                        "to hentaihaven.com",
-                        "to poleman",
-                        "to Tomatoes lucious locks of hair",
-                        "to Yugioh",
-                        "to tomboys",
-                    ]
-                ),
-            ),
-            color=random.choice(
-                [0xFF0000, 0xFF7F00, 0xFFFF00, 0x00FF00, 0x0000FF, 0x4B0082]
-            ),
-        )
-        await ctx.send(embed=e)
-
-    @commands.command()
     async def rr(self, ctx):
         if ctx.author.id == 281576231902773248:
             return await ctx.send("You lived")
