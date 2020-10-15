@@ -127,7 +127,7 @@ class SafePolls(commands.Cog):
         timer = None
         instructions = "the `m` in `5m` stands for 5 minutes, the `h` stands for hours, and the `d` stands for days"
         while not timer:
-            async with self.bot.require("message", ctx) as msg:
+            async with self.bot.require("message", ctx, handle_timeout=True) as msg:
                 result = self.bot.utils.extract_timer(msg.content)
                 if not result:
                     await ctx.send(
@@ -151,7 +151,7 @@ class SafePolls(commands.Cog):
         )
         reaction_count = None
         while not reaction_count:
-            async with self.bot.require("message", ctx) as msg:
+            async with self.bot.require("message", ctx, handle_timeout=True) as msg:
                 if not msg.content.isdigit():
                     await ctx.send("That's not a number, please retry", delete_after=30)
                 elif int(msg.content) > 9:
@@ -168,7 +168,7 @@ class SafePolls(commands.Cog):
         message = await ctx.send("#mention the channel to send the poll into")
         channel = None
         while not channel:
-            async with self.bot.require("message", ctx) as msg:
+            async with self.bot.require("message", ctx, handle_timeout=True) as msg:
                 if not msg.channel_mentions:
                     await ctx.send(
                         f"Retry, but mention the channel like this: {ctx.channel.mention}",
