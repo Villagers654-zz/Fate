@@ -318,7 +318,6 @@ class AntiSpam(commands.Cog):
                         if not self.spam_cd[guild_id]:
                             del self.spam_cd[guild_id]
                     triggered = True
-                    print("Triggered rate limit " + str(msg.author))
 
             # mass pings
             mentions = [*msg.mentions, *msg.role_mentions]
@@ -484,7 +483,9 @@ class AntiSpam(commands.Cog):
                         timer = 150 * multiplier
                         timer_str = self.bot.utils.get_time(timer)
                         await user.add_roles(mute_role)
-                        messages = [m for m, mtime in self.msgs[user_id] if m]
+                        messages = []
+                        if user_id in self.msgs:
+                            messages = [m for m in self.msgs[user_id] if m]
                         with suppress(Forbidden, NotFound, HTTPException):
                             await msg.channel.delete_messages(messages)
                         self.msgs[user_id] = []
