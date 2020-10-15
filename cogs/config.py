@@ -278,7 +278,7 @@ class Config(commands.Cog):
                         options = ["None", "Mute", "Kick", "Softban", "Ban"]
                         try:
                             reaction_index = emojis.index(reaction)
-                        except discord.DiscordException:
+                        except (discord.DiscordException, ValueError):
                             await ctx.send("Invalid reaction >:(")
                             continue
                         punishments.append(options[reaction_index])
