@@ -643,7 +643,7 @@ class Utility(commands.Cog):
             bot_pid = psutil.Process(os.getpid())
             e = discord.Embed(color=colors.fate())
             e.set_author(
-                name="Fate [Zerø]: Core Info",
+                name="Fate Bot: Core Info",
                 icon_url=self.bot.get_user(config.owner_id()).avatar_url,
             )
             stats = self.bot.utils.get_stats()  # type: dict
@@ -663,13 +663,9 @@ class Utility(commands.Cog):
                 if file.endswith(".py"):
                     async with self.bot.open(f"./cogs/{file}", "r") as f:
                         lines += len(await f.readlines())
-            e.description = (
-                f"Weekly Commands Used: {commands}\n" f"Total lines of code: {lines}"
-            )
+            e.description = f"Commands Used This Week: {commands}" \
+                            f"\nLines of code: {lines}"
             e.set_thumbnail(url=self.bot.user.avatar_url)
-            e.set_image(
-                url="https://cdn.discordapp.com/attachments/541520201926311986/630631362847834112/arT9Gz0_d.jpg"
-            )
             e.add_field(
                 name="◈ Summary ◈",
                 value="Fate is a ~~multipurpose~~ hybrid bot created for fun",
@@ -677,21 +673,34 @@ class Utility(commands.Cog):
             )
             e.add_field(
                 name="◈ Statistics ◈",
-                value=f"Commands: [{len(self.bot.commands)}]\nModules: [{len(self.bot.extensions)}]\nServers: [{guilds}]\nUsers: [{users}]",
+                value=f"**Commands:** [{len(self.bot.commands)}]"
+                      f"\n**Modules:** [{len(self.bot.extensions)}]"
+                      f"\n**Servers:** [{guilds}]"
+                      f"\n**Users:** [{users}]",
             )
             e.add_field(
                 name="◈ Credits ◈",
-                value="• Tothy ~ `rival`\n• Cortex ~ `teacher`\n• Discord.py ~ `existing`\n• Opal ~ `Co-Dev`",
+                value="\n• **Cortex** ~ `teacher of many things..`"
+                      "\n• **Discord.py** ~ `existing for me to use`"
+                      "\n• **Luck** ~ `owner & main developer`"
+                      "\n• **Opal, Koro, Vco** ~ `code management`"
             )
             bot_cpu = await self.bot.loop.run_in_executor(
                 None, get_bot_cpu, os.getpid()
             )
+            disk = psutil.disk_usage('/')
+            ram = psutil.virtual_memory()
+            freq = psutil.cpu_freq()
+            cur = str(round(freq.current))
+            cur = f"{cur[0]}.{cur[1]}GHz"
+            max = str(round(freq.max))
+            max = f"{max[0]}.{max[1]}GHz"
             e.add_field(
                 name="◈ Memory ◈",
-                value=f"__**Storage**__: [{p.bytes2human(psutil.disk_usage('/').used)}/{p.bytes2human(psutil.disk_usage('/').total)}]\n"
-                f"__**RAM**__: [{p.bytes2human(psutil.virtual_memory().used)}/{p.bytes2human(psutil.virtual_memory().total)}] ({psutil.virtual_memory().percent}%)\n"
-                f"__**Bot RAM**__: {p.bytes2human(bot_pid.memory_full_info().rss)} ({round(bot_pid.memory_percent())}%)\n"
-                f"__**CPU**__: **Global**: {psutil.cpu_percent()}% **Bot**: {bot_cpu}%\n",
+                value=f"**Storage (Raid5)**:    {p.bytes2human(disk.used)}/{p.bytes2human(disk.total)} - ({round(disk.percent)}%)\n"
+                      f"**RAM (DDR4)**:        {p.bytes2human(ram.used)}/{p.bytes2human(ram.total)} - ({round(ram.percent)}%)\n"
+                      f"**CPU i9-10900K:**    {round(psutil.cpu_percent())}% @{cur}/{max}\n"
+                      f"**Bot Usage:**              **RAM:** {p.bytes2human(bot_pid.memory_full_info().rss)} **CPU:** {round(bot_pid.cpu_percent())}%",
                 inline=False,
             )
             uptime = datetime.now() - self.bot.start_time
