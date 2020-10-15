@@ -145,7 +145,7 @@ class Verification(commands.Cog):
         await ctx.send(
             "Send the name, or mention of the role I should give whence someone completes verification"
         )
-        async with self.bot.require("message", ctx) as msg:
+        async with self.bot.require("message", ctx, handle_timeout=True) as msg:
             role = await self.bot.utils.get_role(ctx, msg.content)
         if not role:
             return await ctx.send(
@@ -158,7 +158,7 @@ class Verification(commands.Cog):
             "Send the name, or mention of the role I should remove whence someone completes verification"
             "\nThis one's optional, so you can reply with `skip` if you don't wish to use one"
         )
-        async with self.bot.require("message", ctx) as msg:
+        async with self.bot.require("message", ctx, handle_timeout=True) as msg:
             temp_role = None
             if str(msg.content).lower() != "skip":
                 target = await self.bot.utils.get_role(ctx, msg.content)
@@ -174,7 +174,7 @@ class Verification(commands.Cog):
             "Should I delete the captcha message that shows if a user passed or failed verification after "
             "completion? Reply with `yes` or `no`"
         )
-        async with self.bot.require("message", ctx) as msg:
+        async with self.bot.require("message", ctx, handle_timeout=True) as msg:
             if (
                 "ye" not in str(msg.content).lower()
                 and "no" not in str(msg.content).lower()
@@ -188,7 +188,7 @@ class Verification(commands.Cog):
         await ctx.send(
             "Should I kick members if they fail verification? Reply with `yes` or `no`"
         )
-        async with self.bot.require("message", ctx) as msg:
+        async with self.bot.require("message", ctx, handle_timeout=True) as msg:
             if (
                 "ye" not in str(msg.content).lower()
                 and "no" not in str(msg.content).lower()
@@ -203,7 +203,7 @@ class Verification(commands.Cog):
             "Now, should I log whether or not someone passes, fails, or kick to a channel? "
             "If so, #mention the channel I should use; otherwise send `skip`"
         )
-        async with self.bot.require("message", ctx) as msg:
+        async with self.bot.require("message", ctx, handle_timeout=True) as msg:
             if msg.channel_mentions:
                 log_channel = msg.channel_mentions[0].id
             else:
@@ -213,7 +213,7 @@ class Verification(commands.Cog):
             "When a new member joins, should I start captcha verification on my own, or "
             "wait until they run .verify. Reply with `yes` to start automatically, or `no` to not"
         )
-        async with self.bot.require("message", ctx) as msg:
+        async with self.bot.require("message", ctx, handle_timeout=True) as msg:
             if (
                 "ye" not in str(msg.content).lower()
                 and "no" not in str(msg.content).lower()

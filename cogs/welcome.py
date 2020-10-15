@@ -331,8 +331,7 @@ class Welcome(commands.Cog):
                 'Send the image(s) you\'d like to use\nReply with "done" when finished'
             )
             while complete is False:
-                msg = await self.bot.utils.wait_for_msg(ctx)  # type: discord.Message
-                if msg:
+                async with self.bot.require("message", ctx, handle_timeout=True) as msg:
                     if msg.content:
                         if "done" in msg.content.lower():
                             return await ctx.send("Added your images 👍")
@@ -375,16 +374,7 @@ class Welcome(commands.Cog):
             await ctx.send(
                 "What format should I use?:```css\nExample:\nWelcome !user to !server```"
             )
-
-            def pred(m):
-                return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
-
-            try:
-                msg = await self.bot.wait_for("message", check=pred, timeout=30)
-            except asyncio.TimeoutError:
-                await ctx.send("Timeout error")
-            else:
-                msg = await ctx.channel.fetch_message(msg.id)
+            async with self.bot.require("message", ctx, handle_timeout=True) as msg:
                 self.format[guild_id] = msg.content
         await ctx.send("Set the welcome format 👍")
         await self.save_data()

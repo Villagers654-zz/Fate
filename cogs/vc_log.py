@@ -86,8 +86,8 @@ class VcLog(commands.Cog):
         if not channel_access:
             return await ctx.send("Sry, I don't have access to that channel")
         await ctx.send("Would you like me to delete all non vc-log messages?")
-        msg = await self.bot.utils.wait_for_msg(ctx)
-        reply = msg.content.lower()
+        async with self.bot.require("message", ctx, handle_timeout=True) as msg:
+            reply = msg.content.lower()
         self.channel[guild_id] = channel_id
         channel_access = await self.ensure_permissions(guild_id)
         if not channel_access:

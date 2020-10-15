@@ -375,16 +375,7 @@ class Leave(commands.Cog):
             await ctx.send(
                 "What format should I use?:```css\nExample:\n**!user has left the chat**```"
             )
-
-            def pred(m):
-                return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
-
-            try:
-                msg = await self.bot.wait_for("message", check=pred, timeout=30)
-            except asyncio.TimeoutError:
-                await ctx.send("Timeout error")
-            else:
-                msg = await ctx.channel.fetch_message(msg.id)
+            async with self.bot.require("message", ctx, handle_timeout=True) as msg:
                 self.format[guild_id] = msg.content
         await ctx.send("Set the welcome format 👍")
         await self.save_data()

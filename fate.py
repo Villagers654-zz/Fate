@@ -177,11 +177,11 @@ class Fate(commands.AutoShardedBot):
         self.open = AsyncFileManager
 
         class WaitForEvent:
-            def __init__(this, event, check=None, channel=None, send_error=True, timeout=60):
+            def __init__(this, event, check=None, channel=None, handle_timeout=False, timeout=60):
                 this.event = event
                 this.channel = channel
                 this.check = check
-                this.send_error = send_error
+                this.handle_timeout = handle_timeout
                 this.timeout = timeout
 
                 ctx = check if isinstance(check, commands.Context) else None
@@ -198,8 +198,10 @@ class Fate(commands.AutoShardedBot):
                     message = await self.wait_for(
                         this.event, check=this.check, timeout=this.timeout
                     )
-                except asyncio.TimeoutError:
-                    if this.send_error and this.channel:
+                except asyncio.TimeoutError as error:
+                    if not this.handle_timeout:
+                        raise error
+                    if this.channel:
                         await this.channel.send(f"Timed out waiting for {this.event}")
                     raise self.ignored_exit()
                 else:
