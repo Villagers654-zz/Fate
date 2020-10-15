@@ -44,7 +44,8 @@ class AntiSpam(commands.Cog):
 
     async def save_data(self):
         data = {'toggle': self.toggle, 'sensitivity': self.sensitivity, 'blacklist': self.blacklist}
-        await self.bot.save_json(self.path, data)
+        async with self.bot.open(self.path, "w+") as f:
+            await f.write(json.dumps(data))
 
     def init(self, guild_id):
         if guild_id not in self.sensitivity:
@@ -53,7 +54,8 @@ class AntiSpam(commands.Cog):
             'Rate-Limit': False,
             'Mass-Pings': False,
             'Anti-Macro': False,
-            'Duplicates': False
+            'Duplicates': False,
+            'Inhuman': False
         }
 
     @tasks.loop(seconds=4)
@@ -104,7 +106,8 @@ class AntiSpam(commands.Cog):
             modules = '**Rate-Limit:** `sending msgs fast`\n' \
                 '**Mass-Pings:** `mass mentioning users`\n' \
                 '**Anti-Macro:** `using macros for bots`\n' \
-                '**Duplicates:** `copying and pasting`'
+                '**Duplicates:** `copying and pasting`\n' \
+                '**Inhuman:** `abnormal, ascii, tall, etc`'
             e.add_field(name='◈ Modules', value=modules, inline=False)
             guild_id = str(ctx.guild.id)
             if guild_id in self.toggle:
@@ -126,7 +129,8 @@ class AntiSpam(commands.Cog):
                 'Rate-Limit': True,
                 'Mass-Pings': True,
                 'Anti-Macro': True,
-                'Duplicates': True
+                'Duplicates': True,
+                'Inhuman': True
             }
             await ctx.send('Enabled all anti-spam modules')
             await self.save_data()
@@ -169,6 +173,16 @@ class AntiSpam(commands.Cog):
             self.init(guild_id)
         self.toggle[guild_id]['Duplicates'] = True
         await ctx.send('Enabled duplicates module')
+        await self.save_data()
+
+    @_enable.command(name='inhuman')
+    @commands.has_permissions(manage_messages=True)
+    async def _enable_inhuman(self, ctx):
+        guild_id = str(ctx.guild.id)
+        if guild_id not in self.toggle:
+            self.init(guild_id)
+        self.toggle[guild_id]['Inhuman'] = True
+        await ctx.send('Enabled inhuman module')
         await self.save_data()
 
     @anti_spam.group(name='disable')
@@ -221,6 +235,16 @@ class AntiSpam(commands.Cog):
             self.init(guild_id)
         self.toggle[guild_id]['Duplicates'] = False
         await ctx.send('Disabled duplicates module')
+        await self.save_data()
+
+    @_disable.command(name='inhuman')
+    @commands.has_permissions(manage_messages=True)
+    async def _disable_inhuman(self, ctx):
+        guild_id = str(ctx.guild.id)
+        if guild_id not in self.toggle:
+            self.init(guild_id)
+        self.toggle[guild_id]['Inhuman'] = False
+        await ctx.send('Disabled inhuman module')
         await self.save_data()
 
     @anti_spam.command(name='alter-sensitivity')
@@ -375,7 +399,7 @@ class AntiSpam(commands.Cog):
                             triggered = True
                             break
 
-            if msg.guild.id == 397415086295089155:  # currently in testing
+            if self.toggle[guild_id]['Inhuman']:
                 abcs = "abcdefghijklmnopqrstuvwxyz"
                 content = str(msg.content).lower()
                 lines = content.split("\n")
