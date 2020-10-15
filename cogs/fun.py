@@ -5,6 +5,7 @@ import random
 from os import path
 from random import random as rd
 from datetime import datetime, timedelta
+from contextlib import suppress
 
 import aiohttp
 import discord
@@ -224,10 +225,11 @@ class Fun(commands.Cog):
             if data["last"][0].created_at < expiration:
                 del self.dat[channel_id]
                 continue
-            for key, value in data.items():
+            for key, value in list(data.items()):
                 if key != "last":
                     if value[0].created_at < expiration:
-                        del self.dat[channel_id][key]
+                        with suppress(KeyError, ValueError):
+                            del self.dat[channel_id][key]
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
@@ -644,3 +646,8 @@ class Fun(commands.Cog):
 
 def setup(bot):
     bot.add_cog(Fun(bot))
+
+
+def teardown(bot):
+    main = bot.cogs["Fun"]  # type: Fun
+    main.clear_old_messages_task.stop()
