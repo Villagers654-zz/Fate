@@ -101,7 +101,7 @@ class Menus(commands.Cog, HelpMenus):
         while True:
             reaction, emoji = await wait_for_reaction()
             if not reaction:
-                if ctx.channel.permissions_for(ctx.guild.me).manage_messages and msg:
+                if ctx.guild and ctx.channel.permissions_for(ctx.guild.me).manage_messages and msg:
                     await msg.clear_reactions()
                 return
             if emoji == emojis[0]:  # home

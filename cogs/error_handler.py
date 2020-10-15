@@ -139,7 +139,7 @@ class ErrorHandler(commands.Cog):
         e.set_author(
             name=f"| Fatal Error | in {ctx.command}", icon_url=ctx.author.avatar_url
         )
-        e.set_thumbnail(url=ctx.guild.icon_url)
+        e.set_thumbnail(url=ctx.guild.icon_url if ctx.guild else None)
         enum = enumerate(self.bot.utils.split(full_traceback, 980))
         for iteration, chunk in enum:
             e.add_field(
