@@ -355,7 +355,7 @@ class AntiSpam(commands.Cog):
                 self.dupes[channel_id] = [
                     msg, *[
                         msg for msg in self.dupes[channel_id]
-                        if msg.created_at > datetime.utcnow() - timedelta(minutes=2)
+                        if msg.created_at > datetime.utcnow() - timedelta(minutes=1)
                     ]
                 ]
                 for message in list(self.dupes[channel_id]):
@@ -416,10 +416,12 @@ class AntiSpam(commands.Cog):
                         return
 
                     # Purge away spam
-                    messages = [
-                        m for m in self.msgs[user_id]
-                        if m and m.created_at > datetime.utcnow() - timedelta(seconds=15)
-                    ]
+                    messages = []
+                    if user_id in self.msgs:
+                        messages = [
+                            m for m in self.msgs[user_id]
+                            if m and m.created_at > datetime.utcnow() - timedelta(seconds=15)
+                        ]
                     self.msgs[user_id] = []  # Remove soon to be deleted messages from the list
                     with suppress(NotFound, Forbidden, HTTPException):
                         await msg.channel.delete_messages(messages)
@@ -536,7 +538,6 @@ class AntiSpam(commands.Cog):
                     with suppress(KeyError):
                         self.bot.tasks["mutes"][guild_id][user_id].cancel()
                         del self.bot.tasks["mutes"][guild_id][user_id]
-                        print(f'Cancelled the task for {after}')
             if guild_id in self.bot.tasks["mutes"]:
                 if not self.bot.tasks["mutes"][guild_id]:
                     del self.bot.tasks["mutes"][guild_id]
