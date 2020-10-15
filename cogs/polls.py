@@ -147,7 +147,7 @@ class SafePolls(commands.Cog):
 
         # Get the wanted amount of reactions to add for users to vote with
         message = await ctx.send(
-            "How many reactions should I add? If set to '2' I'll use yes/no reactions"
+            "How many reactions should I add?"
         )
         reaction_count = None
         while not reaction_count:
