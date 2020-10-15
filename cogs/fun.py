@@ -616,8 +616,6 @@ class Fun(commands.Cog):
                         "infront of rogue",
                         "to rogue",
                         "to furries",
-                        "to loli's",
-                        "to shota's",
                         "to pornhub.com videos",
                         "to illegal porn",
                         "to gay porn",
@@ -625,7 +623,6 @@ class Fun(commands.Cog):
                         "to hentaihaven.com",
                         "to poleman",
                         "to Tomatoes lucious locks of hair",
-                        "to rape",
                         "to Yugioh",
                         "to tomboys",
                     ]
