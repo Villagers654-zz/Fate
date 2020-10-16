@@ -20,8 +20,7 @@ class Tasks(commands.Cog):
         self.enabled_tasks = [
             self.status_task,
             self.log_queue,
-            self.debug_log,
-            self.auto_backup,
+            self.debug_log
         ]
         if bot.is_ready():
             self.ensure_all()
