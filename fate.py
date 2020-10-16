@@ -218,6 +218,7 @@ class Fate(commands.AutoShardedBot):
 
         super().__init__(
             command_prefix=Utils.get_prefixes,
+            intents=discord.Intents.all(),
             activity=discord.Game(name=self.config["startup_status"]),
             max_messages=self.config["max_cached_messages"],
             **options,
