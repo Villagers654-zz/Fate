@@ -42,6 +42,9 @@ class AntiSpam(commands.Cog):
                 self.blacklist = dat['blacklist']
         self.clear_old_msgs_task.start()
 
+    def cog_unload(self):
+        self.clear_old_msgs_task.stop()
+
     async def save_data(self):
         data = {'toggle': self.toggle, 'sensitivity': self.sensitivity, 'blacklist': self.blacklist}
         async with self.bot.open(self.path, "w+") as f:
@@ -570,8 +573,3 @@ class AntiSpam(commands.Cog):
 
 def setup(bot):
     bot.add_cog(AntiSpam(bot))
-
-
-def teardown(bot):
-    main = bot.cogs["AntiSpam"]  # type: AntiSpam
-    main.clear_old_msgs_task.stop()

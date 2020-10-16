@@ -51,7 +51,7 @@ class Logger(commands.Cog):
         self.recent_logs = {
             guild_id: {Type: [] for Type in self.channel_types}
             for guild_id, dat in self.config.items()
-            if (dat["type"] == "multi")
+            if dat["type"] == "multi"
         }
 
         self.static = {}
@@ -79,6 +79,12 @@ class Logger(commands.Cog):
                     bot.log.info("Canceled existing keep_alive_task in logger")
             task = self.bot.loop.create_task(self.keep_alive_task())
             bot.logger_tasks["keep_alive_task"] = task
+
+    def cog_unload(self):
+        for task_id, task in self.bot.logger_tasks.items():
+            if not task.done():
+                task.cancel()
+            del self.bot.logger_tasks[task_id]
 
     @property
     def template(self):
@@ -1955,10 +1961,3 @@ class Logger(commands.Cog):
 
 def setup(bot):
     bot.add_cog(Logger(bot))
-
-
-def teardown(bot):
-    for task_id, task in bot.logger_tasks.items():
-        if not task.done():
-            task.cancel()
-        del bot.logger_tasks[task_id]

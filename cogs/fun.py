@@ -83,6 +83,9 @@ class Fun(commands.Cog):
                 self.gay[sexuality] = {}
         self.clear_old_messages_task.start()
 
+    def cog_unload(self):
+        self.clear_old_messages_task.stop()
+
     def save_gay(self):
         with open(self.gp, "w") as f:
             json.dump(self.gay, f, ensure_ascii=False)
@@ -613,8 +616,3 @@ class Fun(commands.Cog):
 
 def setup(bot):
     bot.add_cog(Fun(bot))
-
-
-def teardown(bot):
-    main = bot.cogs["Fun"]  # type: Fun
-    main.clear_old_messages_task.stop()

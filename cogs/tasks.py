@@ -23,6 +23,14 @@ class Tasks(commands.Cog):
             self.debug_log,
             self.auto_backup,
         ]
+        if bot.is_ready():
+            self.ensure_all()
+
+    def cog_unload(self):
+        for task in self.enabled_tasks:
+            if task.is_running():
+                task.stop()
+                self.bot.log.info(f"Cancelled {task.coro.__name__}")
 
     def running_tasks(self):
         return [
@@ -221,10 +229,3 @@ class Tasks(commands.Cog):
 
 def setup(bot):
     bot.add_cog(Tasks(bot))
-
-
-def teardown(bot):
-    main = bot.cogs["Tasks"]  # type: Tasks
-    for task in main.enabled_tasks:
-        task.stop()
-        bot.log.info(f"Cancelled {task.coro.__name__}")
