@@ -20,7 +20,7 @@ from colormap import rgb2hex
 import psutil
 from discord.ext import commands
 
-from utils import colors, bytes2human as p, config
+from utils import colors, config
 from cogs.utils import Utils as utils
 
 
@@ -616,11 +616,6 @@ class Utility(commands.Cog):
                 await msg.edit(embed=e)
 
         else:
-
-            def get_bot_cpu(pid):
-                process = psutil.Process(pid)
-                return round(process.cpu_percent(interval=1))
-
             options = ["Bot Info", "User Info", "Server Info", "Channel Info"]
             choice = await self.bot.get_choice(ctx, *options, user=ctx.author)
             if not choice:
@@ -685,22 +680,32 @@ class Utility(commands.Cog):
                       "\n• **Luck** ~ `owner & main developer`"
                       "\n• **Opal, Koro, Vco** ~ `code management`"
             )
-            bot_cpu = await self.bot.loop.run_in_executor(
-                None, get_bot_cpu, os.getpid()
-            )
-            disk = psutil.disk_usage('/')
-            ram = psutil.virtual_memory()
-            freq = psutil.cpu_freq()
-            cur = str(round(freq.current))
-            cur = f"{cur[0]}.{cur[1]}GHz"
-            max = str(round(freq.max))
-            max = f"{max[0]}.{max[1]}GHz"
+
+            def get_info() -> str:
+                disk = psutil.disk_usage('/')
+                ram = psutil.virtual_memory()
+                freq = psutil.cpu_freq()
+                cur = str(round(freq.current))
+
+                if freq.current < 1000:
+                    cur = f"{cur}GHz"
+                else:
+                    cur = f"{cur[0]}.{cur[1]}GHz"
+                max = str(round(freq.max))
+                max = f"{max[0]}.{max[1]}GHz"
+                p = self.bot.utils
+                c_temp = round(psutil.sensors_temperatures(fahrenheit=False)['coretemp'][0].current)
+                f_temp = round(psutil.sensors_temperatures(fahrenheit=True)['coretemp'][0].current)
+                value = f"**Storage (Raid5)**:    {p.bytes2human(disk.used)}/{p.bytes2human(disk.total)} - ({round(disk.percent)}%)\n" \
+                        f"**RAM (DDR4)**:        {p.bytes2human(ram.used)}/{p.bytes2human(ram.total)} - ({round(ram.percent)}%)\n" \
+                        f"**CPU i9-10900K:**    {round(psutil.cpu_percent())}% @{cur}/{max}\n" \
+                        f"**CPU Temp:**             {c_temp}°C {f_temp}°F\n" \
+                        f"**Bot Usage:**              **RAM:** {p.bytes2human(bot_pid.memory_full_info().rss)} **CPU:** {round(bot_pid.cpu_percent())}%"
+                return value
+
             e.add_field(
                 name="◈ Memory ◈",
-                value=f"**Storage (Raid5)**:    {p.bytes2human(disk.used)}/{p.bytes2human(disk.total)} - ({round(disk.percent)}%)\n"
-                      f"**RAM (DDR4)**:        {p.bytes2human(ram.used)}/{p.bytes2human(ram.total)} - ({round(ram.percent)}%)\n"
-                      f"**CPU i9-10900K:**    {round(psutil.cpu_percent())}% @{cur}/{max}\n"
-                      f"**Bot Usage:**              **RAM:** {p.bytes2human(bot_pid.memory_full_info().rss)} **CPU:** {round(bot_pid.cpu_percent())}%",
+                value=await self.bot.loop.run_in_executor(None, get_info),
                 inline=False,
             )
             uptime = datetime.now() - self.bot.start_time
