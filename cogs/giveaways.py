@@ -61,7 +61,10 @@ class Giveaways(commands.Cog):
                 else:
                     random.shuffle(users)
                     winners = []
-                    for i in range(dat["winners"]):
+                    winner_count = dat["winners"]
+                    if dat["winners"] > len(users):
+                        winner_count = len(users)
+                    for i in range(winner_count):
                         winners.append(users[i])
                     if len(winners) == 1:
                         await channel.send(
