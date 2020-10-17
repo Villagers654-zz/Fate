@@ -80,7 +80,8 @@ class Leave(commands.Cog):
             "images": self.images,
             "format": self.format,
         }
-        await self.bot.save_json("./data/userdata/leave.json", data)
+        async with self.bot.open("./data/userdata/leave.json", "w+") as f:
+            await f.write(json.dumps(data))
 
     @commands.group(name="leave", aliases=["farewell"], usage=leave_help())
     @commands.cooldown(1, 3, commands.BucketType.channel)
@@ -388,7 +389,7 @@ class Leave(commands.Cog):
                 channel = self.bot.get_channel(self.channel[guild_id])
                 if not channel:
                     del self.toggle[guild_id]
-                    return self.save_data()
+                    return await self.save_data()
                 msg = self.format[guild_id]
                 msg = msg.replace("$MENTION", str(m)).replace("$SERVER", m.guild.name)
                 msg = msg.replace("!user", str(m)).replace("!server", m.guild.name)
