@@ -986,7 +986,7 @@ class Logger(commands.Cog):
     @commands.Cog.listener()
     async def on_raw_message_edit(self, payload):
         channel = self.bot.get_channel(int(payload.data["channel_id"]))
-        if not isinstance(channel, discord.DMChannel):
+        if isinstance(channel, discord.TextChannel) and channel.guild:
             guild_id = str(channel.guild.id)
             if guild_id in self.config and not payload.cached_message:
                 try:
