@@ -3,7 +3,7 @@ import traceback
 from time import time
 
 import discord
-from aiohttp import ClientConnectorError
+from aiohttp import ClientConnectorError, ClientOSError, ServerDisconnectedError
 from discord.ext import commands
 
 from utils import colors, checks
@@ -116,7 +116,7 @@ class ErrorHandler(commands.Cog):
                 await ctx.send(embed=e)
 
             # Temporarily can't connect to discord
-            if isinstance(error, ClientConnectorError):
+            if isinstance(error, (ClientConnectorError, ClientOSError, ServerDisconnectedError)):
                 await ctx.send(
                     "Temporarily failed to connect to discord; please re-run your command"
                 )
