@@ -4,8 +4,9 @@ import random
 import traceback
 import os
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from zipfile import ZipFile
+import json
 
 import discord
 from discord.ext import commands, tasks
@@ -20,7 +21,8 @@ class Tasks(commands.Cog):
         self.enabled_tasks = [
             self.status_task,
             self.log_queue,
-            self.debug_log
+            self.debug_log,
+            self.mark_alive
         ]
         if bot.is_ready():
             self.ensure_all()
@@ -31,22 +33,34 @@ class Tasks(commands.Cog):
                 task.stop()
                 self.bot.log.info(f"Cancelled {task.coro.__name__}")
 
-    def running_tasks(self):
-        return [
-            task
-            for task in asyncio.all_tasks(self.bot.loop)
-            if not task.done() and not task.cancelled()
-        ]
-
-    def running_task_names(self):
-        return sorted([task.get_name() for task in self.running_tasks()])
-
     def ensure_all(self):
         """Start any core tasks that aren't running"""
         for task in self.enabled_tasks:
             if not task.is_running():
                 task.start()
                 self.bot.log(f"Started task {task.coro.__name__}", color="cyan")
+
+    @tasks.loop(seconds=25)
+    async def mark_alive(self):
+        keep_for = self.bot.config["log_uptime_for_?_days"]  # type: int
+        path = "./data/uptime.json"
+        if not os.path.isfile(path):
+            async with self.bot.open(path, "w") as f:
+                await f.write(json.dumps([]))
+        async with self.bot.open(path, "r") as f:
+            uptime_data = json.loads(await f.read())  # type: list
+
+        for date_entry in list(uptime_data):
+            date = datetime.strptime(date_entry, "%Y-%m-%d %H:%M:%S")
+            if date < datetime.utcnow() - timedelta(days=keep_for):
+                uptime_data.remove(date_entry)
+
+        now = str(datetime.utcnow().replace(second=0, microsecond=0))
+        if now not in uptime_data:
+            uptime_data.append(now)
+
+        async with self.bot.open(path, "w+") as f:
+            await f.write(json.dumps(uptime_data))
 
     @tasks.loop()
     async def status_task(self):
