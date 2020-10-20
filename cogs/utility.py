@@ -708,10 +708,31 @@ class Utility(commands.Cog):
                 value=await self.bot.loop.run_in_executor(None, get_info),
                 inline=False,
             )
-            uptime = datetime.now() - self.bot.start_time
+
+            async with self.bot.open("./data/uptime.json", "r") as f:
+                uptime_data = json.loads(await f.read())
+            uptime_data = [
+                datetime.strptime(date_string, "%Y-%m-%d %H:%M:%S")
+                for date_string in uptime_data
+            ]
+
+            timespan = (uptime_data[len(uptime_data) - 1] - uptime_data[0]).seconds
+            downtime = 0
+            for iteration, date in enumerate(uptime_data):
+                if iteration != len(uptime_data) - 1:
+                    diff = (uptime_data[iteration + 1] - date).seconds
+                    if diff > 60:
+                        downtime += diff
+                        continue
+
+            if downtime == 0:
+                downtime = 1
+            percentage = round(100 - ((round(downtime) / round(timespan)) * 100))
+            online_for = datetime.now() - self.bot.start_time
             e.add_field(
                 name="◈ Uptime ◈",
-                value=utils.get_time(round(uptime.total_seconds())),
+                value=f"Online for {utils.get_time(round(online_for.total_seconds()))}\n"
+                      f"With {percentage}% uptime in the last 7 days\n",
                 inline=False,
             )
             e.set_footer(
