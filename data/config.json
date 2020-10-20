@@ -19,6 +19,7 @@
   "startup_status": "Up and Running",
   "max_cached_messages": 64000,
   "debug_mode": false,
+  "log_uptime_for_?_days": 7,
 
   "support_server": "https://discord.gg/wtjuznh",
   "original_bot": true,
