@@ -8,8 +8,7 @@
   "token": "goes in /utils/auth.py",
   "token_id": "fate",
   "token_encryption": true,
-  "bot_data": "./data",
-  "user_data": "./data/userdata",
+  "datastore_location": "./data",
 
   "hub_server": 397415086295089155,
   "log_channel": 577661500802465813,

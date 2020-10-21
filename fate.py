@@ -18,6 +18,7 @@ from termcolor import cprint
 from utils import auth, colors, checks
 from utils.custom_logging import Logging
 from cogs.utils import Utils
+from cogs.tasks import Tasks
 
 
 class EmptyException(Exception):
@@ -226,15 +227,21 @@ class Fate(commands.AutoShardedBot):
 
     @property
     def utils(self) -> Utils:
+        """Return the cog containing utility functions"""
         if "Utils" not in self.cogs:
             raise ModuleNotFoundError("The utils cog hasn't been loaded yet")
         return self.get_cog("Utils")
 
     @property
-    def core_tasks(self):
+    def core_tasks(self) -> Tasks:
+        """Return the cog for tasks relating to bot management"""
         if "Tasks" not in self.cogs:
             raise ModuleNotFoundError("The Tasks cog hasn't been loaded yet")
         return self.get_cog("Tasks")
+
+    def get_fp_for(self, path) -> str:
+        """Return the path for the set storage location"""
+        return os.path.join(self.config["datastore_location"], path)
 
     # async def on_error(self, event_method, *args, **kwargs):
     #     full_error = str(traceback.format_exc())
