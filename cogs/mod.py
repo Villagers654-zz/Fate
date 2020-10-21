@@ -78,6 +78,8 @@ def has_warn_permission():
     async def predicate(ctx):
         cls = globals()["cls"]  # type: Moderation
         config = cls.template
+        if not ctx.guild:
+            return False
         guild_id = str(ctx.guild.id)
         if guild_id in cls.config:
             config = cls.config[guild_id]
