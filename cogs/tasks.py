@@ -22,7 +22,8 @@ class Tasks(commands.Cog):
             self.status_task,
             self.log_queue,
             self.debug_log,
-            self.mark_alive
+            self.mark_alive,
+            self.auto_backup
         ]
         if bot.is_ready():
             self.ensure_all()
@@ -183,7 +184,7 @@ class Tasks(commands.Cog):
         message += "```"
         await channel.send(mention + message)
 
-    @tasks.loop(hours=5)
+    @tasks.loop(hours=2)
     async def auto_backup(self):
         """Backs up files every x seconds and keeps them for x days"""
 
@@ -197,43 +198,53 @@ class Tasks(commands.Cog):
             return file_paths
 
         keep_for = 7  # Days to keep each backup
-        await asyncio.sleep(60 * 60)
+        await asyncio.sleep(1)
         before = time.monotonic()
 
         def copy_files():
             # Copy all data to the ZipFile
+            path = self.bot.config["backups_location"]
             file_paths = get_all_file_paths("./data")
-            fp = f"backup_{datetime.now()}.zip"
+            fp = os.path.join(path, f"backup_{datetime.now()}.zip")
+
             with ZipFile(fp, "w") as _zip:
                 for file in file_paths:
                     _zip.write(file)
 
-            creds = auth.Backups()
-            cnopts = pysftp.CnOpts()
-            cnopts.hostkeys = None
-            with pysftp.Connection(
-                creds.host,
-                username=creds.username,
-                password=creds.password,
-                port=creds.port,
-                cnopts=cnopts,
-            ) as sftp:
-                # Remove older backups
-                root = "/home/luck/Backups"
-                for backup in sftp.listdir(root):
-                    backup_time = datetime.strptime(
-                        backup.split("_")[1].strip(".zip"), "%Y-%m-%d %H:%M:%S.%f"
-                    )
-                    if (datetime.now() - backup_time).days > keep_for:
-                        try:
-                            sftp.remove(backup)
-                            self.bot.log(f"Removed backup {backup}")
-                        except FileNotFoundError:
-                            pass
+            for backup in os.listdir(path):
+                backup_time = datetime.strptime(
+                    backup.split("_")[1].strip(".zip"), "%Y-%m-%d %H:%M:%S.%f"
+                )
+                if (datetime.now() - backup_time).days > keep_for:
+                    os.remove(backup)
+                    self.bot.log.info(f"Removed backup {backup}")
 
-                # Transfer then remove the local backup
-                sftp.put(fp, os.path.join(root, fp))
-                os.remove(fp)
+            # creds = auth.Backups()
+            # cnopts = pysftp.CnOpts()
+            # cnopts.hostkeys = None
+            # with pysftp.Connection(
+            #     creds.host,
+            #     username=creds.username,
+            #     password=creds.password,
+            #     port=creds.port,
+            #     cnopts=cnopts,
+            # ) as sftp:
+            #     # Remove older backups
+            #     root = "/home/luck/Backups"
+            #     for backup in sftp.listdir(root):
+            #         backup_time = datetime.strptime(
+            #             backup.split("_")[1].strip(".zip"), "%Y-%m-%d %H:%M:%S.%f"
+            #         )
+            #         if (datetime.now() - backup_time).days > keep_for:
+            #             try:
+            #                 sftp.remove(backup)
+            #                 self.bot.log(f"Removed backup {backup}")
+            #             except FileNotFoundError:
+            #                 pass
+#
+            #     # Transfer then remove the local backup
+            #     sftp.put(fp, os.path.join(root, fp))
+            #     os.remove(fp)
 
         await self.bot.loop.run_in_executor(None, copy_files)
         ping = round((time.monotonic() - before) * 1000)
