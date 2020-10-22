@@ -869,7 +869,6 @@ class Logger(commands.Cog):
                 if "!here" in content:
                     mention = "@here"
                 if mention:
-                    m = await msg.channel.fetch_message(msg.id)
                     e = discord.Embed(color=white())
                     e.title = f"~==🍸{mention} mentioned🍸==~"
                     e.set_thumbnail(url=msg.author.avatar_url)
@@ -1183,7 +1182,10 @@ class Logger(commands.Cog):
         guild_id = str(payload.guild_id)
         if guild_id in self.config:
             channel = self.bot.get_channel(payload.channel_id)
-            msg = await channel.fetch_message(payload.message_id)
+            try:
+                msg = await channel.fetch_message(payload.message_id)
+            except (discord.errors.NotFound, discord.errors.Forbidden):
+                return
             if msg.author.id in self.config[guild_id]["ignored_bots"]:
                 return
             if msg.channel.id in self.config[guild_id]["ignored_channels"]:
