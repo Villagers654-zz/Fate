@@ -207,6 +207,12 @@ class Logger(commands.Cog):
                         if not self.wait_queue[guild_id]:
                             del self.wait_queue[guild_id]
                     break
+            elif not guild or not guild.me:
+                if parent:
+                    self.wait_queue[guild_id].remove(permission)
+                    if not self.wait_queue[guild_id]:
+                        del self.wait_queue[guild_id]
+                return False
             else:
                 if eval(f"guild.me.guild_permissions.{permission}"):
                     if parent:
