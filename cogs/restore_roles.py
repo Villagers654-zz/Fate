@@ -116,7 +116,7 @@ class RestoreRoles(commands.Cog):
                     and not role.managed
                 )
 
-            for role in [role for role in member.roles if is_modifiable(role)]:
+            for role in [role for role in member.roles if role and is_modifiable(role)]:
                 notable = [
                     "view_audit_log",
                     "manage_roles",
