@@ -1092,7 +1092,10 @@ class Utility(commands.Cog):
             return await ctx.send(embed=e)
         if len(args) == 1:
             _hex = args[0].strip("#")
-            color = int("0x" + _hex, 0)
+            try:
+                color = int("0x" + _hex, 0)
+            except ValueError:
+                return await ctx.send("That's not a real hex")
             if color > 16777215:
                 return await ctx.send("That hex value is too large")
             e = discord.Embed(color=color)
