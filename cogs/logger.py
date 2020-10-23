@@ -893,7 +893,7 @@ class Logger(commands.Cog):
                                 f"[Jump to MSG]({msg.jump_url})": None,
                             }
                         )
-                        for group in self.bot.utils.split(m.content, 1024):
+                        for group in self.bot.utils.split(msg.content, 1024):
                             e.add_field(name="Content", value=group, inline=False)
                         self.queue[guild_id].append([e, "system+", time()])
 
