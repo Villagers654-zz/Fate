@@ -374,7 +374,7 @@ class AntiSpam(commands.Cog):
                             triggered = True
 
             # duplicate messages
-            if self.toggle[guild_id]['Duplicates']:
+            if self.toggle[guild_id]['Duplicates'] and msg.content:
                 channel_id = str(msg.channel.id)
                 if channel_id not in self.dupes:
                     self.dupes[channel_id] = []
@@ -396,13 +396,16 @@ class AntiSpam(commands.Cog):
                             users = set(list([
                                 *[m.author for m in dupes if m], *users
                             ]))
+                            for message in dupes:
+                                with suppress(IndexError, ValueError):
+                                    self.dupes[channel_id].remove(message)
                             await msg.channel.delete_messages([
                                 message for message in dupes if message
                             ])
                             triggered = True
                             break
 
-            if self.toggle[guild_id]['Inhuman']:
+            if self.toggle[guild_id]['Inhuman'] and msg.content:
                 abcs = "abcdefghijklmnopqrstuvwxyz"
                 content = str(msg.content).lower()
                 lines = content.split("\n")
