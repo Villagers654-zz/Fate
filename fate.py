@@ -17,7 +17,7 @@ from termcolor import cprint
 
 from utils import auth, colors, checks
 from utils.custom_logging import Logging
-from cogs.utils import Utils
+from cogs.utils import Utils, Cache, CacheWriter
 from cogs.tasks import Tasks
 
 
@@ -147,19 +147,26 @@ class Fate(commands.AutoShardedBot):
 
         self.cursor = Cursor
 
+        self.cache = Cache(self)  # type: Cache
+
         # Async compatible file manager using aiofiles and asyncio.Lock
         class AsyncFileManager:
-            def __init__(this, file: str, mode: str = "r", lock: bool = True):
+            def __init__(this, file: str, mode: str = "r", lock: bool = True, cache=False):
                 this.file = this.temp_file = file
                 if "w" in mode:
                     this.temp_file += ".tmp"
                 this.mode = mode
                 this.fp_manager = None
-                this.lock = lock
-                if lock and file not in self.locks:
+                this.lock = lock if not cache else False
+                this.cache = cache
+                if lock and file not in self.locks and not this.cache:
                     self.locks[file] = asyncio.Lock()
+                this.writer = None
 
             async def __aenter__(this):
+                if this.cache:
+                    this.writer = CacheWriter(self.cache, this.file)
+                    return this.writer
                 if this.lock:
                     await self.locks[this.file].acquire()
                 this.fp_manager = await aiofiles.open(
@@ -168,11 +175,15 @@ class Fate(commands.AutoShardedBot):
                 return this.fp_manager
 
             async def __aexit__(this, _exc_type, _exc_value, _exc_traceback):
+                if this.cache:
+                    del this.writer
+                    return None
                 await this.fp_manager.close()
                 if this.file != this.temp_file:
                     os.rename(this.temp_file, this.file)
                 if this.lock:
                     self.locks[this.file].release()
+                return None
 
         self.open = AsyncFileManager
 
@@ -418,7 +429,6 @@ async def on_connect():
         if index + 1 == len(chars):
             index = 0
         await asyncio.sleep(0.21)
-        bot.log.debug("Iterated through cache initialization")
 
 
 @bot.event

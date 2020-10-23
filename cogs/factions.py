@@ -44,7 +44,7 @@ class Factions(commands.Cog):
         }
 
     async def save_data(self):
-        async with self.bot.open(self.dir, "w+") as f:
+        async with self.bot.open(self.dir, "w+", cache=True) as f:
             await f.write(
                 json.dumps(
                     {

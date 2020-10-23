@@ -16,7 +16,7 @@ import aiohttp
 import aiofiles
 from contextlib import suppress
 
-from discord.ext import commands
+from discord.ext import commands, tasks
 import discord
 from colormap import rgb2hex
 from PIL import Image, ImageDraw, ImageFont
@@ -221,8 +221,7 @@ class Utils(commands.Cog):
     @staticmethod
     def get_prefixes(bot, msg):
         conf = Utils.get_config()  # type: dict
-        with open("./data/config.json", "r") as f:
-            config = json.load(f)  # type: dict
+        config = bot.config
         if msg.author.id == config["bot_owner_id"]:
             return commands.when_mentioned_or(".")(bot, msg)
         if "blocked" in conf:
@@ -968,7 +967,40 @@ class TempList(list):
         )
 
 
+class CacheWriter:
+    def __init__(self, cache, filepath):
+        self.cache = cache
+        self.filepath = filepath
 
+    async def write(self, *args, **kwargs):
+        await self.cache.write(self.filepath, *args, **kwargs)
+
+
+class Cache:
+    def __init__(self, bot):
+        self.bot = bot
+        self.data = {}  # Filepath: {"args": list, "kwargs": dict}
+        self.dump_task.start()
+
+    def __del__(self):
+        self.dump_task.stop()
+
+    @tasks.loop(minutes=15)
+    async def dump_task(self):
+        for filepath, data in list(self.data.items()):
+            args = data["args"]
+            kwargs = data["kwargs"]
+            async with self.bot.open(filepath, "w+") as f:
+                await f.write(*args, *kwargs)
+            del self.data[filepath]
+            self.bot.log.info(f"Wrote {filepath} from cache")
+
+    async def write(self, filepath, *args, **kwargs):
+        self.data[filepath] = {
+            "args": args,
+            "kwargs": kwargs
+        }
+        self.bot.log.debug(f"Cached for later {filepath}")
 
 
 def setup(bot):
