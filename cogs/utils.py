@@ -97,7 +97,8 @@ class Utils(commands.Cog):
         e.set_image(url="attachment://" + fp)
         e.set_footer(text=f"You have {self.get_time(timeout)}")
         message = await channel.send(
-            f"{user.mention} please verify you're human", embed=e, file=discord.File(fp)
+            f"{user.mention} please verify you're human", embed=e, file=discord.File(fp),
+            allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=True)
         )
         os.remove(fp)
 
