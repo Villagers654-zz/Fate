@@ -993,14 +993,13 @@ class Cache:
             async with self.bot.open(filepath, "w+") as f:
                 await f.write(*args, *kwargs)
             del self.data[filepath]
-            self.bot.log.info(f"Wrote {filepath} from cache")
+            self.bot.log.debug(f"Wrote {filepath} from cache")
 
     async def write(self, filepath, *args, **kwargs):
         self.data[filepath] = {
             "args": args,
             "kwargs": kwargs
         }
-        self.bot.log.debug(f"Cached for later {filepath}")
 
 
 def setup(bot):
