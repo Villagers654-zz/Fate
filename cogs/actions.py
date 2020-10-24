@@ -137,40 +137,6 @@ class Actions(commands.Cog):
             ), allowed_mentions=self.mentions
         )
 
-    @commands.command(name="kms", aliases=["suicide"], description="Textart")
-    @commands.cooldown(1, 5, commands.BucketType.channel)
-    async def kms(self, ctx):
-        if ctx.author.id in self.protected:
-            return await ctx.send("nO")
-        await ctx.send(
-            """━━━━━┒
-┓┏┓┏┓┃Oof
-┛┗┛┗┛┃＼O／
-┓┏┓┏┓┃ /
-┛┗┛┗┛┃ノ)
-┓┏┓┏┓┃ 
-┛┗┛┗┛┃ 
-┓┏┓┏┓┃ 
-┛┗┛┗┛┃ 
-┓┏┓┏┓┃
-┛┗┛┗┛┃ 
-┓┏┓┏┓┃
-┛┗┛┗┛┃ 
-┓┏┓┏┓┃
-┛┗┛┗┛┃ 
-┓┏┓┏┓┃
-┛┗┛┗┛┃ 
-┓┏┓┏┓┃
-┛┗┛┗┛┃ 
-┓┏┓┏┓┃ 
-┛┗┛┗┛┃ 
-┓┏┓┏┓┃ 
-┛┗┛┗┛┃ 
-┓┏┓┏┓┃
-┃┃┃┃┃┃
-┻┻┻┻┻┻"""
-        )
-
 
 def setup(bot):
     bot.add_cog(Actions(bot))
