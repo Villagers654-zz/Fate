@@ -696,11 +696,11 @@ class Utility(commands.Cog):
                 p = self.bot.utils
                 c_temp = round(psutil.sensors_temperatures(fahrenheit=False)['coretemp'][0].current)
                 f_temp = round(psutil.sensors_temperatures(fahrenheit=True)['coretemp'][0].current)
-                value = f"**Storage (HDD)**:    {p.bytes2human(disk.used)}/{p.bytes2human(disk.total)} - ({round(disk.percent)}%)\n" \
-                        f"**RAM (DDR4)**:        {p.bytes2human(ram.used)}/{p.bytes2human(ram.total)} - ({round(ram.percent)}%)\n" \
-                        f"**CPU i9-10900K:**    {round(psutil.cpu_percent())}% @{cur}/{max}\n" \
-                        f"**CPU Temp:**             {c_temp}°C {f_temp}°F\n" \
-                        f"**Bot Usage:**              **RAM:** {p.bytes2human(bot_pid.memory_full_info().rss)} **CPU:** {round(bot_pid.cpu_percent())}%"
+                value = f"**Storage (HDD)**: {p.bytes2human(disk.used)}/{p.bytes2human(disk.total)} - ({round(disk.percent)}%)\n" \
+                        f"**RAM (DDR4)**: {p.bytes2human(ram.used)}/{p.bytes2human(ram.total)} - ({round(ram.percent)}%)\n" \
+                        f"**CPU i9-10900K:** {round(psutil.cpu_percent())}% @{cur}/{max}\n" \
+                        f"**CPU Temp:** {c_temp}°C {f_temp}°F\n" \
+                        f"**Bot Usage:** **RAM:** {p.bytes2human(bot_pid.memory_full_info().rss)} **CPU:** {round(bot_pid.cpu_percent())}%"
                 return value
 
             e.add_field(
@@ -727,7 +727,7 @@ class Utility(commands.Cog):
 
             if downtime == 0:
                 downtime = 1
-            percentage = round(100 - ((round(downtime) / round(timespan)) * 100))
+            percentage = round((round(timespan - downtime) / round(timespan)) * 100)
             online_for = datetime.now() - self.bot.start_time
             e.add_field(
                 name="◈ Uptime ◈",
