@@ -14,6 +14,7 @@ import discord
 import aiomysql
 import pymysql
 from termcolor import cprint
+from discord.errors import NotFound, Forbidden, HTTPException
 
 from utils import auth, colors, checks
 from utils.custom_logging import Logging
@@ -448,8 +449,14 @@ async def on_ready():
 
 @bot.event
 async def on_message(msg):
-    if "@everyone" in msg.content or "@here" in msg.content:
-        msg.content = msg.content.replace("@", "!")
+    # Send the prefix if the bot's mentioned
+    if bot.user.mentioned_in(msg) and len(msg.content.split()) == 1:
+        prefixes = "\n".join(
+            bot.utils.get_prefixes(bot, msg)[1:]  # type: list
+        )
+        with suppress(NotFound, Forbidden, HTTPException, AttributeError):
+            await msg.channel.send(f"The prefixes you can use are:\n{prefixes}")
+        return
     blacklist = ["trap", "dan", "gel", "yaoi"]
     if "--dm" in msg.content and not any(x in msg.content for x in blacklist):
         msg.content = msg.content.replace(" --dm", "")
