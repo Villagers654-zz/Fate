@@ -1,5 +1,6 @@
 from os.path import isfile
 import json
+from contextlib import suppress
 from discord.ext import commands
 import discord
 from utils import colors
@@ -92,12 +93,13 @@ class RestoreRoles(commands.Cog):
         if guild_id in self.cache and guild_id in self.guilds:
             if user_id in self.cache[guild_id]:
                 roles = []
-                for role_id in self.cache[guild_id][user_id]:
-                    role = member.guild.get_role(role_id)
-                    if isinstance(role, discord.Role):
-                        if role.position < member.guild.me.top_role.position:
-                            roles.append(role)
-                await member.add_roles(*roles, reason=".Restore-Roles")
+                with suppress(discord.errors.NotFound, discord.errors.Forbidden, AttributeError):
+                    for role_id in self.cache[guild_id][user_id]:
+                        role = member.guild.get_role(role_id)
+                        if isinstance(role, discord.Role):
+                            if role.position < member.guild.me.top_role.position:
+                                roles.append(role)
+                    await member.add_roles(*roles, reason=".Restore-Roles")
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
