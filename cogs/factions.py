@@ -11,6 +11,9 @@ from discord.ext import commands
 from utils import colors, checks
 
 
+mentions = discord.AllowedMentions(everyone=False, roles=False, users=True)
+
+
 class Factions(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -696,7 +699,8 @@ class Factions(commands.Cog):
                     return await ctx.send("This users already in a faction")
         self.factions[guild_id][faction]["members"].append(ctx.author.id)
         await ctx.send(
-            f"{user.mention}, {ctx.author.name} wants to invite you to {faction}. Reply with `.accept` to join"
+            f"{user.mention}, {ctx.author.name} wants to invite you to {faction}. Reply with `.accept` to join",
+            allowed_mentions=mentions
         )
         self.appending[user.id] = "yeet"
         msg = await self.bot.utils.wait_for_msg(ctx, user)
@@ -816,43 +820,43 @@ class Factions(commands.Cog):
         await self.save_data()
         if ctx.author.id in self.notifs:
             await asyncio.sleep(60)
-            await ctx.send(f"{ctx.author.mention} your cooldowns up", delete_after=10)
+            await ctx.send(f"{ctx.author.mention} your cooldowns up", delete_after=10, allowed_mentions=mentions)
 
-    @_factions.command(name="suicide", aliases=["kms"], category="economy")
-    @commands.cooldown(1, 120, commands.BucketType.user)
-    async def _suicide(self, ctx):
-        faction = self.get_faction(ctx.author)
-        if not faction:
-            return await ctx.send("You need to be in a faction to use this command")
-        guild_id = str(ctx.guild.id)
-        stories = random.randint(1, 8)
-        building = "━━━━━┒\n┓┏┓┏┓┃Oof\n┛┗┛┗┛┃＼O／\n┓┏┓┏┓┃ /\n┛┗┛┗┛┃ノ)"
-        for i in range(stories):
-            building += "\n┓┏┓┏┓┃ \n┛┗┛┗┛┃ "
-        building += "\n┓┏┓┏┓┃\n┃┃┃┃┃┃\n┻┻┻┻┻┻"
-        e = discord.Embed(color=colors.purple())
-        e.set_author(
-            name="You Attempted to Commit Suicide", icon_url=self.get_icon(ctx.author)
-        )
-        e.set_thumbnail(url=ctx.guild.icon_url)
-        e.description = f"{building}\n\n"
-        money = random.randint(2, 10)
-        if stories >= 4:
-            e.colour = colors.green()
-            e.description += (
-                f"You died and earned your faction ${money}\n"
-                f"seems that's all you're worth :c"
-            )
-            self.factions[guild_id][faction]["balance"] += money
-        else:
-            e.colour = colors.red()
-            e.description += (
-                f"You lived and were sent to \n"
-                f"get help costing your faction ${money}"
-            )
-            self.factions[guild_id][faction]["balance"] -= money
-        await ctx.send(embed=e)
-        await self.save_data()
+    # @_factions.command(name="suicide", aliases=["kms"], category="economy")
+    # @commands.cooldown(1, 120, commands.BucketType.user)
+    # async def _suicide(self, ctx):
+    #     faction = self.get_faction(ctx.author)
+    #     if not faction:
+    #         return await ctx.send("You need to be in a faction to use this command")
+    #     guild_id = str(ctx.guild.id)
+    #     stories = random.randint(1, 8)
+    #     building = "━━━━━┒\n┓┏┓┏┓┃Oof\n┛┗┛┗┛┃＼O／\n┓┏┓┏┓┃ /\n┛┗┛┗┛┃ノ)"
+    #     for i in range(stories):
+    #         building += "\n┓┏┓┏┓┃ \n┛┗┛┗┛┃ "
+    #     building += "\n┓┏┓┏┓┃\n┃┃┃┃┃┃\n┻┻┻┻┻┻"
+    #     e = discord.Embed(color=colors.purple())
+    #     e.set_author(
+    #         name="You Attempted to Commit Suicide", icon_url=self.get_icon(ctx.author)
+    #     )
+    #     e.set_thumbnail(url=ctx.guild.icon_url)
+    #     e.description = f"{building}\n\n"
+    #     money = random.randint(2, 10)
+    #     if stories >= 4:
+    #         e.colour = colors.green()
+    #         e.description += (
+    #             f"You died and earned your faction ${money}\n"
+    #             f"seems that's all you're worth :c"
+    #         )
+    #         self.factions[guild_id][faction]["balance"] += money
+    #     else:
+    #         e.colour = colors.red()
+    #         e.description += (
+    #             f"You lived and were sent to \n"
+    #             f"get help costing your faction ${money}"
+    #         )
+    #         self.factions[guild_id][faction]["balance"] -= money
+    #     await ctx.send(embed=e)
+    #     await self.save_data()
 
     @_factions.command(name="pay", aliases=["give"])
     @commands.cooldown(1, 3, commands.BucketType.user)
@@ -900,7 +904,8 @@ class Factions(commands.Cog):
             return await ctx.send("This user already has a pending request")
         await ctx.send(
             f"{target_owner.mention}, {ctx.author.name} wants to merge factions with him/her as the owner\n"
-            f"Reply with `.confirm annex` to accept the offer"
+            f"Reply with `.confirm annex` to accept the offer",
+            allowed_mentions=mentions
         )
         self.appending[target_owner.id] = "yeet"
         msg = await self.bot.utils.wait_for_msg(ctx, target_owner)
@@ -1191,13 +1196,7 @@ class Factions(commands.Cog):
         e.set_footer(
             text="Usage: .factions buy item_name", icon_url=self.bot.user.avatar_url
         )
-        msg = await ctx.send(embed=e)
-        for color in colors.ColorSets().rainbow():
-            e.colour = color
-            await msg.edit(embed=e)
-            await asyncio.sleep(1.5)
-        e.colour = colors.red()
-        await msg.edit(embed=e)
+        await ctx.send(embed=e)
 
     @_factions.command(name="buy", aliases=["buyitem", "buy-item"])
     @commands.cooldown(1, 3, commands.BucketType.user)
