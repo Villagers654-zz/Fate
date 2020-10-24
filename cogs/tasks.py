@@ -184,7 +184,7 @@ class Tasks(commands.Cog):
         message += "```"
         await channel.send(mention + message)
 
-    @tasks.loop(hours=2)
+    @tasks.loop(seconds=1)
     async def auto_backup(self):
         """Backs up files every x seconds and keeps them for x days"""
 
@@ -197,9 +197,12 @@ class Tasks(commands.Cog):
                         file_paths.append(filepath)
             return file_paths
 
-        keep_for = 7  # Days to keep each backup
-        await asyncio.sleep(1)
+        await asyncio.sleep(
+            60 * 60  # 1 hour
+            * self.bot.config["backup_every_?_hours"]
+        )
         before = time.monotonic()
+        keep_for = self.bot.config["keep_backups_for_?_days"]
 
         def copy_files():
             # Copy all data to the ZipFile

@@ -10,6 +10,8 @@
   "token_encryption": true,
   "datastore_location": "./data",
   "backups_location": "/mnt/drive2/Backups/Fate",
+  "backup_every_?_hours": 6,
+  "keep_backups_for_?_days": 7,
 
   "hub_server": 397415086295089155,
   "log_channel": 577661500802465813,
