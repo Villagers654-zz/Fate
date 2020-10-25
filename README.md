@@ -2,6 +2,11 @@
 ![black](https://img.shields.io/badge/code%20style-black-black)
 
 A multipurpose discord bot
+
+<a href="https://top.gg/bot/506735111543193601">
+    <img src="https://top.gg/api/widget/506735111543193601.svg" alt="Fate" />
+</a>
+
 ## Getting Started
 ### Compatibility
 Python 3.8 or higher due to required asyncio features
