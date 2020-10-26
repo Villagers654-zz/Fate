@@ -716,7 +716,7 @@ class Utility(commands.Cog):
                 for date_string in uptime_data
             ]
 
-            timespan = (uptime_data[len(uptime_data) - 1] - uptime_data[0]).seconds
+            # timespan = (uptime_data[len(uptime_data) - 1] - uptime_data[0]).seconds
             downtime = 0
             for iteration, date in enumerate(uptime_data):
                 if iteration != len(uptime_data) - 1:
@@ -727,12 +727,12 @@ class Utility(commands.Cog):
 
             if downtime == 0:
                 downtime = 1
-            percentage = round((round(timespan - downtime) / round(timespan)) * 100)
+            # percentage = round((round(timespan - downtime) / round(timespan)) * 100)
             online_for = datetime.now() - self.bot.start_time
             e.add_field(
                 name="◈ Uptime ◈",
-                value=f"Online for {utils.get_time(round(online_for.total_seconds()))}\n"
-                      f"With {percentage}% uptime in the last 7 days\n",
+                value=f"Online for {utils.get_time(round(online_for.total_seconds()))}\n",
+                      # f"With {percentage}% uptime in the last 7 days\n",
                 inline=False,
             )
             e.set_footer(
