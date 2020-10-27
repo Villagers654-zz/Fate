@@ -147,6 +147,7 @@ class Utils(commands.Cog):
         def predicate(r, u) -> bool:
             return u.id == user.id and str(r.emoji) in emojis
 
+        options = options if not isinstance(options[0], list) else options[0]
         emojis = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️"][
             : len(options)
         ]
