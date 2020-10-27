@@ -30,10 +30,14 @@ class Fate(commands.AutoShardedBot):
     def __init__(self, **options):
         with open("./data/config.json", "r") as f:
             self.config = json.load(f)  # type: dict
+        if not os.path.exists(self.config["datastore_location"]):
+            os.mkdir(self.config["datastore_location"])
+
         self.debug_mode = self.config["debug_mode"]
         self.owner_ids = set(
             list([self.config["bot_owner_id"], *self.config["bot_owner_ids"]])
         )
+
         self.pool = None  # MySQL Pool initialized on_ready
         self.tcp_servers = {  # Socket servers for web panel
             "logger": None,
