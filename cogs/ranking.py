@@ -9,7 +9,7 @@ import requests
 from io import BytesIO
 from datetime import datetime
 import aiohttp
-from pymysql.err import DataError
+from pymysql.err import DataError, InternalError
 
 from discord.ext import commands, tasks
 import discord
@@ -236,6 +236,8 @@ class Ranking(commands.Cog):
                         )
                 except DataError as error:
                     self.bot.log(f"Error updating global xp\n{error}")
+                except InternalError:
+                    pass
                 except RuntimeError:
                     return
 
@@ -282,6 +284,8 @@ class Ranking(commands.Cog):
                         )
                 except DataError as error:
                     self.bot.log(f"Error updating guild xp\n{error}")
+                except InternalError:
+                    pass
                 except RuntimeError:
                     return
 
