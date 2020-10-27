@@ -31,24 +31,33 @@ class AntiSpam(commands.Cog):
         self.toggle = {}
         self.sensitivity = {}
         self.blacklist = {}
-        self.path = './data/userdata/anti_spam.json'
-        if not os.path.isdir('./data'):
-            os.mkdir('data')
+        self.path = bot.get_fp_for("userdata/anti_spam.json")
         if os.path.isfile(self.path):
             with open(self.path, 'r') as f:
                 dat = json.load(f)
                 self.toggle = dat['toggle']
                 self.sensitivity = dat['sensitivity']
                 self.blacklist = dat['blacklist']
-        self.clear_old_msgs_task.start()
+                if 'prefixes' not in dat:
+                    dat['prefixes'] = {}
+                self.prefixes = dat['prefixes']
+        self.cleanup_task.start()
+
+    @property
+    def data(self):
+        return {
+            'toggle': self.toggle, 'sensitivity': self.sensitivity,
+            'blacklist': self.blacklist, 'prefixes': self.prefixes
+        }
 
     def cog_unload(self):
-        self.clear_old_msgs_task.stop()
+        with open(self.path, "w") as f:
+            f.write(json.dumps(self.data))
+        self.cleanup_task.stop()
 
-    async def save_data(self):
-        data = {'toggle': self.toggle, 'sensitivity': self.sensitivity, 'blacklist': self.blacklist}
-        async with self.bot.open(self.path, "w+") as f:
-            await f.write(json.dumps(data))
+    async def save_data(self, cache=True):
+        async with self.bot.open(self.path, "w+", cache=cache) as f:
+            await f.write(json.dumps(self.data))
 
     def init(self, guild_id):
         if guild_id not in self.sensitivity:
@@ -62,8 +71,16 @@ class AntiSpam(commands.Cog):
         }
 
     @tasks.loop(seconds=4)
-    async def clear_old_msgs_task(self):
+    async def cleanup_task(self):
         await asyncio.sleep(1)
+
+        # Remove guilds from blacklist if it's empty
+        for guild_id, channels in list(self.blacklist.items()):
+            if not channels:
+                with suppress(KeyError, ValueError):
+                    del self.blacklist[guild_id]
+
+        # Remove guilds from prefixes if it's empty
 
         # Message Index
         for user_id, messages in list(self.msgs.items()):
@@ -264,31 +281,62 @@ class AntiSpam(commands.Cog):
 
     @anti_spam.command(name='ignore')
     @commands.has_permissions(manage_messages=True)
-    async def _ignore(self, ctx, channel: discord.TextChannel = None):
+    async def _ignore(self, ctx, *, target):
         guild_id = str(ctx.guild.id)
-        if guild_id not in self.blacklist:
-            self.blacklist[guild_id] = []
-        if not channel:
-            channel = ctx.channel
-        if channel.id in self.blacklist[guild_id]:
-            return await ctx.send('This channel is already ignored')
-        self.blacklist[guild_id].append(channel.id)
-        await ctx.send('👍')
+        if ctx.message.channel_mentions:
+            if guild_id not in self.blacklist:
+                self.blacklist[guild_id] = []
+            for channel in ctx.message.channel_mentions:
+                if channel.id in self.blacklist[guild_id]:
+                    await ctx.send('This channel is already ignored')
+                    continue
+                self.blacklist[guild_id].append(channel.id)
+                await ctx.send(f"I'll now ignore {channel.mention}")
+        else:
+            # Check if the phrase is already ignored
+            if guild_id in self.prefixes and target in self.prefixes[guild_id]:
+                p = self.bot.utils.get_prefix(ctx)  # type: str
+                return await ctx.send(
+                    f"That's already ignored. Use `{p}antispam unignore {target}` to remove it"
+                )
+
+            # Confirm that they're using the command correctly
+            await ctx.send(f"Are you trying to get me to ignore "
+                           f"duplicate messages starting with {target}?")
+            choice = await self.bot.utils.get_choice(
+                ctx, ["Yes", "No"], user=ctx.author
+            )
+            if not choice:
+                return
+            if choice == "No":
+                return await ctx.send("Sorry, but atm that's all I'm programmed to do with that arg")
+            if guild_id not in self.prefixes:
+                self.prefixes[guild_id] = []
+            self.prefixes[guild_id].append(target)
+            await ctx.send('👍')
+
         await self.save_data()
 
     @anti_spam.command(name='unignore')
     @commands.has_permissions(manage_messages=True)
-    async def _unignore(self, ctx, channel: discord.TextChannel = None):
+    async def _unignore(self, ctx, *, target):
         guild_id = str(ctx.guild.id)
-        if guild_id not in self.blacklist:
-            return await ctx.send('This server has no ignored channels')
-        if not channel:
-            channel = ctx.channel
-        if channel.id not in self.blacklist[guild_id]:
-            return await ctx.send('This channel isn\'t ignored')
-        index = self.blacklist[guild_id].index(channel.id)
-        self.blacklist[guild_id].pop(index)
-        await ctx.send('👍')
+        if ctx.message.channel_mentions:
+            if guild_id not in self.blacklist:
+                return await ctx.send('This server has no ignored channels')
+            for channel in ctx.message.channel_mentions:
+                if channel.id not in self.blacklist[guild_id]:
+                    await ctx.send(f'{channel.mention} isn\'t ignored')
+                    continue
+                self.blacklist[guild_id].remove(channel.id)
+                await ctx.send(f"Unignored {channel.mention}")
+        else:
+            if guild_id not in self.prefixes:
+                return await ctx.send("There are no ignored prefixes/commands/phrases")
+            if target not in self.prefixes[guild_id]:
+                return await ctx.send(f"`{target}` isn't ignored")
+            self.prefixes[guild_id].remove(target)
+            await ctx.send(f"I'll no longer ignore `{target}`")
         await self.save_data()
 
     async def handle_mute(self, channel, mute_role, user, sleep_time: int):
@@ -374,7 +422,12 @@ class AntiSpam(commands.Cog):
                             triggered = True
 
             # duplicate messages
-            if self.toggle[guild_id]['Duplicates'] and msg.content:
+            if self.toggle[guild_id]['Duplicates'] and msg.content and (
+                True if guild_id not in self.prefixes
+                else not any(str(prefix).lower() in str(msg.content).lower()
+                             for prefix in self.prefixes[guild_id])
+
+            ):
                 channel_id = str(msg.channel.id)
                 if channel_id not in self.dupes:
                     self.dupes[channel_id] = []
@@ -406,7 +459,7 @@ class AntiSpam(commands.Cog):
                             break
 
             if self.toggle[guild_id]['Inhuman'] and msg.content:
-                abcs = "abcdefghijklmnopqrstuvwxyz"
+                abcs = "abcdefghijklmnopqrstuvwxyzجحخهعغفقثصضشسيبلاتتمكطدظزوةىرؤءذئأإآ"
                 content = str(msg.content).lower()
                 lines = content.split("\n")
 
@@ -525,9 +578,8 @@ class AntiSpam(commands.Cog):
                         mentions = discord.AllowedMentions(users=True)
                         additional_info = ""
                         if len(users) > 1 and iteration == 0:
-                            additional_info += f"\nIf this is a common mistake you can either disable duplicate " \
-                                               f"checking with `.log disable duplicates` or ignore this channel " \
-                                               f"with `.antispam ignore {msg.channel.mention}`"
+                            additional_info += f"\nIf this is a common mistake you can add a ignored " \
+                                               f"command with `.antispam ignore .f work` for example"
                         await msg.channel.send(
                             f"Temporarily muted {msg.author.mention} for spam." + additional_info,
                             allowed_mentions=mentions
