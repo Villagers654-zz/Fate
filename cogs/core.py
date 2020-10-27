@@ -16,8 +16,9 @@ import discord
 from discord import Webhook, AsyncWebhookAdapter
 import wikipedia
 import wikipedia.exceptions
+import dbl
 
-from utils import config, colors
+from utils import config, colors, auth
 from cogs.utils import Utils as utils
 
 
@@ -26,7 +27,29 @@ class Core(commands.Cog):
         self.bot = bot
         self.last = {}
         self.spam_cd = {}
+        self.dblpy = dbl.DBLClient(
+            self.bot, auth.top_gg, autopost=True,
+            webhook_path='/dblwebhook', webhook_auth='Luckycharm1!', webhook_port=24685
+        )
         self.path = "./data/userdata/disabled_commands.json"
+
+    async def on_guild_post(self):
+        print("Server count posted successfully")
+
+    @commands.Cog.listener()
+    async def on_dbl_test(self, data):
+        self.bot.log.info(f"Received an upvote\n{data}")
+
+    @commands.command(name='dbl')
+    @commands.is_owner()
+    async def dbl(self, ctx):
+        await ctx.send()
+
+    @commands.command(name="votes")
+    @commands.is_owner()
+    async def votes(self, ctx):
+        votes = await self.dblpy.get_bot_upvotes()
+        await ctx.send(", ".join(dat["username"] for dat in votes))
 
     @commands.command(name="topguilds")
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -49,6 +72,11 @@ class Core(commands.Cog):
     @commands.cooldown(1, 5, commands.BucketType.channel)
     async def invite(self, ctx):
         await ctx.send(embed=config.links())
+
+    @commands.command(name="vote")
+    @commands.cooldown(1, 5, commands.BucketType.channel)
+    async def vote(self, ctx):
+        await ctx.send("https://top.gg/bot/506735111543193601")
 
     @commands.command(name="say")
     @commands.cooldown(1, 5, commands.BucketType.user)
