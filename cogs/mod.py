@@ -583,6 +583,7 @@ class Moderation(commands.Cog):
                             f"one up. You can set a mute role manually with `{p}mute-role @role` which doesn't "
                             f"have to be a role @mention, and can just be the roles name."
                         )
+                    await ctx.send("Creating mute role..")
                     mute_role = await ctx.guild.create_role(
                         name="Muted", color=discord.Color(colors.black())
                     )
@@ -639,6 +640,9 @@ class Moderation(commands.Cog):
                     ):  # Prevent sleeping after the last
                         await asyncio.sleep(0.5)
 
+            if mute_role.position >= ctx.guild.me.top_role.position:
+                return await ctx.send("The mute role's above my highest role so I can't manage it")
+
             timers = []
             timer = expanded_timer = None
             for timer in [re.findall("[0-9]+[smhd]", arg) for arg in reason.split()]:
@@ -672,6 +676,8 @@ class Moderation(commands.Cog):
         for user in list(members):
             if user.top_role.position >= ctx.author.top_role.position:
                 return await ctx.send("That user is above your paygrade, take a seat")
+            if user.top_role.position >= ctx.guild.me.top_role.position:
+                return await ctx.send("That users top role is above mine, so I can't manage them")
             if mute_role in user.roles:
                 user_id = str(user.id)
                 if guild_id in self.bot.tasks["mutes"] and user_id in self.bot.tasks["mutes"][guild_id]:
