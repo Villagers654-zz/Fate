@@ -223,7 +223,7 @@ class Emojis(commands.Cog):
 
             if not at_emoji_limit():
                 if (
-                    not isinstance(emoji, str)
+                    not isinstance(emoji, (str, discord.Asset))
                     and emoji.animated
                     and total_animated() == limit
                 ):
@@ -233,7 +233,7 @@ class Emojis(commands.Cog):
                         )
                     continue
                 elif (
-                    not isinstance(emoji, str)
+                    not isinstance(emoji, (str, discord.Asset))
                     and not emoji.animated
                     and total_emotes() == limit
                 ):
