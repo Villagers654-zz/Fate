@@ -27,9 +27,10 @@ class Core(commands.Cog):
         self.bot = bot
         self.last = {}
         self.spam_cd = {}
+        creds = auth.TopGG()
         self.dblpy = dbl.DBLClient(
-            self.bot, auth.top_gg, autopost=True,
-            webhook_path='/dblwebhook', webhook_auth='Luckycharm1!', webhook_port=24685
+            self.bot, creds.token, autopost=True,
+            webhook_path=creds.path, webhook_auth=creds.auth, webhook_port=creds.port
         )
         self.path = "./data/userdata/disabled_commands.json"
 
@@ -38,7 +39,11 @@ class Core(commands.Cog):
 
     @commands.Cog.listener()
     async def on_dbl_test(self, data):
-        self.bot.log.info(f"Received an upvote\n{data}")
+        self.bot.log.info(f"Received a test upvote from {self.bot.get_user(int(data['user']))}")
+
+    @commands.Cog.listener()
+    async def on_dbl_vote(self, data):
+        self.bot.log.info(f"Received an upvote from {self.bot.get_user(int(data['user']))}")
 
     @commands.command(name='dbl')
     @commands.is_owner()
