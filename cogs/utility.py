@@ -12,6 +12,7 @@ from os import path
 from time import time
 import aiofiles
 import platform
+from contextlib import suppress
 
 import discord
 from discord import User, Role, TextChannel, Member
@@ -1127,14 +1128,20 @@ class Utility(commands.Cog):
         await discord.utils.sleep_until(end_time)
         channel = self.bot.get_channel(dat["channel"])
         try:
-            await channel.send(f"{dat['mention']} remember dat thing: {msg}")
+            await channel.send(
+                f"{dat['mention']} remember dat thing: {discord.utils.escape_mentions(msg)}",
+                allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=True)
+            )
         except (discord.errors.Forbidden, discord.errors.NotFound, AttributeError):
             pass
-        del self.timers[user_id][msg]
-        if not self.timers[user_id]:
-            del self.timers[user_id]
+        with suppress(KeyError, ValueError):
+            del self.timers[user_id][msg]
+        with suppress(KeyError, ValueError):
+            if not self.timers[user_id]:
+                del self.timers[user_id]
         await self.save_timers()
-        del self.bot.tasks["timers"][f"timer-{dat['timer']}"]
+        with suppress(KeyError, ValueError):
+            del self.bot.tasks["timers"][f"timer-{dat['timer']}"]
 
     @commands.command(name="reminder", aliases=["timer", "remindme", "remind"])
     @commands.cooldown(2, 5, commands.BucketType.user)
