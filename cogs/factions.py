@@ -358,6 +358,7 @@ class Factions(commands.Cog):
             e.add_field(
                 name="◈ Economy ◈",
                 value=f".factions work\n"
+                      f".factions scrabble\n"
                       f".factions vote\n"
                 f".factions balance\n"
                 ".factions pay {faction} {amount}\n"
@@ -854,6 +855,57 @@ class Factions(commands.Cog):
         if len(results) > 1:
             additional += f". You have {len(results) - 1} additional votes remaining"
         await ctx.send(f"Redeemed $250 for your faction" + additional)
+        await self.save_data()
+
+    @_factions.command(name="scrabble")
+    @commands.cooldown(1, 360, commands.BucketType.user)
+    async def hard_work(self, ctx):
+        faction = self.get_faction(ctx.author)
+        if not faction:
+            return await ctx.send("You need to be in a faction to use this command")
+
+        def pred(m):
+            return (
+                m.channel.id == ctx.channel.id
+                and m.author.id == ctx.author.id
+                and (str(m.content).lower() == word)
+            )
+
+        words = [
+            "fate",
+            "bait",
+            "rock",
+            "anime",
+            "water",
+            "server",
+            "toast",
+            "beans",
+            "based"
+        ]  # stay wholesome uwu
+        word = random.choice(words)
+        scrambled_word = list(str(word).lower())
+        random.shuffle(scrambled_word)
+
+        e = discord.Embed(color=colors.fate())
+        e.description = f"Scrambled word: `{''.join(scrambled_word)}`"
+        e.set_footer(text="You have 25 seconds..", icon_url=ctx.bot.user.avatar_url)
+        await ctx.send(embed=e, delete_after=25)
+
+        try:
+            await ctx.bot.wait_for("message", check=pred, timeout=25)
+        except asyncio.TimeoutError:
+            return await ctx.send("You failed. Maybe next time :/")
+
+        guild_id = str(ctx.guild.id)
+        self.init(guild_id, faction)
+        paycheck = random.randint(15, 25)
+        e = discord.Embed(color=colors.purple())
+        e.description = f"You earned {faction} ${paycheck}"
+        if "Extra-Income" in self.get_boosts(guild_id, faction):
+            paycheck += 5
+            e.set_footer(text="With Bonus: $5", icon_url=self.get_icon(ctx.author))
+        self.factions[guild_id][faction]["balance"] += paycheck
+        await ctx.send(embed=e)
         await self.save_data()
 
     # @_factions.command(name="suicide", aliases=["kms"], category="economy")
