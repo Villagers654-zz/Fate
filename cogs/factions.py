@@ -882,7 +882,7 @@ class Factions(commands.Cog):
 
     @_factions.command(name="scrabble")
     @commands.cooldown(1, 360, commands.BucketType.user)
-    async def hard_work(self, ctx):
+    async def _scrabble(self, ctx):
         faction = self.get_faction(ctx.author)
         if not faction:
             return await ctx.send("You need to be in a faction to use this command")
@@ -930,6 +930,11 @@ class Factions(commands.Cog):
         self.factions[guild_id][faction]["balance"] += paycheck
         await ctx.send(embed=e)
         await self.save_data()
+
+    @_factions.command(name="add")
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def _add(self, ctx):
+        await ctx.send("https://cdn.discordapp.com/attachments/456152179401555980/771615292571779072/video0.mp4")
 
     # @_factions.command(name="suicide", aliases=["kms"], category="economy")
     # @commands.cooldown(1, 120, commands.BucketType.user)
