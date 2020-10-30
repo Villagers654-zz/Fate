@@ -358,6 +358,7 @@ class Factions(commands.Cog):
             e.add_field(
                 name="◈ Economy ◈",
                 value=f".factions work\n"
+                      f".factions forage\n"
                       f".factions scrabble\n"
                       f".factions vote\n"
                 f".factions balance\n"
@@ -855,6 +856,28 @@ class Factions(commands.Cog):
         if len(results) > 1:
             additional += f". You have {len(results) - 1} additional votes remaining"
         await ctx.send(f"Redeemed $250 for your faction" + additional)
+        await self.save_data()
+
+    @_factions.command(name="forage")
+    @commands.cooldown(1, 15, commands.BucketType.user)
+    async def forage(self, ctx):
+        faction = self.get_faction(ctx.author)
+        if not faction:
+            return await ctx.send("You need to be in a faction to use this command")
+
+        places = [
+            "You checked inside a shoe and found $", "You creeped through an abandoned mineshaft and stumbled across $",
+            "You rummaged through a burnt down walmart and found some silverware you sold for $",
+            "You found fates code and sold it on the black market for $",
+            "You tripped and found $", "You stumbled apon a chest and found $",
+            "Your madusa looking headass sold a picture of yourself for $ to a mysterious agency"
+        ]
+
+        pay = random.randint(3, 7)
+        e = discord.Embed(color=colors.fate())
+        e.description = random.choice(places).replace("$", f"${pay}")
+        self.factions[str(ctx.guild.id)][faction]["balance"] += pay
+        await ctx.send(embed=e)
         await self.save_data()
 
     @_factions.command(name="scrabble")
