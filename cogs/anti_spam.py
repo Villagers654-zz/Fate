@@ -52,8 +52,34 @@ class AntiSpam(commands.Cog):
 
     def cog_unload(self):
         with open(self.path, "w") as f:
-            f.write(json.dumps(self.data))
+            json.dump(self.data, f)
         self.cleanup_task.stop()
+
+    async def get_mutes(self) -> dict:
+        mutes = {}
+        async with self.bot.cursor() as cur:
+            await cur.execute(
+                f"select guild_id, channel_id, user_id, mute_role_id, end_time "
+                f"from anti_spam_mutes;"
+            )
+            results = await cur.fetchall()
+            for guild_id, channel_id, user_id, mute_role_id, end_time in results:
+                if guild_id not in mutes:
+                    mutes[guild_id] = {}
+                mutes[guild_id][user_id] = {
+                    "channel_id": channel_id,
+                    "mute_role_id": mute_role_id,
+                    "end_time": end_time
+                }
+        return mutes
+
+    async def delete_timer(self, guild_id: int, user_id: int):
+        async with self.bot.cursor() as cur:
+            await cur.execute(
+                f"delete from anti_spam_mutes "
+                f"where guild_id = {guild_id} "
+                f"and user_id = {user_id};"
+            )
 
     async def save_data(self, cache=True):
         async with self.bot.open(self.path, "w+", cache=cache) as f:
@@ -356,6 +382,9 @@ class AntiSpam(commands.Cog):
             if not self.bot.tasks["mutes"][guild_id]:
                 del self.bot.tasks["mutes"][guild_id]
 
+        with suppress(AttributeError):
+            await self.delete_timer(channel.guild.id, user.id)
+
     @commands.Cog.listener()
     async def on_message(self, msg: discord.Message):
         if not isinstance(msg.guild, discord.Guild) or msg.author.bot:
@@ -559,11 +588,11 @@ class AntiSpam(commands.Cog):
                             if mute_time > time() - 3600:
                                 multiplier += 1
                             else:
-                                index = self.mutes[guild_id][user_id].index(mute_time)
-                                self.mutes[guild_id][user_id].pop(index)
+                                self.mutes[guild_id][user_id].remove(mute_time)
 
                         # Mute and purge any new messages
                         timer = 150 * multiplier
+                        end_time = time() + timer
                         timer_str = self.bot.utils.get_time(timer)
                         await user.add_roles(mute_role)
                         messages = []
@@ -589,6 +618,7 @@ class AntiSpam(commands.Cog):
                         self.bot.tasks["mutes"] = {}
                     if guild_id not in self.bot.tasks["mutes"]:
                         self.bot.tasks["mutes"][guild_id] = {}
+
                     self.bot.tasks["mutes"][guild_id][user_id] = self.bot.loop.create_task(
                         self.handle_mute(
                             channel=msg.channel,
@@ -597,6 +627,42 @@ class AntiSpam(commands.Cog):
                             sleep_time=timer
                         )
                     )
+
+                    async with self.bot.cursor() as cur:
+                        await cur.execute(
+                            f"insert into anti_spam_mutes "
+                            f"values ("
+                            f"{msg.guild.id}, "
+                            f"{msg.channel.id}, "
+                            f"{msg.author.id}, "
+                            f"{mute_role.id}, "
+                            f"{end_time});"
+                        )
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        if "mutes" not in self.bot.tasks:
+            self.bot.tasks["mutes"] = {}
+        mutes = await self.get_mutes()
+        for guild_id, mutes in list(mutes.items()):
+            for user_id, data in mutes.items():
+                if guild_id not in mutes:
+                    self.bot.tasks["mutes"][guild_id] = {}
+                if user_id not in self.bot.tasks["mutes"][guild_id]:
+                    guild = self.bot.get_guild(int(guild_id))
+                    try:
+                        self.bot.tasks["mutes"][guild_id] = self.bot.loop.create_task(
+                            self.handle_mute(
+                                channel=self.bot.get_channel(data["channel_id"]),
+                                mute_role=guild.get_role(int(data["mute_role_id"])),
+                                user=guild.get_member(user_id),
+                                sleep_time=data["end_time"]
+                            )
+                        )
+                        self.bot.log.info(f"Resumed a anti_spam mute in {guild}")
+                    except AttributeError:
+                        await self.delete_timer(guild_id, user_id)
+                        self.bot.log.info(f"Deleted a anti_spam task in {guild} due to changes")
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
@@ -621,6 +687,7 @@ class AntiSpam(commands.Cog):
                     with suppress(KeyError):
                         self.bot.tasks["mutes"][guild_id][user_id].cancel()
                         del self.bot.tasks["mutes"][guild_id][user_id]
+                        await self.delete_timer(before.guild.id, before.id)
             if guild_id in self.bot.tasks["mutes"]:
                 if not self.bot.tasks["mutes"][guild_id]:
                     del self.bot.tasks["mutes"][guild_id]

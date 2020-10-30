@@ -13,12 +13,13 @@ import random
 import asyncio
 from time import time
 from typing import *
+from base64 import b64encode as encode, b64decode as decode
 
 from discord.ext import commands
 import discord
 
 from utils.colors import purple, cyan, fate
-from utils import utils, checks
+from utils import checks
 
 
 class Game:
@@ -65,6 +66,39 @@ class Game:
             return msg.author
 
 
+def dump(string: str) -> str:
+    return encode(string.encode()).decode()
+
+
+def load(string: str) -> str:
+    return decode(string.encode()).decode()
+
+
+class Faction(dict):
+    def __init__(self, bot, guild_id, faction):
+        self.guild_id = guild_id
+        self.faction = faction
+        self.bot = bot
+        super().__init__()
+
+    async def execute_in_loop(self, sql):
+        async with self.bot.cursor() as cur:
+            await cur.execute(sql)
+
+    def execute(self, sql):
+        self.bot.loop.create_task(self.execute_in_loop(sql))
+
+    def __setitem__(self, key, value):
+        if key == "members":
+            self.execute(
+                f"update factions "
+                f"set members = {dump(json.dumps(value))} "
+                f"where faction = {self.faction} "
+                f"limit 1;"
+            )
+        super().__setitem__(key, value)
+
+
 class Factions(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -107,7 +141,7 @@ class Factions(commands.Cog):
             user = ctx.author
         guild_id = str(ctx.guild.id)
         if not isinstance(user, discord.Member):
-            user = utils.get_user(ctx, user)
+            user = self.bot.utils.get_user(ctx, user)
         if not user:
             return None
         if guild_id in self.factions:
@@ -120,7 +154,7 @@ class Factions(commands.Cog):
         """ returns a users owned faction if it exists """
         if not user:
             user = ctx.author.mention
-        user = utils.get_user(ctx, user)
+        user = self.bot.utils.get_user(ctx, user)
         if not user:
             return
         guild_id = str(ctx.guild.id)
@@ -550,7 +584,7 @@ class Factions(commands.Cog):
     @factions.command(name="kick")
     async def kick(self, ctx, *, user):
         """ Kicks a user from the faction """
-        user = utils.get_user(ctx, user)
+        user = self.bot.utils.get_user(ctx, user)
         if not user:
             return await ctx.send("User not found")
         faction = self.get_owned_faction(ctx)
@@ -577,7 +611,7 @@ class Factions(commands.Cog):
     @factions.command(name="promote")
     async def promote(self, ctx, *, user):
         """ Promotes a faction member to Co-Owner"""
-        user = await utils.get_user(ctx, user)
+        user = await self.bot.utils.get_user(ctx, user)
         if not user:
             return await ctx.send("User not found")
         guild_id = str(ctx.guild.id)
@@ -593,7 +627,7 @@ class Factions(commands.Cog):
     @factions.command(name="demote")
     async def demote(self, ctx, *, user):
         """ Demotes a faction member from Co-Owner """
-        user = await utils.get_user(ctx, user)
+        user = await self.bot.utils.get_user(ctx, user)
         if not user:
             return await ctx.send("User not found")
         faction = self.get_owned_faction(ctx)
