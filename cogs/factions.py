@@ -968,7 +968,7 @@ class Factions(commands.Cog):
     #     await self.save_data()
 
     @_factions.command(name="pay", aliases=["give"])
-    @commands.cooldown(1, 3, commands.BucketType.user)
+    @commands.cooldown(1, 60, commands.BucketType.user)
     async def _pay(self, ctx, *, args):
         amount = [arg for arg in args.split(" ") if arg.isdigit()]
         if not amount or len(amount) > 1:
@@ -989,6 +989,8 @@ class Factions(commands.Cog):
         f = self.factions[guild_id][faction]
         if amount > f["balance"]:
             return await ctx.send("You don't have that much money")
+        if amount > 1000:
+            return await ctx.send("You can't give another faction more than $1,000")
         self.factions[guild_id][faction]["balance"] -= amount
         self.factions[guild_id][target_faction]["balance"] += amount
         await ctx.send(f"Gave ${amount} to {target_faction}")
