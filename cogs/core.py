@@ -42,7 +42,7 @@ class Core(commands.Cog):
         self.bot.log.info(f"Received a test upvote from {self.bot.get_user(int(data['user']))}")
         async with self.bot.cursor() as cur:
             await cur.execute(
-                f"insert into votes values ({int(data['user'])}, {time()}, false);"
+                f"insert into votes values ({int(data['user'])}, {time()});"
             )
 
     @commands.Cog.listener()
@@ -50,7 +50,7 @@ class Core(commands.Cog):
         self.bot.log.info(f"Received an upvote from {self.bot.get_user(int(data['user']))}")
         async with self.bot.cursor() as cur:
             await cur.execute(
-                f"insert into votes values ({int(data['user'])}, {time()}, false);"
+                f"insert into votes values ({int(data['user'])}, {time()});"
             )
 
     @commands.command(name='dbl')

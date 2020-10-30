@@ -374,7 +374,7 @@ class Fate(commands.AutoShardedBot):
         if self.config["extensions"]:
             self.log.info("Loading initial cogs", color="yellow")
             self.load(*self.config["extensions"])
-            self.log.info("Finished loading initial cogs\nLogging in..", color="yellow")
+            self.log.info("Finished loading initial cogs\nLogging in..", color="yellow", end="\r")
         cipher = auth.Tokens()
         if self.config["token_encryption"]:
             token = cipher.decrypt(self.config["token_id"])
