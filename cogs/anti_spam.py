@@ -656,7 +656,7 @@ class AntiSpam(commands.Cog):
                                 channel=self.bot.get_channel(data["channel_id"]),
                                 mute_role=guild.get_role(int(data["mute_role_id"])),
                                 user=guild.get_member(user_id),
-                                sleep_time=data["end_time"]
+                                sleep_time=data["end_time"] - time()
                             )
                         )
                         self.bot.log.info(f"Resumed a anti_spam mute in {guild}")
