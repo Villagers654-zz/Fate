@@ -46,6 +46,9 @@ class Factions(commands.Cog):
             "land-guard": 100,
         }
 
+    def cog_unload(self):
+        self.bot.loop.create_task(self.save_data())
+
     async def save_data(self):
         async with self.bot.open(self.dir, "w+", cache=True) as f:
             await f.write(
@@ -354,7 +357,8 @@ class Factions(commands.Cog):
             )
             e.add_field(
                 name="◈ Economy ◈",
-                value=f".faction work\n"
+                value=f".factions work\n"
+                      f".factions vote\n"
                 f".factions balance\n"
                 ".factions pay {faction} {amount}\n"
                 ".factions raid {faction}\n"
@@ -821,6 +825,36 @@ class Factions(commands.Cog):
         if ctx.author.id in self.notifs:
             await asyncio.sleep(60)
             await ctx.send(f"{ctx.author.mention} your cooldowns up", delete_after=10, allowed_mentions=mentions)
+
+    @_factions.command(name="vote")
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def _vote(self, ctx):
+        faction = self.get_faction(ctx.author)
+        if not faction:
+            return await ctx.send("You need to be in a faction to use this command")
+        async with self.bot.cursor() as cur:
+            await cur.execute(
+                f"select vote_time from votes "
+                f"where user_id = {ctx.author.id} "
+                f"order by vote_time asc;"
+            )
+            results = await cur.fetchall()
+        if not results:
+            return await ctx.send(f"Vote at http://vote.fatebot.xyz to earn $250."
+                                  f"\nRerun the command after to redeem")
+        async with self.bot.cursor() as cur:
+            await cur.execute(
+                f"delete from votes "
+                f"where user_id = {ctx.author.id} "
+                f"order by vote_time asc "
+                f"limit 1;"
+            )
+        self.factions[str(ctx.guild.id)][faction]['balance'] += 250
+        additional = ""
+        if len(results) > 1:
+            additional += f". You have {len(results) - 1} additional votes remaining"
+        await ctx.send(f"Redeemed $250 for your faction" + additional)
+        await self.save_data()
 
     # @_factions.command(name="suicide", aliases=["kms"], category="economy")
     # @commands.cooldown(1, 120, commands.BucketType.user)
