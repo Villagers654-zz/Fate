@@ -74,6 +74,7 @@ class AntiSpam(commands.Cog):
         return mutes
 
     async def delete_timer(self, guild_id: int, user_id: int):
+        print(f"deleting {repr(guild_id)}:{repr(user_id)}")
         async with self.bot.cursor() as cur:
             await cur.execute(
                 f"delete from anti_spam_mutes "
@@ -365,7 +366,8 @@ class AntiSpam(commands.Cog):
             await ctx.send(f"I'll no longer ignore `{target}`")
         await self.save_data()
 
-    async def handle_mute(self, channel, mute_role, user, sleep_time: int):
+    async def handle_mute(self, channel, mute_role, user_id, sleep_time: int):
+        user = channel.guild.get_member(user_id)
         with suppress(Forbidden, NotFound, HTTPException):
             await asyncio.sleep(sleep_time)
             if user and mute_role and mute_role in user.roles:
@@ -383,7 +385,7 @@ class AntiSpam(commands.Cog):
                 del self.bot.tasks["mutes"][guild_id]
 
         with suppress(AttributeError):
-            await self.delete_timer(channel.guild.id, user.id)
+            await self.delete_timer(channel.guild.id, user_id)
 
     @commands.Cog.listener()
     async def on_message(self, msg: discord.Message):
@@ -623,7 +625,7 @@ class AntiSpam(commands.Cog):
                         self.handle_mute(
                             channel=msg.channel,
                             mute_role=mute_role,
-                            user=msg.author,
+                            user_id=msg.author.id,
                             sleep_time=timer
                         )
                     )
@@ -655,7 +657,7 @@ class AntiSpam(commands.Cog):
                             self.handle_mute(
                                 channel=self.bot.get_channel(data["channel_id"]),
                                 mute_role=guild.get_role(int(data["mute_role_id"])),
-                                user=guild.get_member(user_id),
+                                user_id=user_id,
                                 sleep_time=data["end_time"] - time()
                             )
                         )
