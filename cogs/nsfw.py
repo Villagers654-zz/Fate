@@ -81,7 +81,7 @@ class NSFW(commands.Cog):
     @commands.guild_only()
     @commands.is_nsfw()
     @commands.bot_has_permissions(embed_links=True)
-    async def _trap(self, ctx):
+    async def trap(self, ctx):
         e = discord.Embed(color=colors.purple())
         e.set_image(url=self.get("traps.txt"))
         await ctx.send(embed=e)
@@ -91,7 +91,7 @@ class NSFW(commands.Cog):
     @commands.guild_only()
     @commands.is_nsfw()
     @commands.bot_has_permissions(embed_links=True)
-    async def _trap(self, ctx):
+    async def neko(self, ctx):
         e = discord.Embed(color=colors.purple())
         e.set_image(url=self.get("nekos.txt"))
         await ctx.send(embed=e)

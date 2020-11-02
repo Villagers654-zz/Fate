@@ -860,7 +860,7 @@ class Factions(commands.Cog):
 
     @_factions.command(name="forage")
     @commands.cooldown(1, 15, commands.BucketType.user)
-    async def forage(self, ctx):
+    async def _forage(self, ctx):
         faction = self.get_faction(ctx.author)
         if not faction:
             return await ctx.send("You need to be in a faction to use this command")
@@ -994,8 +994,8 @@ class Factions(commands.Cog):
         f = self.factions[guild_id][faction]
         if amount > f["balance"]:
             return await ctx.send("You don't have that much money")
-        if amount > 1000:
-            return await ctx.send("You can't give another faction more than $1,000")
+        if amount > f["balance"] / 4:
+            return await ctx.send(f"You can't give another faction more than ${round(f['balance'] / 4)}")
         self.factions[guild_id][faction]["balance"] -= amount
         self.factions[guild_id][target_faction]["balance"] += amount
         await ctx.send(f"Gave ${amount} to {target_faction}")
