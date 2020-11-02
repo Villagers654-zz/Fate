@@ -16,6 +16,7 @@ from aiohttp.client_exceptions import ClientOSError
 import aiohttp
 import aiofiles
 from contextlib import suppress
+import traceback
 
 from discord.ext import commands
 import discord
@@ -460,6 +461,7 @@ class Logger(commands.Cog):
                         ):
                             e = discord.Embed(title="Failed to send embed")
                             e.set_author(name=guild if guild else "Unknown Guild")
+                            e.description = traceback.format_exc()
                             for text_group in self.bot.utils.split(
                                 str(json.dumps(embed.to_dict(), indent=2)), 1024
                             ):
@@ -469,8 +471,9 @@ class Logger(commands.Cog):
                             e.set_footer(
                                 text=str(guild.id) if guild else "Unknown Guild"
                             )
+                            debug = self.bot.get_channel(self.bot.config["debug_channel"])
                             try:
-                                await channel.send(embed=e)
+                                await debug.send(embed=e)
                             except (
                                 discord.errors.Forbidden,
                                 discord.errors.NotFound,
