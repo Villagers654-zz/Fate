@@ -379,7 +379,7 @@ class AntiSpam(commands.Cog):
         if guild_id in self.bot.tasks["mutes"]:
             user_id = str(user.id)
             if user_id in self.bot.tasks["mutes"][guild_id]:
-                del self.bot.tasks[guild_id][user_id]
+                del self.bot.tasks["mutes"][guild_id][user_id]
             if not self.bot.tasks["mutes"][guild_id]:
                 del self.bot.tasks["mutes"][guild_id]
 
