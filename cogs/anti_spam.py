@@ -74,7 +74,6 @@ class AntiSpam(commands.Cog):
         return mutes
 
     async def delete_timer(self, guild_id: int, user_id: int):
-        print(f"deleting {repr(guild_id)}:{repr(user_id)}")
         async with self.bot.cursor() as cur:
             await cur.execute(
                 f"delete from anti_spam_mutes "
