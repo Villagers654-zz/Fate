@@ -12,97 +12,47 @@ from os import path
 import random
 import asyncio
 from time import time
-from typing import *
-from base64 import b64encode as encode, b64decode as decode
+from contextlib import suppress
+import os
 
 from discord.ext import commands
+from discord.ext.commands import CheckFailure
 import discord
 
-from utils.colors import purple, cyan, fate
+from utils.colors import purple
 from utils import checks
 
 
-class Game:
-    def __init__(self, *users):
-        self.users = users
+def is_faction_owner():
+    async def predicate(ctx):
+        self = ctx.cog  # type: Factions
+        faction = self.get_authors_faction(ctx)
+        guild_id = str(ctx.guild.id)
+        if ctx.author.id != self.factions[guild_id][faction]["owner"]:
+            raise CheckFailure("You aren't the owner of this faction")
+        return True
 
-    async def scrabble(self, ctx):
-        """ Randomize the order of letters in a word """
-
-        def pred(m):
-            return (
-                m.channel.id == ctx.channel.id
-                and m.author in self.users
-                and (str(m.content).lower() == word)
-            )
-
-        words = [
-            "fate",
-            "bait",
-            "rock",
-            "anime",
-            "milkshake",
-            "water",
-            "computer",
-            "server",
-        ]  # stay wholesome uwu
-        word = random.choice(words)
-        scrambled_word = list(str(word).lower())
-        random.shuffle(scrambled_word)
-
-        e = discord.Embed(color=fate())
-        e.description = f"Scrambled word: `{''.join(scrambled_word)}`"
-        e.set_footer(text="You have 10 seconds..", icon_url=ctx.bot.user.avatar_url)
-        await ctx.send(embed=e)
-
-        try:
-            msg = await ctx.bot.wait_for("message", check=pred, timeout=10)
-        except asyncio.TimeoutError:
-            await ctx.send("You failed :/")
-            return None
-        else:
-            if len(self.users) > 1:
-                await ctx.send(f"{msg.author.display_name} won!")
-            return msg.author
+    return commands.check(predicate)
 
 
-def dump(string: str) -> str:
-    return encode(string.encode()).decode()
+def has_faction_permissions():
+    async def predicate(ctx):
+        self = ctx.cog  # type: Factions
+        faction = self.get_authors_faction(ctx)
+        guild_id = str(ctx.guild.id)
+        if ctx.author.id == self.factions[guild_id][faction]["owner"]:
+            return True
+        if ctx.author.id in self.factions[guild_id][faction]["co-owners"]:
+            return True
+        raise CheckFailure("You don't have permission")
 
-
-def load(string: str) -> str:
-    return decode(string.encode()).decode()
-
-
-class Faction(dict):
-    def __init__(self, bot, guild_id, faction):
-        self.guild_id = guild_id
-        self.faction = faction
-        self.bot = bot
-        super().__init__()
-
-    async def execute_in_loop(self, sql):
-        async with self.bot.cursor() as cur:
-            await cur.execute(sql)
-
-    def execute(self, sql):
-        self.bot.loop.create_task(self.execute_in_loop(sql))
-
-    def __setitem__(self, key, value):
-        if key == "members":
-            self.execute(
-                f"update factions "
-                f"set members = {dump(json.dumps(value))} "
-                f"where faction = {self.faction} "
-                f"limit 1;"
-            )
-        super().__setitem__(key, value)
+    return commands.check(predicate)
 
 
 class Factions(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.path = "./"
+        self.path = bot.get_fp_for("userdata/test_factions.json")
         self.icon = "https://cdn.discordapp.com/attachments/641032731962114096/641742675808223242/13_Swords-512.png"
         self.banner = ""
         self.boosts = {"extra-income": {}, "land-guard": [], "anti-raid": {}}
@@ -115,43 +65,74 @@ class Factions(commands.Cog):
             with open(self.path, "r") as f:
                 self.factions = json.load(f)  # type: dict
 
-    async def save_data(self) -> None:
-        """ Saves the current variables """
-        # await self.bot.save_json(self.path, self.factions)
-        return
+    def cog_unload(self):
+        with open(self.path + ".tmp", "w+") as f:
+            f.write(self.__get_dump())
+        os.rename(self.path + ".tmp", self.path)
+
+    def __get_dump(self) -> str:
+        return json.dumps({
+            faction: data for faction, data in list(self.factions.items()) if data
+        })
+
+    async def save_data(self):
+        """Save the current variables without blocking the event loop"""
+
+        data = await self.bot.loop.run_in_executor(None, self.__get_dump)
+        async with self.bot.open(self.path, "w+", cache=True) as f:
+            await f.write(data)
+        return None
 
     def init(self, guild_id: str):
-        """ Creates guild dictionary if it doesnt exist """
+        """Creates guild dictionary if it doesnt exist"""
+
         if guild_id not in self.factions:
             self.factions[guild_id] = {}
 
-    def faction_icon(self, ctx, faction: str) -> str:
-        """ returns an icon for the faction """
+    def get_factions_icon(self, ctx, faction: str) -> str:
+        """Returns an icon for the faction"""
+
         guild_id = str(ctx.guild.id)
         if "icon" in self.factions[guild_id][faction]:
             if self.factions[guild_id][faction]["icon"]:
                 return self.factions[guild_id][faction]["icon"]
+
         owner_id = self.factions[guild_id][faction]["owner"]
         owner = self.bot.get_user(owner_id)
         return owner.avatar_url
 
     def get_users_faction(self, ctx, user=None):
-        """ fetch a users faction by context or partial name """
+        """fetch a users faction by context or partial name"""
+
         if not user:
             user = ctx.author
-        guild_id = str(ctx.guild.id)
         if not isinstance(user, discord.Member):
             user = self.bot.utils.get_user(ctx, user)
-        if not user:
+        if not isinstance(user, discord.Member):
             return None
+
+        guild_id = str(ctx.guild.id)
         if guild_id in self.factions:
             for faction, data in self.factions[guild_id].items():
                 if user.id in data["members"]:
                     return faction
+
         return None
+
+    def get_authors_faction(self, ctx):
+        """ fetch a users faction by context or partial name """
+
+        user = ctx.author
+        guild_id = str(ctx.guild.id)
+        if guild_id in self.factions:
+            for faction, data in self.factions[guild_id].items():
+                if user.id in data["members"]:
+                    return faction
+        raise CheckFailure("You're not currently in a faction")
 
     def get_owned_faction(self, ctx, user=None):
         """ returns a users owned faction if it exists """
+
         if not user:
             user = ctx.author.mention
         user = self.bot.utils.get_user(ctx, user)
@@ -168,10 +149,6 @@ class Factions(commands.Cog):
     async def get_faction_named(self, ctx, name):
         """ gets a faction via partial name """
 
-        def pred(m) -> bool:
-            """ A check for waiting on a message """
-            return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
-
         guild_id = str(ctx.guild.id)
         factions = [
             f
@@ -185,34 +162,13 @@ class Factions(commands.Cog):
                 if str(name).lower() in str(f).lower()
             ]
         if len(factions) > 1:
-            e = discord.Embed(color=cyan())
-            e.description = ""
-            index = 1
-            for faction in factions:
-                owner_id = self.factions[str(ctx.guild.id)][faction]["owner"]
-                owner = self.bot.get_user(owner_id)
-                e.description += f"{index}. {faction} - {owner.mention}\n"
-            embed = await ctx.send(embed=e)
-            try:
-                msg = await ctx.bot.wait_for("message", check=pred, timeout=60)
-            except asyncio.TimeoutError:
-                await ctx.send("Timeout error", delete_after=5)
-                await embed.delete()
-                return None
-            else:
-                try:
-                    choice = int(msg.content)
-                except:
-                    await ctx.send("Invalid response")
-                    await embed.delete()
-                    return None
-                if choice > len(factions):
-                    return await ctx.send("Invalid number")
-                return factions[index - 1]
-        elif len(factions) == 1:
+            choice = await self.bot.utils.get_choice(ctx, factions, user=ctx.author)
+            if not choice:
+                return
+            return choice
+        elif factions:
             return factions[0]
-        else:
-            return None
+        raise commands.CheckFailure("I couldn't find that faction :[")
 
     def collect_claims(self, guild_id, faction=None) -> dict:
         """Fetches claims for the whole guild or a single faction
@@ -220,7 +176,7 @@ class Factions(commands.Cog):
 
         def claims(faction) -> dict:
             """ returns claims & their data """
-            claims = {}
+            fac_claims = {}
             fac = self.factions[guild_id][faction]
             for claim in fac["claims"]:
                 channel = self.bot.get_channel(int(claim))
@@ -229,21 +185,21 @@ class Factions(commands.Cog):
                     self.factions[guild_id][faction]["claims"].remove(claim)
                     continue
                 is_guarded = False
-                if claim in self.boosts["boosts"]["land-guard"]:
+                if claim in self.boosts["land-guard"]:
                     is_guarded = True
-                claims[int(claim)] = {
+                fac_claims[int(claim)] = {
                     "faction": faction,
                     "guarded": is_guarded,
                     "position": channel.position,
                 }
-            return claims
+            return fac_claims
 
         if faction:
             return claims(faction)
         global_claims = {}
         for faction in self.factions[guild_id].keys():
-            claims = claims(faction)  # type: dict
-            for claim, data in claims.items():
+            fac_claims = claims(faction)  # type: dict
+            for claim, data in fac_claims.items():
                 global_claims[claim] = data
         return global_claims
 
@@ -364,7 +320,7 @@ class Factions(commands.Cog):
     async def factions(self, ctx):
         """ Information about the module """
         if not ctx.invoked_subcommand:
-            p = utils.get_prefix(ctx)  # type: str
+            p = self.bot.utils.get_prefix(ctx)  # type: str
             if len(ctx.message.content.split()) > 1:
                 return await ctx.send(f"Unknown command\nTry using `{p}factions help`")
             e = discord.Embed(color=purple())
@@ -383,44 +339,44 @@ class Factions(commands.Cog):
         e = discord.Embed(color=purple())
         e.set_author(name="Usage", icon_url=ctx.author.avatar_url)
         e.set_thumbnail(url=ctx.guild.icon_url)
-        p = utils.get_prefix(ctx)  # type: str
+        p = self.bot.utils.get_prefix(ctx)  # type: str
         e.add_field(
             name="◈ Core ◈",
             value=f"{p}factions create [name]"
-            f"\n{p}factions rename [name]"
-            f"\n{p}factions disband"
-            f"\n{p}factions join [faction]"
-            f"\n{p}factions invite @user"
-            f"\n{p}factions promote @user"
-            f"\n{p}factions demote @user"
-            f"\n{p}factions kick @user"
-            f"\n{p}factions leave",
+                  f"\n{p}factions rename [name]"
+                  f"\n{p}factions disband"
+                  f"\n{p}factions join [faction]"
+                  f"\n{p}factions invite @user"
+                  f"\n{p}factions promote @user"
+                  f"\n{p}factions demote @user"
+                  f"\n{p}factions kick @user"
+                  f"\n{p}factions leave",
             inline=False,
         )
         e.add_field(
             name="◈ Utils ◈",
             value=f"{p}faction privacy"  # incomplete
-            f"\n{p}factions setbio [your new bio]"  # incomplete
-            f"\n{p}factions seticon [file | url]"  # incomplete
-            f"\n{p}factions setbanner [file | url]"  # incomplete
-            f"\n{p}factions togglenotifs",  # incomplete
+                  f"\n{p}factions setbio [your new bio]"  # incomplete
+                  f"\n{p}factions seticon [file | url]"  # incomplete
+                  f"\n{p}factions setbanner [file | url]"  # incomplete
+                  f"\n{p}factions togglenotifs",  # incomplete
             inline=False,
         )
         e.add_field(
             name="◈ Economy ◈",
             value=f"{p}faction work"
-            f"\n{p}factions balance"  # incomplete
-            f"\n{p}factions pay [faction] [amount]"  # incomplete
-            f"\n{p}factions raid [faction]"  # incomplete
-            f"\n{p}factions battle [faction]"  # incomplete
-            f"\n{p}factions annex [faction]"  # incomplete
-            f"\n{p}factions claim #channel"  # incomplete
-            f"\n{p}factions unclaim #channel"  # incomplete
-            f"\n{p}factions claims"
-            f"\n{p}factions boosts"  # incomplete
-            f"\n{p}factions info"
-            f"\n{p}factions members [faction]"
-            f"\n{p}factions top",  # incomplete
+                  f"\n{p}factions balance"  # incomplete
+                  f"\n{p}factions pay [faction] [amount]"  # incomplete
+                  f"\n{p}factions raid [faction]"  # incomplete
+                  f"\n{p}factions battle [faction]"  # incomplete
+                  f"\n{p}factions annex [faction]"  # incomplete
+                  f"\n{p}factions claim #channel"  # incomplete
+                  f"\n{p}factions unclaim #channel"  # incomplete
+                  f"\n{p}factions claims"
+                  f"\n{p}factions boosts"  # incomplete
+                  f"\n{p}factions info"
+                  f"\n{p}factions members [faction]"
+                  f"\n{p}factions top",  # incomplete
             inline=False,
         )
         await ctx.send(embed=e)
@@ -450,7 +406,7 @@ class Factions(commands.Cog):
             "owner": ctx.author.id,
             "co-owners": [],
             "members": [ctx.author.id],
-            "balance": 0,
+            "balance": 500,
             "limit": 15,
             "public": True,
             "allies": [],
@@ -463,31 +419,16 @@ class Factions(commands.Cog):
 
     @factions.command(name="disband")
     @commands.cooldown(1, 10, commands.BucketType.user)
+    @is_faction_owner()
     async def disband(self, ctx):
         """ Deletes the owned faction """
-
-        def pred(msg):
-            return (
-                msg.author.id == ctx.author.id
-                and msg.channel.id == msg.channel.id
-                and ("yes" in msg.content or "no" in msg.content)
-            )
-
         guild_id = str(ctx.guild.id)
         faction = self.get_owned_faction(ctx)
-        if not faction or ctx.author.id != self.factions[guild_id][faction]["owner"]:
-            return await ctx.send("You need to be owner to use this cmd")
-
-        instruction = await ctx.send(
+        await ctx.send(
             "Are you sure you want to delete your faction?\nReply with 'yes' or 'no'"
         )
-        try:
-            msg = self.bot.wait_for("message", check=pred, timeout=30)
-        except asyncio.TimeoutError:
-            await instruction.delete()
-            return await ctx.message.delete()
-        else:
-            if "yes" in msg.content.lower():
+        async with self.bot.require("message", ctx) as msg:
+            if "yes" in str(msg.content).lower():
                 for fac, data in self.factions[guild_id].items():
                     if faction in data["allies"]:
                         self.factions[guild_id][fac]["allies"].remove(faction)
@@ -504,15 +445,13 @@ class Factions(commands.Cog):
         if is_in_faction:
             return await ctx.send("You're already in a faction")
         faction = await self.get_faction_named(ctx, faction)
-        if not faction:
-            return await ctx.send("Couldn't find a faction under that name :[")
         guild_id = str(ctx.guild.id)
         if not self.factions[guild_id][faction]["public"]:
             return await ctx.send("That factions not public :[")
         self.factions[guild_id][faction]["members"].append(ctx.author.id)
         e = discord.Embed(color=purple())
         e.set_author(name=faction, icon_url=ctx.author.avatar_url)
-        e.set_thumbnail(url=self.faction_icon(ctx, faction))
+        e.set_thumbnail(url=self.get_factions_icon(ctx, faction))
         e.description = (
             f"{ctx.author.display_name} joined\nMember Count: "
             f"[`{len(self.factions[guild_id][faction]['members'])}`]"
@@ -545,7 +484,8 @@ class Factions(commands.Cog):
 
         request = await ctx.send(
             f"{user.mention}, {ctx.author.display_name} invited you to join {faction}\n"
-            f"Reply with 'yes' to join, or 'no' to reject"
+            f"Reply with 'yes' to join, or 'no' to reject",
+            allowed_mentions=discord.AllowedMentions(users=True, everyone=False, roles=False)
         )
         try:
             msg = await self.bot.wait_for("message", check=pred, timeout=60)
@@ -642,10 +582,38 @@ class Factions(commands.Cog):
         await ctx.send(f"Demoted {user.mention} from co-owner")
 
     @factions.command(name="annex", enabled=False)
+    @is_faction_owner()
     async def annex(self, ctx, *, faction):
         """ Merges a faction with another """
-        # fuck this ;-;
-        # too much work
+        authors_faction = self.get_owned_faction(ctx, user=ctx.author)
+        other_faction = await self.get_faction_named(ctx, faction)
+        guild_id = str(ctx.guild.id)
+        dat = self.factions[guild_id][other_faction]
+        await ctx.send(
+            f"<@{dat['owner']} {ctx.author} would like to merge factions with them as the owner. "
+            f"Reply with `.confirm annex` if you consent to giving up your faction",
+            allowed_mentions=discord.AllowedMentions(users=True, everyone=False, roles=False)
+        )
+
+        def predicate(m):
+            return m.channel.id == ctx.channel.id and m.author.id == dat["owner"]
+
+        async with self.bot.require("message", predicate) as msg:
+            if ".confirm annex" not in str(msg.content).lower():
+                return await ctx.send("Alright, merge has been rejected")
+
+        for member_id in dat["members"]:
+            if member_id not in self.factions[guild_id][authors_faction]["members"]:
+                self.factions[guild_id][authors_faction]["members"].append(member_id)
+        for member_id in dat["co-owners"]:
+            if member_id not in self.factions[guild_id][authors_faction]["members"]:
+                self.factions[guild_id][authors_faction]["members"].append(member_id)
+        if dat["owner"] not in self.factions[guild_id][authors_faction]["members"]:
+            self.factions[guild_id][authors_faction]["members"].append(dat["owner"])
+        with suppress(ValueError):
+            del self.factions[guild_id][other_faction]
+
+        await ctx.send(f"Successfully annexed {other_faction}")
 
     @factions.command(name="rename")
     async def rename(self, ctx, *, name):
@@ -681,14 +649,12 @@ class Factions(commands.Cog):
         if faction:
             faction = await self.get_faction_named(ctx, faction)
         else:
-            faction = self.get_users_faction(ctx)
-        if not faction:
-            return await ctx.send("Faction not found")
+            faction = self.get_authors_faction(ctx)
 
         guild_id = str(ctx.guild.id)
         dat = self.factions[guild_id][faction]  # type: dict
         owner = self.bot.get_user(dat["owner"])
-        icon_url = self.faction_icon(ctx, faction)
+        icon_url = self.get_factions_icon(ctx, faction)
         rankings = self.get_faction_rankings(guild_id)["net"]  # type: list
         rank = 1
         for fac, value in rankings:
@@ -720,8 +686,6 @@ class Factions(commands.Cog):
             faction = await self.get_faction_named(ctx, faction)
         else:
             faction = self.get_users_faction(ctx)
-        if not faction:
-            return await ctx.send("Faction not found")
 
         guild_id = str(ctx.guild.id)
         owner_id = self.factions[guild_id][faction]["owner"]
@@ -745,7 +709,7 @@ class Factions(commands.Cog):
 
         e = discord.Embed(color=purple())
         e.set_author(name=f"{faction}'s members", icon_url=owner.avatar_url)
-        e.set_thumbnail(url=self.faction_icon(ctx, faction))
+        e.set_thumbnail(url=self.get_factions_icon(ctx, faction))
         e.description = ""
         for user, income in users:
             if user.id in self.factions[guild_id][faction]["co-owners"]:
@@ -753,40 +717,70 @@ class Factions(commands.Cog):
             e.description += f"{user.mention} - ${income}\n"
         await ctx.send(embed=e)
 
+    @factions.command(name="claim")
+    @has_faction_permissions()
+    async def claim(self, ctx, channel: discord.TextChannel = None):
+        """Claim a channel"""
+        if not channel:
+            channel = ctx.channel
+        faction = self.get_authors_faction(ctx)
+        guild_id = str(ctx.guild.id)
+        claims = self.collect_claims(guild_id)  # type: dict
+        cost = 500
+        if channel.id in claims:
+            if claims[channel.id]["guarded"]:
+                return await ctx.send("That claim is currently guarded")
+            cost += 250
+        if cost > self.factions[guild_id][faction]["balance"]:
+            needed = cost - self.factions[guild_id][faction]['balance']
+            return await ctx.send(f"Your faction doesn't have enough money to claim "
+                                  f"this channel. You need ${needed} more")
+        await ctx.send(f"Claiming that channel will cost you ${cost}, "
+                       f"reply with `.confirm` to claim it")
+        async with self.bot.require("message", ctx) as msg:
+            if ".confirm" not in str(msg.content).lower():
+                return await ctx.send("Alright.. maybe next time")
+        if channel.id in claims:
+            fac = claims[channel.id]["faction"]
+            self.factions[guild_id][fac]["claims"].remove(channel.id)
+        self.factions[guild_id][faction]["claims"].append(channel.id)
+        await ctx.send(f"Claimed {channel.mention} for {faction}")
+        await self.save_data()
+
     @factions.command(name="claims")
-    async def claims(self, ctx, *, faction):
+    async def claims(self, ctx, *, faction = None):
         """ Returns a factions sorted claims """
         if faction:
             faction = await self.get_faction_named(ctx, faction)
         else:
-            faction = self.get_users_faction(ctx)
-        if not faction:
-            return await ctx.send("Faction not found")
+            faction = self.get_authors_faction(ctx)
         guild_id = str(ctx.guild.id)
         e = discord.Embed(color=purple())
         e.set_author(
-            name=f"{faction}'s claims", icon_url=self.faction_icon(ctx, faction)
+            name=f"{faction}'s claims", icon_url=self.get_factions_icon(ctx, faction)
         )
         claims = self.collect_claims(guild_id, faction)
         claims = {
             self.bot.get_channel(chnl_id): data for chnl_id, data in claims.items()
         }
         for channel, data in sorted(
-            claims.items, reverse=True, key=lambda kv: kv[1]["position"]
+            claims.items(), reverse=True, key=lambda kv: kv[1]["position"]
         ):
             e.description = (
                 f"• {channel.mention} {'- guarded' if data['guarded'] else ''}\n"
             )
         await ctx.send(embed=e)
 
-    @factions.command(name="battle", enabled=False)
+    @factions.command(name="battle")
     async def battle(self, ctx, *args):
         """ Battle other factions in games like scrabble """
+        await ctx.send("This command isn't developed yet")
 
-    @factions.command(name="raid", enabled=False)
+    @factions.command(name="raid")
+    @has_faction_permissions()
     async def raid(self, ctx, *, faction):
         """ Starts a raid against another faction """
-        attacker = self.get_users_faction(ctx)
+        attacker = self.get_authors_faction(ctx)
         defender = await self.get_faction_named(ctx, faction)
         if not attacker:
             return await ctx.send("You need to be in a faction to use this cmd")
@@ -794,39 +788,67 @@ class Factions(commands.Cog):
             return await ctx.send("Faction not found")
 
         guild_id = str(ctx.guild.id)
-        await ctx.send(f"a warning idk")
-        while True:
-            msg = await self.wait_for_msg(ctx, "everyone")
-            break
+        attacker_bal = self.factions[guild_id][attacker]["balance"]
+        defender_bal = self.factions[guild_id][defender]["balance"]
+
+        if attacker_bal > defender_bal:
+            highest_fac = attacker
+            lowest_fac = defender
+            lowest_bal = defender_bal
+        else:
+            highest_fac = defender
+            lowest_fac = attacker
+            lowest_bal = attacker_bal
+        if lowest_bal <= 250:
+            return await ctx.send("You're too weak to raid. Try again when you at least have $250")
+
+        if defender_bal > attacker_bal:
+            await ctx.send("The odds are against us. Are you sure you wish to attempt a raid?")
+            async with self.bot.require("message", ctx) as msg:
+                if "ye" not in str(msg.content).lower():
+                    return await ctx.send("Wise choice")
+
+
+        max_range = round(lowest_bal / 4)
+        loot = random.randint(50, max_range)
+        if loot > 500:
+            loot = 500
+        if random.randint(1, 100) > 60:
+            winner = lowest_fac
+            loser = highest_fac
+        else:
+            winner = highest_fac
+            loser = lowest_fac
+        self.factions[guild_id][winner] += loot
+        self.factions[guild_id][loser] -= loot
+
+        e = discord.Embed(color=purple())
+        if winner == attacker:
+            e.description = f"You raided {defender} and gained ${loot}. GG"
+        else:
+            e.description = f"You attempted to raid {defender} and lost ${loot}"
+        await ctx.send(embed=e)
+        await self.save_data()
 
     @factions.command(name="work")
     async def work(self, ctx):
         """ Get money for your faction """
         guild_id = str(ctx.guild.id)
-        faction = self.get_users_faction(ctx)
-        if not faction:
-            return await ctx.send("You need to be in a faction to use this cmd")
+        faction = self.get_authors_faction(ctx)
 
         if guild_id not in self.cooldowns:
             self.cooldowns[guild_id] = {}
-        if ctx.author.id in self.cooldowns:
-            remainder = 60 - (time() - self.cooldowns[guild_id][ctx.author.id])
+        if ctx.author.id in self.cooldowns[guild_id]:
+            remainder = round(self.cooldowns[guild_id][ctx.author.id] - time())
             return await ctx.send(f"You're on cooldown! You have {remainder}s left")
-        self.cooldowns[guild_id][ctx.author.id] = time()
-
-        require_game_completion = True if random.randint(1, 4) == 4 else False
-        game = Game(ctx.author)
-        if require_game_completion:
-            is_winner = await game.scrabble(ctx)
-            if not is_winner:
-                return await ctx.send("Maybe next time :[")
+        self.cooldowns[guild_id][ctx.author.id] = time() + 60
 
         e = discord.Embed(color=purple())
         pay = random.randint(15, 25)
         e.description = f"You earned {faction} ${pay}"
         if faction in self.boosts["extra-income"]:
             e.set_footer(
-                text="With Bonus: $5", icon_url=self.faction_icon(ctx, faction)
+                text="With Bonus: $5", icon_url=self.get_factions_icon(ctx, faction)
             )
             pay += 5
 
@@ -839,7 +861,7 @@ class Factions(commands.Cog):
         await ctx.send(embed=e)
         await self.save_data()
 
-        await asyncio.sleep(60)
+        await asyncio.sleep(self.cooldowns[guild_id][ctx.author.id] - time())
         del self.cooldowns[guild_id][ctx.author.id]
 
     @factions.command(name="balance", aliases=["bal"], enabled=False)
@@ -858,15 +880,29 @@ class Factions(commands.Cog):
             )
         guild_id = str(ctx.guild.id)
         e = discord.Embed(color=purple())
-        e.set_author(name=str(faction), icon_url=self.faction_icon(ctx, str(faction)))
+        e.set_author(name=str(faction), icon_url=self.get_factions_icon(ctx, str(faction)))
         e.description = f"${self.factions[guild_id][faction]['balance']}"
         await ctx.send(embed=e)
 
     @factions.command(name="pay", enabled=False)
-    async def pay(self, ctx, faction, amount):
+    @commands.cooldown(2, 240, commands.BucketType.user)
+    @is_faction_owner()
+    async def pay(self, ctx, faction, amount: int):
         """ Pays a faction from the author factions balance """
+        authors_fac = self.get_authors_faction(ctx)
+        target_fac = self.get_faction_named(ctx, faction)
+        guild_id = str(ctx.guild.id)
+        bal = self.factions[guild_id][authors_fac]["balance"]
+        if amount > bal / 5:
+            return await ctx.send(
+                f"You can't pay another faction more than 1/5th your balance, (${round(bal / 5)})."
+            )
+        self.factions[guild_id][target_fac]["balance"] += amount
+        self.factions[guild_id][authors_fac]["balance"] -= amount
+        return await ctx.send(f"Paid {target_fac} ${amount}")
 
     @factions.command(name="top", aliases=["leaderboard", "lb"])
+    @commands.bot_has_permissions(manage_messages=True)
     async def top(self, ctx):
         def predicate(r, u) -> bool:
             m = r.message  # type: discord.Message
@@ -940,19 +976,10 @@ class Factions(commands.Cog):
             await msg.remove_reaction(reaction, user)
 
     @factions.command(name="ally")
+    @is_faction_owner()
     async def ally(self, ctx, *, target_faction):
-        ally_name = self.get_faction_named(
-            ctx, name=target_faction
-        )  # type: Optional[None, str]
-        faction_name = self.get_owned_faction(
-            ctx, user=ctx.author
-        )  # type: Optional[None, str]
-        if not ally_name:
-            return await ctx.send("Target faction not found")
-        if not faction_name:
-            return await ctx.send(
-                "You need owner permissions in a faction to use this command"
-            )
+        ally_name = self.get_faction_named(ctx, name=target_faction)
+        faction_name = self.get_owned_faction(ctx, user=ctx.author)
 
         guild_id = str(ctx.guild.id)
         if faction_name in self.factions[guild_id][ally_name]["allies"]:
@@ -967,26 +994,19 @@ class Factions(commands.Cog):
         def predicate(m):
             return m.channel.id == ctx.channel.id and ".accept" in str(m.content)
 
-        message = await ctx.send(
+        await ctx.send(
             "Someone with ownership level permissions in {ally_name} "
             "reply with `.accept` to agree to the alliance"
         )
         while True:
-            try:
-                msg = await self.bot.wait_for("on_message", check=predicate, timeout=60)
-            except asyncio.TimeoutError:
-                if message:
-                    await message.edit(
-                        content=f"Action expired due to 1 minute timeout.```{message.content}```"
+            async with self.bot.require("message", predicate) as msg:
+                if self.get_owned_faction(ctx, user=msg.author) == ally_name:
+                    self.factions[guild_id][faction_name]["allies"].append(ally_name)
+                    self.factions[guild_id][ally_name]["allies"].append(faction_name)
+                    await ctx.send(
+                        f"Successfully created an alliance between `{faction_name}` and `{ally_name}`"
                     )
-                return
-            if self.get_owned_faction(ctx, user=msg.author) == ally_name:
-                self.factions[guild_id][faction_name]["allies"].append(ally_name)
-                self.factions[guild_id][ally_name]["allies"].append(faction_name)
-                await ctx.send(
-                    f"Successfully created an alliance between `{faction_name}` and `{ally_name}`"
-                )
-                return await self.save_data()
+                    return await self.save_data()
 
     @commands.Cog.listener()
     async def on_message(self, msg):
