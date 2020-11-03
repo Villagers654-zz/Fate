@@ -331,6 +331,7 @@ class Factions(commands.Cog):
                 "not guarded, challenge enemys to minigame battles, and "
                 "rank up on the faction leaderboard"
             )
+            e.set_footer(text=f"For help use {p}f help")
             await ctx.send(embed=e)
 
     @factions.command(name="help", aliases=["commands"])
@@ -342,41 +343,45 @@ class Factions(commands.Cog):
         p = self.bot.utils.get_prefix(ctx)  # type: str
         e.add_field(
             name="◈ Core ◈",
-            value=f"{p}factions create [name]"
-                  f"\n{p}factions rename [name]"
-                  f"\n{p}factions disband"
-                  f"\n{p}factions join [faction]"
-                  f"\n{p}factions invite @user"
-                  f"\n{p}factions promote @user"
-                  f"\n{p}factions demote @user"
-                  f"\n{p}factions kick @user"
-                  f"\n{p}factions leave",
+            value=f"  {p}f create [name]"
+                  f"\n{p}f rename [name]"
+                  f"\n{p}f disband"
+                  f"\n{p}f join [faction]"
+                  f"\n{p}f invite @user"
+                  f"\n{p}f promote @user"
+                  f"\n{p}f demote @user"
+                  f"\n{p}f kick @user"
+                  f"\n{p}f leave",
             inline=False,
         )
         e.add_field(
-            name="◈ Utils ◈",
-            value=f"{p}faction privacy"  # incomplete
-                  f"\n{p}factions setbio [your new bio]"  # incomplete
-                  f"\n{p}factions seticon [file | url]"  # incomplete
-                  f"\n{p}factions setbanner [file | url]"  # incomplete
-                  f"\n{p}factions togglenotifs",  # incomplete
+            name="◈ Utils - Incomplete ◈",
+            value=f"  ~~{p}f privacy"  # incomplete
+                  f"\n{p}f setbio [your new bio]"  # incomplete
+                  f"\n{p}f seticon [file | url]"  # incomplete
+                  f"\n{p}f setbanner [file | url]"  # incomplete
+                  f"\n{p}f togglenotifs~~",  # incomplete
             inline=False,
         )
         e.add_field(
             name="◈ Economy ◈",
-            value=f"{p}faction work"
-                  f"\n{p}factions balance"  # incomplete
-                  f"\n{p}factions pay [faction] [amount]"  # incomplete
-                  f"\n{p}factions raid [faction]"  # incomplete
-                  f"\n{p}factions battle [faction]"  # incomplete
-                  f"\n{p}factions annex [faction]"  # incomplete
-                  f"\n{p}factions claim #channel"  # incomplete
-                  f"\n{p}factions unclaim #channel"  # incomplete
-                  f"\n{p}factions claims"
-                  f"\n{p}factions boosts"  # incomplete
-                  f"\n{p}factions info"
-                  f"\n{p}factions members [faction]"
-                  f"\n{p}factions top",  # incomplete
+            value=f"  {p}f work"
+                  f"\n{p}f vote"
+                  f"\n{p}f forage"
+                  f"\n{p}f scrabble"
+                  f"\n{p}f balance"
+                  f"\n{p}f pay [faction] [amount]"
+                  f"\n{p}f raid [faction]"
+                  f"\n~~{p}f battle [faction]~~"  # incomplete
+                  f"\n{p}f annex [faction]"
+                  f"\n{p}f claim #channel"
+                  f"\n{p}f unclaim #channel"
+                  f"\n{p}f claims"
+                  f"\n{p}f boosts"  # incomplete
+                  f"\n{p}f info"
+                  f"\n{p}f members [faction]"
+                  f"\n{p}f top"
+                  f"\n~~{p}f shop~~",  # incomplete
             inline=False,
         )
         await ctx.send(embed=e)
@@ -747,6 +752,23 @@ class Factions(commands.Cog):
         await ctx.send(f"Claimed {channel.mention} for {faction}")
         await self.save_data()
 
+    @factions.command(name="unclaim")
+    @has_faction_permissions()
+    async def unclaim(self, ctx, channel: discord.TextChannel = None):
+        if not channel:
+            channel = ctx.channel
+        faction = self.get_authors_faction(ctx)
+        guild_id = str(ctx.guild.id)
+        if channel.id not in self.factions[guild_id][faction]["claims"]:
+            return await ctx.send(f"You don't have {channel.mention} claimed")
+        await ctx.send("Unclaiming this channel will give you $250, are you sure?")
+        async with self.bot.require("message", ctx) as msg:
+            if "ye" not in str(msg.content).lower():
+                return await ctx.send("Aight, maybe next time")
+        self.factions[guild_id][faction]["claims"].remove(channel.id)
+        self.factions[guild_id][faction]["balance"] += 250
+        await ctx.send(f"Unclaimed {channel.mention} and returned $250")
+
     @factions.command(name="claims")
     async def claims(self, ctx, *, faction = None):
         """ Returns a factions sorted claims """
@@ -854,9 +876,9 @@ class Factions(commands.Cog):
 
         self.factions[guild_id][faction]["balance"] += pay
         if ctx.author.id in self.factions[guild_id][faction]["income"]:
-            self.factions[guild_id][faction]["income"][ctx.author.id] += pay
+            self.factions[guild_id][faction]["income"][str(ctx.author.id)] += pay
         else:
-            self.factions[guild_id][faction]["income"][ctx.author.id] = pay
+            self.factions[guild_id][faction]["income"][str(ctx.author.id)] = pay
 
         await ctx.send(embed=e)
         await self.save_data()
@@ -864,20 +886,120 @@ class Factions(commands.Cog):
         await asyncio.sleep(self.cooldowns[guild_id][ctx.author.id] - time())
         del self.cooldowns[guild_id][ctx.author.id]
 
-    @factions.command(name="balance", aliases=["bal"], enabled=False)
+    @factions.command(name="scrabble")
+    @commands.cooldown(1, 360, commands.BucketType.user)
+    async def _scrabble(self, ctx):
+        faction = self.get_authors_faction(ctx)
+
+        def pred(m):
+            return (
+                m.channel.id == ctx.channel.id
+                and m.author.id == ctx.author.id
+                and (str(m.content).lower() == word)
+            )
+
+        words = [
+            "fate",
+            "bait",
+            "rock",
+            "anime",
+            "water",
+            "server",
+            "toast",
+            "beans",
+            "based"
+        ]  # stay wholesome uwu
+        word = random.choice(words)
+        scrambled_word = list(str(word).lower())
+        random.shuffle(scrambled_word)
+
+        e = discord.Embed(color=self.bot.config["theme_color"])
+        e.description = f"Scrambled word: `{''.join(scrambled_word)}`"
+        e.set_footer(text="You have 25 seconds..", icon_url=ctx.bot.user.avatar_url)
+        await ctx.send(embed=e)
+
+        try:
+            await ctx.bot.wait_for("message", check=pred, timeout=25)
+        except asyncio.TimeoutError:
+            return await ctx.send("You failed. Maybe next time :/")
+
+        guild_id = str(ctx.guild.id)
+        paycheck = random.randint(15, 25)
+        e = discord.Embed(color=purple())
+        e.description = f"You earned {faction} ${paycheck}"
+        self.factions[guild_id][faction]["balance"] += paycheck
+        if ctx.author.id in self.factions[guild_id][faction]["income"]:
+            self.factions[guild_id][faction]["income"][str(ctx.author.id)] += paycheck
+        else:
+            self.factions[guild_id][faction]["income"][str(ctx.author.id)] = paycheck
+        await ctx.send(embed=e)
+        await self.save_data()
+
+    @factions.command(name="vote")
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def _vote(self, ctx):
+        faction = self.get_authors_faction(ctx)
+        async with self.bot.cursor() as cur:
+            await cur.execute(
+                f"select vote_time from votes "
+                f"where user_id = {ctx.author.id} "
+                f"order by vote_time asc;"
+            )
+            results = await cur.fetchall()
+        if not results:
+            return await ctx.send(f"Vote at http://vote.fatebot.xyz to earn $250."
+                                  f"\nRerun the command after to redeem")
+        async with self.bot.cursor() as cur:
+            await cur.execute(
+                f"delete from votes "
+                f"where user_id = {ctx.author.id} "
+                f"order by vote_time asc "
+                f"limit 1;"
+            )
+        self.factions[str(ctx.guild.id)][faction]['balance'] += 250
+        guild_id = str(ctx.guild.id)
+        if ctx.author.id in self.factions[guild_id][faction]["income"]:
+            self.factions[guild_id][faction]["income"][str(ctx.author.id)] += 250
+        else:
+            self.factions[guild_id][faction]["income"][str(ctx.author.id)] = 250
+        additional = ""
+        if len(results) > 1:
+            additional += f". You have {len(results) - 1} additional votes remaining"
+        await ctx.send(f"Redeemed $250 for your faction" + additional)
+        await self.save_data()
+
+    @factions.command(name="forage")
+    @commands.cooldown(1, 15, commands.BucketType.user)
+    async def _forage(self, ctx):
+        faction = self.get_authors_faction(ctx)
+
+        places = [
+            "You checked inside a shoe and found $", "You creeped through an abandoned mineshaft and stumbled across $",
+            "You rummaged through a burnt down walmart and found some silverware you sold for $",
+            "You found fates code and sold it on the black market for $",
+            "You tripped and found $", "You stumbled apon a chest and found $",
+            "Your madusa looking headass sold a picture of yourself for $ to a mysterious agency"
+        ]
+
+        pay = random.randint(3, 7)
+        e = discord.Embed(color=self.bot.config["theme_color"])
+        e.description = random.choice(places).replace("$", f"${pay}")
+        self.factions[str(ctx.guild.id)][faction]["balance"] += pay
+        guild_id = str(ctx.guild.id)
+        if ctx.author.id in self.factions[guild_id][faction]["income"]:
+            self.factions[guild_id][faction]["income"][str(ctx.author.id)] += pay
+        else:
+            self.factions[guild_id][faction]["income"][str(ctx.author.id)] = pay
+        await ctx.send(embed=e)
+        await self.save_data()
+
+    @factions.command(name="balance", aliases=["bal"])
     async def balance(self, ctx, *, faction=None):
         """ Sends a factions balance """
-        guild_id = str(ctx.guild.id)
-        if guild_id not in self.factions:
-            return await ctx.send("This server has no factions")
-        if not faction:
-            faction = self.get_users_faction(ctx, user=ctx.author)
+        if faction:
+            faction = await self.get_faction_named(ctx, name=faction)
         else:
-            faction = self.get_faction_named(ctx, name=faction)
-        if not faction:
-            return await ctx.send(
-                "You need to either be in a faction or specify a faction"
-            )
+            faction = self.get_authors_faction(ctx)
         guild_id = str(ctx.guild.id)
         e = discord.Embed(color=purple())
         e.set_author(name=str(faction), icon_url=self.get_factions_icon(ctx, str(faction)))
@@ -890,7 +1012,7 @@ class Factions(commands.Cog):
     async def pay(self, ctx, faction, amount: int):
         """ Pays a faction from the author factions balance """
         authors_fac = self.get_authors_faction(ctx)
-        target_fac = self.get_faction_named(ctx, faction)
+        target_fac = await self.get_faction_named(ctx, faction)
         guild_id = str(ctx.guild.id)
         bal = self.factions[guild_id][authors_fac]["balance"]
         if amount > bal / 5:
