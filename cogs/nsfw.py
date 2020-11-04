@@ -27,9 +27,9 @@ class NSFW(commands.Cog):
             client = Danbooru(
                 "danbooru", username="FrequencyX4", api_key="UKnXN9jBTYxrXUZvnk23NJ95"
             )
+            results = client.post_list(limit=100, tags=tags)
         except exceptions.PybooruHTTPError:
             return await ctx.send("An internal server error occured; please retry")
-        results = client.post_list(limit=100, tags=tags)
         results = [r for r in results if "file_url" in r]
         if not results:
             return await ctx.send("No results")
