@@ -104,6 +104,8 @@ class RestoreRoles(commands.Cog):
     @commands.Cog.listener()
     async def on_member_remove(self, member):
         """ Saves role id's when a member leaves """
+        if member.id == self.bot.user.id:
+            return
         guild_id = str(member.guild.id)
         user_id = str(member.id)
         if guild_id in self.guilds:
