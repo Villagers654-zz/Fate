@@ -263,6 +263,13 @@ class SafePolls(commands.Cog):
         await ctx.send("Successfully setup your poll")
 
     @commands.Cog.listener()
+    async def on_message_delete(self, msg):
+        if msg.id in self.polls:
+            self.polls.remove(msg.id)
+        async with self.bot.cursor() as cur:
+            await cur.execute(f"delete from polls where msg_id = {msg.id};")
+
+    @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
         if payload.message_id in self.polls:
             user = self.bot.get_user(payload.user_id)
@@ -271,18 +278,19 @@ class SafePolls(commands.Cog):
             msg_id = payload.message_id
             if msg_id not in self.cache:
                 await self.cache_poll(payload.message_id)
-            print(self.cache[msg_id]["votes"])
             for key, users in self.cache[msg_id]["votes"].items():
                 if payload.user_id in users:
                     if key == str(payload.emoji):
                         return
                     self.cache[msg_id]["votes"][key].remove(payload.user_id)
             self.cache[msg_id]["votes"][str(payload.emoji)].append(payload.user_id)
-            print(self.cache[msg_id]["votes"])
 
             await self.update_poll(payload.message_id)
             channel = self.bot.get_channel(payload.channel_id)
-            msg = await channel.fetch_message(payload.message_id)
+            try:
+                msg = await channel.fetch_message(payload.message_id)
+            except NotFound:
+                return
             await msg.remove_reaction(payload.emoji, user)
 
             # Dump changes to sql

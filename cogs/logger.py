@@ -1851,7 +1851,7 @@ class Logger(commands.Cog):
             e = discord.Embed(color=lime_green())
             icon_url = member.avatar_url
             inviter = "Unknown"
-            if invite.inviter:
+            if invite and invite.inviter:
                 icon_url = invite.inviter.avatar_url
                 inviter = invite.inviter
             e.set_author(name="~==🍸Member Joined🍸==~", icon_url=icon_url)
