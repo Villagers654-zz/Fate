@@ -19,7 +19,7 @@ from discord.ext import commands
 from discord.ext.commands import CheckFailure
 import discord
 
-from utils.colors import purple
+from utils.colors import purple, pink
 from utils import checks
 
 
@@ -49,21 +49,41 @@ def has_faction_permissions():
     return commands.check(predicate)
 
 
-class Factions(commands.Cog):
+class FactionsRewrite(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.path = bot.get_fp_for("userdata/test_factions.json")
         self.icon = "https://cdn.discordapp.com/attachments/641032731962114096/641742675808223242/13_Swords-512.png"
         self.banner = ""
-        self.boosts = {"extra-income": {}, "land-guard": [], "anti-raid": {}}
+        self.boosts = {"extra-income": {}, "land-guard": {}, "anti-raid": {}}
         self.game_data = {}
         self.pending = []
         self.factions = {}
+        self.notifs = []
         self.cooldowns = {}
         self.counter = {}
+        self.claim_counter = {}
         if path.isfile(self.path):
             with open(self.path, "r") as f:
-                self.factions = json.load(f)  # type: dict
+                dat = json.load(f)  # type: dict
+                if "main" in dat:
+                    self.factions = dat["main"]  # type: dict
+                if "boosts" in dat:
+                    self.boosts = dat["boosts"]  # type: dict
+                if "notifs" in dat:
+                    self.notifs = dat["notifs"]  # type: list
+
+    @property
+    def extra_income(self):
+        return self.boosts["extra-income"]
+
+    @property
+    def land_guard(self):
+        return self.boosts["land-guard"]
+
+    @property
+    def anti_raid(self):
+        return self.boosts["anti-raid"]
 
     def cog_unload(self):
         with open(self.path + ".tmp", "w+") as f:
@@ -72,7 +92,11 @@ class Factions(commands.Cog):
 
     def __get_dump(self) -> str:
         return json.dumps({
-            faction: data for faction, data in list(self.factions.items()) if data
+            "main": {
+                faction: data for faction, data in list(self.factions.items()) if data
+            },
+            "boosts": self.boosts,
+            "notifs": self.notifs
         })
 
     async def save_data(self):
@@ -252,6 +276,8 @@ class Factions(commands.Cog):
 
     def update_income_board(self, guild_id, faction, **kwargs) -> None:
         for key, value in kwargs.items():
+            if key not in self.factions[guild_id][faction]["income"]:
+                self.factions[guild_id][faction]["income"][key] = 0
             self.factions[guild_id][faction]["income"][key] += value
 
     async def wait_for_msg(self, ctx, *user):
@@ -296,6 +322,8 @@ class Factions(commands.Cog):
                     "limit": 15,
                     "income": {},
                     "bio": None,
+                    "icon": None,
+                    "banner": None
                 }
                 if "limit" in metadata:
                     new_dict["limit"] = metadata["limit"]
@@ -356,11 +384,11 @@ class Factions(commands.Cog):
         )
         e.add_field(
             name="◈ Utils - Incomplete ◈",
-            value=f"  ~~{p}f privacy"  # incomplete
-                  f"\n{p}f setbio [your new bio]"  # incomplete
-                  f"\n{p}f seticon [file | url]"  # incomplete
-                  f"\n{p}f setbanner [file | url]"  # incomplete
-                  f"\n{p}f togglenotifs~~",  # incomplete
+            value=f"  {p}f privacy"
+                  f"\n{p}f setbio [your new bio]"
+                  f"\n{p}f seticon [file | url]"
+                  f"\n{p}f setbanner [file | url]"
+                  f"\n{p}f togglenotifs",
             inline=False,
         )
         e.add_field(
@@ -377,7 +405,7 @@ class Factions(commands.Cog):
                   f"\n{p}f claim #channel"
                   f"\n{p}f unclaim #channel"
                   f"\n{p}f claims"
-                  f"\n{p}f boosts"  # incomplete
+                  f"\n{p}f boosts"
                   f"\n{p}f info"
                   f"\n{p}f members [faction]"
                   f"\n{p}f top"
@@ -416,7 +444,9 @@ class Factions(commands.Cog):
             "public": True,
             "allies": [],
             "claims": [],
-            "bio": None,
+            "bio": "",
+            "icon": None,
+            "banner": None,
             "income": {},
         }
         await ctx.send("Created your faction")
@@ -586,12 +616,106 @@ class Factions(commands.Cog):
         self.factions[guild_id][faction]["co-owners"].remove(user.id)
         await ctx.send(f"Demoted {user.mention} from co-owner")
 
+    @factions.command(name="privacy")
+    @has_faction_permissions()
+    async def privacy(self, ctx):
+        faction = self.get_authors_faction(ctx)
+        guild_id = str(ctx.guild.id)
+        toggle = self.factions[guild_id][faction]["public"]
+        self.factions[guild_id][faction]["public"] = not toggle
+        await ctx.send(f"Made {faction} {'public' if (not toggle) else 'private'}")
+        await self.save_data()
+
+    @factions.command(name="set-bio", aliases=["set_bio", "setbio"])
+    @has_faction_permissions()
+    async def set_bio(self, ctx, *, bio):
+        faction = self.get_authors_faction(ctx)
+        if len(bio) > 86:
+            return await ctx.send("Your bio cannot exceed more than 86 characters")
+        self.factions[faction]["bio"] = bio
+        await ctx.send("Set your factions bio")
+        await self.save_data()
+
+    @factions.command(name="set-icon", aliases=["seticon", "set_icon"])
+    @has_faction_permissions()
+    async def set_icon(self, ctx, url = None):
+        faction = self.get_authors_faction(ctx)
+        guild_id = str(ctx.guild.id)
+        if self.factions[guild_id][faction]["icon"] is None:
+            if self.factions[guild_id][faction]["balance"] < 250:
+                return await ctx.send("Buying access to icons costs $250 and you currently don't have enough")
+            await ctx.send(
+                "Buying access to icons will cost you $250. Reply with `yes` to confirm. "
+                "Note this is a one time transaction, and you can set the icon as many times "
+                "as you want after without having to buy this again"
+            )
+            async with self.bot.require("message", ctx) as msg:
+                if "ye" not in str(msg.content).lower():
+                    return await ctx.send("Aight.. maybe next time")
+            self.factions[guild_id][faction]["balance"] -= 250
+            self.factions[guild_id][faction]["icon"] = ""
+        if not url and not ctx.message.attachments:
+            self.factions[guild_id][faction]["icon"] = ""
+            return await ctx.send(
+                "Reset your factions icon. Attach a file or add a link when running the command, "
+                "(example: `.f set-icon http://url.to.image/`) to set it back."
+            )
+        if not url:
+            url = ctx.message.attachments[0].url
+        e = discord.Embed(color=discord.Color.red())
+        e.set_author(name="Ensuring the image works", icon_url=url)
+        try:
+            await ctx.send(embed=e, delete_after=5)
+        except discord.errors.HTTPException:
+            return await ctx.send("Discord won't let me set that as the icon, sorry")
+        self.factions[guild_id][faction]["icon"] = url
+        await ctx.send("Set your factions icon")
+        await self.save_data()
+
+    @factions.command(name="set-banner", aliases=["setbanner", "set_banner"])
+    @has_faction_permissions()
+    async def set_banner(self, ctx, url=None):
+        faction = self.get_authors_faction(ctx)
+        guild_id = str(ctx.guild.id)
+        if self.factions[guild_id][faction]["banner"] is None:
+            if self.factions[guild_id][faction]["balance"] < 500:
+                return await ctx.send("Buying access to banners costs $500 and you currently don't have enough")
+            await ctx.send(
+                "Buying access to banners will cost you $500. Reply with `yes` to confirm. "
+                "Note this is a one time purchase, and you can set the banner as many times "
+                "as you want after without having to buy this again"
+            )
+            async with self.bot.require("message", ctx) as msg:
+                if "ye" not in str(msg.content).lower():
+                    return await ctx.send("Aight.. maybe next time")
+            self.factions[guild_id][faction]["balance"] -= 500
+            self.factions[guild_id][faction]["banner"] = ""
+        if not url and not ctx.message.attachments:
+            self.factions[guild_id][faction]["banner"] = ""
+            return await ctx.send(
+                "Reset your factions banner. Attach a file or add a link when running the command, "
+                "(example: `.f set-icon http://url.to.image/`) to set it back."
+            )
+        if not url:
+            url = ctx.message.attachments[0].url
+        e = discord.Embed(color=discord.Color.red())
+        e.set_author(name="Ensuring the image works", icon_url=url)
+        try:
+            await ctx.send(embed=e, delete_after=5)
+        except discord.errors.HTTPException:
+            return await ctx.send("Discord won't let me set that as the banner, sorry")
+        self.factions[guild_id][faction]["banner"] = url
+        await ctx.send("Set your factions banner")
+        await self.save_data()
+
     @factions.command(name="annex", enabled=False)
     @is_faction_owner()
     async def annex(self, ctx, *, faction):
         """ Merges a faction with another """
         authors_faction = self.get_owned_faction(ctx, user=ctx.author)
         other_faction = await self.get_faction_named(ctx, faction)
+        if authors_faction == other_faction:
+            return await ctx.send("You must think you're slick..")
         guild_id = str(ctx.guild.id)
         dat = self.factions[guild_id][other_faction]
         await ctx.send(
@@ -607,6 +731,7 @@ class Factions(commands.Cog):
             if ".confirm annex" not in str(msg.content).lower():
                 return await ctx.send("Alright, merge has been rejected")
 
+        self.factions[guild_id][authors_faction]["balance"] += dat["balance"]
         for member_id in dat["members"]:
             if member_id not in self.factions[guild_id][authors_faction]["members"]:
                 self.factions[guild_id][authors_faction]["members"].append(member_id)
@@ -684,6 +809,26 @@ class Factions(commands.Cog):
         e.set_footer(text=f"Leaderboard Rank: #{rank}")
         await ctx.send(embed=e)
 
+    @factions.command(name="income")
+    async def income(self, ctx):
+        faction = self.get_authors_faction(ctx)
+        guild_id = str(ctx.guild.id)
+        dat = self.factions[guild_id][faction]["income"]
+        info = ""
+        if "land_claims" in dat:
+            info += f"Land-Claims: ${dat['land_claims']}"
+        if "alliances" in dat:
+            info += f"\nAlliances: ${dat['alliances']}"
+        for key, income in dat.items():
+            if key.isdigit():
+                user = self.bot.get_user(int(key))
+                if user:
+                    info += f"\n{user.name}: ${income}"
+        e = discord.Embed(color=purple())
+        e.set_author(name="Income History", icon_url=self.get_factions_icon(ctx, faction))
+        e.description = info
+        await ctx.send(embed=e)
+
     @factions.command(name="members")
     async def members(self, ctx, *, faction=None):
         """ lists a factions members """
@@ -722,6 +867,38 @@ class Factions(commands.Cog):
             e.description += f"{user.mention} - ${income}\n"
         await ctx.send(embed=e)
 
+    @factions.command(name="boosts")
+    async def boosts(self, ctx, *, faction=None):
+        if faction:
+            faction = await self.get_faction_named(ctx, faction)
+        else:
+            faction = self.get_authors_faction(ctx)
+        active = {}
+        guild_id = str(ctx.guild.id)
+        if guild_id in self.extra_income:
+            if faction in self.extra_income[guild_id]:
+                end_time = self.extra_income[guild_id][faction]  # type: float
+                active["Extra-Income"] = end_time - time()  # Remaining time
+        if guild_id in self.land_guard:
+            if faction in self.land_guard[guild_id]:
+                end_time = self.land_guard[guild_id][faction]
+                active["Land-Guard"] = end_time - time()
+        if guild_id in self.anti_raid:
+            if faction in self.anti_raid[guild_id]:
+                end_time = self.anti_raid[guild_id][faction]
+                active["Anti-Raid"] = end_time - time()
+        if active:
+            boosts = "\n".join([
+                f"• {boost} - {self.bot.utils.get_time(remaining_seconds)}"
+                for boost, remaining_seconds in active.items()
+            ])
+        else:
+            boosts = "None Active"
+        e = discord.Embed(color=pink())
+        e.set_author(name=f"{faction}s boosts", icon_url=self.get_factions_icon(ctx, faction))
+        e.description = boosts
+        await ctx.send(embed=e)
+
     @factions.command(name="claim")
     @has_faction_permissions()
     async def claim(self, ctx, channel: discord.TextChannel = None):
@@ -749,6 +926,7 @@ class Factions(commands.Cog):
             fac = claims[channel.id]["faction"]
             self.factions[guild_id][fac]["claims"].remove(channel.id)
         self.factions[guild_id][faction]["claims"].append(channel.id)
+        self.factions[guild_id][faction]["balance"] -= cost
         await ctx.send(f"Claimed {channel.mention} for {faction}")
         await self.save_data()
 
@@ -875,7 +1053,7 @@ class Factions(commands.Cog):
             pay += 5
 
         self.factions[guild_id][faction]["balance"] += pay
-        if ctx.author.id in self.factions[guild_id][faction]["income"]:
+        if str(ctx.author.id) in self.factions[guild_id][faction]["income"]:
             self.factions[guild_id][faction]["income"][str(ctx.author.id)] += pay
         else:
             self.factions[guild_id][faction]["income"][str(ctx.author.id)] = pay
@@ -885,6 +1063,21 @@ class Factions(commands.Cog):
 
         await asyncio.sleep(self.cooldowns[guild_id][ctx.author.id] - time())
         del self.cooldowns[guild_id][ctx.author.id]
+        if ctx.author.id in self.notifs:
+            await ctx.send(
+                f"{ctx.author.mention}, your work cooldowns up", delete_after=5,
+                allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=True)
+            )
+
+    @factions.command(name="toggle-notifs")
+    async def _toggle_notifs(self, ctx):
+        if ctx.author.id in self.notifs:
+            self.notifs.remove(ctx.author.id)
+            await ctx.send("Disabled work notifications")
+        else:
+            self.notifs.append(ctx.author.id)
+            await ctx.send("Enabled work notifications")
+        await self.save_data()
 
     @factions.command(name="scrabble")
     @commands.cooldown(1, 360, commands.BucketType.user)
@@ -1136,17 +1329,21 @@ class Factions(commands.Cog):
             guild_id = str(msg.guild.id)
             if guild_id in self.factions:
                 claims = self.collect_claims(guild_id)  # type: dict
-                channel_id = str(msg.channel.id)
-                if channel_id in claims:
-                    faction = claims[channel_id]["faction"]
-                    pay = random.randint(1, 5)
-                    self.factions[guild_id][faction]["balance"] += pay
-                    self.update_income_board(guild_id, faction, land_claims=pay)
-                    ally_pay = round(pay / 2) if pay > 1 else 0
-                    for ally in self.factions[guild_id][faction]["allies"]:
-                        self.factions[guild_id][ally]["balance"] += ally_pay
-                        self.update_income_board(guild_id, ally, alliances=ally_pay)
+                if msg.channel.id in claims:
+                    if msg.channel.id not in self.claim_counter:
+                        self.claim_counter[msg.channel.id] = 0
+                    self.claim_counter[msg.channel.id] += 1
+                    if self.claim_counter[msg.channel.id] == 5:
+                        self.claim_counter[msg.channel.id] = 0
+                        faction = claims[msg.channel.id]["faction"]
+                        pay = random.randint(1, 5)
+                        self.factions[guild_id][faction]["balance"] += pay
+                        self.update_income_board(guild_id, faction, land_claims=pay)
+                        ally_pay = round(pay / 2) if pay > 1 else 0
+                        for ally in self.factions[guild_id][faction]["allies"]:
+                            self.factions[guild_id][ally]["balance"] += ally_pay
+                            self.update_income_board(guild_id, ally, alliances=ally_pay)
 
 
 def setup(bot):
-    bot.add_cog(Factions(bot))
+    bot.add_cog(FactionsRewrite(bot))

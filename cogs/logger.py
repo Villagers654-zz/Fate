@@ -398,16 +398,24 @@ class Logger(commands.Cog):
                     ):
                         e = discord.Embed(title="Failed to send embed")
                         e.set_author(name=guild if guild else "Unknown Guild")
+                        e.description = traceback.format_exc()
                         for text_group in self.bot.utils.split(
-                            str(json.dumps(embed.to_dict(), indent=2)), 1990
+                                str(json.dumps(embed.to_dict(), indent=2)), 1024
                         ):
                             e.add_field(
                                 name="Embed Data", value=text_group, inline=False
                             )
-                        e.set_footer(text=str(guild.id) if guild else "Unknown Guild")
+                        e.set_footer(
+                            text=str(guild.id) if guild else "Unknown Guild"
+                        )
+                        debug = self.bot.get_channel(self.bot.config["debug_channel"])
                         try:
-                            await category.send(embed=e)
-                        except (discord.errors.Forbidden, discord.errors.NotFound):
+                            await debug.send(embed=e)
+                        except (
+                                discord.errors.Forbidden,
+                                discord.errors.NotFound,
+                                ClientOSError,
+                        ):
                             break
                         continue
                     if file_paths:
