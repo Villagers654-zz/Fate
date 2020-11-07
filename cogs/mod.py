@@ -1400,7 +1400,7 @@ class Moderation(commands.Cog):
                 user.top_role.position >= ctx.author.top_role.position
                 and ctx.author.id != ctx.guild.owner.id
             ):
-                await ctx.send(f"{user} is above your paygrade, take a seat")
+                return await ctx.send(f"{user} is above your paygrade, take a seat")
             del self.config[guild_id]["warns"][user_id]
             await ctx.send(f"Cleared {user}'s warns")
             await self.save_data()
