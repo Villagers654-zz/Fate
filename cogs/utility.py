@@ -171,6 +171,14 @@ class Utility(commands.Cog):
                         "duration": None,
                     }
 
+    @commands.command(name="delete-data")
+    async def delete_data(self, ctx):
+        user_id = str(ctx.author.id)
+        if user_id not in self.user_logs:
+            return await ctx.send("You have no user data saved")
+        del self.user_logs[user_id]
+        await ctx.send("Removed your data from .info")
+
     def cleanup_users(self):
         for user_id, data in self.user_logs.items():
             for name, changed_at in data["names"].items():
