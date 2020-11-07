@@ -116,17 +116,24 @@ class Ranking(commands.Cog):
 
     @tasks.loop(seconds=25)
     async def xp_dump_task(self):
+        async def execute(chunk):
+            async with self.bot.pool.acquire() as conn:
+                async with conn.cursor() as cur:
+                    for query in chunk:
+                        await cur.execute(query)
+
         if not self.guild_xp:
             return self.bot.log.debug("No xp to dump, returning")
         before = monotonic()
         xp_dat = list(self.guild_xp.items())
         self.guild_xp = {}
+        b = monotonic()
         async with self.bot.cursor() as cur:
             queries = []
             for guild_id, data in xp_dat:
                 for user_id, xp in data.items():
                     await cur.execute(
-                        f"select user_id from msg where guild_id = {guild_id} and user_id = {user_id};"
+                        f"select user_id from msg where guild_id = {guild_id} and user_id = {user_id} limit 1;"
                     )
                     results = await cur.fetchall()
                     if not results:
@@ -135,11 +142,21 @@ class Ranking(commands.Cog):
                         )
                     else:
                         queries.append(
-                            f"update msg set xp = xp + {xp} where guild_id = {guild_id} and user_id = {user_id};"
+                            f"update msg set xp = xp + {xp} where guild_id = {guild_id} and user_id = {user_id} limit 1;"
                         )
+            pong = str((monotonic() - before) * 1000) + "ms"
             await cur.execute(" ".join(queries))
+        # tasks = []
+        # amount = 0
+        # for chunk in [queries[i:i + 4] for i in range(0, len(queries), 4)]:
+        #     if not amount:
+        #         amount = len(chunk)
+        #     task = self.bot.loop.create_task(execute(chunk))
+        #     tasks.append(task)
+        # while not all(task.done() for task in tasks):
+        #     await asyncio.sleep(0.21)
         ping = str(round((monotonic() - before) * 1000)) + "ms"
-        self.bot.log.debug(f"Dumped xp for {len(xp_dat)} users in {ping}")
+        self.bot.log.debug(f"Dumped xp for {len(xp_dat)} users in {ping}. Selecting took {pong}")
 
     @tasks.loop(hours=1)
     async def xp_cleanup_task(self):
