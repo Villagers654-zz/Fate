@@ -205,17 +205,23 @@ class FactionsRewrite(commands.Cog):
             for claim in fac["claims"]:
                 channel = self.bot.get_channel(int(claim))
                 if not isinstance(channel, discord.TextChannel):
-                    self.factions[guild_id]["balance"] += 250
+                    self.factions[guild_id][faction]["balance"] += 250
                     self.factions[guild_id][faction]["claims"].remove(claim)
                     continue
+
                 is_guarded = False
-                if claim in self.boosts["land-guard"]:
-                    is_guarded = True
+                if guild_id in self.land_guard:
+                    for f in self.land_guard[guild_id].keys():
+                        if int(claim) in self.factions[guild_id][f]["claims"]:
+                            is_guarded = True
+                            break
+
                 fac_claims[int(claim)] = {
                     "faction": faction,
                     "guarded": is_guarded,
                     "position": channel.position,
                 }
+
             return fac_claims
 
         if faction:
@@ -300,6 +306,7 @@ class FactionsRewrite(commands.Cog):
         new_dict = {}
         with open("./data/userdata/factions.json", "r") as f:
             dat = json.load(f)  # type: dict
+        await ctx.send(f"Converting {len(dat['factions'].items())}")
         for guild_id, factions in dat["factions"].items():
             new_dict[guild_id] = {}
             for faction, metadata in factions.items():
@@ -311,7 +318,7 @@ class FactionsRewrite(commands.Cog):
                         claims = [
                             int(k) for k in dat["land_claims"][guild_id][faction].keys()
                         ]
-                new_dict[faction] = {
+                new_dict[guild_id][faction] = {
                     "owner": metadata["owner"],
                     "co-owners": [],
                     "members": metadata["members"],
@@ -319,14 +326,14 @@ class FactionsRewrite(commands.Cog):
                     "claims": claims,
                     "public": True,
                     "allies": [],
-                    "limit": 15,
+                    "slots": 15,
                     "income": {},
                     "bio": None,
                     "icon": None,
                     "banner": None
                 }
                 if "limit" in metadata:
-                    new_dict["limit"] = metadata["limit"]
+                    new_dict["slots"] = metadata["limit"]
                 if "access" in metadata:
                     new_dict["public"] = (
                         True if metadata["access"] == "public" else False
@@ -339,9 +346,10 @@ class FactionsRewrite(commands.Cog):
                     new_dict["icon"] = metadata["icon"]
                 if "banner" in metadata:
                     new_dict["banner"] = metadata["banner"]
-        await ctx.send("Conversion Would Succeed")
+        self.factions = new_dict
+        await ctx.send(f"Converted {len(new_dict)} factions")
 
-    @commands.group(name="fac")
+    @commands.group(name="factions", aliases=["f"])
     @commands.cooldown(3, 5, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
@@ -440,7 +448,7 @@ class FactionsRewrite(commands.Cog):
             "co-owners": [],
             "members": [ctx.author.id],
             "balance": 500,
-            "limit": 15,
+            "slots": 15,
             "public": True,
             "allies": [],
             "claims": [],
@@ -483,6 +491,9 @@ class FactionsRewrite(commands.Cog):
         guild_id = str(ctx.guild.id)
         if not self.factions[guild_id][faction]["public"]:
             return await ctx.send("That factions not public :[")
+        if len(self.factions[guild_id][faction]["members"]) == self.factions[guild_id][faction]["slots"]:
+            p = self.bot.utils.get_prefix(ctx)
+            return await ctx.send(f"Your faction is currently full. Buy more slots for $250 with {p}f buy slots")
         self.factions[guild_id][faction]["members"].append(ctx.author.id)
         e = discord.Embed(color=purple())
         e.set_author(name=faction, icon_url=ctx.author.avatar_url)
@@ -506,6 +517,10 @@ class FactionsRewrite(commands.Cog):
             )
 
         faction = self.get_owned_faction(ctx)
+        guild_id = str(ctx.guild.id)
+        if len(self.factions[guild_id][faction]["members"]) == self.factions[guild_id][faction]["slots"]:
+            p = self.bot.utils.get_prefix(ctx)
+            return await ctx.send(f"Your faction is currently full. Buy more slots for $250 with {p}f buy slots")
         if not faction:
             return await ctx.send(
                 "You need to have owner level permissions to use this cmd"
@@ -529,7 +544,7 @@ class FactionsRewrite(commands.Cog):
             await ctx.message.delete()
         else:
             if "yes" in msg.content.lower():
-                self.factions[str(ctx.guild.id)][faction]["members"].append(
+                self.factions[guild_id][faction]["members"].append(
                     ctx.author.id
                 )
                 await ctx.send(f"{user.display_name} joined {faction}")
@@ -988,6 +1003,12 @@ class FactionsRewrite(commands.Cog):
             return await ctx.send("Faction not found")
 
         guild_id = str(ctx.guild.id)
+        if guild_id in self.anti_raid:
+            if defender in self.anti_raid[guild_id]:
+                if time() > self.anti_raid[guild_id][faction]:
+                    del self.boosts["anti-raid"][guild_id][faction]
+                else:
+                    return await ctx.send(f"{defender} is currently guarded by anti-raid")
         attacker_bal = self.factions[guild_id][attacker]["balance"]
         defender_bal = self.factions[guild_id][defender]["balance"]
 
@@ -1046,11 +1067,15 @@ class FactionsRewrite(commands.Cog):
         e = discord.Embed(color=purple())
         pay = random.randint(15, 25)
         e.description = f"You earned {faction} ${pay}"
-        if faction in self.boosts["extra-income"]:
-            e.set_footer(
-                text="With Bonus: $5", icon_url=self.get_factions_icon(ctx, faction)
-            )
-            pay += 5
+        if guild_id in self.extra_income:
+            if faction in self.extra_income[guild_id]:
+                if time() > self.extra_income[guild_id][faction]:
+                    del self.boosts["extra-income"][guild_id][faction]
+                else:
+                    e.set_footer(
+                        text="With Bonus: $5", icon_url=self.get_factions_icon(ctx, faction)
+                    )
+                    pay += 5
 
         self.factions[guild_id][faction]["balance"] += pay
         if str(ctx.author.id) in self.factions[guild_id][faction]["income"]:
@@ -1241,14 +1266,14 @@ class FactionsRewrite(commands.Cog):
         )
         net_leaderboard.description = ""
         for i, (faction, value) in enumerate(dat["net"][:9]):
-            net_leaderboard.description += f"#{i}. {faction} - ${value}"
+            net_leaderboard.description += f"\n#{i}. {faction} - ${value}"
 
         bal_leaderboard = discord.Embed(color=purple())
         bal_leaderboard.set_author(name="Balance Leaderboard")
         bal_leaderboard.set_thumbnail(url=ctx.guild.icon_url)
         bal_leaderboard.description = ""
         for i, (faction, balance) in enumerate(dat["bal"][:9]):
-            bal_leaderboard.description += f"#{i}. {faction} - ${balance}"
+            bal_leaderboard.description += f"\n#{i}. {faction} - ${balance}"
 
         alliance_net_leaderboard = discord.Embed(color=purple())
         alliance_net_leaderboard.set_author(name="Alliance Net Leaderboard")
@@ -1310,7 +1335,7 @@ class FactionsRewrite(commands.Cog):
             return m.channel.id == ctx.channel.id and ".accept" in str(m.content)
 
         await ctx.send(
-            "Someone with ownership level permissions in {ally_name} "
+            f"Someone with ownership level permissions in {ally_name} "
             "reply with `.accept` to agree to the alliance"
         )
         while True:
@@ -1322,6 +1347,80 @@ class FactionsRewrite(commands.Cog):
                         f"Successfully created an alliance between `{faction_name}` and `{ally_name}`"
                     )
                     return await self.save_data()
+
+    @factions.command(name="shop")
+    async def shop(self, ctx):
+        e = discord.Embed(color=purple())
+        e.set_author(name="Factions Shop", icon_url=self.bot.user.avatar_url)
+        e.add_field(
+            name="◈ Attributes",
+            value="》 +5 member slots\n"
+                  "• $250",
+            inline=False
+        )
+        e.add_field(
+            name="◈ Boosts",
+            value="》2h extra-income\n"
+                  "• $50\n"
+                  "》24h anti-raid\n"
+                  "• $75\n"
+                  "》2h land-guard\n"
+                  "• $100",
+            inline=False
+        )
+        p = self.bot.utils.get_prefix(ctx)
+        e.set_footer(text=f"Usage | {p}f buy item_name")
+        await ctx.send(embed=e)
+
+    @factions.command(name="buy")
+    @has_faction_permissions()
+    async def buy(self, ctx, item_name: lambda arg: arg.lower()):
+        def has_money(amount: int):
+            return self.factions[guild_id][faction]["balance"] >= amount
+
+        faction = self.get_authors_faction(ctx)
+        guild_id = str(ctx.guild.id)
+
+        if "slots" in item_name:
+            if self.factions[guild_id][faction]["slots"] == 25:
+                return await ctx.send("You're at the max number of slots")
+            if not has_money(250):
+                return await ctx.send("You need $250 to buy this")
+            self.factions[guild_id][faction]["balance"] -= 250
+            self.factions[guild_id][faction]["slots"] += 5
+            await ctx.send(f"Upped the slots to {self.factions[guild_id][faction]['slots']}")
+
+        elif "income" in item_name:
+            if not has_money(50):
+                return await ctx.send("You need $50 to buy this")
+            if guild_id not in self.extra_income:
+                self.boosts["extra-income"][guild_id] = {}
+            self.factions[guild_id][faction]["balance"] -= 50
+            self.boosts["extra-income"][guild_id][faction] = time() + 60 * 60 * 2
+            await ctx.send("Purchased 2h extra-income")
+
+        elif "raid" in item_name:
+            if not has_money(75):
+                return await ctx.send("You need $75 to buy this")
+            if guild_id not in self.anti_raid:
+                self.boosts["anti-raid"][guild_id] = {}
+            self.boosts["anti-raid"][guild_id][faction] = time() + 60 * 60 * 12
+            await ctx.send("Purchased 12h anti-raid")
+
+        elif "guard" in item_name:
+            if not has_money(100):
+                return await ctx.send("You need $100 to buy this")
+            if guild_id not in self.land_guard:
+                self.boosts["land-guard"][guild_id] = {}
+            self.boosts["land-guard"][guild_id][faction] = time() + 60 * 60 * 2
+            await ctx.send("Purchased 2h land-guard")
+
+        else:
+            p = self.bot.utils.get_prefix(ctx)
+            await ctx.send(f"That's not an item in the shop, use {p}f shop")
+
+        await self.save_data()
+
 
     @commands.Cog.listener()
     async def on_message(self, msg):
