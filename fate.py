@@ -296,7 +296,7 @@ class Fate(commands.AutoShardedBot):
                     autocommit=True,
                     loop=self.loop,
                     minsize=1,
-                    maxsize=0,
+                    maxsize=20,
                 )
                 self.pool = pool
                 break

@@ -10,7 +10,6 @@ from io import BytesIO
 from datetime import datetime
 import aiohttp
 from pymysql.err import DataError, InternalError
-from time import monotonic
 
 from discord.ext import commands, tasks
 import discord
@@ -87,11 +86,9 @@ class Ranking(commands.Cog):
         self.vclb = {}
         self.vc_counter = 0
 
-        self.xp_dump_task.start()
         self.xp_cleanup_task.start()
 
     def cog_unload(self):
-        self.xp_dump_task.cancel()
         self.xp_cleanup_task.cancel()
 
     async def save_config(self):
@@ -113,50 +110,6 @@ class Ranking(commands.Cog):
         """ Saves static config as the guilds initial config """
         self.config[guild_id] = self.static_config()
         await self.save_config()
-
-    @tasks.loop(seconds=25)
-    async def xp_dump_task(self):
-        async def execute(chunk):
-            async with self.bot.pool.acquire() as conn:
-                async with conn.cursor() as cur:
-                    for query in chunk:
-                        await cur.execute(query)
-
-        if not self.guild_xp:
-            return self.bot.log.debug("No xp to dump, returning")
-        before = monotonic()
-        xp_dat = list(self.guild_xp.items())
-        self.guild_xp = {}
-        b = monotonic()
-        async with self.bot.cursor() as cur:
-            queries = []
-            for guild_id, data in xp_dat:
-                for user_id, xp in data.items():
-                    await cur.execute(
-                        f"select user_id from msg where guild_id = {guild_id} and user_id = {user_id} limit 1;"
-                    )
-                    results = await cur.fetchall()
-                    if not results:
-                        queries.append(
-                            f"insert into msg values ({guild_id}, {user_id}, {xp});"
-                        )
-                    else:
-                        queries.append(
-                            f"update msg set xp = xp + {xp} where guild_id = {guild_id} and user_id = {user_id} limit 1;"
-                        )
-            pong = str((monotonic() - before) * 1000) + "ms"
-            await cur.execute(" ".join(queries))
-        # tasks = []
-        # amount = 0
-        # for chunk in [queries[i:i + 4] for i in range(0, len(queries), 4)]:
-        #     if not amount:
-        #         amount = len(chunk)
-        #     task = self.bot.loop.create_task(execute(chunk))
-        #     tasks.append(task)
-        # while not all(task.done() for task in tasks):
-        #     await asyncio.sleep(0.21)
-        ping = str(round((monotonic() - before) * 1000)) + "ms"
-        self.bot.log.debug(f"Dumped xp for {len(xp_dat)} users in {ping}. Selecting took {pong}")
 
     @tasks.loop(hours=1)
     async def xp_cleanup_task(self):
@@ -261,19 +214,11 @@ class Ranking(commands.Cog):
                 self.global_cd[user_id] = time() + 10
                 try:
                     async with self.bot.cursor() as cur:
-                        # global msg xp
                         await cur.execute(
-                            f"select xp from global_msg where user_id = {user_id};"
+                            f"insert into global_msg "
+                            f"values ({user_id}, 1) "
+                            f"on duplicate key update xp = xp + 1;"
                         )
-                        results = await cur.fetchone()
-                        if not results:
-                            await cur.execute(
-                                f"insert into global_msg values ({user_id}, 1);"
-                            )
-                        else:
-                            await cur.execute(
-                                f"update global_msg set xp={results[0]+1} where user_id = {user_id};"
-                            )
 
                         # global monthly msg xp
                         await cur.execute(
@@ -306,13 +251,14 @@ class Ranking(commands.Cog):
             self.cd[guild_id][user_id] = msgs
             if len(msgs) < conf["msgs_within_timeframe"]:
                 self.cd[guild_id][user_id].append(time())
-                if guild_id not in self.guild_xp:
-                    self.guild_xp[guild_id] = {}
-                if user_id not in self.guild_xp[guild_id]:
-                    self.guild_xp[guild_id][user_id] = 0
-                self.guild_xp[guild_id][user_id] += new_xp
                 try:
                     async with self.bot.cursor() as cur:
+                        await cur.execute(
+                            f"insert into msg "
+                            f"values ({guild_id}, {user_id}, {new_xp}) "
+                            f"on duplicate key update xp = xp + {new_xp};"
+                        )
+
                         # monthly guilded msg xp
                         await cur.execute(
                             f"INSERT INTO monthly_msg "
