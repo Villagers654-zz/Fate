@@ -103,7 +103,7 @@ class FactionsRewrite(commands.Cog):
         """Save the current variables without blocking the event loop"""
 
         data = await self.bot.loop.run_in_executor(None, self.__get_dump)
-        async with self.bot.open(self.path, "w+", cache=True) as f:
+        async with self.bot.open(self.path, "w+", cache=False) as f:
             await f.write(data)
         return None
 
@@ -320,7 +320,7 @@ class FactionsRewrite(commands.Cog):
                         ]
                 new_dict[guild_id][faction] = {
                     "owner": metadata["owner"],
-                    "co-owners": [],
+                    "co-owners": metadata["co-owners"],
                     "members": metadata["members"],
                     "balance": metadata["balance"],
                     "claims": claims,
@@ -333,19 +333,19 @@ class FactionsRewrite(commands.Cog):
                     "banner": None
                 }
                 if "limit" in metadata:
-                    new_dict["slots"] = metadata["limit"]
+                    new_dict[guild_id][faction]["slots"] = metadata["limit"]
                 if "access" in metadata:
-                    new_dict["public"] = (
+                    new_dict[guild_id][faction]["public"] = (
                         True if metadata["access"] == "public" else False
                     )
                 if "co-owners" in metadata:
-                    new_dict["co-owners"] = metadata["co-owners"]
+                    new_dict[guild_id][faction]["co-owners"] = metadata["co-owners"]
                 if "bio" in metadata:
-                    new_dict["bio"] = metadata["bio"] if metadata["bio"] else None
+                    new_dict[guild_id][faction]["bio"] = metadata["bio"] if metadata["bio"] else None
                 if "icon" in metadata:
-                    new_dict["icon"] = metadata["icon"]
+                    new_dict[guild_id][faction]["icon"] = metadata["icon"]
                 if "banner" in metadata:
-                    new_dict["banner"] = metadata["banner"]
+                    new_dict[guild_id][faction]["banner"] = metadata["banner"]
         self.factions = new_dict
         await ctx.send(f"Converted {len(new_dict)} factions")
 
@@ -617,7 +617,7 @@ class FactionsRewrite(commands.Cog):
     @factions.command(name="demote")
     async def demote(self, ctx, *, user):
         """ Demotes a faction member from Co-Owner """
-        user = await self.bot.utils.get_user(ctx, user)
+        user = self.bot.utils.get_user(ctx, user)
         if not user:
             return await ctx.send("User not found")
         faction = self.get_owned_faction(ctx)
@@ -855,18 +855,22 @@ class FactionsRewrite(commands.Cog):
         guild_id = str(ctx.guild.id)
         owner_id = self.factions[guild_id][faction]["owner"]
         owner = self.bot.get_user(owner_id)
+        owner_income = 0
+        if str(owner.id) in self.factions[guild_id][faction]["income"]:
+            owner_income = self.factions[guild_id][faction]["income"][str(owner_id)]
         users = []
         co_owners = []
         for user_id in self.factions[guild_id][faction]["members"]:  # type: int
             user = self.bot.get_user(user_id)
             if not isinstance(user, discord.User):
                 self.factions[guild_id][faction].remove(user_id)
+                await ctx.send(f"Can't find {await self.bot.fetch_user(user_id)}, kicked them from the faction")
                 await self.save_data()
                 continue
 
             income = 0
-            if user_id in self.factions[guild_id][faction]["income"]:
-                income = self.factions[guild_id][faction][income][user_id]
+            if str(user_id) in self.factions[guild_id][faction]["income"]:
+                income = self.factions[guild_id][faction]["income"][str(user_id)]
             if user_id in self.factions[guild_id][faction]["co-owners"]:
                 co_owners.append([user, income])
             else:
@@ -875,11 +879,11 @@ class FactionsRewrite(commands.Cog):
         e = discord.Embed(color=purple())
         e.set_author(name=f"{faction}'s members", icon_url=owner.avatar_url)
         e.set_thumbnail(url=self.get_factions_icon(ctx, faction))
-        e.description = ""
-        for user, income in users:
-            if user.id in self.factions[guild_id][faction]["co-owners"]:
-                e.description += f"Co: "
-            e.description += f"{user.mention} - ${income}\n"
+        e.description = f"**O:** `{owner.name}` - ${owner_income}\n"
+        for user, income in sorted(co_owners, key=lambda kv: kv[1], reverse=True):
+            e.description += f"**Co:** `{user.name}` - ${income}\n"
+        for user, income in sorted(users, key=lambda kv: kv[1], reverse=True):
+            e.description += f"**M:** `{user.name}` - ${income}\n"
         await ctx.send(embed=e)
 
     @factions.command(name="boosts")
@@ -1040,8 +1044,8 @@ class FactionsRewrite(commands.Cog):
         else:
             winner = highest_fac
             loser = lowest_fac
-        self.factions[guild_id][winner] += loot
-        self.factions[guild_id][loser] -= loot
+        self.factions[guild_id][winner]["balance"] += loot
+        self.factions[guild_id][loser]["balance"] -= loot
 
         e = discord.Embed(color=purple())
         if winner == attacker:
@@ -1253,6 +1257,8 @@ class FactionsRewrite(commands.Cog):
                 await msg.add_reaction(emoji)
 
         guild_id = str(ctx.guild.id)
+        if guild_id not in self.factions:
+            return await ctx.send("This server currently has no rankings")
         dat = self.get_faction_rankings(guild_id)
         e = discord.Embed(description="Collecting Leaderboard Data..")
         msg = await ctx.send(embed=e)
