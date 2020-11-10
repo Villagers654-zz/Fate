@@ -1150,7 +1150,7 @@ class FactionsRewrite(commands.Cog):
         e = discord.Embed(color=purple())
         e.description = f"You earned {faction} ${paycheck}"
         self.factions[guild_id][faction]["balance"] += paycheck
-        if ctx.author.id in self.factions[guild_id][faction]["income"]:
+        if str(ctx.author.id) in self.factions[guild_id][faction]["income"]:
             self.factions[guild_id][faction]["income"][str(ctx.author.id)] += paycheck
         else:
             self.factions[guild_id][faction]["income"][str(ctx.author.id)] = paycheck
@@ -1180,7 +1180,7 @@ class FactionsRewrite(commands.Cog):
             )
         self.factions[str(ctx.guild.id)][faction]['balance'] += 250
         guild_id = str(ctx.guild.id)
-        if ctx.author.id in self.factions[guild_id][faction]["income"]:
+        if str(ctx.author.id) in self.factions[guild_id][faction]["income"]:
             self.factions[guild_id][faction]["income"][str(ctx.author.id)] += 250
         else:
             self.factions[guild_id][faction]["income"][str(ctx.author.id)] = 250
@@ -1208,7 +1208,7 @@ class FactionsRewrite(commands.Cog):
         e.description = random.choice(places).replace("$", f"${pay}")
         self.factions[str(ctx.guild.id)][faction]["balance"] += pay
         guild_id = str(ctx.guild.id)
-        if ctx.author.id in self.factions[guild_id][faction]["income"]:
+        if str(ctx.author.id) in self.factions[guild_id][faction]["income"]:
             self.factions[guild_id][faction]["income"][str(ctx.author.id)] += pay
         else:
             self.factions[guild_id][faction]["income"][str(ctx.author.id)] = pay
