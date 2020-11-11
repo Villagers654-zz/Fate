@@ -88,6 +88,7 @@ class FactionsRewrite(commands.Cog):
     def cog_unload(self):
         with open(self.path + ".tmp", "w+") as f:
             f.write(self.__get_dump())
+        # os.rename is atomic and won't be interrupted
         os.rename(self.path + ".tmp", self.path)
 
     def __get_dump(self) -> str:
@@ -556,18 +557,16 @@ class FactionsRewrite(commands.Cog):
     @factions.command(name="leave")
     async def leave(self, ctx):
         """ Leaves a faction """
-        faction = self.get_users_faction(ctx)
-        if not faction:
-            return await ctx.send("You're not currently in a faction")
-        if self.get_owned_faction(ctx):
+        faction = self.get_authors_faction(ctx)
+        guild_id = str(ctx.guild.id)
+        if ctx.author.id == self.factions[guild_id][faction]["owner"]:
             return await ctx.send(
                 "You cannot leave a faction you own, you must "
                 "transfer ownership, or disband it"
             )
-        guild_id = str(ctx.guild.id)
         self.factions[guild_id][faction]["members"].remove(ctx.author.id)
-        if ctx.author.id in self.factions[guild_id]["co-owners"]:
-            self.factions[guild_id]["co-owners"].remove(ctx.author.id)
+        if ctx.author.id in self.factions[guild_id][faction]["co-owners"]:
+            self.factions[guild_id][faction]["co-owners"].remove(ctx.author.id)
         await ctx.send("👍")
         await self.save_data()
 
@@ -834,7 +833,7 @@ class FactionsRewrite(commands.Cog):
             info += f"Land-Claims: ${dat['land_claims']}"
         if "alliances" in dat:
             info += f"\nAlliances: ${dat['alliances']}"
-        for key, income in dat.items():
+        for key, income in sorted(dat.items(), key=lambda kv: kv[1], reverse=True):
             if key.isdigit():
                 user = self.bot.get_user(int(key))
                 if user:
@@ -938,7 +937,7 @@ class FactionsRewrite(commands.Cog):
                                   f"this channel. You need ${needed} more")
         await ctx.send(f"Claiming that channel will cost you ${cost}, "
                        f"reply with `.confirm` to claim it")
-        async with self.bot.require("message", ctx) as msg:
+        async with self.bot.require("message", ctx, handle_timeout=True) as msg:
             if ".confirm" not in str(msg.content).lower():
                 return await ctx.send("Alright.. maybe next time")
         if channel.id in claims:
@@ -959,7 +958,7 @@ class FactionsRewrite(commands.Cog):
         if channel.id not in self.factions[guild_id][faction]["claims"]:
             return await ctx.send(f"You don't have {channel.mention} claimed")
         await ctx.send("Unclaiming this channel will give you $250, are you sure?")
-        async with self.bot.require("message", ctx) as msg:
+        async with self.bot.require("message", ctx, handle_timeout=True) as msg:
             if "ye" not in str(msg.content).lower():
                 return await ctx.send("Aight, maybe next time")
         self.factions[guild_id][faction]["claims"].remove(channel.id)
@@ -1149,6 +1148,15 @@ class FactionsRewrite(commands.Cog):
         paycheck = random.randint(15, 25)
         e = discord.Embed(color=purple())
         e.description = f"You earned {faction} ${paycheck}"
+        if guild_id in self.extra_income:
+            if faction in self.extra_income[guild_id]:
+                if time() > self.extra_income[guild_id][faction]:
+                    del self.boosts["extra-income"][guild_id][faction]
+                else:
+                    e.set_footer(
+                        text="With Bonus: $5", icon_url=self.get_factions_icon(ctx, faction)
+                    )
+                    paycheck += 5
         self.factions[guild_id][faction]["balance"] += paycheck
         if str(ctx.author.id) in self.factions[guild_id][faction]["income"]:
             self.factions[guild_id][faction]["income"][str(ctx.author.id)] += paycheck
@@ -1206,6 +1214,16 @@ class FactionsRewrite(commands.Cog):
         pay = random.randint(3, 7)
         e = discord.Embed(color=self.bot.config["theme_color"])
         e.description = random.choice(places).replace("$", f"${pay}")
+        guild_id = str(ctx.guild.id)
+        if guild_id in self.extra_income:
+            if faction in self.extra_income[guild_id]:
+                if time() > self.extra_income[guild_id][faction]:
+                    del self.boosts["extra-income"][guild_id][faction]
+                else:
+                    e.set_footer(
+                        text="With Bonus: $2", icon_url=self.get_factions_icon(ctx, faction)
+                    )
+                    pay += 5
         self.factions[str(ctx.guild.id)][faction]["balance"] += pay
         guild_id = str(ctx.guild.id)
         if str(ctx.author.id) in self.factions[guild_id][faction]["income"]:
@@ -1324,15 +1342,15 @@ class FactionsRewrite(commands.Cog):
     @factions.command(name="ally")
     @is_faction_owner()
     async def ally(self, ctx, *, target_faction):
-        ally_name = self.get_faction_named(ctx, name=target_faction)
-        faction_name = self.get_owned_faction(ctx, user=ctx.author)
+        ally_name = await self.get_faction_named(ctx, target_faction)
+        faction_name = self.get_owned_faction(ctx)
 
         guild_id = str(ctx.guild.id)
         if faction_name in self.factions[guild_id][ally_name]["allies"]:
             return await ctx.send(f"You're already allied with `{ally_name}`")
-        if len(self.factions[guild_id][faction_name]["allies"]) == 3:
+        if len(self.factions[guild_id][faction_name]["allies"]) == 2:
             return await ctx.send(f"At the moment, you can't exceed 3 alliances")
-        if len(self.factions[guild_id][ally_name]["allies"]) == 3:
+        if len(self.factions[guild_id][ally_name]["allies"]) == 2:
             return await ctx.send(
                 "That faction has already reached its limit of alliances"
             )
@@ -1345,7 +1363,7 @@ class FactionsRewrite(commands.Cog):
             "reply with `.accept` to agree to the alliance"
         )
         while True:
-            async with self.bot.require("message", predicate) as msg:
+            async with self.bot.require("message", predicate, handle_timeout=True) as msg:
                 if self.get_owned_faction(ctx, user=msg.author) == ally_name:
                     self.factions[guild_id][faction_name]["allies"].append(ally_name)
                     self.factions[guild_id][ally_name]["allies"].append(faction_name)
