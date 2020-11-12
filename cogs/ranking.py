@@ -648,7 +648,7 @@ class Ranking(commands.Cog):
                         save_all=True,
                         append_images=frames[1:],
                         loop=0,
-                        duration=dur,
+                        duration=dur*2,
                         optimize=False,
                     )
                 else:

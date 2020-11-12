@@ -258,8 +258,8 @@ class SelfRoles(commands.Cog):
                 msg = await wait_for_msg()
                 if not msg:
                     return
-                msg.content = msg.content.lower()
-                if "yes" not in msg.content and "no" not in msg.content:
+                content = msg.content.lower()
+                if "yes" not in content and "no" not in content:
                     await msg.delete()
                     await ctx.send("Invalid reply", delete_after=5)
                     continue
