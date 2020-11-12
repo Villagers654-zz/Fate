@@ -104,7 +104,7 @@ class FactionsRewrite(commands.Cog):
         """Save the current variables without blocking the event loop"""
 
         data = await self.bot.loop.run_in_executor(None, self.__get_dump)
-        async with self.bot.open(self.path, "w+", cache=False) as f:
+        async with self.bot.open(self.path, "w+", cache=True) as f:
             await f.write(data)
         return None
 
