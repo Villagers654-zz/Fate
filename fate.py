@@ -456,12 +456,13 @@ async def on_ready():
 async def on_message(msg):
     # Send the prefix if the bot's mentioned
     if bot.user.mentioned_in(msg) and len(msg.content.split()) == 1:
-        prefixes = "\n".join(
-            bot.utils.get_prefixes(bot, msg)[1:]  # type: list
-        )
-        with suppress(NotFound, Forbidden, HTTPException, AttributeError):
-            await msg.channel.send(f"The prefixes you can use are:\n{prefixes}")
-        return
+        if str(bot.user.id) in msg.content:
+            prefixes = "\n".join(
+                bot.utils.get_prefixes(bot, msg)[1:]  # type: list
+            )
+            with suppress(NotFound, Forbidden, HTTPException, AttributeError):
+                await msg.channel.send(f"The prefixes you can use are:\n{prefixes}")
+            return
     blacklist = ["trap", "dan", "gel", "yaoi"]
     if "--dm" in msg.content and not any(x in msg.content for x in blacklist):
         msg.content = msg.content.replace(" --dm", "")
