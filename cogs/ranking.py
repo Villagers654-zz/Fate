@@ -128,43 +128,43 @@ class Ranking(commands.Cog):
                 await conn.commit()
                 self.bot.log.debug("Removed expired messages from monthly leaderboards")
 
-    async def calc_lvl(self, total_xp, config):
-        def x(level):
-            x = 1
-            y = 0.125
-            lmt = 3
+    def calc_lvl_info(self, xp, config):
+        def get_multiplier_for(level):
+            multiplier = 1
+            increase_by = 0.125
+            reduce_at = 3
+
             for i in range(level):
-                if x >= lmt:
-                    y = y / 2
-                    lmt += 3
-                x += y
-            return x
+                if multiplier >= reduce_at:
+                    increase_by /= 2
+                    reduce_at += 3
+                multiplier += increase_by
 
-        def calculate():
-            lvl_req = config["first_lvl_xp_req"]
-            level = 0
-            levels = [[0, lvl_req]]
-            lvl_up = 1
-            sub = 0
-            progress = 0
-            for xp in range(total_xp):
-                requirement = 0
-                for lvl, xp_req in levels:
-                    requirement += xp_req
-                if xp > requirement:
-                    level += 1
-                    levels.append([level, lvl_req * x(level)])
-                    lvl_up = lvl_req * x(level)
-                    sub = requirement
-                progress = xp - sub
+            return multiplier
 
-            return {
-                "level": round(level),
-                "level_up": round(lvl_up),
-                "xp": round(progress),
-            }
+        level = 0
+        remaining_xp = xp
+        base_requirement = config["first_lvl_xp_req"]
 
-        return await self.bot.loop.run_in_executor(None, calculate)
+        while True:
+            multiplier = get_multiplier_for(level)
+            current_req = base_requirement * multiplier
+            if remaining_xp < current_req:
+                break
+            remaining_xp -= current_req
+            level += 1
+
+        data = {
+            "level": level,
+            "xp": xp,
+            "level_start": (xp + (current_req - remaining_xp)) - current_req,
+            "level_end": xp + (current_req - remaining_xp),
+            "start_to_end": current_req,
+            "progress": remaining_xp
+        }
+        return {
+            key: round(value) for key, value in data.items()
+        }
 
     @commands.Cog.listener()
     async def on_message(self, msg):
@@ -491,7 +491,7 @@ class Ranking(commands.Cog):
                     return await ctx.send(
                         "You currently have no global xp, try rerunning this command now"
                     )
-                dat = await self.calc_lvl(results[0], self.static_config())
+                dat = self.calc_lvl_info(results[0], self.static_config())
             else:
                 await cur.execute(
                     f"select xp from msg "
@@ -504,17 +504,16 @@ class Ranking(commands.Cog):
                     return await ctx.send(
                         "You currently have no xp in this server, try rerunning this command now"
                     )
-                dat = await self.calc_lvl(results[0], conf)
+                dat = self.calc_lvl_info(results[0], conf)
 
         base_req = self.config[guild_id]["first_lvl_xp_req"]
         level = dat["level"]
-        xp = dat["xp"]
-        max_xp = base_req if level == 0 else dat["level_up"]
+        xp = dat["progress"]
+        max_xp = base_req if level == 0 else dat["start_to_end"]
         length = ((100 * (xp / max_xp)) * 1000) / 100
-        total = f"Total: {xp}"
         required = f"Required: {max_xp - xp}"
         progress = f"{xp} / {max_xp} xp"
-        misc = f"{progress} | {total} | {required}"
+        misc = f"{progress} | {required}"
 
         # pick status icon
         statuses = {
