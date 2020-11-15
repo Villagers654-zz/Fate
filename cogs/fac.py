@@ -131,9 +131,9 @@ class FactionsRewrite(commands.Cog):
 
         if not user:
             user = ctx.author
-        if not isinstance(user, discord.Member):
+        if not isinstance(user, (discord.User, discord.Member)):
             user = self.bot.utils.get_user(ctx, user)
-        if not isinstance(user, discord.Member):
+        if not isinstance(user, (discord.User, discord.Member)):
             return None
 
         guild_id = str(ctx.guild.id)
@@ -159,10 +159,11 @@ class FactionsRewrite(commands.Cog):
         """ returns a users owned faction if it exists """
 
         if not user:
-            user = ctx.author.mention
-        user = self.bot.utils.get_user(ctx, user)
+            user = ctx.author
+        elif not isinstance(user, (discord.User, discord.Member)):
+            user = self.bot.utils.get_user(ctx, user)
         if not user:
-            return
+            return None
         guild_id = str(ctx.guild.id)
         for faction, data in self.factions[guild_id].items():
             if user.id == data["owner"]:
@@ -571,14 +572,9 @@ class FactionsRewrite(commands.Cog):
         await self.save_data()
 
     @factions.command(name="kick")
-    async def kick(self, ctx, *, user):
+    async def kick(self, ctx, *, user: discord.User):
         """ Kicks a user from the faction """
-        user = self.bot.utils.get_user(ctx, user)
-        if not user:
-            return await ctx.send("User not found")
-        faction = self.get_owned_faction(ctx)
-        if not faction:
-            return await ctx.send("You need to at least be co-owner to use this cmd")
+        faction = self.get_authors_faction(ctx)
         users_faction = self.get_users_faction(ctx, user)
         if not users_faction:
             return await ctx.send("That users not in a faction")
@@ -593,18 +589,19 @@ class FactionsRewrite(commands.Cog):
             return await ctx.send("Only the owner can demote a co-owner!")
         self.factions[guild_id][faction]["members"].remove(user.id)
         if user.id in self.factions[guild_id]["co-owners"]:
-            self.factions[guild_id]["co-owners"].remove(user.id)
+            self.factions[guild_id][faction]["co-owners"].remove(user.id)
         await ctx.send(f"Kicked {user.mention} from {faction}")
         await self.save_data()
 
     @factions.command(name="promote")
+    @is_faction_owner()
     async def promote(self, ctx, *, user):
         """ Promotes a faction member to Co-Owner"""
-        user = await self.bot.utils.get_user(ctx, user)
+        user = self.bot.utils.get_user(ctx, user)
         if not user:
             return await ctx.send("User not found")
         guild_id = str(ctx.guild.id)
-        faction = self.get_owned_faction(ctx)
+        faction = self.get_authors_faction(ctx)
         if not faction or ctx.author.id != self.factions[guild_id][faction]["owner"]:
             return await ctx.send("You need to be owner of a faction to use this cmd")
         if user.id in self.factions[guild_id][faction]["co-owners"]:
@@ -614,12 +611,13 @@ class FactionsRewrite(commands.Cog):
         await self.save_data()
 
     @factions.command(name="demote")
+    @is_faction_owner()
     async def demote(self, ctx, *, user):
         """ Demotes a faction member from Co-Owner """
         user = self.bot.utils.get_user(ctx, user)
         if not user:
             return await ctx.send("User not found")
-        faction = self.get_owned_faction(ctx)
+        faction = self.get_authors_faction(ctx)
         if not faction:
             return await ctx.send("You need to be owner of a faction to use this cmd")
         guild_id = str(ctx.guild.id)
@@ -849,7 +847,7 @@ class FactionsRewrite(commands.Cog):
         if faction:
             faction = await self.get_faction_named(ctx, faction)
         else:
-            faction = self.get_users_faction(ctx)
+            faction = self.get_authors_faction(ctx)
 
         guild_id = str(ctx.guild.id)
         owner_id = self.factions[guild_id][faction]["owner"]
@@ -1028,7 +1026,7 @@ class FactionsRewrite(commands.Cog):
 
         if defender_bal > attacker_bal:
             await ctx.send("The odds are against us. Are you sure you wish to attempt a raid?")
-            async with self.bot.require("message", ctx) as msg:
+            async with self.bot.require("message", ctx, handle_timeout=True) as msg:
                 if "ye" not in str(msg.content).lower():
                     return await ctx.send("Wise choice")
 
