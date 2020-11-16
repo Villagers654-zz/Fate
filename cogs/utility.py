@@ -795,7 +795,7 @@ class Utility(commands.Cog):
             for user in msg.mentions:
                 user_id = str(user.id)
                 if user_id in self.afk:
-                    replies = ["shh", "shush", "shush child", "stfu cunt", "nO"]
+                    replies = ["shh", "shush", "shush child", "nO"]
                     choice = random.choice(replies)
                     await msg.channel.send(f"{choice} he's {self.afk[user_id]}")
 
