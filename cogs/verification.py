@@ -125,7 +125,7 @@ class Verification(commands.Cog):
         guild_id = str(ctx.guild.id)
 
         await ctx.send("Mention the channel I should use for each verification process")
-        async with self.bot.require("message", ctx) as msg:
+        async with self.bot.require("message", ctx, handle_timeout=True) as msg:
             if not msg.channel_mentions:
                 return await ctx.send(
                     "m, that's an invalid response\nRerun the command and try again"

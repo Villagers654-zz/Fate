@@ -592,7 +592,7 @@ class FactionsRewrite(commands.Cog):
         ):
             return await ctx.send("Only the owner can demote a co-owner!")
         self.factions[guild_id][faction]["members"].remove(user.id)
-        if user.id in self.factions[guild_id]["co-owners"]:
+        if user.id in self.factions[guild_id][faction]["co-owners"]:
             self.factions[guild_id][faction]["co-owners"].remove(user.id)
         await ctx.send(f"Kicked {user.mention} from {faction}")
         await self.save_data()
