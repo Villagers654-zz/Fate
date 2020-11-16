@@ -165,6 +165,8 @@ class FactionsRewrite(commands.Cog):
         if not user:
             return None
         guild_id = str(ctx.guild.id)
+        if guild_id not in self.factions:
+            raise CheckFailure("You're not currently in a faction")
         for faction, data in self.factions[guild_id].items():
             if user.id == data["owner"]:
                 return faction
@@ -176,6 +178,8 @@ class FactionsRewrite(commands.Cog):
         """ gets a faction via partial name """
 
         guild_id = str(ctx.guild.id)
+        if guild_id not in self.factions:
+            raise CheckFailure("This server has no factions")
         factions = [
             f
             for f in self.factions[guild_id].keys()

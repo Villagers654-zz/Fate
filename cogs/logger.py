@@ -495,7 +495,7 @@ class Logger(commands.Cog):
                                     os.remove(file)
                         try:
                             self.queue[guild_id].remove(list_obj)
-                        except IndexError:
+                        except ValueError:
                             pass
                         self.recent_logs[guild_id][channelType].append(
                             [embed, logged_at]

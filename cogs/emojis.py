@@ -19,6 +19,7 @@ class Emojis(commands.Cog):
         self.bot = bot
 
     def is_blacklisted(self, ctx, emoji) -> bool:
+        return False
         if ctx.author.id in self.bot.owner_ids:
             return False
         servers = [470961230362837002, 397415086295089155]
