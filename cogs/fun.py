@@ -277,6 +277,7 @@ class Fun(commands.Cog):
                     output,
                     username=ctx.author.display_name,
                     avatar_url=ctx.author.avatar_url,
+                    allowed_mentions=self.bot.allowed_mentions
                 )
                 await webhook.delete()
             await ctx.message.delete()
