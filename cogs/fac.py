@@ -1266,7 +1266,7 @@ class FactionsRewrite(commands.Cog):
         return await ctx.send(f"Paid {target_fac} ${amount}")
 
     @factions.command(name="top", aliases=["leaderboard", "lb"])
-    @commands.bot_has_permissions(manage_messages=True)
+    @commands.bot_has_permissions(manage_messages=True, add_reactions=True)
     async def top(self, ctx):
         def predicate(r, u) -> bool:
             m = r.message  # type: discord.Message
