@@ -83,9 +83,10 @@ class Logger(commands.Cog):
 
     def cog_unload(self):
         for task_id, task in self.bot.logger_tasks.items():
-            if not task.done():
-                task.cancel()
-            del self.bot.logger_tasks[task_id]
+            if task_id != "keep_alive_task":
+                if not task.done():
+                    task.cancel()
+                del self.bot.logger_tasks[task_id]
 
     @property
     def template(self):
@@ -266,6 +267,7 @@ class Logger(commands.Cog):
             index += 1
             if index == 60 * 12:
                 del self.config[guild_id]
+                del self.bot.logger_tasks[guild_id]
                 return
         if guild_id not in self.queue:
             self.queue[guild_id] = []
@@ -287,6 +289,7 @@ class Logger(commands.Cog):
                 index += 1
                 if index == 60 * 12:
                     del self.config[guild_id]
+                    del self.bot.logger_tasks[guild_id]
                     return
 
             log_type = self.config[guild_id]["type"]  # type: str
@@ -338,6 +341,7 @@ class Logger(commands.Cog):
                     result = await self.wait_for_permission(guild, "administrator")
                     if not result:
                         del self.config[guild_id]
+                        del self.bot.logger_tasks[guild_id]
                         return await self.save_data()
 
                 # Ensure the channel still exists
@@ -370,12 +374,14 @@ class Logger(commands.Cog):
                     )
                     if not result:
                         del self.config[guild_id]
+                        del self.bot.logger_tasks[guild_id]
                         return await self.save_data()
                     result = await self.wait_for_permission(
                         guild, "embed_links", category
                     )
                     if not result:
                         del self.config[guild_id]
+                        del self.bot.logger_tasks[guild_id]
                         return await self.save_data()
 
                 # Ensure this still exists
@@ -439,18 +445,21 @@ class Logger(commands.Cog):
                                 )
                                 if not result:
                                     del self.config[guild_id]
+                                    del self.bot.logger_tasks[guild_id]
                                     return await self.save_data()
                             result = await self.wait_for_permission(
                                 guild, "send_messages", channel
                             )
                             if not result:
                                 del self.config[guild_id]
+                                del self.bot.logger_tasks[guild_id]
                                 return await self.save_data()
                             result = await self.wait_for_permission(
                                 guild, "embed_links", channel
                             )
                             if not result:
                                 del self.config[guild_id]
+                                del self.bot.logger_tasks[guild_id]
                                 return await self.save_data()
 
                             channel = await guild.create_text_channel(
