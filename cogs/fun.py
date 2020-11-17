@@ -306,15 +306,15 @@ class Fun(commands.Cog):
         if decoder not in {16, 32, 64}:
             await ctx.send(usage)
         else:
-            if decoder == 16:
-                decode = base64.b16decode(message.encode())
-            elif decoder == 32:
-                decode = base64.b32decode(message.encode())
-            elif decoder == 64:
-                decode = base64.b64decode(message.encode())
-            else:
-                return await ctx.send(f"Invalid decoder:\n{usage}")
             try:
+                if decoder == 16:
+                    decode = base64.b16decode(message.encode())
+                elif decoder == 32:
+                    decode = base64.b32decode(message.encode())
+                elif decoder == 64:
+                    decode = base64.b64decode(message.encode())
+                else:
+                    return await ctx.send(f"Invalid decoder:\n{usage}")
                 await ctx.send(self.bot.utils.cleanup_msg(str(decode.decode())))
             except:
                 await ctx.send(f"That's not properly encoded in {decoder}")
