@@ -259,14 +259,14 @@ class FactionsRewrite(commands.Cog):
                 alliance_net = [(faction, get_value([faction, data], net=True))]
                 alliance_bal = [(faction, get_value([faction, data], net=False))]
                 for ally in data["allies"]:
-                    fac, value = get_value(
+                    value = get_value(
                         [ally, self.factions[guild_id][ally]], net=True
                     )
-                    alliance_net.append([fac, value])
-                    fac, value = get_value(
+                    alliance_net.append([ally, value])
+                    value = get_value(
                         [ally, self.factions[guild_id][ally]], net=False
                     )
-                    alliance_bal.append([fac, value])
+                    alliance_bal.append([ally, value])
                 allies_net.append(alliance_net)
                 allies_bal.append(alliance_bal)
 
@@ -648,7 +648,7 @@ class FactionsRewrite(commands.Cog):
         faction = self.get_authors_faction(ctx)
         if len(bio) > 86:
             return await ctx.send("Your bio cannot exceed more than 86 characters")
-        self.factions[faction]["bio"] = bio
+        self.factions[str(ctx.guild.id)][faction]["bio"] = bio
         await ctx.send("Set your factions bio")
         await self.save_data()
 
@@ -1010,8 +1010,8 @@ class FactionsRewrite(commands.Cog):
         guild_id = str(ctx.guild.id)
         if guild_id in self.anti_raid:
             if defender in self.anti_raid[guild_id]:
-                if time() > self.anti_raid[guild_id][faction]:
-                    del self.boosts["anti-raid"][guild_id][faction]
+                if time() > self.anti_raid[guild_id][defender]:
+                    del self.boosts["anti-raid"][guild_id][defender]
                 else:
                     return await ctx.send(f"{defender} is currently guarded by anti-raid")
         attacker_bal = self.factions[guild_id][attacker]["balance"]
