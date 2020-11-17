@@ -599,14 +599,18 @@ class Utility(commands.Cog):
 
                     action = discord.AuditLogAction.role_update
                     async for entry in ctx.guild.audit_logs(limit=500, action=action):
-                        if role.id == entry.target.id:
-                            if entry.before.name != entry.after.name:
-                                minute = str(entry.created_at.minute)
-                                if len(minute) == 1:
-                                    minute = "0" + minute
-                                when = datetime.date(entry.created_at).strftime(
-                                    f"%m/%d/%Y %I:{minute}%p"
-                                )
+                        if role.id == entry.target.id and hasattr(entry.after, "name"):
+                            minute = str(entry.created_at.minute)
+                            if len(minute) == 1:
+                                minute = "0" + minute
+                            when = datetime.date(entry.created_at).strftime(
+                                f"%m/%d/%Y %I:{minute}%p"
+                            )
+                            if not hasattr(entry.before, "name"):
+                                if entry.before.name != role.name:
+                                    history[f"**Name Changed on {when}**"] = None
+                                    history[f"**Changed to:** `{entry.before.name}`\n"] = None
+                            elif entry.before.name != entry.after.name:
                                 history[f"**Name Changed on {when}**"] = None
                                 history[f"**Old Name:** `{entry.before.name}`\n"] = None
 
