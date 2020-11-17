@@ -217,7 +217,10 @@ class FactionsRewrite(commands.Cog):
 
                 is_guarded = False
                 if guild_id in self.land_guard:
-                    for f in self.land_guard[guild_id].keys():
+                    for f in list(self.land_guard[guild_id].keys()):
+                        if f not in self.factions[guild_id]:
+                            del self.land_guard[guild_id][f]
+                            continue
                         if int(claim) in self.factions[guild_id][f]["claims"]:
                             is_guarded = True
                             break
@@ -512,6 +515,7 @@ class FactionsRewrite(commands.Cog):
         await self.save_data()
 
     @factions.command(name="invite")
+    @has_faction_permissions()
     async def invite(self, ctx, user: discord.Member):
         """ Invites a user to a private faction """
 
@@ -522,7 +526,7 @@ class FactionsRewrite(commands.Cog):
                 and ("yes" in msg.content and "no" in msg.content)
             )
 
-        faction = self.get_owned_faction(ctx)
+        faction = self.get_authors_faction(ctx)
         guild_id = str(ctx.guild.id)
         if len(self.factions[guild_id][faction]["members"]) == self.factions[guild_id][faction]["slots"]:
             p = self.bot.utils.get_prefix(ctx)
@@ -1196,7 +1200,7 @@ class FactionsRewrite(commands.Cog):
             self.factions[guild_id][faction]["income"][str(ctx.author.id)] = 250
         additional = ""
         if len(results) > 1:
-            additional += f". You have {len(results) - 1} additional votes remaining"
+            additional += f". You have {len(results) - 1} redeemable votes remaining"
         await ctx.send(f"Redeemed $250 for your faction" + additional)
         await self.save_data()
 
