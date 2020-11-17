@@ -442,6 +442,9 @@ class SelfRoles(commands.Cog):
         emoji_id = f"{emoji}"
         if isinstance(emoji, discord.PartialEmoji):
             emoji_id = emoji.id
+        for _role_id, emote in self.menus[guild_id][msg_id]["items"].items():
+            if emoji_id == emote:
+                return await ctx.send("That emoji's already in use")
         self.menus[guild_id][msg_id]["items"][str(role.id)] = emoji_id
         try:
             msg = await self.edit_menu(guild_id, msg_id)
