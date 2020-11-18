@@ -735,7 +735,7 @@ class FactionsRewrite(commands.Cog):
         await ctx.send("Set your factions banner")
         await self.save_data()
 
-    @factions.command(name="annex", enabled=False)
+    @factions.command(name="annex")
     @is_faction_owner()
     async def annex(self, ctx, *, faction):
         """ Merges a faction with another """
