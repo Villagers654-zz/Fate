@@ -276,10 +276,10 @@ class FactionsRewrite(commands.Cog):
         factions_net = sorted(factions, key=lambda kv: kv[1], reverse=True)
         factions = sorted(factions, key=lambda kv: kv[1], reverse=True)
         allies_net = sorted(
-            allies_net, key=lambda kv: sum(kv[1] for kv in allies_net), reverse=True
+            allies_net, key=lambda kv: sum(kv[0][1] for kv in allies_net), reverse=True
         )
         allies_bal = sorted(
-            allies_bal, key=lambda kv: sum(kv[1] for kv in allies_bal), reverse=True
+            allies_bal, key=lambda kv: sum(kv[0][1] for kv in allies_bal), reverse=True
         )
 
         return {
@@ -1252,7 +1252,7 @@ class FactionsRewrite(commands.Cog):
         e.description = f"${self.factions[guild_id][faction]['balance']}"
         await ctx.send(embed=e)
 
-    @factions.command(name="pay", enabled=False)
+    @factions.command(name="pay")
     @commands.cooldown(2, 240, commands.BucketType.user)
     @is_faction_owner()
     async def pay(self, ctx, faction, amount: int):
