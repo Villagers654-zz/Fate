@@ -117,37 +117,6 @@ class Utility(commands.Cog):
                     if not m.author.premium_since:
                         await m.delete()
 
-            # duplicate image limiter
-            if guild_id in self.dupe:
-                if channel_id in self.dupe[guild_id]:
-                    if m.attachments:
-                        image_data = []
-                        for attachment in m.attachments:
-                            dat = ""
-                            im = Image.open(
-                                BytesIO(requests.get(attachment.url).content)
-                            ).convert("RGBA")
-                            pixels = list(im.getdata())
-                            for pixel in pixels:
-                                dat += str(pixel)
-                            image_data.append(dat)
-                        async for msg in m.channel.history(limit=10):
-                            if msg.id != m.id:
-                                for attachment in msg.attachments:
-                                    dat = ""
-                                    im = Image.open(
-                                        BytesIO(requests.get(attachment.url).content)
-                                    ).convert("RGBA")
-                                    pixels = list(im.getdata())
-                                    for pixel in pixels:
-                                        dat += str(pixel)
-                                    if dat in image_data:
-                                        print("Msg didnt pass")
-                                        return await m.delete()
-                                    await asyncio.sleep(1)
-                                print("msg passed")
-                        print("ran through all images")
-
 
 def setup(bot):
     bot.add_cog(Utility(bot))
