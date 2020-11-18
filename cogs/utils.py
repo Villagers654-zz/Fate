@@ -222,6 +222,8 @@ class Utils(commands.Cog):
 
     @staticmethod
     def get_prefixes(bot, msg):
+        if msg.author.id in bot.blocked:
+            return "lsimhbiwfefmtalol"
         conf = Utils.get_config()  # type: dict
         config = bot.config
         if msg.author.id == config["bot_owner_id"]:

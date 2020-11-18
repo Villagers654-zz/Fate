@@ -50,6 +50,7 @@ class Fate(commands.AutoShardedBot):
         self.tasks = {}  # Task object storing for easy management
         self.logger_tasks = {}  # Same as Fate.tasks except dedicated to cogs.logger
         self.last_traceback = ""  # Formatted string of the last error traceback
+        self.blocked = []
         self.ignored_exit = EmptyException
         self.allow_user_mentions = discord.AllowedMentions(
             users=True, roles=False, everyone=False
@@ -518,12 +519,51 @@ async def on_guild_remove(guild: discord.Guild):
     os.remove("members.txt")
 
 
+index = {}
+
 @bot.event
-async def on_command(_ctx):
+async def on_command(ctx):
+    if ctx.author.id not in index:
+        index[ctx.author.id] = {}
+    if ctx.message.content not in index[ctx.author.id]:
+        index[ctx.author.id][ctx.message.content] = []
+    now = time()
+    index[ctx.author.id][ctx.message.content].append(now)
+
+    for key, value in list(index.items()):
+        await asyncio.sleep(0)
+        for command, uses in value.items():
+            for use in uses:
+                if use > time() - 65:
+                    index[ctx.author.id][command].remove(use)
+
+    block = False
+    if len(index[ctx.author.id][ctx.message.content]) > 4:
+        if not isinstance(ctx.cog, bot.cogs["Moderation"]):
+            block = True
+            bot.blocked.append(ctx.author.id)
+            await ctx.send("This seems sus.. Ima go for a bit")
+
+
     stats = bot.utils.get_stats()  # type: dict
     stats["commands"].append(str(datetime.now()))
     async with bot.open("./data/stats.json", "w") as f:
         await f.write(json.dumps(stats))
+
+    await asyncio.sleep(60)
+
+    with suppress(KeyError, ValueError):
+        index[ctx.author.id][ctx.message.content].remove(now)
+    with suppress(KeyError):
+        if not index[ctx.author.id][ctx.message.content]:
+            del index[ctx.author.id][ctx.message.content]
+    with suppress(KeyError):
+        if not index[ctx.author.id]:
+            del index[ctx.author.id]
+
+    if block:
+        await asyncio.sleep(60 * 4)
+        bot.blocked.remove(ctx.author.id)
 
 
 if __name__ == "__main__":
