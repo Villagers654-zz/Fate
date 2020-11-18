@@ -70,6 +70,11 @@ class FactionsRewrite(commands.Cog):
                     self.factions = dat["main"]  # type: dict
                 if "boosts" in dat:
                     self.boosts = dat["boosts"]  # type: dict
+                    for key, values in list(self.boosts.items()):
+                        for guild_id, data in list(values.items()):
+                            for faction, end_time in list(data.items()):
+                                if time() > end_time:
+                                    del self.boosts[key][guild_id][faction]
                 if "notifs" in dat:
                     self.notifs = dat["notifs"]  # type: list
 
@@ -220,15 +225,18 @@ class FactionsRewrite(commands.Cog):
                     continue
 
                 is_guarded = False
-                if guild_id in self.land_guard:
-                    for f in list(self.land_guard[guild_id].keys()):
-                        await asyncio.sleep(0)
-                        if f not in self.factions[guild_id]:
-                            del self.land_guard[guild_id][f]
-                            continue
-                        if int(claim) in self.factions[guild_id][f]["claims"]:
-                            is_guarded = True
-                            break
+                if guild_id in self.land_guard and faction in self.land_guard[guild_id]:
+                    if time() > self.land_guard[guild_id][faction]:
+                        del self.land_guard[guild_id][faction]
+                    else:
+                        for f in list(self.land_guard[guild_id].keys()):
+                            await asyncio.sleep(0)
+                            if f not in self.factions[guild_id]:
+                                del self.land_guard[guild_id][f]
+                                continue
+                            if int(claim) in self.factions[guild_id][f]["claims"]:
+                                is_guarded = True
+                                break
 
                 fac_claims[int(claim)] = {
                     "faction": faction,
@@ -387,6 +395,9 @@ class FactionsRewrite(commands.Cog):
             await ctx.send(embed=e)
 
     @factions.command(name="help", aliases=["commands"])
+    @commands.cooldown(1, 60, commands.BucketType.user)
+    @commands.cooldown(1, 30, commands.BucketType.channel)
+    @commands.cooldown(2, 120, commands.BucketType.channel)
     async def _help(self, ctx):
         """ Command usage and descriptions """
         e = discord.Embed(color=purple())
@@ -992,16 +1003,12 @@ class FactionsRewrite(commands.Cog):
         e.set_author(
             name=f"{faction}'s claims", icon_url=self.get_factions_icon(ctx, faction)
         )
-        claims = await self.collect_claims(guild_id, faction)
-        claims = {
-            self.bot.get_channel(chnl_id): data for chnl_id, data in claims.items()
-        }
-        for channel, data in sorted(
-            claims.items(), reverse=True, key=lambda kv: kv[1]["position"]
-        ):
-            e.description = (
-                f"• {channel.mention} {'- guarded' if data['guarded'] else ''}\n"
-            )
+        claims = [
+            self.bot.get_channel(chnl_id) for chnl_id in self.factions[guild_id][faction]["claims"]
+        ]
+        e.description = ""
+        for channel in claims:
+            e.description += f"• {channel.mention}\n"
         await ctx.send(embed=e)
 
     @factions.command(name="battle")
