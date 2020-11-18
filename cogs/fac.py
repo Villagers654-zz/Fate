@@ -161,7 +161,7 @@ class FactionsRewrite(commands.Cog):
         user = ctx.author
         guild_id = str(ctx.guild.id)
         if guild_id in self.factions:
-            for faction, data in self.factions[guild_id].items():
+            for faction, data in list(self.factions[guild_id].items()):
                 await asyncio.sleep(0)
                 if user.id in data["members"]:
                     return faction
@@ -179,7 +179,7 @@ class FactionsRewrite(commands.Cog):
         guild_id = str(ctx.guild.id)
         if guild_id not in self.factions:
             raise CheckFailure("You're not currently in a faction")
-        for faction, data in self.factions[guild_id].items():
+        for faction, data in list(self.factions[guild_id].items()):
             await asyncio.sleep(0)
             if user.id == data["owner"]:
                 return faction
@@ -195,13 +195,13 @@ class FactionsRewrite(commands.Cog):
             raise CheckFailure("This server has no factions")
         factions = [
             f
-            for f in self.factions[guild_id].keys()
+            for f in list(self.factions[guild_id].keys())
             if str(f).lower() == str(name).lower()
         ]
         if not factions:
             factions = [
                 f
-                for f in self.factions[guild_id].keys()
+                for f in list(self.factions[guild_id].keys())
                 if str(name).lower() in str(f).lower()
             ]
         if len(factions) > 1:
