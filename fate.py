@@ -535,7 +535,7 @@ async def on_command(ctx):
         for command, uses in value.items():
             for use in uses:
                 if use > time() - 65:
-                    index[ctx.author.id][command].remove(use)
+                    index[key][command].remove(use)
 
     block = False
     if len(index[ctx.author.id][ctx.message.content]) > 4:
