@@ -61,6 +61,8 @@ class FactionsRewrite(commands.Cog):
         self.factions = {}
         self.notifs = []
         self.cooldowns = {}
+        self.blocked = []
+        self.work_counter = {}
         self.counter = {}
         self.claim_counter = {}
         if path.isfile(self.path):
@@ -218,6 +220,8 @@ class FactionsRewrite(commands.Cog):
         async def claims(faction) -> dict:
             """ returns claims & their data """
             fac_claims = {}
+            if faction not in self.factions[guild_id]:
+                return fac_claims
             fac = self.factions[guild_id][faction]
             for claim in fac["claims"]:
                 await asyncio.sleep(0)
@@ -477,7 +481,7 @@ class FactionsRewrite(commands.Cog):
             "owner": ctx.author.id,
             "co-owners": [],
             "members": [ctx.author.id],
-            "balance": 500,
+            "balance": 0,
             "slots": 15,
             "public": True,
             "allies": [],
@@ -768,7 +772,7 @@ class FactionsRewrite(commands.Cog):
         def predicate(m):
             return m.channel.id == ctx.channel.id and m.author.id == dat["owner"]
 
-        async with self.bot.require("message", predicate) as msg:
+        async with self.bot.require("message", predicate, handle_timeout=True) as msg:
             if ".confirm annex" not in str(msg.content).lower():
                 return await ctx.send("Alright, merge has been rejected")
 
@@ -1094,6 +1098,24 @@ class FactionsRewrite(commands.Cog):
         """ Get money for your faction """
         guild_id = str(ctx.guild.id)
         faction = await self.get_authors_faction(ctx)
+
+        if ctx.author.id in self.blocked:
+            passed_verification = await self.bot.verify_user(ctx, user=ctx.author)
+            if passed_verification:
+                self.blocked.remove(ctx.author.id)
+            else:
+                return
+
+        if ctx.author.id not in self.work_counter:
+            self.work_counter[ctx.author.id] = 0
+        self.work_counter[ctx.author.id] += 1
+        if self.work_counter[ctx.author.id] >= 45:
+            passed_verification = await self.bot.verify_user(ctx, user=ctx.author)
+            if not passed_verification:
+                self.blocked.append(ctx.author.id)
+                self.work_counter[ctx.author.id] = 30
+                return
+            self.work_counter[ctx.author.id] = 0
 
         if guild_id not in self.cooldowns:
             self.cooldowns[guild_id] = {}
@@ -1484,7 +1506,7 @@ class FactionsRewrite(commands.Cog):
     async def on_message(self, msg):
         if isinstance(msg.guild, discord.Guild):
             guild_id = str(msg.guild.id)
-            if guild_id in self.factions:
+            if guild_id in self.factions and "annex" not in msg.content.lower():
                 claims = await self.collect_claims(guild_id)  # type: dict
                 if msg.channel.id in claims:
                     if msg.channel.id not in self.claim_counter:
