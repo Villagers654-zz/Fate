@@ -128,13 +128,14 @@ class Ranking(commands.Cog):
                 await conn.commit()
                 self.bot.log.debug("Removed expired messages from monthly leaderboards")
 
-    def calc_lvl_info(self, xp, config):
-        def get_multiplier_for(level):
+    async def calc_lvl_info(self, xp, config):
+        async def get_multiplier_for(level):
             multiplier = 1
             increase_by = 0.125
             reduce_at = 3
 
             for i in range(level):
+                await asyncio.sleep(0)
                 if multiplier >= reduce_at:
                     increase_by /= 2
                     reduce_at += 3
@@ -147,7 +148,8 @@ class Ranking(commands.Cog):
         base_requirement = config["first_lvl_xp_req"]
 
         while True:
-            multiplier = get_multiplier_for(level)
+            await asyncio.sleep(0)
+            multiplier = await get_multiplier_for(level)
             current_req = base_requirement * multiplier
             if remaining_xp < current_req:
                 break
@@ -491,7 +493,7 @@ class Ranking(commands.Cog):
                     return await ctx.send(
                         "You currently have no global xp, try rerunning this command now"
                     )
-                dat = self.calc_lvl_info(results[0], self.static_config())
+                dat = await self.calc_lvl_info(results[0], self.static_config())
             else:
                 await cur.execute(
                     f"select xp from msg "
@@ -504,7 +506,7 @@ class Ranking(commands.Cog):
                     return await ctx.send(
                         "You currently have no xp in this server, try rerunning this command now"
                     )
-                dat = self.calc_lvl_info(results[0], conf)
+                dat = await self.calc_lvl_info(results[0], conf)
 
         base_req = self.config[guild_id]["first_lvl_xp_req"]
         level = dat["level"]
@@ -825,6 +827,7 @@ class Ranking(commands.Cog):
             rank = 1
             index = 0
             for user_id, xp in rankings:
+                await asyncio.sleep(0)
                 if index == lmt:
                     embeds.append(e)
                     e = discord.Embed(color=0x4A0E50)
@@ -848,8 +851,8 @@ class Ranking(commands.Cog):
 
             return embeds
 
-        with open("./data/userdata/config.json", "r") as f:
-            config = json.load(f)  # type: dict
+        async with self.bot.open("./data/userdata/config.json", "r") as f:
+            config = json.loads(await f.read())  # type: dict
         prefix = "."  # default prefix
         guild_id = str(ctx.guild.id)
         if guild_id in config["prefix"]:
@@ -926,6 +929,7 @@ class Ranking(commands.Cog):
             }
 
         for name, data in leaderboards.items():
+            await asyncio.sleep(0)
             sorted_data = [
                 (user_id, xp)
                 for user_id, xp in data.items()

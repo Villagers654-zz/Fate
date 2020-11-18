@@ -233,27 +233,12 @@ class GlobalChat(commands.Cog):
                 ):
                     ignore = True
                 abcs = "abcdefghijklmnopqrstuvwxyz "
-                matches = re.findall("<a?:[a-zA-Z0-9_]*:[0-9]*>", str(msg.content))
-                if matches:
-                    for match in matches:
-                        msg.content = str(msg.content.replace(match, ""))
                 letters = [l for l in list(msg.content) if l.lower() in abcs]
                 if (
                     len(letters) < len(msg.content) / 3 + len(msg.content) / 3
                     and len(msg.content) > 5
                 ):
                     return await msg.delete()
-
-                # profanity filter
-                # prob = predict_prob([msg.content])
-                # new_prob = []
-                # for i in prob:
-                # 	if i >= 0.2:
-                # 		new_prob.append(1)
-                # 	elif i < 0.2:
-                # 		new_prob.append(0)
-                # profanity = any(prob == 1 for prob in new_prob)
-                profanity = False
 
                 self.bot.loop.create_task(queue(msg))
                 if ignore:
@@ -299,10 +284,6 @@ class GlobalChat(commands.Cog):
                                 ):
                                     del self.config[guild_id]
                                     continue
-                            if profanity and not channel.is_nsfw():
-                                content = "`[filtered message]`"
-                            else:
-                                content = msg.content
                             username = str(msg.author)
                             last = channel.last_message
                             if (
@@ -315,7 +296,7 @@ class GlobalChat(commands.Cog):
                                 and last.author.id == self.bot.user.id
                             ):
                                 e = last.embeds[0]
-                                e.description += f"\n{content}"
+                                e.description += f"\n{msg.content}"
                                 await last.edit(embed=e)
                                 m = last
                             else:
@@ -323,7 +304,7 @@ class GlobalChat(commands.Cog):
                                 e.set_author(
                                     name=str(msg.author), icon_url=msg.author.avatar_url
                                 )
-                                e.description = content
+                                e.description = msg.content
                                 if msg.attachments and channel.is_nsfw():
                                     e.set_image(url=msg.attachments[0].url)
                                 elif msg.attachments and not channel.is_nsfw():
@@ -343,6 +324,7 @@ class GlobalChat(commands.Cog):
         if msg.channel.id == self.main_channel:
             if msg.id in self.index:
                 for guild_id, config in list(self.config.items()):
+                    await asyncio.sleep(0)
                     if guild_id in self.index[msg.id] and self.index[msg.id][guild_id]:
                         try:
                             await self.index[msg.id][guild_id].delete()

@@ -25,8 +25,8 @@ from utils import checks
 
 def is_faction_owner():
     async def predicate(ctx):
-        self = ctx.cog  # type: Factions
-        faction = self.get_authors_faction(ctx)
+        self = ctx.cog
+        faction = await self.get_authors_faction(ctx)
         guild_id = str(ctx.guild.id)
         if ctx.author.id != self.factions[guild_id][faction]["owner"]:
             raise CheckFailure("You aren't the owner of this faction")
@@ -37,8 +37,8 @@ def is_faction_owner():
 
 def has_faction_permissions():
     async def predicate(ctx):
-        self = ctx.cog  # type: Factions
-        faction = self.get_authors_faction(ctx)
+        self = ctx.cog
+        faction = await self.get_authors_faction(ctx)
         guild_id = str(ctx.guild.id)
         if ctx.author.id == self.factions[guild_id][faction]["owner"]:
             return True
@@ -126,7 +126,7 @@ class FactionsRewrite(commands.Cog):
         owner = self.bot.get_user(owner_id)
         return owner.avatar_url
 
-    def get_users_faction(self, ctx, user=None):
+    async def get_users_faction(self, ctx, user=None):
         """fetch a users faction by context or partial name"""
 
         if not user:
@@ -139,23 +139,25 @@ class FactionsRewrite(commands.Cog):
         guild_id = str(ctx.guild.id)
         if guild_id in self.factions:
             for faction, data in self.factions[guild_id].items():
+                await asyncio.sleep(0)
                 if user.id in data["members"]:
                     return faction
 
         return None
 
-    def get_authors_faction(self, ctx):
+    async def get_authors_faction(self, ctx):
         """ fetch a users faction by context or partial name """
 
         user = ctx.author
         guild_id = str(ctx.guild.id)
         if guild_id in self.factions:
             for faction, data in self.factions[guild_id].items():
+                await asyncio.sleep(0)
                 if user.id in data["members"]:
                     return faction
         raise CheckFailure("You're not currently in a faction")
 
-    def get_owned_faction(self, ctx, user=None):
+    async def get_owned_faction(self, ctx, user=None):
         """ returns a users owned faction if it exists """
 
         if not user:
@@ -168,6 +170,7 @@ class FactionsRewrite(commands.Cog):
         if guild_id not in self.factions:
             raise CheckFailure("You're not currently in a faction")
         for faction, data in self.factions[guild_id].items():
+            await asyncio.sleep(0)
             if user.id == data["owner"]:
                 return faction
             if user.id in data["co-owners"]:
@@ -200,15 +203,16 @@ class FactionsRewrite(commands.Cog):
             return factions[0]
         raise commands.CheckFailure("I couldn't find that faction :[")
 
-    def collect_claims(self, guild_id, faction=None) -> dict:
+    async def collect_claims(self, guild_id, faction=None) -> dict:
         """Fetches claims for the whole guild or a single faction
         for easy use when needing all the claims"""
 
-        def claims(faction) -> dict:
+        async def claims(faction) -> dict:
             """ returns claims & their data """
             fac_claims = {}
             fac = self.factions[guild_id][faction]
             for claim in fac["claims"]:
+                await asyncio.sleep(0)
                 channel = self.bot.get_channel(int(claim))
                 if not isinstance(channel, discord.TextChannel):
                     self.factions[guild_id][faction]["balance"] += 250
@@ -218,6 +222,7 @@ class FactionsRewrite(commands.Cog):
                 is_guarded = False
                 if guild_id in self.land_guard:
                     for f in list(self.land_guard[guild_id].keys()):
+                        await asyncio.sleep(0)
                         if f not in self.factions[guild_id]:
                             del self.land_guard[guild_id][f]
                             continue
@@ -234,15 +239,15 @@ class FactionsRewrite(commands.Cog):
             return fac_claims
 
         if faction:
-            return claims(faction)
+            return await claims(faction)
         global_claims = {}
         for faction in self.factions[guild_id].keys():
-            fac_claims = claims(faction)  # type: dict
+            fac_claims = await claims(faction)  # type: dict
             for claim, data in fac_claims.items():
                 global_claims[claim] = data
         return global_claims
 
-    def get_faction_rankings(self, guild_id: str) -> dict:
+    async def get_faction_rankings(self, guild_id: str) -> dict:
         def get_value(kv, net=True):
             value = kv[1]["balance"]
             if net:
@@ -256,12 +261,14 @@ class FactionsRewrite(commands.Cog):
         allies_net = []
 
         for faction, data in self.factions[guild_id].items():
+            await asyncio.sleep(0)
             factions_net.append([faction, get_value([faction, data], net=True)])
             factions.append([faction, get_value([faction, data], net=False)])
             if data["allies"] and not any(faction in List for List in allies_net):
                 alliance_net = [(faction, get_value([faction, data], net=True))]
                 alliance_bal = [(faction, get_value([faction, data], net=False))]
                 for ally in data["allies"]:
+                    await asyncio.sleep(0)
                     value = get_value(
                         [ally, self.factions[guild_id][ally]], net=True
                     )
@@ -289,7 +296,7 @@ class FactionsRewrite(commands.Cog):
             "ally_bal": allies_bal,
         }
 
-    def update_income_board(self, guild_id, faction, **kwargs) -> None:
+    async def update_income_board(self, guild_id, faction, **kwargs) -> None:
         for key, value in kwargs.items():
             if key not in self.factions[guild_id][faction]["income"]:
                 self.factions[guild_id][faction]["income"][key] = 0
@@ -435,7 +442,7 @@ class FactionsRewrite(commands.Cog):
     async def create(self, ctx, *, name):
         """ Creates a faction """
         guild_id = str(ctx.guild.id)
-        faction = self.get_users_faction(ctx)
+        faction = await self.get_users_faction(ctx)
         if faction:
             return await ctx.send(
                 "You must leave your current faction to create a new one"
@@ -475,7 +482,7 @@ class FactionsRewrite(commands.Cog):
     async def disband(self, ctx):
         """ Deletes the owned faction """
         guild_id = str(ctx.guild.id)
-        faction = self.get_owned_faction(ctx)
+        faction = await self.get_authors_faction(ctx)
         await ctx.send(
             "Are you sure you want to delete your faction?\nReply with 'yes' or 'no'"
         )
@@ -493,7 +500,7 @@ class FactionsRewrite(commands.Cog):
     @factions.command(name="join")
     async def join(self, ctx, *, faction):
         """ Joins a public faction via name """
-        is_in_faction = self.get_users_faction(ctx)  # type: str
+        is_in_faction = await self.get_users_faction(ctx)  # type: str
         if is_in_faction:
             return await ctx.send("You're already in a faction")
         faction = await self.get_faction_named(ctx, faction)
@@ -526,7 +533,7 @@ class FactionsRewrite(commands.Cog):
                 and ("yes" in msg.content and "no" in msg.content)
             )
 
-        faction = self.get_authors_faction(ctx)
+        faction = await self.get_authors_faction(ctx)
         guild_id = str(ctx.guild.id)
         if len(self.factions[guild_id][faction]["members"]) == self.factions[guild_id][faction]["slots"]:
             p = self.bot.utils.get_prefix(ctx)
@@ -535,7 +542,7 @@ class FactionsRewrite(commands.Cog):
             return await ctx.send(
                 "You need to have owner level permissions to use this cmd"
             )
-        users_in_faction = self.get_users_faction(ctx, user)
+        users_in_faction = await self.get_users_faction(ctx, user)
         if users_in_faction:
             return await ctx.send("That users already in a faction :[")
         if user.id in self.pending:
@@ -566,7 +573,7 @@ class FactionsRewrite(commands.Cog):
     @factions.command(name="leave")
     async def leave(self, ctx):
         """ Leaves a faction """
-        faction = self.get_authors_faction(ctx)
+        faction = await self.get_authors_faction(ctx)
         guild_id = str(ctx.guild.id)
         if ctx.author.id == self.factions[guild_id][faction]["owner"]:
             return await ctx.send(
@@ -582,8 +589,8 @@ class FactionsRewrite(commands.Cog):
     @factions.command(name="kick")
     async def kick(self, ctx, *, user: discord.User):
         """ Kicks a user from the faction """
-        faction = self.get_authors_faction(ctx)
-        users_faction = self.get_users_faction(ctx, user)
+        faction = await self.get_authors_faction(ctx)
+        users_faction = await self.get_users_faction(ctx, user)
         if not users_faction:
             return await ctx.send("That users not in a faction")
         if users_faction != faction:
@@ -609,7 +616,7 @@ class FactionsRewrite(commands.Cog):
         if not user:
             return await ctx.send("User not found")
         guild_id = str(ctx.guild.id)
-        faction = self.get_authors_faction(ctx)
+        faction = await self.get_authors_faction(ctx)
         if not faction or ctx.author.id != self.factions[guild_id][faction]["owner"]:
             return await ctx.send("You need to be owner of a faction to use this cmd")
         if user.id in self.factions[guild_id][faction]["co-owners"]:
@@ -625,7 +632,7 @@ class FactionsRewrite(commands.Cog):
         user = self.bot.utils.get_user(ctx, user)
         if not user:
             return await ctx.send("User not found")
-        faction = self.get_authors_faction(ctx)
+        faction = await self.get_authors_faction(ctx)
         if not faction:
             return await ctx.send("You need to be owner of a faction to use this cmd")
         guild_id = str(ctx.guild.id)
@@ -639,7 +646,7 @@ class FactionsRewrite(commands.Cog):
     @factions.command(name="privacy")
     @has_faction_permissions()
     async def privacy(self, ctx):
-        faction = self.get_authors_faction(ctx)
+        faction = await self.get_authors_faction(ctx)
         guild_id = str(ctx.guild.id)
         toggle = self.factions[guild_id][faction]["public"]
         self.factions[guild_id][faction]["public"] = not toggle
@@ -649,7 +656,7 @@ class FactionsRewrite(commands.Cog):
     @factions.command(name="set-bio", aliases=["set_bio", "setbio"])
     @has_faction_permissions()
     async def set_bio(self, ctx, *, bio):
-        faction = self.get_authors_faction(ctx)
+        faction = await self.get_authors_faction(ctx)
         if len(bio) > 86:
             return await ctx.send("Your bio cannot exceed more than 86 characters")
         self.factions[str(ctx.guild.id)][faction]["bio"] = bio
@@ -659,7 +666,7 @@ class FactionsRewrite(commands.Cog):
     @factions.command(name="set-icon", aliases=["seticon", "set_icon"])
     @has_faction_permissions()
     async def set_icon(self, ctx, url = None):
-        faction = self.get_authors_faction(ctx)
+        faction = await self.get_authors_faction(ctx)
         guild_id = str(ctx.guild.id)
         if self.factions[guild_id][faction]["icon"] is None:
             if self.factions[guild_id][faction]["balance"] < 250:
@@ -695,7 +702,7 @@ class FactionsRewrite(commands.Cog):
     @factions.command(name="set-banner", aliases=["setbanner", "set_banner"])
     @has_faction_permissions()
     async def set_banner(self, ctx, url=None):
-        faction = self.get_authors_faction(ctx)
+        faction = await self.get_authors_faction(ctx)
         guild_id = str(ctx.guild.id)
         if self.factions[guild_id][faction]["banner"] is None:
             if self.factions[guild_id][faction]["balance"] < 500:
@@ -732,7 +739,7 @@ class FactionsRewrite(commands.Cog):
     @is_faction_owner()
     async def annex(self, ctx, *, faction):
         """ Merges a faction with another """
-        authors_faction = self.get_owned_faction(ctx, user=ctx.author)
+        authors_faction = await self.get_owned_faction(ctx, user=ctx.author)
         other_faction = await self.get_faction_named(ctx, faction)
         if authors_faction == other_faction:
             return await ctx.send("You must think you're slick..")
@@ -766,9 +773,10 @@ class FactionsRewrite(commands.Cog):
         await ctx.send(f"Successfully annexed {other_faction}")
 
     @factions.command(name="rename")
+    @is_faction_owner()
     async def rename(self, ctx, *, name):
         """ Renames their faction """
-        faction = self.get_owned_faction(ctx)
+        faction = await self.get_authors_faction(ctx)
         if not faction:
             return await ctx.send("You need to be owner of a faction to use this cmd")
         guild_id = str(ctx.guild.id)
@@ -799,13 +807,14 @@ class FactionsRewrite(commands.Cog):
         if faction:
             faction = await self.get_faction_named(ctx, faction)
         else:
-            faction = self.get_authors_faction(ctx)
+            faction = await self.get_authors_faction(ctx)
 
         guild_id = str(ctx.guild.id)
         dat = self.factions[guild_id][faction]  # type: dict
         owner = self.bot.get_user(dat["owner"])
         icon_url = self.get_factions_icon(ctx, faction)
-        rankings = self.get_faction_rankings(guild_id)["net"]  # type: list
+        rankings = await self.get_faction_rankings(guild_id)  # type: dict
+        rankings = rankings["net"]  # type: list
         rank = 1
         for fac, value in rankings:
             if fac == faction:
@@ -831,7 +840,7 @@ class FactionsRewrite(commands.Cog):
 
     @factions.command(name="income")
     async def income(self, ctx):
-        faction = self.get_authors_faction(ctx)
+        faction = await self.get_authors_faction(ctx)
         guild_id = str(ctx.guild.id)
         dat = self.factions[guild_id][faction]["income"]
         info = ""
@@ -855,7 +864,7 @@ class FactionsRewrite(commands.Cog):
         if faction:
             faction = await self.get_faction_named(ctx, faction)
         else:
-            faction = self.get_authors_faction(ctx)
+            faction = await self.get_authors_faction(ctx)
 
         guild_id = str(ctx.guild.id)
         owner_id = self.factions[guild_id][faction]["owner"]
@@ -896,7 +905,7 @@ class FactionsRewrite(commands.Cog):
         if faction:
             faction = await self.get_faction_named(ctx, faction)
         else:
-            faction = self.get_authors_faction(ctx)
+            faction = await self.get_authors_faction(ctx)
         active = {}
         guild_id = str(ctx.guild.id)
         if guild_id in self.extra_income:
@@ -929,9 +938,9 @@ class FactionsRewrite(commands.Cog):
         """Claim a channel"""
         if not channel:
             channel = ctx.channel
-        faction = self.get_authors_faction(ctx)
+        faction = await self.get_authors_faction(ctx)
         guild_id = str(ctx.guild.id)
-        claims = self.collect_claims(guild_id)  # type: dict
+        claims = await self.collect_claims(guild_id)  # type: dict
         cost = 500
         if channel.id in claims:
             if claims[channel.id]["guarded"]:
@@ -959,7 +968,7 @@ class FactionsRewrite(commands.Cog):
     async def unclaim(self, ctx, channel: discord.TextChannel = None):
         if not channel:
             channel = ctx.channel
-        faction = self.get_authors_faction(ctx)
+        faction = await self.get_authors_faction(ctx)
         guild_id = str(ctx.guild.id)
         if channel.id not in self.factions[guild_id][faction]["claims"]:
             return await ctx.send(f"You don't have {channel.mention} claimed")
@@ -977,13 +986,13 @@ class FactionsRewrite(commands.Cog):
         if faction:
             faction = await self.get_faction_named(ctx, faction)
         else:
-            faction = self.get_authors_faction(ctx)
+            faction = await self.get_authors_faction(ctx)
         guild_id = str(ctx.guild.id)
         e = discord.Embed(color=purple())
         e.set_author(
             name=f"{faction}'s claims", icon_url=self.get_factions_icon(ctx, faction)
         )
-        claims = self.collect_claims(guild_id, faction)
+        claims = await self.collect_claims(guild_id, faction)
         claims = {
             self.bot.get_channel(chnl_id): data for chnl_id, data in claims.items()
         }
@@ -1004,7 +1013,7 @@ class FactionsRewrite(commands.Cog):
     @has_faction_permissions()
     async def raid(self, ctx, *, faction):
         """ Starts a raid against another faction """
-        attacker = self.get_authors_faction(ctx)
+        attacker = await self.get_authors_faction(ctx)
         defender = await self.get_faction_named(ctx, faction)
         if not attacker:
             return await ctx.send("You need to be in a faction to use this cmd")
@@ -1030,7 +1039,7 @@ class FactionsRewrite(commands.Cog):
             lowest_fac = attacker
             lowest_bal = attacker_bal
         if lowest_bal <= 250:
-            return await ctx.send("You're too weak to raid. Try again when you at least have $250")
+            return await ctx.send("One of you is too weak to raid. Try again when you at least have $250")
 
         if defender_bal > attacker_bal:
             await ctx.send("The odds are against us. Are you sure you wish to attempt a raid?")
@@ -1064,7 +1073,7 @@ class FactionsRewrite(commands.Cog):
     async def work(self, ctx):
         """ Get money for your faction """
         guild_id = str(ctx.guild.id)
-        faction = self.get_authors_faction(ctx)
+        faction = await self.get_authors_faction(ctx)
 
         if guild_id not in self.cooldowns:
             self.cooldowns[guild_id] = {}
@@ -1116,7 +1125,7 @@ class FactionsRewrite(commands.Cog):
     @factions.command(name="scrabble")
     @commands.cooldown(1, 360, commands.BucketType.user)
     async def _scrabble(self, ctx):
-        faction = self.get_authors_faction(ctx)
+        faction = await self.get_authors_faction(ctx)
 
         def pred(m):
             return (
@@ -1174,7 +1183,7 @@ class FactionsRewrite(commands.Cog):
     @factions.command(name="vote")
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def _vote(self, ctx):
-        faction = self.get_authors_faction(ctx)
+        faction = await self.get_authors_faction(ctx)
         async with self.bot.cursor() as cur:
             await cur.execute(
                 f"select vote_time from votes "
@@ -1207,7 +1216,7 @@ class FactionsRewrite(commands.Cog):
     @factions.command(name="forage")
     @commands.cooldown(1, 15, commands.BucketType.user)
     async def _forage(self, ctx):
-        faction = self.get_authors_faction(ctx)
+        faction = await self.get_authors_faction(ctx)
 
         places = [
             "You checked inside a shoe and found $", "You creeped through an abandoned mineshaft and stumbled across $",
@@ -1245,7 +1254,7 @@ class FactionsRewrite(commands.Cog):
         if faction:
             faction = await self.get_faction_named(ctx, name=faction)
         else:
-            faction = self.get_authors_faction(ctx)
+            faction = await self.get_authors_faction(ctx)
         guild_id = str(ctx.guild.id)
         e = discord.Embed(color=purple())
         e.set_author(name=str(faction), icon_url=self.get_factions_icon(ctx, str(faction)))
@@ -1257,7 +1266,7 @@ class FactionsRewrite(commands.Cog):
     @is_faction_owner()
     async def pay(self, ctx, faction, amount: int):
         """ Pays a faction from the author factions balance """
-        authors_fac = self.get_authors_faction(ctx)
+        authors_fac = await self.get_authors_faction(ctx)
         target_fac = await self.get_faction_named(ctx, faction)
         guild_id = str(ctx.guild.id)
         bal = self.factions[guild_id][authors_fac]["balance"]
@@ -1283,7 +1292,7 @@ class FactionsRewrite(commands.Cog):
         guild_id = str(ctx.guild.id)
         if guild_id not in self.factions:
             return await ctx.send("This server currently has no rankings")
-        dat = self.get_faction_rankings(guild_id)
+        dat = await self.get_faction_rankings(guild_id)
         e = discord.Embed(description="Collecting Leaderboard Data..")
         msg = await ctx.send(embed=e)
         emojis = ["💰", "⚔"]
@@ -1349,7 +1358,7 @@ class FactionsRewrite(commands.Cog):
     @is_faction_owner()
     async def ally(self, ctx, *, target_faction):
         ally_name = await self.get_faction_named(ctx, target_faction)
-        faction_name = self.get_owned_faction(ctx)
+        faction_name = await self.get_owned_faction(ctx)
 
         guild_id = str(ctx.guild.id)
         if faction_name in self.factions[guild_id][ally_name]["allies"]:
@@ -1370,7 +1379,7 @@ class FactionsRewrite(commands.Cog):
         )
         while True:
             async with self.bot.require("message", predicate, handle_timeout=True) as msg:
-                if self.get_owned_faction(ctx, user=msg.author) == ally_name:
+                if await self.get_owned_faction(ctx, user=msg.author) == ally_name:
                     self.factions[guild_id][faction_name]["allies"].append(ally_name)
                     self.factions[guild_id][ally_name]["allies"].append(faction_name)
                     await ctx.send(
@@ -1408,7 +1417,7 @@ class FactionsRewrite(commands.Cog):
         def has_money(amount: int):
             return self.factions[guild_id][faction]["balance"] >= amount
 
-        faction = self.get_authors_faction(ctx)
+        faction = await self.get_authors_faction(ctx)
         guild_id = str(ctx.guild.id)
 
         if "slots" in item_name:
@@ -1451,13 +1460,12 @@ class FactionsRewrite(commands.Cog):
 
         await self.save_data()
 
-
     @commands.Cog.listener()
     async def on_message(self, msg):
         if isinstance(msg.guild, discord.Guild):
             guild_id = str(msg.guild.id)
             if guild_id in self.factions:
-                claims = self.collect_claims(guild_id)  # type: dict
+                claims = await self.collect_claims(guild_id)  # type: dict
                 if msg.channel.id in claims:
                     if msg.channel.id not in self.claim_counter:
                         self.claim_counter[msg.channel.id] = 0
@@ -1467,11 +1475,11 @@ class FactionsRewrite(commands.Cog):
                         faction = claims[msg.channel.id]["faction"]
                         pay = random.randint(1, 5)
                         self.factions[guild_id][faction]["balance"] += pay
-                        self.update_income_board(guild_id, faction, land_claims=pay)
+                        await self.update_income_board(guild_id, faction, land_claims=pay)
                         ally_pay = round(pay / 2) if pay > 1 else 0
                         for ally in self.factions[guild_id][faction]["allies"]:
                             self.factions[guild_id][ally]["balance"] += ally_pay
-                            self.update_income_board(guild_id, ally, alliances=ally_pay)
+                            await self.update_income_board(guild_id, ally, alliances=ally_pay)
 
 
 def setup(bot):

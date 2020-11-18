@@ -87,7 +87,7 @@ class Responses(commands.Cog):
                                     ["Hello", "Hello :3", "Suh", "Suh :3", "Wazzuh"]
                                 )
                             )
-                        if m.content.startswith("gm"):
+                        elif m.content.startswith("gm"):
                             await m.channel.send(
                                 random.choice(
                                     [
@@ -99,11 +99,11 @@ class Responses(commands.Cog):
                                     ]
                                 )
                             )
-                        if m.content.startswith("gn"):
+                        elif m.content.startswith("gn"):
                             await m.channel.send(
                                 random.choice(["Gn", "Gn :3", "Night", "Nighty"])
                             )
-                        if m.content.startswith("ree"):
+                        elif m.content.startswith("ree"):
                             await m.channel.send(
                                 random.choice(
                                     [
@@ -120,7 +120,7 @@ class Responses(commands.Cog):
                                     ]
                                 )
                             )
-                        if m.content.startswith("kys"):
+                        elif m.content.startswith("kys"):
                             await m.channel.send(
                                 random.choice(
                                     [

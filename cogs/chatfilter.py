@@ -157,6 +157,7 @@ class ChatFilter(commands.Cog):
                     if m.channel.id in self.ignored[guild_id]:
                         return
                 for phrase in self.blacklist[guild_id]:
+                    await asyncio.sleep(0)
                     if "\\" in phrase:
                         m.content = m.content.replace("\\", "")
                     perms = [
@@ -179,6 +180,7 @@ class ChatFilter(commands.Cog):
             if before.guild.id in self.toggle:
                 if guild_id in self.blacklist:
                     for phrase in self.blacklist[guild_id]:
+                        await asyncio.sleep(0)
                         if "\\" not in phrase:
                             after.content = after.content.replace("\\", "")
                         perms = [

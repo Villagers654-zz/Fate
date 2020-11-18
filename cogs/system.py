@@ -86,38 +86,37 @@ class System(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, msg):
-        if msg.author.id == 264838866480005122:
-            if "chaoscontrol" in msg.content:
-                chosen = []
-                indexed = []
-                bot = msg.guild.get_member(self.bot.user.id)
-                async for m in msg.channel.history(limit=20):
-                    if m.author.top_role.position < bot.top_role.position:
-                        if m.author.id not in indexed:
-                            if random.randint(1, 2) == 1:
-                                chosen.append([m.author, m.author.display_name])
-                            indexed.append(m.author.id)
-                succeeded = []
-                for member, name in chosen:
-                    try:
-                        await member.edit(nick=("[Snapped] " + name)[:32])
-                        succeeded.append([member, name])
-                        await asyncio.sleep(1)
-                    except:
-                        pass
-                kill_count = len(succeeded)
-                await msg.channel.send(
-                    f'Killed {kill_count} {"user" if kill_count == 1 else "users"}'
-                )
-                await asyncio.sleep(120)
-                for member, name in succeeded:
-                    try:
-                        if member.nick:
-                            await member.edit(nick=name[:32])
-                        else:
-                            await member.edit(nick="")
-                    except:
-                        pass
+        if msg.author.id == 264838866480005122 and "chaoscontrol" in msg.content:
+            chosen = []
+            indexed = []
+            bot = msg.guild.get_member(self.bot.user.id)
+            async for m in msg.channel.history(limit=20):
+                if m.author.top_role.position < bot.top_role.position:
+                    if m.author.id not in indexed:
+                        if random.randint(1, 2) == 1:
+                            chosen.append([m.author, m.author.display_name])
+                        indexed.append(m.author.id)
+            succeeded = []
+            for member, name in chosen:
+                try:
+                    await member.edit(nick=("[Snapped] " + name)[:32])
+                    succeeded.append([member, name])
+                    await asyncio.sleep(1)
+                except:
+                    pass
+            kill_count = len(succeeded)
+            await msg.channel.send(
+                f'Killed {kill_count} {"user" if kill_count == 1 else "users"}'
+            )
+            await asyncio.sleep(120)
+            for member, name in succeeded:
+                try:
+                    if member.nick:
+                        await member.edit(nick=name[:32])
+                    else:
+                        await member.edit(nick="")
+                except:
+                    pass
 
     # @commands.Cog.listener()
     # async def on_member_update(self, before, after):

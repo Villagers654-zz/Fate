@@ -10,6 +10,7 @@ import requests
 import aiohttp
 from time import time, monotonic
 from typing import Union
+import asyncio
 
 from discord.ext import commands
 import discord
@@ -390,13 +391,16 @@ class Core(commands.Cog):
         channels = {}
         dat = [*conf["channels"].items(), *conf["categories"].items()]
         for channel_id, commands in dat:
+            await asyncio.sleep(0)
             if commands:
                 channel = self.bot.get_channel(int(channel_id))
                 if channel:
                     channels[channel] = []
                     for cmd in commands:
+                        await asyncio.sleep(0)
                         channels[channel].append(cmd)
         for channel, commands in channels.items():
+            await asyncio.sleep(0)
             e.add_field(name=channel.name, value=", ".join(commands), inline=False)
         await ctx.send(embed=e)
 
@@ -443,22 +447,20 @@ class Core(commands.Cog):
         before = monotonic()
         message = await ctx.send(embed=e)
         ping = (monotonic() - before) * 1000
+
         if ping < 175:
             img = "https://cdn.discordapp.com/emojis/562592256939393035.png?v=1"
+        elif ping < 250:
+            img = "https://cdn.discordapp.com/emojis/562592178204049408.png?v=1"
+        elif ping < 400:
+            img = "https://cdn.discordapp.com/emojis/562592177692213248.png?v=1"
+        elif ping < 550:
+            img = "https://cdn.discordapp.com/emojis/562592176463151105.png?v=1"
+        elif ping < 700:
+            img = "https://cdn.discordapp.com/emojis/562592175880405003.png?v=1"
         else:
-            if ping < 250:
-                img = "https://cdn.discordapp.com/emojis/562592178204049408.png?v=1"
-            else:
-                if ping < 400:
-                    img = "https://cdn.discordapp.com/emojis/562592177692213248.png?v=1"
-                else:
-                    if ping < 550:
-                        img = "https://cdn.discordapp.com/emojis/562592176463151105.png?v=1"
-                    else:
-                        if ping < 700:
-                            img = "https://cdn.discordapp.com/emojis/562592175880405003.png?v=1"
-                        else:
-                            img = "https://cdn.discordapp.com/emojis/562592175192539146.png?v=1"
+            img = "https://cdn.discordapp.com/emojis/562592175192539146.png?v=1"
+
         api = str(self.bot.latency * 1000)
         api = api[: api.find(".")]
         e.set_author(name=f"Bots Latency", icon_url=self.bot.user.avatar_url)
@@ -466,13 +468,16 @@ class Core(commands.Cog):
         e.description = (
             f"**Message Trip 1:** `{int(ping)}ms`\n**Websocket Heartbeat:** `{api}ms`"
         )
+
         before = monotonic()
         await message.edit(embed=e)
         edit_ping = (monotonic() - before) * 1000
         e.description = f"**Message Trip 1:** `{int(ping)}ms`\n**Msg Edit Trip:** `{int(edit_ping)}ms`\n**Websocket Heartbeat:** `{api}ms`"
+
         before = monotonic()
         await message.edit(embed=e)
         second_edit_ping = (monotonic() - before) * 1000
+
         before = monotonic()
         await ctx.send("Measuring Ping", delete_after=0.5)
         second_ping = (monotonic() - before) * 1000
@@ -547,18 +552,6 @@ class Core(commands.Cog):
             e.description = "**Meaning:**\n{}\n\n**Example:**\n{}\n".format(
                 meaning, resp.find("div", {"class": "example"}).text.strip("\n")
             )
-
-            prob = predict_prob([e.description])
-            new_prob = []
-            for i in prob:
-                if i >= 0.14:
-                    new_prob.append(1)
-                elif i < 0.14:
-                    new_prob.append(0)
-            if new_prob[0] == 1 and not ctx.channel.is_nsfw():
-                return await ctx.send(
-                    "You need to be in an nsfw channel to check that definition"
-                )
 
             e.set_footer(
                 text="~{}".format(
