@@ -68,6 +68,9 @@ class FactionsRewrite(commands.Cog):
                 dat = json.load(f)  # type: dict
                 if "main" in dat:
                     self.factions = dat["main"]  # type: dict
+                    for guild_id, factions in list(self.factions.items()):
+                        for faction, data in list(factions.items()):
+                            self.factions[guild_id][faction]["members"] = list(set(data["members"]))
                 if "boosts" in dat:
                     self.boosts = dat["boosts"]  # type: dict
                     for key, values in list(self.boosts.items()):
@@ -249,7 +252,7 @@ class FactionsRewrite(commands.Cog):
         if faction:
             return await claims(faction)
         global_claims = {}
-        for faction in self.factions[guild_id].keys():
+        for faction in list(self.factions[guild_id].keys()):
             fac_claims = await claims(faction)  # type: dict
             for claim, data in fac_claims.items():
                 global_claims[claim] = data
@@ -272,7 +275,7 @@ class FactionsRewrite(commands.Cog):
             await asyncio.sleep(0)
             factions_net.append([faction, get_value([faction, data], net=True)])
             factions.append([faction, get_value([faction, data], net=False)])
-            if data["allies"] and not any(faction in List for List in allies_net):
+            if data["allies"] and not any(any(faction in _ for _ in List) for List in allies_net):
                 alliance_net = [(faction, get_value([faction, data], net=True))]
                 alliance_bal = [(faction, get_value([faction, data], net=False))]
                 for ally in data["allies"]:
@@ -757,7 +760,7 @@ class FactionsRewrite(commands.Cog):
         guild_id = str(ctx.guild.id)
         dat = self.factions[guild_id][other_faction]
         await ctx.send(
-            f"<@{dat['owner']} {ctx.author} would like to merge factions with them as the owner. "
+            f"<@{dat['owner']}> {ctx.author} would like to merge factions with them as the owner. "
             f"Reply with `.confirm annex` if you consent to giving up your faction",
             allowed_mentions=discord.AllowedMentions(users=True, everyone=False, roles=False)
         )
@@ -955,7 +958,12 @@ class FactionsRewrite(commands.Cog):
         cost = 500
         if channel.id in claims:
             if claims[channel.id]["guarded"]:
-                return await ctx.send("That claim is currently guarded")
+                end_time = self.bot.utils.get_time(
+                    self.land_guard[guild_id][claims[channel.id]["faction"]] - time()
+                )
+                return await ctx.send(
+                    f"That claim is currently guarded. Try again in {end_time}"
+                )
             cost += 250
         if cost > self.factions[guild_id][faction]["balance"]:
             needed = cost - self.factions[guild_id][faction]['balance']
@@ -1033,7 +1041,12 @@ class FactionsRewrite(commands.Cog):
                 if time() > self.anti_raid[guild_id][defender]:
                     del self.boosts["anti-raid"][guild_id][defender]
                 else:
-                    return await ctx.send(f"{defender} is currently guarded by anti-raid")
+                    end_time = self.bot.utils.get_time(
+                        self.boosts["anti-raid"][guild_id][defender] - time()
+                    )
+                    return await ctx.send(
+                        f"{defender} is currently guarded by anti-raid. Try again in {end_time}"
+                    )
         attacker_bal = self.factions[guild_id][attacker]["balance"]
         defender_bal = self.factions[guild_id][defender]["balance"]
 
@@ -1312,14 +1325,14 @@ class FactionsRewrite(commands.Cog):
         )
         net_leaderboard.description = ""
         for i, (faction, value) in enumerate(dat["net"][:9]):
-            net_leaderboard.description += f"\n#{i}. {faction} - ${value}"
+            net_leaderboard.description += f"\n#{i + 1}. {faction} - ${value}"
 
         bal_leaderboard = discord.Embed(color=purple())
         bal_leaderboard.set_author(name="Balance Leaderboard")
         bal_leaderboard.set_thumbnail(url=ctx.guild.icon_url)
         bal_leaderboard.description = ""
         for i, (faction, balance) in enumerate(dat["bal"][:9]):
-            bal_leaderboard.description += f"\n#{i}. {faction} - ${balance}"
+            bal_leaderboard.description += f"\n#{i + 1}. {faction} - ${balance}"
 
         alliance_net_leaderboard = discord.Embed(color=purple())
         alliance_net_leaderboard.set_author(name="Alliance Net Leaderboard")
