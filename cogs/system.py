@@ -65,10 +65,6 @@ class System(commands.Cog):
             await asyncio.sleep(5)
             await ctx.message.delete()
 
-    @commands.Cog.listener()
-    async def on_ready(self):
-        pass
-
     @commands.command(name="stealfrom")
     @commands.check(checks.luck)
     async def steal_emojis(self, ctx, guild_id: int):
