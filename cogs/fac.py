@@ -785,6 +785,9 @@ class FactionsRewrite(commands.Cog):
                 self.factions[guild_id][authors_faction]["members"].append(member_id)
         if dat["owner"] not in self.factions[guild_id][authors_faction]["members"]:
             self.factions[guild_id][authors_faction]["members"].append(dat["owner"])
+        for faction, data in list(self.factions[guild_id].items()):
+            if other_faction in data["allies"]:
+                self.factions[guild_id][faction]["allies"].remove(other_faction)
         with suppress(ValueError):
             del self.factions[guild_id][other_faction]
 
