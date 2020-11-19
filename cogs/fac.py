@@ -676,8 +676,8 @@ class FactionsRewrite(commands.Cog):
     @has_faction_permissions()
     async def set_bio(self, ctx, *, bio):
         faction = await self.get_authors_faction(ctx)
-        if len(bio) > 86:
-            return await ctx.send("Your bio cannot exceed more than 86 characters")
+        if len(bio) > 256:
+            return await ctx.send("Your bio cannot exceed more than 256 characters")
         self.factions[str(ctx.guild.id)][faction]["bio"] = bio
         await ctx.send("Set your factions bio")
         await self.save_data()
@@ -849,13 +849,16 @@ class FactionsRewrite(commands.Cog):
         e.set_author(name=faction, icon_url=owner.avatar_url)
         e.set_thumbnail(url=icon_url)
         e.description = (
-            f"__**Owner:**__ `{owner}`"
-            f"\n__**Members:**__ [`{len(dat['members'])}`] "
-            f"__**Public:**__ [`{dat['public']}`]"
-            f"\n__**Balance:**__ [`${dat['balance']}`]\n"
+            f"**Owner:** **`@{owner}`**"
+            f"\n**Members:** [`{len(dat['members'])}`] "
+            f"**Public:** [`{dat['public']}`]"
+            f"\n**Balance:** [`${dat['balance']}`]\n"
         )
         if dat["bio"]:
-            e.description += f"__**Bio:**__ [`{dat['bio']}`]"
+            e.add_field(
+                name="◈ Biography",
+                value=dat["bio"]
+            )
         if "banner" in dat:
             if dat["banner"]:
                 e.set_image(url=dat["banner"])
@@ -872,11 +875,11 @@ class FactionsRewrite(commands.Cog):
             info += f"Land-Claims: ${dat['land_claims']}"
         if "alliances" in dat:
             info += f"\nAlliances: ${dat['alliances']}"
-        for key, income in sorted(dat.items(), key=lambda kv: kv[1], reverse=True):
-            if key.isdigit():
-                user = self.bot.get_user(int(key))
-                if user:
-                    info += f"\n{user.name}: ${income}"
+        # for key, income in sorted(dat.items(), key=lambda kv: kv[1], reverse=True):
+        #     if key.isdigit():
+        #         user = self.bot.get_user(int(key))
+        #         if user:
+        #             info += f"\n{user.name}: ${income}"
         e = discord.Embed(color=purple())
         e.set_author(name="Income History", icon_url=self.get_factions_icon(ctx, faction))
         e.description = info
