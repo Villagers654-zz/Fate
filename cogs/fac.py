@@ -476,6 +476,8 @@ class FactionsRewrite(commands.Cog):
             str(f).lower() for f in self.factions[guild_id].keys()
         ]:
             return await ctx.send("That name is already taken")
+        if len(name) > 25:
+            return await ctx.send("That name's too long")
         self.factions[guild_id][name] = {
             "owner": ctx.author.id,
             "co-owners": [],
@@ -813,6 +815,8 @@ class FactionsRewrite(commands.Cog):
             or "#" in name
         ):
             return await ctx.send("biTcH nO")
+        if len(name) > 25:
+            return await ctx.send("That name's too long")
         for fac, data in self.factions[guild_id].items():
             if faction in data["allies"]:
                 self.factions[guild_id][fac]["allies"].remove(faction)
@@ -1034,6 +1038,8 @@ class FactionsRewrite(commands.Cog):
 
     @factions.command(name="raid")
     @has_faction_permissions()
+    @commands.cooldown(1, 120, commands.BucketType.user)
+    @commands.cooldown(2, 480, commands.BucketType.user)
     async def raid(self, ctx, *, faction):
         """ Starts a raid against another faction """
         attacker = await self.get_authors_faction(ctx)
