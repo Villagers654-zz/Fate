@@ -91,9 +91,7 @@ def has_warn_permission():
             return True
         elif ctx.author.guild_permissions.administrator:
             return True
-        await ctx.send(
-            "You lack administrator or usermod permissions to use this command"
-        )
+        raise commands.CheckFailure("You lack administrator or usermod permissions to use this command")
 
     return commands.check(predicate)
 
