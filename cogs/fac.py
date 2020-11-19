@@ -128,9 +128,8 @@ class FactionsRewrite(commands.Cog):
         """Returns an icon for the faction"""
 
         guild_id = str(ctx.guild.id)
-        if "icon" in self.factions[guild_id][faction]:
-            if self.factions[guild_id][faction]["icon"]:
-                return self.factions[guild_id][faction]["icon"]
+        if self.factions[guild_id][faction]["icon"]:
+            return self.factions[guild_id][faction]["icon"]
 
         owner_id = self.factions[guild_id][faction]["owner"]
         owner = self.bot.get_user(owner_id)
@@ -927,6 +926,8 @@ class FactionsRewrite(commands.Cog):
             faction = await self.get_faction_named(ctx, faction)
         else:
             faction = await self.get_authors_faction(ctx)
+            if not faction:
+                return await ctx.send("Faction not found")
         active = {}
         guild_id = str(ctx.guild.id)
         if guild_id in self.extra_income:
