@@ -1523,7 +1523,10 @@ class FactionsRewrite(commands.Cog):
                         self.factions[guild_id][faction]["balance"] += pay
                         await self.update_income_board(guild_id, faction, land_claims=pay)
                         ally_pay = round(pay / 2) if pay > 1 else 0
-                        for ally in self.factions[guild_id][faction]["allies"]:
+                        for ally in list(self.factions[guild_id][faction]["allies"]):
+                            if ally not in self.factions[guild_id]:
+                                self.factions[guild_id][faction]["allies"].remove(ally)
+                                continue
                             self.factions[guild_id][ally]["balance"] += ally_pay
                             await self.update_income_board(guild_id, ally, alliances=ally_pay)
 
