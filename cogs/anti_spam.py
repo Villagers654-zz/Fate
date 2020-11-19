@@ -365,19 +365,19 @@ class AntiSpam(commands.Cog):
             await ctx.send(f"I'll no longer ignore `{target}`")
         await self.save_data()
 
-    async def handle_mute(self, channel, mute_role, user_id, sleep_time: int):
-        user = channel.guild.get_member(user_id)
-        with suppress(Forbidden, NotFound, HTTPException):
-            await asyncio.sleep(sleep_time)
-            if user and mute_role and mute_role in user.roles:
-                await user.remove_roles(mute_role)
-                mentions = discord.AllowedMentions(users=True)
-                await channel.send(f"Unmuted **{user.mention}**", allowed_mentions=mentions)
+    async def handle_mute(self, channel, mute_role, guild_id, user_id: int, sleep_time: int):
+        if channel:
+            user = channel.guild.get_member(user_id)
+            with suppress(Forbidden, NotFound, HTTPException):
+                await asyncio.sleep(sleep_time)
+                if user and mute_role and mute_role in user.roles:
+                    await user.remove_roles(mute_role)
+                    mentions = discord.AllowedMentions(users=True)
+                    await channel.send(f"Unmuted **{user.mention}**", allowed_mentions=mentions)
 
         # Clean up the tasks
-        guild_id = str(channel.guild.id)
         if guild_id in self.bot.tasks["mutes"]:
-            user_id = str(user.id)
+            user_id = str(user_id)
             if user_id in self.bot.tasks["mutes"][guild_id]:
                 del self.bot.tasks["mutes"][guild_id][user_id]
             if not self.bot.tasks["mutes"][guild_id]:
@@ -624,6 +624,7 @@ class AntiSpam(commands.Cog):
                         self.handle_mute(
                             channel=msg.channel,
                             mute_role=mute_role,
+                            guild_id=guild_id,
                             user_id=msg.author.id,
                             sleep_time=timer
                         )
@@ -656,6 +657,7 @@ class AntiSpam(commands.Cog):
                             self.handle_mute(
                                 channel=self.bot.get_channel(data["channel_id"]),
                                 mute_role=guild.get_role(int(data["mute_role_id"])),
+                                guild_id=guild_id,
                                 user_id=user_id,
                                 sleep_time=data["end_time"] - time()
                             )
