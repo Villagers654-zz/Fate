@@ -221,9 +221,43 @@ class Utils(commands.Cog):
         return p
 
     @staticmethod
+    async def get_prefixes_async(bot, msg):
+        default_prefix = commands.when_mentioned_or(".")(bot, msg)
+        config_path = bot.get_fp_for("userdata/config.json")
+
+        if msg.author.id == bot.config["owner_id"]:
+            return default_prefix
+
+        last_updated, config = bot.prefix_cache
+        if last_updated < time() - 5:
+            async with bot.open(config_path, "r") as f:
+                config = json.loads(await f.read())
+            bot.prefix_cache = [time(), config]
+
+        if msg.author.id in config["blocked"]:
+            return None
+
+        guild_id = str(msg.guild.id) if msg.guild else None
+        if msg.guild and guild_id in config["restricted"]:
+            if msg.channel.id in config["restricted"][guild_id]:
+                if not msg.author.guild_permissions.administrator:
+                    return None
+
+        user_id = str(msg.author.id)
+        if user_id in config["personal_prefix"]:
+            return commands.when_mentioned_or(
+                config["personal_prefix"][user_id]
+            )(bot, msg)
+
+        if guild_id in config["prefix"]:
+            return commands.when_mentioned_or(
+                config["prefix"][guild_id]
+            )(bot, msg)
+
+        return default_prefix
+
+    @staticmethod
     def get_prefixes(bot, msg):
-        if msg.author.id in bot.blocked:
-            return "lsimhbiwfefmtalol"
         conf = Utils.get_config()  # type: dict
         config = bot.config
         if msg.author.id == config["bot_owner_id"]:

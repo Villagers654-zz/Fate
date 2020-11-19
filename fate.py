@@ -154,6 +154,10 @@ class Fate(commands.AutoShardedBot):
         self.cursor = Cursor
 
         self.cache = Cache(self)  # type: Cache
+        self.user_config_cache = [
+            0,  # Time last updated
+            {}  # User data
+        ]
 
         # Async compatible file manager using aiofiles and asyncio.Lock
         class AsyncFileManager:
@@ -523,26 +527,26 @@ index = {}
 
 @bot.event
 async def on_command(ctx):
-    if ctx.author.id not in index:
-        index[ctx.author.id] = {}
-    if ctx.message.content not in index[ctx.author.id]:
-        index[ctx.author.id][ctx.message.content] = []
-    now = time()
-    index[ctx.author.id][ctx.message.content].append(now)
+    # if ctx.author.id not in index:
+    #     index[ctx.author.id] = {}
+    # if ctx.message.content not in index[ctx.author.id]:
+    #     index[ctx.author.id][ctx.message.content] = []
+    # now = time()
+    # index[ctx.author.id][ctx.message.content].append(now)
+#
+    # for key, value in list(index.items()):
+    #     await asyncio.sleep(0)
+    #     for command, uses in value.items():
+    #         for use in uses:
+    #             if use > time() - 65:
+    #                 index[key][command].remove(use)
 
-    for key, value in list(index.items()):
-        await asyncio.sleep(0)
-        for command, uses in value.items():
-            for use in uses:
-                if use > time() - 65:
-                    index[key][command].remove(use)
-
-    block = False
-    if len(index[ctx.author.id][ctx.message.content]) > 4:
-        if not isinstance(ctx.cog, bot.cogs["Moderation"]):
-            block = True
-            bot.blocked.append(ctx.author.id)
-            await ctx.send("This seems sus.. Ima go for a bit")
+    # block = False
+    # if len(index[ctx.author.id][ctx.message.content]) > 4:
+    #     if not isinstance(ctx.cog, bot.cogs["Moderation"]):
+    #         block = True
+    #         bot.blocked.append(ctx.author.id)
+    #         await ctx.send("This seems sus.. Ima go for a bit")
 
 
     stats = bot.utils.get_stats()  # type: dict
@@ -550,20 +554,20 @@ async def on_command(ctx):
     async with bot.open("./data/stats.json", "w") as f:
         await f.write(json.dumps(stats))
 
-    await asyncio.sleep(60)
-
-    with suppress(KeyError, ValueError):
-        index[ctx.author.id][ctx.message.content].remove(now)
-    with suppress(KeyError):
-        if not index[ctx.author.id][ctx.message.content]:
-            del index[ctx.author.id][ctx.message.content]
-    with suppress(KeyError):
-        if not index[ctx.author.id]:
-            del index[ctx.author.id]
-
-    if block:
-        await asyncio.sleep(60 * 4)
-        bot.blocked.remove(ctx.author.id)
+    # await asyncio.sleep(60)
+#
+    # with suppress(KeyError, ValueError):
+    #     index[ctx.author.id][ctx.message.content].remove(now)
+    # with suppress(KeyError):
+    #     if not index[ctx.author.id][ctx.message.content]:
+    #         del index[ctx.author.id][ctx.message.content]
+    # with suppress(KeyError):
+    #     if not index[ctx.author.id]:
+    #         del index[ctx.author.id]
+#
+    # if block:
+    #     await asyncio.sleep(60 * 4)
+    #     bot.blocked.remove(ctx.author.id)
 
 
 if __name__ == "__main__":
