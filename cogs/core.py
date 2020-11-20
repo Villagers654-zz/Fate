@@ -15,8 +15,6 @@ import asyncio
 from discord.ext import commands
 import discord
 from discord import Webhook, AsyncWebhookAdapter
-import wikipedia
-import wikipedia.exceptions
 import dbl
 
 from utils import config, colors, auth
@@ -483,27 +481,6 @@ class Core(commands.Cog):
         second_ping = (monotonic() - before) * 1000
         e.description = f"**Message Trip 1:** `{int(ping)}ms`\n**Message Trip 2:** `{int(second_ping)}ms`\n**Msg Edit Trip 1:** `{int(edit_ping)}ms`\n**Msg Edit Trip 2:** `{int(second_edit_ping)}ms`\n**Websocket Heartbeat:** `{api}ms`"
         await message.edit(embed=e)
-
-    @commands.command(name="wiki")
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    @commands.bot_has_permissions(embed_links=True)
-    async def wiki(self, ctx, *, query: str):
-        try:
-            q = wikipedia.page(query)
-            e = discord.Embed(color=0x80B0FF)
-            e.set_author(name=f"Search Phrase: {query}", icon_url=ctx.author.avatar_url)
-            e.description = (
-                "Result: {}```{}```For more information, visit [here]({})".format(
-                    q.title, wikipedia.summary(query, sentences=5), q.url
-                )
-            )
-            await ctx.send(embed=e)
-        except wikipedia.exceptions.PageError:
-            await ctx.send(
-                "Either the page doesn't exist, or you typed it in wrong. Either way, please try again."
-            )
-        except Exception as e:
-            await ctx.send(f"**```ERROR: {type(e).__name__} - {e}```**")
 
     @commands.command(enabled=False)
     @commands.cooldown(1, 5, commands.BucketType.user)
