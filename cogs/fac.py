@@ -17,6 +17,7 @@ import os
 
 from discord.ext import commands
 from discord.ext.commands import CheckFailure
+from discord.errors import Forbidden
 import discord
 
 from utils.colors import purple, pink
@@ -1349,8 +1350,9 @@ class FactionsRewrite(commands.Cog):
             return m.id == msg.id and str(r.emoji) in emojis and not u.bot
 
         async def add_emojis_task():
-            for emoji in emojis:
-                await msg.add_reaction(emoji)
+            with suppress(Forbidden):
+                for emoji in emojis:
+                    await msg.add_reaction(emoji)
 
         guild_id = str(ctx.guild.id)
         if guild_id not in self.factions:
