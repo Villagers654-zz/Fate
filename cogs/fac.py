@@ -859,6 +859,14 @@ class FactionsRewrite(commands.Cog):
                 name="◈ Biography",
                 value=dat["bio"]
             )
+        if dat["allies"]:
+            allies = ""
+            for ally in dat["allies"]:
+                allies += f"\n• {ally}"
+            e.add_field(
+                name="◈ Allies",
+                value=allies
+            )
         if "banner" in dat:
             if dat["banner"]:
                 e.set_image(url=dat["banner"])
