@@ -676,11 +676,13 @@ class Moderation(commands.Cog):
                 return await ctx.send("That user is above your paygrade, take a seat")
             if user.top_role.position >= ctx.guild.me.top_role.position:
                 return await ctx.send("That users top role is above mine, so I can't manage them")
+            updated = False
             if mute_role in user.roles:
                 user_id = str(user.id)
                 if guild_id in self.tasks and user_id in self.tasks[guild_id]:
                     self.tasks[guild_id][user_id].cancel()
                     del self.tasks[guild_id][user_id]
+                    updated = True
                 else:
                     return await ctx.send(f'{user.display_name} is already muted')
             removed_roles = []
@@ -721,7 +723,10 @@ class Moderation(commands.Cog):
                 "mute_role": mute_role.id,
                 "removed_roles": removed_roles,
             }
-            await ctx.send(f"Muted **{user.name}** for {expanded_timer} for {reason}")
+            if updated:
+                await ctx.send(f"Updated the mute for **{user.name}** to {expanded_timer} for {reason}")
+            else:
+                await ctx.send(f"Muted **{user.name}** for {expanded_timer} for {reason}")
 
             user_id = str(user.id)
             self.config[guild_id]["mute_timers"][user_id] = timer_info
