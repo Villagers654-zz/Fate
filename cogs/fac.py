@@ -1187,7 +1187,7 @@ class FactionsRewrite(commands.Cog):
         await self.save_data()
 
     @factions.command(name="scrabble")
-    @commands.cooldown(1, 360, commands.BucketType.user)
+    @commands.cooldown(1, 30, commands.BucketType.user)
     async def _scrabble(self, ctx):
         faction = await self.get_authors_faction(ctx)
 
@@ -1202,11 +1202,9 @@ class FactionsRewrite(commands.Cog):
             "fate",
             "bait",
             "rock",
-            "anime",
             "water",
             "server",
             "toast",
-            "beans",
             "based"
         ]  # stay wholesome uwu
         word = random.choice(words)
@@ -1224,7 +1222,7 @@ class FactionsRewrite(commands.Cog):
             return await ctx.send("You failed. Maybe next time :/")
 
         guild_id = str(ctx.guild.id)
-        paycheck = random.randint(15, 25)
+        paycheck = random.randint(3, 7)
         e = discord.Embed(color=purple())
         e.description = f"You earned {faction} ${paycheck}"
         if guild_id in self.extra_income:
@@ -1233,9 +1231,9 @@ class FactionsRewrite(commands.Cog):
                     del self.boosts["extra-income"][guild_id][faction]
                 else:
                     e.set_footer(
-                        text="With Bonus: $5", icon_url=self.get_factions_icon(ctx, faction)
+                        text="With Bonus: $2", icon_url=self.get_factions_icon(ctx, faction)
                     )
-                    paycheck += 5
+                    paycheck += 2
         self.factions[guild_id][faction]["balance"] += paycheck
         if str(ctx.author.id) in self.factions[guild_id][faction]["income"]:
             self.factions[guild_id][faction]["income"][str(ctx.author.id)] += paycheck
@@ -1278,7 +1276,7 @@ class FactionsRewrite(commands.Cog):
         await self.save_data()
 
     @factions.command(name="forage")
-    @commands.cooldown(1, 15, commands.BucketType.user)
+    @commands.cooldown(1, 30, commands.BucketType.user)
     async def _forage(self, ctx):
         faction = await self.get_authors_faction(ctx)
 
