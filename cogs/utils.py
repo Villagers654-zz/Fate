@@ -274,7 +274,7 @@ class Utils(commands.Cog):
             conf["restricted"] = {}
         if guild_id in conf["restricted"]:
             if msg.channel.id in conf["restricted"][guild_id]["channels"] and (
-                not msg.author.guild_permissions.administrator
+                not msg.channel.permissions_for(msg.author).manage_messages
             ):
                 return "lsimhbiwfefmtalol"
         if "personal_prefix" not in conf:
