@@ -458,35 +458,36 @@ class AntiSpam(commands.Cog):
                              for prefix in self.prefixes[guild_id])
 
             ):
-                channel_id = str(msg.channel.id)
-                if channel_id not in self.dupes:
-                    self.dupes[channel_id] = []
-                self.dupes[channel_id] = [
-                    msg, *[
-                        msg for msg in self.dupes[channel_id]
-                        if msg.created_at > datetime.utcnow() - timedelta(minutes=1)
+                if msg.channel.permissions_for(msg.guild.me).read_message_history:
+                    channel_id = str(msg.channel.id)
+                    if channel_id not in self.dupes:
+                        self.dupes[channel_id] = []
+                    self.dupes[channel_id] = [
+                        msg, *[
+                            msg for msg in self.dupes[channel_id]
+                            if msg.created_at > datetime.utcnow() - timedelta(seconds=15)
+                        ]
                     ]
-                ]
-                for message in list(self.dupes[channel_id]):
-                    dupes = [
-                        m for m in self.dupes[channel_id]
-                        if m and m.content == message.content
-                    ]
-                    if len(dupes) > sensitivity_level + 1:
-                        await asyncio.sleep(1)
-                        history = await msg.channel.history(limit=5).flatten()
-                        if not any(m.author.bot for m in history):
-                            users = set(list([
-                                *[m.author for m in dupes if m], *users
-                            ]))
-                            for message in dupes:
-                                with suppress(IndexError, ValueError):
-                                    self.dupes[channel_id].remove(message)
-                            await msg.channel.delete_messages([
-                                message for message in dupes if message
-                            ])
-                            triggered = True
-                            break
+                    for message in list(self.dupes[channel_id]):
+                        dupes = [
+                            m for m in self.dupes[channel_id]
+                            if m and m.content == message.content
+                        ]
+                        if len(dupes) > sensitivity_level + 1:
+                            await asyncio.sleep(1)
+                            history = await msg.channel.history(limit=5).flatten()
+                            if not any(m.author.bot for m in history):
+                                users = set(list([
+                                    *[m.author for m in dupes if m], *users
+                                ]))
+                                for message in dupes:
+                                    with suppress(IndexError, ValueError):
+                                        self.dupes[channel_id].remove(message)
+                                await msg.channel.delete_messages([
+                                    message for message in dupes if message
+                                ])
+                                triggered = True
+                                break
 
             if self.toggle[guild_id]['Inhuman'] and msg.content:
                 abcs = "abcdefghijklmnopqrstuvwxyzجحخهعغفقثصضشسيبلاتتمكطدظزوةىرؤءذئأإآ"
