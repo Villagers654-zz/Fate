@@ -265,7 +265,7 @@ class FactionsRewrite(commands.Cog):
         def get_value(kv, net=True):
             value = kv[1]["balance"]
             if net:
-                for i in range(len(kv[1]["claims"])):
+                for _claim in kv[1]["claims"]:
                     value += 500
             return value
 
@@ -294,7 +294,7 @@ class FactionsRewrite(commands.Cog):
                 allies_net.append(alliance_net)
                 allies_bal.append(alliance_bal)
 
-        factions_net = sorted(factions, key=lambda kv: kv[1], reverse=True)
+        factions_net = sorted(factions_net, key=lambda kv: kv[1], reverse=True)
         factions = sorted(factions, key=lambda kv: kv[1], reverse=True)
         allies_net = sorted(
             allies_net, key=lambda kv: sum(kv[0][1] for kv in allies_net), reverse=True
@@ -394,8 +394,8 @@ class FactionsRewrite(commands.Cog):
             e.description = (
                 "Create factions, group up, complete work tasks to earn "
                 "your faction money, raid other factions while they're "
-                "not guarded, challenge enemys to minigame battles, and "
-                "rank up on the faction leaderboard"
+                "not guarded, challenge enemies to minigame battles, and "
+                "rank up on the faction leaderboard."
             )
             e.set_footer(text=f"For help use {p}f help")
             await ctx.send(embed=e)
