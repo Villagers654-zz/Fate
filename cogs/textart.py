@@ -42,22 +42,6 @@ class TextArt(commands.Cog):
         except Exception as e:
             await ctx.send(f"**```ERROR: {type(e).__name__} - {e}```**")
 
-    @commands.command()
-    async def yes(self, ctx):
-        try:
-            await ctx.send(
-                "░░░░░░▄▄\n"
-                "░░░░░█░░█\n"
-                "▄▄▄▄▄█░░█▄▄▄\n"
-                "▓▓▓▓█░░░░░░░█\n"
-                "▓▓▓▓█░░░░░░░░█\n"
-                "▓▓▓▓█░░░░░░░░█\n"
-                "▓▓▓▓█░░░░░░░░█\n"
-                "███▀▀▀███████"
-            )
-            await ctx.message.delete()
-        except Exception as e:
-            await ctx.send(f"**```ERROR: {type(e).__name__} - {e}```**")
 
     @commands.command()
     async def angry(self, ctx):
