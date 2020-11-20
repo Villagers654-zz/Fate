@@ -606,7 +606,7 @@ class Moderation(commands.Cog):
 
                 if mute_role.position >= ctx.guild.me.top_role.position:
                     return await ctx.send(
-                        "My current role's not high enough for me to give, or remove the mute role to anyone"
+                        "My current role's not high enough for me to give, or remove the mute role to, or from anyone"
                     )
                 self.config[guild_id]["mute_role"] = mute_role.id
 
@@ -678,9 +678,9 @@ class Moderation(commands.Cog):
                 return await ctx.send("That users top role is above mine, so I can't manage them")
             if mute_role in user.roles:
                 user_id = str(user.id)
-                if guild_id in self.bot.tasks["mutes"] and user_id in self.bot.tasks["mutes"][guild_id]:
-                    self.bot.tasks["mutes"][guild_id][user_id].cancel()
-                    del self.bot.tasks["mutes"][guild_id][user_id]
+                if guild_id in self.tasks and user_id in self.tasks[guild_id]:
+                    self.tasks[guild_id][user_id].cancel()
+                    del self.tasks[guild_id][user_id]
                 else:
                     return await ctx.send(f'{user.display_name} is already muted')
             removed_roles = []
@@ -709,7 +709,7 @@ class Moderation(commands.Cog):
 
             if timer > 15552000:  # 6 months
                 return await ctx.send(
-                    "No way in hell I'm waiting that long to unmute\n"
+                    "No way in hell I'm waiting that long to unmute. "
                     "You'll have to do it yourself >:("
                 )
             await user.add_roles(mute_role)
@@ -729,7 +729,7 @@ class Moderation(commands.Cog):
             task = self.bot.loop.create_task(
                 self.handle_mute_timer(guild_id, user_id, timer_info)
             )
-            if guild_id not in self.tasks:
+            if guild_id not in self.bot.tasks["mutes"]:
                 self.tasks[guild_id] = {}
             self.tasks[guild_id][user_id] = task
 
