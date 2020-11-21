@@ -74,8 +74,7 @@ class Tasks(commands.Cog):
                 "♡Juice wrld♡",
                 "Mad cuz Bad",
                 "Quest for Cake",
-                "Gone Sexual",
-                "@EPFFORCE#1337 wuz here",
+                "Gone Sexual"
             ]
             stages = ["Serendipity", "Euphoria", "Singularity", "Epiphany"]
             for i in range(len(stages)):
