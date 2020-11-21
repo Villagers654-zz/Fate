@@ -37,6 +37,7 @@ class Fate(commands.AutoShardedBot):
         self.owner_ids = set(
             list([self.config["bot_owner_id"], *self.config["bot_owner_ids"]])
         )
+        self.theme_color = self.config["theme_color"]
 
         self.pool = None  # MySQL Pool initialized on_ready
         self.tcp_servers = {  # Socket servers for web panel

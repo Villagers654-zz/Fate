@@ -21,6 +21,7 @@ import traceback
 from discord.ext import commands
 import discord
 from discord import AuditLogAction as audit
+from discord.errors import NotFound, Forbidden
 from PIL import Image
 
 from utils.colors import *
@@ -1814,7 +1815,10 @@ class Logger(commands.Cog):
             e.description = ""
 
             if action != "Deleted":
-                webhook = await self.bot.fetch_webhook(dat["target"].id)
+                try:
+                    webhook = await self.bot.fetch_webhook(dat["target"].id)
+                except (NotFound, Forbidden):
+                    return
                 channel = self.bot.get_channel(webhook.channel_id)
                 e.set_thumbnail(url=webhook.avatar_url)
                 e.description = self.bot.utils.format_dict(
