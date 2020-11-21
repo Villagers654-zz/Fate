@@ -858,7 +858,8 @@ class FactionsRewrite(commands.Cog):
         if dat["bio"]:
             e.add_field(
                 name="◈ Biography",
-                value=dat["bio"]
+                value=dat["bio"],
+                inline=False
             )
         if dat["allies"]:
             allies = ""
@@ -866,7 +867,8 @@ class FactionsRewrite(commands.Cog):
                 allies += f"\n• {ally}"
             e.add_field(
                 name="◈ Allies",
-                value=allies
+                value=allies,
+                inline=False
             )
         if "banner" in dat:
             if dat["banner"]:
