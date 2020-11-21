@@ -1211,7 +1211,7 @@ class FactionsRewrite(commands.Cog):
         scrambled_word = list(str(word).lower())
         random.shuffle(scrambled_word)
 
-        e = discord.Embed(color=self.bot.config["theme_color"])
+        e = discord.Embed(color=purple())
         e.description = f"Scrambled word: `{''.join(scrambled_word)}`"
         e.set_footer(text="You have 25 seconds..", icon_url=ctx.bot.user.avatar_url)
         await ctx.send(embed=e)
@@ -1289,7 +1289,7 @@ class FactionsRewrite(commands.Cog):
         ]
 
         pay = random.randint(3, 7)
-        e = discord.Embed(color=self.bot.config["theme_color"])
+        e = discord.Embed(color=purple())
         e.description = random.choice(places).replace("$", f"${pay}")
         guild_id = str(ctx.guild.id)
         if guild_id in self.extra_income:
