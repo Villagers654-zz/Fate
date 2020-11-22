@@ -157,7 +157,6 @@ class Custom(commands.Cog):
     @commands.cooldown(2, 5, commands.BucketType.user)
     async def tother(self, ctx):
         choices = [
-            "Fagitos",
             "https://discord.gg/BQ23Z2E",
             "Reeeeeeeeeeeeeeeeeeeeeee",
             "pUrE wHiTe pRiVelIdgEd mALe",
@@ -182,7 +181,6 @@ class Custom(commands.Cog):
             "warned for advertising",
             "jOiN sR",
             "6 million juice",
-            "The 7th SR Fag",
             "7th team lgbt",
             "DAiLy reMinDer sEx RoboTs coSt lesS thAn ReAl gRilLs",
             "elon's musk",
@@ -225,12 +223,6 @@ class Custom(commands.Cog):
     async def chaos(self, ctx):
         await ctx.send("*calling the chaotic god*")
         await ctx.send(self.bot.get_user(493082973906927616).mention)
-
-    @commands.command(name="trash")
-    @commands.cooldown(2, 5, commands.BucketType.user)
-    async def trash(self, ctx):
-        choices = ["the best piece of garbage faggot"]
-        await ctx.send(random.choice(choices))
 
     @commands.command(name="orange")
     @commands.cooldown(2, 5, commands.BucketType.user)
