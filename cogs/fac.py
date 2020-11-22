@@ -381,7 +381,7 @@ class FactionsRewrite(commands.Cog):
         await ctx.send(f"Converted {len(new_dict)} factions")
 
     @commands.group(name="factions", aliases=["f"])
-    @commands.cooldown(3, 5, commands.BucketType.user)
+    @commands.cooldown(4, 6, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
     async def factions(self, ctx):
@@ -1338,6 +1338,8 @@ class FactionsRewrite(commands.Cog):
             return await ctx.send(
                 f"You can't pay another faction more than 1/5th your balance, (${round(bal / 5)})."
             )
+        if amount <= 0:
+            return await ctx.send("Why tho..")
         self.factions[guild_id][target_fac]["balance"] += amount
         self.factions[guild_id][authors_fac]["balance"] -= amount
         return await ctx.send(f"Paid {target_fac} ${amount}")
@@ -1541,13 +1543,12 @@ class FactionsRewrite(commands.Cog):
                         pay = random.randint(1, 5)
                         self.factions[guild_id][faction]["balance"] += pay
                         await self.update_income_board(guild_id, faction, land_claims=pay)
-                        ally_pay = round(pay / 2) if pay > 1 else 0
                         for ally in list(self.factions[guild_id][faction]["allies"]):
                             if ally not in self.factions[guild_id]:
                                 self.factions[guild_id][faction]["allies"].remove(ally)
                                 continue
-                            self.factions[guild_id][ally]["balance"] += ally_pay
-                            await self.update_income_board(guild_id, ally, alliances=ally_pay)
+                            self.factions[guild_id][ally]["balance"] += 1
+                            await self.update_income_board(guild_id, ally, alliances=1)
 
 
 def setup(bot):
