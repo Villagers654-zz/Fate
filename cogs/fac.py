@@ -914,8 +914,8 @@ class FactionsRewrite(commands.Cog):
         co_owners = []
         for user_id in self.factions[guild_id][faction]["members"]:  # type: int
             user = self.bot.get_user(user_id)
-            if not isinstance(user, discord.User):
-                self.factions[guild_id][faction].remove(user_id)
+            if not isinstance(user, discord.User) and user_id != self.factions[guild_id][faction]["owner"]:
+                self.factions[guild_id][faction]["members"].remove(user_id)
                 await ctx.send(f"Can't find {await self.bot.fetch_user(user_id)}, kicked them from the faction")
                 await self.save_data()
                 continue
@@ -1011,7 +1011,8 @@ class FactionsRewrite(commands.Cog):
                 return await ctx.send("Alright.. maybe next time")
         if channel.id in claims:
             fac = claims[channel.id]["faction"]
-            self.factions[guild_id][fac]["claims"].remove(channel.id)
+            if channel.id in self.factions[guild_id][fac]["claims"]:
+                self.factions[guild_id][fac]["claims"].remove(channel.id)
         self.factions[guild_id][faction]["claims"].append(channel.id)
         self.factions[guild_id][faction]["balance"] -= cost
         await ctx.send(f"Claimed {channel.mention} for {faction}")
