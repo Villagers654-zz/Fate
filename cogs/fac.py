@@ -951,15 +951,24 @@ class FactionsRewrite(commands.Cog):
         if guild_id in self.extra_income:
             if faction in self.extra_income[guild_id]:
                 end_time = self.extra_income[guild_id][faction]  # type: float
-                active["Extra-Income"] = end_time - time()  # Remaining time
+                if end_time - time() <= 0:
+                    del self.boosts["extra-income"][guild_id][faction]
+                else:
+                    active["Extra-Income"] = end_time - time()  # Remaining time
         if guild_id in self.land_guard:
             if faction in self.land_guard[guild_id]:
                 end_time = self.land_guard[guild_id][faction]
-                active["Land-Guard"] = end_time - time()
+                if end_time - time() <= 0:
+                    del self.boosts["land-guard"][guild_id][faction]
+                else:
+                    active["Land-Guard"] = end_time - time()
         if guild_id in self.anti_raid:
             if faction in self.anti_raid[guild_id]:
                 end_time = self.anti_raid[guild_id][faction]
-                active["Anti-Raid"] = end_time - time()
+                if end_time - time() <= 0:
+                    del self.boosts["anti-raid"][guild_id][faction]
+                else:
+                    active["Anti-Raid"] = end_time - time()
         if active:
             boosts = "\n".join([
                 f"• {boost} - {self.bot.utils.get_time(remaining_seconds)}"
