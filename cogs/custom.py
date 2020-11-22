@@ -47,14 +47,6 @@ class Custom(commands.Cog):
         await ctx.send(random.choice(choices))
 
     @commands.command()
-    async def nigward(self, ctx):
-        e = discord.Embed(color=0xFF0000)
-        e.set_image(
-            url="https://cdn.discordapp.com/attachments/501492059765735426/505687664805281802/Nigward.jpg"
-        )
-        await ctx.send(embed=e)
-
-    @commands.command()
     async def agent(self, ctx):
         await ctx.send(
             random.choice(
