@@ -489,6 +489,8 @@ class AntiSpam(commands.Cog):
                                 triggered = True
                                 break
 
+            if guild_id not in self.toggle:
+                return
             if self.toggle[guild_id]['Inhuman'] and msg.content:
                 abcs = "abcdefghijklmnopqrstuvwxyzجحخهعغفقثصضشسيبلاتتمكطدظزوةىرؤءذئأإآ"
                 content = str(msg.content).lower()
