@@ -1072,7 +1072,10 @@ class Utility(commands.Cog):
             if not user:
                 return await ctx.send("User not found")
         e = discord.Embed(color=0x80B0FF)
-        e.set_image(url=user.avatar_url_as(format="png"))
+        if "gif" in user.avatar_url:
+            e.set_image(url=user.avatar_url)
+        else:
+            e.set_image(url=user.avatar_url_as(format="png"))
         await ctx.send(
             f"◈ {utils.cleanup_msg(ctx.message, user.display_name)}'s avatar ◈", embed=e
         )
