@@ -156,7 +156,6 @@ class HelpMenus:
         e.description = (
             "• **meme** - `sends a random meme`\n"
             "• **ld** - `detects if a users lying`\n"
-            "• **chatbot** - `bots are ppl too`\n"
             "• **fancify** - `makes text fancy`\n"
             "• **factions** - `work/claim/raid/grow`\n"
             "• **encode** - `encodes a msg in base64`\n"
