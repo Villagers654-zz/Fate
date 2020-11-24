@@ -11,23 +11,34 @@ class CaseManager(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    async def add_case(self, guild_id: int, user_id: int, action: str, reason: str, created_by: int):
+    async def add_case(self, guild_id: int, user_id, action: str, reason, link: str, created_by):
         async with self.bot.cursor() as cur:
-            await cur.execute(f"select count(*) from cases where guild_id = {guild_id}")
-            results = await cur.fetchone()
-            case_number = results[0] + 1
-            now = time()
             await cur.execute(
-                f"insert into cases "
-                f"values ("
-                f"{guild_id}, "
-                f"{user_id}, "
-                f"'{action}', "
-                f"'{reason}', "
-                f"{case_number}, "
-                f"{created_by}, "
-                f"{now}"
-                f");"
+                f"select case_number from cases "
+                f"where guild_id = {guild_id} "
+                f"order by case_number desc "
+                f"limit 1;"
+            )
+            results = await cur.fetchone()
+            if results:
+                case_number = results[0] + 1
+            else:
+                case_number = 1
+            now = time()
+            q = "'"
+            sql = f"insert into cases " \
+                  f"values (" \
+                  f"{guild_id}, " \
+                  f"{f'{q}{user_id}{q}' if user_id else 'null'}, " \
+                  f"'{action}', " \
+                  f"{f'{q}{reason}{q}' if reason else 'null'}, " \
+                  f"'{link}', " \
+                  f"{case_number}, " \
+                  f"{f'{q}{created_by}{q}' if created_by else 'null'}, " \
+                  f"{now}" \
+                  f");"
+            await cur.execute(
+                sql
             )
         return case_number
 
@@ -43,17 +54,18 @@ class CaseManager(commands.Cog):
             usr_id = ctx.message.raw_mentions[0] if ctx.message.raw_mentions else int(args)
             async with self.bot.cursor() as cur:
                 await cur.execute(
-                    f"select user_id, case_action, reason, case_number, created_by, created_at "
-                    f"from cases where guild_id = {guild_id} and user_id = {usr_id};"
+                    f"select user_id, case_action, reason, link, case_number, created_by, created_at "
+                    f"from cases where guild_id = {guild_id} and user_id = {usr_id} order by case_number desc;"
                 )
                 results = await cur.fetchall()
             if not results:
                 return await ctx.send("There are no mod logs for this server")
             lines = [
-                f"#{case_number}. {action} - from `{self.bot.get_user(created_by)}` - {reason}"
-                for i, (user_id, action, reason, case_number, created_by, created_at) in enumerate(sorted(
-                    results[:16], key=lambda kv: kv[5], reverse=True
-                ))
+                f"#{case_number}. [{action} - from `{self.bot.get_user(created_by)}`]" \
+                f"({link}){f' - {reason}' if reason else ''}"
+                for i, (user_id, action, reason, link, case_number, created_by, created_at) in enumerate(
+                    results[:16]
+                )
             ]
 
         # Get mod logs with a specific reason
@@ -61,34 +73,38 @@ class CaseManager(commands.Cog):
             query = f"%{args}%"
             async with self.bot.cursor() as cur:
                 await cur.execute(
-                    f"select user_id, case_action, reason, case_number, created_by, created_at "
-                    f"from cases where guild_id = {guild_id} and reason like '{query}';"
+                    f"select user_id, case_action, reason, link, case_number, created_by, created_at "
+                    f"from cases where guild_id = {guild_id} and reason like '{query}' order by case_number desc;"
                 )
                 results = await cur.fetchall()
             if not results:
                 return await ctx.send("There are no mod logs for this server")
             lines = [
-                f"#{case_number}. `{self.bot.get_user(user_id)}` - {action} - from `{self.bot.get_user(created_by)}` - {reason}"
-                for i, (user_id, action, reason, case_number, created_by, created_at) in enumerate(sorted(
-                    results[:16], key=lambda kv: kv[5], reverse=True
-                ))
+                f"#{case_number}. {f'`{self.bot.get_user(user_id)}` - ' if user_id else ''}" \
+                f"[{action}{f' - from `{self.bot.get_user(created_by)}`' if created_by else ''}]" \
+                f"({link}){f' - {reason}' if reason else ''}"
+                for i, (user_id, action, reason, link, case_number, created_by, created_at) in enumerate(
+                    results[:16]
+                )
             ]
 
         # Get all the mod logs
         else:
             async with self.bot.cursor() as cur:
                 await cur.execute(
-                    f"select user_id, case_action, reason, case_number, created_by, created_at "
-                    f"from cases where guild_id = {guild_id};"
+                    f"select user_id, case_action, reason, link, case_number, created_by, created_at "
+                    f"from cases where guild_id = {guild_id} order by case_number desc;"
                 )
                 results = await cur.fetchall()
             if not results:
                 return await ctx.send("There are no mod logs for this server")
             lines = [
-                f"#{case_number}. `{self.bot.get_user(user_id)}` - {action} - from `{self.bot.get_user(created_by)}` - {reason}"
-                for i, (user_id, action, reason, case_number, created_by, created_at) in enumerate(sorted(
-                    results[:16], key=lambda kv: kv[5], reverse=True
-                ))
+                f"#{case_number}. {f'`{self.bot.get_user(user_id)}` - ' if user_id else ''}" \
+                f"[{action}{f' - from `{self.bot.get_user(created_by)}`' if created_by else ''}]" \
+                f"({link}){f' - {reason}' if reason else ''}"
+                for i, (user_id, action, reason, link, case_number, created_by, created_at) in enumerate(
+                    results[:16]
+                )
             ]
 
         embeds = []
@@ -169,6 +185,29 @@ class CaseManager(commands.Cog):
             await msg.edit(embed=embeds[index])
             self.bot.loop.create_task(msg.remove_reaction(reaction, ctx.author))
 
+    @commands.command(name="del-log", aliases=["del_log", "dellog", "del-modlog"])
+    @commands.cooldown(2, 5, commands.BucketType.user)
+    @commands.guild_only()
+    @commands.has_permissions(administrator=True)
+    async def del_log(self, ctx, case_number: int):
+        guild_id = str(ctx.guild.id)
+        async with self.bot.cursor() as cur:
+            await cur.execute(
+                f"select case_number from cases "
+                f"where guild_id = {guild_id} "
+                f"and case_number = {case_number} "
+                f"limit 1;"
+            )
+            results = await cur.fetchone()
+            if not results:
+                return await ctx.send("There is no case by that number")
+            await cur.execute(
+                f"delete from cases "
+                f"where guild_id = {guild_id} "
+                f"and case_number = {case_number} "
+                f"limit 1;"
+            )
+        await ctx.send(f"Deleted case #{case_number}")
 
 
 def setup(bot):

@@ -707,9 +707,11 @@ class Moderation(commands.Cog):
                                 removed_roles.append(role.id)
                 return None
 
+            case = await self.cases.add_case(ctx.guild.id, user.id, "mute", reason, ctx.message.jump_url, ctx.author.id)
+
             if not timers:
                 await user.add_roles(mute_role)
-                await ctx.send(f"Muted {user.display_name} for {reason}")
+                await ctx.send(f"Muted {user.display_name} for {reason} [Case #{case}]")
                 await ensure_muted()
                 return None
 
@@ -728,9 +730,9 @@ class Moderation(commands.Cog):
                 "removed_roles": removed_roles,
             }
             if updated:
-                await ctx.send(f"Updated the mute for **{user.name}** to {expanded_timer} for {reason}")
+                await ctx.send(f"Updated the mute for **{user.name}** to {expanded_timer} for {reason} [Case #{case}]")
             else:
-                await ctx.send(f"Muted **{user.name}** for {expanded_timer} for {reason}")
+                await ctx.send(f"Muted **{user.name}** for {expanded_timer} for {reason} [Case #{case}]")
 
             user_id = str(user.id)
             self.config[guild_id]["mute_timers"][user_id] = timer_info
@@ -769,7 +771,7 @@ class Moderation(commands.Cog):
     @commands.guild_only()
     @has_required_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
-    async def unmute(self, ctx, user: discord.Member = None):
+    async def unmute(self, ctx, user: discord.Member = None, *, reason = "Unspecified"):
         if not user:
             return await ctx.send("**Unmute Usage:**\n.unmute {@user}")
         if (
@@ -806,7 +808,8 @@ class Moderation(commands.Cog):
             del self.tasks[guild_id][user_id]
             if not self.tasks[guild_id]:
                 del self.tasks[guild_id]
-        await ctx.send(f"Unmuted {user.name}")
+        case = await self.cases.add_case(ctx.guild.id, user.id, "unmute", reason, ctx.message.jump_url, ctx.author.id)
+        await ctx.send(f"Unmuted {user.name} [Case #{case}]")
 
     @commands.command(name="kick")
     @commands.cooldown(*utils.default_cooldown())
@@ -831,7 +834,10 @@ class Moderation(commands.Cog):
                 await member.kick(
                     reason=f"Kicked by {ctx.author} with ID: {ctx.author.id} for {reason}"
                 )
-                e.description += f"✅ {member}"
+                case = await self.cases.add_case(
+                    ctx.guild.id, member.id, "kick", reason, ctx.message.jump_url, ctx.author.id
+                )
+                e.description += f"✅ {member} [Case #{case}]"
             if i % 2 == 0 and i != len(members) - 1:
                 await msg.edit(embed=e)
         await msg.edit(embed=e)
@@ -895,8 +901,11 @@ class Moderation(commands.Cog):
                 await ctx.guild.ban(
                     user, reason=f"{ctx.author}: {reason}", delete_message_days=0
                 )
+                case = await self.cases.add_case(
+                    ctx.guild.id, user.id, "ban", reason, ctx.message.jump_url, ctx.author.id
+                )
                 e.add_field(
-                    name=f"◈ Banned {user}", value=f"Reason: {reason}", inline=False
+                    name=f"◈ Banned {user} [Case #{case}]", value=f"Reason: {reason}", inline=False
                 )
             await msg.edit(embed=e)
         for user in users:
@@ -921,8 +930,11 @@ class Moderation(commands.Cog):
             await ctx.guild.ban(
                 user, reason=f"{ctx.author}: {reason}", delete_message_days=0
             )
+            case = await self.cases.add_case(
+                ctx.guild.id, user.id, "ban", reason, ctx.message.jump_url, ctx.author.id
+            )
             e.add_field(
-                name=f"◈ Banned {user}", value=f"Reason: {reason}", inline=False
+                name=f"◈ Banned {user} [Case #{case}]", value=f"Reason: {reason}", inline=False
             )
         if not e.fields:
             e.colour = colors.red()
@@ -950,8 +962,11 @@ class Moderation(commands.Cog):
                 )
             except discord.errors.NotFound:
                 return await ctx.send("That user isn't banned")
+            case = await self.cases.add_case(
+                ctx.guild.id, user.id, "unban", str(ctx.author), ctx.message.jump_url, ctx.author.id
+            )
             e = discord.Embed(color=colors.red())
-            e.set_author(name=f"{user} unbanned", icon_url=user.avatar_url)
+            e.set_author(name=f"{user} unbanned [Case #{case}]", icon_url=user.avatar_url)
             await ctx.send(embed=e)
         else:
             e = discord.Embed(color=colors.green())
@@ -962,7 +977,17 @@ class Moderation(commands.Cog):
             msg = await ctx.send(embed=e)
             index = 1
             for user in users:
-                e.description += f"✅ {user}"
+                try:
+                    await ctx.guild.unban(
+                        user, reason=reason.replace(":author:", str(ctx.author))
+                    )
+                except discord.errors.NotFound:
+                    e.description += f"Couldn't unban {user}"
+                    continue
+                case = await self.cases.add_case(
+                    ctx.guild.id, user.id, "unban", str(ctx.author), ctx.message.jump_url, ctx.author.id
+                )
+                e.description += f"✅ {user} [Case #{case}]"
                 if index == 5:
                     await msg.edit(embed=e)
                     index = 1
@@ -1003,6 +1028,9 @@ class Moderation(commands.Cog):
             )
         else:
             msg = await ctx.send(embed=gen_embed(0))
+        await self.cases.add_case(
+            ctx.guild.id, None, "mass-nick", nick, msg.jump_url, ctx.author.id
+        )
         async with ctx.typing():
             react = await msg.add_reaction("❌")
             i = 0
@@ -1103,6 +1131,9 @@ class Moderation(commands.Cog):
             )
         else:
             msg = await ctx.send(embed=gen_embed(0))
+        await self.cases.add_case(
+            ctx.guild.id, None, "mass-role", role.mention, msg.jump_url, ctx.author.id
+        )
         async with ctx.typing():
             react = await msg.add_reaction("❌")
             i = 0
@@ -1201,7 +1232,7 @@ class Moderation(commands.Cog):
             msg = f"Gave **{role.name}** to **@{user.name}**"
         await ctx.send(msg)
 
-    async def warn_user(self, channel, user, reason):
+    async def warn_user(self, channel, user, reason, context):
         guild = channel.guild
         guild_id = str(guild.id)
         user_id = str(user.id)
@@ -1253,6 +1284,10 @@ class Moderation(commands.Cog):
                 e.description += f"**Reason:** [`{reason}`]"
             if next_punishment != "None":
                 e.description += f"\n**Next Punishment:** [`{next_punishment}`]"
+        case = await self.cases.add_case(
+            int(guild_id), user.id, "warn", reason, context.message.jump_url, context.author.id
+        )
+        e.description += f" [Case #{case}]"
         if punishment != "None" and next_punishment != "None":
             e.add_field(name="Reason", value=reason, inline=False)
         await channel.send(embed=e)
@@ -1343,9 +1378,9 @@ class Moderation(commands.Cog):
             if ctx.author.id != ctx.guild.owner.id:
                 if user.top_role.position >= ctx.author.top_role.position:
                     await ctx.send(f"{user.name} is above your paygrade, take a seat")
-            await self.warn_user(ctx.channel, user, reason)
+            await self.warn_user(ctx.channel, user, reason, ctx)
 
-    @commands.command(name="delwarn")
+    @commands.command(name="delwarn", aliases=["del-warn"])
     @commands.cooldown(*utils.default_cooldown())
     @check_if_running()
     @has_warn_permission()
@@ -1385,6 +1420,9 @@ class Moderation(commands.Cog):
                             self.config[guild_id]["warns"][user_id].remove(
                                 [reason, warn_time]
                             )
+                            await self.cases.add_case(
+                                ctx.guild.id, int(user_id), "del-warn", reason, ctx.message.jump_url, ctx.author.id
+                            )
                             await self.save_data()
                             await ctx.message.delete()
                             await msg.delete()
@@ -1392,7 +1430,7 @@ class Moderation(commands.Cog):
                             await msg.delete()
                         break
 
-    @commands.command(name="clearwarns")
+    @commands.command(name="clearwarns", aliases=["clear-warns"])
     @commands.cooldown(*utils.default_cooldown())
     @check_if_running()
     @has_warn_permission()
@@ -1409,7 +1447,10 @@ class Moderation(commands.Cog):
             ):
                 return await ctx.send(f"{user} is above your paygrade, take a seat")
             del self.config[guild_id]["warns"][user_id]
-            await ctx.send(f"Cleared {user}'s warns")
+            case = await self.cases.add_case(
+                ctx.guild.id, user.id, "clear-warns", str(ctx.author), ctx.message.jump_url, ctx.author.id
+            )
+            await ctx.send(f"Cleared {user}'s warns [Case #{case}]")
             await self.save_data()
 
     @commands.command(name="warns")
