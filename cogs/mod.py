@@ -147,6 +147,10 @@ class Moderation(commands.Cog):
             "mute_timers": {},
         }
 
+    @property
+    def cases(self):
+        return self.bot.cogs["CaseManager"]
+
     async def save_data(self):
         await self.bot.save_json(self.path, self.config)
 

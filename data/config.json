@@ -57,6 +57,7 @@
     "archive",
     "audit",
     "autorole",
+    "case_manager",
     "chatfilter",
     "chatlock",
     "clean_rythm",
