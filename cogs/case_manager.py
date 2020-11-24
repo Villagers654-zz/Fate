@@ -88,6 +88,7 @@ class CaseManager(commands.Cog):
                     results[:16], key=lambda kv: kv[5], reverse=True
                 ))
             ]
+
         e = discord.Embed(color=self.bot.theme_color)
         e.description = "\n".join(lines)[:2000]
         await ctx.send(embed=e)
