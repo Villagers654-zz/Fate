@@ -842,7 +842,7 @@ class Moderation(commands.Cog):
                 await msg.edit(embed=e)
         await msg.edit(embed=e)
 
-    @commands.command(name="ban")
+    @commands.command(name="ban", aliases=["yeet"])
     @commands.cooldown(2, 10, commands.BucketType.guild)
     @check_if_running()
     @commands.guild_only()
