@@ -104,8 +104,7 @@ class CaseManager(commands.Cog):
 
             lines = [
                 f"**Case #{case_number}.** {f'**`{str(self.bot.get_user(user_id))}`** - ' if user_id else ''}" \
-                f"[{action}]({link}){nl + '• From' if any_large((user_id, created_by)) else ' - from'}" \
-                f"{f' **{self.bot.get_user(created_by)}**' if created_by else ''}" \
+                f"[{action}]({link}){f' - **{self.bot.get_user(created_by)}**' if created_by else ''}" \
                 f"\n> `{reason if has_value(reason) else 'unspecified reason'}`"
                 # f"{f'{nl}> `{reason}`' if has_value(reason) else nl}"
                 for i, (user_id, action, reason, link, case_number, created_by, created_at) in enumerate(
