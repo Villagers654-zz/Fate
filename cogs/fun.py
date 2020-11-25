@@ -390,6 +390,10 @@ class Fun(commands.Cog):
         )
         await ctx.message.delete()
 
+        @commands.command()
+        async def pain(self, ctx):
+            await ctx.send("Spain but the s is silent")
+
     @commands.command()
     async def choose(self, ctx, *choices: str):
         if len(choices) < 2:
