@@ -48,6 +48,9 @@ class CaseManager(commands.Cog):
     @commands.bot_has_permissions(embed_links=True)
     async def mod_logs(self, ctx, *, args = None):
         guild_id = str(ctx.guild.id)
+        has_value = lambda value: value and value != "None" and value != "Unspecified"
+        any_large = lambda values: any(len(str(self.bot.get_user(v))) > 10 for v in values)
+        nl = "\n"
 
         # Get logs from a specific user
         if ctx.message.raw_mentions or (args.isdigit() if args else False):
@@ -59,10 +62,10 @@ class CaseManager(commands.Cog):
                 )
                 results = await cur.fetchall()
             if not results:
-                return await ctx.send("There are no mod logs for this server")
+                return await ctx.send("There are no mod logs for that user")
             lines = [
-                f"#{case_number}. [{action} - from `{self.bot.get_user(created_by)}`]" \
-                f"({link}){f' - {reason}' if reason else ''}"
+                f"#{case_number}. [{action}]({link}) - from `{self.bot.get_user(created_by)}`" \
+                f"{f'{nl}>  {reason}' if has_value(reason) else ''}"
                 for i, (user_id, action, reason, link, case_number, created_by, created_at) in enumerate(
                     results[:16]
                 )
@@ -78,11 +81,11 @@ class CaseManager(commands.Cog):
                 )
                 results = await cur.fetchall()
             if not results:
-                return await ctx.send("There are no mod logs for this server")
+                return await ctx.send("There are no mod logs for that reason")
             lines = [
                 f"#{case_number}. {f'`{self.bot.get_user(user_id)}` - ' if user_id else ''}" \
-                f"[{action}{f' - from `{self.bot.get_user(created_by)}`' if created_by else ''}]" \
-                f"({link}){f' - {reason}' if reason else ''}"
+                f"[{action}]({link}){f' - from `{self.bot.get_user(created_by)}`' if created_by else ''}" \
+                f"{f'{nl}> {reason}' if has_value(reason) else ''}"
                 for i, (user_id, action, reason, link, case_number, created_by, created_at) in enumerate(
                     results[:16]
                 )
@@ -97,11 +100,14 @@ class CaseManager(commands.Cog):
                 )
                 results = await cur.fetchall()
             if not results:
-                return await ctx.send("There are no mod logs for this server")
+                return await ctx.send("There are no mod logs in this server")
+
             lines = [
-                f"#{case_number}. {f'`{self.bot.get_user(user_id)}` - ' if user_id else ''}" \
-                f"[{action}{f' - from `{self.bot.get_user(created_by)}`' if created_by else ''}]" \
-                f"({link}){f' - {reason}' if reason else ''}"
+                f"**Case #{case_number}.** {f'**`{str(self.bot.get_user(user_id))}`** - ' if user_id else ''}" \
+                f"[{action}]({link}){nl + '• From' if any_large((user_id, created_by)) else ' - from'}" \
+                f"{f' **{self.bot.get_user(created_by)}**' if created_by else ''}" \
+                f"\n> `{reason if has_value(reason) else 'unspecified reason'}`"
+                # f"{f'{nl}> `{reason}`' if has_value(reason) else nl}"
                 for i, (user_id, action, reason, link, case_number, created_by, created_at) in enumerate(
                     results[:16]
                 )
@@ -109,10 +115,10 @@ class CaseManager(commands.Cog):
 
         embeds = []
         e = discord.Embed(color=self.bot.theme_color)
-        e.set_author(name="Mod Logs", icon_url=ctx.guild.icon_url)
+        e.set_author(name="Moderation Logs", icon_url=ctx.guild.icon_url)
         e.description = ""
         for i, line in enumerate(lines):
-            if i != 0 and i % 14 == 0:
+            if i != 0 and i % 9 == 0:
                 embeds.append(e)
                 e = discord.Embed(color=self.bot.theme_color)
                 e.set_author(name="Mod Logs", icon_url=ctx.guild.icon_url)
