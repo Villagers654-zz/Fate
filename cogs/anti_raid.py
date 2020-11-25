@@ -102,18 +102,23 @@ class AntiRaid(commands.Cog):
             if not required_permission:
                 return
             if guild_id in self.locked:
-                await m.guild.ban(
-                    m, reason="Server locked due to raid", delete_message_days=0
-                )
                 try:
                     await m.send(
                         f"**{m.guild.name}** is currently locked due to an "
                         f"attempted raid, you can try rejoining in an hour"
                     )
+                    await m.guild.ban(
+                        m, reason="Server locked due to raid", delete_message_days=0
+                    )
                 except discord.DiscordException:
                     pass
-                await asyncio.sleep(3600)
-                return await m.guild.unban(m, reason="Server locked due to raid")
+                else:
+                    await asyncio.sleep(3600)
+                    try:
+                        await m.guild.unban(m, reason="Server locked due to raid")
+                    except (discord.errors.Forbidden, discord.errors.NotFound):
+                        pass
+                return
             if m.bot:
                 return
             if guild_id not in self.last:

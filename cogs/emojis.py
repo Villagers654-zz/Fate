@@ -18,22 +18,6 @@ class Emojis(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    def is_blacklisted(self, ctx, emoji) -> bool:
-        return False
-        if ctx.author.id in self.bot.owner_ids:
-            return False
-        servers = [470961230362837002, 397415086295089155]
-        blacklist = []
-        for server_id in servers:
-            server = self.bot.get_guild(server_id)
-            if isinstance(server, discord.Guild):
-                for emote in server.emojis:
-                    blacklist.append(emote.id)
-        if isinstance(emoji, discord.PartialEmoji):
-            return emoji.id in blacklist
-        elif isinstance(emoji, str):
-            return any(str(emoji_id) in emoji for emoji_id in blacklist)
-
     def cleanup_text(self, text: str):
         """cleans text to avoid errors when creating emotes"""
         if isinstance(text, list):
@@ -160,10 +144,10 @@ class Emojis(commands.Cog):
             return len(ctx.guild.emojis) >= limit * 2
 
         def total_emotes() -> int:
-            return len([emoji for emoji in ctx.guild.emojis if not emoji.animated])
+            return len([emote for emote in ctx.guild.emojis if not emoji.animated])
 
         def total_animated() -> int:
-            return len([emoji for emoji in ctx.guild.emojis if emoji.animated])
+            return len([emote for emote in ctx.guild.emojis if emoji.animated])
 
         # Handle emoji limitations
         if at_emoji_limit():
@@ -198,11 +182,6 @@ class Emojis(commands.Cog):
                         ctx.msg = await self.bot.utils.update_msg(
                             ctx.msg, f"Emote Limit Reached"
                         )
-                    continue
-                if self.is_blacklisted(ctx, emoji):
-                    ctx.msg = await self.bot.utils.update_msg(
-                        ctx.msg, f"{emoji.name} - Blacklisted Emoji"
-                    )
                     continue
                 name = emoji.name
                 img = await self.bot.download(emoji.url)
@@ -263,6 +242,7 @@ class Emojis(commands.Cog):
                 return "."
             return args[it + 1]
 
+        mappings = {}
         try:
             mappings = {
                 await self.bot.download(arg): check(it)

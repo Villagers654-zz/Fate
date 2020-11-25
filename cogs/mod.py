@@ -543,7 +543,8 @@ class Moderation(commands.Cog):
             mute_role = guild.get_role(self.config[guild_id]["mute_role"])
             if not mute_role:
                 self.config[guild_id]["mute_role"] = None
-                del self.config[guild_id]["mute_timers"][user_id]
+                if user_id in self.config[guild_id]["mute_timers"]:
+                    del self.config[guild_id]["mute_timers"][user_id]
                 return
             if mute_role in user.roles:
                 channel = self.bot.get_channel(timer_info["channel"])
