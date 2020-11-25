@@ -396,6 +396,11 @@ class Fun(commands.Cog):
         await ctx.send("Spain but the s is silent")
 
     @commands.command()
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def spain(self, ctx):
+        await ctx.send("Pain but with an s")
+
+    @commands.command()
     async def choose(self, ctx, *choices: str):
         if len(choices) < 2:
             return await ctx.send("You need to provide at least 2 choices when running this command")
