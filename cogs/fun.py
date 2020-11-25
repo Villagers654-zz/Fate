@@ -391,6 +391,7 @@ class Fun(commands.Cog):
         await ctx.message.delete()
 
     @commands.command()
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def pain(self, ctx):
         await ctx.send("Spain but the s is silent")
 
