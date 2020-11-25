@@ -137,7 +137,7 @@ class Utils(commands.Cog):
                     return
                 try:
                     await message.add_reaction(emoji)
-                except discord.errors.NotFound:
+                except (discord.errors.NotFound, discord.errors.Forbidden):
                     return
                 if len(options) > 5:
                     await asyncio.sleep(1)
