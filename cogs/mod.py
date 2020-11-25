@@ -687,8 +687,6 @@ class Moderation(commands.Cog):
                     self.tasks[guild_id][user_id].cancel()
                     del self.tasks[guild_id][user_id]
                     updated = True
-                else:
-                    return await ctx.send(f'{user.display_name} is already muted')
             removed_roles = []
 
             async def ensure_muted():
@@ -808,8 +806,7 @@ class Moderation(commands.Cog):
             del self.tasks[guild_id][user_id]
             if not self.tasks[guild_id]:
                 del self.tasks[guild_id]
-        case = await self.cases.add_case(ctx.guild.id, user.id, "unmute", reason, ctx.message.jump_url, ctx.author.id)
-        await ctx.send(f"Unmuted {user.name} [Case #{case}]")
+        await ctx.send(f"Unmuted {user.name}")
 
     @commands.command(name="kick")
     @commands.cooldown(*utils.default_cooldown())
@@ -1029,7 +1026,7 @@ class Moderation(commands.Cog):
         else:
             msg = await ctx.send(embed=gen_embed(0))
         await self.cases.add_case(
-            ctx.guild.id, None, "mass-nick", nick, msg.jump_url, ctx.author.id
+            ctx.guild.id, ctx.author.id, "massnick", nick, msg.jump_url, ctx.author.id
         )
         async with ctx.typing():
             react = await msg.add_reaction("❌")
@@ -1105,7 +1102,6 @@ class Moderation(commands.Cog):
 
         role = role.lstrip("+")
         action = "Adding"
-        i = 0
         if role.startswith("-"):
             action = "Removing"
             role = role.lstrip("-")
@@ -1132,7 +1128,7 @@ class Moderation(commands.Cog):
         else:
             msg = await ctx.send(embed=gen_embed(0))
         await self.cases.add_case(
-            ctx.guild.id, None, "mass-role", role.mention, msg.jump_url, ctx.author.id
+            ctx.guild.id, ctx.author.id, "massrole", role.mention, msg.jump_url, ctx.author.id
         )
         async with ctx.typing():
             react = await msg.add_reaction("❌")
@@ -1420,9 +1416,6 @@ class Moderation(commands.Cog):
                             self.config[guild_id]["warns"][user_id].remove(
                                 [reason, warn_time]
                             )
-                            await self.cases.add_case(
-                                ctx.guild.id, int(user_id), "del-warn", reason, ctx.message.jump_url, ctx.author.id
-                            )
                             await self.save_data()
                             await ctx.message.delete()
                             await msg.delete()
@@ -1447,10 +1440,7 @@ class Moderation(commands.Cog):
             ):
                 return await ctx.send(f"{user} is above your paygrade, take a seat")
             del self.config[guild_id]["warns"][user_id]
-            case = await self.cases.add_case(
-                ctx.guild.id, user.id, "clear-warns", str(ctx.author), ctx.message.jump_url, ctx.author.id
-            )
-            await ctx.send(f"Cleared {user}'s warns [Case #{case}]")
+            await ctx.send(f"Cleared {user}'s warns")
             await self.save_data()
 
     @commands.command(name="warns")
