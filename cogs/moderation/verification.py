@@ -13,7 +13,7 @@ from discord.errors import *
 
 from fate import Fate
 from utils import colors
-from cogs.utils import Utils as utils
+from cogs.core.utils import Utils as utils
 
 
 class Verification(commands.Cog):

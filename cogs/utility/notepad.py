@@ -10,7 +10,7 @@ from discord.ext import commands
 import discord
 from PIL import Image, ImageDraw, ImageFont
 
-from utils import utils
+from cogs.core.utils import Utils as utils
 
 
 class NotePad(commands.Cog):

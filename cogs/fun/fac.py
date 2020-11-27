@@ -125,10 +125,12 @@ class FactionsRewrite(commands.Cog):
         if guild_id not in self.factions:
             self.factions[guild_id] = {}
 
-    def get_factions_icon(self, ctx, faction: str) -> str:
+    def get_factions_icon(self, ctx, faction: str):
         """Returns an icon for the faction"""
 
         guild_id = str(ctx.guild.id)
+        if not faction:
+            return None
         if self.factions[guild_id][faction]["icon"]:
             return self.factions[guild_id][faction]["icon"]
 
@@ -253,7 +255,7 @@ class FactionsRewrite(commands.Cog):
 
             return fac_claims
 
-        if faction:
+        if faction and faction is not None:
             return await claims(faction)
         global_claims = {}
         for faction in list(self.factions[guild_id].keys()):

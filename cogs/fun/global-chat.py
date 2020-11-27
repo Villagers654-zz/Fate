@@ -5,14 +5,13 @@ import json
 import aiohttp
 import asyncio
 from time import time
-import re
 
 from discord.ext import commands
 from discord import Webhook, AsyncWebhookAdapter
 import discord
 
 from utils import colors, config
-from cogs.utils import Utils as utils
+from cogs.core.utils import Utils as utils
 
 
 def toggle_webhook_check():

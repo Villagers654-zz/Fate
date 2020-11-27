@@ -18,8 +18,8 @@ from discord.errors import NotFound, Forbidden, HTTPException
 
 from utils import auth, colors, checks
 from utils.custom_logging import Logging
-from cogs.utils import Utils, Cache, CacheWriter
-from cogs.tasks import Tasks
+from cogs.core.utils import Utils, Cache, CacheWriter
+from cogs.core.tasks import Tasks
 
 
 class EmptyException(Exception):
@@ -40,10 +40,6 @@ class Fate(commands.AutoShardedBot):
         self.theme_color = self.config["theme_color"]
 
         self.pool = None  # MySQL Pool initialized on_ready
-        self.tcp_servers = {  # Socket servers for web panel
-            "logger": None,
-            "levels": None,
-        }
         self.lavalink = None  # Music server
         self.login_errors = []  # Exceptions ignored during startup
         self.logs = []  # Logs to send to discord, empties out quickly
@@ -118,12 +114,6 @@ class Fate(commands.AutoShardedBot):
                 "disable": None,
             },
         }
-
-        if not self.config["original_bot"]:
-            original_only = ["polis", "dev", "backup"]
-            for ext in original_only:
-                if ext in self.config["extensions"]:
-                    self.config["extensions"].remove(ext)
 
         self.log = Logging(bot=self)         # Class to handle printing/logging
 
@@ -380,7 +370,11 @@ class Fate(commands.AutoShardedBot):
     def run(self):
         if self.config["extensions"]:
             self.log.info("Loading initial cogs", color="yellow")
-            self.load(*self.config["extensions"])
+            extensions = []
+            for category, cogs in self.config["extensions"].items():
+                for cog in cogs:
+                    extensions.append(f"{category}.{cog}")
+            self.load(*extensions)
             self.log.info("Finished loading initial cogs\nLogging in..", color="yellow")
         cipher = auth.Tokens()
         if self.config["token_encryption"]:

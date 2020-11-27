@@ -16,7 +16,7 @@ import discord
 from PIL import Image, ImageFont, ImageDraw, ImageSequence, UnidentifiedImageError
 
 from utils import colors
-from cogs.utils import Utils as utils
+from cogs.core.utils import Utils as utils
 
 
 def profile_help():

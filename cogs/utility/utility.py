@@ -22,7 +22,7 @@ import psutil
 from discord.ext import commands
 
 from utils import colors, config
-from cogs.utils import Utils as utils
+from cogs.core.utils import Utils as utils
 
 
 class SatisfiableChannel(commands.Converter):
@@ -1072,7 +1072,7 @@ class Utility(commands.Cog):
             if not user:
                 return await ctx.send("User not found")
         e = discord.Embed(color=0x80B0FF)
-        if "gif" in user.avatar_url:
+        if "gif" in str(user.avatar_url):
             e.set_image(url=str(user.avatar_url))
         else:
             e.set_image(url=user.avatar_url_as(format="png"))
