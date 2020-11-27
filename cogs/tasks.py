@@ -7,10 +7,10 @@ import time
 from datetime import datetime, timedelta
 from zipfile import ZipFile
 import json
+import subprocess
 
 import discord
 from discord.ext import commands, tasks
-import pysftp
 
 from utils import auth
 
@@ -186,7 +186,6 @@ class Tasks(commands.Cog):
     @tasks.loop(seconds=1)
     async def auto_backup(self):
         """Backs up files every x seconds and keeps them for x days"""
-
         def get_all_file_paths(directory):
             file_paths = []
             for root, directories, files in os.walk(directory):
@@ -196,25 +195,17 @@ class Tasks(commands.Cog):
                         file_paths.append(filepath)
             return file_paths
 
-        await asyncio.sleep(
-            60 * 60  # 1 hour
-            * self.bot.config["backup_every_?_hours"]
-        )
-        before = time.monotonic()
-        keep_for = self.bot.config["keep_backups_for_?_days"]
-
         def copy_files():
             # Copy all data to the ZipFile
-            file_path = os.path.join(self.bot.config["backups_location"], "files")
-            db_path = os.path.join(self.bot.config["backups_location"], "db")
+            path = os.path.join(self.bot.config["backups_location"], "local")
             file_paths = get_all_file_paths("./data")
-            fp = os.path.join(file_path, f"backup_{datetime.now()}.zip")
+            fp = os.path.join(path, f"backup_{datetime.now()}.zip")
 
             with ZipFile(fp, "w") as _zip:
                 for file in file_paths:
                     _zip.write(file)
 
-            for backup in os.listdir(file_path):
+            for backup in os.listdir(path):
                 backup_time = datetime.strptime(
                     backup.split("_")[1].strip(".zip"), "%Y-%m-%d %H:%M:%S.%f"
                 )
@@ -222,7 +213,28 @@ class Tasks(commands.Cog):
                     os.remove(backup)
                     self.bot.log.info(f"Removed backup {backup}")
 
+        await asyncio.sleep(
+            60 * 60  # 1 hour
+            * self.bot.config["backup_every_?_hours"]
+        )
+        keep_for = self.bot.config["keep_backups_for_?_days"]
+        creds = auth.MySQL()
 
+        # Backup MySQL DB
+        before = time.monotonic()
+        db_path = os.path.join(self.bot.config["backups_location"], "db")
+        fp = os.path.join(db_path, f"backup_{datetime.now()}.sql")
+        process = subprocess.Popen(
+            f"mysqldump -u root -p{creds.password} fate > '{fp}'",
+            shell=True
+        )
+        while not process.poll():
+            await asyncio.sleep(0.21)
+        ping = round((time.monotonic() - before) * 1000)
+        self.bot.log.info(f"Backed up SQL Database: {ping}ms")
+
+        # Backup Local Files
+        before = time.monotonic()
         await self.bot.loop.run_in_executor(None, copy_files)
         ping = round((time.monotonic() - before) * 1000)
         self.bot.log(f"Ran Automatic Backup: {ping}ms")

@@ -9,7 +9,7 @@
   "token_id": "fate",
   "token_encryption": true,
   "datastore_location": "./data",
-  "backups_location": "/mnt/drive3/LucksBackups/Fate",
+  "backups_location": "/mnt/drive3/luck/Fate",
   "backup_every_?_hours": 6,
   "keep_backups_for_?_days": 7,
 
