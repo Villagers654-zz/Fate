@@ -11,6 +11,7 @@ import asyncio
 class Custom(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.hidden = True
 
     @staticmethod
     def luck(ctx):
@@ -19,6 +20,15 @@ class Custom(commands.Cog):
     @staticmethod
     def tm(ctx):
         return ctx.author.id in [264838866480005122, 355026215137968129]
+
+    @commands.command(name="kaizen")
+    @commands.cooldown(1, 15, commands.BucketType.channel)
+    async def kaizen(self, ctx):
+        await ctx.send("some seals are on the brink of extinction due to climate change such as: the bearded and ringed seal")
+
+    @commands.command(name="sploop")
+    async def sploop(self, ctx):
+        await ctx.send("https://cdn.discordapp.com/avatars/677306009957433404/8a0d8f14aec36096b3de0c9b8be52cd5.png?size=1024")
 
     @commands.command(name="pog", aliases=["pog.", "poggers"])
     @commands.cooldown(1, 5, commands.BucketType.channel)
