@@ -65,6 +65,7 @@
       "utils"
     ],
     "dev": [
+      "custom",
       "dev",
       "reload",
       "secure_overwrites",
@@ -72,9 +73,7 @@
     ],
     "fun": [
       "actions",
-      "chatbridges",
       "cookies",
-      "custom",
       "fac",
       "fun",
       "global-chat",
