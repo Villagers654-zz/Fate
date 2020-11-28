@@ -213,14 +213,31 @@ class Tasks(commands.Cog):
                     os.remove(backup)
                     self.bot.log.info(f"Removed backup {backup}")
 
-        await asyncio.sleep(
-            60 * 60  # 1 hour
-            * self.bot.config["backup_every_?_hours"]
-        )
-        keep_for = self.bot.config["keep_backups_for_?_days"]
-        creds = auth.MySQL()
-
+        sleep_for = self.bot.config["backup_every_?_hours"] * 60 * 60
         try:
+            local_fp = os.path.join(self.bot.config["backups_location"], "local")
+            if os.listdir(local_fp):
+                last_backed_up = datetime.strptime(
+                     os.listdir(local_fp)[0].split("_")[1].strip(".zip"), "%Y-%m-%d %H:%M:%S.%f"
+                 )
+                time_since = (datetime.now() - last_backed_up).seconds
+                remaining_sleep = sleep_for - time_since
+
+                # Run a backup because it's been greater than the interval to do backups
+                if remaining_sleep <= 0:
+                    expanded_form = self.bot.utils.get_time(int(str(remaining_sleep).lstrip('-')))
+                    self.bot.log.info(f"It's been {expanded_form} since the last backup. Backing up immediately")
+                    sleep_for = 0
+
+                # Resume so the sleep time doesn't reset on restart
+                else:
+                    self.bot.log.info(f"Resuming backup task. Sleeping for {self.bot.utils.get_time(sleep_for)}")
+                    sleep_for = remaining_sleep
+
+            await asyncio.sleep(sleep_for)
+            keep_for = self.bot.config["keep_backups_for_?_days"]
+            creds = auth.MySQL()
+
             # Backup MySQL DB
             before = time.monotonic()
             db_path = os.path.join(self.bot.config["backups_location"], "db")
@@ -229,8 +246,11 @@ class Tasks(commands.Cog):
                 f"mysqldump -u root -p{creds.password} fate > '{fp}'",
                 shell=True
             )
-            while not process.poll():
-                await asyncio.sleep(0.21)
+            while True:
+                if process.poll():
+                    await asyncio.sleep(0.21)
+                else:
+                    break
             ping = round((time.monotonic() - before) * 1000)
             self.bot.log.info(f"Backed up SQL Database: {ping}ms")
 
