@@ -8,6 +8,7 @@ import logging
 from typing import *
 import aiofiles
 from contextlib import suppress
+from base64 import b64decode, b64encode
 
 from discord.ext import commands
 import discord
@@ -366,6 +367,12 @@ class Fate(commands.AutoShardedBot):
         """ Reaction based menu for users to choose between things """
         return await self.utils.get_choice(ctx, *options, user=user, timeout=timeout)
     # -------------------------------------------------------
+
+    def encode(self, string) -> str:
+        return b64encode(string.encode()).decode()
+
+    def decode(self, string) -> str:
+        return b64decode(string.encode()).decode()
 
     def run(self):
         if self.config["extensions"]:

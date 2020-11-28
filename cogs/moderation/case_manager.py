@@ -12,6 +12,8 @@ class CaseManager(commands.Cog):
         self.bot = bot
 
     async def add_case(self, guild_id: int, user_id, action: str, reason, link: str, created_by):
+        if reason:
+            reason = self.bot.encode(reason)
         async with self.bot.cursor() as cur:
             await cur.execute(
                 f"select case_number from cases "
@@ -65,7 +67,7 @@ class CaseManager(commands.Cog):
                 return await ctx.send("There are no mod logs for that user")
             lines = [
                 f"#{case_number}. [{action}]({link}) - from `{self.bot.get_user(created_by)}`" \
-                f"{f'{nl}>  {reason}' if has_value(reason) else ''}"
+                f"{f'{nl}> {self.bot.decode(reason)}' if reason else ''}"
                 for i, (user_id, action, reason, link, case_number, created_by, created_at) in enumerate(
                     results[:16]
                 )
@@ -85,7 +87,7 @@ class CaseManager(commands.Cog):
             lines = [
                 f"#{case_number}. {f'`{self.bot.get_user(user_id)}` - ' if user_id else ''}" \
                 f"[{action}]({link}){f' - from `{self.bot.get_user(created_by)}`' if created_by else ''}" \
-                f"{f'{nl}> {reason}' if has_value(reason) else ''}"
+                f"{f'{nl}> {self.bot.decode(reason)}' if reason else ''}"
                 for i, (user_id, action, reason, link, case_number, created_by, created_at) in enumerate(
                     results[:16]
                 )
@@ -105,7 +107,7 @@ class CaseManager(commands.Cog):
             lines = [
                 f"**Case #{case_number}.** {f'**`{str(self.bot.get_user(user_id))}`** - ' if user_id else ''}" \
                 f"[{action}]({link}){f' - **{self.bot.get_user(created_by)}**' if created_by else ''}" \
-                f"\n> `{reason if has_value(reason) else 'unspecified reason'}`"
+                f"\n> `{self.bot.decode(reason) if reason else 'unspecified reason'}`"
                 # f"{f'{nl}> `{reason}`' if has_value(reason) else nl}"
                 for i, (user_id, action, reason, link, case_number, created_by, created_at) in enumerate(
                     results[:16]
