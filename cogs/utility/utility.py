@@ -978,7 +978,7 @@ class Utility(commands.Cog):
             e.set_author(name=role.name, icon_url=ctx.author.avatar_url)
             e.set_thumbnail(url=ctx.guild.icon_url)
             e.description = ""
-            dat = [(m, m.top_role.position) for m in role.members]
+            dat = [(m, m.top_role.position) for m in role.members][:10]
             for member, position in sorted(dat, key=lambda kv: kv[1], reverse=True):
                 new_line = f"• {member.mention}\n"
                 if len(e.description) + len(new_line) > 2000:
