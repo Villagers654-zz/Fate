@@ -64,7 +64,7 @@ class Actions(commands.Cog):
             "$user was injected with $injection and died",
             "injected $injection into $user's dick",
             "$user was injected with $injection and got autism",
-            "$author tripped and injected himself with $injection",
+            "$author tripped and injected themself with $injection",
         ]
         choice = (
             random.choice(choices)
