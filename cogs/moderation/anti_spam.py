@@ -580,6 +580,8 @@ class AntiSpam(commands.Cog):
                             for channel in msg.guild.voice_channels:
                                 if channel.permissions_for(bot).manage_channels:
                                     await channel.set_permissions(mute_role, speak=False)
+                        if mute_role.position >= msg.guild.me.top_role.position:
+                            return
 
                         # Increase the mute timer if multiple offenses in the last hour
                         multiplier = 0
