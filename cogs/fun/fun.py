@@ -620,7 +620,7 @@ class Fun(commands.Cog):
 
     @commands.command()
     async def rr(self, ctx):
-        if ctx.author.id == 281576231902773248:
+        if ctx.author.id in [281576231902773248, 401230282272800768]:
             return await ctx.send("You lived")
         await ctx.send(random.choice(["You lived", "You died"]))
 
