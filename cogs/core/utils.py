@@ -213,11 +213,12 @@ class Utils(commands.Cog):
 
     @staticmethod
     def get_prefix(ctx):
-        guild_id = str(ctx.guild.id)
-        config = ctx.bot.utils.get_config()  # type: dict
-        p = "."  # default command prefix
-        if guild_id in config["prefix"]:
-            p = config["prefix"][guild_id]
+        p = "."
+        if ctx.guild:
+            guild_id = str(ctx.guild.id)
+            config = ctx.bot.utils.get_config()  # type: dict
+            if guild_id in config["prefix"]:
+                p = config["prefix"][guild_id]
         return p
 
     @staticmethod
