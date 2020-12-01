@@ -52,10 +52,10 @@ class ErrorHandler(commands.Cog):
             # Too fast, sMh
             elif isinstance(error, commands.CommandOnCooldown):
                 user_id = str(ctx.author.id)
-                await ctx.message.add_reaction("⏳")
                 if user_id not in self.cd:
                     self.cd[user_id] = 0
                 if self.cd[user_id] < time() - 10:
+                    await ctx.message.add_reaction("⏳")
                     await ctx.send(error)
                 self.cd[user_id] = time() + 10
                 return
