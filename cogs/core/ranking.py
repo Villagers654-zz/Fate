@@ -342,7 +342,7 @@ class Ranking(commands.Cog):
             e.add_field(
                 name="◈ Note",
                 value="Replace `@role` with the mention for the role you want to give, "
-                      "and replace `[level]` with the level you want the role to be given at`",
+                      "and replace `[level]` with the level you want the role to be given at",
                 inline=False
             )
             async with self.bot.cursor() as cur:
