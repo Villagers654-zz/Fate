@@ -740,7 +740,7 @@ class Moderation(commands.Cog):
             task = self.bot.loop.create_task(
                 self.handle_mute_timer(guild_id, user_id, timer_info)
             )
-            if guild_id not in self.bot.tasks["mutes"]:
+            if guild_id not in self.tasks:
                 self.tasks[guild_id] = {}
             self.tasks[guild_id][user_id] = task
 
