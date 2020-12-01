@@ -321,7 +321,7 @@ class Ranking(commands.Cog):
             await asyncio.sleep(5)
             self.cmd_cd[user_id].remove(cmd)
 
-    @commands.command(name="level-roles", aliases=["level-rewards", "lr"])
+    @commands.command(name="level-roles", aliases=["level-rewards", "role-rewards" "lr"])
     @commands.cooldown(*utils.default_cooldown())
     @commands.bot_has_permissions(embed_links=True, manage_roles=True)
     async def level_roles(self, ctx, *args):
