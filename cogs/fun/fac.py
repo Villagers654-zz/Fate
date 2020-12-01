@@ -149,10 +149,12 @@ class FactionsRewrite(commands.Cog):
             return None
 
         guild_id = str(ctx.guild.id)
-        if guild_id in self.factions:
-            for faction, data in self.factions[guild_id].items():
+        if guild_id not in self.factions:
+            return None
+        for guild_id, data in list(self.factions[guild_id].items()):
+            for faction, metadata in data.items():
                 await asyncio.sleep(0)
-                if user.id in data["members"]:
+                if user.id in metadata["members"]:
                     return faction
 
         return None
