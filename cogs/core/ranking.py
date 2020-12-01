@@ -10,9 +10,11 @@ from io import BytesIO
 from datetime import datetime
 import aiohttp
 from pymysql.err import DataError, InternalError
+from contextlib import suppress
 
 from discord.ext import commands, tasks
 import discord
+from discord.errors import NotFound, Forbidden
 from PIL import Image, ImageFont, ImageDraw, ImageSequence, UnidentifiedImageError
 
 from utils import colors
@@ -255,24 +257,54 @@ class Ranking(commands.Cog):
                 self.cd[guild_id][user_id].append(time())
                 try:
                     async with self.bot.cursor() as cur:
+
+                        # Guilded xp
                         await cur.execute(
                             f"insert into msg "
                             f"values ({guild_id}, {user_id}, {new_xp}) "
                             f"on duplicate key update xp = xp + {new_xp};"
                         )
 
-                        # monthly guilded msg xp
+                        # Monthly guilded msg xp
                         await cur.execute(
                             f"INSERT INTO monthly_msg "
                             f"VALUES ({guild_id}, {user_id}, {set_time}, {new_xp}) "
                             f"ON DUPLICATE KEY UPDATE xp = xp + {new_xp};"
                         )
+
+                        await cur.execute(
+                            f"select xp from msg "
+                            f"where guild_id = {guild_id} "
+                            f"and user_id = {user_id} "
+                            f"limit 1;"
+                        )
+                        result = await cur.fetchone()
+                        dat = await self.calc_lvl_info(result[0], conf)
+                        await cur.execute(
+                            f"select role_id from level_roles "
+                            f"where guild_id = {guild_id} "
+                            f"and lvl <= {dat['level']};"
+                        )
+                        results = await cur.fetchall()
+                        for result in results:
+                            role = msg.guild.get_role(result[0])
+                            if role not in msg.author.roles:
+                                try:
+                                    await msg.author.add_roles(role)
+                                    e = discord.Embed(color=role.color)
+                                    e.description = f"You leveled up and earned {role.mention}"
+                                    with suppress(Forbidden):
+                                        await msg.channel.send(embed=e)
+                                except (NotFound, Forbidden):
+                                    await cur.execute(
+                                        f"delete from level_roles "
+                                        f"where role_id = {result[0]};"
+                                    )
+
                 except DataError as error:
                     self.bot.log(f"Error updating guild xp\n{error}")
                 except InternalError:
                     pass
-                except RuntimeError:
-                    return
 
     @commands.Cog.listener()
     async def on_command_completion(self, ctx):
@@ -288,6 +320,79 @@ class Ranking(commands.Cog):
             await self.bot.save_json(self.clb_path, self.cmds)
             await asyncio.sleep(5)
             self.cmd_cd[user_id].remove(cmd)
+
+    @commands.command(name="level-roles", aliases=["level-rewards", "lr"])
+    @commands.cooldown(*utils.default_cooldown())
+    @commands.bot_has_permissions(embed_links=True, manage_roles=True)
+    async def level_roles(self, ctx, *args):
+        if not args or len(args) == 1:
+            e = discord.Embed(color=self.bot.config["theme_color"])
+            e.set_author(name="Level Roles", icon_url=self.bot.user.avatar_url)
+            e.set_thumbnail(url=ctx.guild.icon_url)
+            e.description = "Grant roles as a reward to users whence they reach a specified level"
+            p = utils.get_prefix(ctx)  # type: str
+            e.add_field(
+                name="◈ Usage",
+                value=f"{p}level-rewards @role [level]\n"
+                      f"`adds a level reward`\n"
+                      f"{p}level-rewards remove @role\n"
+                      f"`removes a level reward`",
+                inline=False
+            )
+            e.add_field(
+                name="◈ Note",
+                value="Replace `@role` with the mention for the role you want to give, "
+                      "and replace `[level]` with the level you want the role to be given at`",
+                inline=False
+            )
+            async with self.bot.cursor() as cur:
+                await cur.execute(f"select role_id, lvl from level_roles where guild_id = {ctx.guild.id};")
+                results = await cur.fetchall()
+            if results:
+                value = ""
+                for role_id, level in sorted(list(results), key=lambda kv: kv[1], reverse=True):
+                    value += f"\nLvl {level} - {ctx.guild.get_role(int(role_id)).mention}"
+                e.add_field(
+                    name="◈ Active Roles",
+                    value=value,
+                    inline=False
+                )
+            return await ctx.send(embed=e)
+
+        if ctx.message.role_mentions:
+            role = ctx.message.role_mentions[0]
+        else:
+            role = await self.bot.utils.get_role(ctx, args[1])
+            if not role:
+                return await ctx.send("Role not found")
+
+        if "remove" in args[0].lower():
+            async with self.bot.cursor() as cur:
+                await cur.execute(f"delete from level_roles where role_id = {role.id};")
+            return await ctx.send(f"Removed the level-role for {role.mention} if it existed")
+        if not args[1].isdigit():
+            return await ctx.send(
+                "Your command isn't formatted properly. "
+                "The level argument you put wasn't a number"
+            )
+        level = int(args[1])
+        stack = False
+        await ctx.send(
+            "Should I remove this role when the user gets a higher role reward? "
+            "Reply with `yes` or `no`"
+        )
+        async with self.bot.require("message", ctx) as msg:
+            if "yes" in msg.content.lower():
+                stack = True
+
+        async with self.bot.cursor() as cur:
+            await cur.execute(
+                f"insert into level_roles "
+                f"values ({ctx.guild.id}, {role.id}, {level}, {stack}) "
+                f"on duplicate key update lvl = {level} and stack = {stack};"
+            )
+        await ctx.send(f"Setup complete")
+
 
     @commands.command(name="xp-config")
     @commands.cooldown(*utils.default_cooldown())
