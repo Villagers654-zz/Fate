@@ -183,7 +183,7 @@ class Tasks(commands.Cog):
         message += "```"
         await channel.send(mention + message)
 
-    @tasks.loop(seconds=1)
+    @tasks.loop(seconds=25)
     async def auto_backup(self):
         """Backs up files every x seconds and keeps them for x days"""
         def get_all_file_paths(directory):
@@ -210,7 +210,7 @@ class Tasks(commands.Cog):
                     backup.split("_")[1].strip(".zip"), "%Y-%m-%d %H:%M:%S.%f"
                 )
                 if (datetime.now() - backup_time).days > keep_for:
-                    os.remove(backup)
+                    os.remove(os.path.join(path, backup))
                     self.bot.log.info(f"Removed backup {backup}")
 
         sleep_for = self.bot.config["backup_every_?_hours"] * 60 * 60
@@ -218,10 +218,10 @@ class Tasks(commands.Cog):
             local_fp = os.path.join(self.bot.config["backups_location"], "local")
             if os.listdir(local_fp):
                 last_backed_up = datetime.strptime(
-                     os.listdir(local_fp)[0].split("_")[1].strip(".zip"), "%Y-%m-%d %H:%M:%S.%f"
+                     sorted(os.listdir(local_fp), reverse=True)[0].split("_")[1].strip(".zip"), "%Y-%m-%d %H:%M:%S.%f"
                  )
-                time_since = (datetime.now() - last_backed_up).seconds
-                remaining_sleep = sleep_for - time_since
+                time_since = (datetime.now() - last_backed_up).total_seconds()
+                remaining_sleep = round(sleep_for - time_since)
 
                 # Run a backup because it's been greater than the interval to do backups
                 if remaining_sleep <= 0:
