@@ -864,8 +864,8 @@ class Ranking(commands.Cog):
             # ('vclb', 'vcleaderboard'),
             ("glb", "gleaderboard"),
             # ('gvclb', 'gvcleaderboard'),
-            ("mlb", "mleaderboard"),
-            ("gmlb", "gmleaderboard"),
+            # ("mlb", "mleaderboard"),
+            # ("gmlb", "gmleaderboard"),
             # ('gglb', 'ggleaderboard'),
             # ('ggvclb', 'ggvcleaderboard')
         ]
@@ -915,7 +915,7 @@ class Ranking(commands.Cog):
             leaderboards["Monthly Msg Leaderboard"] = {
                 user_id: xp for user_id, xp in results
             }
-
+#
             await cur.execute(
                 f"select user_id, sum(xp) as total_xp "
                 f"from global_monthly "
