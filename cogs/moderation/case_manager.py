@@ -44,7 +44,7 @@ class CaseManager(commands.Cog):
             )
         return case_number
 
-    @commands.command(name="mod-logs", aliases=["mod_logs", "modlogs"])
+    @commands.command(name="mod-logs", aliases=["mod_logs", "modlogs", "infractions"])
     @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
