@@ -15,6 +15,23 @@ class ModMail(commands.Cog):
     async def modmail(self, ctx):
         e = discord.Embed(color=self.bot.config["theme_color"])
         e.set_author(name="Modmail", icon_url=self.bot.user.avatar_url)
+        p = self.bot.utils.get_prefix(ctx)  # type: str
+        e.add_field(
+            name="◈ Usage",
+            value=f"  {p}modmail enable"
+                  f"\n`helps you set a category`"
+                  f"\n{p}modmail disable"
+                  f"\n`disables modmail`"
+                  f"\n{p}modmail block [user_id]"
+                  f"\n`blocks a user from using modmail`"
+                  f"\n{p}modmail unblock [user_id]"
+                  f"\n`unblocks a user from using modmail`"
+                  f"\n{p}reply [case_number]"
+                  f"\n`send modmail for appeals etc`"
+                  f"\n{p}close-thread"
+                  f"\n`closes a modmail channel`",
+            inline=False
+        )
         e.set_thumbnail(url="https://opal.place/public/captures/716209.png")
         await ctx.send(embed=e)
 
@@ -92,13 +109,13 @@ class ModMail(commands.Cog):
         async with self.bot.cursor() as cur:
             if case_number:
                 await cur.execute(
-                    f"select guild_id, case_number, reason from cases "
-                    f"where case_number = {case_number};"
+                    f"select guild_id, case_number, reason, link, created_at from cases "
+                    f"where case_number = {case_number} and user_id = {ctx.author.id};"
                 )
                 results = await cur.fetchall()
             else:
                 await cur.execute(
-                    f"select guild_id, case_number, reason from cases "
+                    f"select guild_id, case_number, reason, link, created_at from cases "
                     f"where user_id = {ctx.author.id} "
                     f"and created_at > {time() - 60 * 60 * 24 * 14};"
                 )
@@ -111,7 +128,18 @@ class ModMail(commands.Cog):
                 f"Couldn't find any cases from you from within the last 14 days. "
                 f"Use `{p}reply [case_number]` to specify which"
             )
-        await ctx.send("This part of the command isn't developed yet")
+        sorted_results = sorted(results, key=lambda lst: lst[4])[:5]
+        formatted_results = [
+            f"[Case #{case} from {self.bot.get_guild(guild_id)}]({link})" \
+            f"\n> For {self.bot.decode(reason)}"
+            for guild_id, case, reason, link, created_at in sorted_results
+        ]
+        choice = await self.bot.utils.get_choice(ctx, *formatted_results, user=ctx.author)
+        if not choice:
+            return await ctx.send("Timed out waiting for choice")
+        result = sorted_results[formatted_results.index(choice)]
+        guild_id, case, reason, link, created_at = result
+        await ctx.send(f"You chose case #{case} from {self.bot.get_guild(guild_id)}")
 
     @commands.command(name="close")
     async def close(self, ctx):
