@@ -286,16 +286,17 @@ class Ranking(commands.Cog):
                             f"and lvl <= {dat['level']};"
                         )
                         results = await cur.fetchall()
-                        for result in results:
-                            role = msg.guild.get_role(result[0])
-                            if role not in msg.author.roles:
-                                try:
-                                    await msg.author.add_roles(role)
-                                    e = discord.Embed(color=role.color)
-                                    e.description = f"You leveled up and earned {role.mention}"
-                                    with suppress(Forbidden):
-                                        await msg.channel.send(embed=e)
-                                except (NotFound, Forbidden):
+                    for result in results:
+                        role = msg.guild.get_role(result[0])
+                        if role not in msg.author.roles:
+                            try:
+                                await msg.author.add_roles(role)
+                                e = discord.Embed(color=role.color)
+                                e.description = f"You leveled up and earned {role.mention}"
+                                with suppress(Forbidden):
+                                    await msg.channel.send(embed=e)
+                            except (NotFound, Forbidden):
+                                async with self.bot.cursor() as cur:
                                     await cur.execute(
                                         f"delete from level_roles "
                                         f"where role_id = {result[0]};"
