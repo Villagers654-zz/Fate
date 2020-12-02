@@ -129,18 +129,19 @@ class Fate(commands.AutoShardedBot):
                 while not self.pool:
                     await asyncio.sleep(10)
                 for _ in range(this.retries):
-                    with suppress(pymysql.OperationalError, RuntimeError):
+                    try:
                         this.conn = await self.pool.acquire()
-                        this.cursor = await this.conn.cursor()
-                        break
-                    await asyncio.sleep(1.21)
+                    except (pymysql.OperationalError, RuntimeError):
+                        await asyncio.sleep(1.21)
+                        continue
+                    this.cursor = await this.conn.cursor()
+                    break
                 else:
                     raise pymysql.OperationalError("Can't connect to db")
                 return this.cursor
 
             async def __aexit__(this, _type, _value, _tb):
                 with suppress(RuntimeError):
-                    await this.conn.commit()
                     self.pool.release(this.conn)
 
         self.cursor = Cursor
@@ -311,6 +312,11 @@ class Fate(commands.AutoShardedBot):
             self.log.critical("Logging out..")
             return await self.logout()
         self.log.info(f"Initialized db {sql.db} with {sql.user}@{sql.host}")
+
+    async def execute(self, sql):
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute(sql)
 
     def load(self, *extensions) -> None:
         for cog in extensions:

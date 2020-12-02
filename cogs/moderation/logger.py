@@ -172,6 +172,7 @@ class Logger(commands.Cog):
         self.bot.log("Loggers keep_alive_task was started")
         channel = self.bot.get_channel(541520201926311986)
         while True:
+            await asyncio.sleep(1)
             for guild_id, task in list(self.bot.logger_tasks.items()):
                 if task.done():
                     guild = self.bot.get_guild(int(guild_id))
@@ -185,7 +186,7 @@ class Logger(commands.Cog):
                         task = self.bot.loop.create_task(self.start_queue(guild_id))
                         self.bot.logger_tasks[guild_id] = task
             self.bot.log.debug("keep_alive_task still running")
-            await asyncio.sleep(60)
+            await asyncio.sleep(59)
 
     async def wait_for_permission(self, guild, permission: str, channel=None) -> bool:
         """Notify the owner of missing permissions and wait until they've been granted"""
@@ -1017,7 +1018,7 @@ class Logger(commands.Cog):
             if guild_id in self.config and not payload.cached_message:
                 try:
                     msg = await channel.fetch_message(payload.message_id)
-                except discord.errors.NotFound:
+                except (discord.errors.NotFound, discord.errors.Forbidden):
                     return
                 if msg.author.id in self.config[guild_id]["ignored_bots"]:
                     return

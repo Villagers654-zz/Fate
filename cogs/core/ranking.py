@@ -115,6 +115,7 @@ class Ranking(commands.Cog):
 
     @tasks.loop(hours=1)
     async def xp_cleanup_task(self):
+        await asyncio.sleep(1)
         self.bot.log.debug("Started xp cleanup task")
         if not self.bot.is_ready():
             await self.bot.wait_until_ready()
@@ -279,9 +280,10 @@ class Ranking(commands.Cog):
                             f"limit 1;"
                         )
                         result = await cur.fetchone()
-                        dat = await self.calc_lvl_info(result[0], conf)
+                    dat = await self.calc_lvl_info(result[0], conf)
+                    async with self.bot.cursor() as cur:
                         await cur.execute(
-                            f"select role_id from level_roles "
+                            f"select role_id from role_rewards "
                             f"where guild_id = {guild_id} "
                             f"and lvl <= {dat['level']};"
                         )
@@ -296,11 +298,10 @@ class Ranking(commands.Cog):
                                 with suppress(Forbidden):
                                     await msg.channel.send(embed=e)
                             except (NotFound, Forbidden):
-                                async with self.bot.cursor() as cur:
-                                    await cur.execute(
-                                        f"delete from level_roles "
-                                        f"where role_id = {result[0]};"
-                                    )
+                                await self.bot.execute(
+                                    f"delete from role_rewards "
+                                    f"where role_id = {result[0]} limit 1;"
+                                )
 
                 except DataError as error:
                     self.bot.log(f"Error updating guild xp\n{error}")
@@ -347,7 +348,7 @@ class Ranking(commands.Cog):
                 inline=False
             )
             async with self.bot.cursor() as cur:
-                await cur.execute(f"select role_id, lvl from level_roles where guild_id = {ctx.guild.id};")
+                await cur.execute(f"select role_id, lvl from role_rewards where guild_id = {ctx.guild.id};")
                 results = await cur.fetchall()
             if results:
                 value = ""
@@ -368,8 +369,7 @@ class Ranking(commands.Cog):
                 return await ctx.send("Role not found")
 
         if "remove" in args[0].lower():
-            async with self.bot.cursor() as cur:
-                await cur.execute(f"delete from level_roles where role_id = {role.id};")
+            await self.bot.execute(f"delete from role_rewards where role_id = {role.id};")
             return await ctx.send(f"Removed the level-role for {role.mention} if it existed")
         if not args[1].isdigit():
             return await ctx.send(
@@ -386,12 +386,11 @@ class Ranking(commands.Cog):
             if "yes" in msg.content.lower():
                 stack = True
 
-        async with self.bot.cursor() as cur:
-            await cur.execute(
-                f"insert into level_roles "
-                f"values ({ctx.guild.id}, {role.id}, {level}, {stack}) "
-                f"on duplicate key update lvl = {level} and stack = {stack};"
-            )
+        await self.bot.execute(
+            f"insert into level_roles "
+            f"values ({ctx.guild.id}, {role.id}, {level}, {stack}) "
+            f"on duplicate key update lvl = {level} and stack = {stack};"
+        )
         await ctx.send(f"Setup complete")
 
 

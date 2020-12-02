@@ -41,8 +41,9 @@ class Tasks(commands.Cog):
                 task.start()
                 self.bot.log(f"Started task {task.coro.__name__}", color="cyan")
 
-    @tasks.loop(seconds=25)
+    @tasks.loop(seconds=24)
     async def mark_alive(self):
+        await asyncio.sleep(1)
         keep_for = self.bot.config["log_uptime_for_?_days"]  # type: int
         path = "./data/uptime.json"
         if not os.path.isfile(path):
@@ -65,8 +66,9 @@ class Tasks(commands.Cog):
 
     @tasks.loop()
     async def status_task(self):
-        await asyncio.sleep(10)
+        await asyncio.sleep(9)
         while True:
+            await asyncio.sleep(1)
             motds = [
                 "FBI OPEN UP",
                 "YEET to DELETE",
@@ -114,10 +116,12 @@ class Tasks(commands.Cog):
 
     @tasks.loop()
     async def debug_log(self):
+        await asyncio.sleep(1)
         channel = self.bot.get_channel(self.bot.config["debug_channel"])
         log = []
         reads = 0
         while True:
+            await asyncio.sleep(1)
             reads += 1
             with open("discord.log", "r") as f:
                 lines = f.readlines()
@@ -141,10 +145,10 @@ class Tasks(commands.Cog):
                     f.write("")
                 log = []
                 reads = 0
-            await asyncio.sleep(1)
 
     @tasks.loop(seconds=1)
     async def log_queue(self):
+        await asyncio.sleep(1)
         if not self.bot.is_ready():
             await self.bot.wait_until_ready()
         channel = await self.bot.fetch_channel(self.bot.config["log_channel"])
@@ -186,6 +190,7 @@ class Tasks(commands.Cog):
     @tasks.loop(seconds=25)
     async def auto_backup(self):
         """Backs up files every x seconds and keeps them for x days"""
+        await asyncio.sleep(1)
         def get_all_file_paths(directory):
             file_paths = []
             for root, directories, files in os.walk(directory):
