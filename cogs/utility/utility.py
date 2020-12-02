@@ -388,6 +388,7 @@ class Utility(commands.Cog):
                 return str(r.emoji) in emojis and r.message.id == msg.id and not u.bot
 
             while True:
+                await asyncio.sleep(0.5)
                 try:
                     reaction, user = await self.bot.wait_for(
                         "reaction_add", check=predicate, timeout=60
@@ -567,6 +568,7 @@ class Utility(commands.Cog):
                 return str(r.emoji) in emojis and r.message.id == msg.id and not u.bot
 
             while True:
+                await asyncio.sleep(0.5)
                 try:
                     reaction, user = await self.bot.wait_for(
                         "reaction_add", check=predicate, timeout=60

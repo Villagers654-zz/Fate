@@ -1421,6 +1421,7 @@ class FactionsRewrite(commands.Cog):
         net = True
         normal_lb = True
         while True:
+            await asyncio.sleep(0.5)
             await msg.edit(embed=leaderboards[net][normal_lb])
             try:
                 reaction, user = await self.bot.wait_for(
@@ -1458,6 +1459,7 @@ class FactionsRewrite(commands.Cog):
             "reply with `.accept` to agree to the alliance"
         )
         while True:
+            await asyncio.sleep(0.5)
             async with self.bot.require("message", predicate, handle_timeout=True) as msg:
                 if await self.get_owned_faction(ctx, user=msg.author) == ally_name:
                     self.factions[guild_id][faction_name]["allies"].append(ally_name)

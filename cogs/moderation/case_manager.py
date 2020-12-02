@@ -166,6 +166,7 @@ class CaseManager(commands.Cog):
         self.bot.loop.create_task(add_emojis_task())
 
         while True:
+            await asyncio.sleep(0.5)
             reaction, emoji = await wait_for_reaction()
             if not reaction:
                 return await msg.clear_reactions()

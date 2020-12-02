@@ -16,6 +16,7 @@ class System(commands.Cog):
 
     async def console_task(self):
         while True:
+            await asyncio.sleep(5)
             try:
                 channel = self.bot.get_channel(577661412432805888)
                 output_msg = await channel.fetch_message(577662410010263564)
@@ -35,10 +36,10 @@ class System(commands.Cog):
                     await self.bot.get_channel(577661461543780382).send(e)
                 except:
                     pass
-            await asyncio.sleep(5)
 
     async def activity_task(self):
         while True:
+            await asyncio.sleep(5)
             e = discord.Embed(color=colors.fate())
             voice_state = ""
             for guild_id in self.bot.voice_calls:
@@ -52,7 +53,6 @@ class System(commands.Cog):
             if voice_state != self.last_voice_state:
                 await msg.edit(embed=e)
                 self.last_voice_state = voice_state
-            await asyncio.sleep(5)
 
     @commands.command(name="save")
     @commands.check(checks.luck)

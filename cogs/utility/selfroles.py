@@ -255,6 +255,7 @@ class SelfRoles(commands.Cog):
                 content='Should I use role mentions instead of role names\nReply with "yes" or "no"'
             )
             while True:
+                await asyncio.sleep(0.5)
                 msg = await wait_for_msg()
                 if not msg:
                     return

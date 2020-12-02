@@ -758,6 +758,7 @@ class Utils(commands.Cog):
         message = await ctx.send(embed=overview())
         self.bot.loop.create_task(init_reactions_task())
         while True:
+            await asyncio.sleep(0.5)
             await clear_user_reactions(message)
             payload = await wait_for_reaction()
             if not payload:
@@ -785,6 +786,7 @@ class Utils(commands.Cog):
                 return full
             else:
                 while True:
+                    await asyncio.sleep(0.5)
                     await clear_user_reactions(message)
                     index = emojis.index(str(reaction.emoji))
                     value = pages[page][list(pages[page].keys())[index]]

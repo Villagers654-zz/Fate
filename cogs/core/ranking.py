@@ -151,7 +151,7 @@ class Ranking(commands.Cog):
         base_requirement = config["first_lvl_xp_req"]
 
         while True:
-            await asyncio.sleep(0)
+            await asyncio.sleep(0.21)
             multiplier = await get_multiplier_for(level)
             current_req = base_requirement * multiplier
             if remaining_xp < current_req:
@@ -1055,6 +1055,7 @@ class Ranking(commands.Cog):
         await msg.edit(embed=embeds[index][0])
 
         while True:
+            await asyncio.sleep(0.5)
             reaction, emoji = await wait_for_reaction()
             if not reaction:
                 return await msg.clear_reactions()

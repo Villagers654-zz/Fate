@@ -88,7 +88,6 @@
     "moderation": [
       "anti_raid",
       "anti_spam",
-      "automod",
       "case_manager",
       "chatfilter",
       "chatlock",

@@ -31,8 +31,6 @@ from utils import colors, config, checks
 from cogs.core.utils import Utils as utils
 
 
-
-
 class EmptyException(Exception):
 	pass
 
@@ -98,13 +96,14 @@ class ListManager(list):
 		)
 
 
-
 class Dev(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.last = {}
 		self.silence = None
 		self.lst = ListManager(bot, keep_for=10)
+
+
 
 	@commands.command(name="set-avatar", aliases=["set_avatar"])
 	@commands.is_owner()
@@ -877,7 +876,7 @@ class Dev(commands.Cog):
 				await conn.commit()
 		await ctx.send(f"Converted global xp\noperation took {round((monotonic() - before) * 1000)}ms")
 
-	@commands.command(name='check')
+	@commands.command(name='check', enabled=False)
 	@commands.is_owner()
 	async def check(self, ctx, url):
 		""" Check the pixels in an img """

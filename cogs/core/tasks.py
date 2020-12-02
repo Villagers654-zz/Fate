@@ -252,9 +252,8 @@ class Tasks(commands.Cog):
                 shell=True
             )
             while True:
-                if process.poll():
-                    await asyncio.sleep(0.21)
-                else:
+                await asyncio.sleep(1.21)
+                if not process.poll():
                     break
             ping = round((time.monotonic() - before) * 1000)
             self.bot.log.info(f"Backed up SQL Database: {ping}ms")
