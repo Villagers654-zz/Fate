@@ -287,6 +287,9 @@ class FactionsRewrite(commands.Cog):
                 alliance_bal = [(faction, get_value([faction, data], net=False))]
                 for ally in data["allies"]:
                     await asyncio.sleep(0)
+                    if ally not in self.factions[guild_id]:
+                        self.factions[guild_id][faction]["allies"].remove(ally)
+                        continue
                     value = get_value(
                         [ally, self.factions[guild_id][ally]], net=True
                     )

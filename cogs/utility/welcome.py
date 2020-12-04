@@ -388,6 +388,7 @@ class Welcome(commands.Cog):
                 if not channel:
                     del self.toggle[guild_id]
                     return await self.save_data()
+                mentions = discord.AllowedMentions(users=True, roles=True, everyone=False)
                 msg = self.format[guild_id]
                 msg = msg.replace("$MENTION", m.mention).replace(
                     "$SERVER", m.guild.name
@@ -410,7 +411,7 @@ class Welcome(commands.Cog):
                             await channel.send(
                                 msg,
                                 embed=e,
-                                allowed_mentions=self.bot.allow_user_mentions,
+                                allowed_mentions=mentions,
                             )
                         except discord.errors.Forbidden:
                             del self.useimages[guild_id]
@@ -427,7 +428,7 @@ class Welcome(commands.Cog):
                                     path, filename=os.path.basename(path)
                                 ),
                                 embed=e,
-                                allowed_mentions=self.bot.allow_user_mentions,
+                                allowed_mentions=mentions,
                             )
                         except discord.errors.Forbidden:
                             del self.useimages[guild_id]
@@ -437,7 +438,7 @@ class Welcome(commands.Cog):
                 else:
                     try:
                         await channel.send(
-                            msg, allowed_mentions=self.bot.allow_user_mentions
+                            msg, allowed_mentions=mentions
                         )
                     except discord.errors.Forbidden:
                         del self.toggle[guild_id]
