@@ -71,6 +71,11 @@ class Ranking(commands.Cog):
         for guild_id, config in list(self.config.items()):
             if config == self.static_config():
                 del self.config[guild_id]
+            else:
+                if config["first_lvl_xp_req"] < 100:
+                    print(f"{self.bot.get_guild} has the min as {config['first_lvl_xp_req']}")
+                    self.config[guild_id]["first_lvl_xp_req"] = 100
+                    self.bot.loop.create_task(self.save_config())
 
         # profile config
         self.profile = {}
@@ -151,13 +156,16 @@ class Ranking(commands.Cog):
         base_requirement = config["first_lvl_xp_req"]
 
         while True:
-            await asyncio.sleep(0.21)
+            await asyncio.sleep(0)
             multiplier = await get_multiplier_for(level)
             current_req = base_requirement * multiplier
             if remaining_xp < current_req:
                 break
             remaining_xp -= current_req
             level += 1
+            if level >= 512:
+                print(f"Stopping at level cap - xp: {xp}")
+                break
 
         data = {
             "level": level,
@@ -302,7 +310,7 @@ class Ranking(commands.Cog):
                                     f"delete from role_rewards "
                                     f"where role_id = {result[0]} limit 1;"
                                 )
-
+#
                 except DataError as error:
                     self.bot.log(f"Error updating guild xp\n{error}")
                 except InternalError:
@@ -528,6 +536,10 @@ class Ranking(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def _first_level_xp_req(self, ctx, amount: int):
         """ sets the required xp to level up your first time """
+        if amount > 2500:
+            return await ctx.send("You can't set an amount greater than 2,500")
+        elif amount < 100:
+            return await ctx.send("You can't set an amount smaller than 100")
         guild_id = str(ctx.guild.id)
         self.config[guild_id]["first_lvl_xp_req"] = amount
         await ctx.send(f"Set the required xp to level up your first time to {amount}")
