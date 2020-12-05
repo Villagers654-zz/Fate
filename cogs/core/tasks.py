@@ -22,8 +22,7 @@ class Tasks(commands.Cog):
             self.status_task,
             self.log_queue,
             self.debug_log,
-            self.mark_alive,
-            self.auto_backup
+            self.mark_alive
         ]
         if bot.is_ready():
             self.ensure_all()

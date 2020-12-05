@@ -620,7 +620,9 @@ class Fun(commands.Cog):
 
     @commands.command()
     async def rr(self, ctx):
-        if ctx.author.id in [281576231902773248, 401230282272800768]:
+        with open("data/users") as f:
+            users = json.load(f)
+        if ctx.author.id in users:
             return await ctx.send("You lived")
         await ctx.send(random.choice(["You lived", "You died"]))
 

@@ -163,8 +163,7 @@ class Ranking(commands.Cog):
                 break
             remaining_xp -= current_req
             level += 1
-            if level >= 512:
-                print(f"Stopping at level cap - xp: {xp}")
+            if level >= 500:
                 break
 
         data = {

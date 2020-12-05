@@ -1511,10 +1511,13 @@ class Utility(commands.Cog):
     async def afk(self, ctx, *, reason="afk"):
         if ctx.message.mentions or ctx.message.role_mentions:
             return await ctx.send("nO")
+        if ctx.author.id in self.afk:
+            del self.afk[ctx.author.id]
+            return await ctx.send("https://cdn.discordapp.com/attachments/775825352639512576/784311253023588392/ec1cb4c8368f601f3bf9b34d52dcd33967-10-skyrim-opening-screenshot.png")
         e = discord.Embed(color=colors.fate())
         e.set_author(name="You are now afk", icon_url=ctx.author.avatar_url)
         await ctx.send(embed=e, delete_after=5)
-        self.afk[str(ctx.author.id)] = reason
+        self.afk[ctx.author.id] = reason
         await asyncio.sleep(5)
         await ctx.message.delete()
 

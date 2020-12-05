@@ -89,11 +89,11 @@ class APIS(commands.Cog):
     @commands.bot_has_permissions(embed_links=True, attach_files=True)
     async def reddit(self, ctx, search):
         try:
-            dat = auth.reddit()  # type: dict
+            dat = auth.Reddit()
             reddit = Reddit(
-                client_id=dat["client_id"],
-                client_secret=dat["client_secret"],
-                user_agent=dat["user_agent"],
+                client_id=dat.client_id,
+                client_secret=dat.client_secret,
+                user_agent=dat.user_agent,
             )
         except Exception as e:
             return await ctx.send(f"Error With Reddit Credentials\n{e}")
