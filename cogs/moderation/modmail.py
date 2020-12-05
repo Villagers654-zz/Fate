@@ -294,7 +294,7 @@ class ModMail(commands.Cog):
                 return None
             await ctx.send("Replied to your thread 👍")
 
-    @commands.command(name="close")
+    @commands.command(name="close-thread")
     async def close(self, ctx):
         if "case-" not in ctx.channel.name:
             return await ctx.send("Unable to parse the channel name")

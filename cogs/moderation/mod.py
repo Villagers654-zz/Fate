@@ -708,10 +708,21 @@ class Moderation(commands.Cog):
                 return None
 
             case = await self.cases.add_case(ctx.guild.id, user.id, "mute", reason, ctx.message.jump_url, ctx.author.id)
+            additional = ""
+            usr_additional = ""
+            async with self.bot.cursor() as cur:
+                await cur.execute(f"select channel_id from modmail where guild_id = {guild_id};")
+                result = await cur.fetchone()
+            if result:
+                usr_additional += f" [use .appeal if this was a mistake]"
 
             if not timers:
+                try:
+                    await user.send(f"You've been muted in {ctx.guild} for {reason}" + usr_additional)
+                except:
+                    additional += " (couldn't dm them)"
                 await user.add_roles(mute_role)
-                await ctx.send(f"Muted {user.display_name} for {reason} [Case #{case}]")
+                await ctx.send(f"Muted {user.display_name} for {reason} [Case #{case}]" + additional)
                 await ensure_muted()
                 return None
 
@@ -729,10 +740,20 @@ class Moderation(commands.Cog):
                 "mute_role": mute_role.id,
                 "removed_roles": removed_roles,
             }
+            try:
+                await user.send(f"You've been muted in {ctx.guild} for {expanded_timer} for {reason}" + usr_additional)
+            except:
+                additional += " (couldn't dm them)"
             if updated:
-                await ctx.send(f"Updated the mute for **{user.name}** to {expanded_timer} for {reason} [Case #{case}]")
+                await ctx.send(
+                    f"Updated the mute for **{user.name}** to {expanded_timer} "
+                    f"for {reason} [Case #{case}]" + additional
+                )
             else:
-                await ctx.send(f"Muted **{user.name}** for {expanded_timer} for {reason} [Case #{case}]")
+                await ctx.send(
+                    f"Muted **{user.name}** for {expanded_timer} "
+                    f"for {reason} [Case #{case}]" + additional
+                )
 
             user_id = str(user.id)
             self.config[guild_id]["mute_timers"][user_id] = timer_info
