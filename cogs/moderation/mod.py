@@ -743,7 +743,7 @@ class Moderation(commands.Cog):
             try:
                 await user.send(f"You've been muted in {ctx.guild} for {expanded_timer} for {reason}" + usr_additional)
             except:
-                additional += " (couldn't dm them)"
+                additional += " (Unable to notify user via DM)"
             if updated:
                 await ctx.send(
                     f"Updated the mute for **{user.name}** to {expanded_timer} "
