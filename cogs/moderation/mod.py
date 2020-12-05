@@ -714,7 +714,7 @@ class Moderation(commands.Cog):
                 await cur.execute(f"select channel_id from modmail where guild_id = {guild_id};")
                 result = await cur.fetchone()
             if result:
-                usr_additional += f" [use .appeal if this was a mistake]"
+                usr_additional += f" [use .appeal {case} if this was a mistake]"
 
             if not timers:
                 try:
