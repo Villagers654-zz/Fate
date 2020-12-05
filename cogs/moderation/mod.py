@@ -720,7 +720,7 @@ class Moderation(commands.Cog):
                 try:
                     await user.send(f"You've been muted in {ctx.guild} for {reason}" + usr_additional)
                 except:
-                    additional += " (couldn't dm them)"
+                    additional += " (Unable to notify user via DM)"
                 await user.add_roles(mute_role)
                 await ctx.send(f"Muted {user.display_name} for {reason} [Case #{case}]" + additional)
                 await ensure_muted()
