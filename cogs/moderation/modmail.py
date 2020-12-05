@@ -2,10 +2,11 @@
 import json
 from time import time
 from contextlib import suppress
+import asyncio
 
 from discord.ext import commands
 import discord
-from discord.errors import Forbidden
+from discord.errors import NotFound, Forbidden
 
 
 class ModMail(commands.Cog):
@@ -15,27 +16,28 @@ class ModMail(commands.Cog):
     @commands.group(name="modmail", aliases=["mod-mail", "mod_mail"])
     @commands.cooldown(2, 5, commands.BucketType.user)
     async def modmail(self, ctx):
-        e = discord.Embed(color=self.bot.config["theme_color"])
-        e.set_author(name="Modmail", icon_url=self.bot.user.avatar_url)
-        p = self.bot.utils.get_prefix(ctx)  # type: str
-        e.add_field(
-            name="◈ Usage",
-            value=f"  {p}modmail enable"
-                  f"\n`helps you set a category`"
-                  f"\n{p}modmail disable"
-                  f"\n`disables modmail`"
-                  f"\n{p}modmail block [user_id]"
-                  f"\n`blocks a user from using modmail`"
-                  f"\n{p}modmail unblock [user_id]"
-                  f"\n`unblocks a user from using modmail`"
-                  f"\n{p}reply [case_number]"
-                  f"\n`send modmail for appeals etc`"
-                  f"\n{p}close-thread"
-                  f"\n`closes a modmail channel`",
-            inline=False
-        )
-        e.set_thumbnail(url="https://opal.place/public/captures/716209.png")
-        await ctx.send(embed=e)
+        if not ctx.invoked_subcommand:
+            e = discord.Embed(color=self.bot.config["theme_color"])
+            e.set_author(name="Modmail", icon_url=self.bot.user.avatar_url)
+            p = self.bot.utils.get_prefix(ctx)  # type: str
+            e.add_field(
+                name="◈ Usage",
+                value=f"  {p}modmail enable"
+                      f"\n`helps you set a category`"
+                      f"\n{p}modmail disable"
+                      f"\n`disables modmail`"
+                      f"\n{p}modmail block [user_id]"
+                      f"\n`blocks a user from using modmail`"
+                      f"\n{p}modmail unblock [user_id]"
+                      f"\n`unblocks a user from using modmail`"
+                      f"\n{p}reply [case_number]"
+                      f"\n`send modmail for appeals etc`"
+                      f"\n{p}close-thread"
+                      f"\n`closes a modmail channel`",
+                inline=False
+            )
+            e.set_thumbnail(url="https://opal.place/public/captures/716209.png")
+            await ctx.send(embed=e)
 
     @modmail.command(name="enable")
     @commands.guild_only()
@@ -105,13 +107,84 @@ class ModMail(commands.Cog):
             )
         await ctx.send(f"Unblocked {user} from using modmail")
 
-    @commands.command(name="reply")
-    async def reply(self, ctx, case_number: int = None, *, message=None):
+    async def mod_reply(self, ctx, msg):
+        case_number = int(msg.channel.name.replace("case-", ""))
+        async with self.bot.cursor() as cur:
+            await cur.execute(
+                f"select user_id "
+                f"from cases "
+                f"where guild_id = {msg.guild.id} "
+                f"and case_number = {case_number};"
+            )
+            result = await cur.fetchone()
+            if result:
+                user_id = result[0]
+            else:
+                await msg.channel.send("Can't find the case for this thread")
+                return None
+            user = self.bot.get_user(user_id)
+            if not user:
+                await msg.channel.send(
+                    f"I no longer share any servers with this user, therefore cannot dm them"
+                )
+                return None
+
+            e = discord.Embed(color=self.bot.config["theme_color"])
+            e.set_author(name=f"Case #{case_number} in {msg.guild}", icon_url=msg.guild.icon_url)
+            e.description = f"Reply from {msg.author}"
+            if msg.content:
+                e.add_field(
+                    name="◈ Message",
+                    value=msg.content[:1024],
+                    inline=False
+                )
+            if msg.attachments:
+                e.set_image(url=msg.attachments[0].url)
+            e.set_footer(text=f"Use .reply {case_number} to make a reply")
+            user = self.bot.get_user(user_id)
+            if not user:
+                await msg.channel.send(f"I no longer share any servers with this user, therefore cannot dm them")
+                return None
+            try:
+                await user.send(embed=e)
+            except Forbidden:
+                await msg.channel.send(
+                    "Failed to reply to the user. Either their dms are closed "
+                    "or I no longer share any servers with them"
+                )
+            else:
+                await msg.channel.send(embed=e)
+                await ctx.message.delete()
+
+    @commands.command(name="reply", aliases=["appeal"])
+    async def reply(self, ctx, *, case_number = None):
+        if isinstance(ctx.guild, discord.Guild) and "case-" in ctx.channel.name:
+            if not ctx.channel.name.replace("case-", "").isdigit():
+                await ctx.send("Error parsing the channel name")
+                return None
+            ctx.message.content = ctx.message.content.replace(ctx.message.content.split()[0] + " ", "")
+            return await self.mod_reply(ctx, ctx.message)
+
+        message = None
+        if not case_number.isdigit() and " " not in case_number:
+            message = case_number
+            case_number = None
+        elif not case_number.isdigit():
+            args = case_number.split()
+            if args[0].isdigit():
+                case_number = int(args[0])
+                args.remove(args[0])
+            message = " ".join(args)
+        attachment = None
+        if ctx.message.attachments:
+            attachment = ctx.message.attachments[0].url
+
+
         async with self.bot.cursor() as cur:
             if case_number:
                 await cur.execute(
                     f"select guild_id, case_number, reason, link, created_at from cases "
-                    f"where case_number = {case_number} and user_id = {ctx.author.id}"
+                    f"where case_number = {int(case_number)} and user_id = {ctx.author.id} "
                     f"limit 1;"
                 )
                 results = await cur.fetchall()
@@ -135,21 +208,24 @@ class ModMail(commands.Cog):
             )
             return None
 
-        sorted_results = sorted(results, key=lambda lst: lst[4])[:5]
-        formatted_results = [
-            f"[Case #{case} from {self.bot.get_guild(guild_id)}]({link})" \
-            f"\n> For {self.bot.decode(reason)}"
-            for guild_id, case, reason, link, created_at in sorted_results
-        ]
-        choice = await self.bot.utils.get_choice(ctx, *formatted_results, user=ctx.author)
-        if not choice:
-            await ctx.send("Timed out waiting for choice")
-            return None
-        result = sorted_results[formatted_results.index(choice)]
+        if len(results) == 1 and results[0][1] == case_number:
+            result = results[0]
+        else:
+            sorted_results = sorted(results, key=lambda lst: lst[4])[:5]
+            formatted_results = [
+                f"[Case #{case} from {self.bot.get_guild(guild_id)}]({link})" \
+                f"\n> For {self.bot.decode(reason)}"
+                for guild_id, case, reason, link, created_at in sorted_results
+            ]
+            choice = await self.bot.utils.get_choice(ctx, *formatted_results, user=ctx.author)
+            if not choice:
+                await ctx.send("Timed out waiting for choice")
+                return None
+            result = sorted_results[formatted_results.index(choice)]
         guild_id, case, reason, link, created_at = result
 
         await cur.execute(
-            f"select channel_id from modmail "
+            f"select channel_id, blocked from modmail "
             f"where guild_id = {guild_id} "
             f"limit 1;"
         )
@@ -157,6 +233,16 @@ class ModMail(commands.Cog):
         if not results:
             await ctx.send("Modmail isn't enabled in that server")
             return None
+        if ctx.author.id in json.loads(self.bot.decode(results[1])):
+            return await ctx.send("You're blocked from using modmail in that server")
+
+        if not message and not attachment:
+            await ctx.send("What's the message you'd like to send?")
+            async with self.bot.require("message", ctx) as msg:
+                if msg.content:
+                    message = msg.content
+                if msg.attachments:
+                    attachment = msg.attachments[0].url
 
         category = self.bot.get_channel(results[0])
         if not category:
@@ -164,10 +250,6 @@ class ModMail(commands.Cog):
             return None
 
         thread_id = f"case-{case}"
-        no_content = not message and not ctx.message.attachments
-        if no_content and any(thread_id == channel.name for channel in category.channels):
-            return await ctx.send("There's already an active thread in that server")
-
         matches = [channel for channel in category.channels if thread_id == channel.name]
         if not matches:
             try:
@@ -178,10 +260,19 @@ class ModMail(commands.Cog):
             e = discord.Embed(color=self.bot.config["theme_color"])
             e.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
             e.description = f"**Case #{case}:**\n"
+            reason = self.bot.decode(reason)
             if link:
                 e.description += f"Reason: [{reason}]({link})\n"
             else:
                 e.description += f"Reason: `{reason}`"
+            if message:
+                e.add_field(
+                    name="◈ Message",
+                    value=message,
+                    inline=False
+                )
+            if attachment:
+                e.set_image(url=attachment)
             try:
                 await channel.send(embed=e)
             except Forbidden:
@@ -194,8 +285,8 @@ class ModMail(commands.Cog):
             e.set_author(name="New Reply", icon_url=ctx.author.avatar_url)
             if message:
                 e.description = message
-            if ctx.message.attachments:
-                e.set_image(url=ctx.message.attachments[0].url)
+            if attachment:
+                e.set_image(url=attachment)
             try:
                 await channel.send(embed=e)
             except Forbidden:
@@ -203,70 +294,34 @@ class ModMail(commands.Cog):
                 return None
             await ctx.send("Replied to your thread 👍")
 
-    @commands.Cog.listener()
-    async def on_message(self, msg):
-        if (msg.content or msg.attachments) and isinstance(msg.guild, discord.Guild) and "case-" in msg.channel.name:
-            name = msg.channel.name.replace("case-", "")
-            if name.isdigit() and int(name) in self.bot.modmail_threads:
-                case_number = int(name)
-                async with self.bot.cursor() as cur:
-                    await cur.execute(
-                        f"select user_id "
-                        f"from cases "
-                        f"where guild_id = {msg.guild.id} "
-                        f"and case_number = {case_number};"
-                    )
-                    result = await cur.fetchone()
-                    if result:
-                        user_id = result[0]
-                    else:
-                        return None
-                    user = self.bot.get_user(user_id)
+    @commands.command(name="close")
+    async def close(self, ctx):
+        if "case-" not in ctx.channel.name:
+            return await ctx.send("Unable to parse the channel name")
+        case = ctx.channel.name.replace("case-", "")
+        if not case.isdigit():
+            return await ctx.send("Unable to parse the channel name")
 
-                    if ".close" in msg.content.lower():
-                        if msg.channel.permissions_for(msg.guild.me).read_messages:
-                            pass
-                            # history = await msg.channel.history(limit=75).flatten()
-                        if user:
-                            with suppress(Forbidden):
-                                await user.send(f"Case #{case_number} was closed in {msg.guild}")
-                        try:
-                            await msg.channel.delete()
-                        except:
-                            await msg.channel.send(
-                                f"To close the thread, delete the channel"
-                            )
-                        return None
-
-                    elif not user:
-                        await msg.channel.send(
-                            f"I no longer share any servers with this user, therefore cannot dm them"
-                        )
-                        return None
-
-                    e = discord.Embed(color=self.bot.config["theme_color"])
-                    e.set_author(name=f"Case #{case_number} in {msg.guild}", icon_url=msg.guild.icon_url)
-                    e.description = f"Reply from {msg.author}"
-                    if msg.content:
-                        e.add_field(
-                            name="◈ Message",
-                            value=msg.content[:1024],
-                            inline=False
-                        )
-                    if msg.attachments:
-                        e.set_image(url=msg.attachments[0].url)
-                    e.set_footer(text=f"Use .reply {case_number} [your message]")
-                    user = self.bot.get_user(user_id)
-                    if not user:
-                        await msg.channel.send(f"I no longer share any servers with this user, therefore cannot dm them")
-                        return None
-                    try:
-                        await user.send(embed=e)
-                    except Forbidden:
-                        await msg.channel.send(
-                            "Failed to reply to the user. Either their dms are closed "
-                            "or I no longer share any servers with them"
-                        )
+        if not ctx.channel.category.permissions_for(ctx.guild.me).manage_channels:
+            return await ctx.send(
+                f"To close the thread, delete the channel, or give me permissions to and rerun the cmd"
+            )
+        case_number = int(case)
+        async with self.bot.cursor() as cur:
+            await cur.execute(
+                f"select user_id from cases "
+                f"where guild_id = {ctx.guild.id} "
+                f"and case_number = {case_number};"
+            )
+            r = await cur.fetchone()
+        if r:
+            with suppress(NotFound, Forbidden):
+                await self.bot.get_user(r[0]).send(
+                    f"The thread for case #{case_number} in {ctx.guild} was closed"
+                )
+        await ctx.send("Closing the thread in 10 seconds")
+        await asyncio.sleep(10)
+        await ctx.channel.delete()
 
 
 def setup(bot):
