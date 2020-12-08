@@ -1,54 +1,96 @@
-from time import monotonic
 import asyncio
 
 from discord.ext import commands, tasks
 import discord
-import aiomysql
+import praw
+import prawcore
 
-from utils import colors
+from utils import colors, auth
 
 
 class Reddit(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.config = {}
-        self.is_ready = False
-        self.bot.loop.create_task(self._load_from_sql())
+        self.enabled = []
         self.ensure_subscriptions_task.start()
 
-    async def _load_from_sql(self):
-        """Cache configs from mysql server"""
-        while not self.bot.pool and not self.bot.is_ready():
-            await asyncio.sleep(0.21)
-        async with self.bot.pool.acquire() as conn:
-            before = monotonic()
-            async with conn.cursor(aiomysql.DictCursor) as cur:
-                await cur.execute(
-                    "select guild_id, channel_id, subreddit, new_posts, images, text, rate from reddit;"
-                )
-            results = await cur.fetchall()
-            for entry in results:
-                await asyncio.sleep(0)
-                guild_id = entry.pop("guild_id")
-                self.config[guild_id] = entry
-            self.is_ready = True
-            ping = str(round((monotonic() - before) * 1000)) + "ms"
-            self.bot.log.info(f"Cached reddit config. Operation took {ping}")
+    def cog_unload(self):
+        self.ensure_subscriptions_task.cancel()
 
     @tasks.loop(minutes=1)
     async def ensure_subscriptions_task(self):
-        if not self.is_ready:
-            return None
+        await asyncio.sleep(0.21)
+        if not self.bot.is_ready() or not self.bot.pool:
+            return
         if "reddit" not in self.bot.tasks:
             self.bot.tasks["reddit"] = {}
-        for guild_id, data in list(self.config.items()):
+        if not self.enabled:
+            async with self.bot.cursor() as cur:
+                await cur.execute("select guild_id from reddit;")
+                results = await cur.fetchall()
+            self.enabled = [result[0] for result in results]
+        for guild_id in self.enabled:
             if guild_id not in self.bot.tasks["reddit"] or self.bot.tasks["reddit"][guild_id].done():
                 self.bot.tasks["reddit"][guild_id] = self.bot.loop.create_task(
                     self.handle_subscription(guild_id)
                 )
+        for guild_id, task in self.bot.tasks["reddit"].items():
+            if guild_id not in self.enabled:
+                task.cancel()
+        await asyncio.sleep(60)
 
     async def handle_subscription(self, guild_id):
-        pass
+        async with self.bot.cursor() as cur:
+            await cur.execute(
+                f"select channel_id, subreddit, new_posts, text, images, rate "
+                f"from reddit "
+                f"where guild_id = {guild_id} "
+                f"limit 1;"
+            )
+            results = await cur.fetchall()
+        if not results:
+            return
+
+        channel_id, subreddit, new_posts, text, images, rate = results[0]
+
+        def collect() -> list:
+            creds = auth.Reddit()
+            client = praw.Reddit(
+                client_id=creds.client_id,
+                client_secret=creds.client_secret,
+                user_agent=creds.user_agent,
+            )
+            reddit = client.subreddit(subreddit)
+            if new_posts:
+                posts = reddit.new(limit=50)
+            else:
+                posts = reddit.hot(limit=50)
+            exts = ["png", "jpg", "jpeg", "gif"]
+            passing_posts = []
+            if images:
+                for post in posts:
+                    if any(ext in post.url for ext in exts):
+                        passing_posts.append(post)
+            if text:
+                for post in posts:
+                    if not any(ext in post.url for ext in exts):
+                        passing_posts.append(post)
+            return list(set(passing_posts))
+
+        channel = self.bot.get_channel(channel_id)
+
+        while True:
+            try:
+                for post in await self.bot.loop.run_in_executor(None, collect):
+                    await asyncio.sleep(rate)
+                    e = discord.Embed(color=colors.red())
+                    e.title = post.title
+                    e.set_footer(text=f"{subreddit}")
+                    e.set_image(url=post.url)
+                    await channel.send(embed=e)
+            except prawcore.exceptions.BadRequest:
+                await asyncio.sleep(1.21)
+                continue
 
     @commands.group(name="reddit-api")
     async def _reddit(self, ctx):
@@ -118,20 +160,20 @@ class Reddit(commands.Cog):
                 f"rate = {rate};"
             )
 
-        # Cache the current config
-        self.config[guild_id] = {
-            "channel_id": ctx.channel.id,
-            "subreddit": subreddit,
-            "new_posts": new,
-            "text": text,
-            "images": images,
-            "rate": rate
-        }
-
         await ctx.send(
             f"Set up the subreddit subscription. You'll now receive "
             f"a new post every {self.bot.utils.get_time(rate)}"
         )
+
+    @_reddit.command(name="disable")
+    @commands.has_permissions(administrator=True)
+    async def disable(self, ctx):
+        if ctx.guild.id not in self.enabled:
+            return await ctx.send("This server currently isn't subscribed to a subreddit")
+        async with self.bot.cursor() as cur:
+            await cur.execute(f"delete from reddit where guild_id = {ctx.guild.id};")
+        self.enabled.remove(ctx.guild.id)
+        await ctx.send("Disabled the reddit subscription")
 
 
 def setup(bot):
