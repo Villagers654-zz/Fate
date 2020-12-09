@@ -10,6 +10,8 @@ class Actions(commands.Cog):
             264838866480005122,  # luck
             355026215137968129,  # tother
             243233669148442624,  # opal
+            506735111543193601,  # Fate
+            644579811607707659   # Cabaretta
         ]
         self.mentions = discord.AllowedMentions(everyone=False, roles=False, users=True)
 
