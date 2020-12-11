@@ -175,10 +175,10 @@ class AntiSpam(commands.Cog):
                 'Rate-Limit': True,
                 'Mass-Pings': True,
                 'Anti-Macro': True,
-                'Duplicates': True,
-                'Inhuman': True
+                'Duplicates': False,
+                'Inhuman': False
             }
-            await ctx.send('Enabled all anti-spam modules')
+            await ctx.send('Enabled the default anti-spam config')
             await self.save_data()
 
     @_enable.command(name='rate-limit')
@@ -228,7 +228,10 @@ class AntiSpam(commands.Cog):
         if guild_id not in self.toggle:
             self.init(guild_id)
         self.toggle[guild_id]['Inhuman'] = True
-        await ctx.send('Enabled inhuman module')
+        await ctx.send(
+            'Enabled inhuman module. Note that this only '
+            'supports english characters and is still being refined.'
+        )
         await self.save_data()
 
     @anti_spam.group(name='disable')
