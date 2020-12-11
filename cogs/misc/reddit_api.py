@@ -248,17 +248,21 @@ class Reddit(commands.Cog):
                 )
                 return await ctx.send(embed=e)
 
-            e = discord.Embed(color=colors.fate())
+            e = discord.Embed(color=colors.red())
             e.set_author(name="Reddit", icon_url=ctx.author.avatar_url)
-            e.description = "Pulls from a subreddits posts and can subscribe to a " \
-                            "designated TextChannel. Can be sorted by top or new and can collect " \
-                            "images only, text only, or both according to preference"
+            e.set_thumbnail(
+                url="https://cdn3.iconfinder.com/data/icons/2018-social-media-logotypes/1000/2018_social_media_popular_app_logo_reddit-512.png"
+            )
+            e.description = "Get a random post from a subreddit, or subscribe to a " \
+                            "designated TextChannel at a set interval"
             p = self.bot.utils.get_prefix(ctx)  # type: str
             e.add_field(
                 name="◈ Usage",
-                value=f"{p}reddit subscribe r/example\n"
+                value=f"**{p}reddit [subreddit]**\n"
+                      f"`get a random post`\n"
+                      f"**{p}reddit subscribe r/example**\n"
                       f"`begin setup`\n"
-                      f"{p}reddit unsubscribe\n"
+                      f"**{p}reddit unsubscribe**\n"
                       f"`disables the subscription`"
             )
             await ctx.send(embed=e)
