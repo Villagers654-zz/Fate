@@ -203,7 +203,7 @@ class VcLog(commands.Cog):
     async def on_guild_remove(self, guild):
         guild_id = str(guild.id)
         if guild_id in self.channel:
-            del self.channel
+            del self.channel[guild_id]
             await self.save_json()
         if guild_id in self.keep_clean:
             del self.keep_clean[guild_id]
