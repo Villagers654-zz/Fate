@@ -47,11 +47,7 @@ class Reddit(commands.Cog):
                     await cur.execute("select guild_id from reddit;")
                     results = await cur.fetchall()
                 self.enabled = [result[0] for result in results]
-            lmt = time() - 60 * 60
-            await cur.execute(f"select post_id from reddit_cache where sent_at < {lmt}")
-            results = await cur.fetchall()
-            if results:
-                self.bot.log.info(f"Removing {len(results)} post ids from reddit_cache")
+            lmt = time() - 60 * 60 * 24 * 14
             await cur.execute(f"delete from reddit_cache where sent_at < {lmt};")
         for guild_id in self.enabled:
             if guild_id not in self.bot.tasks["reddit"] or self.bot.tasks["reddit"][guild_id].done():
