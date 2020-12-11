@@ -8,6 +8,7 @@
   "token": "goes in ./utils/auth",
   "token_id": "fate",
   "token_encryption": true,
+  "sentry_dsn": "https://d276b7e14b73496997280c86e536b983@o490280.ingest.sentry.io/5553956",
   "datastore_location": "./data",
   "backups_location": "/mnt/drive3/luck/Fate",
   "backup_every_?_hours": 24,
@@ -67,7 +68,6 @@
     "dev": [
       "custom",
       "dev",
-      "reddit_api",
       "reload",
       "secure_overwrites",
       "server_setup"
@@ -84,7 +84,8 @@
     "misc": [
       "apis",
       "nsfw",
-      "reactions"
+      "reactions",
+      "reddit_api"
     ],
     "moderation": [
       "anti_raid",

@@ -16,6 +16,7 @@ import aiomysql
 import pymysql
 from termcolor import cprint
 from discord.errors import NotFound, Forbidden, HTTPException
+from discord_sentry_reporting import use_sentry
 
 from utils import auth, colors, checks
 from utils.custom_logging import Logging
@@ -422,7 +423,10 @@ bot = Fate(case_insensitive=True)
 bot.allowed_mentions = discord.AllowedMentions(everyone=False, roles=False, users=False)
 bot.remove_command("help")  # Default help command
 bot.add_check(checks.command_is_enabled)
-
+use_sentry(
+    bot,
+    dsn=bot.config["sentry_dsn"]
+)
 
 @bot.event
 async def on_shard_ready(shard_id):
