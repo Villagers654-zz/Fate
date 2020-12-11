@@ -174,14 +174,15 @@ class ModMail(commands.Cog):
             if args[0].isdigit():
                 case_number = int(args[0])
                 args.remove(args[0])
+            else:
+                case_number = None
             message = " ".join(args)
         attachment = None
         if ctx.message.attachments:
             attachment = ctx.message.attachments[0].url
 
-
         async with self.bot.cursor() as cur:
-            if case_number:
+            if case_number.isdigit():
                 await cur.execute(
                     f"select guild_id, case_number, reason, link, created_at from cases "
                     f"where case_number = {int(case_number)} and user_id = {ctx.author.id} "
