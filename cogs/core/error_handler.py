@@ -92,6 +92,11 @@ class ErrorHandler(commands.Cog):
                 )
 
             # The bot attempted to complete an invalid action
+            elif isinstance(error, discord.HTTPException):
+                if "Maximum number of guild roles reached" in error:
+                    return await ctx.send("Can't operate due to this server reaching the max number of roles")
+
+            # Discord shit the bed
             elif isinstance(error, discord.errors.DiscordServerError):
                 return await ctx.send(
                         "Oop-\nDiscord shit in the bed\nIt's not my fault, it's theirs"
