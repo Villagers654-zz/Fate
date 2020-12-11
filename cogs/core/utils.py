@@ -181,7 +181,7 @@ class Utils(commands.Cog):
                     if resp.status != 200:
                         return None
                     return await resp.read()
-            except asyncio.TimeoutError:
+            except (asyncio.TimeoutError, aiohttp.ClientPayloadError):
                 return None
 
     async def save_json(self, fp, data, mode="w+", **json_kwargs) -> None:
