@@ -67,6 +67,7 @@
     "dev": [
       "custom",
       "dev",
+      "reddit_api",
       "reload",
       "secure_overwrites",
       "server_setup"
@@ -95,6 +96,7 @@
       "lock",
       "logger",
       "mod",
+      "modmail",
       "rules",
       "verification"
     ],
