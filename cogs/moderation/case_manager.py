@@ -2,6 +2,7 @@
 
 from time import time
 import asyncio
+import aiomysql
 
 from discord.ext import commands
 import discord
@@ -28,20 +29,28 @@ class CaseManager(commands.Cog):
                 case_number = 1
             now = time()
             q = "'"
-            sql = f"insert into cases " \
-                  f"values (" \
-                  f"{guild_id}, " \
-                  f"{f'{q}{user_id}{q}' if user_id else 'null'}, " \
-                  f"'{action}', " \
-                  f"{f'{q}{reason}{q}' if reason else 'null'}, " \
-                  f"'{link}', " \
-                  f"{case_number}, " \
-                  f"{f'{q}{created_by}{q}' if created_by else 'null'}, " \
-                  f"{now}" \
-                  f");"
-            await cur.execute(
-                sql
-            )
+
+            for _ in range(3):
+                try:
+                    sql = f"insert into cases " \
+                          f"values (" \
+                          f"{guild_id}, " \
+                          f"{f'{q}{user_id}{q}' if user_id else 'null'}, " \
+                          f"'{action}', " \
+                          f"{f'{q}{reason}{q}' if reason else 'null'}, " \
+                          f"'{link}', " \
+                          f"{case_number}, " \
+                          f"{f'{q}{created_by}{q}' if created_by else 'null'}, " \
+                          f"{now}" \
+                          f");"
+                    await cur.execute(
+                        sql
+                    )
+                    break
+                except aiomysql.IntegrityError:
+                    case_number += 1
+            else:
+                return None
         return case_number
 
     @commands.command(name="mod-logs", aliases=["mod_logs", "modlogs", "infractions"])
