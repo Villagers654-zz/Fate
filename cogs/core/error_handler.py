@@ -92,9 +92,8 @@ class ErrorHandler(commands.Cog):
                 )
 
             # The bot attempted to complete an invalid action
-            elif isinstance(error, discord.errors.HTTPException):
-                if "internal" in error_str or "service unavailable" in error_str:
-                    return await ctx.send(
+            elif isinstance(error, discord.errors.DiscordServerError):
+                return await ctx.send(
                         "Oop-\nDiscord shit in the bed\nIt's not my fault, it's theirs"
                     )
 
