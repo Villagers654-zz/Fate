@@ -72,7 +72,7 @@ class Reactions(commands.Cog):
 
         # Remove sent gifs from possible options and choose which GIF to send
         for sent_path in self.sent[reaction][ctx.guild.id].keys():
-            with suppress(IndexError):
+            with suppress(ValueError):
                 options.remove(sent_path)
         filename = random.choice(options)
         path = os.getcwd() + f"/data/images/reactions/{reaction}/" + filename
