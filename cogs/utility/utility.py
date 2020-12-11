@@ -1209,11 +1209,12 @@ class Utility(commands.Cog):
         await ctx.send(
             f"I'll remind you about {' '.join(args)} in {', '.join(expanded_timer)}"
         )
+        with suppress(KeyError):
+            task = self.bot.loop.create_task(
+                self.remind(user_id, msg, self.timers[user_id][msg])
+            )
+            self.bot.tasks["timers"][f"timer-{self.timers[user_id][msg]['timer']}"] = task
         await self.save_timers()
-        task = self.bot.loop.create_task(
-            self.remind(user_id, msg, self.timers[user_id][msg])
-        )
-        self.bot.tasks["timers"][f"timer-{self.timers[user_id][msg]['timer']}"] = task
 
     @commands.command(name="timers", aliases=["reminders"])
     @commands.cooldown(*utils.default_cooldown())
