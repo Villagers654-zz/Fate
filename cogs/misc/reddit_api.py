@@ -194,7 +194,7 @@ class Reddit(commands.Cog):
         if not ctx.invoked_subcommand:
             args = ctx.message.content.split()
             if len(args) > 1:
-                subreddit = args[1:][0]
+                subreddit = args[1:][0].lstrip("r/")
                 reddit = await self.client.subreddit(subreddit)
                 post = await reddit.random()
                 await post.author.load()
@@ -254,7 +254,7 @@ class Reddit(commands.Cog):
             p = self.bot.utils.get_prefix(ctx)  # type: str
             e.add_field(
                 name="◈ Usage",
-                value=f"**{p}reddit [subreddit]**\n"
+                value=f"**{p}reddit r/example**\n"
                       f"`get a random post`\n"
                       f"**{p}reddit subscribe r/example**\n"
                       f"`begin setup`\n"
