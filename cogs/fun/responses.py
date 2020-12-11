@@ -44,7 +44,6 @@ class Responses(commands.Cog):
     async def on_message(self, m: discord.Message):
         if isinstance(m.guild, discord.Guild):
             if not m.author.bot and m.channel.permissions_for(m.guild.me).send_messages:
-                m.content = m.content.lower()
                 # toggleable responses
                 if str(m.guild.id) not in self.responses:
                     self.responses[str(m.guild.id)] = "disabled"

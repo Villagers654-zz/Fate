@@ -75,7 +75,6 @@ class Utility(commands.Cog):
                         if m.author.id == 235088799074484224:
                             await asyncio.sleep(9)
                             await m.delete()
-                        m.content = m.content.lower()
                         for i in listed:
                             if m.content.startswith("!"):
                                 if m.content.startswith("!play"):
