@@ -285,8 +285,14 @@ class Emojis(commands.Cog):
                     )
                 continue
 
-            file = await attachment.read()  # Raw bytes file
             name = attachment.filename[: attachment.filename.find(".")]
+            try:
+                file = await attachment.read()  # Raw bytes file
+            except discord.errors.HTTPException:
+                await self.bot.utils.update_msg(
+                    ctx.msg, f"{name} - failed to read attachment"
+                )
+                continue
             if args and not custom and not ids and not mappings:
                 name = args[0]
 
