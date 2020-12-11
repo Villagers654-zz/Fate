@@ -1,7 +1,7 @@
 import asyncio
 import traceback
 from time import time
-
+from datetime import datetime
 
 from discord.ext import commands, tasks
 import discord
@@ -19,6 +19,14 @@ class Reddit(commands.Cog):
         for guild_id, task in list(self.bot.tasks["reddit"].items()):
             task.cancel()
             del self.bot.tasks["reddit"][guild_id]
+
+        creds = auth.Reddit()
+        self.client = asyncpraw.Reddit(
+            client_id=creds.client_id,
+            client_secret=creds.client_secret,
+            user_agent=creds.user_agent,
+        )
+
         self.ensure_subscriptions_task.start()
 
     def cog_unload(self):
@@ -31,13 +39,20 @@ class Reddit(commands.Cog):
         await asyncio.sleep(0.21)
         if not self.bot.is_ready() or not self.bot.pool:
             return
-        if "reddit" not in self.bot.tasks:
-            self.bot.tasks["reddit"] = {}
-        if not self.enabled:
-            async with self.bot.cursor() as cur:
-                await cur.execute("select guild_id from reddit;")
-                results = await cur.fetchall()
-            self.enabled = [result[0] for result in results]
+        async with self.bot.cursor() as cur:
+            if "reddit" not in self.bot.tasks:
+                self.bot.tasks["reddit"] = {}
+            if not self.enabled:
+                async with self.bot.cursor() as cur:
+                    await cur.execute("select guild_id from reddit;")
+                    results = await cur.fetchall()
+                self.enabled = [result[0] for result in results]
+            lmt = time() - 60 * 60
+            await cur.execute(f"select post_id from reddit_cache where sent_at < {lmt}")
+            results = await cur.fetchall()
+            if results:
+                self.bot.log.info(f"Removing {len(results)} post ids from reddit_cache")
+            await cur.execute(f"delete from reddit_cache where sent_at < {lmt};")
         for guild_id in self.enabled:
             if guild_id not in self.bot.tasks["reddit"] or self.bot.tasks["reddit"][guild_id].done():
                 self.bot.tasks["reddit"][guild_id] = self.bot.loop.create_task(
@@ -62,6 +77,7 @@ class Reddit(commands.Cog):
 
         channel_id, subreddit_name, new_posts, text, images, rate = results[0]
         exts = ["png", "jpg", "jpeg", "gif"]
+
         cache = []
         async with self.bot.cursor() as cur:
             await cur.execute(
@@ -73,18 +89,19 @@ class Reddit(commands.Cog):
             cache.append(result[0])
 
         channel = self.bot.get_channel(channel_id)
-        await channel.send("Subscription task was started")
         get_description = lambda post: post.selftext if post.selftext else post.title
-        creds = auth.Reddit()
-        client = asyncpraw.Reddit(
-            client_id=creds.client_id,
-            client_secret=creds.client_secret,
-            user_agent=creds.user_agent,
-        )
+
         subreddit_name = subreddit_name.replace(" ", "")
-        reddit = await client.subreddit(subreddit_name.replace(",", "+"))
+        reddit = await self.client.subreddit(subreddit_name.replace(",", "+"))
         subreddit = reddit.new if new_posts else reddit.hot
         search_limit = 25
+
+        reduced_time = None
+        history = await channel.history(limit=1).flatten()
+        if history and history[0].author.id == self.bot.user.id:
+            time_since = (datetime.utcnow() - history[0].created_at).total_seconds()
+            if rate > time_since:
+                reduced_time = round(rate - time_since)
 
         while True:
             await asyncio.sleep(0.21)
@@ -113,7 +130,12 @@ class Reddit(commands.Cog):
 
                 for post in posts:
                     url = f"https://reddit.com{post.permalink}"
-                    await asyncio.sleep(rate)
+                    sleep_time = rate
+                    if reduced_time:
+                        sleep_time = reduced_time
+                        await channel.send(f"Resuming a timer and sleeping for {sleep_time}")
+                        reduced_time = None
+                    await asyncio.sleep(sleep_time)
                     await post.author.load()
                     await post.subreddit.load()
 
@@ -165,7 +187,7 @@ class Reddit(commands.Cog):
                         )
                     cache.append(post.id)
             except asyncio.CancelledError:
-                return await channel.send("Subscription task was cancelled")
+                return
             except:
                 await channel.send(traceback.format_exc())
                 await asyncio.sleep(1.21)
@@ -174,13 +196,72 @@ class Reddit(commands.Cog):
     @commands.group(name="reddit", aliases=["reddit-api"])
     async def _reddit(self, ctx):
         if not ctx.invoked_subcommand:
-            pass
-        elif not ctx.invoked_subcommand:
+            args = ctx.message.content.split()
+            if len(args) > 1:
+                subreddit = args[1:][0]
+                reddit = await self.client.subreddit(subreddit)
+                post = await reddit.random()
+                await post.author.load()
+
+                e = discord.Embed(color=colors.red())
+                icon_img = self.bot.user.avatar_url
+                if hasattr(post.author, "icon_img"):
+                    icon_img = post.author.icon_img
+                e.set_author(name=f"u/{post.author.name}", icon_url=icon_img, url=post.url)
+
+                # Set to use text
+                if post.title or post.selftext:
+                    enum = enumerate(self.bot.utils.split(
+                        post.selftext if post.selftext else post.title, 914
+                    ))
+                    for i, chunk in enum:
+                        if i == 0:
+                            e.description = chunk
+                        elif i == 1:
+                            e.description += chunk
+                        elif i == 5:
+                            e.add_field(
+                                name="Reached the character limit",
+                                value=f"Click the [hyperlink]({post.url}) to view more",
+                                inline=False
+                            )
+                            break
+                        else:
+                            e.add_field(
+                                name="Additional Text",
+                                value=chunk,
+                                inline=False
+                            )
+
+                # Set to use images
+                if "." in post.url.split("/")[post.url.count("/")]:
+                    if any(post.url.endswith(ext) for ext in ["png", "jpg", "gif", "jpeg"]):
+                        e.set_image(url=post.url)
+                    else:
+                        e.description += f"\n[click to view attachment]({post.url})"
+
+                e.set_footer(
+                    text=f"r/{post.subreddit.display_name} | "
+                         f"⬆ {post.score} | "
+                         f"👍 {str(post.upvote_ratio).lstrip('0.')}% | "
+                         f"💬 {post.num_comments}"
+                )
+                return await ctx.send(embed=e)
+
             e = discord.Embed(color=colors.fate())
             e.set_author(name="Reddit", icon_url=ctx.author.avatar_url)
             e.description = "Pulls from a subreddits posts and can subscribe to a " \
                             "designated TextChannel. Can be sorted by top or new and can collect " \
-                            "images only, text only, or title only depending on preference"
+                            "images only, text only, or both according to preference"
+            p = self.bot.utils.get_prefix(ctx)  # type: str
+            e.add_field(
+                name="◈ Usage",
+                value=f"{p}reddit subscribe r/example\n"
+                      f"`begin setup`\n"
+                      f"{p}reddit unsubscribe\n"
+                      f"`disables the subscription`"
+            )
+            await ctx.send(embed=e)
 
     @_reddit.command(name="subscribe")
     @commands.has_permissions(administrator=True)
@@ -242,7 +323,6 @@ class Reddit(commands.Cog):
         self.enabled.append(guild_id)
         if ctx.guild.id in self.bot.tasks["reddit"]:
             self.bot.tasks["reddit"][ctx.guild.id].cancel()
-            await ctx.send("Cancelled existing task")
         self.bot.tasks["reddit"][ctx.guild.id] = self.bot.loop.create_task(
             self.handle_subscription(guild_id)
         )
@@ -252,9 +332,9 @@ class Reddit(commands.Cog):
             f"a new post every {self.bot.utils.get_time(rate)}"
         )
 
-    @_reddit.command(name="disable")
+    @_reddit.command(name="unsubscribe", aliases=["disable"])
     @commands.has_permissions(administrator=True)
-    async def disable(self, ctx):
+    async def unsubscribe(self, ctx):
         if ctx.guild.id not in self.enabled:
             return await ctx.send("This server currently isn't subscribed to a subreddit")
         async with self.bot.cursor() as cur:
