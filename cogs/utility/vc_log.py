@@ -160,7 +160,7 @@ class VcLog(commands.Cog):
                         )
                         self.join_cd[guild_id][user_id] = time() + 10
                         return
-                if not after.channel:
+                elif not after.channel:
                     if guild_id not in self.leave_cd:
                         self.leave_cd[guild_id] = {}
                     if user_id not in self.leave_cd[guild_id]:
@@ -171,7 +171,7 @@ class VcLog(commands.Cog):
                         )
                         self.leave_cd[guild_id][user_id] = time() + 10
                         return
-                if before.channel.id != after.channel.id:
+                elif before.channel.id != after.channel.id:
                     now = int(time() / 10)
                     if guild_id not in self.move_cd:
                         self.move_cd[guild_id] = {}
@@ -186,28 +186,18 @@ class VcLog(commands.Cog):
                     return await channel.send(
                         f"🚸 **{member.display_name} moved to {after.channel.name}**"
                     )
-                if before.mute is False and after.mute is True:
+                elif before.mute is False and after.mute is True:
                     return await channel.send(f"🔈 **{member.display_name} was muted**")
-                if before.mute is True and after.mute is False:
+                elif before.mute is True and after.mute is False:
                     return await channel.send(
                         f"🔊 **{member.display_name} was unmuted**"
                     )
-                if before.deaf is False and after.deaf is True:
+                elif before.deaf is False and after.deaf is True:
                     return await channel.send(
                         f"🎧 **{member.display_name} was deafened**"
                     )
-                if before.deaf is True and after.deaf is False:
+                elif before.deaf is True and after.deaf is False:
                     await channel.send(f"🎤 **{member.display_name} was undeafened**")
-
-    @commands.Cog.listener()
-    async def on_guild_remove(self, guild):
-        guild_id = str(guild.id)
-        if guild_id in self.channel:
-            del self.channel[guild_id]
-            await self.save_json()
-        if guild_id in self.keep_clean:
-            del self.keep_clean[guild_id]
-            await self.save_json()
 
 
 def setup(bot):
