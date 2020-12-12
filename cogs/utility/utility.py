@@ -761,9 +761,10 @@ class Utility(commands.Cog):
         if not guild:
             guild = invite.guild
             if not isinstance(guild, (discord.Guild, discord.PartialInviteGuild)):
-                tmp = self.bot.get_guild(guild.id)
-                if isinstance(tmp, discord.Guild):
-                    guild = tmp
+                if hasattr(guild, "id"):
+                    tmp = self.bot.get_guild(guild.id)
+                    if isinstance(tmp, discord.Guild):
+                        guild = tmp
         guild_name = "Unknown"
         if isinstance(guild, (discord.Guild, discord.PartialInviteGuild)):
             guild_name = guild.name
