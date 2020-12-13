@@ -539,6 +539,7 @@ index = {}
 
 @bot.event
 async def on_command(ctx):
+    await ctx.channel.trigger_typing()
     # if ctx.author.id not in index:
     #     index[ctx.author.id] = {}
     # if ctx.message.content not in index[ctx.author.id]:
