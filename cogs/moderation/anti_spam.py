@@ -486,9 +486,10 @@ class AntiSpam(commands.Cog):
                                 for message in dupes:
                                     with suppress(IndexError, ValueError):
                                         self.dupes[channel_id].remove(message)
-                                await msg.channel.delete_messages([
-                                    message for message in dupes if message
-                                ])
+                                with suppress(Forbidden, NotFound):
+                                    await msg.channel.delete_messages([
+                                        message for message in dupes if message
+                                    ])
                                 triggered = True
                                 break
 
