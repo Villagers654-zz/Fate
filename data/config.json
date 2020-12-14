@@ -77,12 +77,12 @@
       "cookies",
       "fac",
       "fun",
-      "global-chat",
       "responses",
       "textart"
     ],
     "misc": [
       "apis",
+      "gc",
       "nsfw",
       "reactions",
       "reddit_api"

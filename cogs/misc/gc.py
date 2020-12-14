@@ -29,11 +29,11 @@ class GlobalChatRewrite(commands.Cog):
     @tasks.loop(seconds=3)
     async def handle_queue(self):
         if self.queue:
-            messages, e = self.queue
+            embed = self.queue
             self.queue = None
             for guild_id, message in list(self.cache.items()):
                 with suppress(NotFound, Forbidden):
-                    await message.edit(content=messages, embed=e)
+                    await message.edit(content=None, embed=embed)
 
     async def cache_channels(self):
         if not self.bot.is_ready():
@@ -61,11 +61,12 @@ class GlobalChatRewrite(commands.Cog):
                     with suppress(Forbidden):
                         await channel.send("Disabled global chat due to missing permissions")
 
-    @commands.group(name="gcr")
+    @commands.group(name="gc", aliases=["global-chat", "globalchat", "global_chat"])
     async def _gc(self, ctx):
         pass
 
     @_gc.command(name="enable")
+    @commands.has_permissions(administrator=True)
     async def _enable(self, ctx):
         msg = await ctx.send("Enabling global chat")
         async with self.bot.cursor() as cur:
@@ -80,6 +81,15 @@ class GlobalChatRewrite(commands.Cog):
         self.cache[ctx.guild.id] = msg
         await ctx.send("Enabled global chat")
 
+    @_gc.command(name="disable")
+    @commands.has_permissions(administrator=True)
+    async def _disable(self, ctx):
+        if ctx.guild.id not in self.cache:
+            return await ctx.send("Global chat isn't enabled")
+        async with self.bot.cursor() as cur:
+            await cur.execute(f"delete from global_chat where guild_id = {ctx.guild.id};")
+        await ctx.send("Disabled global chat")
+
     @commands.Cog.listener()
     async def on_message(self, msg):
         active = [m.channel.id for m in list(self.cache.values())]
@@ -87,24 +97,24 @@ class GlobalChatRewrite(commands.Cog):
             if any(msg.content == m.content for m in self.messages):
                 return
             self.message_cache.append(msg)
-            messages = ""
             last = None
             e = discord.Embed()
             e.set_thumbnail(url=msg.author.avatar_url)
             for i, message in enumerate(self.messages):
                 if message.author.id == last:
-                    messages += f"\n{message.content[:100]}"
                     e.set_field_at(
                         index=len(e.fields) - 1,
                         name=str(message.author),
                         value=e.fields[len(e.fields) - 1].value + f"\n{message.content[:100]}", inline=False
                     )
                 else:
-                    messages += f"\n\n<:{message.author.display_name}:> {message.content[:100]}"
-                    e.add_field(name=(str(message.author)), value=f"{message.content[:100]}", inline=False)
+                    e.add_field(
+                        name=(str(message.author)),
+                        value=f"{message.content[:100]}",
+                        inline=False
+                    )
                 last = message.author.id
-            messages = f"```css{messages.replace('`', '')}```"
-            self.queue = messages, e
+            self.queue = e
             await asyncio.sleep(1)
             with suppress(NotFound, Forbidden):
                 await msg.delete()
