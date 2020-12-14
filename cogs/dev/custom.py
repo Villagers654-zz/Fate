@@ -24,7 +24,8 @@ class Custom(commands.Cog):
     @commands.command(name="kaizen")
     @commands.cooldown(1, 15, commands.BucketType.channel)
     async def kaizen(self, ctx):
-        await ctx.send("some seals are on the brink of extinction due to climate change such as: the bearded and ringed seal")
+        await ctx.message.add_reaction(self.bot.get_emoji(764961946491289620))
+        await ctx.send("https://cdn.discordapp.com/attachments/681086116195074060/788123405156089916/seal_saturday.mp4")
 
     @commands.command(name="sploop")
     async def sploop(self, ctx):
