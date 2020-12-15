@@ -477,6 +477,8 @@ async def on_message(msg):
             prefixes = "\n".join(
                 bot.utils.get_prefixes(bot, msg)[1:]  # type: list
             )
+            if len(prefixes.split("\n")) > 2:
+                return
             with suppress(NotFound, Forbidden, HTTPException, AttributeError):
                 await msg.channel.send(f"The prefixes you can use are:\n{prefixes}")
             return
