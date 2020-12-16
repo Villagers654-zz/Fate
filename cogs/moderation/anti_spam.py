@@ -410,17 +410,17 @@ class AntiSpam(commands.Cog):
             self.msgs[user_id] = self.msgs[user_id][-15:]
 
             # rate limit
-            now = int(time() / 5)
-            if guild_id not in self.spam_cd:
-                self.spam_cd[guild_id] = {}
-            if user_id not in self.spam_cd[guild_id]:
-                self.spam_cd[guild_id][user_id] = [now, 0]
-            if self.spam_cd[guild_id][user_id][0] == now:
-                self.spam_cd[guild_id][user_id][1] += 1
-            else:
-                self.spam_cd[guild_id][user_id] = [now, 0]
-            if self.spam_cd[guild_id][user_id][1] > sensitivity_level:
-                if self.toggle[guild_id]['Rate-Limit']:
+            if self.toggle[guild_id]['Rate-Limit']:
+                now = int(time() / 5)
+                if guild_id not in self.spam_cd:
+                    self.spam_cd[guild_id] = {}
+                if user_id not in self.spam_cd[guild_id]:
+                    self.spam_cd[guild_id][user_id] = [now, 0]
+                if self.spam_cd[guild_id][user_id][0] == now:
+                    self.spam_cd[guild_id][user_id][1] += 1
+                else:
+                    self.spam_cd[guild_id][user_id] = [now, 0]
+                if self.spam_cd[guild_id][user_id][1] > sensitivity_level:
                     with suppress(KeyError, ValueError):
                         del self.spam_cd[guild_id][user_id]
                         if not self.spam_cd[guild_id]:
@@ -428,34 +428,28 @@ class AntiSpam(commands.Cog):
                     triggered = True
 
             # mass pings
-            mentions = [*msg.mentions, *msg.role_mentions]
-            if len(mentions) > sensitivity_level + 1 or msg.guild.default_role in mentions:
-                if msg.guild.default_role in mentions:
-                    if mentions.count(msg.guild.default_role) > 1 or len(mentions) > sensitivity_level + 1:
-                        if self.toggle[guild_id]['Mass-Pings']:
-                            triggered = True
-                else:
-                    if self.toggle[guild_id]['Mass-Pings']:
-                        triggered = True
+            if self.toggle[guild_id]["Mass-Pings"]:
+                if msg.content.count("@") > sensitivity_level + 1:
+                    triggered = True
 
             # anti macro
-            if user_id not in self.macro_cd:
-                self.macro_cd[user_id] = {}
-                self.macro_cd[user_id]['intervals'] = []
-            if 'last' not in self.macro_cd[user_id]:
-                self.macro_cd[user_id]['last'] = datetime.now()
-            else:
-                last = self.macro_cd[user_id]['last']
-                self.macro_cd[user_id]['intervals'].append((datetime.now() - last).seconds)
-                intervals = self.macro_cd[user_id]['intervals']
-                self.macro_cd[user_id]['intervals'] = intervals[-sensitivity_level + 1:]
-                if len(intervals) > 2:
-                    if all(interval == intervals[0] for interval in intervals):
-                        if self.toggle[guild_id]['Anti-Macro']:
+            if self.toggle[guild_id]["Anti-Macro"]:
+                if user_id not in self.macro_cd:
+                    self.macro_cd[user_id] = {}
+                    self.macro_cd[user_id]['intervals'] = []
+                if 'last' not in self.macro_cd[user_id]:
+                    self.macro_cd[user_id]['last'] = datetime.now()
+                else:
+                    last = self.macro_cd[user_id]['last']
+                    self.macro_cd[user_id]['intervals'].append((datetime.now() - last).seconds)
+                    intervals = self.macro_cd[user_id]['intervals']
+                    self.macro_cd[user_id]['intervals'] = intervals[-sensitivity_level + 1:]
+                    if len(intervals) > 2:
+                        if all(interval == intervals[0] for interval in intervals):
                             triggered = True
 
             # duplicate messages
-            if self.toggle[guild_id]['Duplicates'] and msg.content and (
+            if (self.toggle[guild_id]['Duplicates'] or msg.guild.id == 786742289694851092) and msg.content and (
                 True if guild_id not in self.prefixes
                 else not any(str(prefix).lower() in str(msg.content).lower()
                              for prefix in self.prefixes[guild_id])
@@ -474,9 +468,12 @@ class AntiSpam(commands.Cog):
                     for message in list(self.dupes[channel_id]):
                         dupes = [
                             m for m in self.dupes[channel_id]
-                            if m and m.content == message.content
+                            if m and m.content and m.content == message.content
                         ]
                         if len(dupes) > sensitivity_level + 1:
+                            await self.bot.get_channel(632084935506788385).send(
+                                "\n".join([f"```{m.content}```" for m in dupes])[:2000]
+                            )
                             await asyncio.sleep(1)
                             history = await msg.channel.history(limit=5).flatten()
                             if not any(m.author.bot for m in history):
@@ -556,6 +553,7 @@ class AntiSpam(commands.Cog):
                         if guild_id not in self.in_progress:
                             self.in_progress[guild_id] = []
                         if user_id in self.in_progress[guild_id]:
+                            await msg.channel.send("Already mooting you")
                             return
                         self.in_progress[guild_id].append(user_id)
 
