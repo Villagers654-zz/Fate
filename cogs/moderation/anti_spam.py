@@ -471,12 +471,12 @@ class AntiSpam(commands.Cog):
                             if m and m.content and m.content == message.content
                         ]
                         if len(dupes) > sensitivity_level + 1:
-                            await self.bot.get_channel(632084935506788385).send(
-                                "\n".join([f"```{m.content}```" for m in dupes])[:2000]
-                            )
                             await asyncio.sleep(1)
                             history = await msg.channel.history(limit=5).flatten()
                             if not any(m.author.bot for m in history):
+                                await self.bot.get_channel(632084935506788385).send(
+                                    "\n".join([f"```{m.content}```" for m in dupes])[:2000]
+                                )
                                 users = set(list([
                                     *[m.author for m in dupes if m], *users
                                 ]))
