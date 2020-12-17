@@ -21,6 +21,11 @@ class Custom(commands.Cog):
     def tm(ctx):
         return ctx.author.id in [264838866480005122, 355026215137968129]
 
+    @commands.command(name="riester")
+    @commands.cooldown(1, 15, commands.BucketType.channel)
+    async def riester(self, ctx):
+        await ctx.send("https://cdn.discordapp.com/attachments/788980129031258163/788980519424884786/southparkmexican.png")
+
     @commands.command(name="kaizen")
     @commands.cooldown(1, 15, commands.BucketType.channel)
     async def kaizen(self, ctx):
