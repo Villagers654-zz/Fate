@@ -387,6 +387,16 @@ class Ranking(commands.Cog):
                 "Your command isn't formatted properly. "
                 "The level argument you put wasn't a number"
             )
+
+        async with self.bot.cursor() as cur:
+            await cur.execute(
+                f"select * from role_rewards "
+                f"where guild_id = {ctx.guild.id};"
+            )
+            entries = cur.rowcount
+        if entries >= 10:
+            return await ctx.send("You can't have more than 10 level rewards")
+
         level = int(args[1])
         stack = True
         await ctx.send(
