@@ -136,7 +136,9 @@ class FactionsRewrite(commands.Cog):
 
         owner_id = self.factions[guild_id][faction]["owner"]
         owner = self.bot.get_user(owner_id)
-        return owner.avatar_url
+        if owner:
+            return owner.avatar_url
+        return None
 
     async def get_users_faction(self, ctx, user=None):
         """fetch a users faction by context or partial name"""
