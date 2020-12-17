@@ -314,10 +314,22 @@ class Fate(commands.AutoShardedBot):
             return await self.logout()
         self.log.info(f"Initialized db {sql.db} with {sql.user}@{sql.host}")
 
-    async def execute(self, sql):
-        async with self.pool.acquire() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute(sql)
+    async def execute(self, sql: str) -> None:
+        async with self.cursor() as cur:
+            await cur.execute(sql)
+        return None
+
+    async def fetch(self, sql: str) -> tuple:
+        async with self.cursor() as cur:
+            await cur.execute(sql)
+            r = await cur.fetchall()
+        return r
+
+    async def rowcount(self, sql: str) -> int:
+        async with self.cursor() as cur:
+            await cur.execute(sql)
+            rows = cur.rowcount
+        return rows
 
     def load(self, *extensions) -> None:
         for cog in extensions:
