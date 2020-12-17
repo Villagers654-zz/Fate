@@ -388,14 +388,14 @@ class Ranking(commands.Cog):
                 "The level argument you put wasn't a number"
             )
         level = int(args[1])
-        stack = False
+        stack = True
         await ctx.send(
             "Should I remove this role when the user gets a higher role reward? "
             "Reply with `yes` or `no`"
         )
         async with self.bot.require("message", ctx) as msg:
             if "yes" in msg.content.lower():
-                stack = True
+                stack = False
 
         await self.bot.execute(
             f"insert into role_rewards "
