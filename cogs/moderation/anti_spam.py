@@ -175,7 +175,7 @@ class AntiSpam(commands.Cog):
                 'Rate-Limit': True,
                 'Mass-Pings': True,
                 'Anti-Macro': True,
-                'Duplicates': False,
+                'Duplicates': True,
                 'Inhuman': False
             }
             await ctx.send('Enabled the default anti-spam config')
