@@ -11,7 +11,7 @@
   "sentry_dsn": "https://d276b7e14b73496997280c86e536b983@o490280.ingest.sentry.io/5553956",
   "datastore_location": "./data",
   "backups_location": "/mnt/drive3/luck/Fate",
-  "backup_every_?_hours": 24,
+  "backup_every_?_hours": 12,
   "keep_backups_for_?_days": 7,
 
   "hub_server": 397415086295089155,

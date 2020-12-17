@@ -22,7 +22,8 @@ class Tasks(commands.Cog):
             self.status_task,
             self.log_queue,
             self.debug_log,
-            self.mark_alive
+            self.mark_alive,
+            self.auto_backup
         ]
         if bot.is_ready():
             self.ensure_all()
@@ -219,24 +220,24 @@ class Tasks(commands.Cog):
 
         sleep_for = self.bot.config["backup_every_?_hours"] * 60 * 60
         try:
-            local_fp = os.path.join(self.bot.config["backups_location"], "local")
-            if os.listdir(local_fp):
-                last_backed_up = datetime.strptime(
-                     sorted(os.listdir(local_fp), reverse=True)[0].split("_")[1].strip(".zip"), "%Y-%m-%d %H:%M:%S.%f"
-                 )
-                time_since = (datetime.now() - last_backed_up).total_seconds()
-                remaining_sleep = round(sleep_for - time_since)
-
-                # Run a backup because it's been greater than the interval to do backups
-                if remaining_sleep <= 0:
-                    expanded_form = self.bot.utils.get_time(int(str(remaining_sleep).lstrip('-')))
-                    self.bot.log.info(f"It's been {expanded_form} since the last backup. Backing up immediately")
-                    sleep_for = 0
-
-                # Resume so the sleep time doesn't reset on restart
-                else:
-                    self.bot.log.info(f"Resuming backup task. Sleeping for {self.bot.utils.get_time(sleep_for)}")
-                    sleep_for = remaining_sleep
+            # local_fp = os.path.join(self.bot.config["backups_location"], "local")
+            # if os.listdir(local_fp):
+            #     last_backed_up = datetime.strptime(
+            #          sorted(os.listdir(local_fp), reverse=True)[0].split("_")[1].strip(".zip"), "%Y-%m-%d %H:%M:%S.%f"
+            #      )
+            #     time_since = (datetime.now() - last_backed_up).total_seconds()
+            #     remaining_sleep = round(sleep_for - time_since)
+#
+            #     # Run a backup because it's been greater than the interval to do backups
+            #     if remaining_sleep <= 0:
+            #         expanded_form = self.bot.utils.get_time(int(str(remaining_sleep).lstrip('-')))
+            #         self.bot.log.info(f"It's been {expanded_form} since the last backup. Backing up immediately")
+            #         sleep_for = 0
+#
+            #     # Resume so the sleep time doesn't reset on restart
+            #     else:
+            #         self.bot.log.info(f"Resuming backup task. Sleeping for {self.bot.utils.get_time(sleep_for)}")
+            #         sleep_for = remaining_sleep
 
             await asyncio.sleep(sleep_for)
             keep_for = self.bot.config["keep_backups_for_?_days"]
