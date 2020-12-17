@@ -330,10 +330,10 @@ class Ranking(commands.Cog):
             await asyncio.sleep(5)
             self.cmd_cd[user_id].remove(cmd)
 
-    @commands.command(name="level-roles", aliases=["level-rewards", "role-rewards", "lr"])
+    @commands.command(name="role-rewards", aliases=["level-rewards", "level-roles", "lr"])
     @commands.cooldown(*utils.default_cooldown())
     @commands.bot_has_permissions(embed_links=True, manage_roles=True)
-    async def level_roles(self, ctx, *args):
+    async def role_rewards(self, ctx, *args):
         if not args or len(args) == 1:
             e = discord.Embed(color=self.bot.config["theme_color"])
             e.set_author(name="Level Roles", icon_url=self.bot.user.avatar_url)
@@ -355,11 +355,15 @@ class Ranking(commands.Cog):
                 inline=False
             )
             async with self.bot.cursor() as cur:
-                await cur.execute(f"select role_id, lvl from role_rewards where guild_id = {ctx.guild.id};")
+                await cur.execute(
+                    f"select role_id, lvl from role_rewards "
+                    f"where guild_id = {ctx.guild.id} "
+                    f"order by lvl desc;"
+                )
                 results = await cur.fetchall()
             if results:
                 value = ""
-                for role_id, level in sorted(list(results), key=lambda kv: kv[1], reverse=True):
+                for role_id, level in results:
                     value += f"\nLvl {level} - {ctx.guild.get_role(int(role_id)).mention}"
                 e.add_field(
                     name="◈ Active Roles",
@@ -394,7 +398,7 @@ class Ranking(commands.Cog):
                 stack = True
 
         await self.bot.execute(
-            f"insert into level_roles "
+            f"insert into role_rewards "
             f"values ({ctx.guild.id}, {role.id}, {level}, {stack}) "
             f"on duplicate key update lvl = {level} and stack = {stack};"
         )
