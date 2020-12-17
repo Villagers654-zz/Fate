@@ -740,7 +740,7 @@ class FactionsRewrite(commands.Cog):
                 "Note this is a one time purchase, and you can set the banner as many times "
                 "as you want after without having to buy this again"
             )
-            async with self.bot.require("message", ctx) as msg:
+            async with self.bot.require("message", ctx, handle_timeout=True) as msg:
                 if "ye" not in str(msg.content).lower():
                     return await ctx.send("Aight.. maybe next time")
             self.factions[guild_id][faction]["balance"] -= 500
@@ -915,6 +915,8 @@ class FactionsRewrite(commands.Cog):
         guild_id = str(ctx.guild.id)
         owner_id = self.factions[guild_id][faction]["owner"]
         owner = self.bot.get_user(owner_id)
+        if not owner:
+            return await ctx.send("Well.. fuck\nIt seems your owner's gone")
         owner_income = 0
         if str(owner.id) in self.factions[guild_id][faction]["income"]:
             owner_income = self.factions[guild_id][faction]["income"][str(owner_id)]
@@ -1242,6 +1244,9 @@ class FactionsRewrite(commands.Cog):
             return await ctx.send("You failed. Maybe next time :/")
 
         guild_id = str(ctx.guild.id)
+        if faction not in self.factions[guild_id]:
+            return await ctx.send(f"Uh. It seems the faction called `{faction}` doesn't exist anymore ._.")
+
         paycheck = random.randint(3, 7)
         e = discord.Embed(color=purple())
         e.description = f"You earned {faction} ${paycheck}"
