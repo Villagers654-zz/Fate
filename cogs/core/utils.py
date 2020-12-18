@@ -34,6 +34,7 @@ class Utils(commands.Cog):
         self.MemoryInfo = memory_info
         self.Result = result
         self.templist = TempList
+        self.tempdl = TempDownload
 
     async def verify_user(
         self, context=None, channel=None, user=None, timeout=45, delete_after=False
@@ -1041,6 +1042,28 @@ class Cache:
             "args": args,
             "kwargs": kwargs
         }
+
+
+class TempDownload(commands.Cog):
+    def __init__(self, filename: str, url: str):
+        self.filename = filename
+        self.url = url
+        files = os.listdir("./.local")
+        if filename in files:
+            self.filename += str(len([f for f in files if filename in f]))
+        self.fp = os.path.join(os.getcwd(), ".local", self.filename)
+
+    async def __aenter__(self):
+        async with aiohttp.ClientSession() as sess:
+            async with sess.get(self.url) as resp:
+                raw_dat = await resp.read()
+        async with aiofiles.open(self.fp, "wb") as f:
+            await f.write(raw_dat)
+        return self.fp
+
+    async def __aexit__(self, _exc_type, _exc_val, _exc_tb):
+        if os.path.isfile(self.fp):
+            os.remove(self.fp)
 
 
 def setup(bot):
