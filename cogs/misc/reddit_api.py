@@ -91,6 +91,8 @@ class Reddit(commands.Cog):
         reddit = await self.client.subreddit(subreddit_name.replace(",", "+"))
         subreddit = reddit.new if new_posts else reddit.hot
         search_limit = 25
+        if new_posts:
+            search_limit = 5
 
         reduced_time = None
         history = await channel.history(limit=1).flatten()
@@ -120,6 +122,9 @@ class Reddit(commands.Cog):
                     if search_limit == 250:
                         await channel.send(f"No results after searching r/{subreddit_name}")
                         await asyncio.sleep(rate)
+                        continue
+                    if new_posts:
+                        await asyncio.sleep(300)  # Wait 5 minutes for new posts
                         continue
                     search_limit += 25
                     continue
@@ -300,7 +305,7 @@ class Reddit(commands.Cog):
         if rate < 60 * 5 and ctx.author.id not in self.bot.owner_ids:
             return await ctx.send("That rates too fast\nRedo the command")
         if rate > 60 * 60 * 24:
-            return await ctx.send("That rates too...... long.......for............me.....owo blushes")
+            return await ctx.send("That rates too... long.....for.........me.....OwO blushes")
             # i looked away for literally 20 seconds. and you do this
             # without regerts
 
@@ -327,10 +332,11 @@ class Reddit(commands.Cog):
             self.handle_subscription(guild_id)
         )
 
-        await ctx.send(
-            f"Set up the subreddit subscription. You'll now receive "
-            f"a new post every {self.bot.utils.get_time(rate)}"
-        )
+        msg = f"Set up the subreddit subscription. You'll now receive " \
+              f"a new post every {self.bot.utils.get_time(rate)}"
+        if new:
+            msg += ". Allow the bot a bit of time to catch up on the most recent posts"
+        await ctx.send(msg)
 
     @_reddit.command(name="unsubscribe", aliases=["disable"])
     @commands.has_permissions(administrator=True)
