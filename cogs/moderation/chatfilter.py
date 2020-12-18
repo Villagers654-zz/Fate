@@ -150,7 +150,7 @@ class ChatFilter(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, m: discord.Message):
-        if isinstance(m.author, discord.Member):
+        if isinstance(m.author, discord.Member) and hasattr(m.guild, "id"):
             guild_id = str(m.guild.id)
             if m.guild.id in self.toggle and guild_id in self.blacklist:
                 if guild_id in self.ignored:
@@ -175,7 +175,7 @@ class ChatFilter(commands.Cog):
     async def on_message_edit(self, before, after):
         if isinstance(before.author, discord.Member) and isinstance(
             after.author, discord.Member
-        ):
+        ) and hasattr(before.guild, "id"):
             guild_id = str(before.guild.id)
             if before.guild.id in self.toggle:
                 if guild_id in self.blacklist:

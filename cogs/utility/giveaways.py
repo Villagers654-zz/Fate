@@ -9,6 +9,7 @@ import random
 
 from discord.ext import commands
 import discord
+from discord.errors import NotFound, Forbidden
 
 from utils import colors
 
@@ -44,12 +45,16 @@ class Giveaways(commands.Cog):
         channel = await self.bot.fetch_channel(dat["channel"])
         try:
             message = await channel.fetch_message(dat["message"])
-        except discord.errors.NotFound:
+        except (NotFound, Forbidden):
             del self.data[guild_id][giveaway_id]
             return await self.save_data()
         while timestamp() < dat["end_time"]:
             await asyncio.sleep(30)
-            await message.edit(embed=await self.make_embed(dat))
+            try:
+                await message.edit(embed=await self.make_embed(dat))
+            except (NotFound, Forbidden):
+                del self.data[guild_id][giveaway_id]
+                return await self.save_data()
         await message.edit(content="Giveaway complete")
         message = await channel.fetch_message(dat["message"])
         for reaction in message.reactions:

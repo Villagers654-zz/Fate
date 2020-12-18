@@ -422,7 +422,8 @@ class Logger(commands.Cog):
                         except (
                                 discord.errors.Forbidden,
                                 discord.errors.NotFound,
-                                ClientOSError,
+                                discord.errors.HTTPException,
+                                ClientOSError
                         ):
                             break
                         continue
@@ -508,9 +509,12 @@ class Logger(commands.Cog):
                             self.queue[guild_id].remove(list_obj)
                         except ValueError:
                             pass
-                        self.recent_logs[guild_id][channelType].append(
-                            [embed, logged_at]
-                        )
+                        if log_type == "multi":
+                            self.recent_logs[guild_id][channelType].append([embed, logged_at])
+                        else:
+                            self.recent_logs[guild_id][channelType].append(
+                                [embed, logged_at]
+                            )
                         break
 
                 if log_type == "multi":

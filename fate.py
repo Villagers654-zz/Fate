@@ -244,7 +244,7 @@ class Fate(commands.AutoShardedBot):
     def utils(self) -> Utils:
         """Return the cog containing utility functions"""
         if "Utils" not in self.cogs:
-            raise ModuleNotFoundError("The utils cog hasn't been loaded yet")
+            raise self.ignored_exit
         return self.get_cog("Utils")
 
     @property
@@ -553,7 +553,6 @@ index = {}
 
 @bot.event
 async def on_command(ctx):
-    await ctx.channel.trigger_typing()
     # if ctx.author.id not in index:
     #     index[ctx.author.id] = {}
     # if ctx.message.content not in index[ctx.author.id]:

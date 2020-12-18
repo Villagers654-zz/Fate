@@ -204,7 +204,8 @@ class Moderation(commands.Cog):
         # with open(self.fp, 'r') as f:
         #     cache = json.load(f)  # type: dict
         cmd = ctx.command.name
-        cache[cmd].remove(ctx.guild.id)
+        if ctx.guild.id in cache[cmd]:
+            cache[cmd].remove(ctx.guild.id)
         # with open(self.fp, 'w') as f:
         #     json.dump(cache, f, indent=2)
 
@@ -492,11 +493,14 @@ class Moderation(commands.Cog):
                         before=ctx.message,
                     )
                 except discord.errors.HTTPException:  # Msgs too old
-                    messages = []
-                    async for msg in ctx.channel.history(before=ctx.message, limit=amount_to_purge):
-                        with suppress(discord.errors.Forbidden, discord.errors.NotFound):
-                            await msg.delete()
-                            messages.append(msg)
+                    try:
+                        messages = []
+                        async for msg in ctx.channel.history(before=ctx.message, limit=amount_to_purge):
+                            with suppress(discord.errors.Forbidden, discord.errors.NotFound):
+                                await msg.delete()
+                                messages.append(msg)
+                    except discord.errors.NotFound:
+                        raise self.bot.ignored_exit
                 return messages
 
             task = self.bot.loop.create_task(purge_task())

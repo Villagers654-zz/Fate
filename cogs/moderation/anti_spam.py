@@ -570,7 +570,7 @@ class AntiSpam(commands.Cog):
                                 del self.toggle[guild_id]
                                 del self.sensitivity[guild_id]
                                 await self.save_data()
-                                del self.in_progress[guild_id]
+                                self.in_progress[guild_id].remove(user_id)
                                 return
 
                             mute_role = await msg.guild.create_role(name="Muted", color=discord.Color(colors.black()), hoist=True)
@@ -583,7 +583,7 @@ class AntiSpam(commands.Cog):
                                 if channel.permissions_for(bot).manage_channels:
                                     await channel.set_permissions(mute_role, speak=False)
                         if mute_role.position >= msg.guild.me.top_role.position:
-                            del self.in_progress[guild_id]
+                            self.in_progress[guild_id].remove(user_id)
                             return
 
                         # Increase the mute timer if multiple offenses in the last hour
@@ -604,7 +604,7 @@ class AntiSpam(commands.Cog):
                         end_time = time() + timer
                         timer_str = self.bot.utils.get_time(timer)
                         await user.add_roles(mute_role)
-                        del self.in_progress[guild_id]
+                        self.in_progress[guild_id].remove(user_id)
                         messages = []
                         if user_id in self.msgs:
                             messages = [m for m in self.msgs[user_id] if m]
