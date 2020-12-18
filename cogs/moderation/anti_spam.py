@@ -462,7 +462,7 @@ class AntiSpam(commands.Cog):
                     self.dupes[channel_id] = [
                         msg, *[
                             msg for msg in self.dupes[channel_id]
-                            if msg.created_at > datetime.utcnow() - timedelta(seconds=36)
+                            if msg.created_at > datetime.utcnow() - timedelta(seconds=25)
                         ]
                     ]
                     for message in list(self.dupes[channel_id]):
