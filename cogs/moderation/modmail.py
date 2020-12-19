@@ -166,10 +166,10 @@ class ModMail(commands.Cog):
             return await self.mod_reply(ctx, ctx.message)
 
         message = None
-        if not case_number.isdigit() and " " not in case_number:
+        if case_number and not case_number.isdigit() and " " not in case_number:
             message = case_number
             case_number = None
-        elif not case_number.isdigit():
+        elif case_number and not case_number.isdigit():
             args = case_number.split()
             if args[0].isdigit():
                 case_number = int(args[0])
