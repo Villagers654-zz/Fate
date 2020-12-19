@@ -397,6 +397,8 @@ class AntiSpam(commands.Cog):
         user_id = str(msg.author.id)
         triggered = False
         if guild_id in self.toggle:
+            if guild_id in self.in_progress and user_id in self.in_progress[guild_id]:
+                return
             users = [msg.author]
             sensitivity_level = 3 if self.sensitivity[guild_id] == 'low' else 2
             if guild_id in self.blacklist:
@@ -543,8 +545,8 @@ class AntiSpam(commands.Cog):
                         await msg.channel.delete_messages(messages)
 
                     # Don't mute users with Administrator
-                    if msg.author.top_role.position >= bot.top_role.position or user.guild_permissions.administrator:
-                        return
+                    if user.top_role.position >= bot.top_role.position or user.guild_permissions.administrator:
+                        continue
                     # Don't continue if lacking permission(s) to operate
                     if not msg.channel.permissions_for(bot).send_messages or not perms.manage_roles:
                         return
@@ -553,7 +555,7 @@ class AntiSpam(commands.Cog):
                         if guild_id not in self.in_progress:
                             self.in_progress[guild_id] = []
                         if user_id in self.in_progress[guild_id]:
-                            return
+                            continue
                         self.in_progress[guild_id].append(user_id)
 
                         # Get, or setup the mute role
