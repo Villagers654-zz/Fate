@@ -16,6 +16,7 @@ from contextlib import suppress
 from discord.ext import commands
 import discord
 from discord.ext.commands import Greedy
+from discord.errors import NotFound, Forbidden
 
 from utils import colors
 from cogs.core.utils import Utils as utils
@@ -855,12 +856,21 @@ class Moderation(commands.Cog):
             elif member.top_role.position >= ctx.guild.me.top_role.position:
                 e.description += f"❌ {member} is Higher Than Me"
             else:
-                await member.kick(
-                    reason=f"Kicked by {ctx.author} with ID: {ctx.author.id} for {reason}"
-                )
                 case = await self.cases.add_case(
                     ctx.guild.id, member.id, "kick", reason, ctx.message.jump_url, ctx.author.id
                 )
+                content = f"You've been kicked in {ctx.guild} by {ctx.author} for {reason}"
+                rows = await self.bot.rowcount(f"select * from modmail where guild_id = {ctx.guild.id};")
+                if rows:
+                    content += f". Use `.appeal {case}` if you feel there's a mistake"
+                else:
+                    content += f" [Case #{case}]"
+                with suppress(NotFound, Forbidden):
+                    await member.send(content)
+                await member.kick(
+                    reason=f"Kicked by {ctx.author} with ID: {ctx.author.id} for {reason}"
+                )
+
                 e.description += f"✅ {member} [Case #{case}]"
             if i % 2 == 0 and i != len(members) - 1:
                 await msg.edit(embed=e)
@@ -922,11 +932,19 @@ class Moderation(commands.Cog):
                     inline=False,
                 )
             else:
-                await ctx.guild.ban(
-                    user, reason=f"{ctx.author}: {reason}", delete_message_days=0
-                )
                 case = await self.cases.add_case(
                     ctx.guild.id, user.id, "ban", reason, ctx.message.jump_url, ctx.author.id
+                )
+                content = f"You've been banned in {ctx.guild} by {ctx.author} for {reason}"
+                rows = await self.bot.rowcount(f"select * from modmail where guild_id = {ctx.guild.id};")
+                if rows:
+                    content += f". Use `.appeal {case}` if you feel there's a mistake"
+                else:
+                    content += f" [Case #{case}]"
+                with suppress(NotFound, Forbidden):
+                    await user.send(content)
+                await ctx.guild.ban(
+                    user, reason=f"{ctx.author}: {reason}", delete_message_days=0
                 )
                 e.add_field(
                     name=f"◈ Banned {user} [Case #{case}]", value=f"Reason: {reason}", inline=False
@@ -951,11 +969,19 @@ class Moderation(commands.Cog):
                     )
                     await msg.edit(embed=e)
                     continue
-            await ctx.guild.ban(
-                user, reason=f"{ctx.author}: {reason}", delete_message_days=0
-            )
             case = await self.cases.add_case(
                 ctx.guild.id, user.id, "ban", reason, ctx.message.jump_url, ctx.author.id
+            )
+            content = f"You've been banned in {ctx.guild} by {ctx.author} for {reason}"
+            rows = await self.bot.rowcount(f"select * from modmail where guild_id = {ctx.guild.id};")
+            if rows:
+                content += f". Use `.appeal {case}` if you feel there's a mistake"
+            else:
+                content += f" [Case #{case}]"
+            with suppress(NotFound, Forbidden):
+                await user.send(content)
+            await ctx.guild.ban(
+                user, reason=f"{ctx.author}: {reason}", delete_message_days=0
             )
             e.add_field(
                 name=f"◈ Banned {user} [Case #{case}]", value=f"Reason: {reason}", inline=False
