@@ -9,7 +9,6 @@ class Statistics(commands.Cog):
         self.cogs = {  #  CogName: variable
             "Logger": "config",
             "SelfRoles": "menus",
-            "GlobalChat": "config",
             "AutoRole": "roles",
             "ChatFilter": "toggle",
             "Giveaways": "data",
