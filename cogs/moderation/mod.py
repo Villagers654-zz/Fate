@@ -16,7 +16,7 @@ from contextlib import suppress
 from discord.ext import commands
 import discord
 from discord.ext.commands import Greedy
-from discord.errors import NotFound, Forbidden
+from discord.errors import NotFound, Forbidden, HTTPException
 
 from utils import colors
 from cogs.core.utils import Utils as utils
@@ -865,7 +865,7 @@ class Moderation(commands.Cog):
                     content += f". Use `.appeal {case}` if you feel there's a mistake"
                 else:
                     content += f" [Case #{case}]"
-                with suppress(NotFound, Forbidden):
+                with suppress(NotFound, Forbidden, HTTPException):
                     await member.send(content)
                 await member.kick(
                     reason=f"Kicked by {ctx.author} with ID: {ctx.author.id} for {reason}"
@@ -941,7 +941,7 @@ class Moderation(commands.Cog):
                     content += f". Use `.appeal {case}` if you feel there's a mistake"
                 else:
                     content += f" [Case #{case}]"
-                with suppress(NotFound, Forbidden):
+                with suppress(NotFound, Forbidden, HTTPException):
                     await user.send(content)
                 await ctx.guild.ban(
                     user, reason=f"{ctx.author}: {reason}", delete_message_days=0
@@ -978,7 +978,7 @@ class Moderation(commands.Cog):
                 content += f". Use `.appeal {case}` if you feel there's a mistake"
             else:
                 content += f" [Case #{case}]"
-            with suppress(NotFound, Forbidden):
+            with suppress(NotFound, Forbidden, HTTPException):
                 await user.send(content)
             await ctx.guild.ban(
                 user, reason=f"{ctx.author}: {reason}", delete_message_days=0
