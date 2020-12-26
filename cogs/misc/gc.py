@@ -28,15 +28,15 @@ class GlobalChatRewrite(commands.Cog):
         self._queue = self._queue[-3:]
         return self._queue
 
-    @tasks.loop(seconds=3)
+    @tasks.loop(seconds=0.21)
     async def handle_queue(self):
         queued_to_send = []
         for entry in list(self.queue):
             if not any(entry[2] in values for values in queued_to_send):
                 queued_to_send.append(entry)
-        for embed, requires_edit, author_id in queued_to_send:
+        for embed, requires_edit, author_msg in queued_to_send:
             with suppress(ValueError, IndexError):
-                self._queue.remove([embed, requires_edit, author_id])
+                self._queue.remove([embed, requires_edit, author_msg])
             if requires_edit:
                 for message in self.msg_cache:
                     with suppress(NotFound, Forbidden):
@@ -45,11 +45,20 @@ class GlobalChatRewrite(commands.Cog):
                 self.msg_cache = []
                 chunk = {}
                 for guild_id, channel in list(self.cache.items()):
+                    with suppress(AttributeError):
+                        if author_msg.channel.id == channel.id and author_msg.attachments:
+                            continue
                     with suppress(NotFound, Forbidden):
                         msg = await channel.send(embed=embed)
                         self.msg_cache.append(msg)
                         chunk[msg.channel.id] = msg.id
                 self.msg_chunks.append(chunk)
+            with suppress(AttributeError, NotFound, Forbidden):
+                if author_msg.attachments:
+                    if author_msg.channel.permissions_for(author_msg.guild.me).add_reactions:
+                        await author_msg.add_reaction("✅")
+                else:
+                    await author_msg.delete()
 
     async def cache_channels(self):
         if not self.bot.is_ready():
@@ -107,7 +116,7 @@ class GlobalChatRewrite(commands.Cog):
         active = [m.id for m in list(self.cache.values())]
         if not msg.author.bot and msg.channel.id in active:
             # Duplicate messages
-            if any(msg.content == m.content for m in self.msg_cache):
+            if msg.content and any(msg.content == m.content for m in self.msg_cache):
                 return
 
             # Missing permissions to moderate global chat
@@ -124,27 +133,30 @@ class GlobalChatRewrite(commands.Cog):
 
             # Edit & combine their last msg
             if msg.author.id == self.last_id:
-                e = self.msg_cache[0].embeds[0]
-                if msg.attachments:
-                    e.set_image(url=msg.attachments[0].url)
-                e.description += f"\n{msg.content[:256]}"
-                if len(e.description) >= 1048:
+                em = self.msg_cache[0].embeds[0]
+                if not isinstance(e.image.url, str):
+                    if msg.attachments:
+                        em.set_image(url=msg.attachments[0].url)
+                    if e.description:
+                        em.description += f"\n{msg.content[:256]}"
+                    elif msg.content:
+                        em.description = f"{msg.content[:256]}"
+                    if len(e.description) >= 1048:
+                        return
+                    self._queue.append([em, True, msg])
                     return
-                self._queue.append([e, True, msg.author.id])
 
             # Send a new msg
+            if msg.attachments:
+                e.set_image(url=msg.attachments[0].url)
+            e.set_author(name=str(msg.author), icon_url=msg.author.avatar_url)
+            e.set_thumbnail(url=msg.guild.icon_url)
+            e.description = msg.content[:512]
+            self._queue.append([e, False, msg])
+            if msg.attachments:
+                self.last_id = None
             else:
-                if msg.attachments:
-                    e.set_image(url=msg.attachments[0].url)
-                e.set_author(name=str(msg.author), icon_url=msg.author.avatar_url)
-                e.set_thumbnail(url=msg.guild.icon_url)
-                e.description = msg.content[:512]
-                self._queue.append([e, False, msg.author.id])
                 self.last_id = msg.author.id
-
-            await asyncio.sleep(1)
-            with suppress(NotFound, Forbidden):
-                await msg.delete()
 
     @commands.Cog.listener()
     async def on_message_delete(self, msg):
