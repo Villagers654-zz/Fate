@@ -4,7 +4,7 @@ import random
 import requests
 import json
 import os
-from utils import colors
+from botutils import colors
 import asyncio
 
 

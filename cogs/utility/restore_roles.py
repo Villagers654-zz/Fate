@@ -3,7 +3,7 @@ import json
 from contextlib import suppress
 from discord.ext import commands
 import discord
-from utils import colors
+from botutils import colors
 
 
 class RestoreRoles(commands.Cog):

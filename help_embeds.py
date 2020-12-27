@@ -1,5 +1,5 @@
 import discord
-from utils import colors, config
+from botutils import colors, config
 
 
 class HelpMenus:

@@ -24,7 +24,7 @@ from discord import AuditLogAction as audit
 from discord.errors import NotFound, Forbidden
 from PIL import Image
 
-from utils.colors import *
+from botutils.colors import *
 
 
 def is_guild_owner():

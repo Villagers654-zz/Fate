@@ -18,8 +18,8 @@ from termcolor import cprint
 from discord.errors import NotFound, Forbidden, HTTPException
 from discord_sentry_reporting import use_sentry
 
-from utils import auth, colors, checks
-from utils.custom_logging import Logging
+from botutils import auth, colors, checks
+from botutils.custom_logging import Logging
 from cogs.core.utils import Utils, Cache, CacheWriter
 from cogs.core.tasks import Tasks
 

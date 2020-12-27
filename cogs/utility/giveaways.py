@@ -11,7 +11,7 @@ from discord.ext import commands
 import discord
 from discord.errors import NotFound, Forbidden
 
-from utils import colors
+from botutils import colors
 
 
 class Giveaways(commands.Cog):

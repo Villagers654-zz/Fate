@@ -5,7 +5,7 @@ import aiohttp
 from praw import Reddit
 from discord.ext import commands
 import discord
-from utils import colors, auth
+from botutils import colors, auth
 
 
 class APIS(commands.Cog):

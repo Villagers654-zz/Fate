@@ -3,8 +3,8 @@ from typing import Optional
 from discord.ext import commands
 import discord
 import asyncio
-from utils import checks
-from utils.colors import ColorSets
+from botutils import checks
+from botutils.colors import ColorSets
 
 CONFIG = {
     264838866480005122: {

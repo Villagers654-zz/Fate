@@ -12,7 +12,7 @@ import subprocess
 import discord
 from discord.ext import commands, tasks
 
-from utils import auth
+from botutils import auth
 
 
 class Tasks(commands.Cog):

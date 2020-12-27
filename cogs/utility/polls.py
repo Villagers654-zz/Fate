@@ -13,7 +13,7 @@ from discord.errors import NotFound, Forbidden
 from base64 import b64encode as encode64, b64decode as decode64
 
 from fate import Fate
-from utils import colors
+from botutils import colors
 
 
 class SafePolls(commands.Cog):

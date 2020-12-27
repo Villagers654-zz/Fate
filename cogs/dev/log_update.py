@@ -20,7 +20,7 @@ import discord
 from discord import AuditLogAction as audit
 from PIL import Image
 
-from utils.colors import *
+from botutils.colors import *
 
 
 def is_guild_owner():

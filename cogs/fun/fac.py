@@ -20,8 +20,8 @@ from discord.ext.commands import CheckFailure
 from discord.errors import Forbidden
 import discord
 
-from utils.colors import purple, pink
-from utils import checks
+from botutils.colors import purple, pink
+from botutils import checks
 
 
 def is_faction_owner():

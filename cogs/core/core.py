@@ -17,7 +17,7 @@ import discord
 from discord import Webhook, AsyncWebhookAdapter
 import dbl
 
-from utils import config, colors, auth
+from botutils import config, colors, auth
 from cogs.core.utils import Utils as utils
 
 

@@ -7,7 +7,7 @@ from discord.ext import commands, tasks
 import discord
 import asyncpraw
 
-from utils import colors, auth
+from botutils import colors, auth
 
 
 class Reddit(commands.Cog):

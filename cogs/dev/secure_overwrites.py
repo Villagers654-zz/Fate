@@ -1,5 +1,5 @@
 from discord.ext import commands
-from utils import config
+from botutils import config
 
 CONFIG = {
     579823772547153958: [config.owner_id()],  # 2B2TBE

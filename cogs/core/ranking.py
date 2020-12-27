@@ -17,7 +17,7 @@ import discord
 from discord.errors import NotFound, Forbidden
 from PIL import Image, ImageFont, ImageDraw, ImageSequence, UnidentifiedImageError
 
-from utils import colors
+from botutils import colors
 from cogs.core.utils import Utils as utils
 
 
@@ -505,29 +505,13 @@ class Ranking(commands.Cog):
         """ sets the minimum gained xp per msg """
         if amount > 100:
             return await ctx.send("biTcH nO, those heels are too high")
-        elif amount < 0:
-            return await ctx.send("..NO")
-        async with self.bot.cursor() as cur:
-            await cur.execute(
-                f"insert into xp values "
-                f"({ctx.guild.id}, {amount}, 1, 10, 1, 250) "
-                f"on duplicate key update "
-                f"min_xp = {amount};"
-            )
-            await ctx.send(f"Set the minimum xp gained per msg to {amount}")
-            await cur.execute(
-                f"select max_xp from xp "
-                f"where guild_id = {ctx.guild.id};"
-            )
-            r = await cur.fetchone()
-            max_xp = r[0]  # type: int
-            if amount > max_xp:
-                await self.bot.execute(
-                    f"update xp "
-                    f"set max_xp = {amount} "
-                    f"where guild_id = {ctx.guild.id};"
-                )
-                await ctx.send(f"I also upped the maximum xp per msg to {amount}")
+        guild_id = str(ctx.guild.id)
+        self.config[guild_id]["min_xp_per_msg"] = amount
+        await ctx.send(f"Set the minimum xp gained per msg to {amount}")
+        if amount > self.config[guild_id]["max_xp_per_msg"]:
+            self.config[guild_id]["max_xp_per_msg"] = amount
+            await ctx.send(f"I also upped the maximum xp per msg to {amount}")
+        await self.save_config()
 
     @set.command(name="max-xp-per-msg")
     @commands.has_permissions(administrator=True)
@@ -535,61 +519,31 @@ class Ranking(commands.Cog):
         """ sets the minimum gained xp per msg """
         if amount > 100:
             return await ctx.send("biTcH nO, those heels are too high")
-        elif amount < 1:
-            return await ctx.send("haha.. heh... ***no***")
-        async with self.bot.cursor() as cur:
-            await cur.execute(
-                f"insert into xp values "
-                f"({ctx.guild.id}, 1, {amount}, 10, 1, 250) "
-                f"on duplicate key update "
-                f"max_xp = {amount};"
-            )
-            await ctx.send(f"Set the maximum xp gained per msg to {amount}")
-            await cur.execute(
-                f"select min_xp from msg "
-                f"where guild_id = {ctx.guild.id};"
-            )
-            r = await cur.fetchone()
-            min_xp = r[0]  # type: int
-            if amount < min_xp:
-                await cur.execute(
-                    f"update xp "
-                    f"set min_xp = {amount} "
-                    f"where guild_id = {ctx.guild.id};"
-                )
-                await ctx.send(f"I also lowered the minimum xp per msg to {amount}")
+        guild_id = str(ctx.guild.id)
+        self.config[guild_id]["max_xp_per_msg"] = amount
+        await ctx.send(f"Set the maximum xp gained per msg to {amount}")
+        if amount < self.config[guild_id]["max_xp_per_msg"]:
+            self.config[guild_id]["max_xp_per_msg"] = amount
+            await ctx.send(f"I also lowered the minimum xp per msg to {amount}")
+        await self.save_config()
 
     @set.command(name="timeframe")
     @commands.has_permissions(administrator=True)
     async def _timeframe(self, ctx, amount: int):
         """ sets the timeframe to allow x messages """
-        if amount > 60 * 60 * 24 * 7:  # 1 week
-            return await ctx.send("biTcH nO, those heels are too high")
-        elif amount < 0:
-            return await ctx.send("haha.. heh... ***no***")
-        await self.bot.execute(
-            f"insert into xp values "
-            f"({ctx.guild.id}, 1, 1, {amount}, 1, 250) "
-            f"on duplicate key update "
-            f"timeframe = {amount};"
-        )
+        guild_id = str(ctx.guild.id)
+        self.config[guild_id]["timeframe"] = amount
         await ctx.send(f"Set the timeframe that allows x messages to {amount}")
+        await self.save_config()
 
     @set.command(name="msgs-within-timeframe")
     @commands.has_permissions(administrator=True)
     async def _msgs_within_timeframe(self, ctx, amount: int):
         """ sets the limit of msgs within the timeframe """
-        if amount > 2048:
-            return await ctx.send("biTcH nO, those heels are too high")
-        elif amount < 1:
-            return await ctx.send("I don't think that's how this works..")
-        await self.bot.execute(
-            f"insert into xp values "
-            f"({ctx.guild.id}, 1, 1, 10, {amount}, 250) "
-            f"on duplicate key update "
-            f"msgs_within_timeframe = {amount};"
-        )
+        guild_id = str(ctx.guild.id)
+        self.config[guild_id]["msgs_within_timeframe"] = amount
         await ctx.send(f"Set msgs within timeframe limit to {amount}")
+        await self.save_config()
 
     @set.command(name="first-lvl-xp-req")
     @commands.has_permissions(administrator=True)
@@ -599,13 +553,10 @@ class Ranking(commands.Cog):
             return await ctx.send("You can't set an amount greater than 2,500")
         elif amount < 100:
             return await ctx.send("You can't set an amount smaller than 100")
-        await self.bot.execute(
-            f"insert into xp values "
-            f"({ctx.guild.id}, 1, 1, 10, 1, {amount}) "
-            f"on duplicate key update "
-            f"first_lvl_requirement = {amount};"
-        )
+        guild_id = str(ctx.guild.id)
+        self.config[guild_id]["first_lvl_xp_req"] = amount
         await ctx.send(f"Set the required xp to level up your first time to {amount}")
+        await self.save_config()
 
     @commands.command(name="profile", aliases=["rank"], usage=profile_help())
     @commands.cooldown(1, 5, commands.BucketType.user)

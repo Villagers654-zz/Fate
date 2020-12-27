@@ -14,7 +14,7 @@ from discord import Webhook, AsyncWebhookAdapter
 from discord.ext import commands
 from discord.ext import tasks
 
-from utils import colors, auth
+from botutils import colors, auth
 
 code = "```py\n{0}\n```"
 sexualities = [

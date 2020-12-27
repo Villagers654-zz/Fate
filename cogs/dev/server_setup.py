@@ -1,6 +1,6 @@
 from discord.ext import commands
 import discord
-from utils.checks import luck
+from botutils.checks import luck
 
 
 class ServerSetup(commands.Cog):

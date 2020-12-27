@@ -1,5 +1,5 @@
 from discord.ext import commands
-from utils import colors
+from botutils import colors
 import discord
 import asyncio
 import json

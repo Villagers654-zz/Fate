@@ -1,5 +1,5 @@
 from discord.ext import commands
-from utils import colors
+from botutils import colors
 from os.path import isfile
 from time import time
 import discord

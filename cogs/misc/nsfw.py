@@ -6,7 +6,7 @@ import discord
 from discord.ext import commands
 from pybooru import Danbooru, exceptions
 
-from utils import colors
+from botutils import colors
 
 
 class NSFW(commands.Cog):

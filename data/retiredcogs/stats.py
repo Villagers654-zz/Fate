@@ -1,4 +1,4 @@
-from utils.utils import bytes2human
+from botutils.utils import bytes2human
 from discord.ext import commands
 from datetime import datetime
 import discord

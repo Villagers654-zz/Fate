@@ -2,7 +2,7 @@ from discord.ext import commands
 import discord
 
 from fate import Fate
-from utils import colors
+from botutils import colors
 
 
 class Toggles(commands.Cog):

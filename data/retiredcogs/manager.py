@@ -2,7 +2,7 @@ import asyncio
 import json
 import traceback
 import psutil
-from utils.utils import bytes2human as read
+from botutils.utils import bytes2human as read
 
 
 class Commands:

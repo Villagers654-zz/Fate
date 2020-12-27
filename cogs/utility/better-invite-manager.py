@@ -7,7 +7,7 @@ import json
 from discord.ext import commands
 import discord
 
-from utils import colors
+from botutils import colors
 
 
 class BetterInviteManager(commands.Cog):

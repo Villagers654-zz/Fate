@@ -21,7 +21,7 @@ from colormap import rgb2hex
 import psutil
 from discord.ext import commands
 
-from utils import colors, config
+from botutils import colors, config
 from cogs.core.utils import Utils as utils
 
 

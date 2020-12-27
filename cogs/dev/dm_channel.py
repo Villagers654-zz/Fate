@@ -1,6 +1,6 @@
 from discord import Webhook, AsyncWebhookAdapter
 from discord.ext import commands
-from utils import checks
+from botutils import checks
 from io import BytesIO
 import requests
 import discord

@@ -1,5 +1,5 @@
 from discord.ext import commands
-from utils import checks, colors
+from botutils import checks, colors
 from os.path import isfile
 import discord
 import json

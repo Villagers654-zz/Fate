@@ -137,11 +137,11 @@ class GlobalChatRewrite(commands.Cog):
                 if not isinstance(e.image.url, str):
                     if msg.attachments:
                         em.set_image(url=msg.attachments[0].url)
-                    if e.description:
+                    if em.description:
                         em.description += f"\n{msg.content[:256]}"
                     elif msg.content:
                         em.description = f"{msg.content[:256]}"
-                    if len(e.description) >= 1048:
+                    if len(em.description) >= 1048:
                         return
                     self._queue.append([em, True, msg])
                     return

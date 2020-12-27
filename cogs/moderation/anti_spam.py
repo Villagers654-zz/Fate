@@ -10,7 +10,7 @@ from discord.errors import Forbidden, NotFound, HTTPException
 from discord.ext import commands
 from discord.ext import tasks
 
-from utils import colors
+from botutils import colors
 
 
 class AntiSpam(commands.Cog):

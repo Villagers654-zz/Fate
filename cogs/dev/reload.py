@@ -5,7 +5,7 @@ import traceback
 import discord
 from discord.ext import commands
 
-from utils import colors
+from botutils import colors
 
 
 class Reload(commands.Cog):

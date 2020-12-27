@@ -18,7 +18,7 @@ import discord
 from discord.ext.commands import Greedy
 from discord.errors import NotFound, Forbidden, HTTPException
 
-from utils import colors
+from botutils import colors
 from cogs.core.utils import Utils as utils
 
 

@@ -1,7 +1,7 @@
 from discord.ext import commands
 import discord
 import json
-from utils import colors
+from botutils import colors
 
 
 class User(commands.Cog):

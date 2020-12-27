@@ -8,7 +8,7 @@ from discord.ext import commands
 import discord
 from profanity_check import predict_prob
 
-from utils import checks, colors
+from botutils import checks, colors
 
 
 class ChatBot(commands.Cog):

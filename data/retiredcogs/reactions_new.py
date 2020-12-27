@@ -2,7 +2,7 @@ import random
 import os
 from discord.ext import commands
 import discord
-from utils import colors
+from botutils import colors
 
 
 class Reactions(commands.Cog):

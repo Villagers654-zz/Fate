@@ -8,7 +8,7 @@ from typing import Optional
 import discord
 from discord.ext import commands
 
-from utils import colors, checks
+from botutils import colors, checks
 
 
 mentions = discord.AllowedMentions(everyone=False, roles=False, users=True)

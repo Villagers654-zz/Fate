@@ -1,7 +1,7 @@
 import json
 import sys
 import psutil
-from utils.utils import bytes2human as read
+from botutils.utils import bytes2human as read
 
 process = psutil.Process(int(sys.argv[1]))
 interval = int(sys.argv[2])

@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from discord.ext import commands
 from os.path import isfile
-from utils import colors
+from botutils import colors
 from time import time
 import discord
 import asyncio

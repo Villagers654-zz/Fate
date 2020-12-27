@@ -12,7 +12,7 @@ import discord
 from discord.errors import *
 
 from fate import Fate
-from utils import colors
+from botutils import colors
 from cogs.core.utils import Utils as utils
 
 
