@@ -25,7 +25,7 @@ class CreateListener:
             raise CheckError(f"Check of type '{type(check)}' isn't implemented")
         return ids[0]
 
-    async def reaction(self, check, timeout=60, ignore_timeout=True):
+    async def get_reaction(self, check, timeout=60, ignore_timeout=True):
         target_id = self.parse_check(check)  # type: int
 
         def predicate(r, u):
