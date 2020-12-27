@@ -11,6 +11,7 @@ from typing import Union
 from time import time
 import os
 import subprocess
+from importlib import reload
 
 from discord.ext import commands, tasks
 import discord
@@ -33,6 +34,7 @@ class Utils(commands.Cog):
             "resources", "listeners", "menus", "files"
         ]
         for package in self.packages:
+            reload(eval(package))
             eval(package).init(self)
 
         self.filter = _filter
