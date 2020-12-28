@@ -580,7 +580,7 @@ class Ranking(commands.Cog):
             return im
 
         def font(size):
-            return ImageFont.truetype("./utils/fonts/Modern_Sans_Light.otf", size)
+            return ImageFont.truetype("./botutils/fonts/Modern_Sans_Light.otf", size)
 
         # core
         _path = "./static/card.png"
