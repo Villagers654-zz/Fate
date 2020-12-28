@@ -330,7 +330,7 @@ def init(cls):
     cls.get_images = get_images
     cls.total_seconds = total_seconds
     cls.get_user = get_user
-    cls.get_user_rewrite = cls.get_user_rewrite
+    cls.get_user_rewrite = get_user_rewrite
     cls.get_role = get_role
     cls.get_time = get_time
     cls.update_msg = update_msg
