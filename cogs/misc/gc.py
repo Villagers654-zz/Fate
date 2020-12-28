@@ -105,9 +105,12 @@ class GlobalChatRewrite(commands.Cog):
     @_gc.command(name="disable")
     @commands.has_permissions(administrator=True)
     async def _disable(self, ctx):
-        if ctx.guild.id not in self.cache:
-            return await ctx.send("Global chat isn't enabled")
         async with self.bot.cursor() as cur:
+            await cur.execute(f"select * from global_chat where guild_id = {ctx.guild.id};")
+            if not cur.rowcount:
+                return await ctx.send("Global chat isn't enabled")
+            if ctx.guild.id in self.cache:
+                del self.cache[ctx.guild.id]
             await cur.execute(f"delete from global_chat where guild_id = {ctx.guild.id};")
         await ctx.send("Disabled global chat")
 
