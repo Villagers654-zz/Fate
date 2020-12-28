@@ -202,7 +202,7 @@ class Utils(commands.Cog):
 
     def format_dict(self, data: dict, emoji=None) -> str:
         if emoji is None:
-            emoji = self.emojis("arrow") + " "
+            emoji = self.emotes.arrow + " "
         elif emoji is False:
             emoji = ""
         result = ""
