@@ -292,7 +292,8 @@ class Ranking(commands.Cog):
                         await cur.execute(
                             f"select role_id from role_rewards "
                             f"where guild_id = {guild_id} "
-                            f"and lvl <= {dat['level']};"
+                            f"and lvl <= {dat['level']} "
+                            f"order by lvl asc;"
                         )
                         results = await cur.fetchall()
                     for result in results:
