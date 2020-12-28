@@ -45,8 +45,8 @@ class SelfRoles(commands.Cog):
         e = discord.Embed(color=data["color"])
         name = data["name"]
         e.set_author(
-            name=f"Self-Role Menu{f': {name}' if name else ''}",
-            icon_url=guild.owner.avatar_url,
+            name=name if name else "Self-Role Menu",
+            icon_url=guild.icon_url,
         )
         e.set_thumbnail(
             url="https://cdn.discordapp.com/attachments/514213558549217330/514345278669848597/8yx98C.gif"
@@ -378,7 +378,7 @@ class SelfRoles(commands.Cog):
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
     @commands.has_permissions(manage_roles=True)
-    async def set_name(self, ctx, msg_id=None, new_name=None):
+    async def set_name(self, ctx, msg_id=None, *, new_name=None):
         """ Sets an existing menus name """
         guild_id = str(ctx.guild.id)
         if guild_id not in self.menus:
@@ -409,7 +409,7 @@ class SelfRoles(commands.Cog):
             return await ctx.send(usage)
         if msg_id not in self.menus[guild_id]:
             return await ctx.send("That menu doesn't exist")
-        if not indent:
+        if indent is None:
             return await ctx.send(usage)
         if indent > 2:
             return await ctx.send("The max indent is 2")
