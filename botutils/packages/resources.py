@@ -1,5 +1,50 @@
 from datetime import datetime
+from os.path import isfile
+import json
 from botutils import colors
+
+
+def get_config():
+    if not isfile("./data/userdata/config.json"):
+        with open("./data/userdata/config.json", "w") as f:
+            json.dump({}, f, ensure_ascii=False)
+    with open("./data/userdata/config.json", "r") as f:
+        return json.load(f)
+
+
+def get_stats():
+    if not isfile("./data/stats.json"):
+        with open("./data/stats.json", "w") as f:
+            json.dump({"commands": []}, f, ensure_ascii=False)
+    with open("./data/stats.json", "r") as stats:
+        return json.load(stats)
+
+
+def generate_rainbow_rgb(amount: int) -> list:
+    fixed_colors = [
+        (255, 0, 0),  # Red
+        (255, 127, 0),  # Orange
+        (255, 255, 0),  # Yellow
+        (0, 255, 0),  # Green
+        (0, 0, 255),  # Blue
+        (75, 0, 130),  # Dark Purple
+        (148, 0, 211),  # Purple
+    ]
+    color_array = []
+    for iteration, (r, g, b) in enumerate(fixed_colors):
+        color_array.append((r, g, b))
+        if len(fixed_colors) != iteration + 1:
+            nr, ng, nb = fixed_colors[iteration + 1]
+            divide_into = int(amount / len(fixed_colors)) + 2
+            r_diff = (nr - r) / divide_into
+            g_diff = (ng - g) / divide_into
+            b_diff = (nb - b) / divide_into
+            for i in range(divide_into):
+                r += r_diff
+                g += g_diff
+                b += b_diff
+                color_array.append((int(r), int(g), int(b)))
+    return color_array
 
 
 class Emojis:
@@ -57,4 +102,7 @@ class Emojis:
 
 def init(cls):
     cls.colors = colors
+    cls.generate_rainbow_rgb = generate_rainbow_rgb
+    cls.get_config = get_config
+    cls.get_stats = get_stats
     cls.emotes = Emojis()
