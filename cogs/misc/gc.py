@@ -99,7 +99,7 @@ class GlobalChatRewrite(commands.Cog):
                 f"and message_id = {msg.id};"
             )
 
-        self.cache[ctx.guild.id] = msg
+        self.cache[ctx.guild.id] = ctx.channel
         await ctx.send("Enabled global chat")
 
     @_gc.command(name="disable")
