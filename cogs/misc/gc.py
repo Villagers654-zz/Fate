@@ -1,6 +1,9 @@
 
 from contextlib import suppress
 import asyncio
+import json
+from os import path
+from typing import Union
 
 from discord.ext import commands, tasks
 from discord.errors import NotFound, Forbidden
@@ -17,6 +20,10 @@ class GlobalChatRewrite(commands.Cog):
         self.handle_queue.start()
         self._queue = []
         self.last_id = None
+        self.blocked = []
+        if path.isfile("data/gcb.json"):
+            with open("data/gcb.json") as f:
+                self.blocked = json.load(f)
 
     def cog_unload(self):
         self.handle_queue.cancel()
@@ -25,15 +32,31 @@ class GlobalChatRewrite(commands.Cog):
 
     @property
     def queue(self) -> list:
-        self._queue = self._queue[-3:]
+        self._queue = self._queue[-5:]
         return self._queue
 
     @tasks.loop(seconds=0.21)
     async def handle_queue(self):
         queued_to_send = []
-        for entry in list(self.queue):
+        sending = list(self.queue)
+        if len(sending) > 3 and all(e[2].guild.id == sending[0][2].guild.id for e in sending):
+            self.blocked.append(sending[0][2].guild.id)
+            await sending[0][2].channel.send("Andddddddd blocked")
+            self._queue = []
+            return
+
+        for entry in sending:
+            if len([e for e in sending if e[2].author.id == entry[2].id]) > 1:
+                for e in sending:
+                    if e != entry:
+                        entry[0].description += f"\nMerged with: {e[0].description}"
+                        with suppress(ValueError, NotFound, Forbidden):
+                            self._queue.remove(e)
+                            await e[2].delete()
+                        sending.remove(e)
             if not any(entry[2] in values for values in queued_to_send):
                 queued_to_send.append(entry)
+
         for embed, requires_edit, author_msg in queued_to_send:
             with suppress(ValueError, IndexError):
                 self._queue.remove([embed, requires_edit, author_msg])
@@ -49,9 +72,10 @@ class GlobalChatRewrite(commands.Cog):
                         if author_msg.channel.id == channel.id and author_msg.attachments:
                             continue
                     with suppress(NotFound, Forbidden):
-                        msg = await channel.send(embed=embed)
-                        self.msg_cache.append(msg)
-                        chunk[msg.channel.id] = msg.id
+                        if channel.permissions_for(channel.guild.me).manage_messages:
+                            msg = await channel.send(embed=embed)
+                            self.msg_cache.append(msg)
+                            chunk[msg.channel.id] = msg.id
                 self.msg_chunks.append(chunk)
             with suppress(AttributeError, NotFound, Forbidden):
                 if author_msg.attachments:
@@ -85,6 +109,12 @@ class GlobalChatRewrite(commands.Cog):
     @commands.group(name="gc", aliases=["global-chat", "globalchat", "global_chat"])
     async def _gc(self, ctx):
         pass
+
+    @_gc.command(name="ban")
+    @commands.is_owner()
+    async def _ban(self, ctx, *, target: Union[discord.User, discord.Guild]):
+        self.blocked.append(target.id)
+        await ctx.send(f"Blocked {target}")
 
     @_gc.command(name="enable")
     @commands.has_permissions(administrator=True)
@@ -121,6 +151,8 @@ class GlobalChatRewrite(commands.Cog):
             # Duplicate messages
             if msg.content and any(msg.content == m.content for m in self.msg_cache):
                 return
+            if msg.guild.id in self.blocked or msg.author.id in self.blocked:
+                return
 
             # Missing permissions to moderate global chat
             if not msg.channel.permissions_for(msg.guild.me).manage_messages:
@@ -135,7 +167,7 @@ class GlobalChatRewrite(commands.Cog):
             e.set_thumbnail(url=msg.author.avatar_url)
 
             # Edit & combine their last msg
-            if msg.author.id == self.last_id:
+            if msg.author.id == self.last_id and self.msg_cache:
                 em = self.msg_cache[0].embeds[0]
                 if not isinstance(e.image.url, str):
                     if msg.attachments:

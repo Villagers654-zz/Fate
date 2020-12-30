@@ -37,7 +37,7 @@ class Menus:
 
         def create_card():
             colors = ["orange", "green", "white", "cyan", "red"]
-            font = ImageFont.truetype("./utils/fonts/Modern_Sans_Light.otf", 75)
+            font = ImageFont.truetype("./botutils/fonts/Modern_Sans_Light.otf", 75)
             size = font.getsize(chars)
             card = Image.new("RGBA", size=(size[0] + 20, 80), color=(255, 255, 255, 0))
             draw = ImageDraw.Draw(card)

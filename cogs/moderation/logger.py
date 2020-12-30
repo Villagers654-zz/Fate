@@ -512,7 +512,7 @@ class Logger(commands.Cog):
                         if log_type == "multi":
                             self.recent_logs[guild_id][channelType].append([embed, logged_at])
                         else:
-                            self.recent_logs[guild_id][channelType].append(
+                            self.recent_logs[guild_id].append(
                                 [embed, logged_at]
                             )
                         break
