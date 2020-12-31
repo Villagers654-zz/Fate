@@ -801,10 +801,13 @@ class Ranking(commands.Cog):
         await ctx.send(f"> **{ty} card for {user}**", file=discord.File(_path))
 
     @commands.command(name="top")
+    @commands.cooldown(1, 25, commands.BucketType.user)
     @commands.cooldown(1, 25, commands.BucketType.guild)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True, attach_files=True)
     async def top(self, ctx):
+        await ctx.channel.trigger_typing()
+
         def add_corners(im, rad):
             """ Adds transparent corners to an img """
             circle = Image.new("L", (rad * 2, rad * 2), 0)
@@ -828,12 +831,10 @@ class Ranking(commands.Cog):
             except:
                 await ctx.send(f"can't get {url}")
 
-        fp = os.path.basename("static/test_card.png")
-        card = Image.new("RGBA", (750, 900), color=(0, 0, 0, 0))
-
         def font(size):
             return ImageFont.truetype("./botutils/fonts/Roboto-Bold.ttf", size=size)
 
+        fp = os.path.basename(f"static/card-{time()}.png")
         r = await self.bot.fetch(
             f"select user_id, xp from msg where guild_id = {ctx.guild.id} order by xp desc limit 20;"
         )
@@ -843,57 +844,65 @@ class Ranking(commands.Cog):
             if member:
                 members.append([member, xp])
 
+        conf = self.static_config()
+        if str(ctx.guild.id) in self.config:
+            conf = self.config[str(ctx.guild.id)]
+
         tasks = [
-            [m, xp, self.bot.loop.create_task(get_av_task(m.avatar_url))]
-            for m, xp in members[:9]
+            [
+                m, xp,
+                await self.calc_lvl_info(xp, conf),
+                self.bot.loop.create_task(get_av_task(m.avatar_url))
+            ] for m, xp in members[:9]
         ]
         for i in range(50):
             await asyncio.sleep(0.21)
-            if all(task.done() for _m, _xp, task in tasks):
+            if all(task.done() for _m, _xp, _lvl_dat, task in tasks):
                 break
         else:
-            return await ctx.send("Couldn't get the avatars")
+            return await ctx.send("Couldn't get all of the avatars for the top 9 users")
 
-        for i, (member, xp, task) in enumerate(tasks):
-            await asyncio.sleep(0)
+        def create_card():
+            card = Image.new("RGBA", (750, 900), color=(0, 0, 0, 0))
+            for i, (member, xp, lvl_dat, task) in enumerate(tasks):
+                av = Image.open(task.result()).convert("RGBA")
+                av = av.resize((90, 90), Image.BICUBIC)
+                im = Image.new(mode="RGBA", size=(740, 90), color=(114, 137, 218))
+                im.paste(av, (0, 0), av)
+                draw = ImageDraw.Draw(im)
 
-            av = Image.open(task.result()).convert("RGBA")
-            av = av.resize((90, 90), Image.BICUBIC)
-            im = Image.new(mode="RGBA", size=(740, 90), color=(114, 137, 218))
-            im.paste(av, (0, 0), av)
-            draw = ImageDraw.Draw(im)
+                im = add_corners(im, 25)
 
-            im = add_corners(im, 25)
+                data = []
+                for r, g, b, c in im.getdata():
+                    if (r, g, b, c) == (114, 137, 218, 255):
+                        data.append((r, g, b, 150))
+                    else:
+                        data.append((r, g, b, c))
+                im.putdata(data)
 
-            data = []
-            for r, g, b, c in im.getdata():
-                await asyncio.sleep(0)
-                if (r, g, b, c) == (114, 137, 218, 255):
-                    data.append((r, g, b, 150))
-                else:
-                    data.append((r, g, b, c))
-            im.putdata(data)
+                color = member.color.to_rgb()
+                if color == (0, 0, 0):
+                    color = (255, 255, 255)
+                draw.text((110, 22), member.name[:18], color, font=font(45))
 
-            color = member.color.to_rgb()
-            if color == (0, 0, 0):
-                color = (255, 255, 255)
-            draw.text((110, 22), member.name, color, font=font(45))
+                lvl = str(lvl_dat['level']).rjust(3, " ")
+                progress = f"{lvl_dat['progress']}/{lvl_dat['start_to_end']}"
 
-            conf = self.static_config()
-            if str(ctx.guild.id) in self.config:
-                conf = self.config[str(ctx.guild.id)]
-            lvl_dat = await self.calc_lvl_info(xp, conf)
-            lvl = str(lvl_dat['level']).rjust(3, " ")
+                draw.text((615, 15), f"Lvl {lvl}", (255, 255, 255), font=font(30))
+                draw.text((620, 55), progress, (255, 255, 255), font=font(20))
 
-            draw.text((615, 15), f"Lvl {lvl}", (255, 255, 255), font=font(30))
-            draw.text((620, 55), f"{xp} xp", (255, 255, 255), font=font(20))
-            card.paste(im, (5, 100 * i), im)
+                card.paste(im, (5, 100 * i), im)
 
-        card.save(fp)
+            card.save(fp)
+
+        await self.bot.loop.run_in_executor(None, create_card)
+
         e = discord.Embed(color=colors.fate())
         e.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
         e.set_image(url=f"attachment://{fp}")
         await ctx.send(embed=e, file=discord.File(fp, filename=fp))
+        os.remove(fp)
 
     @commands.command(name="sub-from-lb")
     @commands.is_owner()
