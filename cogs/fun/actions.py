@@ -88,7 +88,9 @@ class Actions(commands.Cog):
         await ctx.send(
             "⚔ | {} {}".format(user.mention, random.choice([
                 "just got sliced up into sushi",
-                "just got sliced up into string cheese"
+                "just got sliced up into string cheese",
+                "just got their paycheck sliced in half",
+                "got sliced and diced just like the carrots in my salad",
             ])),
             allowed_mentions=self.mentions
         )
