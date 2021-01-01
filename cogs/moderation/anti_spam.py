@@ -42,6 +42,12 @@ class AntiSpam(commands.Cog):
                     dat['prefixes'] = {}
                 self.prefixes = dat['prefixes']
         self.cleanup_task.start()
+        self.cache = []
+
+    async def lock_mute(self, guild_id, user_id):
+        self.cache.append([guild_id, user_id])
+        await asyncio.sleep(120)
+        self.cache.remove([guild_id, user_id])
 
     @property
     def data(self):
@@ -399,6 +405,8 @@ class AntiSpam(commands.Cog):
         if guild_id in self.toggle:
             if guild_id in self.in_progress and user_id in self.in_progress[guild_id]:
                 return
+            if [msg.guild.id, msg.author.id] in self.cache:
+                return
             users = [msg.author]
             sensitivity_level = 3 if self.sensitivity[guild_id] == 'low' else 2
             if guild_id in self.blacklist:
@@ -526,7 +534,12 @@ class AntiSpam(commands.Cog):
                     triggered = True
 
             if triggered:
-                for iteration, user in enumerate(users):
+                if [msg.guild.id, msg.author.id] in self.cache:
+                    return
+                self.bot.loop.create_task(
+                    self.lock_mute(msg.guild.id, msg.author.id)
+                )
+                for iteration, user in enumerate(list(set(users))):
                     user_id = str(user.id)
                     bot = msg.guild.me
                     perms = bot.guild_permissions
@@ -589,7 +602,7 @@ class AntiSpam(commands.Cog):
                             return
 
                         # Increase the mute timer if multiple offenses in the last hour
-                        multiplier = 0
+                        multiplier = 1
                         if guild_id not in self.mutes:
                             self.mutes[guild_id] = {}
                         if user_id not in self.mutes[guild_id]:
