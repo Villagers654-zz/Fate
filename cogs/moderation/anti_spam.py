@@ -430,7 +430,7 @@ class AntiSpam(commands.Cog):
                     self.spam_cd[guild_id][user_id][1] += 1
                 else:
                     self.spam_cd[guild_id][user_id] = [now, 0]
-                if self.spam_cd[guild_id][user_id][1] > sensitivity_level:
+                if self.spam_cd[guild_id][user_id][1] > 4:
                     with suppress(KeyError, ValueError):
                         del self.spam_cd[guild_id][user_id]
                         if not self.spam_cd[guild_id]:
