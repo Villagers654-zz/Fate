@@ -499,7 +499,7 @@ async def on_message(msg):
         msg.content = msg.content.replace(" --dm", "")
         channel = await msg.author.create_dm()
         msg.channel = channel
-    if msg.guild and not msg.channel.permissions_for(msg.guild.me).send_messages:
+    if msg.guild and msg.guild.me and not msg.channel.permissions_for(msg.guild.me).send_messages:
         return
     await bot.process_commands(msg)
 
