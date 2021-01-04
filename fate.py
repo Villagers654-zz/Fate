@@ -331,6 +331,14 @@ class Fate(commands.AutoShardedBot):
             rows = cur.rowcount
         return rows
 
+    def load_collection(self, collection) -> dict:
+        data = {}
+        for config in collection.find({}):
+            data[config["_id"]] = {
+                k: v for k, v in config.items() if k != "_id"
+            }
+        return data
+
     def load(self, *extensions) -> None:
         for cog in extensions:
             try:
