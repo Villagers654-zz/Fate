@@ -101,7 +101,7 @@ class Core(commands.Cog):
                 await ctx.message.delete()
             return
         if content:
-            content = utils.cleanup_msg(ctx.message, content)
+            content = self.bot.utils.cleanup_msg(ctx.message, content)
             content = content[:2000]
         if ctx.message.attachments and ctx.channel.is_nsfw():
             file_data = [

@@ -22,7 +22,7 @@ import psutil
 from discord.ext import commands
 
 from botutils import colors, config
-from cogs.core.utils import Utils as utils
+from cogs.core.utils import Utils
 
 
 class SatisfiableChannel(commands.Converter):
@@ -746,7 +746,7 @@ class Utility(commands.Cog):
             online_for = datetime.now() - self.bot.start_time
             e.add_field(
                 name="◈ Uptime ◈",
-                value=f"Online for {utils.get_time(round(online_for.total_seconds()))}\n",
+                value=f"Online for {self.bot.utils.get_time(round(online_for.total_seconds()))}\n",
                       # f"With {percentage}% uptime in the last 7 days\n",
                 inline=False,
             )
@@ -933,8 +933,8 @@ class Utility(commands.Cog):
                 f"• Boost Level [`{ctx.guild.premium_tier}`]\n"
                 f"• Total Boosts [`{ctx.guild.premium_subscription_count}`]\n"
                 f"• Max Emoji's [`{ctx.guild.emoji_limit}`]\n"
-                f'• Max Bitrate [`{utils.bytes2human(ctx.guild.bitrate_limit).replace(".0", "")}`]\n'
-                f'• Max Filesize [`{utils.bytes2human(ctx.guild.filesize_limit).replace(".0", "")}`]'
+                f'• Max Bitrate [`{self.bot.utils.bytes2human(ctx.guild.bitrate_limit).replace(".0", "")}`]\n'
+                f'• Max Filesize [`{self.bot.utils.bytes2human(ctx.guild.filesize_limit).replace(".0", "")}`]'
             )
             e.add_field(name="◈ Perks ◈", value=perks, inline=False)
         created = datetime.date(ctx.guild.created_at)
@@ -972,7 +972,7 @@ class Utility(commands.Cog):
             if ctx.message.role_mentions:
                 role = ctx.message.role_mentions[0]
             else:
-                role = await utils.get_role(ctx, role)
+                role = await self.bot.utils.get_role(ctx, role)
                 if not isinstance(role, discord.Role):
                     return
             if role.id == ctx.guild.default_role.id:
@@ -1080,7 +1080,7 @@ class Utility(commands.Cog):
         else:
             e.set_image(url=user.avatar_url_as(format="png"))
         await ctx.send(
-            f"◈ {utils.cleanup_msg(ctx.message, user.display_name)}'s avatar ◈", embed=e
+            f"◈ {self.bot.utils.cleanup_msg(ctx.message, user.display_name)}'s avatar ◈", embed=e
         )
 
     @commands.command(name="owner")
@@ -1128,7 +1128,7 @@ class Utility(commands.Cog):
                 return await ctx.send("Wtf man.. wHo")
             role = ctx.guild.get_role(int(target))
         else:
-            role = await utils.get_role(ctx, args[0])
+            role = await self.bot.utils.get_role(ctx, args[0])
         if not role:
             return await ctx.send("Unknown role")
         try:
@@ -1218,7 +1218,7 @@ class Utility(commands.Cog):
         await self.save_timers()
 
     @commands.command(name="timers", aliases=["reminders"])
-    @commands.cooldown(*utils.default_cooldown())
+    @commands.cooldown(*Utils.default_cooldown())
     async def timers(self, ctx):
         user_id = str(ctx.author.id)
         if user_id not in self.timers:
@@ -1341,7 +1341,7 @@ class Utility(commands.Cog):
     @commands.bot_has_permissions(embed_links=True)
     async def id(self, ctx, *, user=None):
         if user:
-            user = utils.get_user(ctx, user)
+            user = self.bot.utils.get_user(ctx, user)
             if not user:
                 return await ctx.send("User not found")
             return await ctx.send(user.id)
