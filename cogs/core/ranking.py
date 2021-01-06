@@ -870,8 +870,12 @@ class Ranking(commands.Cog):
                 im = Image.new(mode="RGBA", size=(740, 90), color=(114, 137, 218))
                 im.paste(av, (0, 0), av)
                 draw = ImageDraw.Draw(im)
-
                 im = add_corners(im, 25)
+
+                if i < 1:
+                    r = Image.open(f"./assets/ranking/ribbon_{i + 1}.png").convert("RGBA")
+                    r = r.resize((90, 90), Image.BICUBIC)
+                    im.paste(r, (515, 0), r)
 
                 data = []
                 for r, g, b, c in im.getdata():
@@ -881,10 +885,7 @@ class Ranking(commands.Cog):
                         data.append((r, g, b, c))
                 im.putdata(data)
 
-                color = member.color.to_rgb()
-                if color == (0, 0, 0):
-                    color = (255, 255, 255)
-                draw.text((110, 22), member.name[:18], color, font=font(45))
+                draw.text((110, 22), member.name[:18], (255, 255, 255), font=font(45))
 
                 lvl = str(lvl_dat['level']).rjust(3, " ")
                 progress = f"{lvl_dat['progress']}/{lvl_dat['start_to_end']}"
