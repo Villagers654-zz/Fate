@@ -4,6 +4,8 @@ __pycache__/
 /static/*
 /Static/
 /Static/*
+/assets/
+/assets/*
 
 *.exe
 *.json
