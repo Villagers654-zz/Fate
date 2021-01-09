@@ -1882,11 +1882,13 @@ class Logger(commands.Cog):
                 inviter = invite.inviter
             e.set_author(name="~==🍸Member Joined🍸==~", icon_url=icon_url)
             e.set_thumbnail(url=member.avatar_url)
+            created = self.bot.utils.get_time(round((datetime.utcnow() - member.created_at).total_seconds()))
             e.description = self.bot.utils.format_dict(
                 {
                     "Name": member.name,
                     "Mention": member.mention,
                     "ID": member.id,
+                    "Created": f"{created} ago",
                     "Invited by": inviter,
                     "Invite": f"[{invite.code}]({invite.url})",
                 }
