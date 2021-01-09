@@ -14,6 +14,8 @@ class CreateListener:
 
     @staticmethod
     def parse_check(check) -> int:
+        if hasattr(check, "__call__"):
+            return check
         ids = []
         if isinstance(check, Context):
             ids.append(check.author.id)
@@ -31,16 +33,42 @@ class CreateListener:
         def predicate(r, u):
             return r.message.id == target_id or u.id == target_id
 
-        try:
-            reaction, user = await self.bot.wait_for(
-                "reaction_add", check=predicate, timeout=timeout
-            )
-        except asyncio.TimeoutError:
-            if ignore_timeout:
+        if hasattr(target_id, "__call__"):
+            predicate = target_id
+
+        coro = self.bot.wait_for("reaction_add", check=predicate, timeout=timeout)
+        if ignore_timeout:
+            try:
+                reaction, user = await coro
+            except asyncio.TimeoutError:
                 raise self.bot.handled_exit
-            return None
+        else:
+            reaction, user = await coro
+
         return reaction, user
+
+    async def get_message(self, check, timeout=60, ignore_timeout=True):
+        target = self.parse_check(check)
+
+        def predicate(m):
+            return m.author.id == target
+
+        if hasattr(target, "__call__"):
+            predicate = target
+
+        coro = self.bot.wait_for("message", check=predicate, timeout=timeout)
+        if ignore_timeout:
+            try:
+                msg = await coro
+            except asyncio.TimeoutError:
+                raise self.bot.handled_exit
+        else:
+            msg = await coro
+
+        return msg
 
 
 def init(cls):
-    cls.listener = CreateListener(cls.bot)
+    listener = CreateListener(cls.bot)
+    cls.get_message = listener.get_message
+    cls.get_reaction = listener.get_reaction
