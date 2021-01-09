@@ -41,7 +41,7 @@ class CreateListener:
             try:
                 reaction, user = await coro
             except asyncio.TimeoutError:
-                raise self.bot.handled_exit
+                raise self.bot.ignored_exit
         else:
             reaction, user = await coro
 
@@ -61,7 +61,7 @@ class CreateListener:
             try:
                 msg = await coro
             except asyncio.TimeoutError:
-                raise self.bot.handled_exit
+                raise self.bot.ignored_exit
         else:
             msg = await coro
 
