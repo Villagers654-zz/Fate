@@ -159,11 +159,8 @@ class Menus:
         r_check = lambda r, u: u.id == ctx.author.id and r.message.id == message.id
 
         async def clear_user_reactions(message) -> None:
-            before = monotonic()
             with suppress(NotFound, Forbidden, NameError):
                 await message.remove_reaction(reaction.emoji, user)
-            after = round((monotonic() - before) * 1000)
-            print(f"{after}ms to clear reactions")
 
         async def init_reactions_task() -> None:
             if len(options) > 9:
