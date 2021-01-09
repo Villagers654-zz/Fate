@@ -35,7 +35,7 @@ class Menus(commands.Cog, HelpMenus):
     async def help(self, ctx, *, args=None):
         async def wait_for_reaction() -> list:
             def check(reaction, user):
-                return user == ctx.author
+                return user == ctx.author and msg.id == reaction.message.id
 
             try:
                 reaction, user = await self.bot.wait_for(
