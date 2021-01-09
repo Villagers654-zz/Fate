@@ -3,7 +3,8 @@
   "bot_owner_id": 264838866480005122,
   "bot_owner_ids": [
     355026215137968129,
-    243233669148442624
+    243233669148442624,
+    173174974633345024
   ],
   "token": "goes in ./utils/auth",
   "token_id": "fate",
@@ -13,6 +14,15 @@
   "backups_location": "/mnt/drive3/luck/Fate",
   "backup_every_?_hours": 12,
   "keep_backups_for_?_days": 7,
+
+  "mongodb": {
+    "url": "127.0.0.1:27017",
+    "connection_args": {
+      "zlibCompressionLevel": 7,
+      "compressors": "zlib"
+    },
+    "db": "fate"
+  },
 
   "hub_server": 397415086295089155,
   "log_channel": 577661500802465813,
