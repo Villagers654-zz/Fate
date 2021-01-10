@@ -18,6 +18,7 @@ from botutils.packages import resources, listeners, menus, files, tools
 class Utils(commands.Cog):
     def __init__(self, bot, _filter, memory_info, result):
         self.bot = bot
+        self.TempConvo = TempConvo
 
         # Resources
         self.colors = self.emotes = self.generate_rainbow_rgb = self.get_config = self.get_stats = None
@@ -376,7 +377,30 @@ class Cache:
         }
 
 
+class TempConvo:
+    def __init__(self, context):
+        self.ctx = context
+        self.sent = []
 
+    def predicate(self, message):
+        return message.author.id in [self.ctx.author.id, self.ctx.bot.user.id]
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, _type, _tb, _exc):
+        before = self.sent[len(self.sent) - 1]
+        after = self.sent[0]
+        msgs = await self.ctx.channel.history(before=before, after=after).flatten()
+        await self.ctx.channel.delete_messages([
+            before, after, *[
+                msg for msg in msgs if self.predicate(msg)
+            ]
+        ])
+
+    async def send(self, *args, **kwargs):
+        msg = await self.ctx.send(*args, **kwargs)
+        self.sent.append(msg)
 
 
 def setup(bot):
