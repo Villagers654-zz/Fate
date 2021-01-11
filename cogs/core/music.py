@@ -374,7 +374,7 @@ class Music(commands.Cog):
         if volume > 1000:
             await ctx.send("biTcH nO, those heels are too high", delete_after=25)
         if volume < 0:
-            await ctx.send("That's deeper than corpses voice.. no", delete_after=25)
+            await ctx.send("No.. that's deeper than corpses voice", delete_after=25)
         await ctx.player.set_volume(volume)
         e = discord.Embed(color=self.color)
         e.set_author(name=f"Set the volume to {volume}", icon_url=self._volume)
