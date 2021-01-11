@@ -12,6 +12,14 @@ from botutils import auth
 
 url_rx = re.compile(r'https?://(?:www\.)?.+')
 creds = auth.Lavalink()
+votes = {}
+
+
+def require_vote():
+    async def predicate(ctx):
+        pass
+
+    return commands.check(predicate)
 
 
 class Music(commands.Cog):
@@ -38,6 +46,7 @@ class Music(commands.Cog):
         self._volume = "https://cdn.discordapp.com/attachments/632084935506788385/797782826484498432/volume.png"
         self._skip = "https://cdn.discordapp.com/attachments/632084935506788385/797783872581795840/skip.png"
         self._seek = "https://cdn.discordapp.com/attachments/632084935506788385/797793989947293767/seek.png"
+        self._pause = "https://cdn.discordapp.com/attachments/632084935506788385/798075784543207424/pause-play.png"
 
 
     def cog_unload(self):
@@ -116,6 +125,25 @@ class Music(commands.Cog):
     def get_player(self, ctx):
         self.bot.lavalink.player_manager.get(ctx.guild.id)
 
+    def format_duration(self, duration):
+        duration /= 1000
+        minutes, seconds = divmod(duration, 60)
+        hours, minutes = divmod(minutes, 60)
+
+        hours = round(hours)
+        minutes = str(round(minutes))
+        seconds = str(round(seconds))
+
+        if len(seconds) == 1:
+            seconds = "0" + seconds
+
+        if hours:
+            if len(minutes) == 1:
+                minutes = "0" + minutes
+
+            return f"{hours}:{minutes}:{seconds}"
+        return f"{minutes}:{seconds}"
+
     @commands.command(aliases=['p'])
     async def play(self, ctx, *, query: str):
         """ Searches and plays a song from a given query. """
@@ -136,14 +164,17 @@ class Music(commands.Cog):
             e.set_author(name="Playlist Queued", icon_url=self._playlist)
             e.description = f'{results["playlistInfo"]["name"]} - {len(tracks)} tracks'
         else:
-            options = [
-                f"[{track['info']['title']}]({track['info']['uri']})"
-                for track in results["tracks"]
-            ][:5]
-            choice = await self.bot.utils.get_choice(ctx, *options, user=ctx.author)
-            if not choice:
-                return
-            track = results['tracks'][options.index(choice)]
+            if "youtu.be" in query or "youtube.com" in query:
+                track = results["tracks"][0]
+            else:
+                options = [
+                    f"[{track['info']['title']}]({track['info']['uri']})"
+                    for track in results["tracks"]
+                ][:5]
+                choice = await self.bot.utils.get_choice(ctx, *options, user=ctx.author)
+                if not choice:
+                    return
+                track = results["tracks"][options.index(choice)]
 
             e.set_author(name="Song Queued", icon_url=self._note)
             e.description = f'[{track["info"]["title"]}]({track["info"]["uri"]})'
@@ -252,7 +283,7 @@ class Music(commands.Cog):
         ctx.player.repeat = not ctx.player.repeat
         e = discord.Embed(color=self.color)
         new_toggle = "Enabled" if ctx.player.repeat else "Disabled"
-        e.set_author(name=f"{new_toggle} repeat", icon_url=self.repeat)
+        e.set_author(name=f"{new_toggle} repeat", icon_url=self._repeat)
         await ctx.send(embed=e, delete_after=25)
 
     @commands.command(name="skip")
@@ -316,6 +347,26 @@ class Music(commands.Cog):
         e.set_author(name=f"Now playing at {position}", icon_url=self._seek)
         await ctx.send(embed=e, delete_after=25)
 
+    @commands.command(name="pause")
+    async def pause(self, ctx):
+        await ctx.ensure_player_is_playing()
+        if ctx.player.paused:
+            return await ctx.send("The music player is already paused", delete_after=25)
+        await ctx.player.set_pause(True)
+        e = discord.Embed(color=self.color)
+        e.set_author(name="Paused the music player", icon_url=self._pause)
+        await ctx.send(embed=e, delete_after=25)
+
+    @commands.command(name="resume")
+    async def resume(self, ctx):
+        await ctx.ensure_player_is_playing()
+        if not ctx.player.paused:
+            return await ctx.send("The music player isn't paused", delete_after=25)
+        await ctx.player.set_pause(False)
+        e = discord.Embed(color=self.color)
+        e.set_author(name="Resumed the music player", icon_url=self._pause)
+        await ctx.send(embed=e, delete_after=25)
+
     @commands.command(name="volume", aliases=["vol", "v"])
     async def volume(self, ctx, volume: int):
         """Alter the players volume to raise or lower it"""
@@ -331,18 +382,31 @@ class Music(commands.Cog):
 
     @commands.command(name="now", aliases=["np", "playing", "current", "cur"])
     async def now_playing(self, ctx):
+        """Show information on the current playing track"""
         await ctx.ensure_player_is_playing()
-        await ctx.send("This command isn't implemented yet")
+        track = ctx.player.current
+        thumbnail = f"http://img.youtube.com/vi/{track.identifier}/maxresdefault.jpg"
+        requester = self.bot.get_user(track.requester)
 
-    @commands.command(name="pause")
-    async def pause(self, ctx):
-        await ctx.ensure_player_is_playing()
-        await ctx.send("This command isn't implemented yet")
+        percentage = 100 * (ctx.player.position / track.duration)
+        progress_into_chars = (percentage * 17) / 100
+        chars = list("•" * 17)
+        chars[round(progress_into_chars)] = "🔘"
+        bar = "".join(chars)
 
-    @commands.command(name="resume")
-    async def resume(self, ctx):
-        await ctx.ensure_player_is_playing()
-        await ctx.send("This command isn't implemented yet")
+        progress = self.format_duration(ctx.player.position)
+        duration = self.format_duration(track.duration)
+
+        e = discord.Embed(color=self.color)
+        e.set_thumbnail(url=thumbnail)
+        e.description = f"[{track.title}]({track.uri})\n﹂`By {track.author}`"
+        e.add_field(
+            name="◈ Song Progress ◈",
+            value=f"{bar}\n**`{progress}`/`{duration}`**"
+        )
+        e.set_footer(text=f"Requested by {requester}", icon_url=requester.avatar_url)
+
+        await ctx.send(embed=e, delete_after=25)
 
     @commands.command(name="remove")
     async def remove(self, ctx):
@@ -352,10 +416,14 @@ class Music(commands.Cog):
     @commands.command(name="shuffle")
     async def shuffle(self, ctx):
         await ctx.ensure_player_is_playing()
-        await ctx.send("This command isn't implemented yet")
+        ctx.player.shuffle = not ctx.player.shuffle
+        e = discord.Embed(color=self.color)
+        toggle = "Enabled" if ctx.player.shuffle else "Disabled"
+        e.set_author(name=f"{toggle} shuffle")
+        await ctx.send(embed=e, delete_after=25)
 
     @commands.command(name="previous")
-    async def resume(self, ctx):
+    async def previous(self, ctx):
         await ctx.ensure_player_is_playing()
         await ctx.send("This command isn't implemented yet")
 
