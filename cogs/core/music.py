@@ -295,6 +295,16 @@ class Music(commands.Cog):
         e.set_author(name="Skipped to the next song", icon_url=self._skip)
         await ctx.send(embed=e, delete_after=25)
 
+    @commands.command(name="remove")
+    async def remove(self, ctx):
+        await ctx.ensure_player_is_playing()
+        await ctx.send("This command isn't implemented yet")
+
+    @commands.command(name="previous")
+    async def previous(self, ctx):
+        await ctx.ensure_player_is_playing()
+        await ctx.send("This command isn't implemented yet")
+
     @commands.command(name="seek", aliases=["s"])
     async def seek(self, ctx, amount: int):
         await ctx.ensure_player_is_playing()
@@ -408,11 +418,6 @@ class Music(commands.Cog):
 
         await ctx.send(embed=e, delete_after=25)
 
-    @commands.command(name="remove")
-    async def remove(self, ctx):
-        await ctx.ensure_player_is_playing()
-        await ctx.send("This command isn't implemented yet")
-
     @commands.command(name="shuffle")
     async def shuffle(self, ctx):
         await ctx.ensure_player_is_playing()
@@ -421,16 +426,6 @@ class Music(commands.Cog):
         toggle = "Enabled" if ctx.player.shuffle else "Disabled"
         e.set_author(name=f"{toggle} shuffle")
         await ctx.send(embed=e, delete_after=25)
-
-    @commands.command(name="previous")
-    async def previous(self, ctx):
-        await ctx.ensure_player_is_playing()
-        await ctx.send("This command isn't implemented yet")
-
-    @commands.command(name="find")
-    async def find(self, ctx):
-        await ctx.ensure_player_is_playing()
-        await ctx.send("This command isn't implemented yet")
 
 
 def setup(bot):
