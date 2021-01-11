@@ -179,6 +179,8 @@ class Music(commands.Cog):
                 _page = []
         if _page:
             create_embed()
+        if not pages:
+            return await ctx.send("The queue is currently empty", delete_after=25)
 
         async def add_emojis_task():
             """ So the bot can read reactions before all are added """
