@@ -186,7 +186,7 @@ class Music(commands.Cog):
         if not player.is_playing:
             await player.play()
 
-    @commands.command(name="queue")
+    @commands.command(name="queue", aliases=["q"])
     async def queue(self, ctx):
         await ctx.ensure_player_is_playing()
 
