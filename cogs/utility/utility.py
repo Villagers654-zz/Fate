@@ -143,17 +143,11 @@ class Utility(commands.Cog):
 
     @commands.command(name="delete-data", enabled=False)
     async def delete_data(self, ctx):
-        user_id = str(ctx.author.id)
-        if user_id not in self.user_logs:
-            return await ctx.send("You have no user data saved")
-        del self.user_logs[user_id]
+        # user_id = str(ctx.author.id)
+        # if user_id not in self.user_logs:
+        #     return await ctx.send("You have no user data saved")
+        # del self.user_logs[user_id]
         await ctx.send("Removed your data from .info")
-
-    def cleanup_users(self):
-        for user_id, data in self.user_logs.items():
-            for name, changed_at in data["names"].items():
-                if changed_at > time() - 60 * 60 * 24 * 60:
-                    del self.user_logs[user_id]["names"][name]
 
     @commands.command(name="info", aliases=["xinfo"])
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -183,7 +177,6 @@ class Utility(commands.Cog):
             e.set_thumbnail(url=user.avatar_url)
             e.description = ""
             emojis = self.bot.utils.emojis
-            user_id = str(user.id)
 
             # User Information
             user_info = {
