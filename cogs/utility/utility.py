@@ -16,6 +16,7 @@ from contextlib import suppress
 
 import discord
 from discord import User, Role, TextChannel, Member
+from discord.errors import NotFound, HTTPException
 from PIL import Image
 from colormap import rgb2hex
 import psutil
@@ -757,54 +758,87 @@ class Utility(commands.Cog):
             await msg.edit(embed=e)
             return await self.wait_for_dismissal(ctx, msg)
 
-    def collect_invite_info(self, invite, guild=None):
-        if not guild:
-            guild = invite.guild
-            if not isinstance(guild, (discord.Guild, discord.PartialInviteGuild)):
-                if hasattr(guild, "id"):
-                    tmp = self.bot.get_guild(guild.id)
-                    if isinstance(tmp, discord.Guild):
-                        guild = tmp
-        guild_name = "Unknown"
-        if isinstance(guild, (discord.Guild, discord.PartialInviteGuild)):
-            guild_name = guild.name
-        invite_info = {"deleted": False, "guild": {"name": guild_name, "id": guild.id}}
-        if invite.inviter:
-            invite_info["inviter"] = invite.inviter.id
-        else:
-            invite_info["inviter"] = None
-        invite_info["member_count"] = invite.approximate_member_count
-        invite_info["online_count"] = invite.approximate_presence_count
-        invite_info["channel"] = {"name": None, "id": invite.channel.id}
-        if isinstance(
-            invite.channel,
-            (discord.TextChannel, discord.VoiceChannel, discord.PartialInviteChannel),
-        ):
-            invite_info["channel"]["name"] = invite.channel.name
-        invite_info["temporary"] = invite.temporary
-        invite_info["created_at"] = time()
-        invite_info["uses"] = invite.uses
-        invite_info["max_uses"] = invite.max_uses
-        if "inviters" not in invite_info:
-            invite_info["inviters"] = []
-        return invite_info
+    def to_num(self, string):
+        return int.from_bytes(string.encode('utf-8'), "little")
+
+    def from_num(self, number):
+        recovered = int(number).to_bytes((int(number).bit_length() + 7) // 8, 'little')
+        return recovered.decode("utf-8")
+
+    def collect_invite_info(self, inv):
+        info = {
+            "code": self.to_num(inv.id),
+            "guild_id": None,
+            "guild_name": None,
+            "channel_id": None,
+            "channel_name": None,
+            "inviter": None,
+            "uses": "0"
+        }
+        guild_types = (discord.Guild, discord.PartialInviteGuild)
+        guild = inv.guild
+        if not isinstance(inv.guild, guild_types) and hasattr(inv.guild, "id"):
+            tmp = self.bot.get_guild(inv.guild.id)
+            if isinstance(tmp, discord.Guild):
+                guild = tmp
+
+        if guild.id and guild.name:
+            info["guild_id"] = guild.id
+            info["guild_name"] = self.bot.encode(guild.name)
+
+        if inv.inviter:
+            info["inviter"] = inv.inviter.id
+
+        if inv.channel:
+            info["channel_id"] = inv.channel.id
+            info["channel_name"] = self.bot.encode(inv.channel.name)
+
+        if inv.uses:
+            info["uses"] = inv.uses
+
+        return info
+
+    async def invite_to_sql(self, invite):
+        info = self.collect_invite_info(invite)
+        iv = {}
+        for key, value in info.items():
+            if value is None:
+                iv[key] = "null"
+            else:
+                iv[key] = repr(value)
+
+        insert_values = [
+            iv["code"], iv["guild_id"], iv["guild_name"], iv["channel_id"], iv["channel_name"],
+            iv["inviter"], iv["uses"], time(), "null"
+        ]
+
+        update_values = {
+            "guild_id": info["guild_id"] if info["guild_id"] else "null",
+            "guild_name": repr(info["guild_name"]) if info["guild_name"] else "guild_name",
+            "channel_id": info["channel_id"] if info["channel_id"] else "channel_id",
+            "channel_name": repr(info["channel_name"]) if info["channel_name"] else "channel_name",
+            "inviter": info["inviter"] if info["inviter"] else "inviter",
+            "uses": f"case when uses is null then 0 when {info['uses']} is not null and {info['uses']} > uses then {info['uses']} else uses end",
+            "created_at": f"case when created_at is null then {time()} else created_at end"
+        }
+
+        sql = f"insert into invites values ({', '.join(str(v) for v in insert_values)}) " \
+              f"on duplicate key update " \
+              f"{', '.join(f'{k} = {v}' for k, v in update_values.items())};"
+
+        await self.bot.execute(sql)
 
     @commands.Cog.listener()
     async def on_message(self, msg):
         # AFK Command
         if msg.author.bot:
             return
-        user_id = str(msg.author.id)
-        if user_id in self.afk:
-            del self.afk[user_id]
-            await msg.channel.send("removed your afk", delete_after=3)
-        else:
-            for user in msg.mentions:
-                user_id = str(user.id)
-                if user_id in self.afk:
-                    replies = ["shh", "shush", "shush child", "nO"]
-                    choice = random.choice(replies)
-                    await msg.channel.send(f"{choice} he's {self.afk[user_id]}")
+        for user in msg.mentions:
+            if user.id in self.afk:
+                replies = ["shh", "shush", "shush child", "nO"]
+                choice = random.choice(replies)
+                await msg.channel.send(f"{choice} he's {self.afk[user.id]}")
+                return
 
         # Keep track of their last message time
         self.setup_if_not_exists(msg.author)
@@ -813,36 +847,25 @@ class Utility(commands.Cog):
         # Check for invites and log their current state
         if "discord.gg" in msg.content:
             invites = re.findall("discord.gg/.{4,8}", msg.content)
-            if invites:
-                for invite in invites:
-                    code = discord.utils.resolve_invite(invite)
-                    try:
-                        invite = await self.bot.fetch_invite(code)
-                        invite_info = self.collect_invite_info(invite)
-                        if invite.code not in self.misc_logs["invites"]:
-                            self.misc_logs["invites"][invite.code] = invite_info
-                        for key, value in invite_info.items():
-                            try:
-                                if key not in self.misc_logs["invites"][invite.code]:
-                                    self.misc_logs["invites"][invite.code][key] = value
-                                elif (
-                                    value != self.misc_logs["invites"][invite.code][key]
-                                    and value is not None
-                                ):
-                                    self.misc_logs["invites"][invite.code][key] = value
-                            except KeyError:
-                                return
-                        if (
-                            msg.author.id
-                            not in self.misc_logs["invites"][invite.code]["inviters"]
-                        ):
-                            self.misc_logs["invites"][invite.code]["inviters"].append(
-                                msg.author.id
-                            )
-                    except discord.errors.NotFound:
-                        pass
-                    except discord.errors.HTTPException:
-                        pass
+            invites = invites if invites else []
+            for invite in invites:
+                code = discord.utils.resolve_invite(invite)
+                if any(c.lower() not in "abcdefghijklmnopqrstuvwxyz0123456789" for c in code):
+                    return  # Not a real invite
+
+                try:
+                    invite = await self.bot.fetch_invite(code, with_counts=True)
+                except NotFound:
+                    return await self.bot.execute(
+                        f"update invites "
+                        f"set deleted_at = {time()} "
+                        f"where code = '{self.to_num(code)}' "
+                        f"and deleted_at = null;"
+                    )
+                except HTTPException:
+                    return
+
+                await self.invite_to_sql(invite)
 
     @commands.Cog.listener()
     async def on_user_update(self, before, after):
@@ -889,20 +912,19 @@ class Utility(commands.Cog):
     @commands.Cog.listener()
     async def on_invite_create(self, invite):
         if invite.code not in self.misc_logs["invites"]:
-            guild = self.bot.get_guild(invite.guild.id)
             try:
                 inv = await self.bot.fetch_invite(invite.code, with_counts=True)
-                invite = inv
-            except discord.errors.HTTPException:
-                pass
-            self.misc_logs["invites"][invite.code] = self.collect_invite_info(
-                invite, guild
-            )
+            except (NotFound, HTTPException):
+                return
+            await self.invite_to_sql(inv)
 
     @commands.Cog.listener()
     async def on_invite_delete(self, invite):
-        if invite.code in self.misc_logs["invites"]:
-            self.misc_logs["invites"][invite.code]["deleted"] = True
+        await self.bot.execute(
+            f"update invites "
+            f"set deleted_at = {time()} "
+            f"where code = {self.to_num(invite.code)};"
+        )
 
     @commands.command(name="serverinfo", aliases=["sinfo"])
     @commands.cooldown(1, 3, commands.BucketType.user)
