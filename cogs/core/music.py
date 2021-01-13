@@ -427,6 +427,14 @@ class Music(commands.Cog):
         e.set_author(name=f"{toggle} shuffle")
         await ctx.send(embed=e, delete_after=25)
 
+    @commands.command(name="thumbnail")
+    async def thumbnail(self, ctx):
+        await ctx.ensure_player_is_playing()
+        thumbnail = f"http://img.youtube.com/vi/{ctx.player.current.identifier}/maxresdefault.jpg"
+        e = discord.Embed(color=self.color)
+        e.set_image(url=thumbnail)
+        await ctx.send(embed=e, delete_after=25)
+
 
 def setup(bot):
     bot.add_cog(Music(bot))
