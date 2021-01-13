@@ -20,7 +20,7 @@ from discord.errors import NotFound, HTTPException
 from PIL import Image
 from colormap import rgb2hex
 import psutil
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 from botutils import colors, config
 from cogs.core.utils import Utils
@@ -56,37 +56,50 @@ class Utility(commands.Cog):
         if os.path.isfile(self.timer_path):
             with open(self.timer_path, "r") as f:
                 self.timers = json.load(f)
-        self.path = "./data/info.json"
-        self.guild_logs = {}
-        self.user_logs = {}
-        self.misc_logs = {"invites": {}}
-        if path.isfile(self.path):
-            with open(self.path, "r") as f:
-                try:
-                    dat = json.load(f)  # type: dict
-                except json.JSONDecodeError:
-                    bot.log(
-                        "Utility is retreating to a backup file. The previous is corrupt",
-                        "CRITICAL",
-                    )
-                    with open(self.path + ".old") as old:
-                        dat = json.load(old)
-                self.guild_logs = dat["guild_logs"]
-                self.user_logs = dat["user_logs"]
-                self.misc_logs = dat["misc_logs"]
-        else:
-            bot.log(
-                "info.json is missing, and cogs.Utility was loaded without any data",
-                "CRITICAL",
-            )
-        self.cache = {}
-        if "info" not in bot.tasks:
-            bot.tasks["info"] = bot.loop.create_task(self.save_data_task())
-        else:
-            bot.tasks["info"].cancel()
-            bot.tasks["info"] = bot.loop.create_task(self.save_data_task())
         if "timers" not in bot.tasks:
             bot.tasks["timers"] = {}
+        self.database_cleanup_task.start()
+
+    def cog_unload(self):
+        self.database_cleanup_task.cancel()
+
+    @tasks.loop(hours=6)
+    async def database_cleanup_task(self):
+        if not self.bot.is_ready():
+            await self.bot.wait_until_ready()
+        for _iteration in range(6):
+            if self.bot.pool:
+                break
+            await asyncio.sleep(10)
+        else:
+            self.bot.log.critical("Can't connect to the DB to cleanup invites")
+            return
+        lmt = time() + 60 * 60 * 24 * 30
+        set_to_remove = 0
+        async with self.bot.cursor() as cur:
+            # Invites
+            await cur.execute(f"select * from invites where created_at > {lmt};")
+            set_to_remove += cur.rowcount
+            await cur.execute(f"select * from invites where deleted_at > {lmt};")
+            set_to_remove += cur.rowcount
+            if set_to_remove:
+                self.bot.log.info(f"Removing {set_to_remove} old invites")
+            await cur.execute(f"delete from invites where created_at > {lmt};")
+            await cur.execute(f"delete from invites where deleted_at > {lmt};")
+
+            # Usernames
+            lmt = 60 * 60 * 24 * 30
+            await cur.execute(
+                f"delete from usernames where changed_at > {lmt};"
+            )
+
+            # Activity
+            lmt = 60 * 60 * 24 * 365
+            await cur.execute(
+                f"delete from activity "
+                f"where last_online > {lmt} "
+                f"and last_message > {lmt};"
+            )
 
     async def save_timers(self):
         await self.bot.save_json(self.timer_path, self.timers)
@@ -128,51 +141,7 @@ class Utility(commands.Cog):
             await asyncio.sleep(0.21)
             await reply.delete()
 
-    # def cog_unload(self):
-    # 	self.bot.loop.create_task(self.save_data())
-
-    async def save_data_task(self):
-        self.bot.log.debug("Starting save task for info.json")
-        while True:
-            await asyncio.sleep(60 * 5)
-            async with aiofiles.open(self.path + ".temp", "w+") as f:
-                await f.write(
-                    json.dumps(
-                        {
-                            "guild_logs": self.guild_logs,
-                            "user_logs": self.user_logs,
-                            "misc_logs": self.misc_logs,
-                        },
-                        ensure_ascii=False,
-                    )
-                )
-            if not path.exists(self.path):
-                self.bot.log.critical(
-                    "info.json was missing, and is being replaced with what's in memory"
-                )
-            if path.exists(self.path + ".old"):
-                os.remove(self.path + ".old")
-            os.rename(self.path, self.path + ".old")
-            os.rename(self.path + ".temp", self.path)
-            self.bot.log.debug("Saved info.json successfully")
-
-    def setup_if_not_exists(self, *args):
-        for arg in args:
-            if isinstance(arg, discord.Guild):
-                guild_id = str(arg.id)
-                if guild_id not in self.guild_logs:
-                    self.guild_logs[guild_id] = {"joins": [], "names": []}
-            if isinstance(arg, (discord.User, discord.Member)):
-                user_id = str(arg.id)
-                if user_id not in self.user_logs:
-                    self.user_logs[user_id] = {
-                        "names": {str(arg): time()},
-                        "last_msg": None,
-                        "last_online": None,
-                        "duration": None,
-                    }
-
-    @commands.command(name="delete-data")
+    @commands.command(name="delete-data", enabled=False)
     async def delete_data(self, ctx):
         user_id = str(ctx.author.id)
         if user_id not in self.user_logs:
@@ -206,7 +175,6 @@ class Utility(commands.Cog):
                 tmp = ctx.guild.get_member(user.id)
                 if isinstance(tmp, discord.Member):
                     user = tmp  # type: discord.Member
-            self.setup_if_not_exists(user)
 
             e = discord.Embed(color=colors.fate())
             e.set_author(
@@ -303,26 +271,33 @@ class Utility(commands.Cog):
                 g for g in self.bot.guilds if user.id in [m.id for m in g.members]
             ]
             if mutual:
-                user = mutual[0].get_member(user.id)
-                if user.status is discord.Status.offline:
-                    if self.user_logs[user_id]["last_online"]:
-                        seconds = round(time() - self.user_logs[user_id]["last_online"])
-                        activity_info[
-                            "Last Online"
-                        ] = f"{self.bot.utils.get_time(seconds)} ago"
-                        seconds = round(self.user_logs[user_id]["duration"])
-                        activity_info[
-                            "Online For"
-                        ] = f"{self.bot.utils.get_time(seconds)}"
+                user = mutual[0].get_member(user.id)  # type: discord.Member
+                async with self.bot.cursor() as cur:
+                    if user.status is discord.Status.offline:
+                        await cur.execute(
+                            f"select last_online from activity "
+                            f"where user_id = {user.id} "
+                            f"and last_online is not null "
+                            f"limit 1;"
+                        )
+                        if cur.rowcount:
+                            r = await cur.fetchone()
+                            seconds = round(time() - r[0])
+                            activity_info["Last Online"] = f"{self.bot.utils.get_time(seconds)} ago"
+                        else:
+                            activity_info["Last Online"] = "Unknown"
+                    await cur.execute(
+                        f"select last_message from activity "
+                        f"where user_id = {user.id} "
+                        f"and last_message is not null "
+                        f"limit 1;"
+                    )
+                    if cur.rowcount:
+                        r = await cur.fetchone()
+                        seconds = round(time() - r[0])
+                        activity_info["Last Msg"] = f"{self.bot.utils.get_time(seconds)} ago"
                     else:
-                        activity_info["Last Online"] = "Unknown"
-                if self.user_logs[user_id]["last_msg"]:
-                    seconds = round(time() - self.user_logs[user_id]["last_msg"])
-                    activity_info[
-                        "Last Msg"
-                    ] = f"{self.bot.utils.get_time(seconds)} ago"
-                else:
-                    activity_info["Last Msg"] = "Unknown"
+                        activity_info["Last Msg"] = "Unknown"
 
             if isinstance(user, discord.Member):
                 if user.status is discord.Status.online:
@@ -331,14 +306,15 @@ class Utility(commands.Cog):
                     else:
                         activity_info["Active on PC 🖥"] = None
 
-            # username history - broken (maybe)
-            names = [
-                name
-                for name, name_time in self.user_logs[user_id]["names"].items()
-                if name_time > time() - 60 * 60 * 24 * 60 and name != str(user)
-            ]
-            if names:
-                user_info["Usernames"] = ",".join(names)
+            # Username history
+            async with self.bot.cursor() as cur:
+                await cur.execute(f"select username from usernames where user_id = {user.id};")
+                if cur.rowcount:
+                    results = await cur.fetchall()
+                    decoded_results = [self.bot.decode(r[0]) for r in results]
+                    names = [name for name in decoded_results if name != str(user)]
+                    if names:
+                        user_info["Usernames"] = ",".join(names)
 
             e.description += (
                 f"◈ User Information{self.bot.utils.format_dict(user_info)}\n\n"
@@ -482,40 +458,42 @@ class Utility(commands.Cog):
             )
             inv = [arg for arg in ctx.message.content.split() if "discord.gg" in arg][0]
             code = discord.utils.resolve_invite(inv)
-            dat = None
             try:
                 invite = await self.bot.fetch_invite(code)
+                e.set_author(
+                    name="Alright, here's what I got..", icon_url=invite.guild.icon_url
+                )
+                e.set_thumbnail(url=invite.guild.splash_url)
+                e.set_image(url=invite.guild.banner_url)
+                data = {
+                    "Guild": invite.guild.name,
+                    "GuildID": invite.guild.id,
+                    "channel_name": invite.channel.name,
+                    "channel_id": invite.channel.id
+                }
             except (discord.errors.NotFound, discord.errors.Forbidden):
-                if code in self.misc_logs["invites"]:
-                    dat = self.misc_logs["invites"][code]
-                    e.set_footer(text="⚠ From History ⚠")
-            else:
-                dat = self.collect_invite_info(invite, invite.guild)
-            if not dat:
-                return await ctx.send("Invite not found")
-
-            logged = None
-            if code in self.misc_logs["invites"]:
-                logged = self.misc_logs["invites"][code]
-
-            core = {
-                "Guild": dat["guild"]["name"],
-                "GuildID": dat["guild"]["id"],
-                "Channel": dat["channel"]["name"],
-                "ChannelID": dat["channel"]["id"],
-            }
+                async with self.bot.cursor() as cur:
+                    await cur.execute(
+                        f"select guild_id, guild_name, channel_id, channel_name "
+                        f"from invites "
+                        f"where code = {self.to_num(code)};"
+                    )
+                    if not cur.rowcount:
+                        return await ctx.send("Failed to query that invite")
+                    results = await cur.fetchone()
+                    data = {
+                        "guild_name": self.bot.decode(results[1]),
+                        "guild_id": results[0],
+                        "channel_name": self.bot.decode(results[3]),
+                        "channel_id": results[2],
+                    }
+                    e.set_footer(text="⚠ From Cache ⚠")
 
             inviters = []
-            if logged:
-                for user_id in logged["inviters"]:
-                    user = self.bot.get_user(user_id)
-                    if not user:
-                        user = await self.bot.fetch_user(user_id)
-                    inviters.append(str(user))
 
             e.add_field(
                 name="◈ Invite Information",
-                value=self.bot.utils.format_dict(core),
+                value=self.bot.utils.format_dict(data),
                 inline=False,
             )
             if inviters:
@@ -841,9 +819,12 @@ class Utility(commands.Cog):
                 return
 
         # Keep track of their last message time
-        self.setup_if_not_exists(msg.author)
-        await asyncio.sleep(1)  # avoid getting in the way of .info @user
-        self.user_logs[str(msg.author.id)]["last_msg"] = time()
+        await self.bot.execute(
+            f"insert into activity values ({msg.author.id}, null, {time()}) "
+            f"on duplicate key update "
+            f"last_message = {time()};"
+        )
+
         # Check for invites and log their current state
         if "discord.gg" in msg.content:
             invites = re.findall("discord.gg/.{4,8}", msg.content)
@@ -865,58 +846,43 @@ class Utility(commands.Cog):
                 except HTTPException:
                     return
 
+                guild = self.bot.get_guild(invite.guild.id)
+                if guild and guild.me.guild_permissions.administrator:
+                    invites = await guild.invites()
+                    for _invite in invites:
+                        if invite.id == _invite.id:
+                            invite = _invite
+                            break
                 await self.invite_to_sql(invite)
 
     @commands.Cog.listener()
     async def on_user_update(self, before, after):
-        user_id = str(before.id)
-        old_name = str(before)
-        new_name = str(after)
-        if old_name != new_name:
-            self.setup_if_not_exists(before)
-            if new_name not in self.user_logs[user_id]:
-                self.user_logs[user_id][new_name] = time()
+        if before and after and str(before) != str(after):
+            async with self.bot.cursor() as cur:
+                await cur.execute(
+                    f"select * from usernames "
+                    f"where user_id = {after.id} "
+                    f"and username = {repr(self.bot.encode(str(before)))};"
+                )
+                if not cur.rowcount:
+                    await cur.execute(
+                        f"insert into usernames values ({after.id}, {repr(self.bot.encode(str(before)))}, {time()});"
+                    )
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
         if before.status != after.status:
-            user_id = str(before.id)
-            self.setup_if_not_exists(before)
             status = discord.Status
-            if user_id not in self.cache and after.status != status.offline:
-                self.cache[user_id] = time()
-            elif before.status == status.offline and after.status != status.online:
-                self.cache[user_id] = time()
             if before.status != status.offline and after.status == status.offline:
-                if user_id not in self.cache:
-                    return  # Prevents the code below from repeating
-                self.user_logs[user_id]["last_online"] = self.cache[user_id]
-                self.user_logs[user_id]["duration"] = time() - self.cache[user_id]
-                del self.cache[user_id]
-
-    @commands.Cog.listener()
-    async def on_member_join(self, member):
-        guild = member.guild
-        guild_id = str(guild.id)
-        self.setup_if_not_exists(guild)
-        self.guild_logs[guild_id]["joins"].append([member.id, time()])
-
-    @commands.Cog.listener()
-    async def on_member_leave(self, member):
-        if not member.bot:
-            self.setup_if_not_exists(member.guild)
-            user_id = str(member.id)
-            if user_id in self.guild_logs["joins"]:
-                del self.guild_logs["joins"][user_id]
+                await self.bot.execute(
+                    f"insert into activity values ({before.id}, {time()}, null) "
+                    f"on duplicate key update "
+                    f"last_online = {time()};"
+                )
 
     @commands.Cog.listener()
     async def on_invite_create(self, invite):
-        if invite.code not in self.misc_logs["invites"]:
-            try:
-                inv = await self.bot.fetch_invite(invite.code, with_counts=True)
-            except (NotFound, HTTPException):
-                return
-            await self.invite_to_sql(inv)
+        await self.invite_to_sql(invite)
 
     @commands.Cog.listener()
     async def on_invite_delete(self, invite):
