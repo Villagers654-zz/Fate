@@ -26,6 +26,9 @@ class AntiSpam(commands.Cog):
         self.in_progress = {}
         self.mutes = {}
         self.msgs = {}
+        # Only keeps things in the list for a set amount of time
+        self.index1 = {}
+        self.index2 = {}
 
         # configs
         self.toggle = {}
@@ -412,6 +415,7 @@ class AntiSpam(commands.Cog):
             if guild_id in self.blacklist:
                 if msg.channel.id in self.blacklist[guild_id]:
                     return
+            reason = "Unknown"
 
             # msgs to delete if triggered
             if user_id not in self.msgs:
@@ -421,25 +425,61 @@ class AntiSpam(commands.Cog):
 
             # rate limit
             if self.toggle[guild_id]['Rate-Limit']:
-                now = int(time() / 5)
-                if guild_id not in self.spam_cd:
-                    self.spam_cd[guild_id] = {}
-                if user_id not in self.spam_cd[guild_id]:
-                    self.spam_cd[guild_id][user_id] = [now, 0]
-                if self.spam_cd[guild_id][user_id][0] == now:
-                    self.spam_cd[guild_id][user_id][1] += 1
+                # now = int(time() / 5)
+                # if guild_id not in self.spam_cd:
+                #     self.spam_cd[guild_id] = {}
+                # if user_id not in self.spam_cd[guild_id]:
+                #     self.spam_cd[guild_id][user_id] = [now, 0]
+                # if self.spam_cd[guild_id][user_id][0] == now:
+                #     self.spam_cd[guild_id][user_id][1] += 1
+                # else:
+                #     self.spam_cd[guild_id][user_id] = [now, 0]
+                # if self.spam_cd[guild_id][user_id][1] > 4:
+                #     with suppress(KeyError, ValueError):
+                #         del self.spam_cd[guild_id][user_id]
+                #         if not self.spam_cd[guild_id]:
+                #             del self.spam_cd[guild_id]
+                #     triggered = True
+
+                now = int(time() / 3)
+                if guild_id not in self.index1:
+                    self.index1[guild_id] = {}
+                if user_id not in self.index1[guild_id]:
+                    self.index1[guild_id][user_id] = [now, 0]
+                if self.index1[guild_id][user_id][0] == now:
+                    self.index1[guild_id][user_id][1] += 1
                 else:
-                    self.spam_cd[guild_id][user_id] = [now, 0]
-                if self.spam_cd[guild_id][user_id][1] > 4:
+                    self.index1[guild_id][user_id] = [now, 0]
+                if self.index1[guild_id][user_id][1] > 4:
                     with suppress(KeyError, ValueError):
-                        del self.spam_cd[guild_id][user_id]
-                        if not self.spam_cd[guild_id]:
-                            del self.spam_cd[guild_id]
+                        del self.index1[guild_id][user_id]
+                        if not self.index1[guild_id]:
+                            del self.index1[guild_id]
+                    reason = "5 or more messages within 3 seconds"
                     triggered = True
+
+                now = int(time() / 10)
+                if guild_id not in self.index2:
+                    self.index2[guild_id] = {}
+                if user_id not in self.index2[guild_id]:
+                    self.index2[guild_id][user_id] = [now, 0]
+                if self.index2[guild_id][user_id][0] == now:
+                    self.index2[guild_id][user_id][1] += 1
+                else:
+                    self.index2[guild_id][user_id] = [now, 0]
+                if self.index2[guild_id][user_id][1] > 7:
+                    with suppress(KeyError, ValueError):
+                        del self.index2[guild_id][user_id]
+                        if not self.index2[guild_id]:
+                            del self.index2[guild_id]
+                    reason = "8 or more messages within 10 seconds"
+                    triggered = True
+
 
             # mass pings
             if self.toggle[guild_id]["Mass-Pings"]:
                 if msg.content.count("@") > sensitivity_level + 1:
+                    reason = "mass pinging"
                     triggered = True
 
             # anti macro
@@ -456,6 +496,7 @@ class AntiSpam(commands.Cog):
                     self.macro_cd[user_id]['intervals'] = intervals[-sensitivity_level + 1:]
                     if len(intervals) > 2:
                         if all(interval == intervals[0] for interval in intervals):
+                            reason = "macromancing"
                             triggered = True
 
             # duplicate messages
@@ -484,9 +525,6 @@ class AntiSpam(commands.Cog):
                             await asyncio.sleep(1)
                             history = await msg.channel.history(limit=5).flatten()
                             if not any(m.author.bot for m in history):
-                                await self.bot.get_channel(632084935506788385).send(
-                                    "\n".join([f"```{m.content}```" for m in dupes])[:2000]
-                                )
                                 users = set(list([
                                     *[m.author for m in dupes if m], *users
                                 ]))
@@ -497,6 +535,7 @@ class AntiSpam(commands.Cog):
                                     await msg.channel.delete_messages([
                                         message for message in dupes if message
                                     ])
+                                reason = "duplicate messages"
                                 triggered = True
                                 break
 
@@ -630,12 +669,8 @@ class AntiSpam(commands.Cog):
                         with suppress(NotFound, Forbidden, HTTPException):
                             await msg.author.send(f"You've been muted for spam in **{msg.guild.name}** for {timer_str}")
                         mentions = discord.AllowedMentions(users=True)
-                        additional_info = ""
-                        if len(users) > 1 and iteration == 0:
-                            additional_info += f"\nIf this is a common mistake you can add a ignored " \
-                                               f"command with `.antispam ignore .f work` for example"
                         await msg.channel.send(
-                            f"Temporarily muted {msg.author.mention} for spam." + additional_info,
+                            f"Temporarily muted {msg.author.mention} for spam. Reason: {reason}",
                             allowed_mentions=mentions
                         )
 
