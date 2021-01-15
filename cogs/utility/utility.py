@@ -158,13 +158,6 @@ class Utility(commands.Cog):
         )  # type: bool
         if isinstance(target, (User, Member)):
             user = target  # type: discord.User
-            if ctx.author.id == 611108193275478018 and user.id == 264838866480005122:
-                await self.bot.get_channel(541520201926311986).send(
-                    "<@264838866480005122> eppy tried using .info on yu"
-                )
-                return await ctx.send(
-                    "https://cdn.discordapp.com/attachments/633866664252801024/725905903928213584/Screenshot_20181018-003209_Gallery.jpg"
-                )
             if ctx.guild:
                 tmp = ctx.guild.get_member(user.id)
                 if isinstance(tmp, discord.Member):
@@ -268,26 +261,26 @@ class Utility(commands.Cog):
                 async with self.bot.cursor() as cur:
                     if user.status is discord.Status.offline:
                         await cur.execute(
-                            f"select last_online from activity "
+                            f"select format(last_online, 3) from activity "
                             f"where user_id = {user.id} "
                             f"and last_online is not null "
                             f"limit 1;"
                         )
                         if cur.rowcount:
                             r = await cur.fetchone()
-                            seconds = round(time() - r[0])
+                            seconds = round(time() - float(r[0].replace(',', '')))
                             activity_info["Last Online"] = f"{self.bot.utils.get_time(seconds)} ago"
                         else:
                             activity_info["Last Online"] = "Unknown"
                     await cur.execute(
-                        f"select last_message from activity "
+                        f"select format(last_message, 3) from activity "
                         f"where user_id = {user.id} "
                         f"and last_message is not null "
                         f"limit 1;"
                     )
                     if cur.rowcount:
                         r = await cur.fetchone()
-                        seconds = round(time() - r[0])
+                        seconds = round(time() - float(r[0].replace(',', '')))
                         activity_info["Last Msg"] = f"{self.bot.utils.get_time(seconds)} ago"
                     else:
                         activity_info["Last Msg"] = "Unknown"
@@ -469,7 +462,7 @@ class Utility(commands.Cog):
                     await cur.execute(
                         f"select guild_id, guild_name, channel_id, channel_name "
                         f"from invites "
-                        f"where code = {self.to_num(code)};"
+                        f"where code = {self.bot.encode(code)};"
                     )
                     if not cur.rowcount:
                         return await ctx.send("Failed to query that invite")
@@ -738,7 +731,7 @@ class Utility(commands.Cog):
 
     def collect_invite_info(self, inv):
         info = {
-            "code": self.to_num(inv.id),
+            "code": self.bot.encode(inv.id),
             "guild_id": None,
             "guild_name": None,
             "channel_id": None,
@@ -793,11 +786,16 @@ class Utility(commands.Cog):
             "created_at": f"case when created_at is null then {time()} else created_at end"
         }
 
-        sql = f"insert into invites values ({', '.join(str(v) for v in insert_values)}) " \
-              f"on duplicate key update " \
-              f"{', '.join(f'{k} = {v}' for k, v in update_values.items())};"
-
-        await self.bot.execute(sql)
+        async with self.bot.cursor() as cur:
+            await cur.execute(f"select * from invites where code = {iv['code']} limit 1;")
+            if cur.rowcount:
+                await cur.execute(
+                    f"update invites "
+                    f"set {', '.join(f'{k} = {v}' for k, v in update_values.items())} "
+                    f"where code = {iv['code']} limit 1;"
+                )
+            else:
+                await cur.execute(f"insert into invites values ({', '.join(str(v) for v in insert_values)})")
 
     @commands.Cog.listener()
     async def on_message(self, msg):
@@ -812,10 +810,11 @@ class Utility(commands.Cog):
                 return
 
         # Keep track of their last message time
+        await asyncio.sleep(1)
         await self.bot.execute(
-            f"insert into activity values ({msg.author.id}, null, {time()}) "
+            f"insert into activity values ({msg.author.id}, null, '{datetime.now()}') "
             f"on duplicate key update "
-            f"last_message = {time()};"
+            f"last_message = '{time()}';"
         )
 
         # Check for invites and log their current state
@@ -868,9 +867,9 @@ class Utility(commands.Cog):
             status = discord.Status
             if before.status != status.offline and after.status == status.offline:
                 await self.bot.execute(
-                    f"insert into activity values ({before.id}, {time()}, null) "
+                    f"insert into activity values ({before.id}, '{datetime.now()}', null) "
                     f"on duplicate key update "
-                    f"last_online = {time()};"
+                    f"last_online = '{time()}';"
                 )
 
     @commands.Cog.listener()
