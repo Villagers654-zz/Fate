@@ -303,6 +303,7 @@ class Music(commands.Cog):
     @commands.command(name="remove")
     @ensure_player_is_playing()
     async def remove(self, ctx, track_number: int):
+        """Removes a track from the queue"""
         if track_number > len(ctx.player.queue):
             return await ctx.send("The queue isn't that big. Use `.queue` to find it's track number", delete_after=25)
         track = ctx.player.queue.pop(track_number - 1)
@@ -314,6 +315,7 @@ class Music(commands.Cog):
     @commands.command(name="seek", aliases=["s"])
     @ensure_player_is_playing()
     async def seek(self, ctx, amount: int):
+        """Forwards or rewinds a track"""
         position = amount * 1000 + ctx.player.current.duration
         await ctx.player.seek(position)
         e = discord.Embed(color=self.color)
@@ -365,6 +367,7 @@ class Music(commands.Cog):
     @commands.command(name="pause")
     @ensure_player_is_playing()
     async def pause(self, ctx):
+        """Pauses a track from playing without getting rid of it"""
         if ctx.player.paused:
             return await ctx.send("The music player is already paused", delete_after=25)
         await ctx.player.set_pause(True)
@@ -375,6 +378,7 @@ class Music(commands.Cog):
     @commands.command(name="resume")
     @ensure_player_is_playing()
     async def resume(self, ctx):
+        """Resumes a paused track"""
         if not ctx.player.paused:
             return await ctx.send("The music player isn't paused", delete_after=25)
         await ctx.player.set_pause(False)
@@ -426,6 +430,7 @@ class Music(commands.Cog):
     @commands.command(name="shuffle")
     @ensure_player_is_playing()
     async def shuffle(self, ctx):
+        """Toggle shuffle to randomize the order in which songs are played"""
         ctx.player.shuffle = not ctx.player.shuffle
         e = discord.Embed(color=self.color)
         toggle = "Enabled" if ctx.player.shuffle else "Disabled"
@@ -435,6 +440,7 @@ class Music(commands.Cog):
     @commands.command(name="thumbnail")
     @ensure_player_is_playing()
     async def thumbnail(self, ctx):
+        """Get the thumbnail of a youtube track"""
         thumbnail = f"http://img.youtube.com/vi/{ctx.player.current.identifier}/maxresdefault.jpg"
         e = discord.Embed(color=self.color)
         e.set_image(url=thumbnail)
