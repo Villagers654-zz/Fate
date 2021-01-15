@@ -8,6 +8,7 @@ from time import time
 import os
 import subprocess
 from importlib import reload
+from contextlib import suppress
 
 from discord.ext import commands, tasks
 import discord
@@ -58,16 +59,12 @@ class Utils(commands.Cog):
     @staticmethod
     async def get_prefixes_async(bot, msg):
         default_prefix = commands.when_mentioned_or(".")(bot, msg)
-        config_path = bot.get_fp_for("userdata/config.json")
+        # config_path = bot.get_fp_for("userdata/config.json")
 
         if msg.author.id == bot.config["owner_id"]:
             return default_prefix
 
-        last_updated, config = bot.prefix_cache
-        if last_updated < time() - 5:
-            async with bot.open(config_path, "r") as f:
-                config = json.loads(await f.read())
-            bot.prefix_cache = [time(), config]
+        config = bot.prefix_cache
 
         if msg.author.id in config["blocked"]:
             return None
@@ -332,7 +329,7 @@ class TempList(list):
 
     async def remove_after(self, value):
         await asyncio.sleep(self.keep_for)
-        if value in super().__iter__():
+        with suppress(IndexError):
             super().remove(value)
 
     def append(self, *args, **kwargs):
