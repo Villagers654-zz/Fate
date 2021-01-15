@@ -22,6 +22,23 @@ def require_vote():
     return commands.check(predicate)
 
 
+def ensure_player_is_playing():
+    async def predicate(ctx):
+        await ctx.bot.cogs["Music"].ensure_voice(ctx)
+        player = ctx.bot.lavalink.player_manager.get(ctx.guild.id)
+        if not player or not player.is_connected:
+            await ctx.send("I'm not connected to any voice channel", delete_after=25)
+        elif not ctx.author.voice:
+            await ctx.end("You're not currently connected to a voice channel", delete_after=25)
+        elif not player.is_connected and ctx.author.voice.channel.id != int(player.channel_id):
+            await ctx.send("We don't currently share a voice channel", delete_after=25)
+        else:
+            return True
+        raise ctx.bot.ignored_exit
+
+    return commands.check(predicate)
+
+
 class Music(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -57,16 +74,6 @@ class Music(commands.Cog):
 
     async def cog_before_invoke(self, ctx):
         """ Command before-invoke handler. """
-        async def ensure_playing():
-            if not ctx.player or not ctx.player.is_connected:
-                await ctx.send("I'm not connected to any voice channel")
-            elif not ctx.author.voice or (
-                    ctx.player.is_connected and ctx.author.voice.channel.id != int(ctx.player.channel_id)):
-                await ctx.send("We don't currently share a voice channel")
-            else:
-                return None
-            raise self.bot.ignored_exit
-
         async def delete_after():
             await asyncio.sleep(25)
             if ctx.message is not None:
@@ -81,7 +88,6 @@ class Music(commands.Cog):
         if guild_check:
             await self.ensure_voice(ctx)
             ctx.player = self.bot.lavalink.player_manager.get(ctx.guild.id)
-            ctx.ensure_player_is_playing = ensure_playing
 
         return guild_check
 
@@ -187,9 +193,8 @@ class Music(commands.Cog):
             await player.play()
 
     @commands.command(name="queue", aliases=["q"])
+    @ensure_player_is_playing()
     async def queue(self, ctx):
-        await ctx.ensure_player_is_playing()
-
         # Index the pages for the queue
         def create_embed():
             e = discord.Embed(color=self.color)
@@ -260,26 +265,26 @@ class Music(commands.Cog):
             await msg.remove_reaction(reaction, ctx.author)
 
     @commands.command(name="disconnect", aliases=['dc'])
+    @ensure_player_is_playing()
     async def disconnect(self, ctx):
         """Disconnects the player from the voice channel and clears its queue"""
-        await ctx.ensure_player_is_playing()
         ctx.player.queue.clear()
         await ctx.player.stop()
         await self.connect_to(ctx.guild.id, None)
         await ctx.send("*⃣ | Disconnected.", delete_after=25)
 
     @commands.command(name="stop")
+    @ensure_player_is_playing()
     async def stop(self, ctx):
         """Stops the player from playing without leaving the channel"""
-        await ctx.ensure_player_is_playing()
         ctx.player.queue.clear()
         await ctx.player.stop()
         await ctx.send("Stopped playing", delete_after=25)
 
     @commands.command(name="repeat")
+    @ensure_player_is_playing()
     async def repeat(self, ctx):
         """Sets the player to repeat the currently playing track"""
-        await ctx.ensure_player_is_playing()
         ctx.player.repeat = not ctx.player.repeat
         e = discord.Embed(color=self.color)
         new_toggle = "Enabled" if ctx.player.repeat else "Disabled"
@@ -287,17 +292,17 @@ class Music(commands.Cog):
         await ctx.send(embed=e, delete_after=25)
 
     @commands.command(name="skip")
+    @ensure_player_is_playing()
     async def skip(self, ctx):
         """Skip to the next track in queue"""
-        await ctx.ensure_player_is_playing()
         await ctx.player.skip()
         e = discord.Embed(color=self.color)
         e.set_author(name="Skipped to the next song", icon_url=self._skip)
         await ctx.send(embed=e, delete_after=25)
 
     @commands.command(name="remove")
+    @ensure_player_is_playing()
     async def remove(self, ctx):
-        await ctx.ensure_player_is_playing()
         await ctx.send("This command isn't implemented yet")
 
     @commands.command(name="previous")
@@ -306,8 +311,8 @@ class Music(commands.Cog):
         await ctx.send("This command isn't implemented yet")
 
     @commands.command(name="seek", aliases=["s"])
+    @ensure_player_is_playing()
     async def seek(self, ctx, amount: int):
-        await ctx.ensure_player_is_playing()
         position = amount * 1000 + ctx.player.current.duration
         await ctx.player.seek(position)
         e = discord.Embed(color=self.color)
@@ -315,10 +320,9 @@ class Music(commands.Cog):
         await ctx.send(embed=e, delete_after=25)
 
     @commands.command(name="playat")
+    @ensure_player_is_playing()
     async def play_at(self, ctx, position):
         """Skip forward in a song, or play at a specific time"""
-        await ctx.ensure_player_is_playing()
-
         usage = "Invalid usage. Either specify in seconds, or in the format of 5:27 to " \
                 "play at 5 minutes and 27 seconds into the track"
 
@@ -358,8 +362,8 @@ class Music(commands.Cog):
         await ctx.send(embed=e, delete_after=25)
 
     @commands.command(name="pause")
+    @ensure_player_is_playing()
     async def pause(self, ctx):
-        await ctx.ensure_player_is_playing()
         if ctx.player.paused:
             return await ctx.send("The music player is already paused", delete_after=25)
         await ctx.player.set_pause(True)
@@ -368,8 +372,8 @@ class Music(commands.Cog):
         await ctx.send(embed=e, delete_after=25)
 
     @commands.command(name="resume")
+    @ensure_player_is_playing()
     async def resume(self, ctx):
-        await ctx.ensure_player_is_playing()
         if not ctx.player.paused:
             return await ctx.send("The music player isn't paused", delete_after=25)
         await ctx.player.set_pause(False)
@@ -378,9 +382,9 @@ class Music(commands.Cog):
         await ctx.send(embed=e, delete_after=25)
 
     @commands.command(name="volume", aliases=["vol", "v"])
+    @ensure_player_is_playing()
     async def volume(self, ctx, volume: int):
         """Alter the players volume to raise or lower it"""
-        await ctx.ensure_player_is_playing()
         if volume > 1000:
             await ctx.send("biTcH nO, those heels are too high", delete_after=25)
         if volume < 0:
@@ -391,9 +395,9 @@ class Music(commands.Cog):
         await ctx.send(embed=e, delete_after=25)
 
     @commands.command(name="now", aliases=["np", "playing", "current", "cur"])
+    @ensure_player_is_playing()
     async def now_playing(self, ctx):
         """Show information on the current playing track"""
-        await ctx.ensure_player_is_playing()
         track = ctx.player.current
         thumbnail = f"http://img.youtube.com/vi/{track.identifier}/maxresdefault.jpg"
         requester = self.bot.get_user(track.requester)
@@ -419,8 +423,8 @@ class Music(commands.Cog):
         await ctx.send(embed=e, delete_after=25)
 
     @commands.command(name="shuffle")
+    @ensure_player_is_playing()
     async def shuffle(self, ctx):
-        await ctx.ensure_player_is_playing()
         ctx.player.shuffle = not ctx.player.shuffle
         e = discord.Embed(color=self.color)
         toggle = "Enabled" if ctx.player.shuffle else "Disabled"
@@ -428,8 +432,8 @@ class Music(commands.Cog):
         await ctx.send(embed=e, delete_after=25)
 
     @commands.command(name="thumbnail")
+    @ensure_player_is_playing()
     async def thumbnail(self, ctx):
-        await ctx.ensure_player_is_playing()
         thumbnail = f"http://img.youtube.com/vi/{ctx.player.current.identifier}/maxresdefault.jpg"
         e = discord.Embed(color=self.color)
         e.set_image(url=thumbnail)
