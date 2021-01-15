@@ -302,13 +302,14 @@ class Music(commands.Cog):
 
     @commands.command(name="remove")
     @ensure_player_is_playing()
-    async def remove(self, ctx):
-        await ctx.send("This command isn't implemented yet")
-
-    @commands.command(name="previous")
-    async def previous(self, ctx):
-        await ctx.ensure_player_is_playing()
-        await ctx.send("This command isn't implemented yet")
+    async def remove(self, ctx, track_number: int):
+        if track_number > len(ctx.player.queue):
+            return await ctx.send("The queue isn't that big. Use `.queue` to find it's track number", delete_after=25)
+        track = ctx.player.queue.pop(track_number - 1)
+        e = discord.Embed(color=self.color)
+        requester = self.bot.get_user(track.requester)
+        e.description = f"Removed [{track.title}]({track.uri})\n﹂`From {requester}`"
+        await ctx.send(embed=e, delete_after=25)
 
     @commands.command(name="seek", aliases=["s"])
     @ensure_player_is_playing()
