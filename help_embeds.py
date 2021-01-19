@@ -25,7 +25,7 @@ class HelpMenus:
             "• **Mod** - `moderation commands`\n"
             "• **Utility** - `helpful commands`\n"
             "• **Fun** - `fun games/commands`\n"
-            "• **Music** - `play moosic in vc`"
+            "• **Music** - `play moosic in vc` - coming soon"
         )
         e.add_field(name="◈ Categories", value=categories, inline=False)
         e.set_footer(
