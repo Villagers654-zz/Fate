@@ -483,21 +483,22 @@ class AntiSpam(commands.Cog):
                     triggered = True
 
             # anti macro
-            if self.toggle[guild_id]["Anti-Macro"]:
-                if user_id not in self.macro_cd:
-                    self.macro_cd[user_id] = {}
-                    self.macro_cd[user_id]['intervals'] = []
-                if 'last' not in self.macro_cd[user_id]:
-                    self.macro_cd[user_id]['last'] = datetime.now()
-                else:
-                    last = self.macro_cd[user_id]['last']
-                    self.macro_cd[user_id]['intervals'].append((datetime.now() - last).seconds)
-                    intervals = self.macro_cd[user_id]['intervals']
-                    self.macro_cd[user_id]['intervals'] = intervals[-sensitivity_level + 1:]
-                    if len(intervals) > 2:
-                        if all(interval == intervals[0] for interval in intervals):
-                            reason = "macromancing"
-                            triggered = True
+            # if self.toggle[guild_id]["Anti-Macro"]:
+            #     if user_id not in self.macro_cd:
+            #         self.macro_cd[user_id] = {}
+            #         self.macro_cd[user_id]['intervals'] = []
+            #     if 'last' not in self.macro_cd[user_id]:
+            #         self.macro_cd[user_id]['last'] = datetime.now()
+            #     else:
+            #         last = self.macro_cd[user_id]['last']
+            #         self.macro_cd[user_id]['intervals'].append((datetime.now() - last).seconds)
+            #         intervals = self
+            #         .macro_cd[user_id]['intervals']
+            #         self.macro_cd[user_id]['intervals'] = intervals[-sensitivity_level + 1:]
+            #         if len(intervals) > 2:
+            #             if all(interval == intervals[0] and interval > 4 for interval in intervals):
+            #                 reason = "macromancing"
+            #                 triggered = True
 
             # duplicate messages
             if (self.toggle[guild_id]['Duplicates'] or msg.guild.id == 786742289694851092) and msg.content and (
