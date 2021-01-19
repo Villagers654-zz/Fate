@@ -17,6 +17,7 @@ youtube-dl
 lavalink
 googletrans
 Pybooru
+gtts
 
 
 
@@ -48,9 +49,7 @@ requests
 aiohttp
 websockets
 pysftp
-aiomysql
-pymysql
-
+aiomysql==0.0.20
 
 
 # Misc
