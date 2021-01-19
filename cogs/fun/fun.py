@@ -165,7 +165,7 @@ class Fun(commands.Cog):
             user_agent=creds.user_agent,
         )
 
-        reddits = ["memes", "dankmemes", "MemeEconomy", "ComedyCemetery"]
+        reddits = ["Memes_Of_The_Dank", "dankmemes"]
         reddit_posts = []  # type: praw.Reddit.submission
 
         for submission in reddit.subreddit(random.choice(reddits)).hot(limit=100):
