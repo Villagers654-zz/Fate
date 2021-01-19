@@ -35,15 +35,15 @@ class ServerStatistics(commands.Cog):
             self.configs[guild_id] = {
                 "members": {
                     "channel_id": members,
-                    "format": members_fmt
+                    "format": self.bot.decode(members_fmt) if members_fmt else self.defaults["members"]
                 },
                 "bots": {
                     "channel_id": bots,
-                    "format": bots_fmt,
+                    "format": self.bot.decode(bots_fmt) if bots_fmt else self.defaults["bots"],
                 },
                 "boosts": {
                     "channel_id": boosts,
-                    "format": boosts_fmt
+                    "format": self.bot.decode(boosts_fmt) if boosts_fmt else self.defaults["boosts"]
                 }
             }
         self.bot.log.info("Cached server statistic configs")
@@ -153,54 +153,70 @@ class ServerStatistics(commands.Cog):
         async with self.bot.cursor() as cur:
             await cur.execute(
                 f"update server_stats "
-                f"set {ctype}_fmt = '{format}' "
+                f"set {ctype}_fmt = '{self.bot.encode(format)}' "
                 f"where guild_id = {guild_id};"
             )
         if guild_id in self.configs:
             self.configs[guild_id][ctype]["format"] = format
 
     @commands.Cog.listener()
+    async def on_guild_channel_update(self, before, after):
+        if before and after and before.guild.id in self.configs and "{count}" in after.name:
+            guild_id = before.guild.id
+            for ctype, data in list(self.configs[guild_id].items()):
+                if before.id == data["channel_id"]:
+                    await self.update_format(guild_id, ctype, after.name)
+                    if ctype == "members":
+                        await self.update_members(before.guild)
+                    elif ctype == "bots":
+                        await self.update_bots(before.guild)
+                    elif ctype == "boosts":
+                        await self.update_boosts(before.guild)
+                    break
+
+    async def update_members(self, guild):
+        conf = self.configs[guild.id]  # type: dict
+        channel = self.bot.get_channel(conf["members"]["channel_id"])
+        if not channel:
+            return
+        count = len([m for m in guild.members if not m.bot])
+        name = conf["members"]["format"].replace("{count}", str(count))
+        await channel.edit(name=name)
+
+    async def update_bots(self, guild):
+        conf = self.configs[guild.id]  # type: dict
+        channel = self.bot.get_channel(conf["bots"]["channel_id"])
+        if not channel:
+            return
+        count = len([m for m in guild.members if m.bot])
+        name = conf["members"]["format"].replace("{count}", str(count))
+        await channel.edit(name=name)
+
+    async def update_boosts(self, guild):
+        conf = self.configs[guild.id]
+        channel = self.bot.get_channel(conf["boosts"]["channel_id"])
+        if not channel:
+            return
+        count = guild.premium_subscription_count
+        name = conf["boosts"]["format"].replace("{count}", str(count))
+        await channel.edit(name=name)
+
+    @commands.Cog.listener()
     async def on_member_join(self, member):
         if member.guild.id in self.configs:
-            conf = self.configs[member.guild.id]  # type: dict
-
+            conf = self.configs[member.guild.id]
             if not member.bot and conf["members"]["channel_id"]:
-                channel = self.bot.get_channel(conf["members"]["channel_id"])
-                if not channel:
-                    return
-                if "{count}" in channel.name:
-                    await self.update_format(member.guild.id, "members", channel.name)
-                    conf["members"]["format"] = channel.name
-                count = len([m for m in member.guild.members if not m.bot])
-                name = conf["members"]["format"].replace("{count}", str(count))
-                await channel.edit(name=name)
-
+                await self.update_members(member.guild)
             elif member.bot and conf["bots"]["channel_id"]:
-                channel = self.bot.get_channel(conf["bots"]["channel_id"])
-                if not channel:
-                    return
-                if "{count}" in channel.name:
-                    await self.update_format(member.guild.id, "bots", channel.name)
-                    conf["bots"]["format"] = channel.name
-                count = len([m for m in member.guild.members if m.bot])
-                name = conf["members"]["format"].replace("{count}", str(count))
-                await channel.edit(name=name)
+                await self.update_bots(member.guild)
 
     @commands.Cog.listener()
     async def on_guild_update(self, before, after):
-        if before and before.id in self.configs:
+        if before and after and before.id in self.configs:
             conf = self.configs[before.id]  # type: dict
             if conf["boosts"]["channel_id"]:
                 if before.premium_subscription_count != after.premium_subscription_count:
-                    channel = self.bot.get_channel(conf["boosts"]["channel_id"])
-                    if not channel:
-                        return
-                    if "{count}" in channel.name:
-                        await self.update_format(before.id, "boosts", channel.name)
-                        conf["boosts"]["format"] = channel.name
-                    count = after.premium_subscription_count
-                    name = conf["boosts"]["format"].replace("{count}", str(count))
-                    await channel.edit(name=name)
+                    await self.update_boosts(after)
 
 
 def setup(bot):
