@@ -153,6 +153,7 @@ class ModMail(commands.Cog):
                     "or I no longer share any servers with them"
                 )
             else:
+                e.set_footer(text=f"Use .reply to respond again")
                 await msg.channel.send(embed=e)
                 await ctx.message.delete()
 
@@ -279,6 +280,7 @@ class ModMail(commands.Cog):
             except Forbidden:
                 await ctx.send("Failed to create a thread due to my lacking manage_channel perms in that server")
                 return None
+            e.set_footer(text="Use .reply to respond")
             await ctx.send("Created your thread 👍")
         else:
             channel = matches[0]  # type: discord.TextChannel
