@@ -707,6 +707,14 @@ class Logger(commands.Cog):
                     bots.append(bot.mention)
             if bots:
                 e.add_field(name="◈ Ignored Bots", value=", ".join(bots), inline=False)
+        if self.config[guild_id]["channels"]:
+            channels = []
+            for log_type, channel_id in list(self.config[guild_id]["channels"].items()):
+                channel = self.bot.get_channel(int(channel_id))
+                if channel:
+                    channels.append(f"{channel.mention} - {log_type}")
+            if channels:
+                e.add_field(name="◈ Log Redirects", value="\n".join(channels), inline=False)
         await ctx.send(embed=e)
 
     @commands.Cog.listener()
