@@ -48,7 +48,6 @@ class Fate(commands.AutoShardedBot):
         self.locks = {}
         self.tasks = {}  # Task object storing for easy management
         self.logger_tasks = {}  # Same as Fate.tasks except dedicated to cogs.logger
-        self._logger_tasks = {}
         self.last_traceback = ""  # Formatted string of the last error traceback
         self.blocked = []
         self.ignored_exit = EmptyException
