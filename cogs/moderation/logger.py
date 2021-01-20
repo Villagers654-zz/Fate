@@ -751,13 +751,11 @@ class Logger(commands.Cog):
                     elif msg.channel.permissions_for(msg.author).mention_everyone:
                         is_successful = True
                     if is_successful:
-                        e.description = self.bot.utils.format_dict(
-                            {
-                                "Author": msg.author.mention,
-                                "Channel": msg.channel.mention,
-                                f"[Jump to MSG]({msg.jump_url})": None,
-                            }
-                        )
+                        e.description = self.bot.utils.format_dict({
+                            "Author": msg.author.mention,
+                            "Channel": msg.channel.mention,
+                            f"[Jump to MSG]({msg.jump_url})": None,
+                        })
                         for group in self.bot.utils.split(msg.content, 1024):
                             e.add_field(name="Content", value=group, inline=False)
                         log = Log("everyone_mention", embed=e)
@@ -1256,7 +1254,7 @@ class Logger(commands.Cog):
                 if channel.id == self.config[guild_id]["channel"]:
                     for embed in self.recent_logs[guild_id]:
                         log = Log("message_delete", embed=embed)
-                        self.put_nowait(guild_id, log)
+                        await self.queue[guild_id].put(log)
                     return
 
             dat = await self.search_audit(channel.guild, audit.channel_delete)
