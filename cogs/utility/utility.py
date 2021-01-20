@@ -634,10 +634,14 @@ class Utility(commands.Cog):
                 await f.write(json.dumps(stats))
             async with self.bot.open("fate.py", "r") as f:
                 lines += len(await f.readlines())
-            for file in os.listdir("cogs"):
-                if file.endswith(".py"):
-                    async with self.bot.open(f"./cogs/{file}", "r") as f:
-                        lines += len(await f.readlines())
+
+            locations = ["botutils", "cogs"]
+            for location in locations:
+                for root, dirs, files in os.walk(location):
+                    for file in files:
+                        if file.endswith(".py"):
+                            async with self.bot.open(f"{root}/{file}", "r") as f:
+                                lines += len(await f.readlines())
             e.description = f"Commands Used This Week: {commands}" \
                             f"\nLines of code: {lines}"
             e.set_thumbnail(url=self.bot.user.avatar_url)
