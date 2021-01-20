@@ -331,12 +331,12 @@ class Welcome(commands.Cog):
                 'Send the image(s) you\'d like to use\nReply with "done" when finished'
             )
             while complete is False:
-                async with self.bot.require("message", ctx, handle_timeout=True) as msg:
-                    if msg.content:
-                        if "done" in msg.content.lower():
-                            return await ctx.send("Added your images 👍")
-                    for attachment in msg.attachments:
-                        self.images[guild_id].append(attachment.url)
+                msg = await self.bot.utils.get_message(ctx)  # type: discord.Message
+                if msg.content:
+                    if "done" in msg.content.lower():
+                        return await ctx.send("Added your images 👍")
+                for attachment in msg.attachments:
+                    self.images[guild_id].append(attachment.url)
         for attachment in ctx.message.attachments:
             self.images[guild_id].append(attachment.url)
         if len(self.images[guild_id]) > 0:

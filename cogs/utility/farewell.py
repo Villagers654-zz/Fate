@@ -332,7 +332,7 @@ class Leave(commands.Cog):
                 'Send the image(s) you\'d like to use\nReply with "done" when finished'
             )
             while complete is False:
-                msg = await self.bot.utils.wait_for_msg(ctx)  # type: discord.Message
+                msg = await self.bot.utils.get_message(ctx)  # type: discord.Message
                 if msg:
                     if msg.content:
                         if "done" in msg.content.lower():
