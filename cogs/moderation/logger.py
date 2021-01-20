@@ -1581,7 +1581,7 @@ class Logger(commands.Cog):
                 # self.role_index[guild_id] = [role for role in after.guild.roles]
                 em = discord.Embed()
                 em.description = f"Role {before.mention} was moved"
-                log = Log("role_move", embed=e)
+                log = Log("role_move", embed=em)
                 self.put_nowait(guild_id, log)
 
                 # before_roles = before.guild.roles
