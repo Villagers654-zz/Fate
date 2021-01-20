@@ -37,23 +37,30 @@ def is_guild_owner():
     return commands.check(predicate)
 
 
+class Log:
+    def __init__(self, log_type, embed=None, files=None):
+        self.type = log_type
+        self.created_at = time()
+        self.embed = embed
+        self.files = files if files else []
+
+
 class Logger(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
         self.config = {}
-        self.path = "./data/userdata/secure-log.json"
+        self.path = "./data/userdata/log_rewrite.json"
         if path.isfile(self.path):
             with open(self.path, "r") as f:
                 self.config = json.load(f)  # type: dict
 
         self.channel_types = ["system+", "updates", "actions", "chat", "misc", "sudo"]
+        self.log_types = ["message_delete"]
 
-        self.queue = {g_id: asyncio.Queue() for g_id in self.config.keys()}
+        self.queue = {g_id: asyncio.Queue(maxsize=64) for g_id in self.config.keys()}
         self.recent_logs = {
-            guild_id: {Type: [] for Type in self.channel_types}
-            for guild_id, dat in self.config.items()
-            if dat["type"] == "multi"
+            guild_id: [] for guild_id in self.config.keys()
         }
 
         self.static = {}
@@ -63,10 +70,10 @@ class Logger(commands.Cog):
         if self.bot.is_ready():
             self.bot.loop.create_task(self.init_invites())
             for guild_id in self.config.keys():
-                if guild_id in bot.logger_tasks:
-                    bot.logger_tasks[guild_id].cancel()
+                if guild_id in bot._logger_tasks:
+                    bot._logger_tasks[guild_id].cancel()
                 task = self.bot.loop.create_task(self.start_queue(guild_id))
-                bot.logger_tasks[guild_id] = task
+                bot._logger_tasks[guild_id] = task
 
     def cog_unload(self):
         for task_id, task in self.bot.logger_tasks.items():
@@ -86,14 +93,9 @@ class Logger(commands.Cog):
             "disabled_logs": []
         }
 
-    @property
-    def log(self):
-        return {
-            "embed": None,
-            "files": [],
-            "type": None,
-            "created_at": None
-        }
+    def put_nowait(self, guild_id, log):
+        with suppress(asyncio.QueueFull):
+            self.queue[guild_id].put_nowait(log)
 
     async def save_data(self) -> None:
         """ Saves local variables """
@@ -127,9 +129,9 @@ class Logger(commands.Cog):
     async def destruct(self, guild_id):
         del self.queue[guild_id]
         del self.recent_logs[guild_id]
-        if guild_id in self.bot.logger_tasks:
-            self.bot.logger_tasks[guild_id].cancel()
-            del self.bot.logger_tasks[guild_id]
+        if guild_id in self.bot._logger_tasks:
+            self.bot._logger_tasks[guild_id].cancel()
+            del self.bot._logger_tasks[guild_id]
         await self.save_data()
 
     async def wait_for_permission(self, guild, permission: str, channel=None) -> bool:
@@ -209,17 +211,18 @@ class Logger(commands.Cog):
             return await self.destruct(guild_id)
 
         while True: # Listen for new logs
-            log = await self.queue[guild_id].get()  # type: dict
-            log_type = log["type"]                  # type: str            # Event name
-            created_at = log["created_at"]          # type: float          # Timestamp
-            embed = log["embed"]                    # type: discord.Embed  # Log embed
+            log = await self.queue[guild_id].get()  # type: Log
+            log_type = log.type                     # type: str            # Event name
+            created_at = log.created_at             # type: float          # Timestamp
+            embed = log.embed                       # type: discord.Embed  # Log embed
             files = [                               # type: list           # Optional filepaths
                 discord.File(fp)
-                for fp in log["files"]
+                for fp in log.files
                 if path.isfile(fp)
             ]
 
             for i, field in enumerate(embed.fields):
+                await asyncio.sleep(0)
                 if not field.value or field.value is discord.Embed.Empty:
                     self.bot.log(
                         f"A log of type {log_type} had no value", "CRITICAL"
@@ -274,7 +277,6 @@ class Logger(commands.Cog):
             # Ensure this still exists
             if guild_id not in self.recent_logs:
                 self.recent_logs[guild_id] = []
-
             try:
                 await channel.send(embed=embed, files=files)
             except (
@@ -307,7 +309,8 @@ class Logger(commands.Cog):
                     break
                 continue
 
-            for file in log["files"]:
+            for file in log.files:
+                await asyncio.sleep(0)
                 if os.path.isfile(file):
                     os.remove(file)
 
@@ -317,7 +320,7 @@ class Logger(commands.Cog):
                 if time() - log[1] > 60 * 60 * 24:
                     self.recent_logs[guild_id].remove(log)
 
-            await asyncio.sleep(0.21)
+            await asyncio.sleep(1)
 
     async def init_invites(self) -> None:
         """ Indexes each servers invites """
@@ -383,7 +386,7 @@ class Logger(commands.Cog):
                         break
         return dat
 
-    @commands.group(name="logger", aliases=["log", "secure-log"])
+    @commands.group(name="_logger")
     @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
@@ -449,19 +452,20 @@ class Logger(commands.Cog):
             return await ctx.send("I need attach_files permission(s) in that channel")
         self.config[guild_id] = {
             "channel": channel.id,
-            "channels": [],
+            "channels": {},
             "secure": False,
             "ignored_channels": [],
             "ignored_bots": [],
-            "disabled": []
+            "disabled": [],
+            "themes": {}
         }
         if (
-            guild_id in self.bot.logger_tasks
-            and not self.bot.logger_tasks[guild_id].done()
+            guild_id in self.bot._logger_tasks
+            and not self.bot._logger_tasks[guild_id].done()
         ):
-            self.bot.logger_tasks[guild_id].cancel()
+            self.bot._logger_tasks[guild_id].cancel()
         task = self.bot.loop.create_task(self.start_queue(guild_id))
-        self.bot.logger_tasks[guild_id] = task
+        self.bot._logger_tasks[guild_id] = task
         await ctx.send("Enabled Logger")
         await self.save_data()
 
@@ -499,25 +503,24 @@ class Logger(commands.Cog):
             return await ctx.send("I need attach_files permission(s) in that channel")
         guild_id = str(ctx.guild.id)
         if guild_id in self.config:
-            if self.config[guild_id]["type"] == "multi":
-                return await ctx.send("You can only use this on single-channel logs")
             self.config[guild_id]["channel"] = channel.id
         else:
             self.config[guild_id] = {
                 "channel": channel.id,
-                "channels": [],
+                "channels": {},
                 "secure": False,
                 "ignored_channels": [],
                 "ignored_bots": [],
-                "disabled": []
+                "disabled": [],
+                "themes": {}
             }
         if (
-            guild_id in self.bot.logger_tasks
+            guild_id in self.bot._logger_tasks
             and not self.bot.logger_tasks[guild_id].done()
         ):
-            self.bot.logger_tasks[guild_id].cancel()
+            self.bot._logger_tasks[guild_id].cancel()
         task = self.bot.loop.create_task(self.start_queue(guild_id))
-        self.bot.logger_tasks[guild_id] = task
+        self.bot._logger_tasks[guild_id] = task
         await ctx.send(f"Enabled Logger in {channel.mention}")
         await self.save_data()
 
@@ -529,7 +532,16 @@ class Logger(commands.Cog):
         guild_id = str(ctx.guild.id)
         if guild_id not in self.config:
             return await ctx.send("Logger isn't enabled")
-        await self.initiate_channels(ctx.guild)
+        if log_type not in self.log_types:
+            return await ctx.send(
+                f"That isn't a valid log type. Here's a list of the accepted types: "
+                f"{', '.join(f'`{ltype}`' for ltype in self.log_types)}"
+            )
+        await self.ensure_channels(ctx.guild)
+        if channel.id == self.config[guild_id]["channel"]:
+            del self.config[guild_id]["channels"][log_type]
+        else:
+            self.config[guild_id]["channels"][log_type] = channel.id
         await ctx.send(f"Moved the {log_type} to {channel.mention}")
         await self.save_data()
 
@@ -618,8 +630,7 @@ class Logger(commands.Cog):
         e.set_author(name="Logger Config", icon_url=ctx.guild.owner.avatar_url)
         e.set_thumbnail(url=self.bot.user.avatar_url)
         e.description = (
-            f"**Log Type:** {self.config[guild_id]['type']} channel"
-            f"\n**Security:** {self.config[guild_id]['secure']}"
+            f"**Security:** {self.config[guild_id]['secure']}"
             f"\n**Channel:** {self.bot.get_channel(self.config[guild_id]['channel'])}"
         )
         if self.config[guild_id]["ignored_channels"]:
@@ -646,21 +657,12 @@ class Logger(commands.Cog):
     async def on_ready(self):
         for guild_id in list(self.config.keys()):
             if (
-                guild_id in self.bot.logger_tasks
-                and not self.bot.logger_tasks[guild_id].done()
+                guild_id in self.bot._logger_tasks
+                and not self.bot._logger_tasks[guild_id].done()
             ):
                 continue
             task = self.bot.loop.create_task(self.start_queue(guild_id))
-            self.bot.logger_tasks[guild_id] = task
-        if "keep_alive_task" in self.bot.logger_tasks:
-            if self.bot.logger_tasks["keep_alive_task"].done():
-                self.bot.log(
-                    message="Loggers keep alive task came to an end",
-                    level="CRITICAL",
-                    tb=self.bot.logger_tasks["keep_alive_tasks"].result(),
-                )
-            task = self.bot.loop.create_task(self.keep_alive_task())
-            self.bot.logger_tasks["keep_alive_task"] = task
+            self.bot._logger_tasks[guild_id] = task
         self.bot.loop.create_task(self.init_invites())
 
     @commands.Cog.listener()
@@ -702,7 +704,8 @@ class Logger(commands.Cog):
                         )
                         for group in self.bot.utils.split(msg.content, 1024):
                             e.add_field(name="Content", value=group, inline=False)
-                        self.queue[guild_id].append([e, "system+", time()])
+                        log = Log("mentions", embed=e)
+                        self.put_nowait(guild_id, log)
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
@@ -737,7 +740,8 @@ class Logger(commands.Cog):
                         for i in range(0, len(after.content), 1024)
                     ]:
                         e.add_field(name="◈ After", value=group, inline=False)
-                    self.queue[guild_id].append([e, "chat", time()])
+                    log = Log("message_edit", embed=e)
+                    self.put_nowait(guild_id, log)
 
                 if before.embeds and not after.embeds:
                     if before.author.id in self.config[guild_id]["ignored_bots"]:
@@ -768,11 +772,12 @@ class Logger(commands.Cog):
                     )
                     em = before.embeds[0].to_dict()
                     fp = f"./static/embed-{before.id}.json"
-                    with open(fp, "w+") as f:
-                        json.dump(
-                            em, f, sort_keys=True, indent=4, separators=(",", ": ")
-                        )
-                    self.queue[guild_id].append([(e, fp), "chat", time()])
+                    async with self.bot.open(fp, "w+") as f:
+                        f.write(json.dumps(
+                            em, sort_keys=True, indent=4, separators=(",", ": ")
+                        ))
+                    log = Log("embed_hidden", embed=e, files=[fp])
+                    self.put_nowait(guild_id, log)
 
                 if before.pinned != after.pinned:
                     action = "Unpinned" if before.pinned else "Pinned"
@@ -793,7 +798,8 @@ class Logger(commands.Cog):
                     )
                     for text_group in self.bot.utils.split(after.content, 1000):
                         e.add_field(name="◈ Content", value=text_group, inline=False)
-                    self.queue[guild_id].append([e, "chat", time()])
+                    log = Log("message_pinned", embed=e)
+                    self.put_nowait(guild_id, log)
 
     @commands.Cog.listener()
     async def on_raw_message_edit(self, payload):
@@ -812,16 +818,15 @@ class Logger(commands.Cog):
                 e = discord.Embed(color=pink())
                 e.set_author(name="Uncached Msg Edited", icon_url=msg.author.avatar_url)
                 e.set_thumbnail(url=msg.author.avatar_url)
-                e.description = self.bot.utils.format_dict(
-                    {
-                        "Author": msg.author.mention,
-                        "Channel": channel.mention,
-                        f"[Jump to MSG]({msg.jump_url})": None,
-                    }
-                )
+                e.description = self.bot.utils.format_dict({
+                    "Author": msg.author.mention,
+                    "Channel": channel.mention,
+                    f"[Jump to MSG]({msg.jump_url})": None,
+                })
                 for text_group in self.bot.utils.split(msg.content, 1024):
                     e.add_field(name="◈ Content", value=text_group, inline=False)
-                self.queue[guild_id].append([e, "chat", time()])
+                log = Log("message_edit", embed=e)
+                self.put_nowait(guild_id, log)
 
     @commands.Cog.listener()
     async def on_message_delete(self, msg):
@@ -850,12 +855,11 @@ class Logger(commands.Cog):
                                 async with aiofiles.open(fp, "wb") as f:
                                     await f.write(file)
                                 files.append(fp)
-                            self.queue[guild_id].append(
-                                [(msg.embeds[0], files), "sudo", time()]
-                            )
+                            log = Log("message_delete", embed=msg.embeds[0], files=files)
+                            self.put_nowait(guild_id, log)
                         else:
-                            self.queue[guild_id].append([msg.embeds[0], "sudo", time()])
-
+                            log = Log("message_delete", embed=msg.embeds[0])
+                            self.put_nowait(guild_id, log)
                         return
 
                 if (
@@ -879,19 +883,17 @@ class Logger(commands.Cog):
                     dat["thumbnail_url"] = msg.author.avatar_url
                 e.set_author(name="~==🍸Msg Deleted🍸==~", icon_url=dat["thumbnail_url"])
                 e.set_thumbnail(url=msg.author.avatar_url)
-                e.description = self.bot.utils.format_dict(
-                    {
-                        "Author": msg.author.mention,
-                        "Channel": msg.channel.mention,
-                        "Deleted by": dat["user"],
-                    }
-                )
+                e.description = self.bot.utils.format_dict({
+                    "Author": msg.author.mention,
+                    "Channel": msg.channel.mention,
+                    "Deleted by": dat["user"],
+                })
                 for text_group in self.bot.utils.split(msg.content, 1024):
                     e.add_field(name="◈ MSG Content", value=text_group, inline=False)
                 if msg.embeds:
                     e.set_footer(text="⇓ Embed ⇓")
+                files = []
                 if msg.attachments:
-                    files = []
                     for attachment in msg.attachments:
                         if attachment.size > 8000000:
                             continue
@@ -902,11 +904,11 @@ class Logger(commands.Cog):
                         async with aiofiles.open(fp, "wb") as f:
                             await f.write(file)
                         files.append(fp)
-                    self.queue[guild_id].append([(e, files), "chat", time()])
-                else:
-                    self.queue[guild_id].append([e, "chat", time()])
+                log = Log("message_delete", embed=e, files=files)
+                self.put_nowait(guild_id, log)
                 if msg.embeds:
-                    self.queue[guild_id].append([msg.embeds[0], "chat", time()])
+                    log = Log("message_delete", embed=msg.embeds[0])
+                    self.put_nowait(guild_id, log)
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, payload):
@@ -919,15 +921,14 @@ class Logger(commands.Cog):
             dat = await self.search_audit(guild, audit.message_delete)
             e.set_author(name="Uncached Message Deleted", icon_url=dat["icon_url"])
             e.set_thumbnail(url=dat["thumbnail_url"])
-            e.description = self.bot.utils.format_dict(
-                {
-                    "Author": dat["target"],
-                    "MSG ID": payload.message_id,
-                    "Channel": self.bot.get_channel(payload.channel_id).mention,
-                    "Deleted by": dat["user"],
-                }
-            )
-            self.queue[guild_id].append([e, "chat", time()])
+            e.description = self.bot.utils.format_dict({
+                "Author": dat["target"],
+                "MSG ID": payload.message_id,
+                "Channel": self.bot.get_channel(payload.channel_id).mention,
+                "Deleted by": dat["user"],
+            })
+            log = Log("message_delete", embed=e)
+            self.put_nowait(guild_id, log)
 
     @commands.Cog.listener()
     async def on_raw_bulk_message_delete(self, payload):
@@ -937,17 +938,17 @@ class Logger(commands.Cog):
             channel = self.bot.get_channel(payload.channel_id)
             purged_messages = ""
             for msg in payload.cached_messages:
-
                 if self.config[guild_id]["secure"]:
                     if msg.embeds:
+                        log = Log("message_delete", embed=msg.embeds[0])
                         if msg.channel.id == self.config[guild_id]["channel"]:
-                            self.queue[guild_id].append([msg.embeds[0], "sudo", time()])
+                            self.put_nowait(guild_id, log)
                             continue
                         if msg.channel.id in self.config[guild_id]["channels"]:
                             await msg.channel.send(
                                 "OwO what's this", embed=msg.embeds[0]
                             )
-                            self.queue[guild_id].append([msg.embeds[0], "sudo", time()])
+                            self.put_nowait(guild_id, log)
                             continue
 
                 timestamp = msg.created_at.strftime("%I:%M%p")
@@ -959,8 +960,8 @@ class Logger(commands.Cog):
                 return
 
             fp = f"./static/purged-messages-{r.randint(0, 9999)}.txt"
-            with open(fp, "w") as f:
-                f.write(purged_messages)
+            async with self.bot.open(fp, "w") as f:
+                await f.write(purged_messages)
 
             e = discord.Embed(color=lime_green())
             dat = await self.search_audit(guild, audit.message_bulk_delete)
@@ -973,16 +974,15 @@ class Logger(commands.Cog):
                 e.set_author(name=f"~==🍸{len(payload.cached_messages)} Msgs Purged🍸==~")
             if dat["thumbnail_url"]:
                 e.set_thumbnail(url=dat["thumbnail_url"])
-            e.description = self.bot.utils.format_dict(
-                {
-                    "Users Effected": len(
-                        list(set([msg.author for msg in payload.cached_messages]))
-                    ),
-                    "Channel": channel.mention,
-                    "Purged by": dat["user"],
-                }
-            )
-            self.queue[guild_id].append([(e, fp), "chat", time()])
+            e.description = self.bot.utils.format_dict({
+                "Users Effected": len(
+                    list(set([msg.author for msg in payload.cached_messages]))
+                ),
+                "Channel": channel.mention,
+                "Purged by": dat["user"],
+            })
+            log = Log("message_purge", embed=e, files=[fp])
+            self.put_nowait(guild_id, log)
 
     @commands.Cog.listener()
     async def on_raw_reaction_clear(self, payload):
@@ -1009,7 +1009,8 @@ class Logger(commands.Cog):
                     f"[Jump to MSG]({msg.jump_url})": None,
                 }
             )
-            self.queue[guild_id].append([e, "chat", time()])
+            log = Log("reactions_cleared", embed=e)
+            self.put_nowait(guild_id, log)
 
     @commands.Cog.listener()
     async def on_guild_update(self, before, after):  # due for rewrite
@@ -1031,7 +1032,8 @@ class Logger(commands.Cog):
                 )
                 e.add_field(name="◈ Before", value=before.name, inline=False)
                 e.add_field(name="◈ After", value=after.name, inline=False)
-                self.queue[guild_id].append([e, "updates", time()])
+                log = Log("server_rename", embed=e)
+                self.put_nowait(guild_id, log)
             if before.icon_url != after.icon_url:
                 e = create_template_embed()
                 e.description = (
@@ -1041,19 +1043,22 @@ class Logger(commands.Cog):
                     e.description += f"\n__**Icons now animated**__"
                 if not after.is_icon_animated() and before.is_icon_animated():
                     e.description += f"\n__**Icons no longer animated**__"
-                self.queue[guild_id].append([e, "updates", time()])
+                log = Log("new_server_icon", embed=e)
+                self.put_nowait(guild_id, log)
             if before.banner_url != after.banner_url:
                 e = create_template_embed()
                 e.description = (
                     f"> 》__**Banner Changed**__《" f"\n**Changed by:** {dat['user']}"
                 )
-                self.queue[guild_id].append([e, "updates", time()])
+                log = Log("new_server_banner", embed=e)
+                self.put_nowait(guild_id, log)
             if before.splash_url != after.splash_url:
                 e = create_template_embed()
                 e.description = (
                     f"> 》__**Splash Changed**__《" f"\n**Changed by:** {dat['user']}"
                 )
-                self.queue[guild_id].append([e, "updates", time()])
+                log = Log("new_server_splash", embed=e)
+                self.put_nowait(guild_id, log)
             if before.region != after.region:
                 e = create_template_embed()
                 e.description = (
@@ -1061,7 +1066,8 @@ class Logger(commands.Cog):
                 )
                 e.add_field(name="◈ Before", value=str(before.region), inline=False)
                 e.add_field(name="◈ After", value=str(after.region), inline=False)
-                self.queue[guild_id].append([e, "updates", time()])
+                log = Log("region_change", embed=e)
+                self.put_nowait(guild_id, log)
             if before.afk_timeout != after.afk_timeout:
                 e = create_template_embed()
                 e.description = (
@@ -1072,7 +1078,8 @@ class Logger(commands.Cog):
                     name="◈ Before", value=str(before.afk_timeout), inline=False
                 )
                 e.add_field(name="◈ After", value=str(after.afk_timeout), inline=False)
-                self.queue[guild_id].append([e, "updates", time()])
+                log = Log("afk_timeout_change", embed=e)
+                self.put_nowait(guild_id, log)
             if before.afk_channel != after.afk_channel:
                 e = create_template_embed()
                 e.description = (
@@ -1093,7 +1100,8 @@ class Logger(commands.Cog):
                         f"\n**ID:** {after.afk_channel.id}",
                         inline=False,
                     )
-                self.queue[guild_id].append([e, "updates", time()])
+                log = Log("afk_channel_change", embed=e)
+                self.put_nowait(guild_id, log)
             if before.owner != after.owner:
                 e = create_template_embed()
                 e.description = f"> 》__**Owner Changed**__《"
@@ -1109,7 +1117,8 @@ class Logger(commands.Cog):
                     f"\n**Mention:** {after.owner.mention}"
                     f"\n**ID:** {after.owner.id}",
                 )
-                self.queue[guild_id].append([e, "updates", time()])
+                log = Log("new_owner", embed=e)
+                self.put_nowait(guild_id, log)
             if before.features != after.features and before.features or after.features:
                 e = create_template_embed()
                 e.description = f"> 》__**Features Changed**__《"
@@ -1122,14 +1131,16 @@ class Logger(commands.Cog):
                         changes += f"<:plus:548465119462424595> {feature}"
                 if changes:
                     e.add_field(name="◈ Changes", value=changes)
-                    self.queue[guild_id].append([e, "updates", time()])
+                    log = Log("features_change", embed=e)
+                    self.put_nowait(guild_id, log)
             if before.premium_tier != after.premium_tier:
                 e = discord.Embed(color=pink())
                 action = (
                     "lowered" if before.premium_tier > after.premium_tier else "raised"
                 )
                 e.description = f"Servers boost level {action} to {after.premium_tier}"
-                self.queue[guild_id].append([e, "updates", time()])
+                log = Log("new_boost_tier", embed=e)
+                self.put_nowait(guild_id, log)
             if before.premium_subscription_count != after.premium_subscription_count:
                 e = create_template_embed()
                 if after.premium_subscription_count > before.premium_subscription_count:
@@ -1151,7 +1162,8 @@ class Logger(commands.Cog):
                         ]
                     who = changed[0].mention
                 e.description = f"> **Member {action}**《" f"\n**Who:** [{who}]"
-                self.queue[guild_id].append([e, "system+", time()])
+                log = Log("boost", embed=e)
+                self.put_nowait(guild_id, log)
             # mfa_level, verification_level, explicit_content_filter, default_notifications
             # preferred_locale, large, system_channel, system_channel_flags
             # Union[emoji_limit, bitrate_limit, filesize_limit]
@@ -1170,16 +1182,15 @@ class Logger(commands.Cog):
             mention = "None"
             if isinstance(channel, discord.TextChannel):
                 mention = channel.mention
-            e.description = self.bot.utils.format_dict(
-                {
-                    "Name": channel.name,
-                    "Mention": mention,
-                    "ID": channel.id,
-                    "Creator": dat["user"],
-                    "Members": member_count,
-                }
-            )
-            self.queue[guild_id].append([e, "actions", time()])
+            e.description = self.bot.utils.format_dict({
+                "Name": channel.name,
+                "Mention": mention,
+                "ID": channel.id,
+                "Creator": dat["user"],
+                "Members": member_count,
+            })
+            log = Log("channel_create", embed=e)
+            self.put_nowait(guild_id, log)
 
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, channel):
@@ -1188,21 +1199,11 @@ class Logger(commands.Cog):
 
             # anti log channel deletion
             if self.config[guild_id]["secure"]:
-                log_type = self.config[guild_id]["type"]
                 if channel.id == self.config[guild_id]["channel"]:
-                    if log_type == "single":
-                        for embed in self.recent_logs[guild_id]:
-                            self.queue[guild_id].append([embed, "actions", time()])
-                        return
-                    for channelType, embeds in self.recent_logs[guild_id].items():
-                        for embed, logged_at in embeds:
-                            self.queue[guild_id].append([embed, channelType, logged_at])
-                for channelType, channel_id in self.config[guild_id][
-                    "channels"
-                ].items():
-                    if channel_id == channel.id:
-                        for embed, logged_at in self.recent_logs[guild_id][channelType]:
-                            self.queue[guild_id].append([embed, channelType, logged_at])
+                    for embed in self.recent_logs[guild_id]:
+                        log = Log("message_delete", embed=embed)
+                        self.put_nowait(guild_id, log)
+                    return
 
             dat = await self.search_audit(channel.guild, audit.channel_delete)
             member_count = "Unknown"
@@ -1215,15 +1216,13 @@ class Logger(commands.Cog):
             e = discord.Embed(color=red())
             e.set_author(name="~==🍸Channel Deleted🍸==~", icon_url=dat["icon_url"])
             e.set_thumbnail(url=dat["thumbnail_url"])
-            e.description = self.bot.utils.format_dict(
-                {
-                    "Name": channel.name,
-                    "ID": channel.id,
-                    "Category": category,
-                    "Members": member_count,
-                    "Deleted by": dat["user"],
-                }
-            )
+            e.description = self.bot.utils.format_dict({
+                "Name": channel.name,
+                "ID": channel.id,
+                "Category": category,
+                "Members": member_count,
+                "Deleted by": dat["user"],
+            })
 
             if isinstance(channel, discord.CategoryChannel):
                 self.queue[guild_id].append([e, "actions", time()])
@@ -1235,10 +1234,11 @@ class Logger(commands.Cog):
                 members += (
                     f"\n{member.id}, {member.mention}, {member}, {member.display_name}"
                 )
-            with open(fp, "w") as f:
-                f.write(members)
+            async with self.bot.open(fp, "w") as f:
+                await f.write(members)
 
-            self.queue[guild_id].append([(e, fp), "actions", time()])
+            log = Log("channel_delete", embed=e, files=[fp])
+            self.put_nowait(guild_id, log)
 
     @commands.Cog.listener()
     async def on_guild_channel_update(self, before, after):  # due for rewrite
@@ -1397,7 +1397,8 @@ class Logger(commands.Cog):
                 )
 
             if e.fields:
-                self.queue[guild_id].append([e, "updates", time()])
+                log = Log("channel_update", embed=e)
+                self.put_nowait(guild_id, log)
 
     @commands.Cog.listener()
     async def on_guild_role_create(self, role):
@@ -1410,7 +1411,8 @@ class Logger(commands.Cog):
             e.description = self.bot.utils.format_dict(
                 {"Mention": role.mention, "ID": role.id, "Created by": dat["user"]}
             )
-            self.queue[guild_id].append([e, "actions", time()])
+            log = Log("role_create", embed=e)
+            self.put_nowait(guild_id, log)
 
     @commands.Cog.listener()
     async def on_guild_role_delete(self, role):
@@ -1441,9 +1443,10 @@ class Logger(commands.Cog):
                 members += (
                     f"\n{member.id}, {member.mention}, {member}, {member.display_name}"
                 )
-            with open(fp1, "w") as f:
-                f.write(members)
-            self.queue[guild_id].append([(e, [fp1, fp]), "actions", time()])
+            async with self.bot.open(fp1, "w") as f:
+                await f.write(members)
+            log = Log("role_delete", embed=e, files=[fp1, fp])
+            self.put_nowait(guild_id, log)
 
     @commands.Cog.listener()
     async def on_guild_role_update(self, before, after):
@@ -1454,14 +1457,12 @@ class Logger(commands.Cog):
             e = discord.Embed(color=green())
             e.set_author(name="~==🍸Role Updated🍸==~", icon_url=dat["thumbnail_url"])
             e.set_thumbnail(url=dat["thumbnail_url"])
-            e.description = self.bot.utils.format_dict(
-                {
-                    "Name": after.name,
-                    "Mention": after.mention,
-                    "ID": before.id,
-                    "Changed by": dat["user"],
-                }
-            )
+            e.description = self.bot.utils.format_dict({
+                "Name": after.name,
+                "Mention": after.mention,
+                "ID": before.id,
+                "Changed by": dat["user"],
+            })
 
             if before.name != after.name:
                 e.add_field(
@@ -1519,7 +1520,8 @@ class Logger(commands.Cog):
                 # self.role_index[guild_id] = [role for role in after.guild.roles]
                 em = discord.Embed()
                 em.description = f"Role {before.mention} was moved"
-                self.queue[guild_id].append([em, "updates", time()])
+                log = Log("role_move", embed=e)
+                self.put_nowait(guild_id, log)
 
                 # before_roles = before.guild.roles
                 # before_roles.pop(after.position)
@@ -1554,10 +1556,8 @@ class Logger(commands.Cog):
                         changes += f"\n• {perm} {'unallowed' if value else 'allowed'}"
                 e.add_field(name="◈ Permissions Changed", value=changes, inline=False)
             if e.fields:
-                if fp:
-                    self.queue[guild_id].append([(e, fp), "updates", time()])
-                else:
-                    self.queue[guild_id].append([e, "updates", time()])
+                log = Log("role_update", embed=e, files=[fp] if fp else [])
+                self.put_nowait(guild_id, log)
 
     @commands.Cog.listener()
     async def on_guild_integrations_update(self, guild):
@@ -1569,7 +1569,8 @@ class Logger(commands.Cog):
             )
             e.set_thumbnail(url=guild.icon_url)
             e.description = "An integration was created, modified, or removed"
-            self.queue[guild_id].append([e, "system+", time()])
+            log = Log("integrations_update", embed=e)
+            self.put_nowait(guild_id, log)
 
     @commands.Cog.listener()
     async def on_webhooks_update(self, channel):
@@ -1618,7 +1619,8 @@ class Logger(commands.Cog):
                     f"{action} by": dat["user"],
                 }
             )
-            self.queue[guild_id].append([e, "misc", time()])
+            log = Log("webhook_update", embed=e)
+            self.put_nowait(guild_id, log)
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -1639,7 +1641,8 @@ class Logger(commands.Cog):
                         "Invited by": dat["user"],
                     }
                 )
-                self.queue[guild_id].append([e, "system+", time()])
+                log = Log("bot_add", embed=e)
+                self.put_nowait(guild_id, log)
                 return
             invites = await member.guild.invites()
             invite = None  # the invite used to join
@@ -1664,46 +1667,39 @@ class Logger(commands.Cog):
             e.set_author(name="~==🍸Member Joined🍸==~", icon_url=icon_url)
             e.set_thumbnail(url=member.avatar_url)
             created = self.bot.utils.get_time(round((datetime.utcnow() - member.created_at).total_seconds()))
-            e.description = self.bot.utils.format_dict(
-                {
-                    "Name": member.name,
-                    "Mention": member.mention,
-                    "ID": member.id,
-                    "Created": f"{created} ago",
-                    "Invited by": inviter,
-                    "Invite": f"[{invite.code}]({invite.url})",
-                }
-            )
-            aliases = list(
-                set(
-                    [
-                        m.display_name
-                        for m in [
-                            server.get_member(member.id)
-                            for server in self.bot.guilds
-                            if member in server.members
-                        ]
-                        if m.id == member.id and m.display_name != member.name
-                    ]
-                )
-            )
+            e.description = self.bot.utils.format_dict({
+                "Name": member.name,
+                "Mention": member.mention,
+                "ID": member.id,
+                "Created": f"{created} ago",
+                "Invited by": inviter,
+                "Invite": f"[{invite.code}]({invite.url})",
+            })
+            aliases = list(set([
+                m.display_name
+                for m in [
+                    server.get_member(member.id)
+                    for server in self.bot.guilds
+                    if member in server.members
+                ]
+                if m.id == member.id and m.display_name != member.name
+            ]))
             if len(aliases) > 0:
                 e.add_field(name="◈ Aliases", value=", ".join(aliases), inline=False)
-            self.queue[guild_id].append([e, "misc", time()])
+            log = Log("member_join", embed=e)
+            self.put_nowait(guild_id, log)
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
         guild_id = str(member.guild.id)
         if guild_id in self.config:
             e = discord.Embed(color=red())
-            e.description = self.bot.utils.format_dict(
-                {
-                    "Username": member,
-                    "Mention": member.mention,
-                    "ID": member.id,
-                    "Top Role": member.top_role.mention,
-                }
-            )
+            e.description = self.bot.utils.format_dict({
+                "Username": member,
+                "Mention": member.mention,
+                "ID": member.id,
+                "Top Role": member.top_role.mention,
+            })
             e.set_thumbnail(url=member.avatar_url)
             removed = False
 
@@ -1719,7 +1715,8 @@ class Logger(commands.Cog):
                     e.description += self.bot.utils.format_dict(
                         {"Kicked by": entry.user.mention}
                     )
-                    self.queue[guild_id].append([e, "sudo", time()])
+                    log = Log("member_kick", embed=e)
+                    self.put_nowait(guild_id, log)
                     removed = True
 
             async for entry in member.guild.audit_logs(limit=1, action=audit.ban):
@@ -1730,12 +1727,14 @@ class Logger(commands.Cog):
                     e.description += self.bot.utils.format_dict(
                         {"Banned by": entry.user.mention}
                     )
-                    self.queue[guild_id].append([e, "sudo", time()])
+                    log = Log("member_ban", embed=e)
+                    self.put_nowait(guild_id, log)
                     removed = True
 
             if not removed:
                 e.set_author(name="~==🍸Member Left🍸==~", icon_url=member.avatar_url)
-                self.queue[guild_id].append([e, "misc", time()])
+                log = Log("member_leave", embed=e)
+                self.put_nowait(guild_id, log)
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
@@ -1749,7 +1748,8 @@ class Logger(commands.Cog):
                 )
                 e.add_field(name="◈ Before", value=before.display_name)
                 e.add_field(name="◈ After", value=after.display_name)
-                self.queue[guild_id].append([e, "updates", time()])
+                log = Log("nick_change", embed=e)
+                self.put_nowait(guild_id, log)
 
             if len(before.roles) != len(after.roles):
                 dat = await self.search_audit(after.guild, audit.member_role_update)
@@ -1776,7 +1776,8 @@ class Logger(commands.Cog):
                     value=self.bot.utils.format_dict(info),
                     inline=False,
                 )
-                self.queue[guild_id].append([e, "updates", time()])
+                log = Log("member_roles_update", embed=e)
+                self.put_nowait(guild_id, log)
 
 
 def setup(bot):
