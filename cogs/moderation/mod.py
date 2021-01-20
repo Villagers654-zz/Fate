@@ -1255,6 +1255,8 @@ class Moderation(commands.Cog):
     @commands.bot_has_permissions(manage_roles=True)
     async def role(self, ctx, user, *, role):
         user = self.bot.utils.get_user(ctx, user)
+        if user:
+            user = ctx.guild.get_member(user.id)
         if not user:
             return await ctx.send("User not found")
         converter = commands.RoleConverter()
