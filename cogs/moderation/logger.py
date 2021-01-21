@@ -125,7 +125,7 @@ class Logger(commands.Cog):
         }
 
     def put_nowait(self, guild_id, log):
-        with suppress(asyncio.QueueFull):
+        with suppress(asyncio.QueueFull, KeyError):
             self.queue[guild_id].put_nowait(log)
 
     async def save_data(self) -> None:
@@ -501,6 +501,8 @@ class Logger(commands.Cog):
             "disabled": [],
             "themes": {}
         }
+        if guild_id not in self.queue:
+            self.queue[guild_id] = asyncio.Queue(maxsize=64)
         if guild_id in self.bot.logger_tasks and not self.bot.logger_tasks[guild_id].done():
             self.bot.logger_tasks[guild_id].cancel()
         task = self.bot.loop.create_task(self.start_queue(guild_id))
@@ -531,6 +533,8 @@ class Logger(commands.Cog):
                     "Due to security settings, only the owner of the server can use this"
                 )
         del self.config[guild_id]
+        if guild_id in self.queue:
+            del self.queue[guild_id]
         await ctx.send("Disabled Logger")
         await self.save_data()
 
@@ -563,6 +567,8 @@ class Logger(commands.Cog):
                 "disabled": [],
                 "themes": {}
             }
+        if guild_id not in self.queue:
+            self.queue[guild_id] = asyncio.Queue(maxsize=64)
         if guild_id in self.bot.logger_tasks and not self.bot.logger_tasks[guild_id].done():
             self.bot.logger_tasks[guild_id].cancel()
         task = self.bot.loop.create_task(self.start_queue(guild_id))
