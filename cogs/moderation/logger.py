@@ -1288,7 +1288,8 @@ class Logger(commands.Cog):
             })
 
             if isinstance(channel, discord.CategoryChannel):
-                self.queue[guild_id].append([e, "actions", time()])
+                log = Log("channel_delete", embed=e)
+                self.put_nowait(guild_id, log)
                 return
 
             fp = f"./static/members-{r.randint(1, 9999)}.txt"
