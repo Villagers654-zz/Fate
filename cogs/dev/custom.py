@@ -21,6 +21,11 @@ class Custom(commands.Cog):
     def tm(ctx):
         return ctx.author.id in [264838866480005122, 355026215137968129]
 
+    @commands.command(name="kio")
+    @commands.cooldown(1, 15, commands.BucketType.channel)
+    async def kio(self, ctx):
+        await ctx.send("Kio is a nice boyo 👉👈")
+
     @commands.command(name="riester")
     @commands.cooldown(1, 15, commands.BucketType.channel)
     async def riester(self, ctx):
