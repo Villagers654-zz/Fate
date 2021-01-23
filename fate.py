@@ -9,6 +9,7 @@ from typing import *
 import aiofiles
 from contextlib import suppress
 from base64 import b64decode, b64encode
+import sys
 
 from discord.ext import commands
 import discord
@@ -46,6 +47,7 @@ class Fate(commands.AutoShardedBot):
         self.login_errors = []  # Exceptions ignored during startup
         self.logs = []  # Logs to send to discord, empties out quickly
         self.locks = {}
+        self.operation_locks = []
         self.tasks = {}  # Task object storing for easy management
         self.logger_tasks = {}  # Same as Fate.tasks except dedicated to cogs.logger
         self.last_traceback = ""  # Formatted string of the last error traceback
@@ -510,6 +512,14 @@ async def on_message(msg):
     if msg.guild and msg.guild.me and not msg.channel.permissions_for(msg.guild.me).send_messages:
         return
     await bot.process_commands(msg)
+
+
+@bot.event
+async def on_error(_event_method, *_args, **_kwargs):
+    error = sys.exc_info()[1]
+    if isinstance(error, bot.ignored_exit):
+        return
+    raise error
 
 
 @bot.event

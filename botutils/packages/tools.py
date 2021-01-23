@@ -9,6 +9,21 @@ from colormap import rgb2hex
 import discord
 
 
+class OperationLock:
+    bot = None
+    def __init__(self, key):
+        self.key = key
+
+    def __enter__(self):
+        if self.key in self.bot.operation_locks:
+            self.bot.log(f"Operation with ID {self.key} was stopped")
+            raise self.bot.ignored_exit
+        self.bot.operation_locks.append(self.key)
+
+    def __exit__(self, _exc_type, _exc_val, _exc_tb):
+        self.bot.operation_locks.remove(self.key)
+
+
 def split(text, amount=2000) -> list:
     return [text[i : i + amount] for i in range(0, len(text), amount)]
 
@@ -338,4 +353,6 @@ def init(cls):
     formatting = Formatting(cls.bot)
     cls.format_dict = formatting.format_dict
     cls.add_field = formatting.add_field
+    OperationLock.bot = cls.bot
+    cls.operation_lock = OperationLock
 
