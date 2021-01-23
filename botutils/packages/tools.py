@@ -16,7 +16,6 @@ class OperationLock:
 
     def __enter__(self):
         if self.key in self.bot.operation_locks:
-            self.bot.log(f"Operation with ID {self.key} was stopped")
             raise self.bot.ignored_exit
         self.bot.operation_locks.append(self.key)
 
