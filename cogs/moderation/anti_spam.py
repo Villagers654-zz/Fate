@@ -463,7 +463,9 @@ class AntiSpam(commands.Cog):
 
                 # mass pings
                 if self.toggle[guild_id]["Mass-Pings"]:
-                    if msg.content.count("@") > sensitivity_level + 1:
+                    pings = [msg.mentions, msg.raw_mentions, msg.role_mentions, msg.raw_role_mentions]
+                    total_pings = sum(len(group) for group in pings)
+                    if total_pings > sensitivity_level + 1:
                         reason = "mass pinging"
                         triggered = True
 
