@@ -14,8 +14,10 @@ __pycache__/
 testing.py
 Backup.zip
 discord.log
+cipher.py
 
 /cogs/dev/dev.py
+/data/auth.json
 /data/clipboard.txt
 /data/4b4t/
 /data/images/
