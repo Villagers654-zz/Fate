@@ -16,7 +16,24 @@ creds = auth.Lavalink()
 votes = {}
 
 
-def require_vote():
+def ensure_player_is_playing():
+    async def predicate(ctx):
+        await ctx.bot.cogs["Music"].ensure_voice(ctx)
+        player = ctx.bot.lavalink.player_manager.get(ctx.guild.id)
+        if not player or not player.is_connected:
+            await ctx.send("I'm not connected to any voice channel", delete_after=25)
+        elif not ctx.author.voice:
+            await ctx.end("You're not currently connected to a voice channel", delete_after=25)
+        elif not player.is_connected and ctx.author.voice.channel.id != int(player.channel_id):
+            await ctx.send("We don't currently share a voice channel", delete_after=25)
+        else:
+            return True
+        raise ctx.bot.ignored_exit
+
+    return commands.check(predicate)
+
+
+def require_voting():
     async def predicate(ctx):
         guild_id = ctx.guild.id
         has_admin = ctx.author.guild_permissions.administrator
@@ -50,23 +67,6 @@ def require_vote():
         votes[guild_id] = [guild_id]
         await ctx.send(f"Voted to {ctx.command}. ({len(votes[guild_id])}/{required})")
         return False
-
-    return commands.check(predicate)
-
-
-def ensure_player_is_playing():
-    async def predicate(ctx):
-        await ctx.bot.cogs["Music"].ensure_voice(ctx)
-        player = ctx.bot.lavalink.player_manager.get(ctx.guild.id)
-        if not player or not player.is_connected:
-            await ctx.send("I'm not connected to any voice channel", delete_after=25)
-        elif not ctx.author.voice:
-            await ctx.end("You're not currently connected to a voice channel", delete_after=25)
-        elif not player.is_connected and ctx.author.voice.channel.id != int(player.channel_id):
-            await ctx.send("We don't currently share a voice channel", delete_after=25)
-        else:
-            return True
-        raise ctx.bot.ignored_exit
 
     return commands.check(predicate)
 
@@ -333,6 +333,7 @@ class Music(commands.Cog):
 
     @commands.command(name="skip")
     @ensure_player_is_playing()
+    @require_voting()
     async def skip(self, ctx):
         """Skip to the next track in queue"""
         await ctx.player.skip()
@@ -469,6 +470,7 @@ class Music(commands.Cog):
 
     @commands.command(name="shuffle")
     @ensure_player_is_playing()
+    @require_voting()
     async def shuffle(self, ctx):
         """Toggle shuffle to randomize the order in which songs are played"""
         ctx.player.shuffle = not ctx.player.shuffle
