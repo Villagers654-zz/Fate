@@ -1,6 +1,7 @@
 import re
 import asyncio
 from contextlib import suppress
+from types import FunctionType
 
 import discord
 import lavalink
@@ -17,7 +18,38 @@ votes = {}
 
 def require_vote():
     async def predicate(ctx):
-        pass
+        guild_id = ctx.guild.id
+        has_admin = ctx.author.guild_permissions.administrator
+        roles = [r.name for r in ctx.guild.roles]
+        has_dj = any("dj" in name.lower() for name in roles)
+
+        if has_admin or has_dj:
+            if guild_id in votes:
+                del votes[guild_id]
+            return True
+
+        channel = ctx.author.voice.channel
+        members = [m for m in channel.members if not m.bot]
+        required = round(len(members) / 3)
+
+        if len(members) < 3:
+            if guild_id in votes:
+                del votes[guild_id]
+            return True
+
+        if guild_id in votes:
+            if ctx.author.id in votes[guild_id]:
+                return await ctx.send(f"You've already voted to {ctx.command}")
+            votes[guild_id].append(ctx.author.id)
+            if len(votes[guild_id]) > required:
+                del votes[guild_id]
+                return True
+            await ctx.send(f"Voted to {ctx.command}. ({len(votes[guild_id])}/{required})")
+            return False
+
+        votes[guild_id] = [guild_id]
+        await ctx.send(f"Voted to {ctx.command}. ({len(votes[guild_id])}/{required})")
+        return False
 
     return commands.check(predicate)
 
@@ -119,9 +151,17 @@ class Music(commands.Cog):
                 raise commands.CommandInvokeError("You need to be in my voice channel")
 
     async def track_hook(self, event):
+        """Handler for lavalink events"""
+        guild_id = int(event.player.guild_id)
+
         if isinstance(event, lavalink.events.QueueEndEvent):
-            guild_id = int(event.player.guild_id)
             await self.connect_to(guild_id, None)
+            if guild_id in votes:
+                del votes[guild_id]
+
+        if isinstance(event, lavalink.events.TrackEndEvent):
+            if guild_id in votes:
+                del votes[guild_id]
 
     async def connect_to(self, guild_id: int, channel_id):
         """ Connects to the given voice channel ID. A channel_id of `None` means disconnect. """
