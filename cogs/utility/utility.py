@@ -668,24 +668,24 @@ class Utility(commands.Cog):
             def get_info() -> str:
                 disk = psutil.disk_usage('/')
                 ram = psutil.virtual_memory()
-                # freq = psutil.cpu_freq()
-                # cur = str(round(freq.current))
+                freq = psutil.cpu_freq()
+                cur = str(round(freq.current))
 
-                # if freq.current < 1000:
-                #     cur = f"{cur}GHz"
-                # else:
-                #     cur = f"{cur[0]}.{cur[1]}GHz"
-                # max = str(round(freq.max))
-                # max = f"{max[0]}.{max[1]}GHz"
+                if freq.current < 1000:
+                    cur = f"{cur}GHz"
+                else:
+                    cur = f"{cur[0]}.{cur[1]}GHz"
+                max = str(round(freq.max))
+                max = f"{max[0]}.{max[1]}GHz"
                 p = self.bot.utils
-                # c_temp = round(psutil.sensors_temperatures(fahrenheit=False)['coretemp'][0].current)
-                # f_temp = round(psutil.sensors_temperatures(fahrenheit=True)['coretemp'][0].current)
+                c_temp = round(psutil.sensors_temperatures(fahrenheit=False)['coretemp'][0].current)
+                f_temp = round(psutil.sensors_temperatures(fahrenheit=True)['coretemp'][0].current)
                 value = f"**Storage (NVME)**: {p.bytes2human(disk.used)}/{p.bytes2human(disk.total)} - ({round(disk.percent)}%)\n" \
                         f"**RAM (DDR4)**: {p.bytes2human(ram.used)}/{p.bytes2human(ram.total)} - ({round(ram.percent)}%)\n" \
-                        f"**CPU i9-10900K:** {round(psutil.cpu_percent())}%\n" \
+                        f"**CPU i9-10900K:** {round(psutil.cpu_percent())}% @{cur}/{max}\n" \
+                        f"**CPU Temp:** {c_temp}°C {f_temp}°F\n" \
                         f"**Bot Usage:** **RAM:** {p.bytes2human(bot_pid.memory_full_info().rss)} **CPU:** {round(bot_pid.cpu_percent())}%"
-                        # f"**CPU Temp:** {c_temp}°C {f_temp}°F\n" \
-                        # f"**CPU i9-10900K:** {round(psutil.cpu_percent())}% @{cur}/{max}\n" \
+
                 return value
 
             e.add_field(
