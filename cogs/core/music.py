@@ -77,11 +77,18 @@ class Music(commands.Cog):
 
         # Create the lavalink client if not exists
         if not hasattr(bot, 'lavalink') or not bot.lavalink:
-            bot.lavalink = lavalink.Client(bot.user.id)
+            bot.lavalink = lavalink.Client(bot.config["bot_user_id"])
             bot.add_listener(bot.lavalink.voice_update_handler, 'on_socket_response')
 
         # Create a new node
-        bot.lavalink.add_node(creds.host, creds.port, creds.password, 'eu', 'default-node')
+        for node in bot.auth["Lavalink"]:
+            bot.lavalink.add_node(
+                host=node["host"],
+                port=node["port"],
+                password=node["password"],
+                region=node["region"],
+                resume_key=node["id"]
+            )
         lavalink.add_event_hook(self.track_hook)
 
         # Assets
@@ -152,14 +159,14 @@ class Music(commands.Cog):
 
     async def track_hook(self, event):
         """Handler for lavalink events"""
-        guild_id = int(event.player.guild_id)
-
         if isinstance(event, lavalink.events.QueueEndEvent):
+            guild_id = int(event.player.guild_id)
             await self.connect_to(guild_id, None)
             if guild_id in votes:
                 del votes[guild_id]
 
         if isinstance(event, lavalink.events.TrackEndEvent):
+            guild_id = int(event.player.guild_id)
             if guild_id in votes:
                 del votes[guild_id]
 

@@ -10,6 +10,8 @@ import aiofiles
 from contextlib import suppress
 from base64 import b64decode, b64encode
 import sys
+from cryptography.fernet import Fernet
+from getpass import getpass
 
 from discord.ext import commands
 import discord
@@ -35,6 +37,7 @@ class Fate(commands.AutoShardedBot):
             self.config = json.load(f)  # type: dict
         if not os.path.exists(self.config["datastore_location"]):
             os.mkdir(self.config["datastore_location"])
+        self.auth = {}
 
         self.debug_mode = self.config["debug_mode"]
         self.owner_ids = set(
@@ -274,26 +277,23 @@ class Fate(commands.AutoShardedBot):
                 return message
         return None
 
-    async def create_pool(self, force=False):
-        if self.pool and not force:
-            return self.log.info(
-                "bot.create_pool was called when one was already initialized"
-            )
-        elif self.pool:
-            self.log.critical("Closing the existing pool to start a new connection")
+    async def create_pool(self):
+        if self.pool:
             self.pool.close()
             await self.pool.wait_closed()
-            self.log.info("Pool was successfully closed")
-        sql = auth.MySQL()
+            self.log.critical(
+                "Closed the existing pool to start a new one"
+            )
+        sql = self.auth["MySQL"]  # type: dict
         for _attempt in range(5):
             try:
                 self.log("Connecting to db")
                 pool = await aiomysql.create_pool(
-                    host=sql.host,
-                    port=sql.port,
-                    user=sql.user,
-                    password=sql.password,
-                    db=sql.db,
+                    host=sql["host"],
+                    port=sql["port"],
+                    user=sql["user"],
+                    password=sql["password"],
+                    db=sql["db"],
                     autocommit=True,
                     loop=self.loop,
                     minsize=1,
@@ -303,18 +303,18 @@ class Fate(commands.AutoShardedBot):
                 break
             except (ConnectionRefusedError, pymysql.err.OperationalError):
                 self.log.critical(
-                    "Couldn't connect to SQL server, retrying in 25 seconds.."
+                    "Couldn't connect to MySQL server, retrying in 25 seconds.."
                 )
                 self.log.critical(traceback.format_exc())
             await asyncio.sleep(25)
         else:
             self.log.critical(
-                f"Couldn't connect to SQL server, reached max attempts``````{traceback.format_exc()}"
+                f"Couldn't connect to MySQL server, reached max attempts``````{traceback.format_exc()}"
             )
             self.unload(*self.config["extensions"], log=False)
             self.log.critical("Logging out..")
             return await self.logout()
-        self.log.info(f"Initialized db {sql.db} with {sql.user}@{sql.host}")
+        self.log.info(f"Initialized db {sql['db']} with {sql['user']}@{sql['host']}")
 
     async def execute(self, sql: str) -> None:
         async with self.cursor() as cur:
@@ -404,6 +404,14 @@ class Fate(commands.AutoShardedBot):
         return b64decode(string.encode()).decode()
 
     def run(self):
+        # Decrypt auth data and login
+        cipher = Fernet(getpass().encode())
+        fp = os.path.join(self.config["datastore_location"], "auth.json")
+        with open(fp, "r") as f:
+            data = cipher.decrypt(f.read().encode()).decode()
+        self.auth = json.loads(data)
+
+        # Load additional modules/cogs
         if self.config["extensions"]:
             self.log.info("Loading initial cogs", color="yellow")
             extensions = []
@@ -412,14 +420,8 @@ class Fate(commands.AutoShardedBot):
                     extensions.append(f"{category}.{cog}")
             self.load(*extensions)
             self.log.info("Finished loading initial cogs\nLogging in..", color="yellow")
-        cipher = auth.Tokens()
-        if self.config["token_encryption"]:
-            token = cipher.decrypt(self.config["token_id"])
-        else:
-            token = cipher.tokens[self.config["token_id"]]
-        if isinstance(token, bytes):
-            token = token.decode()
-        super().run(token)
+
+        super().run(self.auth["tokens"][self.config["token_id"]])
 
 
 # Reset log files on startup so they don't fill up and cause lag

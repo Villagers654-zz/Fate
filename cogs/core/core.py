@@ -26,15 +26,19 @@ class Core(commands.Cog):
         self.bot = bot
         self.last = {}
         self.spam_cd = {}
-        creds = auth.TopGG()
+        creds = bot.auth["TopGG"]  # type: dict
         self.dblpy = dbl.DBLClient(
-            self.bot, creds.token, autopost=True,
-            webhook_path=creds.path, webhook_auth=creds.auth, webhook_port=creds.port
+            bot=self.bot,
+            token=creds["token"],
+            autopost=True,
+            webhook_path=creds["path"],
+            webhook_auth=creds["auth"],
+            webhook_port=creds["port"]
         )
         self.path = "./data/userdata/disabled_commands.json"
 
     async def on_guild_post(self):
-        print("Server count posted successfully")
+        self.bot.log.debug("Server count posted successfully")
 
     @commands.Cog.listener()
     async def on_dbl_test(self, data):

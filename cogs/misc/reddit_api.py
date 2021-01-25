@@ -20,11 +20,11 @@ class Reddit(commands.Cog):
             task.cancel()
             del self.bot.tasks["reddit"][guild_id]
 
-        creds = auth.Reddit()
+        creds = bot.auth["Reddit"]
         self.client = asyncpraw.Reddit(
-            client_id=creds.client_id,
-            client_secret=creds.client_secret,
-            user_agent=creds.user_agent,
+            client_id=creds["client_id"],
+            client_secret=creds["client_secret"],
+            user_agent=creds["user_agent"],
         )
 
         self.ensure_subscriptions_task.start()
