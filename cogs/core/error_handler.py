@@ -32,8 +32,12 @@ class ErrorHandler(commands.Cog):
 
         # Parse the error object
         error = getattr(error, "original", error)
+        if isinstance(error, str):
+            self.bot.log(f"Error `{error}` was a string and not a object")
+            formatted = f"```python\n{error}```"
+        else:
+            formatted = "\n".join(traceback.format_tb(error.__traceback__))
         error_str = str(error)
-        formatted = "\n".join(traceback.format_tb(error.__traceback__))
         full_traceback = f"```python\n{formatted}\n{type(error).__name__}: {error}```"
         if "EmptyException" in full_traceback or "NotFound" in full_traceback:
             return
