@@ -62,18 +62,19 @@
 
   "extensions": {
     "core": [
+      "utils",
       "config",
       "core",
       "error_handler",
       "menus",
+      "music",
       "ranking",
       "server_list",
       "statistics",
       "system",
       "tasks",
       "toggles",
-      "user",
-      "utils"
+      "user"
     ],
     "dev": [
       "custom",
