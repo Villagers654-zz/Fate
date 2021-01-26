@@ -5,6 +5,7 @@ from time import time
 import discord
 from aiohttp import ClientConnectorError, ClientOSError, ServerDisconnectedError
 from discord.ext import commands
+from discord.http import DiscordServerError
 
 from botutils import colors, checks
 
@@ -101,7 +102,7 @@ class ErrorHandler(commands.Cog):
                     return await ctx.send("Can't operate due to this server reaching the max number of roles")
 
             # Discord shit the bed
-            elif isinstance(error, discord.errors.DiscordServerError):
+            elif isinstance(error, DiscordServerError):
                 return await ctx.send(
                         "Oop-\nDiscord shit in the bed\nIt's not my fault, it's theirs"
                     )
