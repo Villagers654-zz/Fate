@@ -26,6 +26,8 @@ def ensure_player_is_playing():
             await ctx.end("You're not currently connected to a voice channel", delete_after=25)
         elif not player.is_connected and ctx.author.voice.channel.id != int(player.channel_id):
             await ctx.send("We don't currently share a voice channel", delete_after=25)
+        elif not player.is_playing:
+            await ctx.send("I'm not currently playing anything", delete_after=25)
         else:
             return True
         raise ctx.bot.ignored_exit
@@ -130,7 +132,7 @@ class Music(commands.Cog):
 
         return guild_check
 
-    async def cog_command_error(self, ctx, error):
+    async def _cog_command_error(self, ctx, error):
         if isinstance(error, commands.CommandInvokeError):
             await ctx.send(error.original)
 
@@ -140,22 +142,26 @@ class Music(commands.Cog):
         should_connect = ctx.command.name in ('play',)
 
         if not ctx.author.voice or not ctx.author.voice.channel:
-            raise commands.CommandInvokeError("Join a voice channel first")
+            await ctx.send("Join a voice channel first")
+            raise self.bot.ignored_exit
 
         if not player.is_connected:
             if not should_connect:
-                raise commands.CommandInvokeError("I'm not connected to any voice channel")
+                await ctx.send("I'm not connected to any voice channel")
+                raise self.bot.ignored_exit
 
             permissions = ctx.author.voice.channel.permissions_for(ctx.me)
 
             if not permissions.connect or not permissions.speak:  # Check user limit too?
-                raise commands.CommandInvokeError("I need `connect` and `speak` permissions")
+                await ctx.send("I need `connect` and `speak` permissions")
+                raise self.bot.ignored_exit
 
             player.store('channel', ctx.channel.id)
             await self.connect_to(ctx.guild.id, str(ctx.author.voice.channel.id))
         else:
             if int(player.channel_id) != ctx.author.voice.channel.id:
-                raise commands.CommandInvokeError("You need to be in my voice channel")
+                await ctx.send("You need to be in my voice channel")
+                raise self.bot.ignored_exit
 
     async def track_hook(self, event):
         """Handler for lavalink events"""
