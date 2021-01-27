@@ -64,7 +64,7 @@ class ModMail(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def disable(self, ctx):
         async with self.bot.cursor() as cur:
-            await cur.execute(f"delete from modlogs where guild_id = {ctx.guild.id} limit 1;")
+            await cur.execute(f"delete from modmail where guild_id = {ctx.guild.id} limit 1;")
         await ctx.send("Disabled modmail if it was enabled")
 
     @modmail.command(name="block")
@@ -82,7 +82,7 @@ class ModMail(commands.Cog):
             blocked.append(user.id)
             await cur.execute(
                 f"update modmail "
-                f"set blocked = {self.bot.encode(json.dumps(blocked))} "
+                f"set blocked = '{self.bot.encode(json.dumps(blocked))}' "
                 f"where guild_id = {ctx.guild.id};"
             )
         await ctx.send(f"Blocked {user} from using modmail")
@@ -102,7 +102,7 @@ class ModMail(commands.Cog):
             blocked.remove(user.id)
             await cur.execute(
                 f"update modmail "
-                f"set blocked = {self.bot.encode(json.dumps(blocked))} "
+                f"set blocked = '{self.bot.encode(json.dumps(blocked))}' "
                 f"where guild_id = {ctx.guild.id};"
             )
         await ctx.send(f"Unblocked {user} from using modmail")
