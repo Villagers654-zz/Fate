@@ -45,16 +45,20 @@ class Fate(commands.AutoShardedBot):
         )
         self.theme_color = self.config["theme_color"]
 
-        self.pool = None  # MySQL Pool initialized on_ready
-        self.lavalink = None  # Music server
-        self.login_errors = []  # Exceptions ignored during startup
-        self.logs = []  # Logs to send to discord, empties out quickly
+        # Cache
+        self.guild_prefixes = {}  # {user_id: [prefix, last_accessed]}
+        self.user_prefixes = {}
         self.locks = {}
         self.operation_locks = []
         self.tasks = {}  # Task object storing for easy management
         self.logger_tasks = {}  # Same as Fate.tasks except dedicated to cogs.logger
-        self.last_traceback = ""  # Formatted string of the last error traceback
         self.blocked = []
+
+        self.pool = None  # MySQL Pool initialized on_ready
+        self.lavalink = None  # Music server
+        self.login_errors = []  # Exceptions ignored during startup
+        self.logs = []  # Logs to send to discord, empties out quickly
+        self.last_traceback = ""  # Formatted string of the last error traceback
         self.ignored_exit = EmptyException
         self.allow_user_mentions = discord.AllowedMentions(
             users=True, roles=False, everyone=False
@@ -238,7 +242,7 @@ class Fate(commands.AutoShardedBot):
         self.invite_url = discord.utils.oauth_url(self.config["bot_user_id"], perms)
 
         super().__init__(
-            command_prefix=Utils.get_prefixes,
+            command_prefix=Utils.get_prefixes_async,
             intents=discord.Intents.all(),
             activity=discord.Game(name=self.config["startup_status"]),
             max_messages=self.config["max_cached_messages"],
