@@ -19,19 +19,21 @@ class Tasks(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.enabled_tasks = [
+            self.prefix_cleanup_task,
             self.status_task,
             self.log_queue,
             self.debug_log,
             self.mark_alive,
             self.auto_backup
         ]
-        if bot.is_ready():
-            self.ensure_all()
+        for task in self.enabled_tasks:
+            task.start()
+            bot.log(f"Started {task.coro.__name__}")
 
     def cog_unload(self):
         for task in self.enabled_tasks:
             if task.is_running():
-                task.stop()
+                task.cancel()
                 self.bot.log.info(f"Cancelled {task.coro.__name__}")
 
     def ensure_all(self):
@@ -40,6 +42,32 @@ class Tasks(commands.Cog):
             if not task.is_running():
                 task.start()
                 self.bot.log(f"Started task {task.coro.__name__}", color="cyan")
+
+    @tasks.loop(minutes=1)
+    async def prefix_cleanup_task(self):
+        uncached = 0
+        for guild_id, data in list(self.bot.guild_prefixes.items()):
+            await asyncio.sleep(0)
+            if isinstance(data, float):
+                last_used = data
+            else:
+                last_used = data[1]
+            if last_used > time.time() - 60 * 60:
+                del self.bot.guild_prefixes[guild_id]
+                uncached += 1
+        self.bot.log.debug(f"Removed {uncached} unused prefixes from guild cache")
+        uncached = 0
+
+        for user_id, data in list(self.bot.user_prefixes.items()):
+            await asyncio.sleep(0)
+            if isinstance(data, float):
+                last_used = data
+            else:
+                last_used = data["last_used"]
+            if last_used > time.time() - 60 * 60:
+                del self.bot.user_prefixes[user_id]
+                uncached += 1
+        self.bot.log.debug(f"Removed {uncached} unused prefixes from guild cache")
 
     @tasks.loop(seconds=24)
     async def mark_alive(self):
@@ -263,6 +291,8 @@ class Tasks(commands.Cog):
             await self.bot.loop.run_in_executor(None, copy_files)
             ping = round((time.monotonic() - before) * 1000)
             self.bot.log(f"Ran Automatic Backup: {ping}ms")
+        except asyncio.CancelledError as error:
+            raise error
         except:
             self.bot.log.critical(f"Backup task errored:\n{traceback.format_exc()}")
 
