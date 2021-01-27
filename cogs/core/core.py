@@ -130,48 +130,58 @@ class Core(commands.Cog):
     @commands.command(name="prefix")
     @commands.cooldown(*utils.default_cooldown())
     @commands.guild_only()
-    async def _prefix(self, ctx, *, prefix=None):
-        async with self.bot.open("./data/userdata/config.json", "r") as f:
-            config = json.loads(await f.read())  # type: dict
-        guild_id = str(ctx.guild.id)
+    async def prefix(self, ctx, *, prefix = None):
         if not prefix:
-            prefixes = ""
-            if guild_id in config["prefix"]:
-                prefixes += f"**Guild Prefix:** `{config['prefix'][guild_id]}`"
-            else:
-                prefixes += f"**Guild Prefix:** `.`"
-            if str(ctx.author.id) in config["personal_prefix"]:
-                prefixes += f"**Personal Prefix:** `{config['personal_prefix'][str(ctx.author.id)]}`"
+            prefixes = await self.bot.utils.get_prefixes_async(self.bot, ctx.message)
+            formatted = "\n".join(prefixes[1::])
             e = discord.Embed(color=colors.fate())
             e.set_author(name="Prefixes", icon_url=ctx.author.avatar_url)
-            e.description = prefixes
+            e.description = formatted
             return await ctx.send(embed=e)
         if not ctx.author.guild_permissions.manage_guild:
             return await ctx.send(f"You need manage_server permission(s) to use this")
         if not isinstance(ctx.guild, discord.Guild):
             return await ctx.send("This command can't be used in dm")
-        async with self.bot.open("./data/userdata/config.json", "w") as f:
-            if "prefix" not in config:
-                config["prefix"] = {}
-            config["prefix"][guild_id] = prefix
-            await f.write(json.dumps(config))
+        if len(prefix) > 5:
+            return await ctx.send("That prefix is too long")
+        async with self.bot.cursor() as cur:
+            if prefix == ".":
+                await cur.execute(f"delete from guild_prefixes where guild_id = {ctx.guild.id};")
+                self.bot.guild_prefixes[ctx.guild.id] = time()
+            else:
+                await cur.execute(
+                    f"insert into guild_prefixes values ({ctx.guild.id}, '{self.bot.encode(prefix)}') "
+                    f"on duplicate key update "
+                    f"prefix = '{self.bot.encode(prefix)}';"
+                )
+                self.bot.guild_prefixes[int(ctx.guild.id)] = [prefix, time()]
         await ctx.send(f"Changed the servers prefix to `{prefix}`")
 
     @commands.command(name="personal-prefix", aliases=["pp"])
     @commands.cooldown(*utils.default_cooldown())
     async def personal_prefix(self, ctx, *, prefix=""):
-        user_id = str(ctx.author.id)
-        async with self.bot.open("./data/userdata/config.json", "r") as f:
-            config = json.loads(await f.read())  # type: dict
-        if "personal_prefix" not in config:
-            config["personal_prefix"] = {}
-        config["personal_prefix"][user_id] = prefix
-        if prefix == ".":
-            del config["personal_prefix"][user_id]
-        async with self.bot.open("./data/userdata/config.json", "w") as f:
-            await f.write(json.dumps(config))
+        if prefix.startswith('"') and prefix.endswith('"') and len(prefix) > 2:
+            prefix = prefix.strip('"')
+        prefix = prefix.strip("'\"")
+        if len(prefix) > 5:
+            return await ctx.send("Your prefix can't be more than 8 chars long")
+        async with self.bot.cursor() as cur:
+            if prefix == ".":
+                await cur.execute(f"delete from user_prefixes where user_id = {ctx.author.id};")
+                self.bot.user_prefixes[ctx.author.id] = time()
+            else:
+                await cur.execute(
+                    f"insert into user_prefixes values ({ctx.author.id}, '{prefix}', False) "
+                    f"on duplicate key update prefix = '{self.bot.encode(prefix)}';"
+                )
+                self.bot.user_prefixes[ctx.author.id] = {
+                    "prefix": prefix,
+                    "override": False,
+                    "last_used": time()
+                }
+        nothing = "something that doesn't exist"
         await ctx.send(
-            f"Set your personal prefix as `{prefix}`\n"
+            f"Set your personal prefix as `{prefix if prefix else nothing}`\n"
             f"Note you can still use my mention as a sub-prefix"
         )
 
