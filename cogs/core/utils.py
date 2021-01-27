@@ -109,9 +109,13 @@ class Utils(commands.Cog):
             bot.guild_prefixes[guild_id][1] = time()
 
         # Parse the wanted prefixes
-        return commands.when_mentioned_or(
-            prefixes[0] if prefixes and prefixes[0] else "."
-        )(bot, msg)
+        if not prefixes:
+            return commands.when_mentioned_or(".")(bot, msg)
+
+        return [
+            *commands.when_mentioned(bot, msg),
+            *prefixes
+        ]
 
     @staticmethod
     def get_prefixes(bot, msg):

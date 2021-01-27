@@ -171,7 +171,7 @@ class Core(commands.Cog):
                 self.bot.user_prefixes[ctx.author.id] = time()
             else:
                 await cur.execute(
-                    f"insert into user_prefixes values ({ctx.author.id}, '{prefix}', False) "
+                    f"insert into user_prefixes values ({ctx.author.id}, '{self.bot.encode(prefix)}', False) "
                     f"on duplicate key update prefix = '{self.bot.encode(prefix)}';"
                 )
                 self.bot.user_prefixes[ctx.author.id] = {
