@@ -3,6 +3,7 @@ import json
 from time import time
 from contextlib import suppress
 import asyncio
+from datetime import datetime, timedelta
 
 from discord.ext import commands
 import discord
@@ -42,6 +43,7 @@ class ModMail(commands.Cog):
     @modmail.command(name="enable")
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
+    @commands.bot_has_permissions(view_audit_log=True)
     async def enable(self, ctx):
         await ctx.send("What's the category ID I should use for modmail")
         async with self.bot.require("message", ctx) as msg:
@@ -239,6 +241,21 @@ class ModMail(commands.Cog):
             return None
         if ctx.author.id in json.loads(self.bot.decode(results[1])):
             return await ctx.send("You're blocked from using modmail in that server")
+        category = self.bot.get_channel(results[0])
+        if not category:
+            await ctx.send("Couldn't get the modmail channel in that guild, sorry")
+            return None
+        if not category.guild.me.guild_permissions.view_audit_log:
+            return await ctx.send(
+                "I'm missing view_audit_log permissions in that "
+                "server at the moment. Try again later"
+            )
+
+        after = datetime.utcnow() - timedelta(hours=12)
+        action = discord.AuditLogAction.channel_delete
+        async for entry in ctx.guild.audit_logs(after=after, action=action):
+            if "case-" in entry.target.name and str(case) in entry.target.name:
+                return await ctx.send("That thread was closed within the last 12h. Try again another time")
 
         if not message and not attachment:
             await ctx.send("What's the message you'd like to send?")
@@ -247,11 +264,6 @@ class ModMail(commands.Cog):
                     message = msg.content
                 if msg.attachments:
                     attachment = msg.attachments[0].url
-
-        category = self.bot.get_channel(results[0])
-        if not category:
-            await ctx.send("Couldn't get the modmail channel in that guild, sorry")
-            return None
 
         thread_id = f"case-{case}"
         matches = [channel for channel in category.channels if thread_id == channel.name]
