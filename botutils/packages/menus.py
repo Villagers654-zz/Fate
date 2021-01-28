@@ -37,11 +37,13 @@ class Menus:
 
         def create_card():
             colors = ["orange", "green", "white", "cyan", "red"]
-            font = ImageFont.truetype("./botutils/fonts/Modern_Sans_Light.otf", 75)
+            font = ImageFont.truetype("./botutils/fonts/Modern_Sans_Light.otf", 70)
             size = font.getsize(chars)
             card = Image.new("RGBA", size=(size[0] + 20, 80), color=(255, 255, 255, 0))
             draw = ImageDraw.Draw(card)
-            draw.text((10, 10), chars, fill=random.choice(colors), font=font)
+            color = random.choice(colors)
+            for i in range(len(chars)):
+                draw.text((10 + 35 * i, 10), chars[i], fill=color, font=font)
 
             redirections = 5
             lowest_range = 5
