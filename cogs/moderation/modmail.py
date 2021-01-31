@@ -46,7 +46,7 @@ class ModMail(commands.Cog):
     @commands.bot_has_permissions(view_audit_log=True)
     async def enable(self, ctx):
         await ctx.send("What's the category ID I should use for modmail")
-        async with self.bot.require("message", ctx) as msg:
+        async with self.bot.require("message", ctx, handle_timeout=True) as msg:
             if not msg.content.isdigit():
                 return await ctx.send("That's not a category ID. Rerun the command >:(")
             category_id = int(msg.content)
@@ -253,7 +253,7 @@ class ModMail(commands.Cog):
 
         after = datetime.utcnow() - timedelta(hours=12)
         action = discord.AuditLogAction.channel_delete
-        async for entry in ctx.guild.audit_logs(after=after, action=action):
+        async for entry in category.guild.audit_logs(after=after, action=action):
             if "case-" in entry.target.name and str(case) in entry.target.name:
                 return await ctx.send("That thread was closed within the last 12h. Try again another time")
 
