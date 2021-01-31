@@ -245,10 +245,20 @@ class Fun(commands.Cog):
             self.dat[channel_id]["last"] = dat
             self.dat[channel_id][user_id] = dat
 
-    @commands.command(name="sex", aliases=["sexdupe"], enabled=False)
+    @commands.command(name="sex", aliases=["sexdupe"])
     @commands.cooldown(1, 10, commands.BucketType.user)
     async def sex(self, ctx, user: discord.User):
         await ctx.send(f"Sent instructions on the {user.name} sex dupe to dms")
+        try:
+            choices = [
+                "There isn't one for *you*",
+                "Err.. maybe try being more attractive",
+                "Sike! You're nobodys type",
+                "I can't dupe your micro penis. zero times 2 is still zero"
+            ]
+            await ctx.author.send(random.choice(choices))
+        except:
+            pass
 
     @commands.command(name="fancify", aliases=["cursive"])
     @commands.cooldown(2, 3, commands.BucketType.channel)
