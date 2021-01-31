@@ -20,6 +20,8 @@ import pymysql
 from termcolor import cprint
 from discord.errors import NotFound, Forbidden, HTTPException
 from discord_sentry_reporting import use_sentry
+import pymongo
+from motor.motor_asyncio import AsyncIOMotorClient
 
 from botutils import auth, colors, checks
 from botutils.custom_logging import Logging
@@ -280,6 +282,24 @@ class Fate(commands.AutoShardedBot):
             if message.id == message_id:
                 return message
         return None
+
+    @property
+    def mongo(self):
+        conf = self.auth["MongoDB"]
+        return pymongo.MongoClient(conf["url"])[conf["db"]]
+
+    @property
+    def aio_mongo(self):
+        conf = self.auth["MongoDB"]
+        client = AsyncIOMotorClient(conf["url"], **conf["connection_args"])
+        db = client.get_database(conf["db"])
+        return db
+
+    async def update_mongo(self, collection, filter, data):
+        pass
+
+    async def remove_mongo(self, collection, filter):
+        self.aio_mongo[collection].delete_many(filter)
 
     async def create_pool(self):
         if self.pool:
