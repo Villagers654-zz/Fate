@@ -469,6 +469,17 @@ class AntiSpam(commands.Cog):
                         reason = "mass pinging"
                         triggered = True
 
+                    pongs = lambda s: [
+                        m for m in self.msgs[user_id]
+                        if m and m.created_at > datetime.utcnow() - timedelta(seconds=s)
+                           and sum(len(group) for group in [
+                            m.mentions, m.raw_mentions, m.role_mentions, m.raw_role_mentions
+                        ])
+                    ]
+                    if len(pongs(10)) > 2:
+                        reason = "mass pinging"
+                        triggered = True
+
                 # anti macro
                 # if self.toggle[guild_id]["Anti-Macro"]:
                 #     if user_id not in self.macro_cd:
