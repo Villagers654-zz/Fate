@@ -183,7 +183,7 @@ class SelfRoles(commands.Cog):
                 await instructions.delete()
                 return None
             else:
-                if "cancel" in msg.content:
+                if "cancel" in msg.content.lower():
                     await instructions.delete()
                     await msg.delete()
                     return None
@@ -209,7 +209,7 @@ class SelfRoles(commands.Cog):
         await asyncio.sleep(0.5)
         await msg.delete()
 
-        if "quick" not in ctx.message.content:
+        if "quick" not in ctx.message.content.lower():
 
             await instructions.edit(
                 content='What hex color should the menu be\nReply with "cancel" to exit, '
@@ -219,7 +219,7 @@ class SelfRoles(commands.Cog):
                 msg = await wait_for_msg()
                 if not msg:
                     return
-                if "skip" in msg.content:
+                if "skip" in msg.content.lower():
                     menu["color"] = colors.fate()
                     break
                 try:
@@ -239,7 +239,7 @@ class SelfRoles(commands.Cog):
                 msg = await wait_for_msg()
                 if not msg:
                     return
-                if "skip" in msg.content:
+                if "skip" in msg.content.lower():
                     menu["limit"] = None
                     break
                 try:
@@ -264,7 +264,7 @@ class SelfRoles(commands.Cog):
                     await msg.delete()
                     await ctx.send("Invalid reply", delete_after=5)
                     continue
-                if "yes" in msg.content:
+                if "yes" in msg.content.lower():
                     menu["mentions"] = True
                 else:
                     menu["mentions"] = False
@@ -281,7 +281,7 @@ class SelfRoles(commands.Cog):
                 msg = await wait_for_msg()
                 if not msg:
                     return
-                if "done" in msg.content:
+                if "done" in msg.content.lower():
                     break
                 for content in msg.content.split("\n"):
                     args = content.split(" ", 1)
