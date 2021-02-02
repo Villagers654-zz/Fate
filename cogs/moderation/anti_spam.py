@@ -206,7 +206,7 @@ class AntiSpam(commands.Cog):
     async def _configure(self, ctx):
         guild_id = ctx.guild.id
         if guild_id not in self.config:
-            await ctx.send("Anti spam isn't enabled")
+            return await ctx.send("Anti spam isn't enabled")
         menu = ConfigureModules(ctx)
         await menu.setup()
         while True:
@@ -1003,6 +1003,8 @@ class ConfigureModules:
             if not reply.isdigit():
                 await self.ctx.send("Invalid format. Your reply must be a number", delete_after=5)
             else:
+                if int(reply) > 16:
+                    await self.ctx.send("At the moment you can't go above 16")
                 self.config["per_message"] = int(reply)
                 await self.update_data()
             self.reset()
@@ -1048,7 +1050,13 @@ class ConfigureModules:
             if not all(arg.isdigit() for arg in args) or len(args) != 2:
                 await self.ctx.send("Invalid format", delete_after=5)
             else:
-                new_threshold = {"timespan": args[0], "threshold": args[1]}
+                if int(args[0]) > 60:
+                    await self.ctx.send("You can't go above 60s for the timespan")
+                    return self.reset()
+                if int(args[1]) > 30:
+                    await self.ctx.send("You can't go above 30 for the threshold")
+                    return self.reset()
+                new_threshold = {"timespan": int(args[0]), "threshold": int(args[1])}
                 list_check = new_threshold in self.config if isinstance(self.config, list) else False
                 dict_check = new_threshold in self.config["thresholds"] if isinstance(self.config, dict) else False
                 if list_check or dict_check:
