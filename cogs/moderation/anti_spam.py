@@ -155,6 +155,124 @@ class AntiSpam(commands.Cog):
                 e.add_field(name="◈ Config", value=conf, inline=False)
             await ctx.send(embed=e)
 
+    @anti_spam.command(name="configure")
+    @commands.is_owner()
+    async def _configure(self, ctx):
+        guild_id = ctx.guild.id
+        if guild_id not in self.config:
+            await ctx.send("Anti spam isn't enabled")
+
+        # Utility variables
+        emojis = self.bot.utils.emotes
+        create_embed = lambda **kwargs: discord.Embed(
+            color=self.bot.config["theme_color"], **kwargs
+        )
+
+
+        modules = lambda: {
+            module: data
+            for module, data in self.config[guild_id].items()
+            if module != "ignored"
+        }
+        cursor = modules()
+        row = 0
+
+        def get_description():
+            description = ""
+            for i, key in enumerate(cursor.keys()):
+                if i != 0:
+                    description += "\n"
+                if i == row:
+                    description += f"{emojis.online} {key}"
+                else:
+                    description += f"{emojis.offline} {key}"
+            return description
+
+        async def add_reactions():
+            for i, emote in enumerate(emotes):
+                await msg.add_reaction(emote)
+                if i != len(emotes) - 1:
+                    await asyncio.sleep(0.21)
+
+        e = create_embed(description=get_description())
+        msg = await ctx.send(embed=e)
+        emotes = [emojis.home, emojis.up, emojis.down, emojis.yes]
+        self.bot.loop.create_task(add_reactions())
+
+        check = lambda r, u: r.message.id == msg.id and u.id == ctx.author.id
+        reaction = user = config = None
+        while True:
+            if reaction:
+                self.bot.loop.create_task(msg.remove_reaction(reaction, user))
+
+            reaction, user = await self.bot.utils.get_reaction(check)
+            e = create_embed()
+
+            if reaction.emoji == emojis.home:
+                cursor = modules()
+                row = 0
+                config = None
+            elif reaction.emoji == emojis.up:
+                row -= 1
+            elif reaction.emoji == emojis.down:
+                row += 1
+            elif str(reaction.emoji) == emojis.yes:
+                key = list(cursor.keys())[row]
+                if not cursor[key]:
+                    e.description = cursor[key]
+                    if key == "Reset to default":
+                        cursor = modules()
+                        config = None
+                    elif key == "Per-message threshold":
+                        cursor = {
+                            "Update": None,
+                            "Disable": None
+                        }
+                    elif key == "Update":
+                        cursor = modules()
+                        config = None
+                    elif key == "Disable":
+                        cursor = modules()
+                        config = None
+                    elif key == "Add a custom threshold":
+                        m = await ctx.send(
+                            "Send the threshold and timespan to use. Format like "
+                            "`6, 10` to only allow 6 within 10 seconds"
+                        )
+                        reply = await self.bot.utils.get_message(ctx)
+                        await m.delete()
+                        await reply.delete()
+                        cursor = modules()
+                        config = None
+                    else:
+                        cursor = {"Unknown Option": None}
+                else:
+                    e.title = key
+                    config = key, cursor[key]
+                    cursor = {}
+                    if "per_message" in config[1]:
+                        cursor["Per-message threshold"] = None
+                    if "thresholds" in config[1]:
+                        cursor["Add a custom threshold"] = None
+                        cursor["Remove a custom threshold"] = None
+                    cursor["Reset to default"] = None
+                    row = 0
+
+            if row < 0:
+                row = 0
+            elif row > len(cursor.keys()) - 1:
+                row = len(cursor.keys()) - 1
+
+            if not e.description:
+                e.description = get_description()
+            if config:
+                e.add_field(
+                    name="◈ Config",
+                    value=f"```json\n{json.dumps(config[1], indent=2)}```"
+                )
+            await msg.edit(embed=e)
+
+
     @anti_spam.group(name='enable')
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True, manage_roles=True, manage_channels=True)
