@@ -48,37 +48,38 @@ def generate_rainbow_rgb(amount: int) -> list:
 
 
 class Emojis:
-    def __init__(self):
+    # Presences
+    online = "<:status_online:659976003334045727>"
+    idle = "<:status_idle:659976006030983206>"
+    dnd = do_not_disturb = "<:status_dnd:659976008627388438>"
+    offline = invisible = "<:status_offline:659976011651219462>"
 
-        # Presences
-        self.online = "<:status_online:659976003334045727>"
-        self.idle = "<:status_idle:659976006030983206>"
-        self.dnd = self.do_not_disturb = "<:status_dnd:659976008627388438>"
-        self.offline = self.invisible = "<:status_offline:659976011651219462>"
+    # Server Indicators
+    members = "👥"
+    text_channel = "<:textchannel:679179620867899412>"
+    voice_channel = "<:voicechannel:679179727994617881>"
+    boost = "<:boost15:673955479675994122>"
+    booster = "<:boost12:673955482578190356>"
+    verified = "<:verified:673955386839269396>"
+    partner = "<:partner:673955399694548994>"
 
-        # Server Indicators
-        self.members = "👥"
-        self.text_channel = "<:textchannel:679179620867899412>"
-        self.voice_channel = "<:voicechannel:679179727994617881>"
-        self.boost = "<:boost15:673955479675994122>"
-        self.booster = "<:boost12:673955482578190356>"
-        self.verified = "<:verified:673955386839269396>"
-        self.partner = "<:partner:673955399694548994>"
+    # Indicators
+    on = "<:toggle_on:673955968857407541>"
+    off = "<:toggle_off:673955971726311424>"
+    typing = "<a:typing:673955389431349249>"
+    loading = "<a:loading:673956001174781983>"
+    yes = "<a:yes:789735035813101638>"
+    soon = "<:soontm:739960152140152963>"
+    never = "<:never:739960284965502987>"
+    plus = "<:plus:548465119462424595>"
+    edited = "<:edited:550291696861315093>"
+    home = "🏡"
+    up = "⬆️"
+    down = "⬇️"
 
-        # Indicators
-        self.on = "<:toggle_on:673955968857407541>"
-        self.off = "<:toggle_off:673955971726311424>"
-        self.typing = "<a:typing:673955389431349249>"
-        self.loading = "<a:loading:673956001174781983>"
-        self.yes = "<a:yes:789735035813101638>"
-        self.soon = "<:soontm:739960152140152963>"
-        self.never = "<:never:739960284965502987>"
-        self.plus = "<:plus:548465119462424595>"
-        self.edited = "<:edited:550291696861315093>"
-
-        # Misc
-        self.youtube = "<:YouTube:498050040384978945>"
-        self.nice = "<a:nice:770080922380271657>"
+    # Misc
+    youtube = "<:YouTube:498050040384978945>"
+    nice = "<a:nice:770080922380271657>"
 
     @property
     def arrow(self):
