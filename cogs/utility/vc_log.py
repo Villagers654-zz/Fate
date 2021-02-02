@@ -78,7 +78,7 @@ class VcLog(commands.Cog):
     async def _enable(self, ctx):
         guild_id = str(ctx.guild.id)
         await ctx.send("Mention the channel I should use")
-        msg = await self.bot.utils.wait_for_msg(ctx)
+        msg = await self.bot.utils.get_message(ctx)
         if not msg.channel_mentions:
             return await ctx.send("That isn't a channel mention")
         channel_id = msg.channel_mentions[0].id
