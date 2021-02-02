@@ -13,6 +13,35 @@ from discord.ext import tasks
 from botutils import colors
 
 
+defaults = {
+    "rate_limit": [{
+        "timespan": 5,
+        "threshold": 4
+    }],
+    "mass_pings": {
+        "per_message": 4,
+        "thresholds": [{
+            "timespan": 10,
+            "threshold": 3
+        }]
+    },
+    "duplicates": {
+        "per_message": 10,
+        "thresholds": [{
+            "timespan": 25,
+            "threshold": 4
+        }]
+    },
+    "inhuman": {
+        "non_abc": True,
+        "tall_messages": True,
+        "empty_lines": True,
+        "unknown_chars": True,
+        "ascii": True
+    }
+}
+
+
 class AntiSpam(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -156,7 +185,8 @@ class AntiSpam(commands.Cog):
             await ctx.send(embed=e)
 
     @anti_spam.command(name="configure")
-    @commands.is_owner()
+    @commands.has_permissions(administrator=True)
+    @commands.bot_has_permissions(embed_links=True, add_reactions=True, manage_messages=True)
     async def _configure(self, ctx):
         guild_id = ctx.guild.id
         if guild_id not in self.config:
@@ -789,29 +819,36 @@ class AntiSpam(commands.Cog):
 
 class ConfigureModules:
     def __init__(self, ctx):
+        self.super = ctx.bot.cogs["AntiSpam"]
         self.ctx = ctx
         self.bot = ctx.bot
         self.guild_id = ctx.guild.id
+
         self.cursor = self.modules
         self.row = 0
-        self.config = None
+        self.config = self.key = None
+
         emojis = ctx.bot.utils.emotes
-        self. emotes = [emojis.home, emojis.up, emojis.down, emojis.yes]
+        self.emotes = [emojis.home, emojis.up, emojis.down, emojis.yes]
+
         self.msg = self.reaction = self.user = None
         self.check = lambda r, u: r.message.id == self.msg.id and u.id == ctx.author.id
 
     async def setup(self):
+        """Initialize the reaction menu"""
         e = self.create_embed(description=self.get_description())
         self.msg = await self.ctx.send(embed=e)
         self.bot.loop.create_task(self.add_reactions())
 
     def reset(self):
+        """Go back to the list of enabled modules"""
         self.cursor = self.modules
         self.row = 0
         self.config = None
 
     @property
     def modules(self):
+        """Get their current AntiSpam config"""
         items = self.bot.cogs["AntiSpam"].config[self.guild_id].items()
         return {
             module: data
@@ -820,11 +857,13 @@ class ConfigureModules:
         }
 
     def create_embed(self, **kwargs):
+        """Get default embed style"""
         return discord.Embed(
             title="Enabled Modules", color=self.bot.config["theme_color"], **kwargs
         )
 
     def get_description(self):
+        # Format the current options
         emojis = self.bot.utils.emotes
         description = ""
         for i, key in enumerate(self.cursor.keys()):
@@ -837,6 +876,7 @@ class ConfigureModules:
         return description
 
     async def next(self):
+        """Wait for the next reaction"""
         reaction, user = await self.bot.utils.get_reaction(self.check)
         if reaction:
             self.bot.loop.create_task(self.msg.remove_reaction(reaction, user))
@@ -857,10 +897,13 @@ class ConfigureModules:
             key = list(self.cursor.keys())[self.row]
             if not self.cursor[key]:
                 e.description = self.cursor[key]
-                await self.configure(key)
+                if key in self.config and self.config[key]:
+                    await self.init_config(key)
+                else:
+                    await self.configure(key)
             else:
                 e.title = key
-                await self.configure(key)
+                await self.init_config(key)
 
         # Adjust row position
         if self.row < 0:
@@ -872,65 +915,156 @@ class ConfigureModules:
         if not e.description:
             e.description = self.get_description()
         if self.config:
-            e.title = self.config[0]
+            e.title = self.key
             e.add_field(
                 name="◈ Config",
-                value=f"```json\n{json.dumps(self.config[1], indent=2)}```"
+                value=f"```json\n{json.dumps(self.config, indent=2)}```"
             )
         await self.msg.edit(embed=e)
 
     async def add_reactions(self):
+        """Add the reactions in the background"""
         for i, emote in enumerate(self.emotes):
             await self.msg.add_reaction(emote)
             if i != len(self.emotes) - 1:
                 await asyncio.sleep(0.21)
 
+    async def get_reply(self, message):
+        """Get new values for a config"""
+        m = await self.ctx.send(message)
+        reply = await self.bot.utils.get_message(self.ctx)
+        await m.delete()
+        content = reply.content
+        await reply.delete()
+        return content
+
+    async def update_data(self):
+        """Update the cache and database"""
+        self.super.config[self.guild_id][self.key] = self.config
+        await self.bot.aio_mongo["AntiSpam"].update_one(
+            filter={"_id": self.guild_id},
+            update={"$set": {
+                self.key: self.config
+            }}
+        )
+
+    async def init_config(self, key):
+        """Change where we're working at"""
+        self.config = self.cursor[key]
+        self.key = key
+        self.row = 0
+        self.cursor = {}
+
+        # Add in options
+        if any(isinstance(v, bool) for v in dict(self.config).values()):
+            self.cursor["Enable a mod"] = None
+            self.cursor["Disable a mod"] = None
+        if "per_message" in self.config:
+            self.cursor["Per-message threshold"] = None
+        if isinstance(self.config, list) or "thresholds" in self.config:
+            self.cursor["Add a custom threshold"] = None
+            self.cursor["Remove a custom threshold"] = None
+        self.cursor["Reset to default"] = None
+
     async def configure(self, key):
-        if not self.cursor[key]:
-            if key == "Reset to default":
-                self.reset()
-            elif key == "Per-message threshold":
-                self.cursor = {
-                    "Update": None,
-                    "Disable": None
-                }
-            elif key == "Update":
-                self.reset()
-            elif key == "Disable":
-                self.reset()
-            elif key == "Enable a mod":
-                self.reset()
-            elif key == "Disable a mod":
-                self.reset()
-            elif key == "Add a custom threshold":
-                m = await self.ctx.send(
-                    "Send the threshold and timespan to use. Format like "
-                    "`6, 10` to only allow 6 within 10 seconds"
-                )
-                reply = await self.bot.utils.get_message(self.ctx)
-                await m.delete()
-                await reply.delete()
-                self.reset()
+        """Alter a configs data"""
+        if key == "Reset to default":
+            self.config = defaults[self.key]
+            await self.update_data()
+            self.reset()
+
+        elif key == "Per-message threshold":
+            # Get options to modify the per-message threshold
+            self.cursor = {
+                "Update": None,
+                "Disable": None
+            }
+
+        elif key == "Update":
+            # Change the per-message threshold
+            question = "What's the new number I should set"
+            reply = await self.get_reply(question)
+            if not reply.isdigit():
+                await self.ctx.send("Invalid format. Your reply must be a number", delete_after=5)
             else:
-                self.cursor = {"Unknown Option": None}
-            return
+                self.config["per_message"] = int(reply)
+                await self.update_data()
+            self.reset()
+
+        elif key == "Disable":
+            # Remove the per-message threshold
+            if isinstance(self.config, dict):  # To satisfy pycharms warning
+                self.config["per_message"] = None
+            await self.update_data()
+            self.reset()
+
+        elif key == "Enable a mod":
+            # Set a toggle to True
+            question = "Which mod should I enable"
+            reply = await self.get_reply(question)
+            if reply.lower() not in self.config:
+                await self.ctx.send("That's not a toggleable mod", delete_after=5)
+            else:
+                self.config[reply.lower()] = True
+                await self.update_data()
+            self.reset()
+
+        elif key == "Disable a mod":
+            # Set a toggle to False
+            question = "Which mod should I disable"
+            reply = await self.get_reply(question)
+            if reply.lower() not in self.config:
+                await self.ctx.send("That's not a toggleable mod", delete_after=5)
+            else:
+                self.config[reply.lower()] = False
+                await self.update_data()
+            self.reset()
+
+        elif key == "Add a custom threshold":
+            # Something something something
+            question = "Send the threshold and timespan to use. Format like " \
+                       "`6, 10` to only allow 6 within 10 seconds"
+            reply = await self.get_reply(question)
+            args = reply.split(", ")
+            if not all(arg.isdigit() for arg in args) or len(args) != 2:
+                await self.ctx.send("Invalid format", delete_after=5)
+            else:
+                new_threshold = {"timespan": args[0], "threshold": args[1]}
+                dict_check = new_threshold in self.config["thresholds"] if "thresholds" in self.config else False
+                if new_threshold in self.config or dict_check:
+                    await self.ctx.send("That threshold already exists", delete_after=5)
+                    return self.reset()
+                if isinstance(self.config, list):
+                    self.config.append(new_threshold)
+                else:
+                    self.config["thresholds"].append(new_threshold)
+                await self.update_data()
+            self.reset()
+
+        elif key == "Remove a custom threshold":
+            # Something something something
+            question = "Send the threshold and timespan to remove. Format like " \
+                       "`6, 10` to remove one with a threshold of 6 and timespan of 10"
+            reply = await self.get_reply(question)
+            args = reply.split(", ")
+            if not all(arg.isdigit() for arg in args) or len(args) != 2:
+                await self.ctx.send("Invalid format", delete_after=5)
+            else:
+                threshold = {"timespan": args[0], "threshold": args[1]}
+                dict_check = threshold not in self.config["thresholds"] if "thresholds" in self.config else False
+                if threshold not in self.config and not dict_check:
+                    await self.ctx.send("That threshold doesn't exist", delete_after=5)
+                    return self.reset()
+                if isinstance(self.config, list):
+                    self.config.remove(threshold)
+                else:
+                    self.config["thresholds"].remove(threshold)
+                await self.update_data()
+            self.reset()
+
         else:
-            self.config = key, self.cursor[key]
-            self.row = 0
-            conf = dict(self.config[1])
-            if all(isinstance(v, bool) for v in conf.values()):
-                self.cursor = {
-                    "Enable a mod": None,
-                    "Disable a mod": None
-                }
-                return
-            self.cursor = {}
-            if "per_message" in self.config[1]:
-                self.cursor["Per-message threshold"] = None
-            if isinstance(self.config[1], list) or "thresholds" in self.config[1]:
-                self.cursor["Add a custom threshold"] = None
-                self.cursor["Remove a custom threshold"] = None
-            self.cursor["Reset to default"] = None
+            # Something isn't fucking finished
+            self.cursor = {"Unknown Option": None}
 
 
 def setup(bot):
