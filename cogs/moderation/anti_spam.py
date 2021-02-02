@@ -14,10 +14,16 @@ from botutils import colors
 
 
 defaults = {
-    "rate_limit": [{
-        "timespan": 5,
-        "threshold": 4
-    }],
+    "rate_limit": [
+        {
+            "timespan": 3,
+            "threshold": 5
+        },
+        {
+            "timespan": 10,
+            "threshold": 8
+        }
+    ],
     "mass_pings": {
         "per_message": 4,
         "thresholds": [{
@@ -51,6 +57,16 @@ class AntiSpam(commands.Cog):
             self.config[config["_id"]] = {
                 key: value for key, value in config.items() if key != "_id"
             }
+        # i = 0
+        # for guild_id, config in list(self.config.items()):
+        #     if "rate_limit" in config:
+        #         self.config[guild_id]["rate_limit"] = [
+        #             {"timespan": 3, "threshold": 5},
+        #             {"timespan": 10, "threshold": 8}
+        #         ]
+        #         collection.update_one({"_id": guild_id}, {"$set": {"rate_limit": self.config[guild_id]["rate_limit"]}})
+        #         i += 1
+        # self.bot.loop.create_task(self.bot.get_channel(541520201926311986).send(f"Updated {i} configs"))
 
         # cache
         self.spam_cd = {}
@@ -544,7 +560,7 @@ class AntiSpam(commands.Cog):
 
                 # mass pings
                 if "mass_pings" in self.config[guild_id]:
-                    pings = [msg.mentions, msg.raw_mentions, msg.role_mentions, msg.raw_role_mentions]
+                    pings = [msg.raw_mentions, msg.raw_role_mentions]
                     total_pings = sum(len(group) for group in pings)
                     if total_pings > 4:
                         reason = "mass pinging"
@@ -557,7 +573,7 @@ class AntiSpam(commands.Cog):
                             m.mentions, m.raw_mentions, m.role_mentions, m.raw_role_mentions
                         ])
                     ]
-                    if len(pongs(10)) > 2:
+                    if len(pongs(10)) > 3:
                         reason = "mass pinging"
                         triggered = True
 
@@ -1022,6 +1038,9 @@ class ConfigureModules:
 
         elif key == "Add a custom threshold":
             # Something something something
+            if len(self.config) == 3 if isinstance(self.config, list) else len(self.config["thresholds"]) == 3:
+                await self.ctx.send("You can't have more than 3 thresholds", delete_after=5)
+                return self.reset()
             question = "Send the threshold and timespan to use. Format like " \
                        "`6, 10` to only allow 6 within 10 seconds"
             reply = await self.get_reply(question)
@@ -1030,8 +1049,9 @@ class ConfigureModules:
                 await self.ctx.send("Invalid format", delete_after=5)
             else:
                 new_threshold = {"timespan": args[0], "threshold": args[1]}
-                dict_check = new_threshold in self.config["thresholds"] if "thresholds" in self.config else False
-                if new_threshold in self.config or dict_check:
+                list_check = new_threshold in self.config if isinstance(self.config, list) else False
+                dict_check = new_threshold in self.config["thresholds"] if isinstance(self.config, dict) else False
+                if list_check or dict_check:
                     await self.ctx.send("That threshold already exists", delete_after=5)
                     return self.reset()
                 if isinstance(self.config, list):
@@ -1051,8 +1071,9 @@ class ConfigureModules:
                 await self.ctx.send("Invalid format", delete_after=5)
             else:
                 threshold = {"timespan": args[0], "threshold": args[1]}
-                dict_check = threshold not in self.config["thresholds"] if "thresholds" in self.config else False
-                if threshold not in self.config and not dict_check:
+                list_check = threshold in self.config if isinstance(self.config, list) else False
+                dict_check = threshold in self.config["thresholds"] if isinstance(self.config, dict) else False
+                if not list_check and not dict_check:
                     await self.ctx.send("That threshold doesn't exist", delete_after=5)
                     return self.reset()
                 if isinstance(self.config, list):
