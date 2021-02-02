@@ -161,117 +161,10 @@ class AntiSpam(commands.Cog):
         guild_id = ctx.guild.id
         if guild_id not in self.config:
             await ctx.send("Anti spam isn't enabled")
-
-        # Utility variables
-        emojis = self.bot.utils.emotes
-        create_embed = lambda **kwargs: discord.Embed(
-            color=self.bot.config["theme_color"], **kwargs
-        )
-
-
-        modules = lambda: {
-            module: data
-            for module, data in self.config[guild_id].items()
-            if module != "ignored"
-        }
-        cursor = modules()
-        row = 0
-
-        def get_description():
-            description = ""
-            for i, key in enumerate(cursor.keys()):
-                if i != 0:
-                    description += "\n"
-                if i == row:
-                    description += f"{emojis.online} {key}"
-                else:
-                    description += f"{emojis.offline} {key}"
-            return description
-
-        async def add_reactions():
-            for i, emote in enumerate(emotes):
-                await msg.add_reaction(emote)
-                if i != len(emotes) - 1:
-                    await asyncio.sleep(0.21)
-
-        e = create_embed(description=get_description())
-        msg = await ctx.send(embed=e)
-        emotes = [emojis.home, emojis.up, emojis.down, emojis.yes]
-        self.bot.loop.create_task(add_reactions())
-
-        check = lambda r, u: r.message.id == msg.id and u.id == ctx.author.id
-        reaction = user = config = None
+        menu = ConfigureModules(ctx)
+        await menu.setup()
         while True:
-            if reaction:
-                self.bot.loop.create_task(msg.remove_reaction(reaction, user))
-
-            reaction, user = await self.bot.utils.get_reaction(check)
-            e = create_embed()
-
-            if reaction.emoji == emojis.home:
-                cursor = modules()
-                row = 0
-                config = None
-            elif reaction.emoji == emojis.up:
-                row -= 1
-            elif reaction.emoji == emojis.down:
-                row += 1
-            elif str(reaction.emoji) == emojis.yes:
-                key = list(cursor.keys())[row]
-                if not cursor[key]:
-                    e.description = cursor[key]
-                    if key == "Reset to default":
-                        cursor = modules()
-                        config = None
-                    elif key == "Per-message threshold":
-                        cursor = {
-                            "Update": None,
-                            "Disable": None
-                        }
-                    elif key == "Update":
-                        cursor = modules()
-                        config = None
-                    elif key == "Disable":
-                        cursor = modules()
-                        config = None
-                    elif key == "Add a custom threshold":
-                        m = await ctx.send(
-                            "Send the threshold and timespan to use. Format like "
-                            "`6, 10` to only allow 6 within 10 seconds"
-                        )
-                        reply = await self.bot.utils.get_message(ctx)
-                        await m.delete()
-                        await reply.delete()
-                        cursor = modules()
-                        config = None
-                    else:
-                        cursor = {"Unknown Option": None}
-                else:
-                    e.title = key
-                    config = key, cursor[key]
-                    cursor = {}
-                    if "per_message" in config[1]:
-                        cursor["Per-message threshold"] = None
-                    if "thresholds" in config[1]:
-                        cursor["Add a custom threshold"] = None
-                        cursor["Remove a custom threshold"] = None
-                    cursor["Reset to default"] = None
-                    row = 0
-
-            if row < 0:
-                row = 0
-            elif row > len(cursor.keys()) - 1:
-                row = len(cursor.keys()) - 1
-
-            if not e.description:
-                e.description = get_description()
-            if config:
-                e.add_field(
-                    name="◈ Config",
-                    value=f"```json\n{json.dumps(config[1], indent=2)}```"
-                )
-            await msg.edit(embed=e)
-
+            await menu.next()
 
     @anti_spam.group(name='enable')
     @commands.has_permissions(manage_messages=True)
@@ -892,6 +785,152 @@ class AntiSpam(commands.Cog):
             if guild_id in self.bot.tasks["mutes"]:
                 if not self.bot.tasks["mutes"][guild_id]:
                     del self.bot.tasks["mutes"][guild_id]
+
+
+class ConfigureModules:
+    def __init__(self, ctx):
+        self.ctx = ctx
+        self.bot = ctx.bot
+        self.guild_id = ctx.guild.id
+        self.cursor = self.modules
+        self.row = 0
+        self.config = None
+        emojis = ctx.bot.utils.emotes
+        self. emotes = [emojis.home, emojis.up, emojis.down, emojis.yes]
+        self.msg = self.reaction = self.user = None
+        self.check = lambda r, u: r.message.id == self.msg.id and u.id == ctx.author.id
+
+    async def setup(self):
+        e = self.create_embed(description=self.get_description())
+        self.msg = await self.ctx.send(embed=e)
+        self.bot.loop.create_task(self.add_reactions())
+
+    def reset(self):
+        self.cursor = self.modules
+        self.row = 0
+        self.config = None
+
+    @property
+    def modules(self):
+        items = self.bot.cogs["AntiSpam"].config[self.guild_id].items()
+        return {
+            module: data
+            for module, data in items
+            if module != "ignored"
+        }
+
+    def create_embed(self, **kwargs):
+        return discord.Embed(
+            title="Enabled Modules", color=self.bot.config["theme_color"], **kwargs
+        )
+
+    def get_description(self):
+        emojis = self.bot.utils.emotes
+        description = ""
+        for i, key in enumerate(self.cursor.keys()):
+            if i != 0:
+                description += "\n"
+            if i == self.row:
+                description += f"{emojis.online} {key}"
+            else:
+                description += f"{emojis.offline} {key}"
+        return description
+
+    async def next(self):
+        reaction, user = await self.bot.utils.get_reaction(self.check)
+        if reaction:
+            self.bot.loop.create_task(self.msg.remove_reaction(reaction, user))
+        e = self.create_embed()
+        emojis = self.bot.utils.emotes
+
+        # Home button
+        if reaction.emoji == emojis.home:
+            self.reset()
+        # Up button
+        elif reaction.emoji == emojis.up:
+            self.row -= 1
+        # Down button
+        elif reaction.emoji == emojis.down:
+            self.row += 1
+        # Enter button
+        elif str(reaction.emoji) == emojis.yes:
+            key = list(self.cursor.keys())[self.row]
+            if not self.cursor[key]:
+                e.description = self.cursor[key]
+                await self.configure(key)
+            else:
+                e.title = key
+                await self.configure(key)
+
+        # Adjust row position
+        if self.row < 0:
+            self.row = len(self.cursor.keys()) - 1
+        elif self.row > len(self.cursor.keys()) - 1:
+            self.row = 0
+
+        # Parse the message
+        if not e.description:
+            e.description = self.get_description()
+        if self.config:
+            e.title = self.config[0]
+            e.add_field(
+                name="◈ Config",
+                value=f"```json\n{json.dumps(self.config[1], indent=2)}```"
+            )
+        await self.msg.edit(embed=e)
+
+    async def add_reactions(self):
+        for i, emote in enumerate(self.emotes):
+            await self.msg.add_reaction(emote)
+            if i != len(self.emotes) - 1:
+                await asyncio.sleep(0.21)
+
+    async def configure(self, key):
+        if not self.cursor[key]:
+            if key == "Reset to default":
+                self.reset()
+            elif key == "Per-message threshold":
+                self.cursor = {
+                    "Update": None,
+                    "Disable": None
+                }
+            elif key == "Update":
+                self.reset()
+            elif key == "Disable":
+                self.reset()
+            elif key == "Enable a mod":
+                self.reset()
+            elif key == "Disable a mod":
+                self.reset()
+            elif key == "Add a custom threshold":
+                m = await self.ctx.send(
+                    "Send the threshold and timespan to use. Format like "
+                    "`6, 10` to only allow 6 within 10 seconds"
+                )
+                reply = await self.bot.utils.get_message(self.ctx)
+                await m.delete()
+                await reply.delete()
+                self.reset()
+            else:
+                self.cursor = {"Unknown Option": None}
+            return
+        else:
+            self.config = key, self.cursor[key]
+            self.row = 0
+            conf = dict(self.config[1])
+            if all(isinstance(v, bool) for v in conf.values()):
+                self.cursor = {
+                    "Enable a mod": None,
+                    "Disable a mod": None
+                }
+                return
+            self.cursor = {}
+            if "per_message" in self.config[1]:
+                self.cursor["Per-message threshold"] = None
+            if isinstance(self.config[1], list) or "thresholds" in self.config[1]:
+                self.cursor["Add a custom threshold"] = None
+                self.cursor["Remove a custom threshold"] = None
+            self.cursor["Reset to default"] = None
 
 
 def setup(bot):
