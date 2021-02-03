@@ -1117,7 +1117,10 @@ class Utility(commands.Cog):
         if not role:
             return await ctx.send("Unknown role")
         try:
-            _hex = discord.Color(int("0x" + args[1].strip("#").strip("0x"), 0))
+            color = int("0x" + args[1].strip("#").strip("0x"), 0)
+            if color > 16777215:
+                return await ctx.send("That hex value is too large")
+            _hex = discord.Color(color)
         except:
             return await ctx.send("Invalid Hex")
         if role.position >= ctx.author.top_role.position:
