@@ -42,7 +42,10 @@ class SelfRoles(commands.Cog):
             return role.position
 
         guild = self.bot.get_guild(int(guild_id))
-        e = discord.Embed(color=data["color"])
+        color = data["color"]
+        if color > 16777215:
+            color = self.bot.config["theme_color"]
+        e = discord.Embed(color=color)
         name = data["name"]
         e.set_author(
             name=name if name else "Self-Role Menu",
@@ -224,6 +227,8 @@ class SelfRoles(commands.Cog):
                     break
                 try:
                     _hex = int(f"0x{msg.content}", 0)
+                    if _hex > 16777215:
+                        _hex = colors.fate()
                     menu["color"] = _hex
                 except:
                     await msg.delete()
