@@ -1,5 +1,4 @@
 import asyncio
-import os
 import json
 from time import time
 from datetime import datetime, timedelta
@@ -79,6 +78,7 @@ class AntiSpam(commands.Cog):
         self.index1 = {}
         self.index2 = {}
         self.cache = []
+        self.nc = {}
 
         self.cleanup_task.start()
 
@@ -521,45 +521,46 @@ class AntiSpam(commands.Cog):
                 self.msgs[user_id].append(msg)
                 self.msgs[user_id] = self.msgs[user_id][-15:]
 
-                # rate limit
+                # Rate limit
                 if "rate_limit" in self.config[guild_id]:
-                    now = int(time() / 3)
-                    if guild_id not in self.index1:
-                        self.index1[guild_id] = {}
-                    if user_id not in self.index1[guild_id]:
-                        self.index1[guild_id][user_id] = [now, 0]
-                    if self.index1[guild_id][user_id][0] == now:
-                        self.index1[guild_id][user_id][1] += 1
-                    else:
-                        self.index1[guild_id][user_id] = [now, 0]
-                    if self.index1[guild_id][user_id][1] > 4:
-                        with suppress(KeyError, ValueError):
-                            del self.index1[guild_id][user_id]
-                            if not self.index1[guild_id]:
-                                del self.index1[guild_id]
-                        reason = "5 or more messages within 3 seconds"
-                        triggered = True
+                    if guild_id not in self.spam_cd:
+                        self.spam_cd[guild_id] = {}
+                    for rate_limit in list(self.config[guild_id]["rate_limit"]):
+                        await asyncio.sleep(0)
+                        dat = [
+                            *list(rate_limit.values()),
+                            ",".join(str(v) for v in rate_limit.values())
+                        ]
+                        timespan, threshold, uid = dat
+                        if uid not in self.spam_cd[guild_id]:
+                            self.spam_cd[guild_id][uid] = {}
+                    for rl_id in list(self.spam_cd[guild_id].keys()):
+                        await asyncio.sleep(0)
+                        raw = rl_id.split(",")
+                        dat = {
+                            "timespan": int(raw[0]),
+                            "threshold": int(raw[1])
+                        }
+                        if dat not in self.config[guild_id]["rate_limit"]:
+                            del self.spam_cd[guild_id][uid]
 
-                    now = int(time() / 10)
-                    if guild_id not in self.index2:
-                        self.index2[guild_id] = {}
-                    if user_id not in self.index2[guild_id]:
-                        self.index2[guild_id][user_id] = [now, 0]
-                    if self.index2[guild_id][user_id][0] == now:
-                        self.index2[guild_id][user_id][1] += 1
-                    else:
-                        self.index2[guild_id][user_id] = [now, 0]
-                    if self.index2[guild_id][user_id][1] > 7:
-                        with suppress(KeyError, ValueError):
-                            del self.index2[guild_id][user_id]
-                            if not self.index2[guild_id]:
-                                del self.index2[guild_id]
-                        reason = "8 or more messages within 10 seconds"
-                        triggered = True
-
+                    for rl_id in list(self.spam_cd[guild_id].keys()):
+                        await asyncio.sleep(0)
+                        timeframe, threshold = rl_id.split(",")
+                        now = int(time() / int(timespan))
+                        if user_id not in self.spam_cd[guild_id][rl_id]:
+                            self.spam_cd[guild_id][rl_id][user_id] = [now, 0]
+                        if self.spam_cd[guild_id][rl_id][user_id][0] == now:
+                            self.spam_cd[guild_id][rl_id][user_id][1] += 1
+                        else:
+                            self.spam_cd[guild_id][rl_id][user_id] = [now, 0]
+                        if self.spam_cd[guild_id][rl_id][user_id][1] >= int(threshold):
+                            reason = f"{threshold} messages within {timespan} seconds"
+                            triggered = True
 
                 # mass pings
                 if "mass_pings" in self.config[guild_id]:
+                    await asyncio.sleep(0)
                     pings = [msg.raw_mentions, msg.raw_role_mentions]
                     total_pings = sum(len(group) for group in pings)
                     if total_pings > 4:
@@ -597,6 +598,7 @@ class AntiSpam(commands.Cog):
 
                 # duplicate messages
                 if "duplicates" in self.config[guild_id] and msg.content:
+                    await asyncio.sleep(0)
                     if msg.channel.permissions_for(msg.guild.me).read_message_history:
                         channel_id = str(msg.channel.id)
                         if channel_id not in self.dupes:
@@ -608,6 +610,7 @@ class AntiSpam(commands.Cog):
                             ]
                         ]
                         for message in list(self.dupes[channel_id]):
+                            await asyncio.sleep(0)
                             dupes = [
                                 m for m in self.dupes[channel_id]
                                 if m and m.content and m.content == message.content
@@ -631,6 +634,7 @@ class AntiSpam(commands.Cog):
                                     break
 
                 if "inhuman" in self.config[guild_id] and msg.content:
+                    await asyncio.sleep(0)
                     abcs = "abcdefghijklmnopqrstuvwxyzجحخهعغفقثصضشسيبلاتتمكطدظزوةىرؤءذئأإآ"
                     content = str(msg.content).lower()
                     lines = content.split("\n")
@@ -1005,6 +1009,7 @@ class ConfigureModules:
             else:
                 if int(reply) > 16:
                     await self.ctx.send("At the moment you can't go above 16")
+                    return self.reset()
                 self.config["per_message"] = int(reply)
                 await self.update_data()
             self.reset()
@@ -1044,7 +1049,7 @@ class ConfigureModules:
                 await self.ctx.send("You can't have more than 3 thresholds", delete_after=5)
                 return self.reset()
             question = "Send the threshold and timespan to use. Format like " \
-                       "`6, 10` to only allow 6 within 10 seconds"
+                       "`6, 10` to only allow 6 msgs within 10 seconds"
             reply = await self.get_reply(question)
             args = reply.split(", ")
             if not all(arg.isdigit() for arg in args) or len(args) != 2:
@@ -1078,7 +1083,7 @@ class ConfigureModules:
             if not all(arg.isdigit() for arg in args) or len(args) != 2:
                 await self.ctx.send("Invalid format", delete_after=5)
             else:
-                threshold = {"timespan": args[0], "threshold": args[1]}
+                threshold = {"timespan": int(args[1]), "threshold": int(args[0])}
                 list_check = threshold in self.config if isinstance(self.config, list) else False
                 dict_check = threshold in self.config["thresholds"] if isinstance(self.config, dict) else False
                 if not list_check and not dict_check:
