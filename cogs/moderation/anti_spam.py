@@ -742,7 +742,7 @@ class AntiSpam(commands.Cog):
                             timer_str = self.bot.utils.get_time(timer)
                             try:
                                 await user.add_roles(mute_role)
-                            except NotFound:
+                            except (NotFound, HTTPException):
                                 user = await self.bot.fetch_user(int(user.id))
                                 await user.add_roles(mute_role)
                             messages = []
