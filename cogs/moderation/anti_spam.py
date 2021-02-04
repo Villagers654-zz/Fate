@@ -740,7 +740,11 @@ class AntiSpam(commands.Cog):
                             timer = 150 * multiplier
                             end_time = time() + timer
                             timer_str = self.bot.utils.get_time(timer)
-                            await user.add_roles(mute_role)
+                            try:
+                                await user.add_roles(mute_role)
+                            except NotFound:
+                                user = await self.bot.fetch_user(int(user.id))
+                                await user.add_roles(mute_role)
                             messages = []
                             if user_id in self.msgs:
                                 messages = [m for m in self.msgs[user_id] if m]
@@ -758,7 +762,7 @@ class AntiSpam(commands.Cog):
 
                         if "antispam_mutes" not in self.bot.tasks:
                             self.bot.tasks["antispam_mutes"] = {}
-                        if guild_id not in self.bot.tasks["mutes"]:
+                        if guild_id not in self.bot.tasks["antispam_mutes"]:
                             self.bot.tasks["antispam_mutes"][guild_id] = {}
 
                         self.bot.tasks["antispam_mutes"][guild_id][user_id] = self.bot.loop.create_task(
