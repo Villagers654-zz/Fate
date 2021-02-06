@@ -210,10 +210,11 @@ class Moderation(commands.Cog):
         # with open(self.fp, 'w') as f:
         #     json.dump(cache, f, indent=2)
 
-    def save_config(self, config):
+    async def save_config(self, config):
         """ Save things like channel restrictions """
-        with open("./data/userdata/config.json", "w") as f:
-            json.dump(config, f, ensure_ascii=False)
+        self.bot.restricted = config
+        async with self.bot.open("./data/userdata/config.json", "w") as f:
+            await f.write(json.dumps(config))
 
     @commands.command(
         name="mute-role",
@@ -270,7 +271,7 @@ class Moderation(commands.Cog):
             restricted += f"\n{member.mention}"
         e = discord.Embed(color=colors.fate(), description=restricted)
         await ctx.send(embed=e)
-        self.save_config(config)
+        await self.save_config(config)
 
     @commands.command(name="unrestrict")
     @commands.guild_only()
@@ -295,7 +296,7 @@ class Moderation(commands.Cog):
                 unrestricted += f"\n{member.mention}"
         e = discord.Embed(color=colors.fate(), description=unrestricted)
         await ctx.send(embed=e)
-        self.save_config(config)
+        await self.save_config(config)
 
     @commands.command(name="addmod")
     @commands.cooldown(1, 3, commands.BucketType.user)

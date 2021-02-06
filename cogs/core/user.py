@@ -42,6 +42,7 @@ class User(commands.Cog):
         config["blocked"].append(user.id)
         config["blocked"] = list(set(config["blocked"]))
         self.update_config(config)
+        self.bot.blocked.append(user.id)
         await ctx.send(f"Blocked {user}")
 
     @commands.command(name="unblock")
@@ -57,6 +58,7 @@ class User(commands.Cog):
         index = config["blocked"].index(user_id)
         config["blocked"].pop(index)
         self.update_config(config)
+        self.bot.blocked.remove(user_id)
         user = self.bot.get_user(user_id)
         user = user if isinstance(user, discord.User) else user_id
         await ctx.send(f"Unblocked {user}")

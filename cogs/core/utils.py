@@ -12,6 +12,7 @@ from contextlib import suppress
 
 from discord.ext import commands, tasks
 import discord
+import aiofiles
 
 from botutils.packages import resources, listeners, menus, files, tools
 
@@ -58,6 +59,15 @@ class Utils(commands.Cog):
 
     @staticmethod
     async def get_prefixes_async(bot, msg):
+        if msg.author.id in bot.blocked:
+            return "lsimhbiwfefmtalol"
+        guild_id = str(msg.guild.id) if msg.guild else None
+        if guild_id in bot.restricted:
+            if msg.channel.id in bot.restricted[guild_id]["channels"] and (
+                not msg.channel.permissions_for(msg.author).manage_messages
+            ):
+                return "lsimhbiwfefmtalol"
+
         default_prefix = commands.when_mentioned_or(".")(bot, msg)
         prefixes = []
 

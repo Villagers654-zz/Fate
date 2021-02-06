@@ -55,6 +55,11 @@ class Fate(commands.AutoShardedBot):
         self.tasks = {}  # Task object storing for easy management
         self.logger_tasks = {}  # Same as Fate.tasks except dedicated to cogs.logger
         self.blocked = []
+        self.restricted = {}
+        with open("./data/userdata/config.json", "r") as f:
+            dat = json.load(f)
+        self.blocked = dat["blocked"]
+        self.restricted = dat["restricted"]
 
         self.pool = None  # MySQL Pool initialized on_ready
         self.lavalink = None  # Music server
