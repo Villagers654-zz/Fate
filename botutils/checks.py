@@ -2,9 +2,6 @@
 Check functions for the bot
 """
 
-import json
-from os import path
-
 from discord.ext import commands
 import discord
 
@@ -28,30 +25,36 @@ def command_is_enabled(ctx):
         return True
 
     guild_id = str(ctx.guild.id)
-    file_path = "./data/userdata/disabled_commands.json"
-
-    if not path.isfile(file_path):
-        with open(file_path, "w") as f:
-            json.dump({}, f, ensure_ascii=False)
-
-    with open(file_path, "r") as f:
-        config = json.load(f)  # type: dict
-
-    if guild_id not in config:
+    if guild_id not in ctx.bot.disabled_commands:
         return True  # command isn't disabled
 
     cmd = ctx.command.name
-    conf = config[guild_id]  # type: dict
+    conf = ctx.bot.disabled_commands[guild_id]  # type: dict
+    channel_id = str(ctx.channel.id)
 
     if cmd in conf["global"]:
         return False
-    channel_id = str(ctx.channel.id)
     if channel_id in conf["channels"]:
         if cmd in conf["channels"][channel_id]:
             return False
+
     if ctx.channel.category:
         channel_id = str(ctx.channel.category.id)
         if channel_id in conf["categories"]:
             if cmd in conf["categories"][channel_id]:
+                return False
+
+    return True
+
+def blocked(ctx):
+    return ctx.author.id not in ctx.bot.blocked
+
+def restricted(ctx):
+    if not ctx.guild:
+        return True  # Nothing's restricted
+    guild_id = str(ctx.guild.id)
+    if guild_id in ctx.bot.restricted:
+        if ctx.channel.id in ctx.bot.restricted[guild_id]["channels"]:
+            if not ctx.channel.permissions_for(ctx.author).manage_messages:
                 return False
     return True
