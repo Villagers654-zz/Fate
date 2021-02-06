@@ -635,6 +635,7 @@ class AntiSpam(commands.Cog):
 
                 if "inhuman" in self.config[guild_id] and msg.content:
                     await asyncio.sleep(0)
+                    conf = self.config[guild_id]["inhuman"]  # type: dict
                     abcs = "abcdefghijklmnopqrstuvwxyzجحخهعغفقثصضشسيبلاتتمكطدظزوةىرؤءذئأإآ"
                     content = str(msg.content).lower()
                     lines = content.split("\n")
@@ -648,22 +649,27 @@ class AntiSpam(commands.Cog):
                     has_abcs = any(content.count(c) for c in abcs)
 
                     # non abc char spam
-                    if len(msg.content) > 256 and not has_abcs:
-                        triggered = True
+                    if conf["non_abc"]:
+                        if len(msg.content) > 256 and not has_abcs:
+                            triggered = True
                     # Tall msg spam
-                    elif len(content.split("\n")) > 8 and sum(len(line) for line in lines if line) < 21:
-                        triggered = True
-                    elif len(content.split("\n")) > 5 and not has_abcs:
-                        triggered = True
+                    if conf["inhuman"]:
+                        if len(content.split("\n")) > 8 and sum(len(line) for line in lines if line) < 21:
+                            triggered = True
+                        elif len(content.split("\n")) > 5 and not has_abcs:
+                            triggered = True
                     # Empty lines spam
-                    elif len([l for l in lines if not l]) > len([l for l in lines if l]) and len(lines) > 8:
-                        triggered = True
+                    if conf["empty_lines"]:
+                        if len([l for l in lines if not l]) > len([l for l in lines if l]) and len(lines) > 8:
+                            triggered = True
                     # Mostly unknown chars spam
-                    elif len(content) > 128 and len(content) / total_abcs > 3:
-                        triggered = True
+                    if conf["unknown_chars"]:
+                        if len(content) > 128 and len(content) / total_abcs > 3:
+                            triggered = True
                     # ASCII / Spammed chars
-                    elif len(content) > 128 and len(content) / total_spaces > 10:
-                        triggered = True
+                    if conf["ascii"]:
+                        if len(content) > 128 and len(content) / total_spaces > 10:
+                            triggered = True
 
                 if triggered and guild_id in self.config:
                     # Log that a mute is currently running for 180 seconds
