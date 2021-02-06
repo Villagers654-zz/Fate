@@ -653,7 +653,7 @@ class AntiSpam(commands.Cog):
                         if len(msg.content) > 256 and not has_abcs:
                             triggered = True
                     # Tall msg spam
-                    if conf["inhuman"]:
+                    if conf["tall_messages"]:
                         if len(content.split("\n")) > 8 and sum(len(line) for line in lines if line) < 21:
                             triggered = True
                         elif len(content.split("\n")) > 5 and not has_abcs:
