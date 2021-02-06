@@ -290,6 +290,7 @@ class Core(commands.Cog):
             if not values:
                 del conf["categories"][channel_id]
         config[guild_id] = conf
+        self.bot.disabled_commands = config
         async with self.bot.open(self.path, "w") as f:
             await f.write(json.dumps(config))
 
@@ -378,6 +379,7 @@ class Core(commands.Cog):
             conf["categories"][str(location.id)].append(command)
             await ctx.send(f"Disabled {command} in that category")
         config[guild_id] = conf
+        self.bot.disabled_commands = config
         async with self.bot.open(self.path, "w") as f:
             await f.write(json.dumps(config))
 

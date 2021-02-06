@@ -37,6 +37,12 @@ class Fate(commands.AutoShardedBot):
     def __init__(self, **options):
         with open("./data/config.json", "r") as f:
             self.config = json.load(f)  # type: dict
+        with open("./data/userdata/config.json", "r") as f:
+            dat = json.load(f)
+        self.blocked = dat["blocked"]
+        self.restricted = dat["restricted"]
+        with open("./data/userdata/disabled_commands.json", "r") as f:
+            self.disabled_commands = json.load(f)
         if not os.path.exists(self.config["datastore_location"]):
             os.mkdir(self.config["datastore_location"])
         self.auth = {}
@@ -54,12 +60,6 @@ class Fate(commands.AutoShardedBot):
         self.operation_locks = []
         self.tasks = {}  # Task object storing for easy management
         self.logger_tasks = {}  # Same as Fate.tasks except dedicated to cogs.logger
-        self.blocked = []
-        self.restricted = {}
-        with open("./data/userdata/config.json", "r") as f:
-            dat = json.load(f)
-        self.blocked = dat["blocked"]
-        self.restricted = dat["restricted"]
 
         self.pool = None  # MySQL Pool initialized on_ready
         self.lavalink = None  # Music server
@@ -476,6 +476,8 @@ bot = Fate(case_insensitive=True)
 bot.allowed_mentions = discord.AllowedMentions(everyone=False, roles=False, users=False)
 bot.remove_command("help")  # Default help command
 bot.add_check(checks.command_is_enabled)
+bot.add_check(checks.blocked)
+bot.add_check(checks.restricted)
 use_sentry(
     bot,
     dsn=bot.config["sentry_dsn"]
