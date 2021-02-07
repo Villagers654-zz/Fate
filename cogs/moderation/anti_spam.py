@@ -953,12 +953,17 @@ class ConfigureModules:
             e.description = self.get_description()
         if self.config:
             e.title = self.key
-            conf = []
-            for item in self.config:
-                dat = {}
-                for k, v in sorted(item.items(), key=lambda kv: kv[0]):
-                    dat[k] = v
-                conf.append(dat)
+            if isinstance(self.config, list):
+                conf = []
+                for item in self.config:
+                    dat = {}
+                    for k, v in sorted(item.items(), key=lambda kv: kv[0]):
+                        dat[k] = v
+                    conf.append(dat)
+            else:
+                conf = {}
+                for k, v in sorted(self.config.items(), key=lambda kv: kv[0]):
+                    conf[k] = v
             e.add_field(
                 name="◈ Config",
                 value=f"```json\n{json.dumps(conf, indent=2)}```"
