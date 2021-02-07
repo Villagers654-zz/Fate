@@ -606,7 +606,7 @@ class AntiSpam(commands.Cog):
                         self.dupes[channel_id] = [
                             msg, *[
                                 msg for msg in self.dupes[channel_id]
-                                if msg.created_at > datetime.utcnow() - timedelta(seconds=25)
+                                if msg.created_at > datetime.utcnow() - timedelta(seconds=20)
                             ]
                         ]
                         for message in list(self.dupes[channel_id]):
@@ -614,6 +614,7 @@ class AntiSpam(commands.Cog):
                             dupes = [
                                 m for m in self.dupes[channel_id]
                                 if m and m.content and m.content == message.content
+                                   and len(m.content) > 5
                             ]
                             if len(dupes) > 4:
                                 await asyncio.sleep(1)
@@ -651,16 +652,20 @@ class AntiSpam(commands.Cog):
                     # non abc char spam
                     if conf["non_abc"]:
                         if len(msg.content) > 256 and not has_abcs:
+                            reason = "non abc"
                             triggered = True
                     # Tall msg spam
                     if conf["tall_messages"]:
                         if len(content.split("\n")) > 8 and sum(len(line) for line in lines if line) < 21:
+                            reason = "tall message"
                             triggered = True
                         elif len(content.split("\n")) > 5 and not has_abcs:
+                            reason = "tall message"
                             triggered = True
                     # Empty lines spam
                     if conf["empty_lines"]:
                         if len([l for l in lines if not l]) > len([l for l in lines if l]) and len(lines) > 8:
+                            reason = "too many empty lines"
                             triggered = True
                     # Mostly unknown chars spam
                     if conf["unknown_chars"]:
@@ -669,6 +674,7 @@ class AntiSpam(commands.Cog):
                     # ASCII / Spammed chars
                     if conf["ascii"]:
                         if len(content) > 128 and len(content) / total_spaces > 10:
+                            reason = "ascii"
                             triggered = True
 
                 if triggered and guild_id in self.config:
