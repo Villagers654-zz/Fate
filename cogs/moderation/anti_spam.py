@@ -197,7 +197,8 @@ class AntiSpam(commands.Cog):
                             channels.append(channel)
                     if channels:
                         conf += "**Ignored:** " + ", ".join(c.mention for c in channels)
-                e.add_field(name="◈ Config", value=conf, inline=False)
+                if conf:
+                    e.add_field(name="◈ Config", value=conf, inline=False)
             await ctx.send(embed=e)
 
     @anti_spam.command(name="configure")
@@ -257,10 +258,10 @@ class AntiSpam(commands.Cog):
         conf = [{"timespan": 5, "threshold": 4}]
         await self.bot.aio_mongo["AntiSpam"].update_one(
             filter={"_id": guild_id},
-            update={"$set": {"rate_limit": self.config[guild_id]["rate_limit"]}},
+            update={"$set": {"rate_limit": conf}},
             upsert=True
         )
-        self.config[guild_id] = self.config[guild_id]["rate_limit"] = conf
+        self.config[guild_id]["rate_limit"] = conf
         await ctx.send('Enabled rate-limit module')
 
     @_enable.command(name='mass-pings', aliases=['mass-ping'])
@@ -952,9 +953,15 @@ class ConfigureModules:
             e.description = self.get_description()
         if self.config:
             e.title = self.key
+            conf = []
+            for item in self.config:
+                dat = {}
+                for k, v in sorted(item.items(), key=lambda kv: kv[0]):
+                    dat[k] = v
+                conf.append(dat)
             e.add_field(
                 name="◈ Config",
-                value=f"```json\n{json.dumps(self.config, indent=2)}```"
+                value=f"```json\n{json.dumps(conf, indent=2)}```"
             )
         await self.msg.edit(embed=e)
 
