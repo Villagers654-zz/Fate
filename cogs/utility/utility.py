@@ -1044,7 +1044,7 @@ class Utility(commands.Cog):
         await ctx.send(embed=emb)
 
     @commands.command(name="avatar", aliases=["av", "pfp"])
-    @commands.cooldown(1, 3, commands.BucketType.user)
+    @commands.cooldown(2, 45, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
     async def avatar(self, ctx, *, user=None):
