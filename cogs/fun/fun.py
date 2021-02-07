@@ -202,10 +202,12 @@ class Fun(commands.Cog):
             del self.dat[channel_id][user_id]
         else:
             msg, time = self.dat[channel_id]["last"]
-            del self.dat[channel_id]["last"]
+            del self.dat[channel_id]
         if msg.embeds:
             await ctx.send(f"{msg.author} at {time}", embed=msg.embeds[0])
         else:
+            if len(msg.content) > 1000 and not msg.author.guild_permissions.administrator:
+                return await ctx.send("wHy would I snipe that?")
             e = discord.Embed(color=msg.author.color)
             e.set_author(name=msg.author, icon_url=msg.author.avatar_url)
             e.description = msg.content[:2048]
