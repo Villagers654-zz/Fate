@@ -185,7 +185,7 @@ class Fun(commands.Cog):
         await ctx.send(embed=e)
 
     @commands.command(name="snipe")
-    @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.cooldown(1, 10, commands.BucketType.channel)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
     async def snipe(self, ctx):
@@ -199,8 +199,10 @@ class Fun(commands.Cog):
                 await ctx.send("Nothing to snipe", delete_after=1)
                 return await ctx.message.delete()
             msg, time = self.dat[channel_id][user_id]
+            del self.dat[channel_id][user_id]
         else:
             msg, time = self.dat[channel_id]["last"]
+            del self.dat[channel_id]["last"]
         if msg.embeds:
             await ctx.send(f"{msg.author} at {time}", embed=msg.embeds[0])
         else:
