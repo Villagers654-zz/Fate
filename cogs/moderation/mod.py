@@ -948,7 +948,7 @@ class Moderation(commands.Cog):
                 with suppress(NotFound, Forbidden, HTTPException):
                     await user.send(content)
                 await ctx.guild.ban(
-                    user, reason=f"{ctx.author}: {reason}", delete_message_days=0
+                    user, reason=f"{ctx.author}: {reason}"[:512], delete_message_days=0
                 )
                 e.add_field(
                     name=f"◈ Banned {user} [Case #{case}]", value=f"Reason: {reason}", inline=False
@@ -988,7 +988,7 @@ class Moderation(commands.Cog):
             with suppress(NotFound, Forbidden, HTTPException):
                 await user.send(content)
             await ctx.guild.ban(
-                user, reason=f"{ctx.author}: {reason}", delete_message_days=0
+                user, reason=f"{ctx.author}: {reason}"[:512], delete_message_days=0
             )
             e.add_field(
                 name=f"◈ Banned {user} [Case #{case}]", value=f"Reason: {reason}", inline=False
