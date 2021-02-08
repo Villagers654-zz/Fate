@@ -1,7 +1,7 @@
 import re
 import asyncio
 from contextlib import suppress
-from types import FunctionType
+from asyncio import TimeoutError
 
 import discord
 import lavalink
@@ -206,44 +206,45 @@ class Music(commands.Cog):
     @commands.command(aliases=['p'])
     async def play(self, ctx, *, query: str):
         """ Searches and plays a song from a given query. """
-        player = ctx.player
-        query = query.strip('<>')
-        if not url_rx.match(query):
-            query = f'ytsearch:{query}'
-        results = await player.node.get_tracks(query)
-        if not results or not results['tracks']:
-            return await ctx.send('Nothing found!')
+        with suppress(TimeoutError):
+            player = ctx.player
+            query = query.strip('<>')
+            if not url_rx.match(query):
+                query = f'ytsearch:{query}'
+            results = await player.node.get_tracks(query)
+            if not results or not results['tracks']:
+                return await ctx.send('Nothing found!')
 
-        e = discord.Embed(color=self.color)
+            e = discord.Embed(color=self.color)
 
-        if results['loadType'] == 'PLAYLIST_LOADED':
-            tracks = results['tracks']
-            for track in tracks:
-                player.add(requester=ctx.author.id, track=track)
-            e.set_author(name="Playlist Queued", icon_url=self._playlist)
-            e.description = f'{results["playlistInfo"]["name"]} - {len(tracks)} tracks'
-        else:
-            if "youtu.be" in query or "youtube.com" in query:
-                track = results["tracks"][0]
+            if results['loadType'] == 'PLAYLIST_LOADED':
+                tracks = results['tracks']
+                for track in tracks:
+                    player.add(requester=ctx.author.id, track=track)
+                e.set_author(name="Playlist Queued", icon_url=self._playlist)
+                e.description = f'{results["playlistInfo"]["name"]} - {len(tracks)} tracks'
             else:
-                options = [
-                    f"[{track['info']['title']}]({track['info']['uri']})"
-                    for track in results["tracks"]
-                ][:5]
-                choice = await self.bot.utils.get_choice(ctx, *options, user=ctx.author)
-                if not choice:
-                    return
-                track = results["tracks"][options.index(choice)]
+                if "youtu.be" in query or "youtube.com" in query:
+                    track = results["tracks"][0]
+                else:
+                    options = [
+                        f"[{track['info']['title']}]({track['info']['uri']})"
+                        for track in results["tracks"]
+                    ][:5]
+                    choice = await self.bot.utils.get_choice(ctx, *options, user=ctx.author)
+                    if not choice:
+                        return
+                    track = results["tracks"][options.index(choice)]
 
-            e.set_author(name="Song Queued", icon_url=self._note)
-            e.description = f'[{track["info"]["title"]}]({track["info"]["uri"]})'
-            track = lavalink.models.AudioTrack(track, ctx.author.id, recommended=True)
-            player.add(requester=ctx.author.id, track=track)
+                e.set_author(name="Song Queued", icon_url=self._note)
+                e.description = f'[{track["info"]["title"]}]({track["info"]["uri"]})'
+                track = lavalink.models.AudioTrack(track, ctx.author.id, recommended=True)
+                player.add(requester=ctx.author.id, track=track)
 
-        await ctx.send(embed=e, delete_after=25)
+            await ctx.send(embed=e, delete_after=25)
 
-        if not player.is_playing:
-            await player.play()
+            if not player.is_playing:
+                await player.play()
 
     @commands.command(name="queue", aliases=["q"])
     @ensure_player_is_playing()
