@@ -441,7 +441,10 @@ class Moderation(commands.Cog):
             return await ctx.send(embed=_help)
 
         args = [str(arg).lower() for arg in args]
-        amount_to_purge = int(args[len(args) - 1])
+        amount_to_purge = args[len(args) - 1]
+        if not amount_to_purge.isdigit():
+            return await ctx.send(f"{amount_to_purge} isn't a number")
+        amount_to_purge = int(amount_to_purge)
         ctx.counter = 0
         if amount_to_purge > 1000:
             return await ctx.send("You can't purge more than 1000 messages")
