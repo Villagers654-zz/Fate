@@ -1,6 +1,7 @@
 import sys
 import traceback
 from time import time
+from contextlib import suppress
 
 import discord
 from aiohttp import ClientConnectorError, ClientOSError, ServerDisconnectedError
@@ -42,6 +43,11 @@ class ErrorHandler(commands.Cog):
         full_traceback = f"```python\n{formatted}\n{type(error).__name__}: {error}```"
         if "EmptyException" in full_traceback or "NotFound" in full_traceback:
             return
+        if "DiscordServerError" in full_traceback:
+            with suppress(Exception):
+                return await ctx.send(
+                    "Oop-\nDiscord shit in the bed\nIt's not my fault, it's theirs"
+                )
 
         try:
             # Disabled globally in the code
