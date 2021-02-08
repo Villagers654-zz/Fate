@@ -950,6 +950,9 @@ class Moderation(commands.Cog):
                 e.add_field(
                     name=f"◈ Banned {user} [Case #{case}]", value=f"Reason: {reason}", inline=False
                 )
+            for i, field in enumerate(e.fields):
+                if len(field.name) > 256:
+                    e.fields[i] = field.name[:256]
             await msg.edit(embed=e)
         for user in users:
             member = discord.utils.get(ctx.guild.members, id=user.id)
