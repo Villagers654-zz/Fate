@@ -259,11 +259,11 @@ class ModMail(commands.Cog):
 
         if not message and not attachment:
             await ctx.send("What's the message you'd like to send?")
-            async with self.bot.require("message", ctx) as msg:
-                if msg.content:
-                    message = msg.content
-                if msg.attachments:
-                    attachment = msg.attachments[0].url
+            msg = await self.bot.utils.get_message(ctx)
+            if msg.content:
+                message = msg.content
+            if msg.attachments:
+                attachment = msg.attachments[0].url
 
         thread_id = f"case-{case}"
         matches = [channel for channel in category.channels if thread_id == channel.name]
