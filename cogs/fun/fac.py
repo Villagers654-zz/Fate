@@ -131,8 +131,10 @@ class FactionsRewrite(commands.Cog):
         guild_id = str(ctx.guild.id)
         if not faction:
             return None
-        if self.factions[guild_id][faction]["icon"]:
-            return self.factions[guild_id][faction]["icon"]
+        icon_url = self.factions[guild_id][faction]["icon"]
+        if icon_url and isinstance(icon_url, str):
+            if "https" in icon_url or "http" in icon_url:
+                return self.factions[guild_id][faction]["icon"]
 
         owner_id = self.factions[guild_id][faction]["owner"]
         owner = self.bot.get_user(owner_id)
@@ -717,6 +719,8 @@ class FactionsRewrite(commands.Cog):
             )
         if not url:
             url = ctx.message.attachments[0].url
+        if "http" not in url and "https" not in url:
+            return await ctx.send("Discord won't let me set that as the icon, sorry")
         e = discord.Embed(color=discord.Color.red())
         e.set_author(name="Ensuring the image works", icon_url=url)
         try:
@@ -753,6 +757,8 @@ class FactionsRewrite(commands.Cog):
             )
         if not url:
             url = ctx.message.attachments[0].url
+        if "http" not in url and "https" not in url:
+            return await ctx.send("Discord won't let me set that as an image, sorry")
         e = discord.Embed(color=discord.Color.red())
         e.set_author(name="Ensuring the image works", icon_url=url)
         try:
