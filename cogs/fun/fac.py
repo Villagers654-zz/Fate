@@ -861,7 +861,7 @@ class FactionsRewrite(commands.Cog):
             rank += 1
 
         e = discord.Embed(color=purple())
-        e.set_author(name=faction, icon_url=owner.avatar_url)
+        e.set_author(name=faction, icon_url=owner.avatar_url if owner else None)
         e.set_thumbnail(url=icon_url)
         e.description = (
             f"**Owner:** **`@{owner}`**"
