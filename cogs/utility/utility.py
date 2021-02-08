@@ -1461,6 +1461,8 @@ class Utility(commands.Cog):
                 files.append(discord.File(fp))
                 file_paths.append(fp)
 
+            if not msg.content and not files and not embed:
+                continue
             await webhook.send(
                 msg.content,
                 username=msg.author.display_name,
