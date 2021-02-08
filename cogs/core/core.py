@@ -391,6 +391,8 @@ class Core(commands.Cog):
         async with self.bot.open(self.path, "r") as f:
             config = json.loads(await f.read())  # type: dict
         guild_id = str(ctx.guild.id)
+        if guild_id not in config:
+            return await ctx.send("This server has no disabled commands")
         conf = config[guild_id]
         if guild_id not in config or not any(
             conf[key]
