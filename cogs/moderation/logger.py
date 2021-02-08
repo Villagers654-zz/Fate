@@ -702,9 +702,8 @@ class Logger(commands.Cog):
                 if isinstance(channel, discord.TextChannel):
                     channels.append(channel.mention)
             if channels:
-                e.add_field(
-                    name="◈ Ignored Channels", value=", ".join(channels), inline=False
-                )
+                for chunk in self.bot.utils.split("\n".join(channels), 1024):
+                    e.add_field(name="◈ Ignored channels", value=chunk, inline=False)
         if self.config[guild_id]["ignored_bots"]:
             bots = []
             for bot_id in self.config[guild_id]["ignored_bots"]:
@@ -723,7 +722,8 @@ class Logger(commands.Cog):
                 if channel:
                     channels.append(f"{channel.mention} - {log_type}")
             if channels:
-                e.add_field(name="◈ Log Redirects", value="\n".join(channels), inline=False)
+                for chunk in self.bot.utils.split("\n".join(channels), 1024):
+                    e.add_field(name="◈ Log Redirects", value=chunk, inline=False)
         await ctx.send(embed=e)
 
     @commands.Cog.listener()
