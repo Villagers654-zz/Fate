@@ -272,12 +272,14 @@ class SafePolls(commands.Cog):
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
         msg_id = payload.message_id
-        if payload.message_id in self.polls and str(payload.emoji) in self.polls[msg_id]:
+        if payload.message_id in self.polls:
             user = self.bot.get_user(payload.user_id)
             if user.bot:
                 return
             if msg_id not in self.cache:
                 await self.cache_poll(payload.message_id)
+            if str(payload.emoji) not in self.cache[msg_id]:
+                return
             for key, users in self.cache[msg_id]["votes"].items():
                 if payload.user_id in users:
                     if key == str(payload.emoji):
