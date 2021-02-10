@@ -50,7 +50,7 @@ def blocked(ctx):
     return ctx.author.id not in ctx.bot.blocked
 
 def restricted(ctx):
-    if not ctx.guild:
+    if not ctx.guild or ctx.author.id in ctx.bot.owner_ids:
         return True  # Nothing's restricted
     guild_id = str(ctx.guild.id)
     if guild_id in ctx.bot.restricted:
