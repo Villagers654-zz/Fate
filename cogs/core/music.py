@@ -463,20 +463,25 @@ class Music(commands.Cog):
         requester = self.bot.get_user(track.requester)
 
         percentage = 100 * (ctx.player.position / track.duration)
-        progress_into_chars = (percentage * 17) / 100
-        chars = list("•" * 17)
-        chars[round(progress_into_chars)] = "🔘"
+        progress_into_chars = (percentage * 10) / 100
+        chars = list("─" * 10)
+        p = round(progress_into_chars)
+        for i, char in enumerate(chars):
+            if i < p:
+                chars[i] = "━"
+        chars[round(progress_into_chars)] = "❍"
         bar = "".join(chars)
 
         progress = self.format_duration(ctx.player.position)
         duration = self.format_duration(track.duration)
+        remaining = self.format_duration(track.duration - ctx.player.position)
 
         e = discord.Embed(color=self.color)
         e.set_thumbnail(url=thumbnail)
         e.description = f"[{track.title}]({track.uri})\n﹂`By {track.author}`"
         e.add_field(
             name="◈ Song Progress ◈",
-            value=f"{bar}\n**`{progress}`/`{duration}`**"
+            value=f"{bar}\n**`{progress}`/`{duration}`** -{remaining}"
         )
         e.set_footer(text=f"Requested by {requester}", icon_url=requester.avatar_url)
 
