@@ -269,6 +269,7 @@ class Moderation(commands.Cog):
                 continue
             config["restricted"][guild_id]["users"].append(member.id)
             restricted += f"\n{member.mention}"
+        self.bot.restricted = config["restricted"]
         e = discord.Embed(color=colors.fate(), description=restricted)
         await ctx.send(embed=e)
         await self.save_config(config)
@@ -294,6 +295,7 @@ class Moderation(commands.Cog):
             if member.id in dat["users"]:
                 config["restricted"][guild_id]["users"].remove(member.id)
                 unrestricted += f"\n{member.mention}"
+        self.bot.restricted = config["restricted"]
         e = discord.Embed(color=colors.fate(), description=unrestricted)
         await ctx.send(embed=e)
         await self.save_config(config)
@@ -401,7 +403,8 @@ class Moderation(commands.Cog):
                         channel_id
                     )
                     config["restricted"][guild_id]["channels"].pop(position)
-                    self.save_config(config)
+                    self.bot.restricted = config["restricted"]
+                    await self.save_config(config)
                 else:
                     changelog += "\n" + channel.mention
             if changelog:
@@ -413,7 +416,8 @@ class Moderation(commands.Cog):
                 if not isinstance(user, discord.User):
                     position = config["restricted"][guild_id]["users"].index(user_id)
                     config["restricted"][guild_id]["users"].pop(position)
-                    self.save_config(config)
+                    self.bot.restricted = config["restricted"]
+                    await self.save_config(config)
                 else:
                     changelog += "\n" + user.mention
             if changelog:
