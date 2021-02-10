@@ -69,9 +69,11 @@ class Emojis(commands.Cog):
     @commands.command(name="emoji", aliases=["emote", "jumbo"])
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.bot_has_permissions(embed_links=True, attach_files=True)
-    async def _emoji(self, ctx, *emoji: Union[discord.Emoji, discord.PartialEmoji]):
+    async def _emoji(self, ctx, *emojis: Union[discord.Emoji, discord.PartialEmoji]):
         """Sends the emoji in image form"""
-        for emoji in emoji[:3]:
+        if not emojis:
+            return await ctx.send("Usage: `.emoji [custom emoji]`")
+        for emoji in emojis[:3]:
             e = discord.Embed(color=colors.fate())
             e.description = str(emoji.id)
             author_name = emoji.name
