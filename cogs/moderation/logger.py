@@ -153,7 +153,7 @@ class Logger(commands.Cog):
             self.config[guild_id]["channel"] = channel.id
 
         # Remove channels that redirect logs if they're missing
-        for ltype, channel_id in self.config[guild_id]["channels"].items():
+        for ltype, channel_id in list(self.config[guild_id]["channels"].items()):
             if not self.bot.get_channel(channel_id):
                 del self.config[guild_id]["channels"][ltype]
 
