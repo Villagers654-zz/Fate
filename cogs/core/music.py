@@ -142,25 +142,25 @@ class Music(commands.Cog):
         should_connect = ctx.command.name in ('play',)
 
         if not ctx.author.voice or not ctx.author.voice.channel:
-            await ctx.send("Join a voice channel first")
+            await ctx.send("Join a voice channel first", delete_after=25)
             raise self.bot.ignored_exit
 
         if not player.is_connected:
             if not should_connect:
-                await ctx.send("I'm not connected to any voice channel")
+                await ctx.send("I'm not connected to any voice channel", delete_after=25)
                 raise self.bot.ignored_exit
 
             permissions = ctx.author.voice.channel.permissions_for(ctx.me)
 
             if not permissions.connect or not permissions.speak:  # Check user limit too?
-                await ctx.send("I need `connect` and `speak` permissions")
+                await ctx.send("I need `connect` and `speak` permissions", delete_after=25)
                 raise self.bot.ignored_exit
 
             player.store('channel', ctx.channel.id)
             await self.connect_to(ctx.guild.id, str(ctx.author.voice.channel.id))
         else:
             if int(player.channel_id) != ctx.author.voice.channel.id:
-                await ctx.send("You need to be in my voice channel")
+                await ctx.send("You need to be in my voice channel", delete_after=25)
                 raise self.bot.ignored_exit
 
     async def track_hook(self, event):
