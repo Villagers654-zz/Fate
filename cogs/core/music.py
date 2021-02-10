@@ -319,11 +319,12 @@ class Music(commands.Cog):
             await msg.remove_reaction(reaction, ctx.author)
 
     @commands.command(name="disconnect", aliases=['dc'])
-    @ensure_player_is_playing()
     async def disconnect(self, ctx):
         """Disconnects the player from the voice channel and clears its queue"""
-        ctx.player.queue.clear()
-        await ctx.player.stop()
+        player = ctx.bot.lavalink.player_manager.get(ctx.guild.id)
+        if not player or not player.is_connected:
+            return await ctx.send("I'm not connected to any voice channel", delete_after=25)
+        await player.stop()
         await self.connect_to(ctx.guild.id, None)
         await ctx.send("*⃣ | Disconnected.", delete_after=25)
 
