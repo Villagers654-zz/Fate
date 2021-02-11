@@ -206,7 +206,9 @@ class Fun(commands.Cog):
         if msg.embeds:
             await ctx.send(f"{msg.author} at {time}", embed=msg.embeds[0])
         else:
-            if len(msg.content) > 1000 and not msg.author.guild_permissions.administrator:
+            m = ctx.guild.get_member(msg.author.id)
+            has_admin = m.guild_permissions.administrator if m else False
+            if len(msg.content) > 1000 and not has_admin:
                 return await ctx.send("wHy would I snipe that?")
             e = discord.Embed(color=msg.author.color)
             e.set_author(name=msg.author, icon_url=msg.author.avatar_url)
