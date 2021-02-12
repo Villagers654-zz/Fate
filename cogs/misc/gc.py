@@ -110,6 +110,24 @@ class GlobalChatRewrite(commands.Cog):
     async def _gc(self, ctx):
         pass
 
+    @_gc.command(name="mod")
+    @commands.is_owner()
+    async def _mod(self, ctx, user: discord.User):
+        async with self.bot.cursor() as cur:
+            await cur.execute(f"select status from global_users where user_id = {user.id} and status = 'moderator';")
+            if cur.rowcount:
+                await cur.execute(f"update global_users set status = 'verified' where user_id = {user.id};")
+                await ctx.send(f"Removed {user} as a mod")
+            else:
+                await cur.execute(
+                    f"insert into global_users values "
+                    f"({user.id}, 'moderator') "
+                    f"on duplicate key update "
+                    f"status = 'moderator';"
+                )
+                await ctx.send(f"Added {user} as a mod")
+
+
     @_gc.command(name="ban")
     @commands.is_owner()
     async def _ban(self, ctx, *, target: Union[discord.User, discord.Guild]):
@@ -144,6 +162,60 @@ class GlobalChatRewrite(commands.Cog):
             await cur.execute(f"delete from global_chat where guild_id = {ctx.guild.id};")
         await ctx.send("Disabled global chat")
 
+    @_gc.command(name="verify")
+    @commands.cooldown(1, 60, commands.BucketType.user)
+    @commands.cooldown(6, 60, commands.BucketType.guild)
+    async def verify(self, ctx):
+        async with self.bot.cursor() as cur:
+            await cur.execute(f"select status from global_users where user_id = {ctx.author.id};")
+            if cur.rowcount:
+                return await ctx.send("You're already registered")
+        channel = self.bot.get_channel(self.bot.config["gc_verify_channel"])
+        async for msg in channel.history(limit=15):
+            for embed in msg.embeds:
+                if str(ctx.author.id) == embed.description:
+                    return await ctx.send("You already have an application waiting")
+
+        await ctx.send("What's your reason for wanting access to global chat. Send `cancel` to stop the process")
+        reason = await self.bot.utils.get_message(ctx)
+        if "cancel" in reason.content:
+            with suppress(Forbidden, NotFound):
+                await reason.add_reaction("👍")
+            return
+        if not reason.content:
+            return await ctx.send("That's not a valid response. Rerun the command")
+        rules = discord.Embed(color=self.bot.config["theme_color"])
+        rules.description = "1. No spamming\n" \
+                            "2. No NSFW content of any kind\n" \
+                            "3. No harassment or bullying\n" \
+                            "4. No content that may trigger epilepsy. This includes emojis\n" \
+                            "5. No using bot commands in the global channel\n" \
+                            "6. No advertising of any kind\n" \
+                            "7. No absurdly long, or spam-ish names\n" \
+                            "8. Most importantly abide by discords TOS\n" \
+                            "**Breaking any of these rules results in being blocked from using the channel**"
+        msg = await ctx.send(
+            "Do you agree to **all** of the stated rules in this embed?",
+            embed=rules
+        )
+        await msg.add_reaction("👍")
+        await msg.add_reaction("👎")
+        reaction, _user = await self.bot.utils.get_reaction(ctx)
+        if reaction.message.id != msg.id:
+            return await ctx.send("Why.. would you do this. Rerun the cmd")
+        if str(reaction.emoji) != "👍":
+            return await ctx.send("Ok")
+
+        e = discord.Embed(color=self.bot.config["theme_color"])
+        e.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
+        e.description = str(ctx.author.id)
+        e.add_field(name="Reason", value=reason.content)
+        e.set_footer(text=ctx.guild.name, icon_url=ctx.guild.icon_url)
+        msg = await channel.send(embed=e)
+        await msg.add_reaction("👍")
+        await msg.add_reaction("👎")
+        await ctx.send("Sent your application")
+
     @commands.Cog.listener()
     async def on_message(self, msg):
         active = [m.id for m in list(self.cache.values())]
@@ -163,8 +235,36 @@ class GlobalChatRewrite(commands.Cog):
                     "Disabled global chat due to missing manage_message permissions"
                 )
 
+            async with self.bot.cursor() as cur:
+                await cur.execute(f"select status from global_users where user_id = {msg.author.id};")
+                if not cur.rowcount:
+                    return await msg.channel.send("You're not verified into using this channel. Run `.gc verify` in a different channel")
+                await cur.execute(
+                    f"select status from global_users "
+                    f"where user_id = {msg.author.id} "
+                    f"and status = 'blocked';"
+                )
+                if cur.rowcount:
+                    return await msg.channel.send("You're blocked from using global chat")
+                await cur.execute(
+                    f"select status from global_users "
+                    f"where user_id = {msg.author.id} "
+                    f"and status = 'moderator';"
+                )
+                mod = False
+                if cur.rowcount:
+                    mod = True
+
+            for i, char in enumerate(list(msg.content)):
+                await asyncio.sleep(0)
+                if char == ".":
+                    if msg.content[i - 1] != " " and msg.content[i + 1] != " ":
+                        return await msg.channel.send("No links..")
+
             e = discord.Embed()
             e.set_thumbnail(url=msg.author.avatar_url)
+            if mod:
+                e.colour = self.bot.config["theme_color"]
 
             # Edit & combine their last msg
             if msg.author.id == self.last_id and self.msg_cache:
@@ -204,6 +304,27 @@ class GlobalChatRewrite(commands.Cog):
                             m = await channel.fetch_message(msg_id)
                             await m.delete()
                     return
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload):
+        if payload.channel_id == self.bot.config["gc_verify_channel"]:
+            if payload.user_id == self.bot.user.id:
+                return
+            channel = self.bot.get_channel(payload.channel_id)
+            msg = await channel.fetch_message(payload.message_id)
+            user_id = int(msg.embeds[0].description)
+
+            user = await self.bot.fetch_user(user_id)
+            e = discord.Embed(color=self.bot.config["theme_color"])
+            if str(payload.emoji) == "👍":
+                async with self.bot.cursor() as cur:
+                    await cur.execute(f"insert into global_users values ({user_id}, 'verified');")
+                e.set_author(name=f"{user} was verified", icon_url=user.avatar_url)
+                self._queue.append([e, False, msg])
+            else:
+                with suppress(NotFound, Forbidden):
+                    await user.send("Your verification into global-chat was denied.")
+                await msg.delete()
 
 
 def setup(bot):

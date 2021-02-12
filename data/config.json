@@ -29,6 +29,7 @@
   "debug_channel": 675878044824764456,
   "error_channel": 577661392098820106,
   "dump_channel": 577661461543780382,
+  "gc_verify_channel": 809590441779396618,
 
   "use_default_help": false,
   "startup_status": "Up and Running",
