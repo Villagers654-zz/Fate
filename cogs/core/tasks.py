@@ -230,7 +230,8 @@ class Tasks(commands.Cog):
 
         def copy_files():
             # Copy all data to the ZipFile
-            path = os.path.join(self.bot.config["backups_location"], "local")
+            root = self.bot.config["backups_location"]
+            path = os.path.join(root, "local")
             file_paths = get_all_file_paths("./data")
             fp = os.path.join(path, f"backup_{datetime.now()}.zip")
 
@@ -238,35 +239,17 @@ class Tasks(commands.Cog):
                 for file in file_paths:
                     _zip.write(file)
 
-            for backup in os.listdir(path):
-                backup_time = datetime.strptime(
-                    backup.split("_")[1].strip(".zip"), "%Y-%m-%d %H:%M:%S.%f"
-                )
-                if (datetime.now() - backup_time).days > keep_for:
-                    os.remove(os.path.join(path, backup))
-                    self.bot.log.info(f"Removed backup {backup}")
+            for subdir in ["local", "db"]:
+                for backup in os.listdir(os.path.join(root, subdir)):
+                    backup_time = datetime.strptime(
+                        backup.split("_")[1].strip(".zip").strip(".sql"), "%Y-%m-%d %H:%M:%S.%f"
+                    )
+                    if (datetime.now() - backup_time).days > keep_for:
+                        os.remove(os.path.join(root, subdir, backup))
+                        self.bot.log.info(f"Removed backup {backup}")
 
         sleep_for = self.bot.config["backup_every_?_hours"] * 60 * 60
         try:
-            # local_fp = os.path.join(self.bot.config["backups_location"], "local")
-            # if os.listdir(local_fp):
-            #     last_backed_up = datetime.strptime(
-            #          sorted(os.listdir(local_fp), reverse=True)[0].split("_")[1].strip(".zip"), "%Y-%m-%d %H:%M:%S.%f"
-            #      )
-            #     time_since = (datetime.now() - last_backed_up).total_seconds()
-            #     remaining_sleep = round(sleep_for - time_since)
-#
-            #     # Run a backup because it's been greater than the interval to do backups
-            #     if remaining_sleep <= 0:
-            #         expanded_form = self.bot.utils.get_time(int(str(remaining_sleep).lstrip('-')))
-            #         self.bot.log.info(f"It's been {expanded_form} since the last backup. Backing up immediately")
-            #         sleep_for = 0
-#
-            #     # Resume so the sleep time doesn't reset on restart
-            #     else:
-            #         self.bot.log.info(f"Resuming backup task. Sleeping for {self.bot.utils.get_time(sleep_for)}")
-            #         sleep_for = remaining_sleep
-
             await asyncio.sleep(sleep_for)
             keep_for = self.bot.config["keep_backups_for_?_days"]
             creds = auth.MySQL()
