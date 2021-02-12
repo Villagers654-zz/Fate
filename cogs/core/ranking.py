@@ -288,6 +288,8 @@ class Ranking(commands.Cog):
                             f"limit 1;"
                         )
                         result = await cur.fetchone()
+                    if not result:
+                        self.bot.log.critical(f"No xp for {msg.author} after inserting xp?")
                     dat = await self.calc_lvl_info(result[0], conf)
                     async with self.bot.cursor() as cur:
                         await cur.execute(
