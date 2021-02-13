@@ -33,7 +33,7 @@ class EmptyException(Exception):
     pass
 
 
-class Fate(commands.AutoShardedBot):
+class Fate(commands.Bot):
     def __init__(self, **options):
         with open("./data/config.json", "r") as f:
             self.config = json.load(f)  # type: dict
