@@ -200,6 +200,7 @@ class Reddit(commands.Cog):
             args = ctx.message.content.split()
             if len(args) > 1:
                 subreddit = args[1:][0].lstrip("r/")
+
                 reddit = await self.client.subreddit(subreddit)
                 post = await reddit.random()
                 await post.author.load()
@@ -216,6 +217,7 @@ class Reddit(commands.Cog):
                         post.selftext if post.selftext else post.title, 914
                     ))
                     for i, chunk in enum:
+                        await asyncio.sleep(0)
                         if i == 0:
                             e.description = chunk
                         elif i == 1:
@@ -256,7 +258,7 @@ class Reddit(commands.Cog):
             )
             e.description = "Get a random post from a subreddit, or subscribe to a " \
                             "designated TextChannel at a set interval"
-            p = self.bot.utils.get_prefix(ctx)  # type: str
+            p = "."  # type: str
             e.add_field(
                 name="◈ Usage",
                 value=f"**{p}reddit r/example**\n"

@@ -394,6 +394,7 @@ class Welcome(commands.Cog):
                     "$SERVER", m.guild.name
                 )
                 msg = msg.replace("!user", m.mention).replace("!server", m.guild.name)
+                await asyncio.sleep(0)
                 path = (
                     os.getcwd()
                     + "/data/images/reactions/welcome/"
@@ -401,6 +402,7 @@ class Welcome(commands.Cog):
                         os.listdir(os.getcwd() + "/data/images/reactions/welcome/")
                     )
                 )
+                await asyncio.sleep(0)
                 if guild_id in self.images and not self.images[guild_id]:
                     del self.images[guild_id]
                 if guild_id in self.useimages:

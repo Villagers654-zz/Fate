@@ -393,6 +393,7 @@ class Leave(commands.Cog):
                 msg = self.format[guild_id]
                 msg = msg.replace("$MENTION", str(m)).replace("$SERVER", m.guild.name)
                 msg = msg.replace("!user", str(m)).replace("!server", m.guild.name)
+                await asyncio.sleep(0)
                 path = (
                     os.getcwd()
                     + "/data/images/reactions/farewell/"
@@ -400,6 +401,7 @@ class Leave(commands.Cog):
                         os.listdir(os.getcwd() + "/data/images/reactions/farewell/")
                     )
                 )
+                await asyncio.sleep(0)
                 if guild_id in self.useimages:
                     e = discord.Embed(color=colors.fate())
                     if guild_id in self.images:

@@ -281,6 +281,7 @@ class SafePolls(commands.Cog):
             if str(payload.emoji) not in self.cache[msg_id]:
                 return
             for key, users in self.cache[msg_id]["votes"].items():
+                await asyncio.sleep(0)
                 if payload.user_id in users:
                     if key == str(payload.emoji):
                         return
