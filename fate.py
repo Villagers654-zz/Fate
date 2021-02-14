@@ -326,7 +326,8 @@ class Fate(commands.Bot):
                     autocommit=True,
                     loop=self.loop,
                     minsize=1,
-                    maxsize=64,
+                    maxsize=128,
+                    echo=True
                 )
                 self.pool = pool
                 break
