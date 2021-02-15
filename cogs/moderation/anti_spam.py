@@ -507,6 +507,16 @@ class AntiSpam(commands.Cog):
         user_id = str(msg.author.id)
         triggered = False
         if guild_id in self.config and self.config[guild_id]:
+            async def cleanup():
+                async for m in msg.channel.history(limit=10):
+                    if m.content == msg.content:
+                        try:
+                            await m.delete()
+                        except Forbidden:
+                            break
+                        except NotFound:
+                            pass
+
             if "ignored" in self.config[guild_id] and msg.channel.id in self.config[guild_id]["ignored"]:
                 return
             if [msg.guild.id, msg.author.id] in self.cache:
@@ -542,12 +552,12 @@ class AntiSpam(commands.Cog):
                         "threshold": int(raw[1])
                     }
                     if dat not in self.config[guild_id]["rate_limit"]:
-                        del self.spam_cd[guild_id][uid]
+                        del self.spam_cd[guild_id][rl_id]
 
                 for rl_id in list(self.spam_cd[guild_id].keys()):
                     await asyncio.sleep(0)
                     timeframe, threshold = rl_id.split(",")
-                    now = int(time() / int(timespan))
+                    now = int(time() / int(timeframe))
                     if user_id not in self.spam_cd[guild_id][rl_id]:
                         self.spam_cd[guild_id][rl_id][user_id] = [now, 0]
                     if self.spam_cd[guild_id][rl_id][user_id][0] == now:
@@ -555,7 +565,7 @@ class AntiSpam(commands.Cog):
                     else:
                         self.spam_cd[guild_id][rl_id][user_id] = [now, 0]
                     if self.spam_cd[guild_id][rl_id][user_id][1] >= int(threshold):
-                        reason = f"{threshold} messages within {timespan} seconds"
+                        reason = f"{threshold} messages within {timeframe} seconds"
                         triggered = True
 
             # mass pings
@@ -598,19 +608,9 @@ class AntiSpam(commands.Cog):
 
             # duplicate messages
             if "duplicates" in self.config[guild_id] and msg.content:
-                async def cleanup():
-                    async for m in msg.channel.history(limit=10):
-                        if m.content == msg.content:
-                            try:
-                                await m.delete()
-                            except Forbidden:
-                                break
-                            except NotFound:
-                                pass
-
                 await asyncio.sleep(0)
                 if msg.channel.permissions_for(msg.guild.me).read_message_history:
-                    with self.bot.operation_lock(key=msg.id):
+                    with self.bot.utils.operation_lock(key=msg.id):
                         channel_id = str(msg.channel.id)
                         if channel_id not in self.dupes:
                             self.dupes[channel_id] = []
@@ -642,9 +642,6 @@ class AntiSpam(commands.Cog):
                                         ])
                                     reason = "duplicate messages"
                                     triggered = True
-                                    if msg.channel.permissions_for(msg.guild.me).manage_messages:
-                                        if msg.channel.permissions_for(msg.guild.me).read_message_history:
-                                            self.bot.loop.create_task(cleanup())
                                     break
 
             if "inhuman" in self.config[guild_id] and msg.content:
@@ -764,7 +761,7 @@ class AntiSpam(commands.Cog):
 
                             # Mute and purge any new messages
                             if mute_role in user.roles:
-                                return
+                                continue
                             timer = 150 * multiplier
                             end_time = time() + timer
                             timer_str = self.bot.utils.get_time(timer)
@@ -781,12 +778,16 @@ class AntiSpam(commands.Cog):
                             self.msgs[user_id] = []
 
                             with suppress(NotFound, Forbidden, HTTPException):
-                                await msg.author.send(f"You've been muted for spam in **{msg.guild.name}** for {timer_str}")
+                                await user.send(f"You've been muted for spam in **{msg.guild.name}** for {timer_str}")
                             mentions = discord.AllowedMentions(users=True)
                             await msg.channel.send(
-                                f"Temporarily muted {msg.author.mention} for spam. Reason: {reason}",
+                                f"Temporarily muted {user.mention} for spam. Reason: {reason}",
                                 allowed_mentions=mentions
                             )
+                            if "duplicate" in reason:
+                                if msg.channel.permissions_for(msg.guild.me).manage_messages:
+                                    if msg.channel.permissions_for(msg.guild.me).read_message_history:
+                                        self.bot.loop.create_task(cleanup())
 
                         if "antispam_mutes" not in self.bot.tasks:
                             self.bot.tasks["antispam_mutes"] = {}
