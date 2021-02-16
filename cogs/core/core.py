@@ -144,17 +144,21 @@ class Core(commands.Cog):
             return await ctx.send("This command can't be used in dm")
         if len(prefix) > 5:
             return await ctx.send("That prefix is too long")
-        async with self.bot.cursor() as cur:
-            if prefix == ".":
-                await cur.execute(f"delete from guild_prefixes where guild_id = {ctx.guild.id};")
-                self.bot.guild_prefixes[ctx.guild.id] = time()
-            else:
-                await cur.execute(
-                    f"insert into guild_prefixes values ({ctx.guild.id}, '{self.bot.encode(prefix)}') "
-                    f"on duplicate key update "
-                    f"prefix = '{self.bot.encode(prefix)}';"
-                )
-                self.bot.guild_prefixes[int(ctx.guild.id)] = [prefix, time()]
+        if ctx.guild.id in self.bot.guild_prefixes:
+            await self.bot.aio_mongo["GuildPrefixes"].update_one(
+                filter={"_id": ctx.guild.id},
+                update={"$set": {"prefix": prefix}}
+            )
+        else:
+            await self.bot.aio_mongo["GuildPrefixes"].insert_one({
+                "_id": ctx.guild.id,
+                "prefix": prefix,
+                "override": False
+            })
+        self.bot.guild_prefixes[ctx.guild.id] = {
+            "prefix": prefix,
+            "override": False
+        }
         await ctx.send(f"Changed the servers prefix to `{prefix}`")
 
     @commands.command(name="personal-prefix", aliases=["pp"])
@@ -165,20 +169,17 @@ class Core(commands.Cog):
         prefix = prefix.strip("'\"")
         if len(prefix) > 5:
             return await ctx.send("Your prefix can't be more than 8 chars long")
-        async with self.bot.cursor() as cur:
-            if prefix == ".":
-                await cur.execute(f"delete from user_prefixes where user_id = {ctx.author.id};")
-                self.bot.user_prefixes[ctx.author.id] = time()
-            else:
-                await cur.execute(
-                    f"insert into user_prefixes values ({ctx.author.id}, '{self.bot.encode(prefix)}', False) "
-                    f"on duplicate key update prefix = '{self.bot.encode(prefix)}';"
-                )
-                self.bot.user_prefixes[ctx.author.id] = {
-                    "prefix": prefix,
-                    "override": False,
-                    "last_used": time()
-                }
+        if ctx.author.id in self.bot.user_prefixes:
+            await self.bot.aio_mongo["UserPrefixes"].update_one(
+                filter={"_id": ctx.guild.id},
+                update={"$set": {"prefix": prefix}}
+            )
+        else:
+            await self.bot.aio_mongo["UserPrefixes"].insert_one({
+                "_id": ctx.guild.id,
+                "prefix": prefix
+            })
+        self.bot.user_prefixes[ctx.author.id] = {"prefix": prefix}
         nothing = "something that doesn't exist"
         await ctx.send(
             f"Set your personal prefix as `{prefix if prefix else nothing}`\n"
