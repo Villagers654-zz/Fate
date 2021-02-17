@@ -625,10 +625,9 @@ class AntiSpam(commands.Cog):
                             dupes = [
                                 m for m in self.dupes[channel_id]
                                 if m and m.content and m.content == message.content
-                                   and len(m.content) > 5
                             ]
                             if len(dupes) > 4:
-                                history = await msg.channel.history(limit=5).flatten()
+                                history = await msg.channel.history(limit=2).flatten()
                                 if not any(m.author.bot for m in history):
                                     users = set(list([
                                         *[m.author for m in dupes if m], *users
