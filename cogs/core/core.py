@@ -144,20 +144,23 @@ class Core(commands.Cog):
             return await ctx.send("This command can't be used in dm")
         if len(prefix) > 5:
             return await ctx.send("That prefix is too long")
+        opts = ["yes", "no"]
+        choice = await self.bot.utils.get_choice(ctx, opts, name="Allow personal prefixes?")
+        override = False if choice == "no" else False
         if ctx.guild.id in self.bot.guild_prefixes:
             await self.bot.aio_mongo["GuildPrefixes"].update_one(
                 filter={"_id": ctx.guild.id},
-                update={"$set": {"prefix": prefix}}
+                update={"$set": {"prefix": prefix, "override": override}}
             )
         else:
             await self.bot.aio_mongo["GuildPrefixes"].insert_one({
                 "_id": ctx.guild.id,
                 "prefix": prefix,
-                "override": False
+                "override": override
             })
         self.bot.guild_prefixes[ctx.guild.id] = {
             "prefix": prefix,
-            "override": False
+            "override": override
         }
         await ctx.send(f"Changed the servers prefix to `{prefix}`")
 
