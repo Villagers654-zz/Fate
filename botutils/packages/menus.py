@@ -89,7 +89,7 @@ class Menus:
             ).lower() == chars.lower().replace(" ", "")
 
         try:
-            await self.bot.wait_for("message", check=pred, timeout=timeout)
+            m = await self.bot.wait_for("message", check=pred, timeout=timeout)
         except asyncio.TimeoutError:
             if delete_after:
                 await message.delete()
@@ -100,7 +100,9 @@ class Menus:
             return False
         else:
             if delete_after:
-                await message.delete()
+                with suppress(NotFound, Forbidden):
+                    await message.delete()
+                    await m.delete()
             else:
                 e.set_footer(text="Captcha Passed")
                 with suppress(NotFound, Forbidden):
