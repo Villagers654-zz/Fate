@@ -2,7 +2,7 @@
 
 from os import path
 import json
-from time import time
+from time import time, monotonic
 from random import *
 import asyncio
 import requests
@@ -94,10 +94,12 @@ class Ranking(commands.Cog):
         self.vclb = {}
         self.vc_counter = 0
 
-        self.xp_cleanup_task.start()
+        self.monthly_cleanup_task.start()
+        self.cooldown_cleanup_task.start()
 
     def cog_unload(self):
-        self.xp_cleanup_task.cancel()
+        self.monthly_cleanup_task.cancel()
+        self.cooldown_cleanup_task.cancel()
 
     async def save_config(self):
         """ Saves per-server configuration """
@@ -119,8 +121,19 @@ class Ranking(commands.Cog):
         self.config[guild_id] = self.static_config()
         await self.save_config()
 
+    @tasks.loop(minutes=1)
+    async def cooldown_cleanup_task(self):
+        before = monotonic()
+        total = 0
+        for user_id, timestamp in list(self.global_cd.items()):
+            if timestamp < time():
+                del self.global_cd[user_id]
+                total += 1
+        ping = str(round((monotonic() - before) * 1000)) + "ms"
+        self.bot.log.debug(f"Removed {total} cooldowns in {ping}")
+
     @tasks.loop(hours=1)
-    async def xp_cleanup_task(self):
+    async def monthly_cleanup_task(self):
         await asyncio.sleep(1)
         self.bot.log.debug("Started xp cleanup task")
         if not self.bot.is_ready():
@@ -200,6 +213,7 @@ class Ranking(commands.Cog):
                 self.spam_cd[guild_id][user_id] = [now, 0]
             if self.spam_cd[guild_id][user_id][1] > 3:
                 return await punish()
+            await asyncio.sleep(0)
 
             # anti macro
             if user_id not in self.macro_cd:
@@ -217,6 +231,7 @@ class Ranking(commands.Cog):
                 if len(intervals) > 2:
                     if all(interval == intervals[0] for interval in intervals):
                         return await punish()
+            await asyncio.sleep(0)
 
             set_time = datetime.timestamp(
                 datetime.utcnow().replace(microsecond=0, second=0, minute=0, hour=0)
@@ -245,6 +260,7 @@ class Ranking(commands.Cog):
                     pass
                 except RuntimeError:
                     return
+            await asyncio.sleep(0)
 
             # per-server leveling
             conf = self.static_config()  # type: dict
@@ -300,6 +316,7 @@ class Ranking(commands.Cog):
                         )
                         results = await cur.fetchall()
                     for result in results:
+                        await asyncio.sleep(0)
                         role = msg.guild.get_role(result[0])
                         if role not in msg.author.roles:
                             try:
