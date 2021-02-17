@@ -1042,7 +1042,8 @@ class Logger(commands.Cog):
                     icon_url=dat["icon_url"],
                 )
             else:
-                e.set_author(name=f"~==🍸{len(payload.cached_messages)} Msgs Purged🍸==~")
+                amount = len(payload.cached_messages)
+                e.set_author(name=f"~==🍸{amount if amount else 'Uncached'} Msgs Purged🍸==~")
             if dat["thumbnail_url"]:
                 e.set_thumbnail(url=dat["thumbnail_url"])
             e.description = self.bot.utils.format_dict({
