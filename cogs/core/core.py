@@ -171,12 +171,12 @@ class Core(commands.Cog):
             return await ctx.send("Your prefix can't be more than 8 chars long")
         if ctx.author.id in self.bot.user_prefixes:
             await self.bot.aio_mongo["UserPrefixes"].update_one(
-                filter={"_id": ctx.guild.id},
+                filter={"_id": ctx.author.id},
                 update={"$set": {"prefix": prefix}}
             )
         else:
             await self.bot.aio_mongo["UserPrefixes"].insert_one({
-                "_id": ctx.guild.id,
+                "_id": ctx.author.id,
                 "prefix": prefix
             })
         self.bot.user_prefixes[ctx.author.id] = {"prefix": prefix}
