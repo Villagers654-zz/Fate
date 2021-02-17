@@ -54,8 +54,6 @@ class Fate(commands.Bot):
         self.theme_color = self.config["theme_color"]
 
         # Cache
-        self.guild_prefixes = {}  # {user_id: [prefix, last_accessed]}
-        self.user_prefixes = {}
         self.locks = {}
         self.operation_locks = []
         self.tasks = {}  # Task object storing for easy management
@@ -326,8 +324,7 @@ class Fate(commands.Bot):
                     autocommit=True,
                     loop=self.loop,
                     minsize=1,
-                    maxsize=128,
-                    echo=True
+                    maxsize=128
                 )
                 self.pool = pool
                 break
@@ -441,6 +438,22 @@ class Fate(commands.Bot):
             data = cipher.decrypt(f.read().encode()).decode()
         self.auth = json.loads(data)
 
+        # Load in guild prefixes
+        self.guild_prefixes = {}
+        collection = self.mongo["GuildPrefixes"]
+        for config in collection.find({}):
+            self.guild_prefixes[config["_id"]] = {
+                key: value for key, value in config.items() if key != "_id"
+            }
+#
+        # Load in user prefixes
+        self.user_prefixes = {}
+        collection = bot.mongo["UserPrefixes"]
+        for config in collection.find({}):
+            self.user_prefixes[config["_id"]] = {
+                key: value for key, value in config.items() if key != "_id"
+            }
+
         # Load additional modules/cogs
         if self.config["extensions"]:
             self.log.info("Loading initial cogs", color="yellow")
@@ -538,11 +551,6 @@ async def on_message(msg):
             with suppress(NotFound, Forbidden, HTTPException, AttributeError):
                 await msg.channel.send(f"The prefixes you can use are:\n{prefixes}")
             return
-    blacklist = ["trap", "dan", "gel", "yaoi"]
-    if "--dm" in msg.content and not any(x in msg.content for x in blacklist):
-        msg.content = msg.content.replace(" --dm", "")
-        channel = await msg.author.create_dm()
-        msg.channel = channel
     if msg.guild and msg.guild.me and not msg.channel.permissions_for(msg.guild.me).send_messages:
         return
     await bot.process_commands(msg)
