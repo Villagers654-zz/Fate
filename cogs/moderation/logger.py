@@ -1022,7 +1022,7 @@ class Logger(commands.Cog):
                             self.put_nowait(guild_id, log)
                             continue
 
-                timestamp = msg.created_at.strftime("%I:%M%p")
+                timestamp = msg.created_at.strftime("%I:%M:%S%p")
                 purged_messages = (
                     f"{timestamp} | {msg.author}: {msg.content}\n{purged_messages}"
                 )
