@@ -49,70 +49,37 @@ class Utils(commands.Cog):
 
     @staticmethod
     def get_prefix(ctx):
-        p = "."
-        if ctx.guild:
-            guild_id = str(ctx.guild.id)
-            config = ctx.bot.utils.get_config()  # type: dict
-            if guild_id in config["prefix"]:
-                p = config["prefix"][guild_id]
-        return p
+        return "."
+        # if ctx.guild:
+        #     guild_id = str(ctx.guild.id)
+        #     config = ctx.bot.utils.get_config()  # type: dict
+        #     if guild_id in config["prefix"]:
+        #         p = config["prefix"][guild_id]
+        # return p
 
     @staticmethod
     async def get_prefixes_async(bot, msg):
         default_prefix = commands.when_mentioned_or(".")(bot, msg)
         prefixes = []
+        override = False
 
-        # Cache per-user prefixes
+        guild_id = msg.guild.id if msg.guild else None
         user_id = msg.author.id
-        if user_id not in bot.user_prefixes:
-            async with bot.cursor() as cur:
-                await cur.execute(
-                    f"select prefix, override from user_prefixes where user_id = {user_id};"
-                )
-                if cur.rowcount:
-                    r = await cur.fetchone()
-                    bot.user_prefixes[user_id] = {
-                        "prefix": bot.decode(r[0]),
-                        "override": r[1],
-                        "last_used": time()
-                    }
-                else:
-                    bot.user_prefixes[user_id] = time()
 
-        # Add the prefix and/or update when the prefix was fetched
-        if isinstance(bot.user_prefixes[user_id], float):
-            bot.user_prefixes[user_id] = time()
-        else:
-            bot.user_prefixes[user_id]["last_used"] = time()
+        if guild_id and guild_id in bot.guild_prefixes:
+            prefixes.append(bot.guild_prefixes[guild_id]["prefix"])
+            if bot.guild_prefixes[guild_id]["override"]:
+                override = True
+
+        if not override and user_id in bot.user_prefixes:
             prefixes.append(bot.user_prefixes[user_id]["prefix"])
-            if bot.user_prefixes[user_id]["override"]:
-                return commands.when_mentioned_or(prefixes)(bot, msg)
 
         if not isinstance(msg.guild, discord.Guild):
             return prefixes if prefixes else default_prefix
 
-        # Cache per-guild prefixes
-        guild_id = msg.guild.id
-        if guild_id not in bot.guild_prefixes:
-            async with bot.cursor() as cur:
-                await cur.execute(f"select prefix from guild_prefixes where guild_id = {guild_id};")
-                if cur.rowcount:
-                    r = await cur.fetchone()
-                    bot.guild_prefixes[guild_id] = [bot.decode(r[0]), time()]
-                else:
-                    bot.guild_prefixes[guild_id] = time()
-
-        # Add the prefix and/or update when the prefix was fetched
-        if isinstance(bot.guild_prefixes[guild_id], float):
-            bot.guild_prefixes[guild_id] = time()
-        else:
-            prefixes.append(bot.guild_prefixes[guild_id][0])
-            bot.guild_prefixes[guild_id][1] = time()
-
         # Parse the wanted prefixes
         if not prefixes:
             return commands.when_mentioned_or(".")(bot, msg)
-
         return [
             *commands.when_mentioned(bot, msg),
             *prefixes
