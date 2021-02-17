@@ -19,12 +19,11 @@ class Tasks(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.enabled_tasks = [
-            self.prefix_cleanup_task,
             self.status_task,
             self.log_queue,
             self.debug_log,
-            self.mark_alive,
-            self.auto_backup
+            self.auto_backup,
+            self.cleanup_pool
         ]
         for task in self.enabled_tasks:
             task.start()
@@ -42,6 +41,12 @@ class Tasks(commands.Cog):
             if not task.is_running():
                 task.start()
                 self.bot.log(f"Started task {task.coro.__name__}", color="cyan")
+
+    @tasks.loop(hours=1)
+    async def cleanup_pool(self):
+        if self.bot.pool:
+            await self.bot.pool.clear()
+            self.bot.log.debug("Cleared the pool")
 
     @tasks.loop(minutes=1)
     async def prefix_cleanup_task(self):
@@ -81,6 +86,7 @@ class Tasks(commands.Cog):
             uptime_data = json.loads(await f.read())  # type: list
 
         for date_entry in list(uptime_data):
+            await asyncio.sleep(0)
             date = datetime.strptime(date_entry, "%Y-%m-%d %H:%M:%S")
             if date < datetime.utcnow() - timedelta(days=keep_for):
                 uptime_data.remove(date_entry)
