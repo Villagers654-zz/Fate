@@ -257,8 +257,10 @@ class GlobalChatRewrite(commands.Cog):
 
             for i, char in enumerate(list(msg.content)):
                 await asyncio.sleep(0)
-                if char == ".":
-                    if msg.content[i - 1] != " " and msg.content[i + 1] != " ":
+                if char == "." and i != 0 and i + 1 != len(msg.content):
+                    l = msg.content[i - 1]
+                    r = msg.content[i + 1]
+                    if l and l != " " and r and r != " ":
                         return await msg.channel.send("No links..")
 
             e = discord.Embed()
@@ -315,12 +317,13 @@ class GlobalChatRewrite(commands.Cog):
             user_id = int(msg.embeds[0].description)
 
             user = await self.bot.fetch_user(user_id)
-            e = discord.Embed(color=self.bot.config["theme_color"])
+            e = discord.Embed(color=self.bot.utils.colors.green())
             if str(payload.emoji) == "👍":
                 async with self.bot.cursor() as cur:
                     await cur.execute(f"insert into global_users values ({user_id}, 'verified');")
                 e.set_author(name=f"{user} was verified", icon_url=user.avatar_url)
                 self._queue.append([e, False, msg])
+                self.last_id = None
             else:
                 with suppress(NotFound, Forbidden):
                     await user.send("Your verification into global-chat was denied.")
