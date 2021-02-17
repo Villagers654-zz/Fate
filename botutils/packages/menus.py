@@ -1,6 +1,6 @@
 import asyncio
 import random
-from time import time, monotonic
+from time import time
 import os
 from contextlib import suppress
 from typing import Optional, Union
@@ -8,7 +8,6 @@ from typing import Optional, Union
 import discord
 from discord.errors import NotFound, Forbidden
 from PIL import Image, ImageFont, ImageDraw
-from ast import literal_eval
 
 
 class Menus:
@@ -109,7 +108,7 @@ class Menus:
             return True
 
     async def get_choice(
-        self, ctx, *options, user, name="Select which option", timeout=30
+        self, ctx, *options, user=None, name="Select which option", timeout=30
     ) -> Optional[object]:
         """ Reaction based menu for users to choose between things """
 
@@ -179,6 +178,7 @@ class Menus:
         pages = []
         tmp_page = {}
         for i, (key, value) in enumerate(options.items()):
+            await asyncio.sleep(0)
             value = options[key]
             if i == len(emojis):
                 pages.append(tmp_page)
