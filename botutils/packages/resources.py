@@ -1,7 +1,71 @@
 from datetime import datetime
 from os.path import isfile
 import json
+import asyncio
 from botutils import colors
+
+
+class Cache:
+    def __init__(self, bot, collection):
+        self.bot = bot
+        self.collection = collection
+        self._cache = {}
+        for config in bot.mongo[collection].find({}):
+            self._cache[config["_id"]] = {
+                key: value for key, value in config.items() if key != "_id"
+            }
+        self.unsaved = {}
+
+    async def flush(self):
+        collection = self.bot.aio_mongo[self.collection]
+        for key, do_insert in list(self.unsaved.items()):
+            await asyncio.sleep(0)
+            if do_insert:
+                await collection.insert_one({
+                    "_id": key, **self._cache[key]
+                })
+            else:
+                await collection.update_one(
+                    filter={"_id": key},
+                    update={"$set": self._cache[key]}
+                )
+            del self.unsaved[key]
+
+    def __contains__(self, item):
+        return item in self._cache
+
+    def items(self):
+        return self._cache.items()
+
+    def __getitem__(self, item):
+        return self._cache[item]
+
+    def __setitem__(self, key, value):
+        if key in self._cache:
+            self.unsaved[key] = False
+        elif key not in self.unsaved:
+            self.unsaved[key] = True
+        self._cache[key] = value
+
+    def remove(self, key):
+        if key not in self.unsaved or (key in self.unsaved and not self.unsaved[key]):
+            self.bot.loop.create_task(self.remove_from_db(key))
+        if key in self.unsaved:
+            del self.unsaved[key]
+
+    def remove_sub_key(self, key, sub_key):
+        self.bot.loop.create_task(self.remove_from_db(key, sub_key))
+
+    async def remove_from_db(self, key, sub_key=None):
+        collection = self.bot.aio_mongo[self.collection]
+        if sub_key:
+            await collection.update_one(
+                filter={"_id": key},
+                update={"$unset": {sub_key: 1}}
+            )
+        else:
+            await collection.delete_one({"_id": key})
+        del self._cache[key]
 
 
 def get_config():
@@ -107,3 +171,4 @@ def init(cls):
     cls.get_config = get_config
     cls.get_stats = get_stats
     cls.emotes = Emojis()
+    cls.cache = Cache
