@@ -826,7 +826,7 @@ class AntiSpam(commands.Cog):
                 if user_id not in self.bot.tasks["antispam_mutes"][guild_id]:
                     guild = self.bot.get_guild(int(guild_id))
                     try:
-                        self.bot.tasks["antispam_mutes"][guild_id] = self.bot.loop.create_task(
+                        self.bot.tasks["antispam_mutes"][guild_id][user_id] = self.bot.loop.create_task(
                             self.handle_mute(
                                 channel=self.bot.get_channel(data["channel_id"]),
                                 mute_role=guild.get_role(int(data["mute_role_id"])),
