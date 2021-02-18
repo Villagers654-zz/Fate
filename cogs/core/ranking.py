@@ -231,7 +231,6 @@ class Ranking(commands.Cog):
                 if len(intervals) > 2:
                     if all(interval == intervals[0] for interval in intervals):
                         return await punish()
-            await asyncio.sleep(0)
 
             set_time = datetime.timestamp(
                 datetime.utcnow().replace(microsecond=0, second=0, minute=0, hour=0)
@@ -260,7 +259,6 @@ class Ranking(commands.Cog):
                     pass
                 except RuntimeError:
                     return
-            await asyncio.sleep(0)
 
             # per-server leveling
             conf = self.static_config()  # type: dict
@@ -316,7 +314,6 @@ class Ranking(commands.Cog):
                         )
                         results = await cur.fetchall()
                     for result in results:
-                        await asyncio.sleep(0)
                         role = msg.guild.get_role(result[0])
                         if role not in msg.author.roles:
                             try:
