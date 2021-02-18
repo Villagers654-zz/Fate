@@ -64,9 +64,8 @@
   "extensions": {
     "core": [
       "utils",
-      "config",
-      "core",
       "error_handler",
+      "core",
       "menus",
       "music",
       "ranking",
