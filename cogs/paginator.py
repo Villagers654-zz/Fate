@@ -91,7 +91,7 @@ class ConfigureModules:
                 modules[key] = {
                     cmd: None for cmd in value
                     if "luck" not in str(cmd.checks)
-                       and "owner" not in cmd.checks
+                       and "owner" not in str(cmd.checks)
                 }
 
             elif isinstance(value, dict):
