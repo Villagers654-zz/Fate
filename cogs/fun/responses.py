@@ -7,7 +7,7 @@ from discord.ext import commands
 class Responses(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.responses = bot.utils.cache(bot, "responses")
+        self.responses = bot.utils.cache("responses")
 
     @commands.command()
     @commands.guild_only()

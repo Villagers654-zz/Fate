@@ -63,8 +63,8 @@ class Ranking(commands.Cog):
         self.global_monthly_xp = {}
 
         # Configs
-        self.config = self.bot.utils.cache(bot, "ranking")
-        self.profile = self.bot.utils.cache(bot, "profiles")
+        self.config = self.bot.utils.cache("ranking")
+        self.profile = self.bot.utils.cache("profiles")
 
         # save storage
         for guild_id, config in list(self.config.items()):
