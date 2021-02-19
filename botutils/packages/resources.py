@@ -8,7 +8,7 @@ from botutils import colors
 class Cache:
     def __init__(self, bot, collection):
         self.bot = bot
-        self.collection = collection
+        self.collection = None
         self._cache = {}
         for config in bot.mongo[collection].find({}):
             self._cache[config["_id"]] = {
@@ -171,4 +171,4 @@ def init(cls):
     cls.get_config = get_config
     cls.get_stats = get_stats
     cls.emotes = Emojis()
-    cls.cache = Cache
+    cls.cache = lambda col: Cache(cls.bot, col)
