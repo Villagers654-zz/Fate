@@ -366,7 +366,7 @@ class Verification(commands.Cog):
         guild_id = str(channel.guild.id)
         await asyncio.sleep(collection_period)
 
-        target_messages = list(set([msg for msg in self.queue[guild_id] if msg is not None]))
+        target_messages = [msg for msg in self.queue[guild_id] if msg]
         for message in target_messages:
             self.queue[guild_id].remove(message)
 
