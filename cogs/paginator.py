@@ -182,7 +182,10 @@ class ConfigureModules:
             self.row += 5
         # Enter button
         elif str(reaction.emoji) == emojis.yes:
-            key = list(self.cursor.keys())[self.row]
+            row = int(self.row)
+            if "command_help" in self.cursor:
+                row += 1
+            key = list(self.cursor.keys())[row]
             if not self.cursor[key]:
                 e.description = self.cursor[key]
                 if key in self.config and self.config[key]:
@@ -270,12 +273,16 @@ class ConfigureModules:
             cmd = self.bot.get_command("enable-command")
             if await cmd.can_run(self.ctx):
                 await cmd.__call__(self.ctx, self.command)
+            else:
+                await self.ctx.send("You can't run this command")
 
         # Disable the command
         elif key == "Disable":
             cmd = self.bot.get_command("disable-command")
             if await cmd.can_run(self.ctx):
                 await cmd.__call__(self.ctx, self.command)
+            else:
+                await self.ctx.send("You can't run this command")
 
         # Select the commands help embed
         elif key == "Command Help":
@@ -284,7 +291,7 @@ class ConfigureModules:
 
         # Viewing a commands help
         else:
-            self.command = key
+            self.command = str(key)
             cmd = self.bot.get_command(str(key))
             cog = cmd.cog  # type: commands.Cog
             self.cursor = {}
