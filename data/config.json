@@ -79,7 +79,6 @@
     "dev": [
       "custom",
       "dev",
-      "qubemc",
       "reload",
       "secure_overwrites",
       "server_setup"
