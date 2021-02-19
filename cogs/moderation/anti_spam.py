@@ -577,6 +577,8 @@ class AntiSpam(commands.Cog):
                     reason = "mass pinging"
                     triggered = True
 
+                if user_id not in self.msgs:
+                    self.msgs[user_id] = []
                 pongs = lambda s: [
                     m for m in self.msgs[user_id]
                     if m and m.created_at > datetime.utcnow() - timedelta(seconds=s)
