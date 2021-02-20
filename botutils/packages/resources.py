@@ -8,7 +8,7 @@ from botutils import colors
 class Cache:
     def __init__(self, bot, collection):
         self.bot = bot
-        self.collection = None
+        self.collection = collection
         self._cache = {}
         for config in bot.mongo[collection].find({}):
             self._cache[config["_id"]] = {
@@ -65,7 +65,7 @@ class Cache:
             )
         else:
             await collection.delete_one({"_id": key})
-        del self._cache[key]
+            del self._cache[key]
 
 
 def get_config():
