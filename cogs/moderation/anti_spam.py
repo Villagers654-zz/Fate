@@ -79,8 +79,33 @@ class AntiSpam(commands.Cog):
         self.index2 = {}
         self.cache = []
         self.nc = {}
+        self.last = {}
+        self.deep = {}
 
         self.cleanup_task.start()
+
+    async def add_content(self, user, content):
+        async def sleep(now):
+            await asyncio.sleep(120)
+            self.last[user_id][content].remove(now)
+            if not self.last[user_id][content]:
+                del self.last[user_id][content]
+                if user_id in self.deep:
+                    if content in self.deep[user_id]:
+                        del self.deep[user_id][content]
+                    if not self.deep[user_id]:
+                        del self.deep[user_id]
+
+        now = time()
+        content = str(content).lower()
+        user_id = str(user.id)
+        if user_id not in self.last:
+            self.last[user_id] = {}
+        if content not in self.last[user_id]:
+            self.last[user_id][content] = [now]
+        else:
+            self.last[user_id][content].append(now)
+        self.bot.loop.create_task(sleep(now))
 
     def cog_unload(self):
         self.cleanup_task.stop()
@@ -591,22 +616,81 @@ class AntiSpam(commands.Cog):
                     triggered = True
 
             # anti macro
-            # if self.toggle[guild_id]["Anti-Macro"]:
-            #     if user_id not in self.macro_cd:
-            #         self.macro_cd[user_id] = {}
-            #         self.macro_cd[user_id]['intervals'] = []
-            #     if 'last' not in self.macro_cd[user_id]:
-            #         self.macro_cd[user_id]['last'] = datetime.now()
-            #     else:
-            #         last = self.macro_cd[user_id]['last']
-            #         self.macro_cd[user_id]['intervals'].append((datetime.now() - last).seconds)
-            #         intervals = self
-            #         .macro_cd[user_id]['intervals']
-            #         self.macro_cd[user_id]['intervals'] = intervals[-sensitivity_level + 1:]
-            #         if len(intervals) > 2:
-            #             if all(interval == intervals[0] and interval > 10 for interval in intervals):
-            #                 reason = "macromancing"
-            #                 triggered = True
+            if msg.channel.id in [541045023404326922, 813126504543551508]:
+                async def has_pattern(intervals):
+                    total = []
+                    for index in range(len(intervals)):
+                        for i in range(5):
+                            await asyncio.sleep(0)
+                            total.append(intervals[index:index + i])
+
+                    total = [p for p in total if len(p) > 2]
+                    top = []
+                    for lst in sorted(total, key=lambda v: total.count(v), reverse=True):
+                        await asyncio.sleep(0)
+                        dat = [lst, total.count(lst)]
+                        if dat not in top:
+                            top.append(dat)
+
+                    for lst, count in top[:5]:
+                        await asyncio.sleep(0)
+                        div = round(len(intervals) / len(lst))
+                        if count >= div - 1:
+                            return True
+                        else:
+                            return False
+
+
+                ts = datetime.timestamp
+                if user_id not in self.macro_cd:
+                    self.macro_cd[user_id] = [ts(msg.created_at), []]
+                else:
+                    self.macro_cd[user_id][1] = [
+                        *self.macro_cd[user_id][1][-15:],
+                        ts(msg.created_at) - self.macro_cd[user_id][0]
+                    ]
+                    self.macro_cd[user_id][0] = ts(msg.created_at)
+                    intervals = [int(i) for i in self.macro_cd[user_id][1]]
+                    if len(intervals) > 10:
+                        if all(round(cd) == round(intervals[0]) for cd in intervals):
+                            if intervals[0] > 3:
+                                triggered = True
+                                reason = "Repeated messages at the same interval"
+                        elif await has_pattern(intervals):
+                            triggered = True
+                            reason = "Using a bot/macro"
+
+                await self.add_content(msg.author, msg.content)
+                created = False
+
+                for content, timestamps in list(self.last[user_id].items()):
+                    await asyncio.sleep(0)
+                    if user_id in self.deep and content in self.deep[user_id]:
+                        continue
+                    if len(timestamps) > 3:
+                        if user_id not in self.deep:
+                            self.deep[user_id] = {}
+                        self.deep[user_id][content] = [ts(msg.created_at), []]
+                        created = True
+
+                if user_id in self.deep and not created and msg.content.lower() in self.deep[user_id]:
+                    for content in list(self.deep[user_id].keys()):
+                        await asyncio.sleep(0)
+                        self.deep[user_id][content][1] = [
+                            *self.deep[user_id][content][1][-15:],
+                            ts(msg.created_at) - self.deep[user_id][content][0]
+                        ]
+                        self.deep[user_id][content][0] = ts(msg.created_at)
+                        intervals = [int(i) for i in self.deep[user_id][content][1]]
+                        if len(intervals) > 10:
+                            if all(round(cd) == round(intervals[0]) for cd in intervals):
+                                if intervals[0] > 3:
+                                    # triggered = True
+                                    self.bot.log.info(f"Deep check for repeating was triggered by {msg.author}")
+                            elif await has_pattern(intervals):
+                                # triggered = True
+                                self.bot.log.info(f"Deep check for using a bot/macro was triggered by {msg.author}")
+
 
             # duplicate messages
             if "duplicates" in self.config[guild_id] and msg.content:
@@ -626,7 +710,7 @@ class AntiSpam(commands.Cog):
                             await asyncio.sleep(0)
                             dupes = [
                                 m for m in self.dupes[channel_id]
-                                if m and m.content and m.content == message.content
+                                if m and m.content and m.content == message.content and len(m.content) > 3
                             ]
                             if len(dupes) > 4:
                                 history = await msg.channel.history(limit=2).flatten()
@@ -763,7 +847,10 @@ class AntiSpam(commands.Cog):
                             # Mute and purge any new messages
                             if mute_role in user.roles:
                                 continue
-                            timer = 150 * multiplier
+                            timer = 150
+                            if "macro" in reason.lower():
+                                timer = 900
+                            timer *= multiplier
                             end_time = time() + timer
                             timer_str = self.bot.utils.get_time(timer)
                             try:
