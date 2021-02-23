@@ -140,6 +140,7 @@ class Emojis:
     home = "🏡"
     up = "⬆️"
     down = "⬇️"
+    double_down = "⏬"
 
     # Misc
     youtube = "<:YouTube:498050040384978945>"
