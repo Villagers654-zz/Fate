@@ -90,6 +90,7 @@ class AntiSpam(commands.Cog):
             self.last[user_id][content].remove(now)
             if not self.last[user_id][content]:
                 del self.last[user_id][content]
+                print(f"Removed {content} from {user}")
                 if user_id in self.deep:
                     if content in self.deep[user_id]:
                         del self.deep[user_id][content]
@@ -635,62 +636,31 @@ class AntiSpam(commands.Cog):
                     for lst, count in top[:5]:
                         await asyncio.sleep(0)
                         div = round(len(intervals) / len(lst))
-                        if count >= div - 1:
+                        if all(i < 3 for i in lst):
+                            return False
+                        elif count >= div - 1:
                             return True
                         else:
                             return False
-
 
                 ts = datetime.timestamp
                 if user_id not in self.macro_cd:
                     self.macro_cd[user_id] = [ts(msg.created_at), []]
                 else:
                     self.macro_cd[user_id][1] = [
-                        *self.macro_cd[user_id][1][-15:],
+                        *self.macro_cd[user_id][1][-20:],
                         ts(msg.created_at) - self.macro_cd[user_id][0]
                     ]
                     self.macro_cd[user_id][0] = ts(msg.created_at)
                     intervals = [int(i) for i in self.macro_cd[user_id][1]]
-                    if len(intervals) > 10:
+                    if len(intervals) > 12:
                         if all(round(cd) == round(intervals[0]) for cd in intervals):
-                            if intervals[0] > 3:
+                            if intervals[0] > 3 and intervals[0] < 3:
                                 triggered = True
                                 reason = "Repeated messages at the same interval"
                         elif await has_pattern(intervals):
                             triggered = True
                             reason = "Using a bot/macro"
-
-                await self.add_content(msg.author, msg.content)
-                created = False
-
-                for content, timestamps in list(self.last[user_id].items()):
-                    await asyncio.sleep(0)
-                    if user_id in self.deep and content in self.deep[user_id]:
-                        continue
-                    if len(timestamps) > 3:
-                        if user_id not in self.deep:
-                            self.deep[user_id] = {}
-                        self.deep[user_id][content] = [ts(msg.created_at), []]
-                        created = True
-
-                if user_id in self.deep and not created and msg.content.lower() in self.deep[user_id]:
-                    for content in list(self.deep[user_id].keys()):
-                        await asyncio.sleep(0)
-                        self.deep[user_id][content][1] = [
-                            *self.deep[user_id][content][1][-15:],
-                            ts(msg.created_at) - self.deep[user_id][content][0]
-                        ]
-                        self.deep[user_id][content][0] = ts(msg.created_at)
-                        intervals = [int(i) for i in self.deep[user_id][content][1]]
-                        if len(intervals) > 10:
-                            if all(round(cd) == round(intervals[0]) for cd in intervals):
-                                if intervals[0] > 3:
-                                    # triggered = True
-                                    self.bot.log.info(f"Deep check for repeating was triggered by {msg.author}")
-                            elif await has_pattern(intervals):
-                                # triggered = True
-                                self.bot.log.info(f"Deep check for using a bot/macro was triggered by {msg.author}")
-
 
             # duplicate messages
             if "duplicates" in self.config[guild_id] and msg.content:
