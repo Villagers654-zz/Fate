@@ -1,61 +1,19 @@
-from discord.ext import commands
-from botutils import colors
-from os.path import isfile
 from time import time
 import discord
 import asyncio
-import json
+from discord.ext import commands
+from botutils import colors
+from discord.http import DiscordServerError
 
 
 class VcLog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.path = "./data/userdata/VcLog.json"
-        self.channel = {}
-        self.keep_clean = {}
+        self.config = bot.utils.cache("vclog")
         self.join_cd = {}
         self.leave_cd = {}
         self.move_cd = {}
-        if isfile(self.path):
-            with open(self.path, "r") as f:
-                dat = json.load(f)
-                if "channel" in dat:
-                    self.channel = dat["channel"]
-                if "keep_clean" in dat:
-                    self.keep_clean = dat["keep_clean"]
-
-    async def save_json(self):
-        data = {"channel": self.channel, "keep_clean": self.keep_clean}
-        await self.bot.save_json(self.path, data)
-
-    async def ensure_permissions(self, guild_id, channel_id=None):
-        if not self.bot.is_ready():
-            return False
-        if channel_id:
-            channel = self.bot.get_channel(channel_id)
-            if channel:
-                bot = channel.guild.get_member(self.bot.user.id)
-                if channel.permissions_for(bot).send_messages:
-                    return True
-            return False
-        channel = self.bot.get_channel(self.channel[guild_id])
-        if not channel:
-            del self.channel[guild_id]
-            await self.save_json()
-            return False
-        bot = channel.guild.get_member(self.bot.user.id)
-        if guild_id in self.channel:
-            if not channel:
-                del self.channel[guild_id]
-                await self.save_json()
-                return False
-            send_messages = channel.permissions_for(bot).send_messages
-            manage_messages = channel.permissions_for(bot).manage_messages
-            if not send_messages or not manage_messages:
-                del self.channel[guild_id]
-                await self.save_json()
-                return False
-        return True
 
     @commands.group(name="vc-log", aliases=["vclog"])
     @commands.guild_only()
@@ -72,138 +30,141 @@ class VcLog(commands.Cog):
             e.add_field(
                 name="◈ Usage ◈", value=".vclog enable\n.vclog disable", inline=False
             )
-            if str(ctx.guild.id) in self.channel:
-                status = "Current Status: enabled"
-            else:
-                status = "Current Status: disabled"
-            e.set_footer(text=status)
+            toggle = "Enabled" if ctx.guild.id in self.config else "Disabled"
+            e.set_footer(text=f"Current Status: {toggle}")
             await ctx.send(embed=e)
 
     @_vclog.command(name="enable")
     @commands.has_permissions(manage_channels=True)
     async def _enable(self, ctx):
-        guild_id = str(ctx.guild.id)
         await ctx.send("Mention the channel I should use")
         msg = await self.bot.utils.get_message(ctx)
         if not msg.channel_mentions:
             return await ctx.send("That isn't a channel mention")
-        channel_id = msg.channel_mentions[0].id
-        channel_access = await self.ensure_permissions(guild_id, channel_id)
-        if not channel_access:
-            return await ctx.send("Sry, I don't have access to that channel")
+        channel = msg.channel_mentions[0]
+        perms = channel.permissions_for(ctx.guild.me)
+        if not perms.send_messages:
+            return await ctx.send("I don't have access to that channel")
         await ctx.send("Would you like me to delete all non vc-log messages?")
         msg = await self.bot.utils.get_message(ctx)
-        reply = msg.content.lower()
-        self.channel[guild_id] = channel_id
-        channel_access = await self.ensure_permissions(guild_id)
-        if not channel_access:
-            del self.channel[guild_id]
-            del self.keep_clean[guild_id]
-            return await ctx.send(
-                "Sry, I'm missing either manage message(s) or send message(s) permissions in there"
-            )
-        if "yes" in reply or "sure" in reply or "yep" in reply or "ye" in reply:
-            self.keep_clean[guild_id] = "enabled"
+        keep_clean = True if "yes" in msg.content.lower() else False
+        if keep_clean and not perms.manage_messages:
+            return await ctx.send("I'm missing manage_message permissions in the channel")
+        if keep_clean:
             await ctx.send("Aight, i'll make sure it stays clean .-.")
+        self.config[ctx.guild.id] = {
+            "channel": channel.id,
+            "keep_clean": keep_clean
+        }
+        await self.config.flush()
         await ctx.send("Enabled VcLog")
-        await self.save_json()
 
     @_vclog.command(name="disable")
     @commands.has_permissions(manage_channels=True)
     async def _disable(self, ctx):
-        guild_id = str(ctx.guild.id)
-        if guild_id not in self.channel:
+        guild_id = ctx.guild.id
+        if guild_id not in self.config:
             return await ctx.send("VcLog isn't enabled")
-        del self.channel[guild_id]
-        if guild_id in self.keep_clean:
-            del self.keep_clean[guild_id]
+        self.config.remove(guild_id)
         await ctx.send("Disabled VcLog")
-        await self.save_json()
 
     @commands.Cog.listener()
     async def on_message(self, msg: discord.Message):
-        if isinstance(msg.guild, discord.Guild):
-            guild_id = str(msg.guild.id)
-            if guild_id in self.keep_clean:
-                if msg.channel.id == self.channel[guild_id]:
-                    if msg.author.id == self.bot.user.id:
-                        chars = [
-                            "<:plus:548465119462424595>",
-                            "❌",
-                            "🔈",
-                            "🔊",
-                            "🚸",
-                            "🎧",
-                            "🎤",
-                        ]
-                        for x in chars:
-                            if msg.content.startswith(x):
-                                return
-                    bot_has_permissions = await self.ensure_permissions(guild_id)
-                    if bot_has_permissions:
-                        await asyncio.sleep(20)
-                        try:
-                            await msg.delete()
-                        except:
-                            pass
+        if msg.guild and msg.author.id != self.bot.user.id:
+            guild_id = msg.guild.id
+            if guild_id in self.config and self.config[guild_id]["keep_clean"]:
+                if msg.channel.id == self.config[guild_id]["channel"]:
+                    if not msg.channel.permissions_for(msg.guild.me).manage_messages:
+                        return self.config.remove(guild_id)
+                    await asyncio.sleep(20)
+                    if not msg.channel.permissions_for(msg.guild.me).manage_messages:
+                        return self.config.remove(guild_id)
+                    ignored = (
+                        discord.errors.NotFound,
+                        discord.errors.Forbidden,
+                        discord.errors.HTTPException
+                    )
+                    try:
+                        await msg.delete()
+                    except ignored:
+                        pass
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
-        guild_id = str(member.guild.id)
-        if guild_id in self.channel:
-            channel = self.bot.get_channel(self.channel[guild_id])
-            bot_has_permissions = await self.ensure_permissions(guild_id)
-            if bot_has_permissions:
-                user_id = str(member.id)
-                if not before.channel:
-                    if guild_id not in self.join_cd:
-                        self.join_cd[guild_id] = {}
-                    if user_id not in self.join_cd[guild_id]:
-                        self.join_cd[guild_id][user_id] = 0
-                    if self.join_cd[guild_id][user_id] < time():
-                        await channel.send(
-                            f"<:plus:548465119462424595> **{member.display_name} joined {after.channel.name}**"
-                        )
-                        self.join_cd[guild_id][user_id] = time() + 10
-                        return
-                elif not after.channel:
-                    if guild_id not in self.leave_cd:
-                        self.leave_cd[guild_id] = {}
-                    if user_id not in self.leave_cd[guild_id]:
-                        self.leave_cd[guild_id][user_id] = 0
-                    if self.leave_cd[guild_id][user_id] < time():
-                        await channel.send(
-                            f"❌ **{member.display_name} left {before.channel.name}**"
-                        )
-                        self.leave_cd[guild_id][user_id] = time() + 10
-                        return
-                elif before.channel.id != after.channel.id:
-                    now = int(time() / 10)
-                    if guild_id not in self.move_cd:
-                        self.move_cd[guild_id] = {}
-                    if user_id not in self.move_cd[guild_id]:
-                        self.move_cd[guild_id][user_id] = [now, 0]
-                    if self.move_cd[guild_id][user_id][0] == now:
-                        self.move_cd[guild_id][user_id][1] += 1
-                    else:
-                        self.move_cd[guild_id][user_id] = [now, 0]
-                    if self.move_cd[guild_id][user_id][1] > 2:
-                        return
-                    return await channel.send(
-                        f"🚸 **{member.display_name} moved to {after.channel.name}**"
+        guild_id = member.guild.id
+        if guild_id in self.config:
+            channel = self.bot.get_channel(self.config[guild_id]["channel"])
+            if not channel:
+                ignored = (
+                    discord.errors.HTTPException,
+                    DiscordServerError
+                )
+                handled = (
+                    discord.errors.NotFound,
+                    discord.errors.Forbidden
+                )
+                try:
+                    channel = await self.bot.fetch_channel(self.config[guild_id]["channel"])
+                except ignored:
+                    return
+                except handled:
+                    return self.config.remove(guild_id)
+            if not channel.permissions_for(member.guild.me).send_messages:
+                return await self.config.remove(guild_id)
+
+            user_id = member.id
+            if not before.channel:
+                if guild_id not in self.join_cd:
+                    self.join_cd[guild_id] = {}
+                if user_id not in self.join_cd[guild_id]:
+                    self.join_cd[guild_id][user_id] = 0
+                if self.join_cd[guild_id][user_id] < time():
+                    await channel.send(
+                        f"<:plus:548465119462424595> **{member.display_name} joined {after.channel.name}**"
                     )
-                elif before.mute is False and after.mute is True:
-                    return await channel.send(f"🔈 **{member.display_name} was muted**")
-                elif before.mute is True and after.mute is False:
-                    return await channel.send(
-                        f"🔊 **{member.display_name} was unmuted**"
+                    self.join_cd[guild_id][user_id] = time() + 10
+                    return
+
+            elif not after.channel:
+                if guild_id not in self.leave_cd:
+                    self.leave_cd[guild_id] = {}
+                if user_id not in self.leave_cd[guild_id]:
+                    self.leave_cd[guild_id][user_id] = 0
+                if self.leave_cd[guild_id][user_id] < time():
+                    await channel.send(
+                        f"❌ **{member.display_name} left {before.channel.name}**"
                     )
-                elif before.deaf is False and after.deaf is True:
-                    return await channel.send(
-                        f"🎧 **{member.display_name} was deafened**"
-                    )
-                elif before.deaf is True and after.deaf is False:
-                    await channel.send(f"🎤 **{member.display_name} was undeafened**")
+                    self.leave_cd[guild_id][user_id] = time() + 10
+                    return
+
+            elif before.channel.id != after.channel.id:
+                now = int(time() / 10)
+                if guild_id not in self.move_cd:
+                    self.move_cd[guild_id] = {}
+                if user_id not in self.move_cd[guild_id]:
+                    self.move_cd[guild_id][user_id] = [now, 0]
+                if self.move_cd[guild_id][user_id][0] == now:
+                    self.move_cd[guild_id][user_id][1] += 1
+                else:
+                    self.move_cd[guild_id][user_id] = [now, 0]
+                if self.move_cd[guild_id][user_id][1] > 2:
+                    return
+                return await channel.send(
+                    f"🚸 **{member.display_name} moved to {after.channel.name}**"
+                )
+
+            elif before.mute is False and after.mute is True:
+                return await channel.send(f"🔈 **{member.display_name} was muted**")
+            elif before.mute is True and after.mute is False:
+                return await channel.send(
+                    f"🔊 **{member.display_name} was unmuted**"
+                )
+            elif before.deaf is False and after.deaf is True:
+                return await channel.send(
+                    f"🎧 **{member.display_name} was deafened**"
+                )
+            elif before.deaf is True and after.deaf is False:
+                await channel.send(f"🎤 **{member.display_name} was undeafened**")
 
 
 def setup(bot):
