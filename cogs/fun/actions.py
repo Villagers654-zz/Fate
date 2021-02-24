@@ -42,6 +42,9 @@ class Actions(commands.Cog):
         )
         await ctx.send(f"🔫 | pew pew, {result}", allowed_mentions=self.mentions)
 
+    def shoot_usage(self):
+        return discord.Embed(description="yeet yoot shoot help")
+
     @commands.command(description="Injects a user with something random")
     @commands.cooldown(1, 3, commands.BucketType.user)
     async def inject(self, ctx, user: discord.Member):
