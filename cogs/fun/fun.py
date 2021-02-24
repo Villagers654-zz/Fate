@@ -74,23 +74,17 @@ class Fun(commands.Cog):
         self.dat = {}
         self.bullying = []
         self.gay = {sexuality: {} for sexuality in sexualities}
-        self.gp = "./data/userdata/gay.json"
-        if path.isfile(self.gp):
-            with open(self.gp, "r") as f:
-                self.gay = json.load(f)
+        self.gay = bot.utils.cache("sexuality")
         for sexuality in sexualities:
             if sexuality not in self.gay:
                 self.gay[sexuality] = {}
+
         self.clear_old_messages_task.start()
 
     def cog_unload(self):
         self.clear_old_messages_task.stop()
 
-    def save_gay(self):
-        with open(self.gp, "w") as f:
-            json.dump(self.gay, f, ensure_ascii=False)
-
-    @commands.command(name="bully")
+    @commands.command(name="bully", enabled=False)
     @commands.cooldown(1, 5, commands.BucketType.channel)
     @commands.bot_has_permissions(send_messages=True)
     async def bully(self, ctx, user: discord.Member):
@@ -153,7 +147,7 @@ class Fun(commands.Cog):
 
         cleanup()
 
-    @commands.command(name="meme")
+    @commands.command(name="meme", enabled=False)
     @commands.cooldown(1, 3, commands.BucketType.channel)
     @commands.bot_has_permissions(embed_links=True)
     async def meme(self, ctx):
@@ -523,7 +517,7 @@ class Fun(commands.Cog):
             if percentage.lower() == "reset":
                 if user_id not in self.gay[invoked_with]:
                     return await ctx.send("You don't have a custom percentage set")
-                del self.gay[invoked_with][user_id]
+                self.gay.remove_sub(invoked_with, user_id)
                 await ctx.send(f"Removed your custom {invoked_with} percentage")
             elif percentage.lower() == "help":
                 return await ctx.send(usage)
@@ -534,10 +528,10 @@ class Fun(commands.Cog):
                 if int(stripped) > 100:
                     return await ctx.send("That's too high of a percentage")
                 self.gay[invoked_with][user_id] = int(stripped)
-                self.save_gay()
                 await ctx.send(
                     f"Use `{self.bot.utils.get_prefix(ctx)}{invoked_with} reset` to go back to random results"
                 )
+            await self.gay.flush()
         e = discord.Embed(color=user.color)
         e.set_author(name=str(user), icon_url=user.avatar_url)
         percentage = random.randint(0, 100)
