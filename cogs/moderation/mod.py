@@ -45,16 +45,15 @@ def check_if_running():
 
 def has_required_permissions(**kwargs):
     """ Permission check with support for usermod, rolemod, and role specific cmd access """
-
     async def predicate(ctx):
-        with open("./data/userdata/moderation.json", "r") as f:
-            config = json.load(f)  # type: dict
         cls = globals()["cls"]  # type: Moderation
+        config = cls.config
         if str(ctx.guild.id) not in config:
-            config[str(ctx.guild.id)] = cls.template
+            cls.config[str(ctx.guild.id)] = cls.template
         config = config[str(ctx.guild.id)]  # type: dict
         cmd = ctx.command.name
         for command, dat in config["commands"].items():
+            await asyncio.sleep(0)
             for c, subs in cls.subs.items():
                 if cmd in subs:
                     cmd = command
@@ -251,54 +250,46 @@ class Moderation(commands.Cog):
                 ".unrestrict #channel_mention\n.restricted",
             )
             return await ctx.send(embed=e)
-        guild_id = str(ctx.guild.id)
-        config = self.bot.utils.get_config()  # type: dict
-        if "restricted" not in config:
-            config["restricted"] = {}
-        if guild_id not in config["restricted"]:
-            config["restricted"][guild_id] = {"channels": [], "users": []}
+        guild_id = ctx.guild.id
+        if guild_id not in self.bot.restricted:
+            self.bot.restricted[guild_id] = {"channels": [], "users": []}
         restricted = "**Restricted:**"
-        dat = config["restricted"][guild_id]
+        dat = self.bot.restricted[guild_id]
         for channel in ctx.message.channel_mentions:
             if channel.id in dat["channels"]:
                 continue
-            config["restricted"][guild_id]["channels"].append(channel.id)
+            self.bot.restricted[guild_id]["channels"].append(channel.id)
             restricted += f"\n{channel.mention}"
         for member in ctx.message.mentions:
             if member.id in dat["users"]:
                 continue
-            config["restricted"][guild_id]["users"].append(member.id)
+            self.bot.restricted[guild_id]["users"].append(member.id)
             restricted += f"\n{member.mention}"
-        self.bot.restricted = config["restricted"]
+        await self.bot.restricted.flush()
         e = discord.Embed(color=colors.fate(), description=restricted)
         await ctx.send(embed=e)
-        await self.save_config(config)
 
     @commands.command(name="unrestrict")
     @commands.guild_only()
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.has_permissions(administrator=True)
     async def unrestrict(self, ctx):
-        guild_id = str(ctx.guild.id)
-        config = self.bot.utils.get_config()  # type: dict
-        if "restricted" not in config:
-            config["restricted"] = {}
+        guild_id = ctx.guild.id
         unrestricted = "**Unrestricted:**"
-        if guild_id not in config["restricted"]:
+        if guild_id not in self.bot.restricted:
             return await ctx.send("Nothing's currently restricted")
-        dat = config["restricted"][guild_id]
+        dat = self.bot.restricted[guild_id]
         for channel in ctx.message.channel_mentions:
             if channel.id in dat["channels"]:
-                config["restricted"][guild_id]["channels"].remove(channel.id)
+                self.bot.restricted[guild_id]["channels"].remove(channel.id)
                 unrestricted += f"\n{channel.mention}"
         for member in ctx.message.mentions:
             if member.id in dat["users"]:
-                config["restricted"][guild_id]["users"].remove(member.id)
+                self.bot.restricted[guild_id]["users"].remove(member.id)
                 unrestricted += f"\n{member.mention}"
-        self.bot.restricted = config["restricted"]
+        await self.bot.restricted.flush()
         e = discord.Embed(color=colors.fate(), description=unrestricted)
         await ctx.send(embed=e)
-        await self.save_config(config)
 
     @commands.command(name="addmod")
     @commands.cooldown(1, 3, commands.BucketType.user)
@@ -386,11 +377,10 @@ class Moderation(commands.Cog):
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.has_permissions(administrator=True)
     async def restricted(self, ctx):
-        guild_id = str(ctx.guild.id)
-        config = self.bot.utils.get_config()  # type: dict
-        if guild_id not in config["restricted"]:
-            return await ctx.send("No restricted channels/users")
-        dat = config["restricted"][guild_id]
+        guild_id = ctx.guild.id
+        if guild_id not in self.bot.restricted:
+            return await ctx.send("YoU hAvE nONe biTcH")
+        dat = self.bot.restricted[guild_id]
         e = discord.Embed(color=colors.fate())
         e.set_author(name="Restricted:", icon_url=ctx.author.avatar_url)
         e.description = ""
@@ -399,12 +389,8 @@ class Moderation(commands.Cog):
             for channel_id in dat["channels"]:
                 channel = self.bot.get_channel(channel_id)
                 if not isinstance(channel, discord.TextChannel):
-                    position = config["restricted"][guild_id]["channels"].index(
-                        channel_id
-                    )
-                    config["restricted"][guild_id]["channels"].pop(position)
-                    self.bot.restricted = config["restricted"]
-                    await self.save_config(config)
+                    self.bot.restricted[guild_id]["channels"].remove(channel_id)
+                    await self.bot.restricted.flush()
                 else:
                     changelog += "\n" + channel.mention
             if changelog:
@@ -414,10 +400,8 @@ class Moderation(commands.Cog):
             for user_id in dat["users"]:
                 user = self.bot.get_user(user_id)
                 if not isinstance(user, discord.User):
-                    position = config["restricted"][guild_id]["users"].index(user_id)
-                    config["restricted"][guild_id]["users"].pop(position)
-                    self.bot.restricted = config["restricted"]
-                    await self.save_config(config)
+                    self.bot.restricted[guild_id]["users"].remove(user_id)
+                    await self.bot.restricted.flush()
                 else:
                     changelog += "\n" + user.mention
             if changelog:

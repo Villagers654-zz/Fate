@@ -35,18 +35,21 @@ class EmptyException(Exception):
 
 class Fate(commands.Bot):
     def __init__(self, **options):
+        # Bot Configuration
         with open("./data/config.json", "r") as f:
             self.config = json.load(f)  # type: dict
         with open("./data/userdata/config.json", "r") as f:
             dat = json.load(f)
         self.blocked = dat["blocked"]
-        self.restricted = dat["restricted"]
+
+        # User configs
+        self.restricted = {}
         with open("./data/userdata/disabled_commands.json", "r") as f:
             self.disabled_commands = json.load(f)
         if not os.path.exists(self.config["datastore_location"]):
             os.mkdir(self.config["datastore_location"])
-        self.auth = {}
 
+        self.auth = {}
         self.debug_mode = self.config["debug_mode"]
         self.owner_ids = set(
             list([self.config["bot_owner_id"], *self.config["bot_owner_ids"]])
@@ -255,7 +258,7 @@ class Fate(commands.Bot):
         )
 
     @property
-    def utils(self) -> Utils:
+    def utils(self):
         """Return the cog containing utility functions"""
         if "Utils" not in self.cogs:
             raise self.ignored_exit
@@ -464,6 +467,9 @@ class Fate(commands.Bot):
             self.load(*extensions)
             self.log.info("Finished loading initial cogs\nLogging in..", color="yellow")
 
+        # Load in caches
+        self.restricted = self.utils.cache("restricted")
+
         super().run(self.auth["tokens"][self.config["token_id"]])
 
 
@@ -496,6 +502,7 @@ use_sentry(
     bot,
     dsn=bot.config["sentry_dsn"]
 )
+
 
 @bot.event
 async def on_shard_ready(shard_id):
