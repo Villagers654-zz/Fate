@@ -52,7 +52,7 @@ def blocked(ctx):
 def restricted(ctx):
     if not ctx.guild or ctx.author.id in ctx.bot.owner_ids:
         return True  # Nothing's restricted
-    guild_id = str(ctx.guild.id)
+    guild_id = ctx.guild.id
     if guild_id in ctx.bot.restricted:
         if ctx.channel.id in ctx.bot.restricted[guild_id]["channels"]:
             if not ctx.channel.permissions_for(ctx.author).manage_messages:
