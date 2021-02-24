@@ -141,10 +141,9 @@ class GlobalChatRewrite(commands.Cog):
         async with self.bot.cursor() as cur:
             await cur.execute(
                 f"insert into global_chat values ("
-                f"{ctx.guild.id}, {ctx.channel.id}, {msg.id}"
+                f"{ctx.guild.id}, {ctx.channel.id}"
                 f") on duplicate key update "
-                f"channel_id = {ctx.channel.id} "
-                f"and message_id = {msg.id};"
+                f"channel_id = {ctx.channel.id};"
             )
 
         self.cache[ctx.guild.id] = ctx.channel
@@ -297,7 +296,7 @@ class GlobalChatRewrite(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_delete(self, msg):
-        if msg.channel.id == 787940379168210944:
+        if msg.channel.id == 709035348629520425:
             for chunk in list(self.msg_chunks):
                 if msg.id in chunk.values():
                     for channel_id, msg_id in chunk.items():
