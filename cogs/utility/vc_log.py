@@ -66,6 +66,7 @@ class VcLog(commands.Cog):
         if guild_id not in self.config:
             return await ctx.send("VcLog isn't enabled")
         self.config.remove(guild_id)
+        await self.config.flush()
         await ctx.send("Disabled VcLog")
 
     @commands.Cog.listener()
@@ -75,7 +76,8 @@ class VcLog(commands.Cog):
             if guild_id in self.config and self.config[guild_id]["keep_clean"]:
                 if msg.channel.id == self.config[guild_id]["channel"]:
                     if not msg.channel.permissions_for(msg.guild.me).manage_messages:
-                        return self.config.remove(guild_id)
+                        self.config.remove(guild_id)
+                        return await self.config.flush()
                     await asyncio.sleep(20)
                     if not msg.channel.permissions_for(msg.guild.me).manage_messages:
                         return self.config.remove(guild_id)
@@ -108,9 +110,11 @@ class VcLog(commands.Cog):
                 except ignored:
                     return
                 except handled:
-                    return self.config.remove(guild_id)
+                    self.config.remove(guild_id)
+                    return await self.config.flush()
             if not channel.permissions_for(member.guild.me).send_messages:
-                return self.config.remove(guild_id)
+                self.config.remove(guild_id)
+                return await self.config.flush()
 
             user_id = member.id
             if not before.channel:
