@@ -485,7 +485,7 @@ class Ranking(commands.Cog):
         if not url and not ctx.message.attachments:
             if "background" not in self.profile[user_id]:
                 return await ctx.send("You don't have a custom background")
-            self.profile.remove_sub_key(user_id, "background")
+            self.profile.remove_sub(user_id, "background")
             await ctx.send("Reset your background")
             return await self.profile.flush()
         if not url:
