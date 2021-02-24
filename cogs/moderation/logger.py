@@ -1713,20 +1713,23 @@ class Logger(commands.Cog):
                 log = Log("bot_add", embed=e)
                 self.put_nowait(guild_id, log)
                 return
-            invites = await member.guild.invites()
+
             invite = None  # the invite used to join
-            if guild_id not in self.invites:
-                self.invites[guild_id] = {}
-            for invite in invites:
-                if invite.url not in self.invites[guild_id]:
-                    self.invites[guild_id][invite.url] = invite.uses
-                    if invite.uses > 0:
+            if member.guild.me.guild_permissions.administrator:
+                invites = await member.guild.invites()
+                if guild_id not in self.invites:
+                    self.invites[guild_id] = {}
+                for invite in invites:
+                    if invite.url not in self.invites[guild_id]:
+                        self.invites[guild_id][invite.url] = invite.uses
+                        if invite.uses > 0:
+                            invite = invite
+                            break
+                    elif invite.uses != self.invites[guild_id][invite.url]:
+                        self.invites[guild_id][invite.url] = invite.uses
                         invite = invite
                         break
-                elif invite.uses != self.invites[guild_id][invite.url]:
-                    self.invites[guild_id][invite.url] = invite.uses
-                    invite = invite
-                    break
+
             e = discord.Embed(color=lime_green())
             icon_url = member.avatar_url
             inviter = "Unknown"
