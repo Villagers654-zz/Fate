@@ -10,26 +10,30 @@ class Cache:
         self.bot = bot
         self.collection = collection
         self._cache = {}
+        self.state = {}
         for config in bot.mongo[collection].find({}):
             self._cache[config["_id"]] = {
                 key: value for key, value in config.items() if key != "_id"
             }
-        self._unsaved = {}  # type: dict
+            self.state[config["_id"]] = {
+                key: value for key, value in config.items() if key != "_id"
+            }
 
     async def flush(self):
         collection = self.bot.aio_mongo[self.collection]
-        for key, do_insert in list(self._unsaved.items()):
+        for key, value in list(self._cache.items()):
             await asyncio.sleep(0)
-            if do_insert:
+            if key not in self.state:
                 await collection.insert_one({
                     "_id": key, **self._cache[key]
                 })
-            else:
+                self.state[key] = value
+            elif value != self.state[key]:
                 await collection.update_one(
                     filter={"_id": key},
                     update={"$set": self._cache[key]}
                 )
-            del self._unsaved[key]
+                self.state[key] = value
 
     def keys(self):
         return self._cache.keys()
@@ -44,17 +48,13 @@ class Cache:
         return self._cache[item]
 
     def __setitem__(self, key, value):
-        if key in self._cache:
-            self._unsaved[key] = False
-        elif key not in self._unsaved:
-            self._unsaved[key] = True
         self._cache[key] = value
 
     def remove(self, key):
-        if key not in self._unsaved or (key in self._unsaved and not self._unsaved[key]):
+        if key in self.state:
             self.bot.loop.create_task(self._remove_from_db(key))
-        if key in self._unsaved:
-            del self._unsaved[key]
+        else:
+            del self._cache[key]
 
     def remove_sub(self, key, sub_key):
         self.bot.loop.create_task(self._remove_from_db(key, sub_key))
@@ -66,9 +66,14 @@ class Cache:
                 filter={"_id": key},
                 update={"$unset": {sub_key: 1}}
             )
+            del self._cache[key][sub_key]
+            if sub_key in self.state[key]:
+                del self.state[key][sub_key]
         else:
             await collection.delete_one({"_id": key})
             del self._cache[key]
+            if key in self.state:
+                del self.state[key]
 
 
 def get_config():
