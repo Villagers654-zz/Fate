@@ -110,7 +110,7 @@ class VcLog(commands.Cog):
                 except handled:
                     return self.config.remove(guild_id)
             if not channel.permissions_for(member.guild.me).send_messages:
-                return await self.config.remove(guild_id)
+                return self.config.remove(guild_id)
 
             user_id = member.id
             if not before.channel:
