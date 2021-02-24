@@ -29,6 +29,8 @@ class VcLog(commands.Cog):
         await self.bot.save_json(self.path, data)
 
     async def ensure_permissions(self, guild_id, channel_id=None):
+        if not self.bot.is_ready():
+            return False
         if channel_id:
             channel = self.bot.get_channel(channel_id)
             if channel:
@@ -37,6 +39,10 @@ class VcLog(commands.Cog):
                     return True
             return False
         channel = self.bot.get_channel(self.channel[guild_id])
+        if not channel:
+            del self.channel[guild_id]
+            await self.save_json()
+            return False
         bot = channel.guild.get_member(self.bot.user.id)
         if guild_id in self.channel:
             if not channel:
