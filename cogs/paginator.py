@@ -17,18 +17,20 @@ class CoggyCogCog(commands.Cog):
 
 class ConfigureModules:
     def __init__(self, ctx):
-        self.super = ctx.bot.cogs["AntiSpam"]
         self.ctx = ctx
         self.bot = ctx.bot
         self.guild_id = ctx.guild.id
 
         self.cursor = {}
-
         self.row = 0
         self.config = self.key = self.command = None
 
         emojis = ctx.bot.utils.emotes
-        self.emotes = [emojis.home, emojis.up, emojis.down, "⏬", emojis.yes]
+        self.emotes = [
+            getattr(emojis, name) for name in [
+                "home", "up", "down", "double_down", "yes"
+            ]
+        ]
 
         self.msg = self.reaction = self.user = None
         self.check = lambda r, u: r.message.id == self.msg.id and u.id == ctx.author.id
@@ -142,6 +144,10 @@ class ConfigureModules:
             else:
                 description.append(f"{emojis.offline} {key}")
 
+        # Show only the 9 options above and below the selected row if there's
+        # more than 18 options, and if the current row is at the top or bottom
+        # of the options list only show the first or last 18 to keep the amount
+        # of options showing the same
         if len(keys) > 18:
             max_scroll = len(keys) - 9
             if self.row > 9 and self.row < max_scroll:
@@ -178,7 +184,7 @@ class ConfigureModules:
         elif reaction.emoji == emojis.down:
             self.row += 1
         # Double down button
-        elif reaction.emoji == "⏬":
+        elif reaction.emoji == emojis.double_down:
             self.row += 5
         # Enter button
         elif str(reaction.emoji) == emojis.yes:
@@ -192,6 +198,8 @@ class ConfigureModules:
                     await self.init_config(key)
                 else:
                     await self.configure(key)
+            elif isinstance(self.cursor[key], discord.Embed):
+                await self.configure(key)
             else:
                 e.set_author(name=f"~==🥂🍸🍷{key}🍷🍸🥂==~")
                 await self.init_config(key)
@@ -210,20 +218,24 @@ class ConfigureModules:
                 e.remove_field(0)
             e.set_author(name=f"~==🥂🍸🍷{self.key}🍷🍸🥂==~")
             e.description = ""
+            description = await self.get_description()
 
             # Operating on an individual command
-            if "command_help" in self.cursor:
-                usage = self.cursor["command_help"]
-                e.set_field_at(0, name="◈ Command Help", value=usage, inline=False)
-                e.add_field(name="◈ Toggles", value=await self.get_description())
+            if "command_help" in self.cursor or "Command Help" in self.cursor:
+                if "command_help" in self.cursor:
+                    usage = self.cursor["command_help"]
+                    e.set_field_at(0, name="◈ Command Help", value=usage, inline=False)
+                    e.add_field(name="◈ Toggles", value=description, inline=False)
+                else:
+                    e.set_field_at(0, name="◈ Options", value=description, inline=False)
 
             # Showing a list of commands inside a category
             elif any(v is None for v in self.config.values()):
-                e.set_field_at(0, name="◈ Commands", value=await self.get_description())
+                e.set_field_at(0, name="◈ Commands", value=description)
 
             # Showing all the categories
             else:
-                e.set_field_at(0, name="◈ Modules", value=await self.get_description())
+                e.set_field_at(0, name="◈ Modules", value=description)
 
         await self.msg.edit(embed=e)
 
@@ -234,36 +246,13 @@ class ConfigureModules:
             if i != len(self.emotes) - 1:
                 await asyncio.sleep(0.21)
 
-    async def get_reply(self, message):
-        """Get new values for a config"""
-        m = await self.ctx.send(message)
-        reply = await self.bot.utils.get_message(self.ctx)
-        await m.delete()
-        content = reply.content
-        await reply.delete()
-        return content
-
-    async def update_data(self):
-        """Update the cache and database"""
-        return
-
     async def init_config(self, key):
         """Change where we're working at"""
-        self.config = self.cursor[key]
+        if isinstance(self.cursor[key], discord.Embed):
+            return
+        self.config = self.cursor = self.cursor[key]
         self.key = key
         self.row = 0
-        self.cursor = self.cursor[key]
-
-        # Add in options
-        # if any(isinstance(v, bool) for v in dict(self.config).values()):
-        #     self.cursor["Enable a mod"] = None
-        #     self.cursor["Disable a mod"] = None
-        # if "per_message" in self.config:
-        #     self.cursor["Per-message threshold"] = None
-        # if isinstance(self.config, list) or "thresholds" in self.config:
-        #     self.cursor["Add a custom threshold"] = None
-        #     self.cursor["Remove a custom threshold"] = None
-        # self.cursor["Reset to default"] = None
 
     async def configure(self, key):
         """Alter a configs data"""
@@ -287,7 +276,6 @@ class ConfigureModules:
         # Select the commands help embed
         elif key == "Command Help":
             await self.ctx.send(embed=self.cursor[key])
-            self.cursor = await self.main()
 
         # Viewing a commands help
         else:
@@ -312,6 +300,7 @@ class ConfigureModules:
                 "Enable": None,
                 "Disable": None
             }
+
 
 def setup(bot):
     bot.add_cog(CoggyCogCog(bot))
