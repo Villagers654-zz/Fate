@@ -10,12 +10,12 @@ class Cache:
         self.bot = bot
         self.collection = collection
         self._cache = {}
-        self.state = {}
+        self._db_state = {}
         for config in bot.mongo[collection].find({}):
             self._cache[config["_id"]] = {
                 key: value for key, value in config.items() if key != "_id"
             }
-            self.state[config["_id"]] = {
+            self._db_state[config["_id"]] = {
                 key: value for key, value in config.items() if key != "_id"
             }
 
@@ -23,17 +23,17 @@ class Cache:
         collection = self.bot.aio_mongo[self.collection]
         for key, value in list(self._cache.items()):
             await asyncio.sleep(0)
-            if key not in self.state:
+            if key not in self._db_state:
                 await collection.insert_one({
                     "_id": key, **self._cache[key]
                 })
-                self.state[key] = value
-            elif value != self.state[key]:
+                self._db_state[key] = value
+            elif value != self._db_state[key]:
                 await collection.update_one(
                     filter={"_id": key},
                     update={"$set": self._cache[key]}
                 )
-                self.state[key] = value
+                self._db_state[key] = value
 
     def keys(self):
         return self._cache.keys()
@@ -51,7 +51,7 @@ class Cache:
         self._cache[key] = value
 
     def remove(self, key):
-        if key in self.state:
+        if key in self._db_state:
             self.bot.loop.create_task(self._remove_from_db(key))
         else:
             del self._cache[key]
@@ -67,13 +67,13 @@ class Cache:
                 update={"$unset": {sub_key: 1}}
             )
             del self._cache[key][sub_key]
-            if sub_key in self.state[key]:
-                del self.state[key][sub_key]
+            if sub_key in self._db_state[key]:
+                del self._db_state[key][sub_key]
         else:
             await collection.delete_one({"_id": key})
             del self._cache[key]
-            if key in self.state:
-                del self.state[key]
+            if key in self._db_state:
+                del self._db_state[key]
 
 
 def get_config():
