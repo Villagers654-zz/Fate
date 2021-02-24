@@ -14,11 +14,11 @@ class Cache:
             self._cache[config["_id"]] = {
                 key: value for key, value in config.items() if key != "_id"
             }
-        self.unsaved = {}
+        self._unsaved = {}  # type: dict
 
     async def flush(self):
         collection = self.bot.aio_mongo[self.collection]
-        for key, do_insert in list(self.unsaved.items()):
+        for key, do_insert in list(self._unsaved.items()):
             await asyncio.sleep(0)
             if do_insert:
                 await collection.insert_one({
@@ -29,34 +29,37 @@ class Cache:
                     filter={"_id": key},
                     update={"$set": self._cache[key]}
                 )
-            del self.unsaved[key]
+            del self._unsaved[key]
 
-    def __contains__(self, item):
-        return item in self._cache
+    def keys(self):
+        return self._cache.keys()
 
     def items(self):
         return self._cache.items()
+
+    def __contains__(self, item):
+        return item in self._cache
 
     def __getitem__(self, item):
         return self._cache[item]
 
     def __setitem__(self, key, value):
         if key in self._cache:
-            self.unsaved[key] = False
-        elif key not in self.unsaved:
-            self.unsaved[key] = True
+            self._unsaved[key] = False
+        elif key not in self._unsaved:
+            self._unsaved[key] = True
         self._cache[key] = value
 
     def remove(self, key):
-        if key not in self.unsaved or (key in self.unsaved and not self.unsaved[key]):
-            self.bot.loop.create_task(self.remove_from_db(key))
-        if key in self.unsaved:
-            del self.unsaved[key]
+        if key not in self._unsaved or (key in self._unsaved and not self._unsaved[key]):
+            self.bot.loop.create_task(self._remove_from_db(key))
+        if key in self._unsaved:
+            del self._unsaved[key]
 
     def remove_sub_key(self, key, sub_key):
-        self.bot.loop.create_task(self.remove_from_db(key, sub_key))
+        self.bot.loop.create_task(self._remove_from_db(key, sub_key))
 
-    async def remove_from_db(self, key, sub_key=None):
+    async def _remove_from_db(self, key, sub_key=None):
         collection = self.bot.aio_mongo[self.collection]
         if sub_key:
             await collection.update_one(
