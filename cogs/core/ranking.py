@@ -517,10 +517,11 @@ class Ranking(commands.Cog):
             return await ctx.send("biTcH nO, those heels are too high")
         guild_id = ctx.guild.id
         self.config[guild_id]["max_xp_per_msg"] = amount
-        await ctx.send(f"Set the maximum xp gained per msg to {amount}")
-        if amount < self.config[guild_id]["max_xp_per_msg"]:
-            self.config[guild_id]["max_xp_per_msg"] = amount
-            await ctx.send(f"I also lowered the minimum xp per msg to {amount}")
+        msg = f"Set the maximum xp gained per msg to {amount}"
+        if amount < self.config[guild_id]["min_xp_per_msg"]:
+            self.config[guild_id]["min_xp_per_msg"] = amount
+            msg += f". I also lowered the minimum xp per msg to {amount}"
+        await ctx.send(msg)
         await self.config.flush()
 
     @set.command(name="timeframe")
