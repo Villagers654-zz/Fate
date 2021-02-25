@@ -690,7 +690,6 @@ class Utility(commands.Cog):
             e.add_field(
                 name="◈ Uptime ◈",
                 value=f"Online for {self.bot.utils.get_time(round(online_for.total_seconds()))}\n",
-                      # f"With {percentage}% uptime in the last 7 days\n",
                 inline=False,
             )
             e.set_footer(
