@@ -621,17 +621,9 @@ class Utility(commands.Cog):
                 name="Fate Bot: Core Info",
                 icon_url=self.bot.get_user(config.owner_id()).avatar_url,
             )
-            stats = self.bot.utils.get_stats()  # type: dict
-            commands = 0
             lines = 0
-            for command_date in stats["commands"]:
-                date = datetime.strptime(command_date, "%Y-%m-%d %H:%M:%S.%f")
-                if (datetime.now() - date).days < 7:
-                    commands += 1
-                else:
-                    stats["commands"].remove(command_date)
-            async with self.bot.open("./data/stats.json", "w") as f:
-                await f.write(json.dumps(stats))
+            cog = self.bot.cogs["Ranking"]
+            commands = sum(cmd[1]["total"] for cmd in list(cog.cmds.items()))
             async with self.bot.open("fate.py", "r") as f:
                 lines += len(await f.readlines())
 
@@ -642,7 +634,7 @@ class Utility(commands.Cog):
                         if file.endswith(".py"):
                             async with self.bot.open(f"{root}/{file}", "r") as f:
                                 lines += len(await f.readlines())
-            e.description = f"Commands Used This Week: {commands}" \
+            e.description = f"Commands Used This Month: {commands}" \
                             f"\nLines of code: {lines}"
             e.set_thumbnail(url=self.bot.user.avatar_url)
             e.add_field(
@@ -694,25 +686,6 @@ class Utility(commands.Cog):
                 inline=False,
             )
 
-            async with self.bot.open("./data/uptime.json", "r") as f:
-                uptime_data = json.loads(await f.read())
-            uptime_data = [
-                datetime.strptime(date_string, "%Y-%m-%d %H:%M:%S")
-                for date_string in uptime_data
-            ]
-
-            # timespan = (uptime_data[len(uptime_data) - 1] - uptime_data[0]).seconds
-            downtime = 0
-            for iteration, date in enumerate(uptime_data):
-                if iteration != len(uptime_data) - 1:
-                    diff = (uptime_data[iteration + 1] - date).seconds
-                    if diff > 60:
-                        downtime += diff
-                        continue
-
-            if downtime == 0:
-                downtime = 1
-            # percentage = round((round(timespan - downtime) / round(timespan)) * 100)
             online_for = datetime.now() - self.bot.start_time
             e.add_field(
                 name="◈ Uptime ◈",

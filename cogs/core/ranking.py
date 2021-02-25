@@ -63,19 +63,16 @@ class Ranking(commands.Cog):
         self.global_monthly_xp = {}
 
         # Configs
-        self.config = self.bot.utils.cache("ranking")
-        self.profile = self.bot.utils.cache("profiles")
+        self.config = bot.utils.cache("ranking")
+        self.profile = bot.utils.cache("profiles")
+        self.cmds = bot.utils.cache("commands", auto_sync=True)
+        # for k, v in list(self.cmds.items()):
+        #     self.cmds.remove(k)
 
         # save storage
         for guild_id, config in list(self.config.items()):
             if config == self.static_config():
                 self.config.remove(guild_id)
-
-        # top command lb
-        self.cmds = {}
-        if path.isfile(self.clb_path):
-            with open(self.clb_path, "r") as f:
-                self.cmds = json.load(f)
 
         # vc caching
         self.vclb = {}
@@ -326,6 +323,15 @@ class Ranking(commands.Cog):
                 except InternalError:
                     pass
 
+    @commands.Cog.listener()
+    async def on_command(self, ctx):
+        if ctx.command.name == "sexuality":
+            ctx.command.name = "gay"
+        if ctx.command.name not in self.cmds:
+            self.cmds[ctx.command.name] = {"uses": [], "total": 0}
+        self.cmds[ctx.command.name]["uses"].append(datetime.now())
+        self.cmds[ctx.command.name]["total"] += 1
+
     @commands.command(name="role-rewards", aliases=["level-rewards", "level-roles", "lr"])
     @commands.cooldown(*utils.default_cooldown())
     @commands.bot_has_permissions(embed_links=True, manage_roles=True)
@@ -409,7 +415,6 @@ class Ranking(commands.Cog):
             f"on duplicate key update lvl = {level} and stack = {stack};"
         )
         await ctx.send(f"Setup complete")
-
 
     @commands.command(name="xp-config")
     @commands.cooldown(*utils.default_cooldown())
@@ -1168,18 +1173,21 @@ class Ranking(commands.Cog):
     @commands.command(name="clb")
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def clb(self, ctx):
-        for cmd, uses in list(self.cmds.items()):
-            for use in uses:
-                if use < time() - 60 * 60 * 24 * 30:
-                    self.cmds[cmd].remove(use)
+        # Remove old uses from the db
+        for cmd, dat in list(self.cmds.items()):
+            for date in dat["uses"]:
+                await asyncio.sleep(0)
+                if (datetime.now() - date).days > 30:
+                    self.cmds[cmd].remove(date)
+                    self.cmds[cmd]["total"] -= 1
+                    await self.cmds.flush()
+
         e = discord.Embed(color=colors.fate())
         e.set_author(name="Command Leaderboard", icon_url=self.bot.user.avatar_url)
         e.description = ""
         rank = 1
-        for cmd, uses in sorted(
-            self.cmds.items(), key=lambda kv: len(kv[1]), reverse=True
-        )[:10]:
-            e.description += f"**#{rank}.** `{cmd}` - {len(uses)}\n"
+        for cmd, uses in sorted(self.cmds.items(), key=lambda kv: kv[1]["total"], reverse=True)[:10]:
+            e.description += f"**#{rank}.** `{cmd}` - {uses['total']}\n"
             rank += 1
         await ctx.send(embed=e)
 
