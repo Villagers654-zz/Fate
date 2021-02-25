@@ -6,7 +6,7 @@ from botutils import colors
 
 
 class Cache:
-    def __init__(self, bot, collection):
+    def __init__(self, bot, collection, auto_sync=False):
         self.bot = bot
         self.collection = collection
         self._cache = {}
@@ -18,6 +18,13 @@ class Cache:
             self._db_state[config["_id"]] = {
                 key: value for key, value in config.items() if key != "_id"
             }
+        self.auto_sync = auto_sync
+        self.task = None
+
+    async def sync_task(self):
+        await asyncio.sleep(10)
+        await self.bot.loop.create_task(self.flush())
+        self.task = None
 
     async def flush(self):
         collection = self.bot.aio_mongo[self.collection]
@@ -41,6 +48,9 @@ class Cache:
     def items(self):
         return self._cache.items()
 
+    def __len__(self):
+        return len(self._cache)
+
     def __contains__(self, item):
         return item in self._cache
 
@@ -49,6 +59,8 @@ class Cache:
 
     def __setitem__(self, key, value):
         self._cache[key] = value
+        if self.auto_sync and not self.task:
+            self.task = self.bot.loop.create_task(self.sync_task())
 
     def remove(self, key):
         if key in self._db_state:
@@ -180,4 +192,4 @@ def init(cls):
     cls.get_config = get_config
     cls.get_stats = get_stats
     cls.emotes = Emojis()
-    cls.cache = lambda col: Cache(cls.bot, col)
+    cls.cache = lambda *args, **kwargs: Cache(cls.bot, *args, **kwargs)
