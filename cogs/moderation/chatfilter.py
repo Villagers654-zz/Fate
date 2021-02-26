@@ -142,7 +142,7 @@ class ChatFilter(commands.Cog):
                     await asyncio.sleep(0)
                     if "\\" in phrase:
                         m.content = m.content.replace("\\", "")
-                    perms = m.channel.permissions_for(m.guild.me)
+                    perms = m.channel.permissions_for(m.author)
                     if not perms.manage_messages:
                         with suppress(discord.errors.NotFound):
                             for chunk in m.content.split():
@@ -163,7 +163,7 @@ class ChatFilter(commands.Cog):
                     await asyncio.sleep(0)
                     if "\\" not in phrase:
                         after.content = after.content.replace("\\", "")
-                    perms = after.channel.permissions_for(after.guild.me)
+                    perms = after.channel.permissions_for(after)
                     if perms.manage_messages:
                         for chunk in after.content.split():
                             await asyncio.sleep(0)
