@@ -139,6 +139,7 @@ class Emojis:
     offline = invisible = "<:status_offline:659976011651219462>"
 
     # Server Indicators
+    discord = "<:discordlogo:673955433131671552>"
     members = "👥"
     text_channel = "<:textchannel:679179620867899412>"
     voice_channel = "<:voicechannel:679179727994617881>"
