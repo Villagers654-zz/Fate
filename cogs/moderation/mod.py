@@ -379,7 +379,7 @@ class Moderation(commands.Cog):
     async def restricted(self, ctx):
         guild_id = ctx.guild.id
         if guild_id not in self.bot.restricted:
-            return await ctx.send("YoU hAvE nONe biTcH")
+            return await ctx.send("This server doesn't have anything restricted")
         dat = self.bot.restricted[guild_id]
         e = discord.Embed(color=colors.fate())
         e.set_author(name="Restricted:", icon_url=ctx.author.avatar_url)
