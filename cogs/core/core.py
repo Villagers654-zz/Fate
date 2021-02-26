@@ -11,6 +11,7 @@ import aiohttp
 from time import time, monotonic
 from typing import Union
 import asyncio
+from datetime import datetime
 
 from discord.ext import commands
 import discord
@@ -428,35 +429,35 @@ class Core(commands.Cog):
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.bot_has_permissions(embed_links=True)
     async def ping(self, ctx):
+        emojis = self.bot.utils.emotes
         e = discord.Embed(color=colors.fate())
         e.set_author(name="Measuring ping:")
         before = monotonic()
-        message = await ctx.send(embed=e)
-        ping = (monotonic() - before) * 1000
-        if ping < 175:
-            img = "https://cdn.discordapp.com/emojis/562592256939393035.png?v=1"
+        msg = await ctx.send(embed=e)
+        api_ping = f"{emojis.discord} **Discord API:** `{round((monotonic() - before) * 1000)}ms`"
+        response_time = (datetime.utcnow() - ctx.message.created_at).total_seconds() * 1000
+        response_ping = f"\n{emojis.verified} **Message Trip:** `{round(response_time)}ms`"
+        imgs = [
+            "https://cdn.discordapp.com/emojis/562592256939393035.png?v=1",
+            "https://cdn.discordapp.com/emojis/562592178204049408.png?v=1",
+            "https://cdn.discordapp.com/emojis/562592177692213248.png?v=1",
+            "https://cdn.discordapp.com/emojis/562592176463151105.png?v=1",
+            "https://cdn.discordapp.com/emojis/562592175880405003.png?v=1",
+            "https://cdn.discordapp.com/emojis/562592175192539146.png?v=1"
+        ]
+        for i, limit in enumerate(range(0, 1050, 175)):
+            if response_time < limit:
+                img = imgs[i]
+                break
         else:
-            if ping < 250:
-                img = "https://cdn.discordapp.com/emojis/562592178204049408.png?v=1"
-            else:
-                if ping < 400:
-                    img = "https://cdn.discordapp.com/emojis/562592177692213248.png?v=1"
-                else:
-                    if ping < 550:
-                        img = "https://cdn.discordapp.com/emojis/562592176463151105.png?v=1"
-                    else:
-                        if ping < 700:
-                            img = "https://cdn.discordapp.com/emojis/562592175880405003.png?v=1"
-                        else:
-                            img = "https://cdn.discordapp.com/emojis/562592175192539146.png?v=1"
-        api = str(self.bot.latency * 1000)
-        api = api[: api.find(".")]
+            img = imgs[5]
+        shard_ping = ""
+        for shard, latency in self.bot.latencies:
+            shard_ping += f"\n{emojis.boost} **Shard {shard}:** `{round(latency * 1000)}ms`"
         e.set_author(name=f"Bots Latency", icon_url=self.bot.user.avatar_url)
         e.set_thumbnail(url=img)
-        e.description = (
-            f"**Message Trip:** `{int(ping)}ms`\n**Websocket Heartbeat:** `{api}ms`"
-        )
-        await message.edit(embed=e)
+        e.description = api_ping + response_ping + shard_ping
+        await msg.edit(embed=e)
 
     @commands.command(name="devping")
     @commands.cooldown(1, 5, commands.BucketType.user)
