@@ -102,15 +102,20 @@ class ChatFilter(commands.Cog):
     @_chatfilter.command(name="unignore")
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True)
-    async def _unignore(self, ctx, channel: discord.TextChannel):
+    async def _unignore(self, ctx, *channels: discord.TextChannel):
         guild_id = ctx.guild.id
         if guild_id not in self.config:
             return await ctx.send("This server has no ignored channels")
-        if channel.id not in self.config[guild_id]["ignored"]:
-            return await ctx.send(f"{channel.mention} isn't ignored")
-        self.config[guild_id]["ignored"].remove(channel.id)
-        await ctx.send(f"I'll no longer ignore {channel.mention}")
-        await self.config.flush()
+        passed = []
+        for channel in channels:
+            if channel.id not in self.config[guild_id]["ignored"]:
+                await ctx.send(f"{channel.mention} isn't ignored")
+                continue
+            self.config[guild_id]["ignored"].remove(channel.id)
+            passed.append(channel.mention)
+        if passed:
+            await ctx.send(f"I'll no longer ignore {', '.join(passed)}")
+            await self.config.flush()
 
     @_chatfilter.command(name="add")
     @commands.has_permissions(manage_messages=True)
