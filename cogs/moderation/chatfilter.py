@@ -84,13 +84,20 @@ class ChatFilter(commands.Cog):
     @_chatfilter.command(name="ignore")
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True)
-    async def _ignore(self, ctx, channel: discord.TextChannel):
+    async def _ignore(self, ctx, *channels: discord.TextChannel):
         guild_id = ctx.guild.id
         if guild_id not in self.config:
             return await ctx.send("Chatfilter isn't enabled")
-        self.config[guild_id]["ignored"].append(channel.id)
-        await ctx.send(f"I'll now ignore {channel.mention}")
-        await self.config.flush()
+        passed = []
+        for channel in channels:
+            if channel.id in self.config[guild_id]["ignored"]:
+                await ctx.send(f"{channel.mention} is already ignored")
+                continue
+            self.config[guild_id]["ignored"].append(channel.id)
+            passed.append(channel.mention)
+        if passed:
+            await ctx.send(f"I'll now ignore {', '.join(passed)}")
+            await self.config.flush()
 
     @_chatfilter.command(name="unignore")
     @commands.has_permissions(manage_messages=True)
@@ -163,7 +170,7 @@ class ChatFilter(commands.Cog):
                     await asyncio.sleep(0)
                     if "\\" not in phrase:
                         after.content = after.content.replace("\\", "")
-                    perms = after.channel.permissions_for(after)
+                    perms = after.channel.permissions_for(after.author)
                     if perms.manage_messages:
                         for chunk in after.content.split():
                             await asyncio.sleep(0)
