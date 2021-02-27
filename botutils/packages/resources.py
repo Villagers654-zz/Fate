@@ -2,6 +2,7 @@ from datetime import datetime
 from os.path import isfile
 import json
 import asyncio
+from copy import deepcopy
 from botutils import colors
 
 
@@ -15,9 +16,7 @@ class Cache:
             self._cache[config["_id"]] = {
                 key: value for key, value in config.items() if key != "_id"
             }
-            self._db_state[config["_id"]] = {
-                key: value for key, value in config.items() if key != "_id"
-            }
+        self._db_state = deepcopy(self._cache)
         self.auto_sync = auto_sync
         self.task = None
 
@@ -27,6 +26,7 @@ class Cache:
         self.task = None
 
     async def flush(self):
+        print("flushing")
         collection = self.bot.aio_mongo[self.collection]
         for key, value in list(self._cache.items()):
             await asyncio.sleep(0)
