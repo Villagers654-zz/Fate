@@ -445,7 +445,7 @@ class Core(commands.Cog):
             "https://cdn.discordapp.com/emojis/562592175880405003.png?v=1",
             "https://cdn.discordapp.com/emojis/562592175192539146.png?v=1"
         ]
-        for i, limit in enumerate(range(0, 1050, 175)):
+        for i, limit in enumerate(range(175, 175 * 6, 175)):
             if response_time < limit:
                 img = imgs[i]
                 break
