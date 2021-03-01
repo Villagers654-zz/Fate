@@ -28,7 +28,6 @@ class Lock(commands.Cog):
             await ctx.send("Changed the server lock type to kick")
             return await ctx.message.add_reaction("👍")
         self.lock.remove(guild_id)
-        await self.lock.flush()
         await ctx.send("Unlocked the server")
         await ctx.message.add_reaction("👍")
 
@@ -47,7 +46,6 @@ class Lock(commands.Cog):
             await ctx.send("Changed the server lock type to ban")
             return await ctx.message.add_reaction("👍")
         self.lock.remove(guild_id)
-        await self.lock.flush()
         await ctx.send("Unlocked the server")
         await ctx.message.add_reaction("👍")
 
