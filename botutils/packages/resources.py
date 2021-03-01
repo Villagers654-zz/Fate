@@ -29,6 +29,8 @@ class Cache:
         collection = self.bot.aio_mongo[self.collection]
         for key, value in list(self._cache.items()):
             await asyncio.sleep(0)
+            if key not in self._cache:
+                continue
             if key not in self._db_state:
                 await collection.insert_one({
                     "_id": key, **self._cache[key]
