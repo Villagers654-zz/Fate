@@ -826,7 +826,9 @@ class AntiSpam(commands.Cog):
                             try:
                                 await user.add_roles(mute_role)
                             except (NotFound, HTTPException):
-                                user = await self.bot.fetch_user(int(user.id))
+                                user = msg.guild.get_member(int(user.id))
+                                if not user:
+                                    return await msg.channel.send(f"Seems {msg.author.name} no longer exists here")
                                 await user.add_roles(mute_role)
                             messages = []
                             if user_id in self.msgs:
@@ -838,10 +840,11 @@ class AntiSpam(commands.Cog):
                             with suppress(NotFound, Forbidden, HTTPException):
                                 await user.send(f"You've been muted for spam in **{msg.guild.name}** for {timer_str}")
                             mentions = discord.AllowedMentions(users=True)
-                            await msg.channel.send(
-                                f"Temporarily muted {user.mention} for spam. Reason: {reason}",
-                                allowed_mentions=mentions
-                            )
+                            with suppress(NotFound, Forbidden, HTTPException):
+                                await msg.channel.send(
+                                    f"Temporarily muted {user.mention} for spam. Reason: {reason}",
+                                    allowed_mentions=mentions
+                                )
                             if "duplicate" in reason:
                                 if msg.channel.permissions_for(msg.guild.me).manage_messages:
                                     if msg.channel.permissions_for(msg.guild.me).read_message_history:
