@@ -149,11 +149,20 @@ class Core(commands.Cog):
         choice = await self.bot.utils.get_choice(ctx, opts, name="Allow personal prefixes?")
         override = True if choice == "no" else False
         if ctx.guild.id in self.bot.guild_prefixes:
-            await self.bot.aio_mongo["GuildPrefixes"].update_one(
-                filter={"_id": ctx.guild.id},
-                update={"$set": {"prefix": prefix, "override": override}}
-            )
+            if not override and prefix == ".":
+                await self.bot.aio_mongo["GuildPrefixes"].delete_one({
+                    "_id": ctx.guild.id
+                })
+                del self.bot.guild_prefixes[ctx.guild.id]
+                return await ctx.send("Reset the prefix to default")
+            else:
+                await self.bot.aio_mongo["GuildPrefixes"].update_one(
+                    filter={"_id": ctx.guild.id},
+                    update={"$set": {"prefix": prefix, "override": override}}
+                )
         else:
+            if not override and prefix == ".":
+                return await ctx.send("tHaT's tHe sAmE aS thE cuRreNt cOnfiG")
             await self.bot.aio_mongo["GuildPrefixes"].insert_one({
                 "_id": ctx.guild.id,
                 "prefix": prefix,
