@@ -22,11 +22,10 @@ class Cache:
 
     async def sync_task(self):
         await asyncio.sleep(10)
-        await self.bot.loop.create_task(self.flush())
+        await self.flush()
         self.task = None
 
     async def flush(self):
-        print("flushing")
         collection = self.bot.aio_mongo[self.collection]
         for key, value in list(self._cache.items()):
             await asyncio.sleep(0)
