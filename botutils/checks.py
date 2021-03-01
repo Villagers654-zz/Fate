@@ -63,16 +63,15 @@ class Attributes:
         if len(roles) == 1:
             return roles[0]
         elif len(roles) > 1:
-            if choice:
-                mentions = [r.mention for r in roles]
-                mention = await self.bot.utils.get_choice(ctx, mentions, name="Select Which Mute Role")
-                role = roles[mentions.index(mention)]
-                if guild_id in self.mod.config:
-                    self.mod.config[guild_id]["mute_role"] = role
-                    await self.mod.save_data()
-                return role
-            elif not choice:
+            if not choice:
                 return roles[0]
+            mentions = [r.mention for r in roles]
+            mention = await self.bot.utils.get_choice(ctx, mentions, name="Select Which Mute Role")
+            role = roles[mentions.index(mention)]
+            if guild_id in self.mod.config:
+                self.mod.config[guild_id]["mute_role"] = role
+                await self.mod.save_data()
+            return role
 
         if upsert:
             color = discord.Color(self.bot.utils.colors.black())
