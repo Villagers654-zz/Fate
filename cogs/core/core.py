@@ -147,7 +147,7 @@ class Core(commands.Cog):
             return await ctx.send("That prefix is too long")
         opts = ["yes", "no"]
         choice = await self.bot.utils.get_choice(ctx, opts, name="Allow personal prefixes?")
-        override = False if choice == "no" else False
+        override = False if choice == "no" else True
         if ctx.guild.id in self.bot.guild_prefixes:
             await self.bot.aio_mongo["GuildPrefixes"].update_one(
                 filter={"_id": ctx.guild.id},
