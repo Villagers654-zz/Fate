@@ -2,8 +2,102 @@
 Check functions for the bot
 """
 
+import asyncio
+from contextlib import suppress
 from discord.ext import commands
 import discord
+
+
+class Attributes:
+    def __init__(self, bot):
+        self.bot = bot
+        self.mod = bot.cogs["Moderation"]
+
+    def is_moderator(self, member) -> bool:
+        if member.guild_permissions.administrator:
+            return True
+        guild_id = str(member.guild.id)
+        if guild_id in self.mod.config:
+            if member.id in self.mod.config[guild_id]["usermod"]:
+                return True
+            if any(r.id in self.mod.config[guild_id]["rolemod"] for r in member.roles):
+                return True
+        return False
+
+    async def get_mute_role(self, target, choice=False, upsert=False):
+        """
+        :param target: Optional: [Context, Guild]
+        :param choice: Allow choice between multiple roles, requires Context
+        :param upsert: Create the role if not exists
+        :return: Optional: [Role, None]
+        """
+        ctx = None
+        if isinstance(target, commands.Context):
+            ctx = target
+            guild = ctx.guild
+        elif isinstance(target, discord.Guild):
+            guild = target
+        else:
+            raise TypeError(f"Parameter 'target' must be either Context or Guild")
+        if choice and not ctx:
+            raise TypeError("Parameter 'target' must be Context in order to allow role choosing")
+
+        # Check the Moderation cog for a configured mute role
+        guild_id = str(guild.id)
+        if guild_id in self.mod.config and self.mod.config[guild_id]["mute_role"]:
+            role = guild.get_role(self.mod.config[guild_id]["mute_role"])
+            if role:
+                return role
+            else:
+                self.mod.config[guild_id]["mute_role"] = None
+
+        # Get all the related roles
+        roles = []
+        for role in guild.roles:
+            await asyncio.sleep(0)
+            if "muted" in role.name.lower():
+                if not choice:
+                    return role
+                roles.append(role)
+
+        if len(roles) == 1:
+            return roles[0]
+        elif len(roles) > 1:
+            if choice:
+                mentions = [r.mention for r in roles]
+                mention = await self.bot.utils.get_choice(ctx, mentions, name="Select Which Mute Role")
+                role = roles[mentions.index(mention)]
+                if guild_id in self.mod.config:
+                    self.mod.config[guild_id]["mute_role"] = role
+                    await self.mod.save_data()
+                return role
+            elif not choice:
+                return roles[0]
+
+        if upsert:
+            color = discord.Color(self.bot.utils.colors.black())
+            mute_role = await guild.create_role(name="Muted", color=color)
+
+            # Set the overwrites for the mute role
+            # Set the text channel permissions
+            for i, channel in enumerate(guild.text_channels):
+                await asyncio.sleep(0)
+                with suppress(discord.errors.Forbidden):
+                    await channel.set_permissions(mute_role, send_messages=False)
+                if i + 1 >= len(guild.text_channels):  # Prevent sleeping after the last channel in the list
+                    await asyncio.sleep(0.5)
+
+            # Set the voice channel permissions
+            for i, channel in enumerate(guild.voice_channels):
+                await asyncio.sleep(0)
+                with suppress(discord.errors.Forbidden):
+                    await channel.set_permissions(mute_role, speak=False)
+                if i + 1 >= len(guild.voice_channels):  # Prevent sleeping after the last
+                    await asyncio.sleep(0.5)
+
+            return mute_role
+
+        return None
 
 
 def luck(ctx):
