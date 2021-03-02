@@ -160,6 +160,7 @@ class ModMail(commands.Cog):
                 await ctx.message.delete()
 
     @commands.command(name="reply", aliases=["appeal"])
+    @commands.cooldown(1, 15, commands.BucketType.user)
     async def reply(self, ctx, *, case_number = None):
         if isinstance(ctx.guild, discord.Guild) and "case-" in ctx.channel.name:
             if not ctx.channel.name.replace("case-", "").isdigit():
@@ -254,7 +255,7 @@ class ModMail(commands.Cog):
         after = datetime.utcnow() - timedelta(hours=12)
         action = discord.AuditLogAction.channel_delete
         async for entry in category.guild.audit_logs(after=after, action=action):
-            if "case-" in entry.target.name and str(case) in entry.target.name:
+            if "case-" in entry.changes.before.name and str(case) in entry.changes.before.name:
                 return await ctx.send("That thread was closed within the last 12h. Try again another time")
 
         if not message and not attachment:
