@@ -198,6 +198,7 @@ class Tasks(commands.Cog):
                 else "Critical Error\n"
             )
         for log in list(self.bot.logs):  # type: str
+            await asyncio.sleep(0)
             original = str(log)
             mention = ""
             if "CRITICAL" in log:
