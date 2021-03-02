@@ -1287,7 +1287,7 @@ class Moderation(commands.Cog):
         warns = self.config[guild_id]["warns"]
         async with self.bot.open("./data/userdata/config.json", "r") as f:
             raw = await f.read()
-            read = lambda read: json.loads(raw)
+            read = lambda: json.loads(raw)
             config = await self.bot.loop.run_in_executor(None, read)  # type: dict
         punishments = ["None", "None", "Mute", "Kick", "Softban", "Ban"]
         if guild_id in config["warns"]["punishments"]:
@@ -1419,6 +1419,8 @@ class Moderation(commands.Cog):
     @check_if_running()
     @has_warn_permission()
     async def warn(self, ctx, user: Greedy[discord.Member], *, reason="Unspecified"):
+        if not user:
+            return await ctx.send("You need to specify who to warn")
         for user in list(user):
             if user.bot:
                 await ctx.send(f"You can't warn {user.mention} because they're a bot")
