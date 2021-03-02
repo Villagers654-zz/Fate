@@ -173,7 +173,6 @@ class Fate(commands.AutoShardedBot):
         # Async compatible file manager using aiofiles and asyncio.Lock
         class AsyncFileManager:
             def __init__(this, file: str, mode: str = "r", lock: bool = True, cache=False):
-                print(file)
                 this.file = this.temp_file = file
                 if "w" in mode:
                     this.temp_file += ".tmp"
@@ -623,8 +622,8 @@ async def on_guild_remove(guild: discord.Guild):
         f"**Owner:** {guild.owner}\n"
         f"**Members:** [`{len(guild.members)}`]"
     )
-    with open("members.txt", "w") as f:
-        f.write("\n".join([f"{m.id}, {m}, {m.mention}" for m in guild.members]))
+    async with bot.open("members.txt", "w") as f:
+        await f.write("\n".join([f"{m.id}, {m}, {m.mention}" for m in guild.members]))
     await channel.send(embed=e, file=discord.File("members.txt"))
     os.remove("members.txt")
 

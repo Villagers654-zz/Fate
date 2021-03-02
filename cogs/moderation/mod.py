@@ -1285,8 +1285,10 @@ class Moderation(commands.Cog):
         if guild_id not in self.config:
             self.config[guild_id] = self.template
         warns = self.config[guild_id]["warns"]
-        with open("./data/userdata/config.json", "r") as f:
-            config = json.load(f)  # type: dict
+        async with self.bot.open("./data/userdata/config.json", "r") as f:
+            raw = await f.read()
+            read = lambda read: json.loads(raw)
+            config = await self.bot.loop.run_in_executor(None, read)  # type: dict
         punishments = ["None", "None", "Mute", "Kick", "Softban", "Ban"]
         if guild_id in config["warns"]["punishments"]:
             punishments = config["warns"]["punishments"][guild_id]

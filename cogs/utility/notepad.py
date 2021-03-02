@@ -23,9 +23,9 @@ class NotePad(commands.Cog):
             with open(self.path, "r") as f:
                 self.notes = json.load(f)
 
-    def save_data(self):
-        with open(self.path, "w+") as f:
-            json.dump(self.notes, f)
+    async def save_data(self):
+        async with self.bot.open(self.path, "w+") as f:
+            await f.write(await self.bot.utils.dump_json(self.notes))
 
     @commands.command(name="notepad")
     @commands.cooldown(*utils.default_cooldown())

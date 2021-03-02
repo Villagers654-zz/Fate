@@ -157,8 +157,8 @@ class Tasks(commands.Cog):
         while True:
             await asyncio.sleep(1)
             reads += 1
-            with open("discord.log", "r") as f:
-                lines = f.readlines()
+            async with self.bot.open("discord.log", "r") as f:
+                lines = await f.readlines()
             new_lines = len(lines) - len(log)
             if new_lines > 0:
                 added_lines = lines[-new_lines:]
@@ -175,8 +175,8 @@ class Tasks(commands.Cog):
                         await channel.send(f"```{group}```")
                 log = [*log, *added_lines]
             if reads == 1000:
-                with open("discord.log", "w") as f:
-                    f.write("")
+                async with self.bot.open("discord.log", "w") as f:
+                    await f.write("")
                 log = []
                 reads = 0
 
