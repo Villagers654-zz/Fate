@@ -24,7 +24,7 @@ class Attributes:
                 return True
         return False
 
-    async def get_mute_role(self, target, choice=False, upsert=False):
+    async def get_mute_role(self, target, upsert=False):
         """
         :param target: Optional: [Context, Guild]
         :param choice: Allow choice between multiple roles, requires Context
@@ -39,8 +39,6 @@ class Attributes:
             guild = target
         else:
             raise TypeError(f"Parameter 'target' must be either Context or Guild")
-        if choice and not ctx:
-            raise TypeError("Parameter 'target' must be Context in order to allow role choosing")
 
         # Check the Moderation cog for a configured mute role
         guild_id = str(guild.id)
@@ -53,23 +51,23 @@ class Attributes:
 
         # Get all the related roles
         roles = []
-        for role in guild.roles:
+        for role in reversed(guild.roles):
             await asyncio.sleep(0)
             if "muted" in role.name.lower():
-                if not choice:
+                if not ctx:
                     return role
                 roles.append(role)
 
         if len(roles) == 1:
             return roles[0]
         elif len(roles) > 1:
-            if not choice:
+            if not ctx:
                 return roles[0]
             mentions = [r.mention for r in roles]
             mention = await self.bot.utils.get_choice(ctx, mentions, name="Select Which Mute Role")
             role = roles[mentions.index(mention)]
             if guild_id in self.mod.config:
-                self.mod.config[guild_id]["mute_role"] = role
+                self.mod.config[guild_id]["mute_role"] = role.id
                 await self.mod.save_data()
             return role
 
@@ -78,9 +76,21 @@ class Attributes:
             mute_role = await guild.create_role(name="Muted", color=color)
 
             # Set the overwrites for the mute role
+            # Set the category channel permissions
+            for i, channel in enumerate(guild.categories):
+                await asyncio.sleep(0)
+                if mute_role in channel.overwrites:
+                    continue
+                with suppress(discord.errors.Forbidden):
+                    await channel.set_permissions(mute_role, send_messages=False)
+                if i + 1 >= len(guild.text_channels):  # Prevent sleeping after the last channel in the list
+                    await asyncio.sleep(0.5)
+
             # Set the text channel permissions
             for i, channel in enumerate(guild.text_channels):
                 await asyncio.sleep(0)
+                if mute_role in channel.overwrites:
+                    continue
                 with suppress(discord.errors.Forbidden):
                     await channel.set_permissions(mute_role, send_messages=False)
                 if i + 1 >= len(guild.text_channels):  # Prevent sleeping after the last channel in the list
@@ -89,6 +99,8 @@ class Attributes:
             # Set the voice channel permissions
             for i, channel in enumerate(guild.voice_channels):
                 await asyncio.sleep(0)
+                if mute_role in channel.overwrites:
+                    continue
                 with suppress(discord.errors.Forbidden):
                     await channel.set_permissions(mute_role, speak=False)
                 if i + 1 >= len(guild.voice_channels):  # Prevent sleeping after the last
