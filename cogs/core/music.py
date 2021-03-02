@@ -76,6 +76,7 @@ def require_voting():
 class Music(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.refresh = False
 
         # Create the lavalink client if not exists
         if not hasattr(bot, 'lavalink') or not bot.lavalink:
@@ -106,12 +107,24 @@ class Music(commands.Cog):
         self._seek = "https://cdn.discordapp.com/attachments/632084935506788385/797793989947293767/seek.png"
         self._pause = "https://cdn.discordapp.com/attachments/632084935506788385/798075784543207424/pause-play.png"
 
-
     def cog_unload(self):
         """ Cog unload handler. This removes any event hooks that were registered. """
         self.bot.lavalink._event_hooks.clear()
         for node in self.bot.lavalink.node_manager.nodes:
             self.bot.lavalink.node_manager.remove_node(node)
+
+    def refresh_nodes(self):
+        self.bot.lavalink._event_hooks.clear()
+        for node in self.bot.lavalink.node_manager.nodes:
+            self.bot.lavalink.node_manager.remove_node(node)
+        for node in self.bot.auth["Lavalink"]:
+            self.bot.lavalink.add_node(
+                host=node["host"],
+                port=node["port"],
+                password=node["password"],
+                region=node["region"],
+                resume_key=node["id"]
+            )
 
     async def cog_before_invoke(self, ctx):
         """ Command before-invoke handler. """

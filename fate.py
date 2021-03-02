@@ -173,6 +173,7 @@ class Fate(commands.AutoShardedBot):
         # Async compatible file manager using aiofiles and asyncio.Lock
         class AsyncFileManager:
             def __init__(this, file: str, mode: str = "r", lock: bool = True, cache=False):
+                print(file)
                 this.file = this.temp_file = file
                 if "w" in mode:
                     this.temp_file += ".tmp"
@@ -533,6 +534,14 @@ async def on_connect():
 @bot.event
 async def on_ready():
     bot.log.info("Finished initializing cache", color="yellow")
+    # Reconnect the nodes if the bot is reconnecting
+    if "Music" in bot.cogs:
+        cog = bot.cogs["Music"]
+        if cog.refresh:
+            bot.cogs["Music"].refresh_nodes()
+            bot.log.info("Refreshed nodes")
+        else:
+            cog.refresh = True
     if not bot.pool:
         await bot.create_pool()
     bot.owner_ids = set(
@@ -573,6 +582,8 @@ async def on_error(_event_method, *_args, **_kwargs):
 
 @bot.event
 async def on_guild_join(guild):
+    if not bot.is_ready():
+        return
     channel = bot.get_channel(bot.config["log_channel"])
     e = discord.Embed(color=colors.pink())
     e.set_author(name="Bot Added to Guild", icon_url=bot.user.avatar_url)
@@ -599,6 +610,8 @@ async def on_guild_join(guild):
 
 @bot.event
 async def on_guild_remove(guild: discord.Guild):
+    if not bot.is_ready():
+        return
     channel = bot.get_channel(bot.config["log_channel"])
     e = discord.Embed(color=colors.pink())
     e.set_author(name="Bot Left or Was Removed", icon_url=bot.user.avatar_url)
