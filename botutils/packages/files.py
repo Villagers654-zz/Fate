@@ -28,11 +28,12 @@ class TempDownload:
             os.remove(self.fp)
 
 
-async def save_json(fp, data, mode="w+", **json_kwargs) -> None:
+async def save_json(bot, fp, data, mode="w+", **json_kwargs) -> None:
     # self.log(f"Saving {fp}", "DEBUG")
     # before = monotonic()
+    dump = lambda: json.dumps(data, **json_kwargs)
     async with aiofiles.open(fp + ".tmp", mode) as f:
-        await f.write(json.dumps(data, **json_kwargs))
+        await f.write(await bot.loop.run_in_executor(None, dump))
     # ping = str(round((monotonic() - before) * 1000))
     # self.log(f"Wrote to tmp file in {ping}ms", "DEBUG")
     # before = monotonic()
@@ -58,5 +59,5 @@ async def download(url: str, timeout: int = 10):
 
 def init(cls):
     cls.tempdl = TempDownload
-    cls.save_json = save_json
+    cls.save_json = lambda *args, **kwargs: save_json(cls.bot, *args, **kwargs)
     cls.download = download

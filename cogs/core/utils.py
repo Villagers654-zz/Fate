@@ -33,7 +33,7 @@ class Utils(commands.Cog):
         self.split = self.cleanup_msg = self.bytes2human = self.extract_timer = self.get_seconds = None
         # Tools
         self.get_images = self.total_seconds = self.format_dict = self.add_field = self.update_msg = None
-        self.get_user = self.get_role = self.get_time = None
+        self.get_user = self.get_role = self.get_time = self.dump_json = None
 
         # Packages to import
         self.packages = [
