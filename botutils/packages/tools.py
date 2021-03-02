@@ -5,6 +5,7 @@ from PIL import Image
 from typing import Union
 import asyncio
 from datetime import timedelta
+import json
 from colormap import rgb2hex
 import discord
 
@@ -318,6 +319,11 @@ class Formatting:
     def add_field(self, embed, name: str, value: dict, inline=True):
         embed.add_field(name=f"◈ {name}", value=self.format_dict(value), inline=inline)
 
+    async def dump_json(self, data):
+        """Save json in a different thread to prevent freezing the loop"""
+        dump = lambda dump: json.dumps(data)
+        return await self.bot.loop.run_in_executor(None, dump)
+
     async def wait_for_msg(self, ctx, user=None):
         if not user:
             user = ctx.author
@@ -352,6 +358,7 @@ def init(cls):
     formatting = Formatting(cls.bot)
     cls.format_dict = formatting.format_dict
     cls.add_field = formatting.add_field
+    cls.dump_json = formatting.dump_json
     OperationLock.bot = cls.bot
     cls.operation_lock = OperationLock
 
