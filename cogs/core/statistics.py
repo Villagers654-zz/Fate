@@ -10,7 +10,7 @@ class Statistics(commands.Cog):
             "Logger": "config",
             "SelfRoles": "menus",
             "AutoRole": "roles",
-            "ChatFilter": "toggle",
+            "ChatFilter": "config",
             "Giveaways": "data",
             "RestoreRoles": "guilds",
             "Welcome": "toggle",
