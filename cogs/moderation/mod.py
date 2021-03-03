@@ -892,6 +892,8 @@ class Moderation(commands.Cog):
                 name=f"Banning {users_to_ban} user{'' if users_to_ban > 1 else ''}",
                 icon_url=ctx.author.avatar_url,
             )
+        if users_to_ban > 10:
+            return await ctx.send("That's too many")
         e.set_thumbnail(
             url="https://cdn.discordapp.com/attachments/514213558549217330/514345278669848597/8yx98C.gif"
         )
