@@ -176,7 +176,7 @@ class ChatFilter(commands.Cog):
                     if "\\" not in phrase:
                         after.content = after.content.replace("\\", "")
                     perms = after.channel.permissions_for(after.author)
-                    if perms.manage_messages:
+                    if not perms.manage_messages:
                         for chunk in after.content.split():
                             await asyncio.sleep(0)
                             if phrase in chunk.lower():
