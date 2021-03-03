@@ -37,7 +37,7 @@ class ChatFilter(commands.Cog):
                 for text_group in [
                     text[i : i + 1000] for i in range(0, len(text), 1000)
                 ]:
-                    e.add_field(name="◈ Forbidden Words/Phrases", value=text_group, inline=False)
+                    e.add_field(name="◈ Blacklisted Words/Phrases", value=text_group, inline=False)
             if guild_id in self.config and self.config[guild_id]["ignored"]:
                 channels = []
                 for channel_id in list(self.config[guild_id]["ignored"]):
