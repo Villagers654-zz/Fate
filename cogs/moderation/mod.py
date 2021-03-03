@@ -152,7 +152,8 @@ class Moderation(commands.Cog):
         return self.bot.cogs["CaseManager"]
 
     async def save_data(self):
-        await self.bot.save_json(self.path, self.config)
+        async with self.bot.open(self.path, "w+") as f:
+            await f.write(await self.bot.dump(self.config))
 
     @commands.command(name="convert-mod")
     @commands.is_owner()
@@ -1288,9 +1289,7 @@ class Moderation(commands.Cog):
             self.config[guild_id] = self.template
         warns = self.config[guild_id]["warns"]
         async with self.bot.open("./data/userdata/config.json", "r") as f:
-            raw = await f.read()
-            read = lambda: json.loads(raw)
-            config = await self.bot.loop.run_in_executor(None, read)  # type: dict
+            config = await self.bot.load(await f.read())  # type: dict
         punishments = ["None", "None", "Mute", "Kick", "Softban", "Ban"]
         if guild_id in config["warns"]["punishments"]:
             punishments = config["warns"]["punishments"][guild_id]

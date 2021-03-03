@@ -321,8 +321,7 @@ class Formatting:
 
     async def dump_json(self, data):
         """Save json in a different thread to prevent freezing the loop"""
-        dump = lambda dump: json.dumps(data)
-        return await self.bot.loop.run_in_executor(None, dump)
+        return await self.bot.dump(data)
 
     async def wait_for_msg(self, ctx, user=None):
         if not user:

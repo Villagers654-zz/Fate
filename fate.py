@@ -371,7 +371,7 @@ class Fate(commands.AutoShardedBot):
             }
         return data
 
-    def load(self, *extensions) -> None:
+    def load_extensions(self, *extensions) -> None:
         for cog in extensions:
             try:
                 self.load_extension(f"cogs.{cog}")
@@ -383,7 +383,7 @@ class Fate(commands.AutoShardedBot):
                 self.log.critical(f"Couldn't load {cog}``````{traceback.format_exc()}")
                 self.log.info("Continuing..")
 
-    def unload(self, *extensions, log=True) -> None:
+    def unload_extensions(self, *extensions, log=True) -> None:
         for cog in extensions:
             try:
                 self.unload_extension(f"cogs.{cog}")
@@ -393,7 +393,7 @@ class Fate(commands.AutoShardedBot):
                 if log:
                     self.log.info(f"Failed to unload {cog}")
 
-    def reload(self, *extensions) -> None:
+    def reload_extensions(self, *extensions) -> None:
         for cog in extensions:
             try:
                 self.reload_extension(f"cogs.{cog}")
@@ -426,6 +426,14 @@ class Fate(commands.AutoShardedBot):
         """ Reaction based menu for users to choose between things """
         return await self.utils.get_choice(ctx, *options, user=user, timeout=timeout)
     # -------------------------------------------------------
+
+    async def load(self, data):
+        load_json = lambda: json.loads(data)
+        return await self.loop.run_in_executor(None, load_json)
+
+    async def dump(self, data):
+        dump_json = lambda: json.dumps(data)
+        return await self.loop.run_in_executor(None, dump_json)
 
     def encode(self, string) -> str:
         return b64encode(string.encode()).decode()
@@ -464,7 +472,7 @@ class Fate(commands.AutoShardedBot):
             for category, cogs in self.config["extensions"].items():
                 for cog in cogs:
                     extensions.append(f"{category}.{cog}")
-            self.load(*extensions)
+            self.load_extensions(*extensions)
             self.log.info("Finished loading initial cogs\nLogging in..", color="yellow")
 
         # Load in caches
