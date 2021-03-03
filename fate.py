@@ -55,7 +55,6 @@ class Fate(commands.AutoShardedBot):
             list([self.config["bot_owner_id"], *self.config["bot_owner_ids"]])
         )
         self.theme_color = self.config["theme_color"]
-        self.attrs = checks.Attributes(bot=self)
 
         # Cache
         self.locks = {}
@@ -328,7 +327,7 @@ class Fate(commands.AutoShardedBot):
                     autocommit=True,
                     loop=self.loop,
                     minsize=1,
-                    maxsize=128
+                    maxsize=16
                 )
                 self.pool = pool
                 break
@@ -478,6 +477,7 @@ class Fate(commands.AutoShardedBot):
 
         # Load in caches
         self.restricted = self.utils.cache("restricted")
+        self.attrs = checks.Attributes(bot=self)
 
         super().run(self.auth["tokens"][self.config["token_id"]])
 
