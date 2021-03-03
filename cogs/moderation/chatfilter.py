@@ -152,8 +152,7 @@ class ChatFilter(commands.Cog):
                     await asyncio.sleep(0)
                     if "\\" in phrase:
                         m.content = m.content.replace("\\", "")
-                    perms = m.channel.permissions_for(m.author)
-                    if not perms.manage_messages:
+                    if not self.bot.attrs.is_moderator(m.author):
                         with suppress(discord.errors.NotFound):
                             for chunk in m.content.split():
                                 await asyncio.sleep(0)
@@ -173,8 +172,7 @@ class ChatFilter(commands.Cog):
                     await asyncio.sleep(0)
                     if "\\" not in phrase:
                         after.content = after.content.replace("\\", "")
-                    perms = after.channel.permissions_for(after.author)
-                    if not perms.manage_messages:
+                    if not self.bot.attrs.is_moderator(after.author):
                         for chunk in after.content.split():
                             await asyncio.sleep(0)
                             if phrase in chunk.lower():

@@ -12,9 +12,9 @@ from contextlib import suppress
 
 from discord.ext import commands, tasks
 import discord
-import aiofiles
 
 from botutils.packages import resources, listeners, menus, files, tools
+from botutils import checks
 
 
 class Utils(commands.Cog):
@@ -42,6 +42,8 @@ class Utils(commands.Cog):
         for package in self.packages:
             reload(eval(package))
             eval(package).init(self)
+        reload(checks)
+        bot.attrs = checks.Attributes(bot)
 
         self.filter = _filter
         self.MemoryInfo = memory_info

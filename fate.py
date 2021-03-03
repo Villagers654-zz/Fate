@@ -23,7 +23,7 @@ from discord_sentry_reporting import use_sentry
 import pymongo
 from motor.motor_asyncio import AsyncIOMotorClient
 
-from botutils import auth, colors, checks
+from botutils import colors, checks
 from botutils.custom_logging import Logging
 from cogs.core.utils import Utils, Cache, CacheWriter
 from cogs.core.tasks import Tasks
@@ -55,6 +55,7 @@ class Fate(commands.AutoShardedBot):
             list([self.config["bot_owner_id"], *self.config["bot_owner_ids"]])
         )
         self.theme_color = self.config["theme_color"]
+        self.attrs = checks.Attributes(bot=self)
 
         # Cache
         self.locks = {}
