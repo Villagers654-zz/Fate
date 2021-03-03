@@ -17,6 +17,7 @@ import aiohttp
 import aiofiles
 from contextlib import suppress
 import traceback
+from random import randint
 
 from discord.ext import commands
 import discord
@@ -1009,6 +1010,7 @@ class Logger(commands.Cog):
             channel = self.bot.get_channel(payload.channel_id)
             purged_messages = ""
             for msg in payload.cached_messages:
+                await asyncio.sleep(0)
                 if self.config[guild_id]["secure"]:
                     if msg.embeds:
                         log = Log("message_delete", embed=msg.embeds[0])
@@ -1302,6 +1304,7 @@ class Logger(commands.Cog):
             fp = f"./static/members-{r.randint(1, 9999)}.txt"
             members = f"{channel.name} - Member List"
             for member in channel.members:
+                await asyncio.sleep(0)
                 members += (
                     f"\n{member.id}, {member.mention}, {member}, {member.display_name}"
                 )
@@ -1402,6 +1405,7 @@ class Logger(commands.Cog):
 
             if before.overwrites != after.overwrites:
                 for obj, permissions in list(before.overwrites.items()):
+                    await asyncio.sleep(0)
                     after_objects = [x[0] for x in after.overwrites.items()]
                     if obj not in after_objects:
                         dat = await self.search_audit(
@@ -1441,6 +1445,7 @@ class Logger(commands.Cog):
                         )
 
                 for obj, permissions in after.overwrites.items():
+                    await asyncio.sleep(0)
                     if obj not in [x[0] for x in before.overwrites.items()]:
                         dat = await self.search_audit(
                             after.guild, audit.overwrite_create
@@ -1509,6 +1514,7 @@ class Logger(commands.Cog):
             fp1 = f"./static/role-members-{r.randint(1, 9999)}.txt"
             members = f"{role.name} - Member List"
             for member in role.members:
+                await asyncio.sleep(0)
                 members += (
                     f"\n{member.id}, {member.mention}, {member}, {member.display_name}"
                 )
@@ -1540,30 +1546,17 @@ class Logger(commands.Cog):
                     inline=False,
                 )
             if before.color != after.color:
-                # def font(size):
-                #     return ImageFont.truetype("./utils/fonts/Modern_Sans_Light.otf", size)
+                def generate_image():
+                    card = Image.new("RGBA", (200, 30), color=after.color.to_rgb())
+                    box = Image.new("RGBA", (100, 30), color=before.color.to_rgb())
 
-                card = Image.new("RGBA", (200, 30), color=after.color.to_rgb())
-                # draw = ImageDraw.Draw(card)
-                # draw.text((180 - 2, 5), 'After', (0, 0, 0), font=font(45))
-                # draw.text((180 + 2, 5), 'After', (0, 0, 0), font=font(45))
-                # draw.text((180, 5 - 2), 'After', (0, 0, 0), font=font(45))
-                # draw.text((180, 5 + 2), 'After', (0, 0, 0), font=font(45))
-                # draw.text((180, 5), 'After', (255, 255, 255), font=font(45))
+                    card.paste(box)
+                    fp1 = os.getcwd() + f"/static/color-{randint(1, 1000)}.png"
+                    card.save(fp1)
+                    return fp1
 
-                box = Image.new("RGBA", (100, 30), color=before.color.to_rgb())
-                # draw = ImageDraw.Draw(box)
-                # draw.text((10 - 2, 5), 'Before', (0, 0, 0), font=font(45))
-                # draw.text((10 + 2, 5), 'Before', (0, 0, 0), font=font(45))
-                # draw.text((10, 5 - 2), 'Before', (0, 0, 0), font=font(45))
-                # draw.text((10, 5 + 2), 'Before', (0, 0, 0), font=font(45))
-                # draw.text((10, 5), 'Before', (255, 255, 255), font=font(45))
-
-                card.paste(box)
-                fp1 = os.getcwd() + f"/static/color-{r.randint(1, 999)}.png"
-                card.save(fp1)
-
-                e.set_image(url="attachment://" + os.path.basename(fp1))
+                fp1 = await self.bot.loop.run_in_executor(None, generate_image)
+                e.set_image(url="attachment://" + fp1)
                 e.set_thumbnail(url=dat["thumbnail_url"])
                 e.add_field(
                     name="◈ Color Changed",
