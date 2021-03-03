@@ -97,6 +97,7 @@ class Core(commands.Cog):
 
     @commands.command(name="say")
     @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.guild_only()
     @commands.bot_has_permissions(attach_files=True)
     async def say(self, ctx, *, content: commands.clean_content = None):
         has_perms = ctx.channel.permissions_for(ctx.guild.me).manage_messages
