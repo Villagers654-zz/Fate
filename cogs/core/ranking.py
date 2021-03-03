@@ -270,7 +270,6 @@ class Ranking(commands.Cog):
                 self.cd[guild_id][user_id].append(time())
                 try:
                     async with self.bot.cursor() as cur:
-
                         # Guilded xp
                         await cur.execute(
                             f"insert into msg "
@@ -285,6 +284,7 @@ class Ranking(commands.Cog):
                             f"ON DUPLICATE KEY UPDATE xp = xp + {new_xp};"
                         )
 
+                    async with self.bot.cursor() as cur:
                         await cur.execute(
                             f"select xp from msg "
                             f"where guild_id = {guild_id} "
@@ -292,10 +292,9 @@ class Ranking(commands.Cog):
                             f"limit 1;"
                         )
                         result = await cur.fetchone()
-                    if not result:
-                        self.bot.log.critical(f"No xp for {msg.author} after inserting xp?")
-                    dat = await self.calc_lvl_info(result[0], conf)
-                    async with self.bot.cursor() as cur:
+                        if not result:
+                            return
+                        dat = await self.calc_lvl_info(result[0], conf)
                         await cur.execute(
                             f"select role_id from role_rewards "
                             f"where guild_id = {guild_id} "
