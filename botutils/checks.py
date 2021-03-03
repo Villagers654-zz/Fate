@@ -11,16 +11,16 @@ import discord
 class Attributes:
     def __init__(self, bot):
         self.bot = bot
-        self.mod = bot.cogs["Moderation"]
 
     def is_moderator(self, member) -> bool:
         if member.guild_permissions.administrator:
             return True
         guild_id = str(member.guild.id)
-        if guild_id in self.mod.config:
-            if member.id in self.mod.config[guild_id]["usermod"]:
+        mod = self.bot.cogs["Moderation"]
+        if guild_id in mod.config:
+            if member.id in mod.config[guild_id]["usermod"]:
                 return True
-            if any(r.id in self.mod.config[guild_id]["rolemod"] for r in member.roles):
+            if any(r.id in mod.config[guild_id]["rolemod"] for r in member.roles):
                 return True
         return False
 
@@ -42,12 +42,13 @@ class Attributes:
 
         # Check the Moderation cog for a configured mute role
         guild_id = str(guild.id)
-        if guild_id in self.mod.config and self.mod.config[guild_id]["mute_role"]:
-            role = guild.get_role(self.mod.config[guild_id]["mute_role"])
+        mod = self.bot.cogs["Moderation"]
+        if guild_id in mod.config and mod.config[guild_id]["mute_role"]:
+            role = guild.get_role(mod.config[guild_id]["mute_role"])
             if role:
                 return role
             else:
-                self.mod.config[guild_id]["mute_role"] = None
+                mod.config[guild_id]["mute_role"] = None
 
         # Get all the related roles
         roles = []
@@ -66,9 +67,9 @@ class Attributes:
             mentions = [r.mention for r in roles]
             mention = await self.bot.utils.get_choice(ctx, mentions, name="Select Which Mute Role")
             role = roles[mentions.index(mention)]
-            if guild_id in self.mod.config:
-                self.mod.config[guild_id]["mute_role"] = role.id
-                await self.mod.save_data()
+            if guild_id in mod.config:
+                mod.config[guild_id]["mute_role"] = role.id
+                await mod.save_data()
             return role
 
         if upsert:
