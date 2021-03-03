@@ -31,7 +31,7 @@ class SelfRoles(commands.Cog):
                 self.menus = json.load(f)
 
     async def save_data(self):
-        await self.bot.save_json(self.path, self.menus)
+        await self.bot.utils.save_json(self.path, self.menus)
 
     def build_menu(self, guild_id: str, data: dict):
         """ Creates an embed from menu data """
@@ -562,6 +562,7 @@ class SelfRoles(commands.Cog):
                     return
 
                 for role_id, emoji in self.menus[guild_id][msg_id]["items"].items():
+                    await asyncio.sleep(0)
 
                     if isinstance(emoji, int):
                         emoji = self.bot.get_emoji(emoji)
@@ -604,6 +605,7 @@ class SelfRoles(commands.Cog):
                 guild = self.bot.get_guild(payload.guild_id)
                 target = guild.get_member(payload.user_id)
                 for role_id, emoji in self.menus[guild_id][msg_id]["items"].items():
+                    await asyncio.sleep(0)
                     if isinstance(emoji, int):
                         emoji = self.bot.get_emoji(emoji)
                     if str(emoji) == str(payload.emoji):

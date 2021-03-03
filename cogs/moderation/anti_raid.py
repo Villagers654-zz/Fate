@@ -28,7 +28,7 @@ class AntiRaid(commands.Cog):
         fp = "./data/userdata/anti_raid.json"
         data = {"toggle": self.toggle}
         async with self.bot.open(fp, "w+") as f:
-            await f.write(json.dumps(data))
+            await f.write(await self.bot.utils.dump_json(data))
 
     async def ensure_permissions(self, guild):
         guild_id = str(guild.id)
