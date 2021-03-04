@@ -134,6 +134,8 @@ class Music(commands.Cog):
                 with suppress(NotFound, Forbidden):
                     await ctx.message.delete()
 
+        if not ctx.guild or not ctx.guild.me:
+            return False
         if ctx.channel.permissions_for(ctx.guild.me).manage_messages:
             self.bot.loop.create_task(delete_after())
 
