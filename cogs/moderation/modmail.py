@@ -267,7 +267,7 @@ class ModMail(commands.Cog):
                 attachment = msg.attachments[0].url
 
         thread_id = f"case-{case}"
-        matches = [channel for channel in category.channels if thread_id == channel.name]
+        matches = [channel for channel in category.channels if thread_id in channel.name]
         if not matches:
             try:
                 channel = await category.create_text_channel(name=thread_id)
@@ -299,6 +299,8 @@ class ModMail(commands.Cog):
             await ctx.send("Created your thread 👍")
         else:
             channel = matches[0]  # type: discord.TextChannel
+            if "-closed" in channel.name:
+                return await ctx.send("That thread is closed")
             e = discord.Embed(color=self.bot.config["theme_color"])
             e.set_author(name="New Reply", icon_url=ctx.author.avatar_url)
             if message:
@@ -316,7 +318,7 @@ class ModMail(commands.Cog):
     async def close(self, ctx):
         if "case-" not in ctx.channel.name:
             return await ctx.send("Unable to parse the channel name")
-        case = ctx.channel.name.replace("case-", "")
+        case = ctx.channel.name.replace("case-", "").replace("-closed", "")
         if not case.isdigit():
             return await ctx.send("Unable to parse the channel name")
 
@@ -337,9 +339,8 @@ class ModMail(commands.Cog):
                 await self.bot.get_user(r[0]).send(
                     f"The thread for case #{case_number} in {ctx.guild} was closed"
                 )
-        await ctx.send("Closing the thread in 10 seconds")
-        await asyncio.sleep(10)
-        await ctx.channel.delete()
+        await ctx.channel.edit(name=f"{ctx.channel.name}-closed")
+        await ctx.send("Closed the thread")
 
 
 def setup(bot):
