@@ -404,7 +404,7 @@ class Leave(commands.Cog):
                 await asyncio.sleep(0)
                 if guild_id in self.useimages:
                     e = discord.Embed(color=colors.fate())
-                    if guild_id in self.images:
+                    if guild_id in self.images and self.images[guild_id]:
                         e.set_image(url=random.choice(self.images[guild_id]))
                         try:
                             await channel.send(
