@@ -830,6 +830,8 @@ class AntiSpam(commands.Cog):
                                 if not user:
                                     return await msg.channel.send(f"Seems {msg.author.name} no longer exists here")
                                 await user.add_roles(mute_role)
+                            except Forbidden:
+                                return
                             messages = []
                             if user_id in self.msgs:
                                 messages = [m for m in self.msgs[user_id] if m]
@@ -873,7 +875,9 @@ class AntiSpam(commands.Cog):
                                 f"{msg.channel.id}, "
                                 f"{msg.author.id}, "
                                 f"{mute_role.id}, "
-                                f"'{end_time}');"
+                                f"'{end_time}')"
+                                f"on duplicate key update "
+                                f"end_time = '{end_time}';"
                             )
 
     @commands.Cog.listener()
