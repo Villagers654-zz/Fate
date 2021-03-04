@@ -1419,10 +1419,12 @@ class Moderation(commands.Cog):
     @commands.cooldown(*Utils.default_cooldown())
     @check_if_running()
     @has_warn_permission()
-    async def warn(self, ctx, user: Greedy[discord.Member], *, reason="Unspecified"):
-        if not user:
+    async def warn(self, ctx, users: Greedy[discord.Member], *, reason="Unspecified"):
+        if not users:
             return await ctx.send("You need to specify who to warn")
-        for user in list(user):
+        if len(users) > 1 and len(ctx.message.raw_mentions) < len(users):
+            users = users[:1]
+        for user in list(users):
             if user.bot:
                 await ctx.send(f"You can't warn {user.mention} because they're a bot")
                 continue
