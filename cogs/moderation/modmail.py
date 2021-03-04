@@ -199,8 +199,7 @@ class ModMail(commands.Cog):
                 await cur.execute(
                     f"select guild_id, case_number, reason, link, created_at from cases "
                     f"where user_id = {ctx.author.id} "
-                    f"and created_at > {time() - 60 * 60 * 24 * 14} "
-                    f"limit 1;"
+                    f"and created_at > {time() - 60 * 60 * 24 * 14};"
                 )
                 results = await cur.fetchall()
 
@@ -231,12 +230,13 @@ class ModMail(commands.Cog):
             result = sorted_results[formatted_results.index(choice)]
         guild_id, case, reason, link, created_at = result
 
-        await cur.execute(
-            f"select channel_id, blocked from modmail "
-            f"where guild_id = {guild_id} "
-            f"limit 1;"
-        )
-        results = await cur.fetchone()
+        async with self.bot.cursor() as cur:
+            await cur.execute(
+                f"select channel_id, blocked from modmail "
+                f"where guild_id = {guild_id} "
+                f"limit 1;"
+            )
+            results = await cur.fetchone()
         if not results:
             await ctx.send("Modmail isn't enabled in that server")
             return None
