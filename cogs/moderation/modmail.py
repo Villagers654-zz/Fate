@@ -223,7 +223,7 @@ class ModMail(commands.Cog):
                 f"\n> For {self.bot.decode(reason)}"
                 for guild_id, case, reason, link, created_at in sorted_results
             ]
-            choice = await self.bot.utils.get_choice(ctx, *formatted_results, user=ctx.author)
+            choice = await self.bot.utils.get_choice(ctx, *formatted_results, user=ctx.author, timeout=15)
             if not choice:
                 await ctx.send("Timed out waiting for choice")
                 return None
