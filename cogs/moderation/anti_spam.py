@@ -873,7 +873,7 @@ class AntiSpam(commands.Cog):
                                 f"{msg.channel.id}, "
                                 f"{msg.author.id}, "
                                 f"{mute_role.id}, "
-                                f"{end_time});"
+                                f"'{end_time}');"
                             )
 
     @commands.Cog.listener()
@@ -894,7 +894,7 @@ class AntiSpam(commands.Cog):
                                 mute_role=guild.get_role(int(data["mute_role_id"])),
                                 guild_id=guild_id,
                                 user_id=user_id,
-                                sleep_time=data["end_time"] - time()
+                                sleep_time=round(float(data["end_time"]) - time())
                             )
                         )
                         self.bot.log.info(f"Resumed a anti_spam mute in {guild}")
