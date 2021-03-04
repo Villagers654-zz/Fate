@@ -341,27 +341,43 @@ class Fate(commands.AutoShardedBot):
             self.log.critical(
                 f"Couldn't connect to MySQL server, reached max attempts``````{traceback.format_exc()}"
             )
-            self.unload(*self.config["extensions"], log=False)
+            self.unload_extensions(*self.config["extensions"], log=False)
             self.log.critical("Logging out..")
             return await self.logout()
         self.log.info(f"Initialized db {sql['db']} with {sql['user']}@{sql['host']}")
 
+    async def wait_for_pool(self) -> bool:
+        if not self.pool:
+            for _ in range(240):
+                await asyncio.sleep(1)
+                if self.pool:
+                    break
+            else:
+                return False
+        return True
+
     async def execute(self, sql: str) -> None:
-        async with self.cursor() as cur:
-            await cur.execute(sql)
+        if await self.wait_for_pool():
+            async with self.pool.acquire() as conn:
+                async with conn.cursor() as cur:
+                    await cur.execute(sql)
         return None
 
     async def fetch(self, sql: str) -> tuple:
-        async with self.cursor() as cur:
-            await cur.execute(sql)
-            r = await cur.fetchall()
-        return r
+        if await self.wait_for_pool():
+            async with self.cursor() as cur:
+                await cur.execute(sql)
+                r = await cur.fetchall()
+            return r
+        return ()
 
     async def rowcount(self, sql: str) -> int:
-        async with self.cursor() as cur:
-            await cur.execute(sql)
-            rows = cur.rowcount
-        return rows
+        if await self.wait_for_pool():
+            async with self.cursor() as cur:
+                await cur.execute(sql)
+                rows = cur.rowcount
+            return rows
+        return 0
 
     def load_collection(self, collection) -> dict:
         data = {}
