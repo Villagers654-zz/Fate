@@ -50,22 +50,7 @@ defaults = {
 class AntiSpam(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.config = {}
-        collection = bot.mongo["AntiSpam"]
-        for config in collection.find({}):
-            self.config[config["_id"]] = {
-                key: value for key, value in config.items() if key != "_id"
-            }
-        # i = 0
-        # for guild_id, config in list(self.config.items()):
-        #     if "rate_limit" in config:
-        #         self.config[guild_id]["rate_limit"] = [
-        #             {"timespan": 3, "threshold": 5},
-        #             {"timespan": 10, "threshold": 8}
-        #         ]
-        #         collection.update_one({"_id": guild_id}, {"$set": {"rate_limit": self.config[guild_id]["rate_limit"]}})
-        #         i += 1
-        # self.bot.loop.create_task(self.bot.get_channel(541520201926311986).send(f"Updated {i} configs"))
+        self.config = bot.utils.cache("AntiSpam")
 
         # cache
         self.spam_cd = {}
@@ -267,12 +252,7 @@ class AntiSpam(commands.Cog):
                     }]
                 }
             }
-            for key, value in self.config[guild_id].items():
-                await self.bot.aio_mongo["AntiSpam"].update_one(
-                    filter={"_id": guild_id},
-                    update={"$set": {key: value}},
-                    upsert=True
-                )
+            await self.config.flush()
             await ctx.send('Enabled the default anti-spam config')
 
     @_enable.command(name='rate-limit')
@@ -282,12 +262,8 @@ class AntiSpam(commands.Cog):
         if guild_id not in self.config:
             self.config[guild_id] = {}
         conf = [{"timespan": 5, "threshold": 4}]
-        await self.bot.aio_mongo["AntiSpam"].update_one(
-            filter={"_id": guild_id},
-            update={"$set": {"rate_limit": conf}},
-            upsert=True
-        )
         self.config[guild_id]["rate_limit"] = conf
+        await self.config.flush()
         await ctx.send('Enabled rate-limit module')
 
     @_enable.command(name='mass-pings', aliases=['mass-ping'])
@@ -296,36 +272,27 @@ class AntiSpam(commands.Cog):
         guild_id = ctx.guild.id
         if guild_id not in self.config:
             self.config[guild_id] = {}
-        conf = {
+        self.config[guild_id]["mass_pings"] = {
             "per_message": 4,
             "thresholds": [{
                 "timespan": 10,
                 "threshold": 3
             }]
         }
-        await self.bot.aio_mongo["AntiSpam"].update_one(
-            filter={"_id": guild_id},
-            update={"$set": {"mass_pings": conf}},
-            upsert=True
-        )
-        self.config[guild_id]["mass_pings"] = conf
+        await self.config.flush()
         await ctx.send('Enabled rate-limit module')
 
     @_enable.command(name='anti-macro')
     @commands.has_permissions(manage_messages=True)
     async def _enable_anti_macro(self, ctx):
-        return await ctx.send("This module is currently in development and can't be used")
-        # guild_id = ctx.guild.id
-        # if guild_id not in self.config:
-        #     self.config[guild_id] = {}
-        # conf = {}
-        # await self.bot.aio_mongo["AntiSpam"].update_one(
-        #     filter={"_id": guild_id},
-        #     update={"$set": {"anti_macro": conf}},
-        #     upsert=True
-        # )
-        # self.config[guild_id]["anti_macro"] = conf
-        # await ctx.send('Enabled anti-macro module')
+        guild_id = ctx.guild.id
+        if guild_id not in self.config:
+            self.config[guild_id] = {}
+        if "anti_macro" in self.config[guild_id]:
+            return await ctx.send("Anti macro is already enabled")
+        self.config[guild_id]["anti_macro"] = {}
+        await self.config.flush()
+        await ctx.send('Enabled anti-macro module')
 
     @_enable.command(name='duplicates')
     @commands.has_permissions(manage_messages=True)
@@ -333,19 +300,14 @@ class AntiSpam(commands.Cog):
         guild_id = ctx.guild.id
         if guild_id not in self.config:
             self.config[guild_id] = {}
-        conf = {
+        self.config[guild_id]["duplicates"] = {
             "per_message": 10,
             "thresholds": [{
                 "timespan": 25,
                 "threshold": 4
             }]
         }
-        await self.bot.aio_mongo["AntiSpam"].update_one(
-            filter={"_id": guild_id},
-            update={"$set": {"duplicates": conf}},
-            upsert=True
-        )
-        self.config[guild_id]["duplicates"] = conf
+        await self.config.flush()
         await ctx.send('Enabled duplicates module')
 
     @_enable.command(name='inhuman')
@@ -354,19 +316,14 @@ class AntiSpam(commands.Cog):
         guild_id = ctx.guild.id
         if guild_id not in self.config:
             self.config[guild_id] = {}
-        conf = {
+        self.config[guild_id]["inhuman"] = {
             "non_abc": True,
             "tall_messages": True,
             "empty_lines": True,
             "unknown_chars": True,
             "ascii": True
         }
-        await self.bot.aio_mongo["AntiSpam"].update_one(
-            filter={"_id": guild_id},
-            update={"$set": {"inhuman": conf}},
-            upsert=True
-        )
-        self.config[guild_id]["inhuman"] = conf
+        await self.config.flush()
         await ctx.send('Enabled duplicates module')
 
     @anti_spam.group(name='disable')
@@ -376,8 +333,7 @@ class AntiSpam(commands.Cog):
             guild_id = ctx.guild.id
             if guild_id not in self.config:
                 return await ctx.send("Anti-Spam isn't enabled")
-            await self.bot.aio_mongo["AntiSpam"].delete_one({"_id": guild_id})
-            del self.config[guild_id]
+            self.config.remove(guild_id)
             await ctx.send('Disabled anti-spam')
 
     @_disable.command(name='rate-limit', aliases=['Rate-Limit', 'ratelimit', 'RateLimit'])
@@ -388,11 +344,7 @@ class AntiSpam(commands.Cog):
             return await ctx.send("Anti spam isn't enabled")
         if "rate_limit" not in self.config[guild_id]:
             return await ctx.send("Rate limit isn't enabled")
-        await self.bot.aio_mongo["AntiSpam"].update_one(
-            filter={"_id": guild_id},
-            update={"$unset": {"rate_limit": 1}}
-        )
-        del self.config[guild_id]["rate_limit"]
+        self.config.remove_sub(guild_id, "rate_limit")
         await ctx.send('Disabled rate-limit module')
 
     @_disable.command(name='anti-macro', aliases=['Anti-Macro', 'antimacro', 'AntiMacro'])
@@ -403,11 +355,7 @@ class AntiSpam(commands.Cog):
             return await ctx.send("Anti spam isn't enabled")
         if "anti_macro" not in self.config[guild_id]:
             return await ctx.send("Anti Macro isn't enabled")
-        await self.bot.aio_mongo["AntiSpam"].update_one(
-            filter={"_id": guild_id},
-            update={"$unset": {"anti_macro": 1}}
-        )
-        del self.config[guild_id]["anti_macro"]
+        self.config.remove_sub(guild_id, "anti_macro")
         await ctx.send('Disabled anti-macro module')
 
     @_disable.command(name='mass-pings', aliases=['Mass-Pings', 'masspings', 'MassPings'])
@@ -418,11 +366,7 @@ class AntiSpam(commands.Cog):
             return await ctx.send("Anti spam isn't enabled")
         if "mass_pings" not in self.config[guild_id]:
             return await ctx.send("Mass pings isn't enabled")
-        await self.bot.aio_mongo["AntiSpam"].update_one(
-            filter={"_id": guild_id},
-            update={"$unset": {"mass_pings": 1}}
-        )
-        del self.config[guild_id]["mass_pings"]
+        self.config.remove_sub(guild_id, "mass_pings")
         await ctx.send('Disabled mass-pings module')
 
     @_disable.command(name='duplicates', aliases=['Duplicates', 'duplicate', 'Duplicate'])
@@ -433,11 +377,7 @@ class AntiSpam(commands.Cog):
             return await ctx.send("Anti spam isn't enabled")
         if "duplicates" not in self.config[guild_id]:
             return await ctx.send("Duplicates isn't enabled")
-        await self.bot.aio_mongo["AntiSpam"].update_one(
-            filter={"_id": guild_id},
-            update={"$unset": {"duplicates": 1}}
-        )
-        del self.config[guild_id]["duplicates"]
+        self.config.remove_sub(guild_id, "rate_limit")
         await ctx.send('Disabled rate-limit module')
 
     @_disable.command(name='inhuman')
@@ -448,11 +388,7 @@ class AntiSpam(commands.Cog):
             return await ctx.send("Anti spam isn't enabled")
         if "inhuman" not in self.config[guild_id]:
             return await ctx.send("Inhuman isn't enabled")
-        await self.bot.aio_mongo["AntiSpam"].update_one(
-            filter={"_id": guild_id},
-            update={"$unset": {"inhuman": 1}}
-        )
-        del self.config[guild_id]["rate_limit"]
+        self.config.remove_sub(guild_id, "inhuman")
         await ctx.send('Disabled inhuman module')
 
     @anti_spam.command(name='ignore')
@@ -471,11 +407,8 @@ class AntiSpam(commands.Cog):
             if "ignored" not in self.config[guild_id]:
                 self.config[guild_id]["ignored"] = []
             self.config[guild_id]["ignored"].append(channel.id)
-            await self.bot.aio_mongo["AntiSpam"].update_one(
-                filter={"_id": guild_id},
-                update={"$set": {"ignored": self.config[guild_id]["ignored"]}}
-            )
             await ctx.send(f"I'll now ignore {channel.mention}")
+        await self.config.flush()
 
     @anti_spam.command(name='unignore')
     @commands.has_permissions(manage_messages=True)
@@ -490,17 +423,10 @@ class AntiSpam(commands.Cog):
                 await ctx.send(f"{channel.mention} isn't ignored")
                 continue
             self.config[guild_id]["ignored"].remove(channel.id)
-            if self.config[guild_id]["ignored"]:
-                await self.bot.aio_mongo["AntiSpam"].update_one(
-                    filter={"_id": guild_id},
-                    update={"$set": {"ignored": self.config[guild_id]["ignored"]}}
-                )
-            else:
-                await self.bot.aio_mongo["AntiSpam"].update_one(
-                    filter={"_id": guild_id},
-                    update={"$unset": {"ignored": 1}}
-                )
+            if not self.config[guild_id]["ignored"]:
+                self.config.remove_sub(guild_id, "ignored")
             await ctx.send(f"I'll no longer ignore {channel.mention}")
+        await self.config.flush()
 
     async def handle_mute(self, channel, mute_role, guild_id, user_id: int, sleep_time: int):
         if channel:
@@ -680,9 +606,10 @@ class AntiSpam(commands.Cog):
                             await asyncio.sleep(0)
                             dupes = [
                                 m for m in self.dupes[channel_id]
-                                if m and m.content and m.content == message.content and len(m.content) > 3
+                                if m and m.content and m.content == message.content
                             ]
-                            if len(dupes) > 4:
+                            lmt = 4 if len(message.content) > 3 else 8
+                            if len(dupes) > lmt:
                                 history = await msg.channel.history(limit=2).flatten()
                                 if not any(m.author.bot for m in history):
                                     users = set(list([
