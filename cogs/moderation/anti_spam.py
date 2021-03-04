@@ -1097,7 +1097,7 @@ class ConfigureModules:
                 if int(args[1]) > 30:
                     await self.ctx.send("You can't go above 30 for the threshold")
                     return self.reset()
-                new_threshold = {"timespan": int(args[0]), "threshold": int(args[1])}
+                new_threshold = {"timespan": int(args[1]), "threshold": int(args[0])}
                 list_check = new_threshold in self.config if isinstance(self.config, list) else False
                 dict_check = new_threshold in self.config["thresholds"] if isinstance(self.config, dict) else False
                 if list_check or dict_check:
