@@ -284,7 +284,7 @@ class Ranking(commands.Cog):
                             f"ON DUPLICATE KEY UPDATE xp = xp + {new_xp};"
                         )
 
-                    async with self.bot.cursor() as cur:
+                        # Fetch current xp for xp based roles
                         await cur.execute(
                             f"select xp from msg "
                             f"where guild_id = {guild_id} "
@@ -294,7 +294,8 @@ class Ranking(commands.Cog):
                         result = await cur.fetchone()
                         if not result:
                             return
-                        dat = await self.calc_lvl_info(result[0], conf)
+                    dat = await self.calc_lvl_info(result[0], conf)
+                    async with self.bot.cursor() as cur:
                         await cur.execute(
                             f"select role_id from role_rewards "
                             f"where guild_id = {guild_id} "
@@ -311,7 +312,7 @@ class Ranking(commands.Cog):
                                 e.description = f"You leveled up and earned {role.mention}"
                                 with suppress(Forbidden):
                                     await msg.channel.send(embed=e)
-                            except (NotFound, Forbidden):
+                            except (NotFound, Forbidden, AttributeError):
                                 await self.bot.execute(
                                     f"delete from role_rewards "
                                     f"where role_id = {result[0]} limit 1;"
