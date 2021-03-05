@@ -66,7 +66,6 @@ class VcLog(commands.Cog):
         if guild_id not in self.config:
             return await ctx.send("VcLog isn't enabled")
         self.config.remove(guild_id)
-        await self.config.flush()
         await ctx.send("Disabled VcLog")
 
     @commands.Cog.listener()
