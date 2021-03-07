@@ -83,6 +83,10 @@ class FactionsRewrite(commands.Cog):
                                     del self.boosts[key][guild_id][faction]
                 if "notifs" in dat:
                     self.notifs = dat["notifs"]  # type: list
+        for guild_id, data in list(self.factions.items()):
+            for faction, dat in data.items():
+                if dat["icon"] and "http" not in dat["icon"]:
+                    self.factions[guild_id][faction]["icon"] = ""
 
     @property
     def extra_income(self):
@@ -719,7 +723,7 @@ class FactionsRewrite(commands.Cog):
             )
         if not url:
             url = ctx.message.attachments[0].url
-        if "http" not in url and "https" not in url:
+        if "http" not in url:
             return await ctx.send("Discord won't let me set that as the icon, sorry")
         e = discord.Embed(color=discord.Color.red())
         e.set_author(name="Ensuring the image works", icon_url=url)
@@ -757,7 +761,7 @@ class FactionsRewrite(commands.Cog):
             )
         if not url:
             url = ctx.message.attachments[0].url
-        if "http" not in url and "https" not in url:
+        if "http" not in url:
             return await ctx.send("Discord won't let me set that as an image, sorry")
         e = discord.Embed(color=discord.Color.red())
         e.set_author(name="Ensuring the image works", icon_url=url)
