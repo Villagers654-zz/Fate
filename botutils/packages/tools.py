@@ -5,9 +5,9 @@ from PIL import Image
 from typing import Union
 import asyncio
 from datetime import timedelta
-import json
 from colormap import rgb2hex
 import discord
+from discord.ext import commands
 
 
 class OperationLock:
@@ -154,10 +154,12 @@ def get_user(ctx, user: str = None):
     if not user:
         return ctx.author
     if str(user).isdigit():
-        user = str(user)
+        user_id = int(user)
+        if user_id > 9223372036854775807:
+            raise commands.BadArgument("That's not a proper user id")
         usr = None
         if ctx.guild:
-            usr = ctx.guild.get_member(int(user))
+            usr = ctx.guild.get_member(user_id)
         return usr if usr else ctx.bot.get_user(int(user))
     if user.startswith("<@"):
         for char in list(user):
