@@ -73,6 +73,8 @@ class Emojis(commands.Cog):
         """Sends the emoji in image form"""
         if not emojis:
             return await ctx.send("Usage: `.emoji [custom emoji]`")
+        if len(emojis) > 1 and all(e == emojis[0] for e in emojis):
+            return await ctx.send("No")
         for emoji in emojis[:3]:
             e = discord.Embed(color=colors.fate())
             e.description = str(emoji.id)
