@@ -1028,7 +1028,7 @@ class Utility(commands.Cog):
             except discord.errors.NotFound:
                 return await ctx.send("User not found")
         else:
-            user = self.bot.utils.get_user(ctx, user)
+            user = await self.bot.utils.get_user(ctx, user)
             if not user:
                 return await ctx.send("User not found")
         e = discord.Embed(color=0x80B0FF)
@@ -1301,7 +1301,7 @@ class Utility(commands.Cog):
     @commands.bot_has_permissions(embed_links=True)
     async def id(self, ctx, *, user=None):
         if user:
-            user = self.bot.utils.get_user(ctx, user)
+            user = await self.bot.utils.get_user(ctx, user)
             if not user:
                 return await ctx.send("User not found")
             return await ctx.send(user.id)

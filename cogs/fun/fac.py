@@ -152,7 +152,7 @@ class FactionsRewrite(commands.Cog):
         if not user:
             user = ctx.author
         if not isinstance(user, (discord.User, discord.Member)):
-            user = self.bot.utils.get_user(ctx, user)
+            user = await self.bot.utils.get_user(ctx, user)
         if not isinstance(user, (discord.User, discord.Member)):
             return None
 
@@ -184,7 +184,7 @@ class FactionsRewrite(commands.Cog):
         if not user:
             user = ctx.author
         elif not isinstance(user, (discord.User, discord.Member)):
-            user = self.bot.utils.get_user(ctx, user)
+            user = await self.bot.utils.get_user(ctx, user)
         if not user:
             return None
         guild_id = str(ctx.guild.id)
@@ -646,7 +646,7 @@ class FactionsRewrite(commands.Cog):
     @is_faction_owner()
     async def promote(self, ctx, *, user):
         """ Promotes a faction member to Co-Owner"""
-        user = self.bot.utils.get_user(ctx, user)
+        user = await self.bot.utils.get_user(ctx, user)
         if not user:
             return await ctx.send("User not found")
         guild_id = str(ctx.guild.id)
@@ -663,7 +663,7 @@ class FactionsRewrite(commands.Cog):
     @is_faction_owner()
     async def demote(self, ctx, *, user):
         """ Demotes a faction member from Co-Owner """
-        user = self.bot.utils.get_user(ctx, user)
+        user = await self.bot.utils.get_user(ctx, user)
         if not user:
             return await ctx.send("User not found")
         faction = await self.get_authors_faction(ctx)

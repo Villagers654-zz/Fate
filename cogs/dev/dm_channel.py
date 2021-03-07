@@ -39,7 +39,7 @@ class DMChannel(commands.Cog):
             try:
                 user = self.bot.get_user(int(user))
             except:
-                user = self.bot.utils.get_user(ctx, user)
+                user = await self.bot.utils.get_user(ctx, user)
         if not isinstance(user, discord.User) and not isinstance(user, discord.Member):
             return await ctx.send("Improper args or user isn't cached")
         await user.create_dm()

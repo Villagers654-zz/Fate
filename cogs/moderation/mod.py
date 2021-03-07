@@ -1231,7 +1231,7 @@ class Moderation(commands.Cog):
     @commands.has_permissions(manage_nicknames=True)
     @commands.bot_has_permissions(manage_nicknames=True)
     async def nick(self, ctx, user, *, nick=""):
-        user = self.bot.utils.get_user(ctx, user)
+        user = await self.bot.utils.get_user(ctx, user)
         if not user:
             return await ctx.send("User not found")
         if ctx.author.id != ctx.guild.owner.id:
@@ -1252,7 +1252,7 @@ class Moderation(commands.Cog):
     @commands.has_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     async def role(self, ctx, user, *, role):
-        user = self.bot.utils.get_user(ctx, user)
+        user = await self.bot.utils.get_user(ctx, user)
         if user:
             user = ctx.guild.get_member(user.id)
         if not user:
@@ -1508,7 +1508,7 @@ class Moderation(commands.Cog):
         if not user:
             user = ctx.author
         else:
-            user = self.bot.utils.get_user(ctx, user)
+            user = await self.bot.utils.get_user(ctx, user)
         if not user:
             return await ctx.send("User not found")
         guild_id = str(ctx.guild.id)
