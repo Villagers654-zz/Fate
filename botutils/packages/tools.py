@@ -150,39 +150,6 @@ def total_seconds(now, before):
     return secs[: secs.find(".") + 2]
 
 
-def get_user(ctx, user: str = None):
-    if not user:
-        return ctx.author
-    if str(user).isdigit():
-        user_id = int(user)
-        if user_id > 9223372036854775807:
-            raise commands.BadArgument("That's not a proper user id")
-        usr = None
-        if ctx.guild:
-            usr = ctx.guild.get_member(user_id)
-        return usr if usr else ctx.bot.get_user(int(user))
-    if user.startswith("<@"):
-        for char in list(user):
-            if char not in list("1234567890"):
-                user = user.replace(str(char), "")
-        return ctx.guild.get_member(int(user))
-    else:
-        user = user.lower()
-        for member in ctx.guild.members:
-            if user == member.name.lower():
-                return member
-        for member in ctx.guild.members:
-            if user == member.display_name.lower():
-                return member
-        for member in ctx.guild.members:
-            if user in member.name.lower():
-                return member
-        for member in ctx.guild.members:
-            if user in member.display_name.lower():
-                return member
-    return None
-
-
 async def get_user_rewrite(ctx, target: str = None) -> Union[discord.User, discord.Member]:
     """ Grab a user by id, name, or username, and convert to Member if possible """
     if not target:
@@ -350,7 +317,6 @@ def init(cls):
     cls.get_seconds = get_seconds
     cls.get_images = get_images
     cls.total_seconds = total_seconds
-    cls.get_user = get_user
     cls.get_user_rewrite = get_user_rewrite
     cls.get_role = get_role
     cls.get_time = get_time

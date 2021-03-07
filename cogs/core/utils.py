@@ -14,7 +14,7 @@ from discord.ext import commands, tasks
 import discord
 
 from botutils.packages import resources, listeners, menus, files, tools
-from botutils import checks
+from botutils import checks, get_user
 
 
 class Utils(commands.Cog):
@@ -35,16 +35,19 @@ class Utils(commands.Cog):
         self.get_images = self.total_seconds = self.format_dict = self.add_field = self.update_msg = None
         self.get_user = self.get_role = self.get_time = self.dump_json = None
 
-        # Packages to import
+        # Reloading and initializing
         self.packages = [
             "resources", "tools", "listeners", "files", "menus"
         ]
+        self.modules_to_reload = ["checks", "get_user"]
         for package in self.packages:
             reload(eval(package))
             eval(package).init(self)
-        reload(checks)
-        bot.attrs = checks.Attributes(bot)
+        for module in self.modules_to_reload:
+            reload(eval(module))
 
+        self.bot.attrs = checks.Attributes(bot)
+        self.get_user = lambda *args, **kwargs: get_user.GetUser(bot, *args, **kwargs)
         self.filter = _filter
         self.MemoryInfo = memory_info
         self.Result = result
