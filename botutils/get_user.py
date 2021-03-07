@@ -97,18 +97,19 @@ class GetUser:
                     await asyncio.sleep(0)
                     if name.lower() in str(member).lower():
                         options.append(member)
-            if len(options) == 1:
-                users.append(options[0])
-            elif self.multi:
-                users.extend(options)
-            elif not self.channel:
-                users.append(options[0])
-            else:
-                choices = [m.mention for m in options]
-                choice = await self.bot.utils.get_choice(self.ctx, choices, name="Which user")
-                if not choice:
-                    raise self.bot.ignored_exit
-                users.append(options[choices.index(choice)])
+            if options:
+                if len(options) == 1:
+                    users.append(options[0])
+                elif self.multi:
+                    users.extend(options)
+                elif not self.channel:
+                    users.append(options[0])
+                else:
+                    choices = [m.mention for m in options]
+                    choice = await self.bot.utils.get_choice(self.ctx, choices, name="Which user")
+                    if not choice:
+                        raise self.bot.ignored_exit
+                    users.append(options[choices.index(choice)])
         else:
             for user_id in self.user_ids:
                 if not await self._validate_id(user_id):
