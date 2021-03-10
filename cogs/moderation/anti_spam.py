@@ -521,11 +521,11 @@ class AntiSpam(commands.Cog):
                         triggered = True
 
             # mass pings
-            if "mass_pings" in self.config[guild_id]:
+            if "mass_pings" in self.config[guild_id] and not triggered:
                 await asyncio.sleep(0)
                 pings = [msg.raw_mentions, msg.raw_role_mentions]
                 total_pings = sum(len(group) for group in pings)
-                if total_pings > 4:
+                if total_pings > self.config[guild_id]["mass_pings"]["per_message"]:
                     reason = "mass pinging"
                     triggered = True
 
@@ -538,12 +538,15 @@ class AntiSpam(commands.Cog):
                         m.mentions, m.raw_mentions, m.role_mentions, m.raw_role_mentions
                     ])
                 ]
-                if len(pongs(10)) > 3:
-                    reason = "mass pinging"
-                    triggered = True
+
+                for threshold in self.config[guild_id]["mass_pings"]["thresholds"]:
+                    await asyncio.sleep(0)
+                    if len(pongs(threshold["timespan"])) > threshold["threshold"]:
+                        reason = "mass pinging"
+                        triggered = True
 
             # anti macro
-            if "anti_macro" in self.config[guild_id]:
+            if "anti_macro" in self.config[guild_id] and not triggered:
                 async def has_pattern(intervals):
                     total = []
                     for index in range(len(intervals)):
@@ -589,7 +592,7 @@ class AntiSpam(commands.Cog):
                             reason = "Using a bot/macro"
 
             # duplicate messages
-            if "duplicates" in self.config[guild_id] and msg.content:
+            if "duplicates" in self.config[guild_id] and msg.content and not triggered:
                 await asyncio.sleep(0)
                 if msg.channel.permissions_for(msg.guild.me).read_message_history:
                     with self.bot.utils.operation_lock(key=msg.id):
@@ -626,7 +629,7 @@ class AntiSpam(commands.Cog):
                                     triggered = True
                                     break
 
-            if "inhuman" in self.config[guild_id] and msg.content:
+            if "inhuman" in self.config[guild_id] and msg.content and not triggered:
                 await asyncio.sleep(0)
                 conf = self.config[guild_id]["inhuman"]  # type: dict
                 abcs = "abcdefghijklmnopqrstuvwxyzجحخهعغفقثصضشسيبلاتتمكطدظزوةىرؤءذئأإآ"
@@ -895,10 +898,11 @@ class ConfigureModules:
     def modules(self):
         """Get their current AntiSpam config"""
         items = self.bot.cogs["AntiSpam"].config[self.guild_id].items()
+        ignored = ('ignored', 'anti_macro', 'duplicates')
         return {
             module: data
             for module, data in items
-            if module != "ignored"
+            if module not in ignored
         }
 
     def create_embed(self, **kwargs):
