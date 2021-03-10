@@ -53,53 +53,16 @@ class AntiSpam(commands.Cog):
         self.config = bot.utils.cache("AntiSpam")
 
         # cache
-        self.spam_cd = {}
-        self.macro_cd = {}
-        self.ping_cd = {}
-        self.dupes = {}
-        self.roles = {}
-        self.mutes = {}
-        self.msgs = {}
-        self.index1 = {}
-        self.index2 = {}
-        self.cache = []
-        self.nc = {}
-        self.last = {}
-        self.deep = {}
+        self.spam_cd = {}   # Cooldown cache for rate limiting
+        self.macro_cd = {}  # Per-user message interval cache to look for patterns
+        self.dupes = {}     # Per-channel index to keep track of duplicate messages
+        self.msgs = {}      # Limited message cache
+        self.mutes = {}     # Keep track of mutes to increment the timer per-mute
 
         self.cleanup_task.start()
 
-    async def add_content(self, user, content):
-        async def sleep(now):
-            await asyncio.sleep(120)
-            self.last[user_id][content].remove(now)
-            if not self.last[user_id][content]:
-                del self.last[user_id][content]
-                print(f"Removed {content} from {user}")
-                if user_id in self.deep:
-                    if content in self.deep[user_id]:
-                        del self.deep[user_id][content]
-                    if not self.deep[user_id]:
-                        del self.deep[user_id]
-
-        now = time()
-        content = str(content).lower()
-        user_id = str(user.id)
-        if user_id not in self.last:
-            self.last[user_id] = {}
-        if content not in self.last[user_id]:
-            self.last[user_id][content] = [now]
-        else:
-            self.last[user_id][content].append(now)
-        self.bot.loop.create_task(sleep(now))
-
     def cog_unload(self):
         self.cleanup_task.stop()
-
-    async def lock_mute(self, guild_id, user_id):
-        self.cache.append([guild_id, user_id])
-        await asyncio.sleep(120)
-        self.cache.remove([guild_id, user_id])
 
     async def get_mutes(self) -> dict:
         mutes = {}
@@ -127,25 +90,9 @@ class AntiSpam(commands.Cog):
                 f"and user_id = {user_id};"
             )
 
-    async def update_data(self, guild_id: int, data):
-        collection = self.bot.aio_mongo["AntiSpam"]
-        await collection.update_one(
-            filter={"_id": guild_id},
-            update={"$set": data},
-            upsert=True
-        )
-
     @tasks.loop(seconds=4)
     async def cleanup_task(self):
         await asyncio.sleep(1)
-
-        # Remove guilds from blacklist if it's empty
-        # for guild_id, channels in list(self.blacklist.items()):
-        #     if not channels:
-        #         with suppress(KeyError, ValueError):
-        #             del self.blacklist[guild_id]
-
-        # Remove guilds from prefixes if it's empty
 
         # Message Index
         for user_id, messages in list(self.msgs.items()):
@@ -673,11 +620,6 @@ class AntiSpam(commands.Cog):
                         triggered = True
 
             if triggered and guild_id in self.config:
-                # Log that a mute is currently running for 180 seconds
-                self.bot.loop.create_task(
-                    self.lock_mute(msg.guild.id, msg.author.id)
-                )
-
                 # Mute the relevant users
                 for iteration, user in enumerate(list(set(users))):
                     with self.bot.utils.operation_lock(key=user.id):
