@@ -15,6 +15,7 @@ class Menus(commands.Cog, HelpMenus):
     @commands.command(name="help")
     @commands.cooldown(2, 10, commands.BucketType.user)
     @commands.cooldown(1, 3, commands.BucketType.channel)
+    @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True, add_reactions=True)
     async def help(self, ctx, *, args=None):
         if args:
