@@ -543,7 +543,7 @@ class AntiSpam(commands.Cog):
                     triggered = True
 
             # anti macro
-            if msg.channel.id in [541045023404326922, 813126504543551508]:
+            if "anti_macro" in self.config[guild_id]:
                 async def has_pattern(intervals):
                     total = []
                     for index in range(len(intervals)):
