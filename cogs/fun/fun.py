@@ -628,12 +628,13 @@ class Fun(commands.Cog):
         await ctx.message.delete()
 
     @commands.command()
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def rr(self, ctx):
-        with open("data/users") as f:
-            users = json.load(f)
+        async with self.bot.open("data/users") as f:
+            users = await self.bot.load(await f.read())
         if ctx.author.id in users:
             return await ctx.send("You lived")
-        await ctx.send(random.choice(["You lived", "You died"]))
+        await ctx.send(random.choice([*["You lived"] * 6, "You died"]))
 
 
 def setup(bot):
