@@ -22,6 +22,7 @@ from discord.errors import NotFound, Forbidden, HTTPException
 from discord_sentry_reporting import use_sentry
 import pymongo
 from motor.motor_asyncio import AsyncIOMotorClient
+from cleverbot import async_ as cleverbot
 
 from botutils import colors, checks
 from botutils.custom_logging import Logging
@@ -61,6 +62,7 @@ class Fate(commands.AutoShardedBot):
         self.operation_locks = []
         self.tasks = {}  # Task object storing for easy management
         self.logger_tasks = {}  # Same as Fate.tasks except dedicated to cogs.logger
+        self.chats = {}
 
         self.pool = None  # MySQL Pool initialized on_ready
         self.lavalink = None  # Music server
@@ -494,6 +496,17 @@ class Fate(commands.AutoShardedBot):
         # Load in caches
         self.restricted = self.utils.cache("restricted")
         self.attrs = checks.Attributes(bot=self)
+
+        # Initialize cleverBot
+        self.cb = cleverbot.Cleverbot(
+            self.auth["CleverBot"],
+            cs='76nxdxIJ02AAA',
+            timeout=10,
+            tweak1=0,
+            tweak2=100,
+            tweak3=100,
+            loop=self.loop
+        )
 
         super().run(self.auth["tokens"][self.config["token_id"]])
 
