@@ -70,7 +70,7 @@ class ConfigureModules:
         """Initialize the reaction menu"""
         self.cursor = await self.main()
         e = self.create_embed()
-        e.add_field(name="◈ Modules", value=await self.get_description())
+        e.add_field(name="◈ Categories", value=await self.get_description())
         self.msg = await self.ctx.send(embed=e)
         self.bot.loop.create_task(self.add_reactions())
 
