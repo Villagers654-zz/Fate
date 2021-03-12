@@ -9,6 +9,7 @@ class ChatFilter(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.config = bot.utils.cache("chatfilter")
+        self.chatfilter_usage = self._chatfilter
 
     @commands.group(name="chatfilter")
     @commands.bot_has_permissions(embed_links=True)
@@ -29,7 +30,9 @@ class ChatFilter(commands.Cog):
                 ".chatfilter ignore #channel\n"
                 ".chatfilter unignore #channel\n"
                 ".chatfilter add {word/phrase}\n"
-                ".chatfilter remove {word/phrase}\n",
+                ".chatfilter remove {word/phrase}\n"
+                ".chatfilter toggle-bots\n"
+                "`whether to filter bot messages`",
                 inline=False,
             )
             if guild_id in self.config and self.config[guild_id]["blacklist"]:
@@ -141,18 +144,33 @@ class ChatFilter(commands.Cog):
         await ctx.send(f"Removed `{phrase}`")
         await self.config.flush()
 
+    @_chatfilter.command(name="toggle-bots")
+    @commands.has_permissions(manage_messages=True)
+    @commands.bot_has_permissions(manage_messages=True)
+    async def toggle_bots(self, ctx):
+        guild_id = ctx.guild.id
+        if guild_id not in self.config:
+            return await ctx.send("Chatfilter isn't enabled")
+        if "bots" not in self.config[guild_id]:
+            self.config[guild_id]["bots"] = True
+            await self.config.flush()
+        else:
+            await self.config.remove_sub(guild_id, "bots")
+        toggle = "Enabled" if "bots" in self.config[guild_id] else "Disabled"
+        await ctx.send(f"{toggle} filtering bot messages")
+
     @commands.Cog.listener()
     async def on_message(self, m: discord.Message):
-        if not m.author.bot and isinstance(m.author, discord.Member) and hasattr(m.guild, "id"):
+        if hasattr(m.guild, "id") and m.guild.id in self.config:
             guild_id = m.guild.id
-            if guild_id in self.config and self.config[guild_id]["blacklist"]:
+            if not m.author.bot or "bots" in self.config[guild_id]:
                 if m.channel.id in self.config[guild_id]["ignored"]:
                     return
                 for phrase in self.config[guild_id]["blacklist"]:
                     await asyncio.sleep(0)
                     if "\\" in phrase:
                         m.content = m.content.replace("\\", "")
-                    if not self.bot.attrs.is_moderator(m.author):
+                    if m.author.bot or not self.bot.attrs.is_moderator(m.author):
                         with suppress(discord.errors.NotFound):
                             for chunk in m.content.split():
                                 await asyncio.sleep(0)
@@ -163,16 +181,18 @@ class ChatFilter(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
-        if not after.author.bot and isinstance(before.author, discord.Member) and isinstance(
-            after.author, discord.Member
-        ) and hasattr(before.guild, "id"):
+        if hasattr(after.guild, "id") and after.guild.id in self.config:
+            guild_id = after.guild.id
+            if not after.author.bot or "bots" in self.config[guild_id]:
+                if after.channel.id in self.config[guild_id]["ignored"]:
+                    return
             guild_id = before.guild.id
             if guild_id in self.config and self.config[guild_id]["blacklist"]:
                 for phrase in self.config[guild_id]["blacklist"]:
                     await asyncio.sleep(0)
                     if "\\" not in phrase:
                         after.content = after.content.replace("\\", "")
-                    if not self.bot.attrs.is_moderator(after.author):
+                    if after.author.bot or not self.bot.attrs.is_moderator(after.author):
                         for chunk in after.content.split():
                             await asyncio.sleep(0)
                             if phrase in chunk.lower():
