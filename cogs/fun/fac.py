@@ -53,6 +53,7 @@ def has_faction_permissions():
 class FactionsRewrite(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.factions_usage = self._help
         self.path = bot.get_fp_for("userdata/test_factions.json")
         self.icon = "https://cdn.discordapp.com/attachments/641032731962114096/641742675808223242/13_Swords-512.png"
         self.banner = ""
