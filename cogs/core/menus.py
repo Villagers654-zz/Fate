@@ -327,7 +327,7 @@ class ConfigureModules:
             self.cursor = {}
             help = "No help"
 
-            usage_attr = str(key).split()[0] + "_usage"
+            usage_attr = str(key).split()[0].replace("-", "_") + "_usage"
             if hasattr(cog, usage_attr):
                 usage = getattr(cog, usage_attr)
 
