@@ -70,7 +70,7 @@ class Cache:
             del self._cache[key]
 
     def remove_sub(self, key, sub_key):
-        self.bot.loop.create_task(self._remove_from_db(key, sub_key))
+        return self.bot.loop.create_task(self._remove_from_db(key, sub_key))
 
     async def _remove_from_db(self, key, sub_key=None):
         collection = self.bot.aio_mongo[self.collection]
