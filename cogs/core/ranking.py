@@ -66,17 +66,27 @@ class Ranking(commands.Cog):
         self.config = bot.utils.cache("ranking")
         self.profile = bot.utils.cache("profiles")
         self.cmds = bot.utils.cache("commands", auto_sync=True)
-        # for k, v in list(self.cmds.items()):
-        #     self.cmds.remove(k)
 
-        # save storage
+        # Save storage
         for guild_id, config in list(self.config.items()):
             if config == self.static_config():
                 self.config.remove(guild_id)
 
-        # vc caching
+        # Vc caching
         self.vclb = {}
         self.vc_counter = 0
+
+        # Help menus
+        self.set_usage = self.set
+        self.role_rewards_usage = self.role_rewards
+        self.profile_usage = f"`.profile` your global rank\n" \
+                             f"`.rank` your rank in the server"
+        self.leaderboard_usage = "`.lb` server leaderboard\n" \
+                                 "`.glb` global leaderboard\n" \
+                                 "`.mlb` monthly server leaderboard\n" \
+                                 "`.gmlb` global monthly server leaderboard"
+        self.clb_usage = "`.clb` displays the top used commands on the bot"
+        self.top_help = "shows the top 10 ranked users in the server"
 
         self.monthly_cleanup_task.start()
         self.cooldown_cleanup_task.start()
