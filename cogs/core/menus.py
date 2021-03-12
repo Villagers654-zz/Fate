@@ -1,10 +1,14 @@
 import asyncio
 import inspect
+from contextlib import suppress
 
 import discord
 from discord.ext import commands
 
 from help_embeds import HelpMenus
+
+
+command_attrs = (commands.core.Command, commands.core.Group)
 
 
 class Menus(commands.Cog, HelpMenus):
@@ -231,14 +235,16 @@ class ConfigureModules:
                     await self.configure(key)
             elif isinstance(self.cursor[key], discord.Embed):
                 await self.configure(key)
+            elif inspect.iscoroutine(self.cursor[key]):
+                await self.configure(key)
             else:
                 e.set_author(name=f"~==🥂🍸🍷{key}🍷🍸🥂==~")
                 await self.init_config(key)
 
         # Adjust row position
         if self.row < 0:
-            self.row = len(self.cursor) - 1
-        elif self.row > len(self.cursor) - 1:
+            self.row = len(self.cursor.keys()) - 1
+        elif self.row > len(self.cursor.keys()) - 1:
             self.row = 0
 
         # Parse the message
@@ -279,7 +285,7 @@ class ConfigureModules:
 
     async def init_config(self, key):
         """Change where we're working at"""
-        if isinstance(self.cursor[key], discord.Embed):
+        if isinstance(self.cursor[key], discord.Embed) or inspect.iscoroutine(self.cursor[key]):
             return
         self.config = self.cursor = self.cursor[key]
         self.key = key
@@ -306,7 +312,12 @@ class ConfigureModules:
 
         # Select the commands help embed
         elif key == "Command Help":
-            await self.ctx.send(embed=self.cursor[key])
+            usage = self.cursor[key]
+            if isinstance(usage, discord.Embed):
+                await self.ctx.send(embed=usage)
+            elif inspect.iscoroutine(usage):
+                with suppress(RuntimeError):
+                    await usage
 
         # Viewing a commands help
         else:
@@ -316,12 +327,24 @@ class ConfigureModules:
             self.cursor = {}
             help = "No help"
 
-            usage_attr = cmd.name + "_usage"
+            usage_attr = str(key).split()[0] + "_usage"
             if hasattr(cog, usage_attr):
-                usage = getattr(cog, usage_attr)()
+                usage = getattr(cog, usage_attr)
+
+                # Do conversion
+                if hasattr(usage, "__call__"):
+                    if isinstance(usage, command_attrs):
+                        usage = usage(self.ctx)
+                    elif "ctx" in usage.__code__.co_varnames:
+                        usage = usage(self.ctx)
+                    else:
+                        usage = usage()
+
                 if isinstance(usage, str):
                     help = usage
                 elif isinstance(usage, discord.Embed):
+                    self.cursor["Command Help"] = usage
+                elif inspect.iscoroutine(usage):
                     self.cursor["Command Help"] = usage
 
             if not self.cursor:
