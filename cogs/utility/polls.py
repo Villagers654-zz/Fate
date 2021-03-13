@@ -27,6 +27,10 @@ class SafePolls(commands.Cog):
         self.emojis = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣"]
         self.cache = {}
 
+        self.poll_usage = "> Usage: `.poll should we do X or Y?`\n" \
+                          "Creates a poll that's safe from reactions being manipulated. " \
+                          "Note that when you add a reaction you can only change what you react to, and can't remove it."
+
     @commands.Cog.listener()
     async def on_ready(self):
         await self.cache_msg_ids()

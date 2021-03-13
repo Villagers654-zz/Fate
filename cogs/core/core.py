@@ -85,10 +85,19 @@ class Core(commands.Cog):
             rank += 1
         await ctx.send(embed=e)
 
+    @staticmethod
+    def topguilds_usage():
+        return "Displays the top 8 servers based on highest member count"
+
     @commands.command(name="invite", aliases=["links", "support"])
     @commands.cooldown(1, 5, commands.BucketType.channel)
     async def invite(self, ctx):
         await ctx.send(embed=config.links())
+
+    @staticmethod
+    def invite_usage():
+        return "Gives the link to invite the bot to another server. " \
+               "Alongside the invite to the support server. Just click the blue hyperlink text"
 
     @commands.command(name="vote")
     @commands.cooldown(1, 5, commands.BucketType.channel)
