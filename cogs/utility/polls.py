@@ -174,45 +174,34 @@ class SafePolls(commands.Cog):
                         f"Retry, but mention the channel like this: {ctx.channel.mention}",
                         delete_after=16,
                     )
-                elif (
-                    not msg.channel_mentions[0]
-                    .permissions_for(ctx.guild.me)
-                    .send_messages
-                ):
+                elif not msg.channel_mentions[0].permissions_for(ctx.guild.me).send_messages:
                     await ctx.send(
                         "I'm missing perms to send messages in there, you can fix and retry",
                         delete_after=16,
                     )
-                elif (
-                    not msg.channel_mentions[0]
-                    .permissions_for(ctx.guild.me)
-                    .embed_links
-                ):
+                elif not msg.channel_mentions[0].permissions_for(ctx.guild.me).embed_links:
                     await ctx.send(
                         "I'm missing perms to send embeds there, you can fix and retry",
                         delete_after=16,
                     )
-                elif (
-                    not msg.channel_mentions[0]
-                    .permissions_for(ctx.guild.me)
-                    .add_reactions
-                ):
+                elif not msg.channel_mentions[0].permissions_for(ctx.guild.me).add_reactions:
                     await ctx.send(
                         "I'm missing perms to add reactions there, you can fix and retry",
                         delete_after=16,
                     )
                 else:
-                    if (
-                        msg.channel_mentions[0]
-                        .permissions_for(ctx.author)
-                        .send_messages
-                    ):
-                        channel = msg.channel_mentions[0]
-                    else:
+                    if not msg.channel_mentions[0].permissions_for(ctx.author).send_messages:
                         await ctx.send(
                             "You can't send in that channel, please select another",
                             delete_after=16,
                         )
+                    elif self.bot.attrs.is_restricted(msg.channel_mentions[0], ctx.author):
+                        await ctx.send(
+                            "Due to channel restrictions you can't send in that channel",
+                            delete_after=16
+                        )
+                    else:
+                        channel = msg.channel_mentions[0]
                 await msg.delete()
         await message.delete()
 
