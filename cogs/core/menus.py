@@ -85,6 +85,7 @@ class ConfigureModules:
         self.config = None
 
     async def main(self):
+        """The structure of the help menu"""
         modules = {
             "Core": [
                 self.bot.cogs["Core"],
@@ -116,6 +117,8 @@ class ConfigureModules:
             "Music": self.bot.cogs["Music"]
         }
 
+        # Iterate through the help menu and convert values
+        can_run = lambda cmd: "luck" not in str(cmd.checks) and "owner" not in str(cmd.checks)
         for key, value in modules.items():
             await asyncio.sleep(0)
             if isinstance(value, commands.Cog):
@@ -126,9 +129,7 @@ class ConfigureModules:
                     value = modules[key] = [*cog.walk_commands(), *modules[key]]
             if not isinstance(value, dict):
                 modules[key] = {
-                    cmd: None for cmd in value
-                    if "luck" not in str(cmd.checks)
-                       and "owner" not in str(cmd.checks)
+                    cmd: None for cmd in value if can_run(cmd)
                 }
 
             elif isinstance(value, dict):
@@ -142,9 +143,7 @@ class ConfigureModules:
                             v = modules[key][k] = [*cog.walk_commands(), *modules[key][k]]
                     if not isinstance(v, dict):
                         modules[key][k] = {
-                            cmd: None for cmd in v
-                            if "luck" not in str(cmd.checks)
-                               and "owner" not in cmd.checks
+                            cmd: None for cmd in v if can_run(cmd)
                         }
 
         return modules
@@ -259,12 +258,22 @@ class ConfigureModules:
 
             # Operating on an individual command
             if "command_help" in self.cursor or "Command Help" in self.cursor:
+                cmd_name = self.command[0].upper() + self.command[1:]
                 if "command_help" in self.cursor:
                     usage = self.cursor["command_help"]
-                    e.set_field_at(0, name="◈ Command Help", value=usage, inline=False)
+                    e.set_field_at(0, name=f"◈ {cmd_name} Help", value=usage, inline=False)
                     e.add_field(name="◈ Toggles", value=description, inline=False)
                 else:
                     e.set_field_at(0, name="◈ Options", value=description, inline=False)
+
+                index = 1
+                if len(e.fields) == 1:
+                    index = 0
+                    e.description = f"> {cmd_name} Help"
+                cmd = self.bot.get_command(self.command)
+                if cmd and cmd.aliases:
+                    aliases = ", ".join(f"`{alias}`" for alias in cmd.aliases)
+                    e.insert_field_at(index, name="◈ Aliases", value=aliases, inline=False)
 
             # Showing a list of commands inside a category
             elif any(v is None for v in self.config.values()):
@@ -285,11 +294,11 @@ class ConfigureModules:
 
     async def init_config(self, key):
         """Change where we're working at"""
+        self.row = 0
         if isinstance(self.cursor[key], discord.Embed) or inspect.iscoroutine(self.cursor[key]):
             return
         self.config = self.cursor = self.cursor[key]
         self.key = key
-        self.row = 0
 
     async def configure(self, key):
         """Alter a configs data"""
@@ -331,7 +340,7 @@ class ConfigureModules:
             if hasattr(cog, usage_attr):
                 usage = getattr(cog, usage_attr)
 
-                # Do conversion
+                # Do conversion from function to value/awaitable
                 if hasattr(usage, "__call__"):
                     if isinstance(usage, command_attrs):
                         usage = usage(self.ctx)
