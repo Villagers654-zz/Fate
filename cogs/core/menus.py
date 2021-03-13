@@ -4,6 +4,7 @@ from contextlib import suppress
 
 import discord
 from discord.ext import commands
+from discord.errors import NotFound, Forbidden, HTTPException
 
 from help_embeds import HelpMenus
 
@@ -107,6 +108,22 @@ class ConfigureModules:
                 "Chatfilter": self.bot.cogs["ChatFilter"],
                 "Verification": self.bot.cogs["Verification"]
             },
+            "Utility": {
+                "Welcome Messages": self.bot.cogs["Welcome"],
+                "Leave Messages": self.bot.cogs["Leave"],
+                "AutoRole": self.bot.cogs["AutoRole"],
+                "Self-Roles": self.bot.cogs["SelfRoles"],
+                "Restore-Roles": self.bot.cogs["RestoreRoles"],
+                "Emojis": self.bot.cogs["Emojis"],
+                "Vc-Log": self.bot.cogs["VcLog"],
+                "Misc": [
+                    self.bot.cogs["SafePolls"],
+                    self.bot.cogs["Audit"],
+                    self.bot.cogs["Embeds"],
+                    self.bot.cogs["Notepad"],
+                    self.bot.cogs["Utility"]
+                ]
+            },
             "Ranking": self.bot.cogs["Ranking"],
             "Fun": {
                 "Factions": self.bot.cogs["FactionsRewrite"],
@@ -202,7 +219,12 @@ class ConfigureModules:
 
     async def next(self):
         """Wait for the next reaction"""
-        reaction, user = await self.bot.utils.get_reaction(self.check)
+        try:
+            reaction, user = await self.bot.utils.get_reaction(self.check, ignore_timeout=False)
+        except asyncio.TimeoutError:
+            with suppress(NotFound, Forbidden, HTTPException):
+                await self.msg.clear_reactions()
+            raise self.bot.ignored_exit
         if reaction:
             self.bot.loop.create_task(self.msg.remove_reaction(reaction, user))
         e = self.create_embed()
