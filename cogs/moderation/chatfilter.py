@@ -186,20 +186,20 @@ class ChatFilter(commands.Cog):
             if not after.author.bot or "bots" in self.config[guild_id]:
                 if after.channel.id in self.config[guild_id]["ignored"]:
                     return
-            guild_id = before.guild.id
-            if guild_id in self.config and self.config[guild_id]["blacklist"]:
-                for phrase in self.config[guild_id]["blacklist"]:
-                    await asyncio.sleep(0)
-                    if "\\" not in phrase:
-                        after.content = after.content.replace("\\", "")
-                    if after.author.bot or not self.bot.attrs.is_moderator(after.author):
-                        for chunk in after.content.split():
-                            await asyncio.sleep(0)
-                            if phrase in chunk.lower():
-                                await asyncio.sleep(0.5)
-                                with suppress(discord.errors.NotFound):
-                                    await after.delete()
-                                return
+                guild_id = before.guild.id
+                if guild_id in self.config and self.config[guild_id]["blacklist"]:
+                    for phrase in self.config[guild_id]["blacklist"]:
+                        await asyncio.sleep(0)
+                        if "\\" not in phrase:
+                            after.content = after.content.replace("\\", "")
+                        if after.author.bot or not self.bot.attrs.is_moderator(after.author):
+                            for chunk in after.content.split():
+                                await asyncio.sleep(0)
+                                if phrase in chunk.lower():
+                                    await asyncio.sleep(0.5)
+                                    with suppress(discord.errors.NotFound):
+                                        await after.delete()
+                                    return
 
 
 def setup(bot):
