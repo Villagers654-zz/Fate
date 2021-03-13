@@ -24,6 +24,14 @@ class Attributes:
                 return True
         return False
 
+    def is_restricted(self, channel, member):
+        guild_id = channel.guild.id
+        if guild_id in self.bot.restricted:
+            if channel.id in self.bot.restricted[guild_id]["channels"]:
+                if not channel.permissions_for(member).manage_messages:
+                    return True
+        return False
+
     async def get_mute_role(self, target, upsert=False):
         """
         :param target: Optional: [Context, Guild]
