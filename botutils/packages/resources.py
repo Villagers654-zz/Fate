@@ -65,7 +65,7 @@ class Cache:
 
     def remove(self, key):
         if key in self._db_state:
-            self.bot.loop.create_task(self._remove_from_db(key))
+            return self.bot.loop.create_task(self._remove_from_db(key))
         else:
             del self._cache[key]
 
