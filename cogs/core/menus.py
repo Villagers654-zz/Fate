@@ -116,6 +116,7 @@ class ConfigureModules:
                 "Restore-Roles": self.bot.cogs["RestoreRoles"],
                 "Emojis": self.bot.cogs["Emojis"],
                 "Vc-Log": self.bot.cogs["VcLog"],
+                "Chat Bridges": self.bot.cogs["ChatBridges"],
                 "Misc": [
                     self.bot.cogs["SafePolls"],
                     self.bot.cogs["Audit"],
