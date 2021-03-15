@@ -266,9 +266,13 @@ class ChatBridges(commands.Cog):
                 self.waiters[ctx.channel] = [ctx.author.id, time()]
                 return await ctx.send(f"Run `.link` in the other channel you wanna link")
 
-            guild_id = channel.guild.id
-            if guild_id in self.config and channel.id in self.config[guild_id]["channels"]:
-                return await ctx.send("That channel's already linked")
+            guild_id = self.get_guild_id(channel)
+            if guild_id in self.config:
+                return await ctx.send("A channel in this server's already linked")
+            for config in list(self.config.values()):
+                await asyncio.sleep(0)
+                if channel.id in config["channels"]:
+                    return await ctx.send("That channel's already linked")
             if guild_id in self.config and len(self.config[guild_id]["channels"]) == 2:
                 return await ctx.send("You can only link a max of 3 channels together")
             webhook = None
