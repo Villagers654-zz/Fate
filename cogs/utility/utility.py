@@ -1477,7 +1477,7 @@ class Utility(commands.Cog):
             return await ctx.send("nO")
         if ctx.author.id in self.afk:
             del self.afk[ctx.author.id]
-            return await ctx.send("https://cdn.discordapp.com/attachments/775825352639512576/784311253023588392/ec1cb4c8368f601f3bf9b34d52dcd33967-10-skyrim-opening-screenshot.png")
+            return await ctx.send("Removed your afk")
         e = discord.Embed(color=colors.fate())
         e.set_author(name="You are now afk", icon_url=ctx.author.avatar_url)
         await ctx.send(embed=e, delete_after=5)
