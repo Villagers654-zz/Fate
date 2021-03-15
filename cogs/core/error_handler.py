@@ -20,7 +20,7 @@ class ErrorHandler(commands.Cog):
     async def on_command_error(self, ctx, error):
         if hasattr(ctx.command, "on_error"):
             return
-        if "Moderation" in self.bot.cogs:
+        if ctx.command and ctx.command.cog.__class__.__name__ == "Moderation":
             module = self.bot.cogs["Moderation"]
             await module.cog_after_invoke(ctx)
         ignored = (commands.CommandNotFound, commands.NoPrivateMessage)
