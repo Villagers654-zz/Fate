@@ -136,6 +136,8 @@ class ChatBridges(commands.Cog):
             return
         if msg.author.discriminator == "0000" or (not msg.content and not msg.embeds):
             return
+        if not msg.channel.permissions_for(msg.guild.me).send_messages:
+            return
         blacklist = (
             "Error:",
             "I'm not forwarding that",
