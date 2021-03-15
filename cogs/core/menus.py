@@ -247,7 +247,8 @@ class ConfigureModules:
         elif str(reaction.emoji) == emojis.yes:
             row = int(self.row)
             if "command_help" in self.cursor:
-                row += 1
+                if row != len(self.cursor.keys()) - 1:
+                    row += 1
             key = list(self.cursor.keys())[row]
             if not self.cursor[key]:
                 e.description = self.cursor[key]
