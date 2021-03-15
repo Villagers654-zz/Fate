@@ -159,12 +159,35 @@ class ChatBridges(commands.Cog):
 
         # Prevent all caps messages
         abcs = "abcdefghijklmnopqrstuvwxyz"
-        if any(c in msg.content.lower() for c in abcs) and msg.content == msg.content.upper():
-            return await msg.channel.send("I'm not forwarding that")
+        if len([c for c in msg.content if c.lower() in abcs]) > 10:
+            total_uppercase = len([c for c in msg.content if c == c.upper()])
+            div = 100 * total_uppercase / len(msg.content)
+            if div >= 75:
+                return await msg.channel.send("I'm not forwarding that")
 
         # Prevent long messages:
-        if len(msg.content) > 1000:
+        if len(msg.content) > 1000 or "\n\n\n" in msg.content:
             return await msg.channel.send("That's too long for me to forward")
+        if len(msg.content) > 50 and msg.content.count(" ") == 0:
+            return await msg.channel.send("I'm not forwarding that")
+
+        # Prevent repeating lines
+        if msg.content.count("\n") > 3 and all(line == line for line in msg.content.split("\n")):
+            return await msg.channel.send("I'm not forwarding that")
+
+        # Prevent repeating sentences
+        if any(msg.content.count(sentence) > 1 for sentence in msg.content.split(".") if sentence):
+            return await msg.channel.send("I'm not forwarding that")
+        if any(msg.content.count(word) > 10 for word in msg.content.split(" ")):
+            return await msg.channel.send("I'm not forwarding that")
+
+        # Prevent custom emoji spam
+        if msg.content.count(":") > 10:
+            return await msg.channel.send("I'm not forwarding that")
+
+        # Prevent random char spam alongside unicode emoji spam
+        if len(msg.content) > 5 and not any(c in abcs for c in msg.content):
+            return await msg.channel.send("I'm not forwarding that")
 
         # Prevent sending messages too quickly
         thresholds = [(5, 3), (10, 6)]
