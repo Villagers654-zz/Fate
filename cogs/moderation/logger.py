@@ -139,6 +139,8 @@ class Logger(commands.Cog):
         channel = self.bot.get_channel(self.config[guild_id]["channel"])
 
         if not channel:
+            if not guild or not guild.me:
+                return await self.destruct(guild_id)
             if not guild.me.guild_permissions.manage_channels:
                 result = await self.wait_for_permission(
                     guild, "manage_channels"
