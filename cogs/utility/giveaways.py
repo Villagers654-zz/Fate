@@ -6,6 +6,7 @@ import asyncio
 from time import time as timestamp
 import re
 import random
+from contextlib import suppress
 
 from discord.ext import commands
 import discord
@@ -76,9 +77,10 @@ class Giveaways(commands.Cog):
                             f"Congratulations {winners[0].mention}, you won the giveaway for {dat['giveaway']}"
                         )
                     else:
-                        await channel.send(
-                            f"Congratulations {', '.join([w.mention for w in winners])}, you won the giveaway for {dat['giveaway']}"
-                        )
+                        with suppress(Forbidden):
+                            await channel.send(
+                                f"Congratulations {', '.join([w.mention for w in winners])}, you won the giveaway for {dat['giveaway']}"
+                            )
                 break
         del self.data[guild_id][giveaway_id]
         if not self.data[guild_id]:
