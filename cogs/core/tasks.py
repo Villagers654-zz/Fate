@@ -246,11 +246,16 @@ class Tasks(commands.Cog):
                 for file in file_paths:
                     _zip.write(file)
 
-            for subdir in ["local", "db"]:
+            for subdir in ["local", "mysql"]:
                 for backup in os.listdir(os.path.join(root, subdir)):
-                    backup_time = datetime.strptime(
-                        backup.split("_")[1].strip(".zip").strip(".sql"), "%Y-%m-%d %H:%M:%S.%f"
-                    )
+                    if ".zip" in backup or ".sql" in backup:
+                        backup_time = datetime.strptime(
+                            backup.split("_")[1].strip(".zip").strip(".sql"), "%Y-%m-%d %H:%M:%S.%f"
+                        )
+                    else:
+                        backup_time = datetime.strptime(
+                            backup, "%Y-%m-%d %H:%M:%S.%f"
+                        )
                     if (datetime.now() - backup_time).days > keep_for:
                         os.remove(os.path.join(root, subdir, backup))
                         self.bot.log.info(f"Removed backup {backup}")
@@ -263,7 +268,7 @@ class Tasks(commands.Cog):
 
             # Backup MySQL DB
             before = time.monotonic()
-            db_path = os.path.join(self.bot.config["backups_location"], "db")
+            db_path = os.path.join(self.bot.config["backups_location"], "mysql")
             fp = os.path.join(db_path, f"backup_{datetime.now()}.sql")
             process = subprocess.Popen(
                 f"mysqldump -u root -p{creds.password} fate > '{fp}'",
@@ -275,6 +280,20 @@ class Tasks(commands.Cog):
                     break
             ping = round((time.monotonic() - before) * 1000)
             self.bot.log.info(f"Backed up SQL Database: {ping}ms")
+
+            # Backup MongoDB
+            before = time.monotonic()
+            db_path = os.path.join(self.bot.config["backups_location"], "mongo")
+            fp = os.path.join(db_path, f"{datetime.now()}")
+            process = subprocess.Popen(
+                f"mongodump --db fate --out {fp}"
+            )
+            while True:
+                await asyncio.sleep(1.21)
+                if not process.poll():
+                    break
+            ping = round((time.monotonic() - before) * 1000)
+            self.bot.log.info(f"Backed up Mongo Database: {ping}ms")
 
             # Backup Local Files
             before = time.monotonic()
