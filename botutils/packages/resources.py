@@ -49,6 +49,9 @@ class Cache:
     def items(self):
         return self._cache.items()
 
+    def values(self):
+        return self._cache.values()
+
     def __len__(self):
         return len(self._cache)
 
