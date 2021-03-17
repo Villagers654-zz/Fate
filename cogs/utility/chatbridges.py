@@ -319,10 +319,16 @@ class ChatBridges(commands.Cog):
             return await self.destroy(guild_id, "Host disabled the chatbridge")
 
         # Remove the webhook if we can
+        for channel in ctx.guild.text_channels:
+            if str(channel.id) in self.config[guild_id]["channels"]:
+                channel = channel
+                break
+        else:
+            return await ctx.send("This channel isn't linked")
         with suppress(NotFound, Forbidden, HTTPException):
             webhooks = await ctx.channel.webhooks()
             for webhook in webhooks:
-                if webhook.url == self.config[guild_id]["channels"][str(ctx.channel.id)]:
+                if webhook.url == self.config[guild_id]["channels"][str(channel.id)]:
                     await webhook.delete()
                     break
 
