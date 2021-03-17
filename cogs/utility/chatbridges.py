@@ -161,54 +161,47 @@ class ChatBridges(commands.Cog):
             else:
                 return
 
+        async def warn(warning="I'm not forwarding that"):
+            if "warnings" not in self.config[guild_id]:
+                await msg.channel.send(warning)
+            return None
+
         # Prevent all caps messages
         abcs = "abcdefghijklmnopqrstuvwxyz"
         if len([c for c in msg.content if c.lower() in abcs]) > 10:
             total_uppercase = len([c for c in msg.content if c == c.upper()])
             div = 100 * total_uppercase / len(msg.content)
             if div >= 75:
-                if "warnings" not in self.config[guild_id]:
-                    await msg.channel.send("I'm not forwarding that")
-                return
+                return await warn()
 
         # Prevent long messages:
         if len(msg.content) > 1000 or "\n\n\n" in msg.content:
-            return await msg.channel.send("That's too long for me to forward")
+            return await warn("That's too long for me to forward")
         if len(msg.content) > 50 and msg.content.count(" ") == 0:
-            if "warnings" not in self.config[guild_id]:
-                await msg.channel.send("I'm not forwarding that")
-            return
+            return await warn()
+        if len(msg.content) > 5 and all(c == msg.content[0] for c in msg.content):
+            return await warn()
 
         # Prevent repeating lines
         if msg.content.count("\n") > 3 and all(line == line for line in msg.content.split("\n")):
-            if "warnings" not in self.config[guild_id]:
-                await msg.channel.send("I'm not forwarding that")
-            return
+            return await warn()
 
         # Prevent repeating sentences
         if any(msg.content.count(sentence) > 1 for sentence in msg.content.split(".") if sentence):
-            if "warnings" not in self.config[guild_id]:
-                await msg.channel.send("I'm not forwarding that")
-            return
+            return await warn()
         if any(msg.content.count(word) > 10 for word in msg.content.split(" ")):
-            if "warnings" not in self.config[guild_id]:
-                await msg.channel.send("I'm not forwarding that")
-            return
+            return await warn()
 
         # Prevent custom emoji spam
         if msg.content.count(":") > 10:
-            if "warnings" not in self.config[guild_id]:
-                await msg.channel.send("I'm not forwarding that")
-            return
+            return await warn()
 
         # Prevent random char spam alongside unicode emoji spam
-        if len(msg.content) > 5 and not any(c in abcs for c in msg.content):
-            if "warnings" not in self.config[guild_id]:
-                await msg.channel.send("I'm not forwarding that")
-            return
+        if len(msg.content) > 50 and not any(c in abcs for c in msg.content):
+            return await warn()
 
         # Prevent sending messages too quickly
-        thresholds = [(5, 3), (10, 6)]
+        thresholds = [(5, 4), (10, 7)]
         for timeframe, threshold in thresholds:
             await asyncio.sleep(0)
             _id = str([timeframe, threshold])
