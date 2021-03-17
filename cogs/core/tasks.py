@@ -257,7 +257,10 @@ class Tasks(commands.Cog):
                             backup, "%Y-%m-%d %H:%M:%S.%f"
                         )
                     if (datetime.now() - backup_time).days > keep_for:
-                        os.remove(os.path.join(root, subdir, backup))
+                        if ".zip" in backup or ".sql" in backup:
+                            os.remove(os.path.join(root, subdir, backup))
+                        else:
+                            os.rmdir(os.path.join(root, subdir, backup))
                         self.bot.log.info(f"Removed backup {backup}")
 
         sleep_for = self.bot.config["backup_every_?_hours"] * 60 * 60
