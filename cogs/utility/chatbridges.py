@@ -143,9 +143,8 @@ class ChatBridges(commands.Cog):
             return
         blacklist = (
             "Error:",
-            "I'm not forwarding that",
-            "That's too long for me to forward",
-            "That's too many pings"
+            "That's too many pings",
+            "Woah, slow down"
         )
         if msg.author.bot and any(msg.content.startswith(content) for content in blacklist):
             return
@@ -161,9 +160,10 @@ class ChatBridges(commands.Cog):
             else:
                 return
 
-        async def warn(warning="I'm not forwarding that"):
+        async def warn():
             if "warnings" not in self.config[guild_id]:
-                await msg.channel.send(warning)
+                with suppress(Forbidden):
+                    await msg.add_reaction("❌")
             return None
 
         # Prevent all caps messages
@@ -176,7 +176,7 @@ class ChatBridges(commands.Cog):
 
         # Prevent long messages:
         if len(msg.content) > 1000 or "\n\n\n" in msg.content:
-            return await warn("That's too long for me to forward")
+            return await warn()
         if len(msg.content) > 50 and msg.content.count(" ") == 0:
             return await warn()
         if len(msg.content) > 5 and all(c == msg.content[0] for c in msg.content):
@@ -189,7 +189,9 @@ class ChatBridges(commands.Cog):
         # Prevent repeating sentences
         if any(msg.content.count(sentence) > 1 for sentence in msg.content.split(".") if sentence):
             return await warn()
-        if any(msg.content.count(word) > 10 for word in msg.content.split(" ")):
+        if len(msg.content) <= 50 and any(msg.content.count(word) > 3 for word in msg.content.split(" ")):
+            return await warn()
+        if len(msg.content) > 50 and any(msg.content.count(word) > 10 for word in msg.content.split(" ")):
             return await warn()
 
         # Prevent custom emoji spam
