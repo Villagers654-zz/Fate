@@ -252,10 +252,16 @@ class ChatBridges(commands.Cog):
             return
 
         # Parse what channels to forward to
-        webhooks = [
-            webhook_url for channel_id, webhook_url in self.config[guild_id]["channels"].items()
-            if int(channel_id) != msg.channel.id
-        ]
+        webhooks = []
+        for channel_id, webhook_url in list(self.config[guild_id]["channels"].items()):
+            await asyncio.sleep(0)
+            channel = self.bot.get_channel(int(channel_id))
+            if channel and channel.id != msg.channel.id:
+                member = channel.guild.get_member(msg.author.id)
+                mute_role = await self.bot.attrs.get_mute_role(channel.guild, upsert=False)
+                if member and mute_role and mute_role in member.roles:
+                    continue
+                webhooks.append(webhook_url)
         if msg.channel.id != self.config[guild_id]["channel_id"]:
             webhooks.append(self.config[guild_id]["webhook_url"])
 
