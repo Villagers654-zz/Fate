@@ -132,7 +132,10 @@ class ChatBridges(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, msg):
         """Run anti spam checks and send the message to the queue"""
-        if not isinstance(msg.guild, Guild) or self.get_guild_id(msg.channel) not in self.config:
+        if not isinstance(msg.guild, Guild):
+            return
+        guild_id = self.get_guild_id(msg.channel)
+        if guild_id not in self.config:
             return
         if msg.author.discriminator == "0000" or (not msg.content and not msg.embeds):
             return
@@ -146,7 +149,6 @@ class ChatBridges(commands.Cog):
         )
         if msg.author.bot and any(msg.content.startswith(content) for content in blacklist):
             return
-        guild_id = msg.guild.id
         user_id = msg.author.id
         if msg.channel.id != self.config[guild_id]["channel_id"]:
             if str(msg.channel.id) not in self.config[guild_id]["channels"]:
@@ -165,31 +167,45 @@ class ChatBridges(commands.Cog):
             total_uppercase = len([c for c in msg.content if c == c.upper()])
             div = 100 * total_uppercase / len(msg.content)
             if div >= 75:
-                return await msg.channel.send("I'm not forwarding that")
+                if "warnings" not in self.config[guild_id]:
+                    await msg.channel.send("I'm not forwarding that")
+                return
 
         # Prevent long messages:
         if len(msg.content) > 1000 or "\n\n\n" in msg.content:
             return await msg.channel.send("That's too long for me to forward")
         if len(msg.content) > 50 and msg.content.count(" ") == 0:
-            return await msg.channel.send("I'm not forwarding that")
+            if "warnings" not in self.config[guild_id]:
+                await msg.channel.send("I'm not forwarding that")
+            return
 
         # Prevent repeating lines
         if msg.content.count("\n") > 3 and all(line == line for line in msg.content.split("\n")):
-            return await msg.channel.send("I'm not forwarding that")
+            if "warnings" not in self.config[guild_id]:
+                await msg.channel.send("I'm not forwarding that")
+            return
 
         # Prevent repeating sentences
         if any(msg.content.count(sentence) > 1 for sentence in msg.content.split(".") if sentence):
-            return await msg.channel.send("I'm not forwarding that")
+            if "warnings" not in self.config[guild_id]:
+                await msg.channel.send("I'm not forwarding that")
+            return
         if any(msg.content.count(word) > 10 for word in msg.content.split(" ")):
-            return await msg.channel.send("I'm not forwarding that")
+            if "warnings" not in self.config[guild_id]:
+                await msg.channel.send("I'm not forwarding that")
+            return
 
         # Prevent custom emoji spam
         if msg.content.count(":") > 10:
-            return await msg.channel.send("I'm not forwarding that")
+            if "warnings" not in self.config[guild_id]:
+                await msg.channel.send("I'm not forwarding that")
+            return
 
         # Prevent random char spam alongside unicode emoji spam
         if len(msg.content) > 5 and not any(c in abcs for c in msg.content):
-            return await msg.channel.send("I'm not forwarding that")
+            if "warnings" not in self.config[guild_id]:
+                await msg.channel.send("I'm not forwarding that")
+            return
 
         # Prevent sending messages too quickly
         thresholds = [(5, 3), (10, 6)]
@@ -348,6 +364,20 @@ class ChatBridges(commands.Cog):
             )
 
         await ctx.send(f"Unlinked from {self.bot.get_guild(guild_id)}")
+
+    @link.command(name="toggle-warnings")
+    @commands.cooldown(2, 5, commands.BucketType.user)
+    @commands.has_permissions(administrator=True)
+    async def toggle_warnings(self, ctx):
+        guild_id = self.get_guild_id(ctx.channel)
+        if guild_id not in self.config:
+            return await ctx.send("This channel isn't linked")
+        if "warnings" in self.config[guild_id]:
+            await self.config.remove_sub(guild_id, "warnings")
+            return await ctx.send("Enabled warnings")
+        self.config[guild_id]["warnings"] = False
+        await self.config.flush()
+        await ctx.send("Disabled warnings")
 
     @link.command(name="block")
     @commands.cooldown(2, 5, commands.BucketType.user)
