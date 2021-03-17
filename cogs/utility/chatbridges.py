@@ -132,7 +132,7 @@ class ChatBridges(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, msg):
         """Run anti spam checks and send the message to the queue"""
-        if not isinstance(msg.guild, Guild) or msg.guild.id not in self.config:
+        if not isinstance(msg.guild, Guild) or self.get_guild_id(msg.channel) not in self.config:
             return
         if msg.author.discriminator == "0000" or (not msg.content and not msg.embeds):
             return
@@ -273,7 +273,7 @@ class ChatBridges(commands.Cog):
                 return await ctx.send("A channel in this server's already linked")
             for config in list(self.config.values()):
                 await asyncio.sleep(0)
-                if channel.id in config["channels"]:
+                if str(channel.id) in config["channels"]:
                     return await ctx.send("That channel's already linked")
             if guild_id in self.config and len(self.config[guild_id]["channels"]) == 2:
                 return await ctx.send("You can only link a max of 3 channels together")
