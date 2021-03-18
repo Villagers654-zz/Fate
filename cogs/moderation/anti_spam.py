@@ -418,8 +418,6 @@ class AntiSpam(commands.Cog):
 
             if "ignored" in self.config[guild_id] and msg.channel.id in self.config[guild_id]["ignored"]:
                 return
-            if [msg.guild.id, msg.author.id] in self.cache:
-                return
 
             users = [msg.author]
             reason = "Unknown"
