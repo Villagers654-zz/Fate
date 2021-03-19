@@ -161,8 +161,10 @@ class Logger(commands.Cog):
                 del self.config[guild_id]["channels"][ltype]
 
     async def destruct(self, guild_id):
-        del self.queue[guild_id]
-        del self.recent_logs[guild_id]
+        if guild_id in self.queue:
+            del self.queue[guild_id]
+        if guild_id in self.recent_logs:
+            del self.recent_logs[guild_id]
         if guild_id in self.bot.logger_tasks:
             self.bot.logger_tasks[guild_id].cancel()
             del self.bot.logger_tasks[guild_id]
