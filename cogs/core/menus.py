@@ -117,6 +117,7 @@ class ConfigureModules:
                 "Emojis": self.bot.cogs["Emojis"],
                 "Vc-Log": self.bot.cogs["VcLog"],
                 "Chat Bridges": self.bot.cogs["ChatBridges"],
+                "Suggestions": self.bot.cogs["Suggestions"],
                 "Misc": [
                     self.bot.cogs["SafePolls"],
                     self.bot.cogs["Audit"],
