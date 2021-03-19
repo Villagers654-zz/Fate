@@ -622,6 +622,7 @@ class Ranking(commands.Cog):
 
         # xp variables
         guild_rank = "unranked"  # this is required, remember to get this here
+        who = 'You' if user.id == ctx.author.id else 'They'
         async with self.bot.cursor() as cur:
             if (
                 "global" in ctx.message.content
@@ -633,7 +634,7 @@ class Ranking(commands.Cog):
                 results = await cur.fetchone()  # type: tuple
                 if not results:
                     return await ctx.send(
-                        "You currently have no global xp, try rerunning this command now"
+                        f"{who} currently have no global xp, try rerunning this command now"
                     )
                 dat = await self.calc_lvl_info(results[0], self.static_config())
             else:
@@ -646,7 +647,7 @@ class Ranking(commands.Cog):
                 results = await cur.fetchone()  # type: tuple
                 if not results:
                     return await ctx.send(
-                        "You currently have no xp in this server, try rerunning this command now"
+                        f"{who} currently have no xp in this server, try rerunning this command now"
                     )
                 dat = await self.calc_lvl_info(results[0], conf)
 
