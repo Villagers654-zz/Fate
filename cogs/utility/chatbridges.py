@@ -5,7 +5,7 @@ import aiohttp
 from datetime import datetime, timedelta
 
 from discord.ext import commands
-from discord import Guild, Webhook, AsyncWebhookAdapter, AllowedMentions
+from discord import Guild, Webhook, AsyncWebhookAdapter, AllowedMentions, File
 from discord.errors import NotFound, Forbidden, HTTPException
 
 
@@ -64,53 +64,61 @@ class ChatBridges(commands.Cog):
         async with aiohttp.ClientSession() as session:
             while True:
                 msg, webhooks = await self.queue[guild_id].get()
-                for webhook_url in webhooks:
-                    try:
-                        if webhook_url not in webhook_cache:
-                            webhook = Webhook.from_url(webhook_url, adapter=AsyncWebhookAdapter(session))
-                            webhook_cache[webhook_url] = webhook
-                        if isinstance(msg, str):
-                            await webhook_cache[webhook_url].send(msg)
-                        else:
-                            await webhook_cache[webhook_url].send(
-                                content=msg.content,
-                                embeds=msg.embeds if msg.embeds else None,
-                                username=msg.author.display_name,
-                                avatar_url=msg.author.avatar_url,
-                                allowed_mentions=mentions
-                            )
-                    except (NotFound, Forbidden):
-                        if guild_id not in self.config:
-                            return
-                        if webhook_url == self.config[guild_id]["webhook_url"]:
-                            return await self.destroy(guild_id, "Host webhook deleted. Disabling the chatbridge")
+                dl_info = dict(filename=None, url=None)
+                if msg.attachments and msg.attachments and msg.attachments[0].size < 4000000:
+                    dl_info["filename"] = msg.attachments[0].filename
+                    dl_info["url"] = msg.attachments[0].url
+                async with self.bot.utils.tempdl(**dl_info) as file:
+                    if file:
+                        file = File(fp=file)  # discord.File
+                    for webhook_url in webhooks:
+                        try:
+                            if webhook_url not in webhook_cache:
+                                webhook = Webhook.from_url(webhook_url, adapter=AsyncWebhookAdapter(session))
+                                webhook_cache[webhook_url] = webhook
+                            if isinstance(msg, str):
+                                await webhook_cache[webhook_url].send(msg)
+                            else:
+                                await webhook_cache[webhook_url].send(
+                                    content=msg.content,
+                                    embeds=msg.embeds if msg.embeds else None,
+                                    file=file,
+                                    username=msg.author.display_name,
+                                    avatar_url=msg.author.avatar_url,
+                                    allowed_mentions=mentions
+                                )
+                        except (NotFound, Forbidden):
+                            if guild_id not in self.config:
+                                return
+                            if webhook_url == self.config[guild_id]["webhook_url"]:
+                                return await self.destroy(guild_id, "Host webhook deleted. Disabling the chatbridge")
 
-                        # Iterate through and remove the unavailable webhook
-                        for channel_id, _webhook_url in list(self.config[guild_id]["channels"].items()):
-                            if webhook_url == _webhook_url:
-                                self.config[guild_id]["channels"] = {
-                                    c: w for c, w in self.config[guild_id]["channels"].items()
-                                    if c != channel_id
-                                }
-                                await self.config.flush()
+                            # Iterate through and remove the unavailable webhook
+                            for channel_id, _webhook_url in list(self.config[guild_id]["channels"].items()):
+                                if webhook_url == _webhook_url:
+                                    self.config[guild_id]["channels"] = {
+                                        c: w for c, w in self.config[guild_id]["channels"].items()
+                                        if c != channel_id
+                                    }
+                                    await self.config.flush()
 
-                                # Notify the other webhooks that another was deleted
-                                channel = self.bot.get_channel(int(channel_id))
-                                if channel:
-                                    warning = f"The webhook for {channel.mention} in {channel.guild} was deleted"
-                                else:
-                                    warning = f"The webhook for {channel_id} was deleted"
+                                    # Notify the other webhooks that another was deleted
+                                    channel = self.bot.get_channel(int(channel_id))
+                                    if channel:
+                                        warning = f"The webhook for {channel.mention} in {channel.guild} was deleted"
+                                    else:
+                                        warning = f"The webhook for {channel_id} was deleted"
 
-                                await self.queue[guild_id].put([warning, self.get_webhook_urls(guild_id)])
+                                    await self.queue[guild_id].put([warning, self.get_webhook_urls(guild_id)])
 
-                        # Disable the bridge if there's only the host channel
-                        if not self.config[guild_id]["channels"]:
-                            await self.destroy(guild_id, "Disabled the chatbridge due to the only other channel removing their webhook")
+                            # Disable the bridge if there's only the host channel
+                            if not self.config[guild_id]["channels"]:
+                                await self.destroy(guild_id, "Disabled the chatbridge due to the only other channel removing their webhook")
 
-                    except HTTPException as error:
-                        await msg.channel.send(f"Error: couldn't send your message to the other channels. {error}")
+                        except HTTPException as error:
+                            await msg.channel.send(f"Error: couldn't send your message to the other channels. {error}")
 
-                await asyncio.sleep(1)
+                    await asyncio.sleep(0.5)
 
     def get_guild_id(self, channel):
         guild_id = channel.guild.id
@@ -189,9 +197,9 @@ class ChatBridges(commands.Cog):
         # Prevent repeating sentences
         if any(msg.content.count(sentence) > 1 for sentence in msg.content.split(".") if sentence):
             return await warn()
-        if len(msg.content) <= 50 and any(msg.content.count(word) > 3 for word in msg.content.split(" ")):
+        if len(msg.content) <= 50 and any(msg.content.count(word) > 3 for word in msg.content.split(" ") if len(word) > 3):
             return await warn()
-        if len(msg.content) > 50 and any(msg.content.count(word) > 10 for word in msg.content.split(" ")):
+        if len(msg.content) > 50 and any(msg.content.count(word) > 10 for word in msg.content.split(" ") if len(word) > 3):
             return await warn()
 
         # Prevent custom emoji spam
