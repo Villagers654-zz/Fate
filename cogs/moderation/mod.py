@@ -426,11 +426,16 @@ class Moderation(commands.Cog):
             ".purge bots amount\n"
             ".purge word/phrase amount"
         )
-        if not args or not args[len(args) - 1].isdigit():
+        if (not args or not args[len(args) - 1].isdigit()) and not ctx.message.reference:
             return await ctx.send(embed=_help)
 
         args = [str(arg).lower() for arg in args]
-        amount_to_purge = args[len(args) - 1]
+        if ctx.message.reference:
+            amount_to_purge = "1000"
+            if args and args[1].isdigit():
+                amount_to_purge = args[len(args) - 1]
+        else:
+            amount_to_purge = args[len(args) - 1]
         if not amount_to_purge.isdigit():
             return await ctx.send(f"{amount_to_purge} isn't a number")
         amount_to_purge = int(amount_to_purge)
@@ -479,13 +484,9 @@ class Moderation(commands.Cog):
                 return False
 
         if "reaction" not in args and "reactions" not in args:
-            async def purge_task():
+            async def purge_task(coro):
                 try:
-                    messages = await ctx.channel.purge(
-                        limit=amount_to_purge,
-                        check=check,
-                        before=ctx.message,
-                    )
+                    messages = await coro
                 except discord.errors.HTTPException:  # Msgs too old
                     try:
                         messages = []
@@ -497,7 +498,26 @@ class Moderation(commands.Cog):
                         raise self.bot.ignored_exit
                 return messages
 
-            task = self.bot.loop.create_task(purge_task())
+            if ctx.message.reference:
+                ref = ctx.message.reference
+                if ref.cached_message:
+                    purge_after = ref.cached_message
+                else:
+                    purge_after = await ctx.channel.fetch_message(ref.message_id)
+                coro = ctx.channel.purge(
+                    limit=1000,
+                    check=check,
+                    before=ctx.message,
+                    after=purge_after
+                )
+            else:
+                coro = ctx.channel.purge(
+                    limit=amount_to_purge,
+                    check=check,
+                    before=ctx.message,
+                )
+
+            task = self.bot.loop.create_task(purge_task(coro))
             for _iteration in range(round(5 / 0.21)):
                 await asyncio.sleep(0.21)
                 if task.done():
