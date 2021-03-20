@@ -205,7 +205,7 @@ class Moderation(commands.Cog):
         # with open(self.fp, 'r') as f:
         #     cache = json.load(f)  # type: dict
         cmd = ctx.command.name
-        if ctx.guild.id in cache[cmd]:
+        if cmd in cache and ctx.guild.id in cache[cmd]:
             cache[cmd].remove(ctx.guild.id)
         # with open(self.fp, 'w') as f:
         #     json.dump(cache, f, indent=2)
