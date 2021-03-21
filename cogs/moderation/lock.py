@@ -62,7 +62,7 @@ class Lock(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, m: discord.Member):
-        guild_id = str(m.guild.id)
+        guild_id = m.guild.id
         member_id = str(m.id)
         if guild_id in self.lock:
             if self.lock[guild_id]["type"] == "kick":
