@@ -166,6 +166,8 @@ class Emojis:
     up = "⬆️"
     down = "⬇️"
     double_down = "⏬"
+    approve = "<:approve:673956036612194325>"
+    disapprove = "<:disapprove:673956034108194870>"
 
     # Misc
     youtube = "<:YouTube:498050040384978945>"
