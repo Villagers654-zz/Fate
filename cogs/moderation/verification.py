@@ -19,18 +19,7 @@ from cogs.core.utils import Utils as utils
 class Verification(commands.Cog):
     def __init__(self, bot: Fate):
         self.bot = bot
-        self.path = "./data/userdata/verification.json"
-        self.config = {}
-        if path.isfile(self.path):
-            with open(self.path, "r") as f:
-                self.config = json.load(f)
-        for guild_id, config in list(self.config.items()):
-            if "log_channel" not in config:
-                config["log_channel"] = None
-            if "kick_on_fail" not in config:
-                config["kick_on_fail"] = True
-            if "auto_start" not in config:
-                config["auto_start"] = True
+        self.config = bot.utils.cache("verification")
         self.queue = {}
         self.running_tasks = []
 
@@ -45,11 +34,6 @@ class Verification(commands.Cog):
             "kick_on_fail": bool,
             "auto_start": bool,
         }
-
-    async def save_data(self):
-        """ Dump changes to the config to a file """
-        async with self.bot.open(self.path, "w+") as f:
-            await f.write(json.dumps(self.config))
 
     @commands.group(name="verification")
     @commands.cooldown(*utils.default_cooldown())
@@ -83,7 +67,7 @@ class Verification(commands.Cog):
                 f"the #channel argument to disable this feature`",
                 inline=False,
             )
-            guild_id = str(ctx.guild.id)
+            guild_id = ctx.guild.id
             if guild_id in self.config:
                 conf = self.config[guild_id]
                 channel = self.bot.get_channel(conf["channel_id"])
@@ -122,7 +106,7 @@ class Verification(commands.Cog):
     @verification.group(name="enable")
     @commands.has_permissions(administrator=True)
     async def _enable(self, ctx):
-        guild_id = str(ctx.guild.id)
+        guild_id = ctx.guild.id
 
         await ctx.send("Mention the channel I should use for each verification process")
         async with self.bot.require("message", ctx, handle_timeout=True) as msg:
@@ -234,22 +218,21 @@ class Verification(commands.Cog):
             "auto_start": automatic,
         }
         await ctx.send("Successfully setup the verification system")
-        await self.save_data()
+        await self.config.flush()
 
     @verification.group(name="disable")
     @commands.has_permissions(administrator=True)
     async def _disable(self, ctx):
-        guild_id = str(ctx.guild.id)
+        guild_id = ctx.guild.id
         if guild_id not in self.config:
             return await ctx.send("Verification isn't enabled")
-        del self.config[guild_id]
+        await self.config.remove(guild_id)
         await ctx.send("Disabled verification")
-        await self.save_data()
 
     @verification.group(name="setchannel", aliases=["set-channel"])
     @commands.has_permissions(administrator=True)
     async def _set_channel(self, ctx, channel: discord.TextChannel):
-        guild_id = str(ctx.guild.id)
+        guild_id = ctx.guild.id
         if guild_id not in self.config:
             return await ctx.send("Verification isn't enabled")
         perms = channel.permissions_for(ctx.guild.me)
@@ -264,12 +247,12 @@ class Verification(commands.Cog):
             )
         self.config[guild_id]["channel_id"] = channel.id
         await ctx.send("Set the verification channel")
-        await self.save_data()
+        await self.config.flush()
 
     @verification.group(name="set-verified-role")
     @commands.has_permissions(administrator=True)
     async def _set_verified_role(self, ctx, *, role):
-        guild_id = str(ctx.guild.id)
+        guild_id = ctx.guild.id
         if guild_id not in self.config:
             return await ctx.send("Verification isn't enabled")
         role = await self.bot.utils.get_role(ctx, role)
@@ -279,12 +262,12 @@ class Verification(commands.Cog):
             return await ctx.send("That role's higher than I can access")
         self.config[guild_id]["verified_role_id"] = role.id
         await ctx.send("Set the verified role")
-        await self.save_data()
+        await self.config.flush()
 
     @verification.group(name="set-temp-role")
     @commands.has_permissions(administrator=True)
     async def _set_temp_role(self, ctx, *, role=None):
-        guild_id = str(ctx.guild.id)
+        guild_id = ctx.guild.id
         if guild_id not in self.config:
             return await ctx.send("Verification isn't enabled")
         if role is not None:
@@ -296,12 +279,12 @@ class Verification(commands.Cog):
             role = role.id
         self.config[guild_id]["temp_role_id"] = role
         await ctx.send("Set the temp role")
-        await self.save_data()
+        await self.config.flush()
 
     @verification.command(name="delete-after")
     @commands.has_permissions(administrator=True)
     async def _delete_after(self, ctx, toggle: bool = None):
-        guild_id = str(ctx.guild.id)
+        guild_id = ctx.guild.id
         if guild_id not in self.config:
             return await ctx.send("Verification isn't enabled")
         new_toggle = not self.config[guild_id]["delete_after"]
@@ -309,12 +292,12 @@ class Verification(commands.Cog):
             new_toggle = toggle
         self.config[guild_id]["delete_after"] = new_toggle
         await ctx.send(f"{'Enabled' if new_toggle else 'Disabled'} delete-after")
-        await self.save_data()
+        await self.config.flush()
 
     @verification.command(name="kick")
     @commands.has_permissions(administrator=True)
     async def _kick(self, ctx, toggle: Optional[bool]):
-        guild_id = str(ctx.guild.id)
+        guild_id = ctx.guild.id
         if guild_id not in self.config:
             return await ctx.send("Verification isn't enabled")
         if toggle:
@@ -323,12 +306,12 @@ class Verification(commands.Cog):
             new_toggle = not self.config[guild_id]["kick_on_fail"]
         self.config[guild_id]["kick_on_fail"] = new_toggle
         await ctx.send(f"{'Enabled' if new_toggle else 'Disabled'} kicking on fail")
-        await self.save_data()
+        await self.config.flush()
 
     @verification.command(name="auto", aliases=["automatic"])
     @commands.has_permissions(administrator=True)
     async def auto_start(self, ctx, toggle: Optional[bool]):
-        guild_id = str(ctx.guild.id)
+        guild_id = ctx.guild.id
         if guild_id not in self.config:
             return await ctx.send("Verification isn't enabled")
         if toggle:
@@ -339,22 +322,22 @@ class Verification(commands.Cog):
         await ctx.send(
             f"{'Enabled' if new_toggle else 'Disabled'} automatically starting verification"
         )
-        await self.save_data()
+        await self.config.flush()
 
     @verification.command(name="log-channel", aliases=["logchannel"])
     @commands.has_permissions(administrator=True)
     async def _log_channel(self, ctx, channel: Optional[discord.TextChannel]):
-        guild_id = str(ctx.guild.id)
+        guild_id = ctx.guild.id
         if guild_id not in self.config:
             return await ctx.send("Verification isn't enabled")
         self.config[guild_id]["log_channel"] = channel.id if channel else None
         await ctx.send(f"{'Set' if channel else 'Removed'} the log channel")
-        await self.save_data()
+        await self.config.flush()
 
     @commands.command(name="verify")
     @commands.cooldown(1, 10, commands.BucketType.user)
     async def verify(self, ctx):
-        guild_id = str(ctx.guild.id)
+        guild_id = ctx.guild.id
         if guild_id not in self.config:
             return await ctx.send("Verification isn't enabled")
         await self.init_verification_process(ctx.author)
@@ -386,7 +369,7 @@ class Verification(commands.Cog):
             return
         if isinstance(msg.author, discord.Member) and not msg.author.bot:
             if not msg.author.guild_permissions.administrator:
-                guild_id = str(msg.guild.id)
+                guild_id = msg.guild.id
                 if (
                     guild_id in self.config
                     and msg.channel.id == self.config[guild_id]["channel_id"]
@@ -402,7 +385,7 @@ class Verification(commands.Cog):
 
     @commands.Cog.listener("on_member_join")
     async def init_verification_process(self, member: discord.Member):
-        guild_id = str(member.guild.id)
+        guild_id = member.guild.id
         if guild_id in self.config and not member.bot:
             conf = self.config[guild_id]  # type: Verification.template_config
             if member.joined_at > datetime.utcnow() - timedelta(seconds=2):
@@ -415,9 +398,7 @@ class Verification(commands.Cog):
                     await member.guild.owner.send(
                         f"Disabled verification in {member.guild} due to the channel being deleted"
                     )
-                del self.config[guild_id]
-                await self.save_data()
-                return
+                return await self.config.remove(guild_id)
             log_channel = None
             if conf["log_channel"]:
                 try:
@@ -425,7 +406,7 @@ class Verification(commands.Cog):
                 except (NotFound, HTTPException, Forbidden):
                     log_channel = None
                     self.config[guild_id]["log_channel"] = None
-                    await self.save_data()
+                    await self.config.flush()
             if conf["kick_on_fail"]:
                 bot = member.guild.me  # type: discord.Member
                 if (
@@ -442,9 +423,7 @@ class Verification(commands.Cog):
                     await channel.send(
                         f"Disabled verification in {member.guild} due to the verified role being deleted"
                     )
-                del self.config[guild_id]
-                await self.save_data()
-                return
+                return await self.config.remove(guild_id)
             if verified_role in member.roles:
                 return
             verified = await self.bot.verify_user(
@@ -463,7 +442,7 @@ class Verification(commands.Cog):
                                 f"Disabled verification in {member.guild} due to the verified role being deleted"
                             )
                         self.config[guild_id]["temp_role_id"] = None
-                        await self.save_data()
+                        await self.config.flush()
                 if log_channel:
                     await log_channel.send(f"{member} was verified")
             else:
