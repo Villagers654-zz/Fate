@@ -6,6 +6,9 @@ import random
 import os
 
 
+mentions = discord.AllowedMentions(users=True, roles=True, everyone=False)
+
+
 def welcome_help():
     e = discord.Embed(color=colors.tan())
     e.description = "Run `.leave` for a list of sub commands"
@@ -227,7 +230,7 @@ class Welcome(commands.Cog):
             if self.config[guild_id]["images"]:
                 e.set_image(url=random.choice(self.config[guild_id]["images"]))
                 try:
-                    await channel.send(msg, embed=e)
+                    await channel.send(msg, embed=e, allowed_mentions=mentions)
                 except discord.errors.Forbidden:
                     return
             else:
@@ -236,13 +239,13 @@ class Welcome(commands.Cog):
                     await channel.send(
                         msg,
                         file=discord.File(path, filename=os.path.basename(path)),
-                        embed=e,
+                        embed=e, allowed_mentions=mentions
                     )
                 except discord.errors.Forbidden:
                     return
         else:
             try:
-                await channel.send(msg)
+                await channel.send(msg, allowed_mentions=mentions)
             except discord.errors.Forbidden:
                 return
 
@@ -347,7 +350,6 @@ class Welcome(commands.Cog):
                 if not channel:
                     self.config[guild_id]["enabled"] = False
                     return await self.config.flush()
-                mentions = discord.AllowedMentions(users=True, roles=True, everyone=False)
                 msg = conf["format"]
                 msg = msg.replace("$MENTION", m.mention).replace(
                     "$SERVER", m.guild.name
