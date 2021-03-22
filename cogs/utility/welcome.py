@@ -1,10 +1,8 @@
 from discord.ext import commands
-from os.path import isfile
 from botutils import colors
 import discord
 import asyncio
 import random
-import json
 import os
 
 
@@ -59,31 +57,7 @@ def welcome_help():
 class Welcome(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.toggle = {}
-        self.channel = {}
-        self.useimages = {}
-        self.images = {}
-        self.format = {}
-        if isfile("./data/userdata/welcome.json"):
-            with open("./data/userdata/welcome.json", "r") as f:
-                dat = json.load(f)
-                if "toggle" in dat:
-                    self.toggle = dat["toggle"]
-                    self.channel = dat["channel"]
-                    self.useimages = dat["useimages"]
-                    self.images = dat["images"]
-                    self.format = dat["format"]
-
-    async def save_data(self):
-        data = {
-            "toggle": self.toggle,
-            "channel": self.channel,
-            "useimages": self.useimages,
-            "images": self.images,
-            "format": self.format,
-        }
-        async with self.bot.open("./data/userdata/welcome.json", "w+") as f:
-            await f.write(json.dumps(data))
+        self.config = bot.utils.cache("welcome")
 
     @commands.group(name="welcome", usage=welcome_help())
     @commands.cooldown(1, 3, commands.BucketType.channel)
@@ -91,9 +65,9 @@ class Welcome(commands.Cog):
     @commands.bot_has_permissions(embed_links=True)
     async def _welcome(self, ctx):
         if not ctx.invoked_subcommand:
-            guild_id = str(ctx.guild.id)
+            guild_id = ctx.guild.id
             toggle = "disabled"
-            if guild_id in self.toggle:
+            if guild_id in self.config:
                 toggle = "enabled"
             e = discord.Embed(color=colors.tan())
             e.set_author(name="Welcome Messages", icon_url=self.bot.user.avatar_url)
@@ -116,8 +90,8 @@ class Welcome(commands.Cog):
                 inline=False,
             )
             images = ""
-            if guild_id in self.images:
-                images = f" | Custom Images: {len(self.images[guild_id])}"
+            if guild_id in self.config and self.config[guild_id]["useimages"]:
+                images = f" | Custom Images: {len(self.config[guild_id]['images'])}"
             e.set_footer(
                 text=f"Current Status: {toggle}{images}",
                 icon_url=ctx.guild.owner.avatar_url,
@@ -127,113 +101,100 @@ class Welcome(commands.Cog):
     @_welcome.command(name="enable")
     @commands.has_permissions(manage_guild=True)
     async def _enable(self, ctx):
-        guild_id = str(ctx.guild.id)
+        guild_id = ctx.guild.id
         messages = []
-        if guild_id in self.toggle:
-            return await ctx.send("This module is already enabled")
-
-        async def cleanup():
-            await ctx.message.delete()
-            for msg in messages:
-                await asyncio.sleep(1)
-                await msg.delete()
-
-        async def wait_for_msg():
-            def pred(m):
-                return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
-
-            try:
-                msg = await self.bot.wait_for("message", check=pred, timeout=30)
-            except asyncio.TimeoutError:
-                await cleanup()
-            else:
-                return msg
+        conf = {
+            "enabled": True,
+            "channel": None,
+            "format": "Welcome !user",
+            "useimages": False,
+            "images": [],
+            "wait_for_verify": False
+        }
+        if guild_id in self.config:
+            conf = self.config[guild_id]
 
         msg = await ctx.send("Mention the channel I should use")
         messages.append(msg)
         completed = False
         while not completed:
-            msg = await wait_for_msg()
-            if not msg:
-                return await cleanup()
+            msg = await self.bot.utils.get_message(ctx)
             messages.append(msg)
             if "cancel" in msg.content.lower():
-                return await cleanup()
+                return
             if len(msg.channel_mentions) < 1:
                 msg = await ctx.send(
                     'That\'s not a channel mention, reply with "cancel" to stop'
                 )
                 messages.append(msg)
                 continue
-            self.channel[guild_id] = msg.channel_mentions[0].id
+            conf["channel"] = msg.channel_mentions[0].id
             break
+
         msg = await ctx.send("Should I use images/gifs?")
         messages.append(msg)
         while not completed:
-            msg = await wait_for_msg()
-            if not msg:
-                return await cleanup()
+            msg = await self.bot.utils.get_message(ctx)
             messages.append(msg)
             if "cancel" in msg.content.lower():
-                return await cleanup()
+                return
             if "ye" in msg.content.lower():
-                self.useimages[guild_id] = "enabled"
-                msg = await ctx.send("Aight, I'll use my own for now")
+                conf["useimages"] = True
+                msg = await ctx.send("Aight, I'll use images")
                 messages.append(msg)
                 break
             else:
+                conf["useimages"] = False
                 msg = await ctx.send("kk")
                 messages.append(msg)
                 break
+
         msg = await ctx.send(
             "Now to set a message format:```css\nExample:\nWelcome !user to !server```"
         )
         messages.append(msg)
         while not completed:
-            msg = await wait_for_msg()
-            if not msg:
-                return await cleanup()
+            msg = await self.bot.utils.get_message(ctx)
             messages.append(msg)
             if "cancel" in msg.content.lower():
-                return await cleanup()
-            msg = await ctx.channel.fetch_message(msg.id)
-            self.format[guild_id] = msg.content
+                return
+            conf["format"] = msg.content
             break
-        self.toggle[guild_id] = "enabled"
+
+        self.config[guild_id] = conf
+        await self.config.flush()
         e = discord.Embed(color=colors.tan())
         e.set_author(name="Enabled Welcome Messages", icon_url=ctx.author.avatar_url)
         await ctx.send(embed=e, delete_after=10)
-        await cleanup()
-        await self.save_data()
 
     @_welcome.command(name="disable")
     @commands.has_permissions(manage_guild=True)
     async def _disable(self, ctx):
-        guild_id = str(ctx.guild.id)
-        if guild_id not in self.toggle:
+        guild_id = ctx.guild.id
+        if guild_id not in self.config or not self.config[guild_id]["enabled"]:
             return await ctx.send("This module isn't enabled")
-        del self.toggle[guild_id]
+        self.config[guild_id]["enabled"] = False
+        await self.config.flush()
         await ctx.send("Disabled welcome messages")
-        await self.save_data()
 
     @_welcome.command(name="config")
     async def _config(self, ctx):
-        guild_id = str(ctx.guild.id)
+        guild_id = ctx.guild.id
         toggle = "disabled"
         channel = "none"
         useimages = "disabled"
         images = 0
         form = "none"
-        if guild_id in self.toggle:
-            toggle = "enabled"
-        if guild_id in self.channel:
-            channel = self.bot.get_channel(self.channel[guild_id]).mention
-        if guild_id in self.useimages:
-            useimages = self.useimages[guild_id]
-        if guild_id in self.format:
-            form = self.format[guild_id]
-        if guild_id in self.images:
-            images = len(self.images[guild_id])
+        if guild_id in self.config:
+            conf = self.config[guild_id]
+            if conf["enabled"]:
+                toggle = "enabled"
+            channel = self.bot.get_channel(conf["channel"])
+            channel = channel.mention if channel else "none"
+            if conf["useimages"]:
+                useimages = "enabled"
+            form = conf["format"]
+            images = len(conf["images"])
         e = discord.Embed(color=colors.tan())
         e.set_author(name="Welcome Config", icon_url=self.bot.user.avatar_url)
         e.set_thumbnail(url=ctx.guild.icon_url)
@@ -248,12 +209,12 @@ class Welcome(commands.Cog):
 
     @_welcome.command(name="test")
     async def _test(self, ctx):
-        guild_id = str(ctx.guild.id)
+        guild_id = ctx.guild.id
         m = ctx.author
         channel = ctx.channel
-        if guild_id not in self.format:
-            return await ctx.send("You need to set the welcome msg format first")
-        msg = self.format[guild_id]
+        if guild_id not in self.config:
+            return await ctx.send("You need to enable the module first")
+        msg = self.config[guild_id]["format"]
         msg = msg.replace("$MENTION", m.mention).replace("$SERVER", m.guild.name)
         msg = msg.replace("!user", m.mention).replace("!server", m.guild.name)
         path = (
@@ -261,17 +222,14 @@ class Welcome(commands.Cog):
             + "/data/images/reactions/welcome/"
             + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/welcome/"))
         )
-        if guild_id in self.useimages:
+        if self.config[guild_id]["useimages"]:
             e = discord.Embed(color=colors.fate())
-            if guild_id in self.images:
-                if self.images[guild_id]:
-                    e.set_image(url=random.choice(self.images[guild_id]))
-                    try:
-                        await channel.send(msg, embed=e)
-                    except discord.errors.Forbidden:
-                        del self.useimages[guild_id]
-                        del self.images[guild_id]
-                        await self.save_data()
+            if self.config[guild_id]["images"]:
+                e.set_image(url=random.choice(self.config[guild_id]["images"]))
+                try:
+                    await channel.send(msg, embed=e)
+                except discord.errors.Forbidden:
+                    return
             else:
                 e.set_image(url="attachment://" + os.path.basename(path))
                 try:
@@ -281,50 +239,51 @@ class Welcome(commands.Cog):
                         embed=e,
                     )
                 except discord.errors.Forbidden:
-                    del self.useimages[guild_id]
-                    await self.save_data()
+                    return
         else:
             try:
                 await channel.send(msg)
             except discord.errors.Forbidden:
-                del self.toggle[guild_id]
-                await self.save_data()
+                return
 
     @_welcome.command(name="setchannel")
     @commands.has_permissions(manage_guild=True)
     async def _setchannel(self, ctx, channel: discord.TextChannel = None):
-        guild_id = str(ctx.guild.id)
+        guild_id = ctx.guild.id
+        if guild_id not in self.config:
+            return await ctx.send("Welcome messages aren't enabled")
         if not channel:
             channel = ctx.channel
-        self.channel[guild_id] = channel.id
+        self.config[guild_id]["channel"] = channel.id
         await ctx.send(f"Set the welcome message channel to {channel.mention}")
-        await self.save_data()
+        await self.config.flush()
 
     @_welcome.command(name="toggleimages")
     @commands.has_permissions(manage_guild=True)
     @commands.bot_has_permissions(attach_files=True)
     async def _toggle_images(self, ctx):
-        guild_id = str(ctx.guild.id)
-        if guild_id in self.useimages:
-            del self.useimages[guild_id]
-            await ctx.send("Disabled Images")
-            return await self.save_data()
-        self.useimages[guild_id] = "enabled"
-        if guild_id in self.images:
-            await ctx.send("Enabled Images")
+        guild_id = ctx.guild.id
+        if guild_id not in self.config:
+            return await ctx.send("Welcome messages aren't enabled")
+        self.config[guild_id]["useimages"] = not self.config[guild_id]["useimages"]
+        if self.config[guild_id]["useimages"]:
+            if self.config[guild_id]["images"]:
+                await ctx.send("Enabled Images")
+            else:
+                await ctx.send(
+                    "Enabled Images. You have no custom "
+                    "images so I'll just use my own for now"
+                )
         else:
-            await ctx.send(
-                "Enabled Images. You have no custom "
-                "images so I'll just use my own for now"
-            )
-        await self.save_data()
+            await ctx.send("Disabled images")
+        await self.config.flush()
 
     @_welcome.command(name="addimages")
     @commands.has_permissions(manage_guild=True)
     async def _addimages(self, ctx):
-        guild_id = str(ctx.guild.id)
-        if guild_id not in self.images:
-            self.images[guild_id] = []
+        guild_id = ctx.guild.id
+        if guild_id not in self.config:
+            return await ctx.send("Welcome messages aren't enabled")
         if not ctx.message.attachments:
             complete = False
             await ctx.send(
@@ -336,60 +295,60 @@ class Welcome(commands.Cog):
                     if "done" in msg.content.lower():
                         return await ctx.send("Added your images 👍")
                 for attachment in msg.attachments:
-                    self.images[guild_id].append(attachment.url)
+                    self.config[guild_id]["images"].append(attachment.url)
         for attachment in ctx.message.attachments:
-            self.images[guild_id].append(attachment.url)
-        if len(self.images[guild_id]) > 0:
+            self.config[guild_id]["images"].append(attachment.url)
+        if len(self.config[guild_id]["images"]) > 0:
             await ctx.send("Added your image(s)")
         else:
-            await ctx.send("No worries, I'll just keep using my own gifs for now")
-            del self.images[guild_id]
-        await self.save_data()
+            return await ctx.send("No worries, I'll just keep using my own gifs for now")
+        await self.config.flush()
 
     @_welcome.command(name="delimages")
     @commands.has_permissions(manage_guild=True)
     async def _delimages(self, ctx):
-        guild_id = str(ctx.guild.id)
-        if guild_id not in self.images:
+        guild_id = ctx.guild.id
+        if guild_id not in self.config or not self.config[guild_id]["images"]:
             return await ctx.send("No images >:(")
-        del self.images[guild_id]
+        self.config[guild_id]["images"] = []
         await ctx.send("Purged images")
-        await self.save_data()
+        await self.config.flush()
 
     @_welcome.command(name="listimages")
     @commands.has_permissions(manage_guild=True)
     async def _listimages(self, ctx):
-        guild_id = str(ctx.guild.id)
-        if guild_id not in self.images:
+        guild_id = ctx.guild.id
+        if guild_id not in self.config or not self.config[guild_id]["images"]:
             return await ctx.send("This guild has no images")
-        await ctx.send(self.images[guild_id])
+        await ctx.send("\n".join(self.config[guild_id]["images"]))
 
     @_welcome.command(name="format")
     @commands.has_permissions(manage_guild=True)
     async def _format(self, ctx, *, message=None):
-        guild_id = str(ctx.guild.id)
+        guild_id = ctx.guild.id
         if message:
-            self.format[guild_id] = message
+            self.config[guild_id]["format"] = message
         else:
             await ctx.send(
                 "What format should I use?:```css\nExample:\nWelcome !user to !server```"
             )
             async with self.bot.require("message", ctx, handle_timeout=True) as msg:
-                self.format[guild_id] = msg.content
+                self.config[guild_id]["format"] = msg.content
         await ctx.send("Set the welcome format 👍")
-        await self.save_data()
+        await self.config.flush()
 
     @commands.Cog.listener()
     async def on_member_join(self, m: discord.Member):
         if isinstance(m.guild, discord.Guild):
-            guild_id = str(m.guild.id)
-            if guild_id in self.toggle:
-                channel = self.bot.get_channel(self.channel[guild_id])
+            guild_id = m.guild.id
+            if guild_id in self.config and self.config[guild_id]["enabled"]:
+                conf = self.config[guild_id]
+                channel = self.bot.get_channel(conf["channel"])
                 if not channel:
-                    del self.toggle[guild_id]
-                    return await self.save_data()
+                    self.config[guild_id]["enabled"] = False
+                    return await self.config.flush()
                 mentions = discord.AllowedMentions(users=True, roles=True, everyone=False)
-                msg = self.format[guild_id]
+                msg = conf["format"]
                 msg = msg.replace("$MENTION", m.mention).replace(
                     "$SERVER", m.guild.name
                 )
@@ -403,12 +362,10 @@ class Welcome(commands.Cog):
                     )
                 )
                 await asyncio.sleep(0)
-                if guild_id in self.images and not self.images[guild_id]:
-                    del self.images[guild_id]
-                if guild_id in self.useimages:
+                if conf["useimages"]:
                     e = discord.Embed(color=colors.fate())
-                    if guild_id in self.images and self.images[guild_id]:
-                        e.set_image(url=random.choice(self.images[guild_id]))
+                    if conf["images"]:
+                        e.set_image(url=random.choice(conf["images"]))
                         try:
                             await channel.send(
                                 msg,
@@ -416,9 +373,8 @@ class Welcome(commands.Cog):
                                 allowed_mentions=mentions,
                             )
                         except discord.errors.Forbidden:
-                            del self.useimages[guild_id]
-                            del self.images[guild_id]
-                            await self.save_data()
+                            self.config[guild_id]["enabled"] = False
+                            return await self.config.flush()
                         else:
                             pass
                     else:
@@ -433,8 +389,8 @@ class Welcome(commands.Cog):
                                 allowed_mentions=mentions,
                             )
                         except discord.errors.Forbidden:
-                            del self.useimages[guild_id]
-                            await self.save_data()
+                            self.config[guild_id]["enabled"] = False
+                            return await self.config.flush()
                         else:
                             pass
                 else:
@@ -443,8 +399,8 @@ class Welcome(commands.Cog):
                             msg, allowed_mentions=mentions
                         )
                     except discord.errors.Forbidden:
-                        del self.toggle[guild_id]
-                        await self.save_data()
+                        self.config[guild_id]["enabled"] = False
+                        return await self.config.flush()
                     else:
                         pass
 
