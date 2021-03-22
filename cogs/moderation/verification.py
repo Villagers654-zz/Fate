@@ -346,7 +346,7 @@ class Verification(commands.Cog):
         self, channel: discord.TextChannel, collection_period: int = 5
     ):
         """Collect messages for X seconds and bulk delete"""
-        guild_id = str(channel.guild.id)
+        guild_id = channel.guild.id
         await asyncio.sleep(collection_period)
 
         target_messages = [msg for msg in self.queue[guild_id] if msg]
