@@ -1476,14 +1476,22 @@ class Utility(commands.Cog):
         if ctx.message.mentions or ctx.message.role_mentions:
             return await ctx.send("nO")
         if ctx.author.id in self.afk:
-            del self.afk[ctx.author.id]
-            return await ctx.send("Removed your afk")
+            return
         e = discord.Embed(color=colors.fate())
+        if len(reason) > 64:
+            return await ctx.send("Your afk message can't be greater than 64 characters")
         e.set_author(name="You are now afk", icon_url=ctx.author.avatar_url)
         await ctx.send(embed=e, delete_after=5)
+        reason = self.bot.utils.cleanup_msg(ctx.message, reason)
         self.afk[ctx.author.id] = reason
         await asyncio.sleep(5)
         await ctx.message.delete()
+
+    @commands.Cog.listener("on_message")
+    async def remove_afk(self, msg):
+        if msg.author.id in self.afk:
+            del self.afk[msg.author.id]
+            await msg.channel.send("Removed your afk")
 
 
 def setup(bot):
