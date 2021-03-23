@@ -54,6 +54,11 @@ def welcome_help():
         value="Set the format using `.welcome format your_new_format` or run the cmd and send it after",
         inline=False,
     )
+    e.add_field(
+        name=".welcome wait-for-verify",
+        value="This makes the bot wait till a user verifies through the .verification module before welcoming them",
+        inline=False,
+    )
     return e
 
 
@@ -61,6 +66,7 @@ class Welcome(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.config = bot.utils.cache("welcome")
+        self.welcome_usage = welcome_help()
 
     @commands.group(name="welcome", usage=welcome_help())
     @commands.cooldown(1, 3, commands.BucketType.channel)
@@ -89,7 +95,8 @@ class Welcome(commands.Cog):
                 ".welcome addimages\n"
                 ".welcome delimages\n"
                 ".welcome listimages\n"
-                ".welcome format\n",
+                ".welcome format\n"
+                ".welcome wait-for-verify",
                 inline=False,
             )
             images = ""
@@ -340,11 +347,25 @@ class Welcome(commands.Cog):
         await ctx.send("Set the welcome format 👍")
         await self.config.flush()
 
+    @_welcome.command(name="wait-for-verify", aliases=["waitforverify"])
+    @commands.has_permissions(manage_guild=True)
+    async def _wait_for_verify(self, ctx):
+        guild_id = ctx.guild.id
+        if guild_id not in self.config:
+            return await ctx.send("Welcome messages aren't enabled")
+        enabled = not self.config[guild_id]["wait_for_verify"]
+        self.config[guild_id]["wait_for_verify"] = enabled
+        r = "I'll now" if enabled else "I'll no longer"
+        await ctx.send(f"{r} wait for users to verify before sending the welcome message")
+        await self.config.flush()
+
     @commands.Cog.listener()
-    async def on_member_join(self, m: discord.Member):
+    async def on_member_join(self, m: discord.Member, just_verified=False):
         if isinstance(m.guild, discord.Guild):
             guild_id = m.guild.id
             if guild_id in self.config and self.config[guild_id]["enabled"]:
+                if not just_verified and self.config[guild_id]["wait_for_verify"]:
+                    return
                 conf = self.config[guild_id]
                 channel = self.bot.get_channel(conf["channel"])
                 if not channel:

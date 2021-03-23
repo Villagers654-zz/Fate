@@ -445,6 +445,10 @@ class Verification(commands.Cog):
                         await self.config.flush()
                 if log_channel:
                     await log_channel.send(f"{member} was verified")
+                if "Welcome" in self.bot.cogs:
+                    cog = self.bot.cogs["Welcome"]
+                    if int(guild_id) in cog.config and cog.config[int(guild_id)]["wait_for_verify"]:
+                        await cog.on_member_join(member, just_verified=True)
             else:
                 if verified_role not in member.roles and conf["kick_on_fail"]:
                     try:
