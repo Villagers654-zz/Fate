@@ -289,7 +289,7 @@ class Tasks(commands.Cog):
             db_path = os.path.join(self.bot.config["backups_location"], "mongo")
             fp = os.path.join(db_path, f"{datetime.now()}")
             process = subprocess.Popen(
-                f"mongodump --db fate --out {fp}"
+                f"mongodump --db fate --out '{fp}'", shell=True
             )
             while True:
                 await asyncio.sleep(1.21)
