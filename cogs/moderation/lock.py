@@ -1,61 +1,62 @@
-from typing import Optional
-
 from discord.ext import commands
-from os.path import isfile
 import discord
-import json
 import time
+
+
+locks = {
+    "kick": "Kicks all new members",
+    "ban": "Bans all new members",
+    "mute": "Mutes all new members",
+    "new": "Bans recently created accounts"
+}
+unique = ["kick", "ban"]
 
 
 class Lock(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.lock = bot.utils.cache("locks")
+        for guild_id, config in self.lock.items():
+            self.lock[guild_id][self.lock[guild_id]["type"]] = {}
+            del self.lock[guild_id]["type"]
+        self.bot.loop.create_task(self.lock.flush())
         self.cd = {}
+
+    def cog_before_invoke(self, ctx):
+        if ctx.command.can_run(ctx):
+            if ctx.guild.id not in self.lock:
+                self.lock[ctx.guild.id] = {}
 
     @commands.command(name="lock")
     @commands.has_permissions(administrator=True)
     async def lock(self, ctx):
+        choices = [": ".join(item) for item in locks.items()]
+        choice = await self.bot.utils.get_choice(ctx, choices, user=ctx.author)
+        if not choice:
+            return
+        lock = locks[list(locks.keys())[choices.index(choice)]]
         guild_id = ctx.guild.id
+        if guild_id in self.lock:
+            conflict = [ltype for ltype in self.lock[guild_id].keys() if ltype in unique]
+            if lock in unique:
+                expression = "lock" if len(self.lock[guild_id]) == 1 else "locks"
+                conflicts = ', '.join(self.lock[guild_id].keys())
+                await self.lock.remove(guild_id)
+                await ctx.send(f"Removed conflicting {expression} `{conflicts}`")
+            elif conflict:
+                await self.lock.remove(guild_id)
+                await ctx.send(f"Removed conflicting `{conflict[0]}` lock")
         if guild_id not in self.lock:
-            self.lock[guild_id] = {"type": "kick"}
-            await self.lock.flush()
-            await ctx.send("Locked the server")
-            return await ctx.message.add_reaction("👍")
-        if self.lock[guild_id]["type"] != "kick":
-            self.lock[guild_id]["type"] = "kick"
-            await self.lock.flush()
-            await ctx.send("Changed the server lock type to kick")
-            return await ctx.message.add_reaction("👍")
-        self.lock.remove(guild_id)
-        await ctx.send("Unlocked the server")
-        await ctx.message.add_reaction("👍")
-
-    @commands.command(name="lockb")
-    @commands.has_permissions(administrator=True)
-    async def lockb(self, ctx):
-        guild_id = ctx.guild.id
-        if guild_id not in self.lock:
-            self.lock[guild_id] = {"type": "ban"}
-            await self.lock.flush()
-            await ctx.send("Locked the server")
-            return await ctx.message.add_reaction("👍")
-        if self.lock[guild_id]["type"] != "ban":
-            self.lock[guild_id]["type"] = "ban"
-            await self.lock.flush()
-            await ctx.send("Changed the server lock type to ban")
-            return await ctx.message.add_reaction("👍")
-        self.lock.remove(guild_id)
-        await ctx.send("Unlocked the server")
-        await ctx.message.add_reaction("👍")
+            self.lock[guild_id] = {}
+        self.lock[guild_id][lock] = {}
+        await ctx.send(f"Locked the server")
 
     @commands.command(name="unlock")
     @commands.has_permissions(administrator=True)
     async def _unlock(self, ctx):
         guild_id = ctx.guild.id
         if guild_id not in self.lock:
-            await ctx.send("There currently isn't active lock")
-            return await ctx.message.add_reaction("⚠")
+            return await ctx.send("There currently isn't active lock")
         self.lock.remove(guild_id)
         await ctx.send("Unlocked the server")
         await ctx.message.add_reaction("👍")
