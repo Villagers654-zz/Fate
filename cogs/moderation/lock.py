@@ -15,7 +15,28 @@ locks = {
     "mute": "Mutes all new members",
     "new": "Bans recently created accounts"
 }
+
 unique = ["kick", "ban"]
+
+operators = {
+    'seconds': 's',
+    'minutes': 'm',
+    'hours': 'h',
+    'days': 'd',
+    'weeks': 'w',
+    'months': 'M',
+    'years': 'y'
+}
+
+formulas = {
+    's': 1,
+    'm': 60,
+    'h': 3600,
+    'd': 86400,
+    'w': 604800,
+    'M': 2592000,
+    'y': 31536000
+}
 
 
 class Lock(commands.Cog):
@@ -28,44 +49,23 @@ class Lock(commands.Cog):
         self.bot.loop.create_task(self.lock.flush())
         self.cd = {}
 
-    def cog_before_invoke(self, ctx):
+    async def cog_before_invoke(self, ctx):
         if ctx.command.can_run(ctx):
             if ctx.guild.id not in self.lock:
                 self.lock[ctx.guild.id] = {}
 
     def extract_time(self, string):
-        replace = {
-            'seconds': 's',
-            'minutes': 'm',
-            'hours': 'h',
-            'days': 'd',
-            'weeks': 'w',
-            'months': 'M',
-            'years': 'y'
-        }
-        for key, value in replace.items():
-            string = string.replace(key, value)
-            string = string.replace(key.rstrip('s'), value)
+        for human_form, operator in operators.items():
+            string = string.replace(human_form, operator)
+            string = string.replace(human_form.rstrip('s'), operator)
         timers = re.findall("[1-9]*[smhdwMy]", string[:8])
         if not timers:
             return None
         timeframe = 0
         for timer in timers:
-            num = ''.join(c for c in timer if c.isdigit())
-            if 's' in timer:
-                pass
-            elif 'm' in timer:
-                num *= 60
-            elif 'h' in timer:
-                num *= 60 * 60
-            elif 'd' in timer:
-                num *= 60 * 60 * 24
-            elif 'w' in timer:
-                num *= 60 * 60 * 24 * 7
-            elif 'H' in timer:
-                num *= 60 * 60 * 24 * 30
-            elif 'y' in timer:
-                num *= 60 * 60 * 24 * 365
+            operator = ''.join(c for c in timer if not c.isdigit())
+            num = int(timer.replace(operator, ''))
+            num *= formulas[operator]
             timeframe += num
         return timeframe
 
@@ -76,7 +76,7 @@ class Lock(commands.Cog):
         choice = await self.bot.utils.get_choice(ctx, choices, user=ctx.author)
         if not choice:
             return
-        lock = locks[list(locks.keys())[choices.index(choice)]]
+        lock = list(locks.keys())[choices.index(choice)]
         guild_id = ctx.guild.id
         if guild_id in self.lock:
             conflict = [ltype for ltype in self.lock[guild_id].keys() if ltype in unique]
@@ -96,6 +96,7 @@ class Lock(commands.Cog):
             await ctx.send("How long should the minimum account age be")
             reply = await self.bot.utils.get_message(ctx)
             min_age = self.extract_time(reply.content)
+            await ctx.send(f"Limit is {min_age} seconds")
             age_lmt = datetime.utcnow() - timedelta(seconds=min_age)
             violations = []
             for member in list(ctx.guild.members):
@@ -110,6 +111,7 @@ class Lock(commands.Cog):
                 reply = await self.bot.utils.get_message(ctx)
                 if "yes" in reply.content.lower():
                     for member in violations:
+                        await asyncio.sleep(1.21)
                         with suppress(AttributeError, HTTPException, NotFound, Forbidden):
                             await member.kick(reason=f"Didn't pass minimum age requirement set by {ctx.author}")
                     await ctx.send(f"Successfully kicked {len(violations)} accounts")
