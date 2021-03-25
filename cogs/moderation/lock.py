@@ -137,7 +137,7 @@ class Lock(commands.Cog):
 
     @commands.command(name="unlock")
     @commands.has_permissions(administrator=True)
-    async def _unlock(self, ctx):
+    async def unlock(self, ctx):
         guild_id = ctx.guild.id
         if guild_id not in self.lock:
             return await ctx.send("There currently isn't active lock")
