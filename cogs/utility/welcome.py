@@ -171,6 +171,7 @@ class Welcome(commands.Cog):
             conf["format"] = msg.content
             break
 
+        conf["enabled"] = True
         self.config[guild_id] = conf
         await self.config.flush()
         e = discord.Embed(color=colors.tan())
