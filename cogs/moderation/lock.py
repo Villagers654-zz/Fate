@@ -141,9 +141,24 @@ class Lock(commands.Cog):
         guild_id = ctx.guild.id
         if guild_id not in self.lock:
             return await ctx.send("There currently isn't active lock")
+        has_bans = False
+        if "ban" in self.lock[guild_id] or "new" in self.lock[guild_id]:
+            has_bans = True
         await self.lock.remove(guild_id)
         await ctx.send("Unlocked the server")
-        await ctx.message.add_reaction("👍")
+        if has_bans:
+            await ctx.send("Do you want me to unban anyone that was banned by the lock?")
+            reply = await self.bot.utils.get_message(ctx)
+            if "yes" not in reply.content.lower():
+                return
+            await ctx.send("Okay, unbanning now")
+            bans = await ctx.guild.bans()
+            counter = 0
+            for ban_entry in bans:
+                if ban_entry.reason and "Server locked" in ban_entry.reason:
+                    await ctx.guild.unban(ban_entry.user)
+                    counter += 1
+            await ctx.send(f"Unbanned {counter} users")
 
     @commands.Cog.listener()
     async def on_member_join(self, m: discord.Member):
