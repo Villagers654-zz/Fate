@@ -1,6 +1,12 @@
-from discord.ext import commands
-import discord
 import time
+from datetime import datetime, timedelta
+import asyncio
+import re
+from contextlib import suppress
+
+from discord.ext import commands
+from discord.errors import HTTPException, NotFound, Forbidden
+import discord
 
 
 locks = {
@@ -27,6 +33,42 @@ class Lock(commands.Cog):
             if ctx.guild.id not in self.lock:
                 self.lock[ctx.guild.id] = {}
 
+    def extract_time(self, string):
+        replace = {
+            'seconds': 's',
+            'minutes': 'm',
+            'hours': 'h',
+            'days': 'd',
+            'weeks': 'w',
+            'months': 'M',
+            'years': 'y'
+        }
+        for key, value in replace.items():
+            string = string.replace(key, value)
+            string = string.replace(key.rstrip('s'), value)
+        timers = re.findall("[1-9]*[smhdwMy]", string[:8])
+        if not timers:
+            return None
+        timeframe = 0
+        for timer in timers:
+            num = ''.join(c for c in timer if c.isdigit())
+            if 's' in timer:
+                pass
+            elif 'm' in timer:
+                num *= 60
+            elif 'h' in timer:
+                num *= 60 * 60
+            elif 'd' in timer:
+                num *= 60 * 60 * 24
+            elif 'w' in timer:
+                num *= 60 * 60 * 24 * 7
+            elif 'H' in timer:
+                num *= 60 * 60 * 24 * 30
+            elif 'y' in timer:
+                num *= 60 * 60 * 24 * 365
+            timeframe += num
+        return timeframe
+
     @commands.command(name="lock")
     @commands.has_permissions(administrator=True)
     async def lock(self, ctx):
@@ -49,6 +91,28 @@ class Lock(commands.Cog):
         if guild_id not in self.lock:
             self.lock[guild_id] = {}
         self.lock[guild_id][lock] = {}
+
+        if lock == "new":
+            await ctx.send("How long should the minimum account age be")
+            reply = await self.bot.utils.get_message(ctx)
+            min_age = self.extract_time(reply.content)
+            age_lmt = datetime.utcnow() - timedelta(seconds=min_age)
+            violations = []
+            for member in list(ctx.guild.members):
+                await asyncio.sleep(0)
+                if member.created_at > age_lmt:
+                    violations.append(member)
+            if violations:
+                await ctx.send(
+                    f"Would you like me to kick {len(violations)} members who don't abide by that minimum age? "
+                    f"Reply with either `yes` or `no`"
+                )
+                reply = await self.bot.utils.get_message(ctx)
+                if "yes" in reply.content.lower():
+                    for member in violations:
+                        with suppress(AttributeError, HTTPException, NotFound, Forbidden):
+                            await member.kick(reason=f"Didn't pass minimum age requirement set by {ctx.author}")
+                    await ctx.send(f"Successfully kicked {len(violations)} accounts")
         await ctx.send(f"Locked the server")
 
     @commands.command(name="unlock")
