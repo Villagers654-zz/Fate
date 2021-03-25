@@ -71,6 +71,7 @@ class Cache:
             return self.bot.loop.create_task(self._remove_from_db(key))
         else:
             del self._cache[key]
+            return asyncio.sleep(0)
 
     def remove_sub(self, key, sub_key):
         return self.bot.loop.create_task(self._remove_from_db(key, sub_key))
