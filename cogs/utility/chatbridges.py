@@ -296,7 +296,7 @@ class ChatBridges(commands.Cog):
             guild_id = self.get_guild_id(channel)
             has_linked_channel = any(
                 str(c.id) in self.config[guild_id]["channels"] for c in ctx.guild.text_channels
-            )
+            ) if ctx.guild.id in self.config else False
             if ctx.guild.id in self.config or has_linked_channel:
                 return await ctx.send("A channel in this server's already linked")
             for config in list(self.config.values()):
