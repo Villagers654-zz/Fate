@@ -43,18 +43,15 @@ class Lock(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.lock = bot.utils.cache("locks")
-        for guild_id, config in self.lock.items():
-            self.lock[guild_id][self.lock[guild_id]["type"]] = {}
-            del self.lock[guild_id]["type"]
-        self.bot.loop.create_task(self.lock.flush())
         self.cd = {}
 
     async def cog_before_invoke(self, ctx):
-        if ctx.command.can_run(ctx):
+        if await ctx.command.can_run(ctx):
             if ctx.guild.id not in self.lock:
                 self.lock[ctx.guild.id] = {}
 
     def extract_time(self, string):
+        string = string.replace(" ", "")[:20]
         for human_form, operator in operators.items():
             string = string.replace(human_form, operator)
             string = string.replace(human_form.rstrip('s'), operator)
@@ -80,7 +77,7 @@ class Lock(commands.Cog):
         guild_id = ctx.guild.id
         if guild_id in self.lock:
             conflict = [ltype for ltype in self.lock[guild_id].keys() if ltype in unique]
-            if lock in unique:
+            if lock in unique and self.lock[guild_id]:
                 expression = "lock" if len(self.lock[guild_id]) == 1 else "locks"
                 conflicts = ', '.join(self.lock[guild_id].keys())
                 await self.lock.remove(guild_id)
@@ -90,19 +87,36 @@ class Lock(commands.Cog):
                 await ctx.send(f"Removed conflicting `{conflict[0]}` lock")
         if guild_id not in self.lock:
             self.lock[guild_id] = {}
-        self.lock[guild_id][lock] = {}
 
+        # Kick and ban lock
+        if lock in unique:
+            self.lock[guild_id][lock] = {}
+
+        # Mute on_join lock
+        if lock == "mute":
+            return await ctx.send("The mute lock isn't done being developed")
+
+        # Kick new accounts lock
         if lock == "new":
-            await ctx.send("How long should the minimum account age be")
+            await ctx.send("How long should the minimum account age be?")
             reply = await self.bot.utils.get_message(ctx)
             min_age = self.extract_time(reply.content)
-            await ctx.send(f"Limit is {min_age} seconds")
-            age_lmt = datetime.utcnow() - timedelta(seconds=min_age)
+            if not min_age:
+                return await ctx.send("Invalid format")
+            self.lock[guild_id][lock] = {"age_lmt": min_age}
+
+        await ctx.send(f"Locked the server")
+        await self.lock.flush()
+
+        # Check members that have already joined
+        if lock == "new":
+            age_lmt = datetime.utcnow() - timedelta(seconds=self.lock[guild_id][lock]["age_lmt"])
             violations = []
             for member in list(ctx.guild.members):
                 await asyncio.sleep(0)
                 if member.created_at > age_lmt:
-                    violations.append(member)
+                    if ctx.author.top_role.position > member.top_role.position:
+                        violations.append(member)
             if violations:
                 await ctx.send(
                     f"Would you like me to kick {len(violations)} members who don't abide by that minimum age? "
@@ -110,12 +124,16 @@ class Lock(commands.Cog):
                 )
                 reply = await self.bot.utils.get_message(ctx)
                 if "yes" in reply.content.lower():
+                    await ctx.send(f"Beginning to kick {len(violations)} members. Reply with `cancel` to stop")
                     for member in violations:
                         await asyncio.sleep(1.21)
+                        last = ctx.channel.last_message
+                        if last and not last.bot and "cancel" in last.content:
+                            await ctx.send("Alright, kick operation cancelled")
+                            break
                         with suppress(AttributeError, HTTPException, NotFound, Forbidden):
                             await member.kick(reason=f"Didn't pass minimum age requirement set by {ctx.author}")
                     await ctx.send(f"Successfully kicked {len(violations)} accounts")
-        await ctx.send(f"Locked the server")
 
     @commands.command(name="unlock")
     @commands.has_permissions(administrator=True)
@@ -123,47 +141,43 @@ class Lock(commands.Cog):
         guild_id = ctx.guild.id
         if guild_id not in self.lock:
             return await ctx.send("There currently isn't active lock")
-        self.lock.remove(guild_id)
+        await self.lock.remove(guild_id)
         await ctx.send("Unlocked the server")
         await ctx.message.add_reaction("👍")
 
     @commands.Cog.listener()
     async def on_member_join(self, m: discord.Member):
         guild_id = m.guild.id
-        member_id = str(m.id)
         if guild_id in self.lock:
-            if self.lock[guild_id]["type"] == "kick":
+            if "kick" in self.lock[guild_id]:
+                with suppress(HTTPException, Forbidden):
+                    await m.send(f"**{m.guild.name}** is currently locked. Contact an admin or try again later")
                 try:
                     await m.guild.kick(m, reason="Server locked")
-                except discord.errors.Forbidden:
+                except Forbidden:
                     self.lock.remove(guild_id)
+                except NotFound:
                     return
-                except discord.errors.NotFound:
-                    return
-                try:
-                    await m.send(
-                        f"**{m.guild.name}** is currently locked. Contact an admin or try again later"
-                    )
-                except:
-                    pass
-            if self.lock[guild_id]["type"] == "ban":
+            elif "ban" in self.lock[guild_id]:
+                with suppress(HTTPException, Forbidden):
+                    await m.send(f"**{m.guild.name}** is currently locked. Contact an admin or try again later")
                 try:
                     await m.guild.ban(m, reason="Server locked", delete_message_days=0)
-                except discord.errors.Forbidden:
+                except Forbidden:
                     self.lock.remove(guild_id)
-                    return
-                except discord.errors.NotFound:
-                    return
-                if member_id not in self.cd:
-                    self.cd[member_id] = 0
-                if self.cd[member_id] < time.time():
+                except NotFound:
+                    pass
+            elif "new" in self.lock[guild_id]:
+                age_lmt = datetime.utcnow() - timedelta(seconds=self.lock[guild_id]["new"]["age_lmt"])
+                if m.created_at > age_lmt:
+                    with suppress(HTTPException, Forbidden):
+                        await m.send(f"Your account's too new to join **{m.guild}**. Try again in the future")
                     try:
-                        await m.send(
-                            f"**{m.guild.name}** is currently locked. Contact an admin or try again later"
-                        )
-                    except:
-                        pass
-                    self.cd[member_id] = time.time() + 25
+                        await m.guild.ban(m, reason="Server locked")
+                    except Forbidden:
+                        self.lock.remove(guild_id)
+                    except NotFound:
+                        return
 
     @commands.Cog.listener()
     async def on_guild_remove(self, guild):
