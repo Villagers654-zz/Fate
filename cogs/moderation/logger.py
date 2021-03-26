@@ -108,6 +108,8 @@ class Logger(commands.Cog):
                 task = self.bot.loop.create_task(self.start_queue(guild_id))
                 bot.logger_tasks[guild_id] = task
 
+        self.pool = {}
+
     def cog_unload(self):
         for task_id, task in self.bot.logger_tasks.items():
             if not task.done():
@@ -170,6 +172,38 @@ class Logger(commands.Cog):
             del self.bot.logger_tasks[guild_id]
         await self.save_data()
 
+    async def wait_for_permissions(self, guild, permission, channel=None, host=False):
+        perms = lambda: channel.permissions_for(guild.me) if channel else guild.me.guild_permissions
+        if getattr(perms(), permission):
+            return True
+
+        guild_id = str(guild.id)
+        if guild_id not in self.pool or not host:
+            if guild_id not in self.pool:
+                coro = self.wait_for_permissions(guild, permission, channel, host=True)
+                task = self.bot.loop.create_task(coro)
+                self.pool[guild_id] = task
+            return await self.pool[guild_id]
+
+        owner = guild.owner  # type: discord.Member
+        lmt = datetime.utcnow() - timedelta(days=1)
+        msgs = await owner.dm_channel.history(limit=1, after=lmt).flatten()
+        if not msgs or "I'm missing" in msgs[0].content:
+            with suppress(Forbidden, NotFound, AttributeError):
+                await owner.send(
+                    f"I need {permission} permissions in {guild} for the logger module to function. "
+                    f"Until that's satisfied, i'll keep a maximum 12 hours of logs in queue"
+                )
+
+        for _attempt in range(12 * 60):  # Timeout of 12 hours
+            if getattr(perms(), permission):
+                del self.pool[guild_id]
+                return True
+            await asyncio.sleep(60)
+        else:
+            await self.destruct(guild_id)
+            raise self.bot.ignored_exit
+
     async def wait_for_permission(self, guild, permission: str, channel=None) -> bool:
         """Notify the owner of missing permissions and wait until they've been granted"""
 
@@ -219,7 +253,6 @@ class Logger(commands.Cog):
                         if f"I need {permission}" in msg.content:
                             break
                     else:
-                        print("a queue was missing permissions")
                         await guild.owner.send(
                             f"I need {permission} permissions in {guild} for the logger module to function. "
                             f"Until that's satisfied, i'll keep a maximum 12 hours of logs in queue"
