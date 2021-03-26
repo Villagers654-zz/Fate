@@ -50,7 +50,7 @@ class Reload(commands.Cog):
             )
             for cog, error in unsuccessful:
                 for text_group in [
-                    str(error)[i : i + 990] for i in range(0, len(str(error)), 990)
+                    str(error)[i : i + 900] for i in range(0, len(str(error)), 990)
                 ]:
                     if len(e) >= 5000:
                         break

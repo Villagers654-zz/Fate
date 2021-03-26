@@ -128,7 +128,7 @@ class Lock(commands.Cog):
                     for member in violations:
                         await asyncio.sleep(1.21)
                         last = ctx.channel.last_message
-                        if last and not last.bot and "cancel" in last.content:
+                        if last and not last.author.bot and "cancel" in last.content:
                             await ctx.send("Alright, kick operation cancelled")
                             break
                         with suppress(AttributeError, HTTPException, NotFound, Forbidden):
