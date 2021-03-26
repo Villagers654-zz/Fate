@@ -42,7 +42,8 @@ defaults = {
         "tall_messages": True,
         "empty_lines": True,
         "unknown_chars": True,
-        "ascii": True
+        "ascii": True,
+        "copy_paste": True
     }
 }
 
@@ -58,6 +59,7 @@ class AntiSpam(commands.Cog):
         self.dupes = {}     # Per-channel index to keep track of duplicate messages
         self.msgs = {}      # Limited message cache
         self.mutes = {}     # Keep track of mutes to increment the timer per-mute
+        self.typing = {}
 
         self.cleanup_task.start()
 
@@ -90,12 +92,11 @@ class AntiSpam(commands.Cog):
                 f"and user_id = {user_id};"
             )
 
-    @tasks.loop(seconds=4)
+    @tasks.loop(seconds=10)
     async def cleanup_task(self):
-        await asyncio.sleep(1)
-
         # Message Index
         for user_id, messages in list(self.msgs.items()):
+            await asyncio.sleep(0)
             for msg in messages:
                 with suppress(KeyError, IndexError, ValueError):
                     if not msg:
@@ -109,6 +110,7 @@ class AntiSpam(commands.Cog):
 
         # Duplicate text index
         for channel_id, messages in list(self.dupes.items()):
+            await asyncio.sleep(0)
             for message in messages:
                 with suppress(KeyError, ValueError, IndexError):
                     if not message:
@@ -118,6 +120,13 @@ class AntiSpam(commands.Cog):
             with suppress(KeyError):
                 if not self.dupes[channel_id]:
                     del self.dupes[channel_id]
+
+        # Typing timestamps
+        for user_id, timestamps in list(self.typing.items()):
+            await asyncio.sleep(0)
+            if not any((datetime.utcnow() - date).seconds < 60 for date in self.typing[user_id]):
+                if user_id in self.typing:
+                    del self.typing[user_id]
 
     @commands.group(name="anti-spam", aliases=["antispam"])
     @commands.cooldown(1, 2, commands.BucketType.user)
@@ -268,7 +277,8 @@ class AntiSpam(commands.Cog):
             "tall_messages": True,
             "empty_lines": True,
             "unknown_chars": True,
-            "ascii": True
+            "ascii": True,
+            "copy_paste": True
         }
         await self.config.flush()
         await ctx.send('Enabled duplicates module')
@@ -375,6 +385,29 @@ class AntiSpam(commands.Cog):
             await ctx.send(f"I'll no longer ignore {channel.mention}")
         await self.config.flush()
 
+    @anti_spam.command(name="stats")
+    @commands.is_owner()
+    async def stats(self, ctx):
+        total = 0
+        errored = []
+        for guild_id, timers in self.bot.tasks["antispam_mutes"].items():
+            for user_id, task in timers.items():
+                total += 1
+                if task.done():
+                    errored.append(task)
+        e = discord.Embed(color=self.bot.config["theme_color"])
+        e.set_author(name="AntiSpam Stats", icon_url=self.bot.user.avatar_url)
+        emotes = self.bot.utils.emotes
+        e.description = f"{emotes.online} {total} tasks running\n" \
+                        f"{emotes.dnd} {len(errored)} tasks errored"
+        if errored:
+            e.add_field(
+                name="◈ Error",
+                value=errored[0].result(),
+                inline=False
+            )
+        await ctx.send(embed=e)
+
     async def handle_mute(self, channel, mute_role, guild_id, user_id: int, sleep_time: int):
         if channel:
             user = channel.guild.get_member(user_id)
@@ -397,6 +430,16 @@ class AntiSpam(commands.Cog):
 
         with suppress(AttributeError):
             await self.delete_timer(channel.guild.id, user_id)
+
+    @commands.Cog.listener("on_typing")
+    async def log_typing_timestamps(self, channel, user, when):
+        if channel.guild and channel.guild.id in self.config:
+            guild_id = channel.guild.id
+            if "inhuman" in self.config[guild_id] and self.config[guild_id]["inhuman"]["copy_paste"]:
+                user_id = str(user.id)
+                if user_id not in self.typing:
+                    self.typing[user_id] = []
+                self.typing[user_id].append(when)
 
     @commands.Cog.listener()
     async def on_message(self, msg: discord.Message):
@@ -428,8 +471,80 @@ class AntiSpam(commands.Cog):
             self.msgs[user_id].append(msg)
             self.msgs[user_id] = self.msgs[user_id][-15:]
 
+            # Inhuman checks
+            if "inhuman" in self.config[guild_id] and msg.content:
+                conf = self.config[guild_id]["inhuman"]  # type: dict
+                abcs = "abcdefghijklmnopqrstuvwxyzجحخهعغفقثصضشسيبلاتتمكطدظزوةىرؤءذئأإآ"
+
+                content = str(msg.content).lower()
+                lines = content.split("\n")
+
+                total_abcs = len([c for c in content if c in abcs])
+                total_abcs = total_abcs if total_abcs else 1
+
+                total_spaces = content.count(" ")
+                total_spaces = total_spaces if total_spaces else 1
+
+                has_abcs = any(content.count(c) for c in abcs)
+
+                # non abc char spam
+                if conf["non_abc"]:
+                    if len(msg.content) > 256 and not has_abcs:
+                        reason = "non abc"
+                        triggered = True
+
+                # Tall msg spam
+                if conf["tall_messages"]:
+                    if len(content.split("\n")) > 8 and sum(len(line) for line in lines if line) < 21:
+                        reason = "tall message"
+                        triggered = True
+                    elif len(content.split("\n")) > 5 and not has_abcs:
+                        reason = "tall message"
+                        triggered = True
+
+                # Empty lines spam
+                if conf["empty_lines"]:
+                    if len([l for l in lines if not l]) > len([l for l in lines if l]) and len(lines) > 8:
+                        reason = "too many empty lines"
+                        triggered = True
+
+                # Mostly unknown chars spam
+                if conf["unknown_chars"]:
+                    if len(content) > 128 and len(content) / total_abcs > 3:
+                        triggered = True
+
+                # ASCII / Spammed chars
+                if conf["ascii"]:
+                    if len(content) > 128 and len(content) / total_spaces > 10:
+                        reason = "ascii"
+                        triggered = True
+
+                # Pasting large messages without typing much, or at all
+                lmt = 125 if "http" in msg.content else 50
+                if conf["copy_paste"] and len(msg.content) > lmt:
+                    if user_id not in self.typing:
+                        reason = "pasting bulky message"
+                        triggered = True
+                    elif len(msg.content) > 125:
+                        typed_recently = any(
+                            (datetime.utcnow() - date).seconds < 25 for date in self.typing[user_id]
+                        )
+                        if not typed_recently:
+                            reason = "pasting bulky message"
+                            triggered = True
+                        if len(msg.content) > 250:
+                            count = len([
+                                ts for ts in self.typing[user_id]
+                                if (datetime.utcnow() - ts).seconds < 60
+                            ])
+                            if count < 5:
+                                reason = "pasting bulky message"
+                                triggered = True
+                    if user_id in self.typing:
+                        del self.typing[user_id]
+
             # Rate limit
-            if "rate_limit" in self.config[guild_id] and self.config[guild_id]["rate_limit"]:
+            if "rate_limit" in self.config[guild_id] and self.config[guild_id]["rate_limit"] and not triggered:
                 if guild_id not in self.spam_cd:
                     self.spam_cd[guild_id] = {}
                 for rate_limit in list(self.config[guild_id]["rate_limit"]):
@@ -573,49 +688,6 @@ class AntiSpam(commands.Cog):
                                     reason = "duplicate messages"
                                     triggered = True
                                     break
-
-            if "inhuman" in self.config[guild_id] and msg.content and not triggered:
-                await asyncio.sleep(0)
-                conf = self.config[guild_id]["inhuman"]  # type: dict
-                abcs = "abcdefghijklmnopqrstuvwxyzجحخهعغفقثصضشسيبلاتتمكطدظزوةىرؤءذئأإآ"
-                content = str(msg.content).lower()
-                lines = content.split("\n")
-
-                total_abcs = len([c for c in content if c in abcs])
-                total_abcs = total_abcs if total_abcs else 1
-
-                total_spaces = content.count(" ")
-                total_spaces = total_spaces if total_spaces else 1
-
-                has_abcs = any(content.count(c) for c in abcs)
-
-                # non abc char spam
-                if conf["non_abc"]:
-                    if len(msg.content) > 256 and not has_abcs:
-                        reason = "non abc"
-                        triggered = True
-                # Tall msg spam
-                if conf["tall_messages"]:
-                    if len(content.split("\n")) > 8 and sum(len(line) for line in lines if line) < 21:
-                        reason = "tall message"
-                        triggered = True
-                    elif len(content.split("\n")) > 5 and not has_abcs:
-                        reason = "tall message"
-                        triggered = True
-                # Empty lines spam
-                if conf["empty_lines"]:
-                    if len([l for l in lines if not l]) > len([l for l in lines if l]) and len(lines) > 8:
-                        reason = "too many empty lines"
-                        triggered = True
-                # Mostly unknown chars spam
-                if conf["unknown_chars"]:
-                    if len(content) > 128 and len(content) / total_abcs > 3:
-                        triggered = True
-                # ASCII / Spammed chars
-                if conf["ascii"]:
-                    if len(content) > 128 and len(content) / total_spaces > 10:
-                        reason = "ascii"
-                        triggered = True
 
             if triggered and guild_id in self.config:
                 # Mute the relevant users
