@@ -12,6 +12,7 @@ from base64 import b64decode, b64encode
 import sys
 from cryptography.fernet import Fernet
 from getpass import getpass
+import aiohttp
 
 from discord.ext import commands
 import discord
@@ -276,6 +277,15 @@ class Fate(commands.AutoShardedBot):
     def get_fp_for(self, path) -> str:
         """Return the path for the set storage location"""
         return os.path.join(self.config["datastore_location"], path)
+
+    async def get_resource(self, url, method="get", *args, **kwargs):
+        async with aiohttp.ClientSession() as session:
+            operation = getattr(session, method.lower())
+            async with operation(url, *args, **kwargs) as resp:
+                if resp.status == 200:
+                    return await resp.read()
+                else:
+                    raise self.ignored_exit
 
     # async def on_error(self, event_method, *args, **kwargs):
     #     full_error = str(traceback.format_exc())
