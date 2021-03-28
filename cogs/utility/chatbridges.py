@@ -304,7 +304,15 @@ class ChatBridges(commands.Cog):
                 if str(channel.id) in config["channels"]:
                     return await ctx.send("That channel's already linked")
             if guild_id in self.config and len(self.config[guild_id]["channels"]) == 2:
-                return await ctx.send("You can only link a max of 3 channels together")
+                if "additional_channels" in self.config[guild_id]:
+                    lmt = 2 + self.config[guild_id]["additional_channels"]
+                    if len(self.config[guild_id]["channels"]) == lmt:
+                        return await ctx.send(f"You can only link a max of {lmt + 1} channels together")
+                else:
+                    return await ctx.send(
+                        "You can only link a max of 3 channels together. "
+                        "You can request more in the support server"
+                    )
             webhook = None
             if guild_id not in self.config:
                 webhook = await channel.create_webhook(name="F8 ChatBridge")
@@ -390,6 +398,30 @@ class ChatBridges(commands.Cog):
         self.config[guild_id]["warnings"] = False
         await self.config.flush()
         await ctx.send("Disabled warnings")
+
+    @link.command(name="grant")
+    @commands.cooldown(2, 5, commands.BucketType.user)
+    @commands.is_owner()
+    async def grant_slots(self, ctx, channel_id: int, amount: int):
+        guild_id = self.get_guild_id(self.bot.get_channel(channel_id))
+        if "additional_channels" not in self.config[guild_id]:
+            self.config[guild_id]["additional_channels"] = 0
+        self.config[guild_id]["additional_channels"] += amount
+        count = self.config[guild_id]["additional_channels"]
+        await ctx.send(f"{self.bot.get_guild(guild_id)} now has {count} additional channels")
+        await self.config.flush()
+
+    @link.command(name="remove-grant")
+    @commands.cooldown(2, 5, commands.BucketType.user)
+    @commands.is_owner()
+    async def remove_granted_slots(self, ctx, channel_id: int):
+        guild_id = self.get_guild_id(self.bot.get_channel(channel_id))
+        guild = self.bot.get_guild(guild_id)
+        if "additional_channels" not in self.config[guild_id]:
+            return await ctx.send(f"{guild} has no extra channel slots")
+        del self.config[guild_id]["additional_channels"]
+        await ctx.send(f"Removed {guild}'s extra channel slots")
+        await self.config.flush()
 
     @link.command(name="block")
     @commands.cooldown(2, 5, commands.BucketType.user)
