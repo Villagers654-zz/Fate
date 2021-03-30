@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from discord.ext import commands
 from discord import Guild, Webhook, AsyncWebhookAdapter, AllowedMentions, File
 from discord.errors import NotFound, Forbidden, HTTPException
+import discord
 
 
 mentions = AllowedMentions(everyone=False, roles=False, users=True)
@@ -28,9 +29,9 @@ class ChatBridges(commands.Cog):
                           "With a limit of 3 channels. Usage is just running `.link` in both channels"
 
         # Start each bridges task
-        for guild_id, config in self.config.items():
-            self.bot.tasks["bridges"][guild_id] = self.bot.loop.create_task(
-                self.queue_task(guild_id)
+        for channel_id, config in self.config.items():
+            self.bot.tasks["bridges"][channel_id] = self.bot.loop.create_task(
+                self.queue_task(channel_id)
             )
 
     def cog_unload(self):
@@ -46,24 +47,26 @@ class ChatBridges(commands.Cog):
             *list(self.config[guild_id]["channels"].values())
         ]
 
-    async def destroy(self, guild_id, reason):
-        webhooks = self.get_webhook_urls(guild_id)
+    async def destroy(self, bridge_id, reason):
+        webhooks = self.get_webhook_urls(bridge_id)
         async with aiohttp.ClientSession() as session:
             for webhook_url in webhooks:
                 webhook = Webhook.from_url(webhook_url, adapter=AsyncWebhookAdapter(session))
                 with suppress(NotFound, Forbidden, HTTPException):
                     await webhook.send(reason)
                     await webhook.delete()
-        await self.config.remove(guild_id)
-        del self.bot.tasks["bridges"][guild_id]
+        if bridge_id in self.config:
+            self.config.remove(bridge_id)
+        if bridge_id in self.bot.tasks["bridges"]:
+            del self.bot.tasks["bridges"][bridge_id]
 
-    async def queue_task(self, guild_id):
+    async def queue_task(self, bridge_id):
         await self.bot.wait_until_ready()
-        self.queue[guild_id] = asyncio.Queue(maxsize=2)
+        self.queue[bridge_id] = asyncio.Queue(maxsize=2)
         webhook_cache = {}
         async with aiohttp.ClientSession() as session:
             while True:
-                msg, webhooks = await self.queue[guild_id].get()
+                msg, webhooks = await self.queue[bridge_id].get()
                 dl_info = dict(filename=None, url=None)
                 if msg.attachments and msg.attachments and msg.attachments[0].size < 4000000:
                     dl_info["filename"] = msg.attachments[0].filename
@@ -88,16 +91,16 @@ class ChatBridges(commands.Cog):
                                     allowed_mentions=mentions
                                 )
                         except (NotFound, Forbidden):
-                            if guild_id not in self.config:
+                            if bridge_id not in self.config:
                                 return
-                            if webhook_url == self.config[guild_id]["webhook_url"]:
-                                return await self.destroy(guild_id, "Host webhook deleted. Disabling the chatbridge")
+                            if webhook_url == self.config[bridge_id]["webhook_url"]:
+                                return await self.destroy(bridge_id, "Host webhook deleted. Disabling the chatbridge")
 
                             # Iterate through and remove the unavailable webhook
-                            for channel_id, _webhook_url in list(self.config[guild_id]["channels"].items()):
+                            for channel_id, _webhook_url in list(self.config[bridge_id]["channels"].items()):
                                 if webhook_url == _webhook_url:
-                                    self.config[guild_id]["channels"] = {
-                                        c: w for c, w in self.config[guild_id]["channels"].items()
+                                    self.config[bridge_id]["channels"] = {
+                                        c: w for c, w in self.config[bridge_id]["channels"].items()
                                         if c != channel_id
                                     }
                                     await self.config.flush()
@@ -109,41 +112,39 @@ class ChatBridges(commands.Cog):
                                     else:
                                         warning = f"The webhook for {channel_id} was deleted"
 
-                                    await self.queue[guild_id].put([warning, self.get_webhook_urls(guild_id)])
+                                    await self.queue[bridge_id].put([warning, self.get_webhook_urls(bridge_id)])
 
                             # Disable the bridge if there's only the host channel
-                            if not self.config[guild_id]["channels"]:
-                                await self.destroy(guild_id, "Disabled the chatbridge due to the only other channel removing their webhook")
+                            if not self.config[bridge_id]["channels"]:
+                                await self.destroy(bridge_id, "Disabled the chatbridge due to the only other channel removing their webhook")
 
                         except HTTPException as error:
                             await msg.channel.send(f"Error: couldn't send your message to the other channels. {error}")
 
                     await asyncio.sleep(0.5)
 
-    def get_guild_id(self, channel):
-        guild_id = channel.guild.id
-        if guild_id not in self.config:
-            guild_ids = [
-                guild_id for guild_id, config in self.config.items()
-                if str(channel.id) in config["channels"]
-            ]
-            if guild_ids:
-                guild_id = guild_ids[0]
-        return guild_id
+    async def get_bridge_id(self, channel):
+        bridge_id = channel.id
+        if channel.id not in self.config:
+            for channel_id, config in list(self.config.items()):
+                await asyncio.sleep(0)
+                if str(channel.id) in config["channels"]:
+                    return channel_id
+        return bridge_id
 
     async def block(self, channel, user):
-        self.config[self.get_guild_id(channel)]["blocked"].append(user.id)
+        self.config[await self.get_bridge_id(channel)]["blocked"].append(user.id)
 
-    def is_blocked(self, channel, user) -> bool:
-        return user.id in self.config[self.get_guild_id(channel)]["blocked"]
+    async def is_blocked(self, channel, user) -> bool:
+        return user.id in self.config[await self.get_bridge_id(channel)]["blocked"]
 
     @commands.Cog.listener()
     async def on_message(self, msg):
         """Run anti spam checks and send the message to the queue"""
         if not isinstance(msg.guild, Guild):
             return
-        guild_id = self.get_guild_id(msg.channel)
-        if guild_id not in self.config:
+        bridge_id = await self.get_bridge_id(msg.channel)
+        if bridge_id not in self.config:
             return
         if msg.author.discriminator == "0000" or (not msg.content and not msg.embeds):
             return
@@ -157,10 +158,10 @@ class ChatBridges(commands.Cog):
         if msg.author.bot and any(msg.content.startswith(content) for content in blacklist):
             return
         user_id = msg.author.id
-        if msg.channel.id != self.config[guild_id]["channel_id"]:
-            if str(msg.channel.id) not in self.config[guild_id]["channels"]:
+        if msg.channel.id not in self.config:
+            if str(msg.channel.id) not in self.config[bridge_id]["channels"]:
                 return
-        if self.is_blocked(msg.channel, msg.author):
+        if await self.is_blocked(msg.channel, msg.author):
             return
         if msg.author.id in self.ignored:
             if time() - 60 > self.ignored[msg.author.id]:
@@ -169,7 +170,7 @@ class ChatBridges(commands.Cog):
                 return
 
         async def warn():
-            if "warnings" not in self.config[guild_id]:
+            if "warnings" not in self.config[bridge_id]:
                 with suppress(Forbidden):
                     await msg.add_reaction("❌")
             return None
@@ -256,7 +257,7 @@ class ChatBridges(commands.Cog):
 
         # Parse what channels to forward to
         webhooks = []
-        for channel_id, webhook_url in list(self.config[guild_id]["channels"].items()):
+        for channel_id, webhook_url in list(self.config[bridge_id]["channels"].items()):
             await asyncio.sleep(0)
             channel = self.bot.get_channel(int(channel_id))
             if channel and channel.id != msg.channel.id:
@@ -265,11 +266,11 @@ class ChatBridges(commands.Cog):
                 if member and mute_role and mute_role in member.roles:
                     continue
                 webhooks.append(webhook_url)
-        if msg.channel.id != self.config[guild_id]["channel_id"]:
-            webhooks.append(self.config[guild_id]["webhook_url"])
+        if msg.channel.id not in self.config:
+            webhooks.append(self.config[bridge_id]["webhook_url"])
 
         with suppress(asyncio.QueueFull, KeyError):
-            self.queue[guild_id].put_nowait([msg, webhooks])
+            self.queue[bridge_id].put_nowait([msg, webhooks])
 
     @commands.group(name="link", aliases=["chatbridge", "bridge"])
     @commands.cooldown(2, 10, commands.BucketType.user)
@@ -278,6 +279,12 @@ class ChatBridges(commands.Cog):
     async def link(self, ctx):
         """Start the process to link two channels"""
         if not ctx.invoked_subcommand:
+            linked_channels = len([
+                c for c in ctx.guild.text_channels if await self.get_bridge_id(c) in self.config
+            ])
+            if linked_channels == 3:
+                return await ctx.send("You can't create more than 3 bridges in a single server")
+
             for channel, (_user_id, start_time) in list(self.waiters.items()):
                 await asyncio.sleep(0)
                 if start_time < time() - 120:
@@ -293,20 +300,20 @@ class ChatBridges(commands.Cog):
                 self.waiters[ctx.channel] = [ctx.author.id, time()]
                 return await ctx.send(f"Run `.link` in the other channel you wanna link")
 
-            guild_id = self.get_guild_id(channel)
-            has_linked_channel = any(
-                str(c.id) in self.config[guild_id]["channels"] for c in ctx.guild.text_channels
-            ) if ctx.guild.id in self.config else False
-            if ctx.guild.id in self.config or has_linked_channel:
-                return await ctx.send("A channel in this server's already linked")
+            bridge_id = await self.get_bridge_id(channel)
+            linked_channels = len([
+                c for c in ctx.guild.text_channels if await self.get_bridge_id(c) in self.config
+            ])
+            if linked_channels == 3:
+                return await ctx.send("You can't create more than 3 bridges in a single server")
             for config in list(self.config.values()):
                 await asyncio.sleep(0)
                 if str(channel.id) in config["channels"]:
                     return await ctx.send("That channel's already linked")
-            if guild_id in self.config and len(self.config[guild_id]["channels"]) == 2:
-                if "additional_channels" in self.config[guild_id]:
-                    lmt = 2 + self.config[guild_id]["additional_channels"]
-                    if len(self.config[guild_id]["channels"]) == lmt:
+            if bridge_id in self.config and len(self.config[bridge_id]["channels"]) >= 2:
+                if "additional_channels" in self.config[bridge_id]:
+                    lmt = 2 + self.config[bridge_id]["additional_channels"]
+                    if len(self.config[bridge_id]["channels"]) >= lmt:
                         return await ctx.send(f"You can only link a max of {lmt + 1} channels together")
                 else:
                     return await ctx.send(
@@ -314,7 +321,7 @@ class ChatBridges(commands.Cog):
                         "You can request more in the support server"
                     )
             webhook = None
-            if guild_id not in self.config:
+            if bridge_id not in self.config:
                 webhook = await channel.create_webhook(name="F8 ChatBridge")
             sub_webhook = await ctx.channel.create_webhook(name="F8 ChatBridge")
             if webhook:
@@ -324,11 +331,11 @@ class ChatBridges(commands.Cog):
                 allowed_mentions=AllowedMentions.all()
             )
 
-            if guild_id in self.config:
-                self.config[guild_id]["channels"][str(ctx.channel.id)] = sub_webhook.url
+            if bridge_id in self.config:
+                self.config[bridge_id]["channels"][str(ctx.channel.id)] = sub_webhook.url
             else:
-                self.config[guild_id] = {
-                    "channel_id": channel.id,
+                self.config[bridge_id] = {
+                    "guild_id": self.bot.get_channel(bridge_id).guild.id,
                     "webhook_url": webhook.url,
                     "channels": {
                         str(ctx.channel.id): sub_webhook.url
@@ -336,8 +343,8 @@ class ChatBridges(commands.Cog):
                     "blocked": []
                 }
             await self.config.flush()
-            self.bot.tasks["bridges"][guild_id] = self.bot.loop.create_task(
-                self.queue_task(guild_id)
+            self.bot.tasks["bridges"][bridge_id] = self.bot.loop.create_task(
+                self.queue_task(bridge_id)
             )
             if channel in self.waiters:
                 del self.waiters[channel]
@@ -347,16 +354,17 @@ class ChatBridges(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def unlink(self, ctx):
         """Unlink a channel from a bridge"""
-        guild_id = self.get_guild_id(ctx.channel)
-        if guild_id not in self.config:
+        bridge_id = await self.get_bridge_id(ctx.channel)
+        if bridge_id not in self.config:
             return await ctx.send("This channel isn't linked")
-        if ctx.channel.id == self.config[guild_id]["channel_id"]:
-            await ctx.send(f"Unlinked from {self.bot.get_guild(int(guild_id))}")
-            return await self.destroy(guild_id, "Host disabled the chatbridge")
+        guild = self.bot.get_guild(self.config[bridge_id]["guild_id"])
+        if ctx.channel.id == bridge_id:
+            await ctx.send(f"Unlinked from {guild}")
+            return await self.destroy(bridge_id, "Host disabled the chatbridge")
 
         # Remove the webhook if we can
         for channel in ctx.guild.text_channels:
-            if str(channel.id) in self.config[guild_id]["channels"]:
+            if str(channel.id) in self.config[bridge_id]["channels"]:
                 channel = channel
                 break
         else:
@@ -364,32 +372,32 @@ class ChatBridges(commands.Cog):
         with suppress(NotFound, Forbidden, HTTPException):
             webhooks = await ctx.channel.webhooks()
             for webhook in webhooks:
-                if webhook.url == self.config[guild_id]["channels"][str(channel.id)]:
+                if webhook.url == self.config[bridge_id]["channels"][str(channel.id)]:
                     await webhook.delete()
                     break
 
         # Remove the channel_id from the hosts linked channels
-        self.config[guild_id]["channels"] = {
-            c: w for c, w in self.config[guild_id]["channels"].items()
+        self.config[bridge_id]["channels"] = {
+            c: w for c, w in self.config[bridge_id]["channels"].items()
             if c != str(ctx.channel.id)
         }
         await self.config.flush()
 
         # If the host has no linked channels disable the whole thing
-        if not self.config[guild_id]["channels"]:
-            await ctx.send(f"Unlinked from {self.bot.get_guild(guild_id)}")
+        if not self.config[bridge_id]["channels"]:
+            await ctx.send(f"Unlinked from {guild}")
             return await self.destroy(
-                guild_id,
+                bridge_id,
                 "Disabled the chatbridge due to the only other channel removing their webhook"
             )
 
-        await ctx.send(f"Unlinked from {self.bot.get_guild(guild_id)}")
+        await ctx.send(f"Unlinked from {guild}")
 
     @link.command(name="toggle-warnings")
     @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.has_permissions(administrator=True)
     async def toggle_warnings(self, ctx):
-        guild_id = self.get_guild_id(ctx.channel)
+        guild_id = await self.get_bridge_id(ctx.channel)
         if guild_id not in self.config:
             return await ctx.send("This channel isn't linked")
         if "warnings" in self.config[guild_id]:
@@ -403,31 +411,33 @@ class ChatBridges(commands.Cog):
     @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.is_owner()
     async def grant_slots(self, ctx, channel_id: int, amount: int):
-        guild_id = self.get_guild_id(self.bot.get_channel(channel_id))
-        if "additional_channels" not in self.config[guild_id]:
-            self.config[guild_id]["additional_channels"] = 0
-        self.config[guild_id]["additional_channels"] += amount
-        count = self.config[guild_id]["additional_channels"]
-        await ctx.send(f"{self.bot.get_guild(guild_id)} now has {count} additional channels")
+        channel_id = await self.get_bridge_id(self.bot.get_channel(channel_id))
+        if channel_id not in self.config:
+            return await ctx.send("That's not a bridge id")
+        if "additional_channels" not in self.config[channel_id]:
+            self.config[channel_id]["additional_channels"] = 0
+        self.config[channel_id]["additional_channels"] += amount
+        count = self.config[channel_id]["additional_channels"]
+        await ctx.send(f"{self.bot.get_channel(channel_id).guild} now has {count} additional channels")
         await self.config.flush()
 
     @link.command(name="remove-grant")
     @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.is_owner()
     async def remove_granted_slots(self, ctx, channel_id: int):
-        guild_id = self.get_guild_id(self.bot.get_channel(channel_id))
-        guild = self.bot.get_guild(guild_id)
-        if "additional_channels" not in self.config[guild_id]:
-            return await ctx.send(f"{guild} has no extra channel slots")
-        del self.config[guild_id]["additional_channels"]
-        await ctx.send(f"Removed {guild}'s extra channel slots")
+        channel_id = await self.get_bridge_id(self.bot.get_channel(channel_id))
+        channel = self.bot.get_channel(channel_id)
+        if "additional_channels" not in self.config[channel_id]:
+            return await ctx.send(f"{channel.guild} has no extra channel slots")
+        del self.config[channel_id]["additional_channels"]
+        await ctx.send(f"Removed {channel.guild}'s extra channel slots")
         await self.config.flush()
 
     @link.command(name="block")
     @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.has_permissions(administrator=True)
     async def _block(self, ctx, *users):
-        guild_id = self.get_guild_id(ctx.channel)
+        guild_id = await self.get_bridge_id(ctx.channel)
         if guild_id not in self.config:
             return await ctx.send("This channel isn't linked")
         blocked = ""
@@ -449,7 +459,7 @@ class ChatBridges(commands.Cog):
     @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.has_permissions(administrator=True)
     async def _unblock(self, ctx, *, user):
-        guild_id = self.get_guild_id(ctx.channel)
+        guild_id = await self.get_bridge_id(ctx.channel)
         if guild_id not in self.config:
             return await ctx.send("This channel isn't linked")
         user = await self.bot.utils.get_user(ctx, user)
@@ -458,6 +468,39 @@ class ChatBridges(commands.Cog):
         self.config[guild_id]["blocked"].remove(user.id)
         await self.config.flush()
         await ctx.send(f"Unblocked {user}")
+
+    @commands.command(name="bridges")
+    async def chatbridges(self, ctx):
+        e = discord.Embed(color=self.bot.config["theme_color"])
+        e.set_author(name="ChatBridges", icon_url=self.bot.user.avatar_url)
+        e.set_thumbnail(url=ctx.guild.icon_url)
+
+        bridges = ""
+        for channel in ctx.guild.text_channels:
+            await asyncio.sleep(0)
+            if channel.id in self.config:
+                bridges += f"◈ {channel.guild.name}\n"
+                for channel_id in self.config[channel.id]["channels"]:
+                    _channel = self.bot.get_channel(int(channel_id))
+                    if _channel:
+                        bridges += f"﹂{_channel.guild.name}\n"
+                bridges += "\n"
+
+        for channel in ctx.guild.text_channels:
+            await asyncio.sleep(0)
+            bridge_id = await self.get_bridge_id(channel)
+            if channel.id not in self.config and bridge_id in self.config:
+                main = self.bot.get_channel(bridge_id)
+                if not main:
+                    continue
+                bridges += f"◈ {main.guild.name}\n"
+                for channel_id in self.config[bridge_id]["channels"]:
+                    _channel = self.bot.get_channel(int(channel_id))
+                    if _channel:
+                        bridges += f"﹂{_channel.guild.name}\n"
+
+        e.description = bridges
+        await ctx.send(embed=e)
 
 
 def setup(bot):
