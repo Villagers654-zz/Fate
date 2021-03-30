@@ -433,7 +433,7 @@ class AntiSpam(commands.Cog):
 
     @commands.Cog.listener("on_typing")
     async def log_typing_timestamps(self, channel, user, when):
-        if channel.guild and channel.guild.id in self.config:
+        if hasattr(channel, "guild") and channel.guild and channel.guild.id in self.config:
             guild_id = channel.guild.id
             if "inhuman" in self.config[guild_id] and self.config[guild_id]["inhuman"]["copy_paste"]:
                 user_id = str(user.id)
@@ -520,26 +520,26 @@ class AntiSpam(commands.Cog):
                         triggered = True
 
                 # Pasting large messages without typing much, or at all
-                lmt = 125 if "http" in msg.content else 50
+                lmt = 150 if "http" in msg.content else 100
                 if conf["copy_paste"] and len(msg.content) > lmt:
                     if user_id not in self.typing:
                         reason = "pasting bulky message"
-                        triggered = True
-                    elif len(msg.content) > 125:
+                        triggered = None
+                    elif len(msg.content) > 150:
                         typed_recently = any(
                             (datetime.utcnow() - date).seconds < 25 for date in self.typing[user_id]
                         )
                         if not typed_recently:
-                            reason = "pasting bulky message"
-                            triggered = True
+                            reason = "pasting bulky message="
+                            triggered = None
                         if len(msg.content) > 250:
                             count = len([
                                 ts for ts in self.typing[user_id]
                                 if (datetime.utcnow() - ts).seconds < 60
                             ])
-                            if count < 5:
-                                reason = "pasting bulky message"
-                                triggered = True
+                            if count < 3:
+                                reason = "pasting bulky message="
+                                triggered = None
                     if user_id in self.typing:
                         del self.typing[user_id]
 
@@ -688,6 +688,11 @@ class AntiSpam(commands.Cog):
                                     reason = "duplicate messages"
                                     triggered = True
                                     break
+
+            if triggered is None:
+                with suppress(HTTPException, NotFound, Forbidden):
+                    await msg.delete()
+                    await msg.channel.send(f"No {reason}")
 
             if triggered and guild_id in self.config:
                 # Mute the relevant users
