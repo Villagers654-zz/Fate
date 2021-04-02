@@ -632,6 +632,8 @@ class Logger(commands.Cog):
             )
         await self.ensure_channels(ctx.guild)
         if channel.id == self.config[guild_id]["channel"]:
+            if log_type not in self.config[guild_id]["channels"]:
+                return await ctx.send(f"{log_type} is already in {channel.mention}")
             del self.config[guild_id]["channels"][log_type]
         else:
             self.config[guild_id]["channels"][log_type] = channel.id
