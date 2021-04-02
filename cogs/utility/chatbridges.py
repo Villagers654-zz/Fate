@@ -48,33 +48,61 @@ class ChatBridges(commands.Cog):
         ]
 
     async def destroy(self, bridge_id, reason):
-        webhooks = self.get_webhook_urls(bridge_id)
-        async with aiohttp.ClientSession() as session:
-            for webhook_url in webhooks:
-                webhook = Webhook.from_url(webhook_url, adapter=AsyncWebhookAdapter(session))
-                with suppress(NotFound, Forbidden, HTTPException):
-                    await webhook.send(reason)
-                    await webhook.delete()
-        if bridge_id in self.config:
-            self.config.remove(bridge_id)
-        if bridge_id in self.bot.tasks["bridges"]:
-            del self.bot.tasks["bridges"][bridge_id]
+        with suppress(HTTPException, NotFound, Forbidden, KeyError):
+            webhooks = self.get_webhook_urls(bridge_id)
+            async with aiohttp.ClientSession() as session:
+                for webhook_url in webhooks:
+                    webhook = Webhook.from_url(webhook_url, adapter=AsyncWebhookAdapter(session))
+                    with suppress(NotFound, Forbidden, HTTPException):
+                        await webhook.send(reason)
+                        await webhook.delete()
+            if bridge_id in self.config:
+                self.config.remove(bridge_id)
+            if bridge_id in self.bot.tasks["bridges"]:
+                del self.bot.tasks["bridges"][bridge_id]
 
     async def queue_task(self, bridge_id):
         await self.bot.wait_until_ready()
         self.queue[bridge_id] = asyncio.Queue(maxsize=2)
         webhook_cache = {}
+        url = "https://icon-library.com/images/reply-icon/reply-icon-26.jpg"
         async with aiohttp.ClientSession() as session:
             while True:
                 msg, webhooks = await self.queue[bridge_id].get()
                 dl_info = dict(filename=None, url=None)
+
                 if msg.attachments and msg.attachments and msg.attachments[0].size < 4000000:
                     dl_info["filename"] = msg.attachments[0].filename
                     dl_info["url"] = msg.attachments[0].url
+
                 async with self.bot.utils.tempdl(**dl_info) as file:
                     if file:
                         file = File(fp=file)  # discord.File
-                    for webhook_url in webhooks:
+                    for channel_id, webhook_url in webhooks:
+                        channel = self.bot.get_channel(int(channel_id))
+                        ref = alternate_content = None
+
+                        # Reformat message replies into quoted messages
+                        if msg.reference and msg.reference.cached_message:
+                            ref = msg.reference.cached_message
+                        if ref and ref.content:
+                            formatted = "\n".join(f"> {line}" for line in ref.content.split("\n"))
+                            target = r"\@" + ref.author.display_name
+                            if channel and channel.guild and channel.guild.get_member(ref.author.id):
+                                target = ref.author.mention
+                            alternate_content = f"{formatted}\n{target} {msg.content}"
+
+                        # Link any attachments inside of message replies
+                        if ref and ref.attachments:
+                            if not channel or not channel.permissions_for(channel.guild.me).read_message_history:
+                                continue
+                            async for m in channel.history(limit=75):
+                                if ref.content == m.content and len(m.attachments) == len(ref.attachments):
+                                    if ref.attachments[0].filename == m.attachments[0].filename:
+                                        if ref.attachments[0].size == m.attachments[0].size:
+                                            msg.embeds = [discord.Embed(description=f"[attachment]({m.jump_url})")]
+                                            break
+
                         try:
                             if webhook_url not in webhook_cache:
                                 webhook = Webhook.from_url(webhook_url, adapter=AsyncWebhookAdapter(session))
@@ -83,7 +111,7 @@ class ChatBridges(commands.Cog):
                                 await webhook_cache[webhook_url].send(msg)
                             else:
                                 await webhook_cache[webhook_url].send(
-                                    content=msg.content,
+                                    content=alternate_content if alternate_content else msg.content,
                                     embeds=msg.embeds if msg.embeds else None,
                                     file=file,
                                     username=msg.author.display_name,
@@ -146,7 +174,7 @@ class ChatBridges(commands.Cog):
         bridge_id = await self.get_bridge_id(msg.channel)
         if bridge_id not in self.config:
             return
-        if msg.author.discriminator == "0000" or (not msg.content and not msg.embeds):
+        if msg.author.discriminator == "0000" or (not msg.content and not msg.embeds and not msg.attachments):
             return
         if not msg.channel.permissions_for(msg.guild.me).send_messages:
             return
@@ -265,9 +293,9 @@ class ChatBridges(commands.Cog):
                 mute_role = await self.bot.attrs.get_mute_role(channel.guild, upsert=False)
                 if member and mute_role and mute_role in member.roles:
                     continue
-                webhooks.append(webhook_url)
+                webhooks.append([channel_id, webhook_url])
         if msg.channel.id not in self.config:
-            webhooks.append(self.config[bridge_id]["webhook_url"])
+            webhooks.append([bridge_id, self.config[bridge_id]["webhook_url"]])
 
         with suppress(asyncio.QueueFull, KeyError):
             self.queue[bridge_id].put_nowait([msg, webhooks])
