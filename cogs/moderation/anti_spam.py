@@ -520,7 +520,7 @@ class AntiSpam(commands.Cog):
                         triggered = True
 
                 # Pasting large messages without typing much, or at all
-                lmt = 150 if "http" in msg.content else 100
+                lmt = 250 if "http" in msg.content else 100
                 if conf["copy_paste"] and len(msg.content) > lmt:
                     if user_id not in self.typing:
                         reason = "pasting bulky message"
@@ -530,7 +530,7 @@ class AntiSpam(commands.Cog):
                             (datetime.utcnow() - date).seconds < 25 for date in self.typing[user_id]
                         )
                         if not typed_recently:
-                            reason = "pasting bulky message="
+                            reason = "pasting bulky message"
                             triggered = None
                         if len(msg.content) > 250:
                             count = len([
@@ -538,7 +538,7 @@ class AntiSpam(commands.Cog):
                                 if (datetime.utcnow() - ts).seconds < 60
                             ])
                             if count < 3:
-                                reason = "pasting bulky message="
+                                reason = "pasting bulky message"
                                 triggered = None
                     if user_id in self.typing:
                         del self.typing[user_id]
