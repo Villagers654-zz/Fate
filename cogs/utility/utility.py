@@ -268,8 +268,11 @@ class Utility(commands.Cog):
                         )
                         if cur.rowcount:
                             r = await cur.fetchone()
-                            seconds = round(time() - float(r[0].replace(',', '')))
-                            activity_info["Last Online"] = f"{self.bot.utils.get_time(seconds)} ago"
+                            if hasattr(r[0], "replace"):
+                                seconds = round(time() - float(r[0].replace(',', '')))
+                                activity_info["Last Online"] = f"{self.bot.utils.get_time(seconds)} ago"
+                            else:
+                                activity_info["Last Online"] = "Unknown"
                         else:
                             activity_info["Last Online"] = "Unknown"
                     await cur.execute(
@@ -280,8 +283,11 @@ class Utility(commands.Cog):
                     )
                     if cur.rowcount:
                         r = await cur.fetchone()
-                        seconds = round(time() - float(r[0].replace(',', '')))
-                        activity_info["Last Msg"] = f"{self.bot.utils.get_time(seconds)} ago"
+                        if hasattr(r[0], "replace"):
+                            seconds = round(time() - float(r[0].replace(',', '')))
+                            activity_info["Last Msg"] = f"{self.bot.utils.get_time(seconds)} ago"
+                        else:
+                            activity_info["Last Msg"] = "Unknown"
                     else:
                         activity_info["Last Msg"] = "Unknown"
 
@@ -835,7 +841,7 @@ class Utility(commands.Cog):
                 )
                 if not cur.rowcount:
                     await cur.execute(
-                        f"insert into usernames values ({after.id}, {repr(self.bot.encode(str(before)))}, {time()});"
+                        f"insert into usernames values ({after.id}, {repr(self.bot.encode(str(before)))}, '{time()}');"
                     )
 
     @commands.Cog.listener()
