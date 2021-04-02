@@ -432,7 +432,7 @@ class Moderation(commands.Cog):
         args = [str(arg).lower() for arg in args]
         if ctx.message.reference:
             amount_to_purge = "1000"
-            if args and args[1].isdigit():
+            if args:
                 amount_to_purge = args[len(args) - 1]
         else:
             amount_to_purge = args[len(args) - 1]
