@@ -337,6 +337,8 @@ class Welcome(commands.Cog):
     @commands.has_permissions(manage_guild=True)
     async def _format(self, ctx, *, message=None):
         guild_id = ctx.guild.id
+        if guild_id not in self.config:
+            return await ctx.send("Welcome messages aren't enabled")
         if message:
             self.config[guild_id]["format"] = message
         else:
