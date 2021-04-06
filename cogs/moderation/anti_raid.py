@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from contextlib import suppress
 from discord.ext import commands
 from os.path import isfile
 from botutils import colors
@@ -153,33 +154,34 @@ class AntiRaid(commands.Cog):
         guild_id = str(m.guild.id)
         if not m.guild.me.guild_permissions.view_audit_log:
             return
-        async for entry in m.guild.audit_logs(limit=1):
-            if entry.created_at > datetime.utcnow() - timedelta(seconds=3):
-                actions = [discord.AuditLogAction.kick, discord.AuditLogAction.ban]
-                if entry.action in actions:
-                    user_id = str(entry.user.id)
-                    now = int(time() / 15)
-                    if guild_id not in self.cd:
-                        self.cd[guild_id] = {}
-                    if user_id not in self.cd[guild_id]:
-                        self.cd[guild_id][user_id] = [now, 0]
-                    if self.cd[guild_id][user_id][0] == now:
-                        self.cd[guild_id][user_id][1] += 1
-                    else:
-                        self.cd[guild_id][user_id] = [now, 0]
-                    if self.cd[guild_id][user_id][1] > 2:
-                        if m.id == self.bot.user.id:
-                            await m.guild.leave()
-                            print(f"Left {m.guild.name} for my user attempting a purge")
-                        if guild_id in self.toggle:
-                            required_permission = await self.ensure_permissions(m.guild)
-                            if not required_permission:
-                                return
-                            await m.guild.ban(
-                                entry.user,
-                                reason="Attempted Purge",
-                                delete_message_days=0,
-                            )
+        with suppress(discord.errors.Forbidden):
+            async for entry in m.guild.audit_logs(limit=1):
+                if entry.created_at > datetime.utcnow() - timedelta(seconds=3):
+                    actions = [discord.AuditLogAction.kick, discord.AuditLogAction.ban]
+                    if entry.action in actions:
+                        user_id = str(entry.user.id)
+                        now = int(time() / 15)
+                        if guild_id not in self.cd:
+                            self.cd[guild_id] = {}
+                        if user_id not in self.cd[guild_id]:
+                            self.cd[guild_id][user_id] = [now, 0]
+                        if self.cd[guild_id][user_id][0] == now:
+                            self.cd[guild_id][user_id][1] += 1
+                        else:
+                            self.cd[guild_id][user_id] = [now, 0]
+                        if self.cd[guild_id][user_id][1] > 2:
+                            if m.id == self.bot.user.id:
+                                await m.guild.leave()
+                                print(f"Left {m.guild.name} for my user attempting a purge")
+                            if guild_id in self.toggle:
+                                required_permission = await self.ensure_permissions(m.guild)
+                                if not required_permission:
+                                    return
+                                await m.guild.ban(
+                                    entry.user,
+                                    reason="Attempted Purge",
+                                    delete_message_days=0,
+                                )
 
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, channel: discord.TextChannel):
