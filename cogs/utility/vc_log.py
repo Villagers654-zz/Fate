@@ -92,6 +92,9 @@ class VcLog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
+        if not before.channel and not after.channel:
+            return
+
         guild_id = member.guild.id
         if guild_id in self.config:
             channel = self.bot.get_channel(self.config[guild_id]["channel"])
