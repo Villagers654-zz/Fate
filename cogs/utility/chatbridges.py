@@ -5,7 +5,7 @@ import aiohttp
 from datetime import datetime, timedelta
 
 from discord.ext import commands
-from discord import Guild, Webhook, AsyncWebhookAdapter, AllowedMentions, File
+from discord import Guild, Webhook, AsyncWebhookAdapter, AllowedMentions, Message
 from discord.errors import NotFound, Forbidden, HTTPException
 import discord
 
@@ -70,7 +70,7 @@ class ChatBridges(commands.Cog):
                 msg, webhooks = await self.queue[bridge_id].get()
                 file = None
 
-                if msg.attachments and msg.attachments and msg.attachments[0].size < 4000000:
+                if isinstance(msg, Message) and msg.attachments and msg.attachments[0].size < 4000000:
                     with suppress(NotFound, Forbidden, HTTPException):
                         _file = await msg.attachments[0].to_file()
                         file = _file
