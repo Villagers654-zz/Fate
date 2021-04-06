@@ -68,87 +68,85 @@ class ChatBridges(commands.Cog):
         async with aiohttp.ClientSession() as session:
             while True:
                 msg, webhooks = await self.queue[bridge_id].get()
-                dl_info = dict(filename=None, url=None)
+                file = None
 
                 if msg.attachments and msg.attachments and msg.attachments[0].size < 4000000:
-                    dl_info["filename"] = msg.attachments[0].filename
-                    dl_info["url"] = msg.attachments[0].url
+                    with suppress(NotFound, Forbidden, HTTPException):
+                        _file = await msg.attachments[0].to_file()
+                        file = _file
 
-                async with self.bot.utils.tempdl(**dl_info) as file:
-                    if file:
-                        file = File(fp=file)  # discord.File
-                    for channel_id, webhook_url in webhooks:
-                        channel = self.bot.get_channel(int(channel_id))
-                        ref = alternate_content = None
+                for channel_id, webhook_url in webhooks:
+                    channel = self.bot.get_channel(int(channel_id))
+                    ref = alternate_content = None
 
-                        # Reformat message replies into quoted messages
-                        if msg.reference and msg.reference.cached_message:
-                            ref = msg.reference.cached_message
-                        if ref and ref.content:
-                            formatted = "\n".join(f"> {line}" for line in ref.content.split("\n"))
-                            target = r"\@" + ref.author.display_name
-                            if channel and channel.guild and channel.guild.get_member(ref.author.id):
-                                target = ref.author.mention
-                            alternate_content = f"{formatted}\n{target} {msg.content}"
+                    # Reformat message replies into quoted messages
+                    if msg.reference and msg.reference.cached_message:
+                        ref = msg.reference.cached_message
+                    if ref and ref.content:
+                        formatted = "\n".join(f"> {line}" for line in ref.content.split("\n"))
+                        target = r"\@" + ref.author.display_name
+                        if channel and channel.guild and channel.guild.get_member(ref.author.id):
+                            target = ref.author.mention
+                        alternate_content = f"{formatted}\n{target} {msg.content}"
 
-                        # Link any attachments inside of message replies
-                        if ref and ref.attachments:
-                            if not channel or not channel.permissions_for(channel.guild.me).read_message_history:
-                                continue
-                            async for m in channel.history(limit=75):
-                                if ref.content == m.content and len(m.attachments) == len(ref.attachments):
-                                    if ref.attachments[0].filename == m.attachments[0].filename:
-                                        if ref.attachments[0].size == m.attachments[0].size:
-                                            msg.embeds = [discord.Embed(description=f"[attachment]({m.jump_url})")]
-                                            break
+                    # Link any attachments inside of message replies
+                    if ref and ref.attachments:
+                        if not channel or not channel.permissions_for(channel.guild.me).read_message_history:
+                            continue
+                        async for m in channel.history(limit=75):
+                            if ref.content == m.content and len(m.attachments) == len(ref.attachments):
+                                if ref.attachments[0].filename == m.attachments[0].filename:
+                                    if ref.attachments[0].size == m.attachments[0].size:
+                                        msg.embeds = [discord.Embed(description=f"[attachment]({m.jump_url})")]
+                                        break
 
-                        try:
-                            if webhook_url not in webhook_cache:
-                                webhook = Webhook.from_url(webhook_url, adapter=AsyncWebhookAdapter(session))
-                                webhook_cache[webhook_url] = webhook
-                            if isinstance(msg, str):
-                                await webhook_cache[webhook_url].send(msg)
-                            else:
-                                await webhook_cache[webhook_url].send(
-                                    content=alternate_content if alternate_content else msg.content,
-                                    embeds=msg.embeds if msg.embeds else None,
-                                    file=file,
-                                    username=msg.author.display_name,
-                                    avatar_url=msg.author.avatar_url,
-                                    allowed_mentions=mentions
-                                )
-                        except (NotFound, Forbidden):
-                            if bridge_id not in self.config:
-                                return
-                            if webhook_url == self.config[bridge_id]["webhook_url"]:
-                                return await self.destroy(bridge_id, "Host webhook deleted. Disabling the chatbridge")
+                    try:
+                        if webhook_url not in webhook_cache:
+                            webhook = Webhook.from_url(webhook_url, adapter=AsyncWebhookAdapter(session))
+                            webhook_cache[webhook_url] = webhook
+                        if isinstance(msg, str):
+                            await webhook_cache[webhook_url].send(msg)
+                        else:
+                            await webhook_cache[webhook_url].send(
+                                content=alternate_content if alternate_content else msg.content,
+                                embeds=msg.embeds if msg.embeds else None,
+                                file=file,
+                                username=msg.author.display_name,
+                                avatar_url=msg.author.avatar_url,
+                                allowed_mentions=mentions
+                            )
+                    except (NotFound, Forbidden):
+                        if bridge_id not in self.config:
+                            return
+                        if webhook_url == self.config[bridge_id]["webhook_url"]:
+                            return await self.destroy(bridge_id, "Host webhook deleted. Disabling the chatbridge")
 
-                            # Iterate through and remove the unavailable webhook
-                            for channel_id, _webhook_url in list(self.config[bridge_id]["channels"].items()):
-                                if webhook_url == _webhook_url:
-                                    self.config[bridge_id]["channels"] = {
-                                        c: w for c, w in self.config[bridge_id]["channels"].items()
-                                        if c != channel_id
-                                    }
-                                    await self.config.flush()
+                        # Iterate through and remove the unavailable webhook
+                        for channel_id, _webhook_url in list(self.config[bridge_id]["channels"].items()):
+                            if webhook_url == _webhook_url:
+                                self.config[bridge_id]["channels"] = {
+                                    c: w for c, w in self.config[bridge_id]["channels"].items()
+                                    if c != channel_id
+                                }
+                                await self.config.flush()
 
-                                    # Notify the other webhooks that another was deleted
-                                    channel = self.bot.get_channel(int(channel_id))
-                                    if channel:
-                                        warning = f"The webhook for {channel.mention} in {channel.guild} was deleted"
-                                    else:
-                                        warning = f"The webhook for {channel_id} was deleted"
+                                # Notify the other webhooks that another was deleted
+                                channel = self.bot.get_channel(int(channel_id))
+                                if channel:
+                                    warning = f"The webhook for {channel.mention} in {channel.guild} was deleted"
+                                else:
+                                    warning = f"The webhook for {channel_id} was deleted"
 
-                                    await self.queue[bridge_id].put([warning, self.get_webhook_urls(bridge_id)])
+                                await self.queue[bridge_id].put([warning, self.get_webhook_urls(bridge_id)])
 
-                            # Disable the bridge if there's only the host channel
-                            if not self.config[bridge_id]["channels"]:
-                                await self.destroy(bridge_id, "Disabled the chatbridge due to the only other channel removing their webhook")
+                        # Disable the bridge if there's only the host channel
+                        if not self.config[bridge_id]["channels"]:
+                            await self.destroy(bridge_id, "Disabled the chatbridge due to the only other channel removing their webhook")
 
-                        except HTTPException as error:
-                            await msg.channel.send(f"Error: couldn't send your message to the other channels. {error}")
+                    except HTTPException as error:
+                        await msg.channel.send(f"Error: couldn't send your message to the other channels. {error}")
 
-                    await asyncio.sleep(0.5)
+                await asyncio.sleep(0.5)
 
     async def get_bridge_id(self, channel):
         bridge_id = channel.id
@@ -299,7 +297,10 @@ class ChatBridges(commands.Cog):
         try:
             self.queue[bridge_id].put_nowait([msg, webhooks])
         except asyncio.QueueFull:
-            await msg.add_reaction("⏳")
+            if self.bot.tasks["bridges"][bridge_id].done():
+                await msg.channel.send("⚠")
+            else:
+                await msg.add_reaction("⏳")
         except KeyError:
             pass
 
