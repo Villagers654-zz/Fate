@@ -393,7 +393,7 @@ class AntiSpam(commands.Cog):
         for guild_id, timers in self.bot.tasks["antispam_mutes"].items():
             for user_id, task in timers.items():
                 total += 1
-                if task.done():
+                if task.done() and task.result():
                     errored.append(task)
         e = discord.Embed(color=self.bot.config["theme_color"])
         e.set_author(name="AntiSpam Stats", icon_url=self.bot.user.avatar_url)
@@ -431,6 +431,138 @@ class AntiSpam(commands.Cog):
         with suppress(AttributeError):
             await self.delete_timer(channel.guild.id, user_id)
 
+    async def destroy_task(self, guild_id, user_id):
+        """Clean up the cache before ending the task"""
+        guild_id = int(guild_id)
+        user_id = int(user_id)
+        if guild_id in self.bot.tasks["antispam_mutes"]:
+            if user_id in self.bot.tasks["antispam_mutes"][guild_id]:
+                del self.bot.tasks["antispam_mutes"][guild_id][user_id]
+            if not self.bot.tasks["antispam_mutes"][guild_id]:
+                del self.bot.tasks["antispam_mutes"][guild_id]
+        with suppress(AttributeError):
+            await self.delete_timer(guild_id, user_id)
+
+    async def cleanup_from_message(self, msg):
+        """Remove duplicate messages if duplicate msg spam was detected"""
+        async for m in msg.channel.history(limit=10):
+            if m.content == msg.content:
+                with suppress(NotFound, Forbidden):
+                    await m.delete()
+
+    async def process_mute(self, guild_id, user_id, msg, reason="", original=False, timer=0):
+        """Handle the entire muting process separately"""
+        guild = self.bot.get_guild(int(guild_id))
+        if not guild:
+            return await self.destroy_task(guild_id, user_id)
+        user = guild.get_member(int(user_id))
+        if not user:
+            return await self.destroy_task(guild_id, user_id)
+
+        with self.bot.utils.operation_lock(key=int(user_id)):
+            if original:
+                bot_user = msg.guild.me
+                perms = msg.channel.permissions_for(bot_user)
+                if not perms.manage_messages:
+                    return await self.destroy_task(guild_id, user_id)
+
+                # Don't mute users with Administrator
+                if user.top_role.position >= bot_user.top_role.position or user.guild_permissions.administrator:
+                    return await self.destroy_task(guild_id, user_id)
+
+                # Don't continue if lacking permission(s) to operate
+                if not msg.channel.permissions_for(bot_user).send_messages or not perms.manage_roles:
+                    return await self.destroy_task(guild_id, user_id)
+
+                async with msg.channel.typing():
+                    mute_role = await self.bot.attrs.get_mute_role(msg.guild, upsert=True)
+                    if not mute_role or mute_role.position >= msg.guild.me.top_role.position:
+                        return await self.destroy_task(guild_id, user_id)
+
+                    # Increase the mute timer if multiple offenses in the last hour
+                    multiplier = 1
+                    if guild_id not in self.mutes:
+                        self.mutes[guild_id] = {}
+                    if user_id not in self.mutes[guild_id]:
+                        self.mutes[guild_id][user_id] = []
+                    self.mutes[guild_id][user_id].append(time())
+                    for mute_time in self.mutes[guild_id][user_id]:
+                        if mute_time > time() - 3600:
+                            multiplier += 1
+                        else:
+                            self.mutes[guild_id][user_id].remove(mute_time)
+
+                    # Mute and purge any new messages
+                    if mute_role in user.roles:
+                        return await self.destroy_task(guild_id, user_id)
+
+                    timer = 150
+                    timer *= multiplier
+                    end_time = time() + timer
+                    timer_str = self.bot.utils.get_time(timer)
+
+                    try:
+                        await user.add_roles(mute_role)
+                    except (NotFound, HTTPException) as e:
+                        with suppress(Exception):
+                            await msg.channel.send(f"Failed to mute {msg.author}. {e}")
+                        return await self.destroy_task(guild_id, user_id)
+                    except Forbidden:
+                        return
+
+                    messages = []
+                    if user_id in self.msgs:
+                        messages = [m for m in self.msgs[user_id] if m]
+                    with suppress(Forbidden, NotFound, HTTPException):
+                        await msg.channel.delete_messages(messages)
+                    self.msgs[user_id] = []
+
+                    with suppress(NotFound, Forbidden, HTTPException):
+                        await user.send(f"You've been muted for spam in **{msg.guild.name}** for {timer_str}")
+                    mentions = discord.AllowedMentions(users=True)
+                    with suppress(NotFound, Forbidden, HTTPException):
+                        await msg.channel.send(
+                            f"Temporarily muted {user.mention} for spam. Reason: {reason}",
+                            allowed_mentions=mentions
+                        )
+
+                    if "duplicate" in reason:
+                        if msg.channel.permissions_for(msg.guild.me).manage_messages:
+                            if msg.channel.permissions_for(msg.guild.me).read_message_history:
+                                self.bot.loop.create_task(self.cleanup_from_message(msg))
+
+                    with suppress(Exception):
+                        async with self.bot.cursor() as cur:
+                            await cur.execute(
+                                f"insert into anti_spam_mutes "
+                                f"values ("
+                                f"{msg.guild.id}, "
+                                f"{msg.channel.id}, "
+                                f"{msg.author.id}, "
+                                f"{mute_role.id}, "
+                                f"'{end_time}')"
+                                f"on duplicate key update "
+                                f"end_time = '{end_time}';"
+                            )
+
+            await asyncio.sleep(timer)
+            if user and mute_role and mute_role in user.roles:
+                try:
+                    await user.remove_roles(mute_role)
+                except Forbidden:
+                    await msg.channel.send(f"Missing permissions to unmute {user.mention}")
+                except NotFound:
+                    await msg.channel.send(f"Couldn't find and unmute **{user}**")
+                except HTTPException:
+                    await msg.channel.send(f"Unknown error while unmuting {user.mention}")
+                else:
+                    await msg.channel.send(
+                        f"Unmuted **{user.mention}**",
+                        allowed_mentions=discord.AllowedMentions(users=True)
+                    )
+
+            return await self.destroy_task(guild_id, user_id)
+
     @commands.Cog.listener("on_typing")
     async def log_typing_timestamps(self, channel, user, when):
         if hasattr(channel, "guild") and channel.guild and channel.guild.id in self.config:
@@ -449,16 +581,6 @@ class AntiSpam(commands.Cog):
         user_id = str(msg.author.id)
         triggered = False
         if guild_id in self.config and self.config[guild_id]:
-            async def cleanup():
-                async for m in msg.channel.history(limit=10):
-                    if m.content == msg.content:
-                        try:
-                            await m.delete()
-                        except Forbidden:
-                            break
-                        except NotFound:
-                            pass
-
             if "ignored" in self.config[guild_id] and msg.channel.id in self.config[guild_id]["ignored"]:
                 return
 
@@ -698,10 +820,11 @@ class AntiSpam(commands.Cog):
                 # Mute the relevant users
                 for iteration, user in enumerate(list(set(users))):
                     with self.bot.utils.operation_lock(key=user.id):
+                        guild_id = str(msg.guild.id)
                         user_id = str(user.id)
-                        bot = msg.guild.me
-                        perms = bot.guild_permissions
-                        if not msg.channel.permissions_for(bot).manage_messages:
+                        bot_user = msg.guild.me
+                        perms = msg.channel.permissions_for(bot_user)
+                        if not perms.manage_messages:
                             return
 
                         # Purge away spam
@@ -716,116 +839,40 @@ class AntiSpam(commands.Cog):
                             await msg.channel.delete_messages(messages)
 
                         # Don't mute users with Administrator
-                        if user.top_role.position >= bot.top_role.position or user.guild_permissions.administrator:
-                            continue
+                        if user.top_role.position >= bot_user.top_role.position or user.guild_permissions.administrator:
+                            return
                         # Don't continue if lacking permission(s) to operate
-                        if not msg.channel.permissions_for(bot).send_messages or not perms.manage_roles:
+                        if not msg.channel.permissions_for(bot_user).send_messages or not perms.manage_roles:
                             return
 
                         async with msg.channel.typing():
-                            # Get, or setup the mute role
-                            mute_role = None
-                            mod = self.bot.cogs["Moderation"]
-                            if guild_id in mod.config and mod.config[guild_id]["mute_role"]:
-                                mute_role = msg.guild.get_role(mod.config[guild_id]["mute_role"])
-                            if not mute_role:
-                                mute_role = discord.utils.get(msg.guild.roles, name="Muted")
-                            if not mute_role:
-                                mute_role = discord.utils.get(msg.guild.roles, name="muted")
-                            if not mute_role:
-                                if not perms.manage_channels:
-                                    return
-
-                                mute_role = await msg.guild.create_role(name="Muted", color=discord.Color(colors.black()), hoist=True)
-                                if guild_id in mod.config:
-                                    mod.config[guild_id]["mute_role"] = mute_role.id
-                                for channel in msg.guild.text_channels:
-                                    if channel.permissions_for(bot).manage_channels:
-                                        await channel.set_permissions(mute_role, send_messages=False)
-                                for channel in msg.guild.voice_channels:
-                                    if channel.permissions_for(bot).manage_channels:
-                                        await channel.set_permissions(mute_role, speak=False)
-                            if mute_role.position >= msg.guild.me.top_role.position:
+                            mute_role = await self.bot.attrs.get_mute_role(msg.guild, upsert=True)
+                            if not mute_role or mute_role.position >= msg.guild.me.top_role.position:
                                 return
 
-                            # Increase the mute timer if multiple offenses in the last hour
-                            multiplier = 1
-                            if guild_id not in self.mutes:
-                                self.mutes[guild_id] = {}
-                            if user_id not in self.mutes[guild_id]:
-                                self.mutes[guild_id][user_id] = []
-                            self.mutes[guild_id][user_id].append(time())
-                            for mute_time in self.mutes[guild_id][user_id]:
-                                if mute_time > time() - 3600:
-                                    multiplier += 1
-                                else:
-                                    self.mutes[guild_id][user_id].remove(mute_time)
+                    if "antispam_mutes" not in self.bot.tasks:
+                        self.bot.tasks["antispam_mutes"] = {}
+                    if guild_id not in self.bot.tasks["antispam_mutes"]:
+                        self.bot.tasks["antispam_mutes"][guild_id] = {}
+                    if user_id in self.bot.tasks["antispam_mutes"][guild_id]:
+                        task = self.bot.tasks["antispam_mutes"][guild_id][user_id]
+                        if task.done():
+                            if task.result():
+                                self.bot.log.critical(f"An antispam task errored.\n{task.result()}")
+                            else:
+                                self.bot.log.critical(f"An antispam task errored with no result")
+                        else:
+                            return
 
-                            # Mute and purge any new messages
-                            if mute_role in user.roles:
-                                continue
-                            timer = 150
-                            if "macro" in reason.lower():
-                                timer = 900
-                            timer *= multiplier
-                            end_time = time() + timer
-                            timer_str = self.bot.utils.get_time(timer)
-                            try:
-                                await user.add_roles(mute_role)
-                            except (NotFound, HTTPException):
-                                user = msg.guild.get_member(int(user.id))
-                                if not user:
-                                    return await msg.channel.send(f"Seems {msg.author.name} no longer exists here")
-                                await user.add_roles(mute_role)
-                            except Forbidden:
-                                return
-                            messages = []
-                            if user_id in self.msgs:
-                                messages = [m for m in self.msgs[user_id] if m]
-                            with suppress(Forbidden, NotFound, HTTPException):
-                                await msg.channel.delete_messages(messages)
-                            self.msgs[user_id] = []
-
-                            with suppress(NotFound, Forbidden, HTTPException):
-                                await user.send(f"You've been muted for spam in **{msg.guild.name}** for {timer_str}")
-                            mentions = discord.AllowedMentions(users=True)
-                            with suppress(NotFound, Forbidden, HTTPException):
-                                await msg.channel.send(
-                                    f"Temporarily muted {user.mention} for spam. Reason: {reason}",
-                                    allowed_mentions=mentions
-                                )
-                            if "duplicate" in reason:
-                                if msg.channel.permissions_for(msg.guild.me).manage_messages:
-                                    if msg.channel.permissions_for(msg.guild.me).read_message_history:
-                                        self.bot.loop.create_task(cleanup())
-
-                        if "antispam_mutes" not in self.bot.tasks:
-                            self.bot.tasks["antispam_mutes"] = {}
-                        if guild_id not in self.bot.tasks["antispam_mutes"]:
-                            self.bot.tasks["antispam_mutes"][guild_id] = {}
-
-                        self.bot.tasks["antispam_mutes"][guild_id][user_id] = self.bot.loop.create_task(
-                            self.handle_mute(
-                                channel=msg.channel,
-                                mute_role=mute_role,
-                                guild_id=guild_id,
-                                user_id=msg.author.id,
-                                sleep_time=timer
-                            )
+                    self.bot.tasks["antispam_mutes"][guild_id][user_id] = self.bot.loop.create_task(
+                        self.process_mute(
+                            user_id=user.id,
+                            guild_id=guild_id,
+                            msg=msg,
+                            reason=reason,
+                            original=True
                         )
-
-                        async with self.bot.cursor() as cur:
-                            await cur.execute(
-                                f"insert into anti_spam_mutes "
-                                f"values ("
-                                f"{msg.guild.id}, "
-                                f"{msg.channel.id}, "
-                                f"{msg.author.id}, "
-                                f"{mute_role.id}, "
-                                f"'{end_time}')"
-                                f"on duplicate key update "
-                                f"end_time = '{end_time}';"
-                            )
+                    )
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -834,23 +881,26 @@ class AntiSpam(commands.Cog):
         mutes = await self.get_mutes()
         for guild_id, mutes in list(mutes.items()):
             for user_id, data in mutes.items():
-                if guild_id not in mutes:
+                if guild_id not in self.bot.tasks["antispam_mutes"]:
                     self.bot.tasks["antispam_mutes"][guild_id] = {}
                 if user_id not in self.bot.tasks["antispam_mutes"][guild_id]:
                     guild = self.bot.get_guild(int(guild_id))
+                    if not guild:
+                        await self.destroy_task(guild_id, user_id)
+                        continue
                     try:
                         self.bot.tasks["antispam_mutes"][guild_id][user_id] = self.bot.loop.create_task(
-                            self.handle_mute(
-                                channel=self.bot.get_channel(data["channel_id"]),
-                                mute_role=guild.get_role(int(data["mute_role_id"])),
+                            self.process_mute(
                                 guild_id=guild_id,
                                 user_id=user_id,
-                                sleep_time=round(float(data["end_time"]) - time())
+                                msg=None,
+                                reason="",
+                                timer=round(float(data["end_time"]) - time())
                             )
                         )
                         self.bot.log.info(f"Resumed a anti_spam mute in {guild}")
                     except AttributeError:
-                        await self.delete_timer(guild_id, user_id)
+                        await self.destroy_task(guild_id, user_id)
                         self.bot.log.info(f"Deleted a anti_spam task in {guild} due to changes")
 
     @commands.Cog.listener()
@@ -862,21 +912,11 @@ class AntiSpam(commands.Cog):
         if guild_id in self.bot.tasks["antispam_mutes"]:
             if user_id in self.bot.tasks["antispam_mutes"][guild_id]:
                 await asyncio.sleep(5)
-                mute_role = None
-                mod = self.bot.get_cog("Moderation")
-                if not mod:
+                mute_role = await self.bot.attrs.get_mute_role(before.guild, upsert=False)
+                if not mute_role:
                     return
-                if guild_id in mod.config and mod.config[guild_id]["mute_role"]:
-                    mute_role = after.guild.get_role(mod.config[guild_id]["mute_role"])
-                if not mute_role:
-                    mute_role = discord.utils.get(after.guild.roles, name="Muted")
-                if not mute_role:
-                    mute_role = discord.utils.get(after.guild.roles, name="muted")
                 if mute_role not in after.roles:
-                    with suppress(KeyError):
-                        self.bot.tasks["antispam_mutes"][guild_id][user_id].cancel()
-                        del self.bot.tasks["antispam_mutes"][guild_id][user_id]
-                        await self.delete_timer(before.guild.id, before.id)
+                    await self.destroy_task(guild_id, user_id)
             if guild_id in self.bot.tasks["antispam_mutes"]:
                 if not self.bot.tasks["antispam_mutes"][guild_id]:
                     del self.bot.tasks["antispam_mutes"][guild_id]
