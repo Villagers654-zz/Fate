@@ -82,7 +82,10 @@ class Attributes:
 
         if upsert:
             color = discord.Color(self.bot.utils.colors.black())
-            mute_role = await guild.create_role(name="Muted", color=color)
+            try:
+                mute_role = await guild.create_role(name="Muted", color=color)
+            except discord.errors.HTTPException:
+                return None
 
             # Set the overwrites for the mute role
             # Set the category channel permissions
