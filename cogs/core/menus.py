@@ -6,16 +6,13 @@ import discord
 from discord.ext import commands
 from discord.errors import NotFound, Forbidden, HTTPException
 
-from help_embeds import HelpMenus
-
 
 command_attrs = (commands.core.Command, commands.core.Group)
 
 
-class Menus(commands.Cog, HelpMenus):
+class Menus(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        super().__init__(bot)
 
     @commands.command(name="help")
     @commands.cooldown(2, 10, commands.BucketType.user)
@@ -312,10 +309,11 @@ class ConfigureModules:
 
     async def add_reactions(self):
         """Add the reactions in the background"""
-        for i, emote in enumerate(self.emotes):
-            await self.msg.add_reaction(emote)
-            if i != len(self.emotes) - 1:
-                await asyncio.sleep(0.21)
+        with suppress(NotFound, Forbidden):
+            for i, emote in enumerate(self.emotes):
+                await self.msg.add_reaction(emote)
+                if i != len(self.emotes) - 1:
+                    await asyncio.sleep(0.21)
 
     async def init_config(self, key):
         """Change where we're working at"""
