@@ -189,7 +189,8 @@ class ErrorHandler(commands.Cog):
 
     @commands.Cog.listener("on_raw_reaction_add")
     async def dismiss_error_on_fix(self, data):
-        if not self.bot.get_user(data.user_id).bot:
+        user = self.bot.get_user(data.user_id)
+        if user and not user.bot:
             if data.channel_id == self.bot.config["error_channel"]:
                 if str(data.emoji) == "✔":
                     channel = self.bot.get_channel(data.channel_id)
