@@ -63,9 +63,8 @@ class ChatBridges(commands.Cog):
 
     async def queue_task(self, bridge_id):
         await self.bot.wait_until_ready()
-        self.queue[bridge_id] = asyncio.Queue(maxsize=2)
+        self.queue[bridge_id] = asyncio.Queue(maxsize=3)
         webhook_cache = {}
-        url = "https://icon-library.com/images/reply-icon/reply-icon-26.jpg"
         async with aiohttp.ClientSession() as session:
             while True:
                 msg, webhooks = await self.queue[bridge_id].get()
@@ -297,11 +296,15 @@ class ChatBridges(commands.Cog):
         if msg.channel.id not in self.config:
             webhooks.append([bridge_id, self.config[bridge_id]["webhook_url"]])
 
-        with suppress(asyncio.QueueFull, KeyError):
+        try:
             self.queue[bridge_id].put_nowait([msg, webhooks])
+        except asyncio.QueueFull:
+            await msg.add_reaction("⏳")
+        except KeyError:
+            pass
 
     @commands.group(name="link", aliases=["chatbridge", "bridge"])
-    @commands.cooldown(2, 10, commands.BucketType.user)
+    @commands.cooldown(4, 10, commands.BucketType.user)
     @commands.has_permissions(administrator=True)
     @commands.bot_has_permissions(manage_webhooks=True)
     async def link(self, ctx):
@@ -497,7 +500,7 @@ class ChatBridges(commands.Cog):
         await self.config.flush()
         await ctx.send(f"Unblocked {user}")
 
-    @commands.command(name="bridges")
+    @commands.command(name="bridges", aliases=["chatbridges"])
     async def chatbridges(self, ctx):
         e = discord.Embed(color=self.bot.config["theme_color"])
         e.set_author(name="ChatBridges", icon_url=self.bot.user.avatar_url)
