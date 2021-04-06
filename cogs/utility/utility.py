@@ -738,7 +738,8 @@ class Utility(commands.Cog):
 
         if inv.channel:
             info["channel_id"] = inv.channel.id
-            info["channel_name"] = self.bot.encode(inv.channel.name)
+            if hasattr(inv.channel, "name"):
+                info["channel_name"] = self.bot.encode(inv.channel.name)
 
         if inv.uses:
             info["uses"] = inv.uses
