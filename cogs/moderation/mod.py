@@ -904,6 +904,7 @@ class Moderation(commands.Cog):
         reason="Unspecified",
     ):
         """ Ban cmd that supports more than just members """
+        reason = reason[:128]
         users_to_ban = len(ids if ids else []) + len(users if users else [])
         e = discord.Embed(color=colors.fate())
         if users_to_ban == 0:
