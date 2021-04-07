@@ -11,9 +11,10 @@ class Statistics(commands.Cog):
             "SelfRoles": "menus",
             "AutoRole": "roles",
             "ChatFilter": "config",
+            "AntiSpam": "config",
             "Giveaways": "data",
             "RestoreRoles": "guilds",
-            "Welcome": "toggle",
+            "Welcome": "config",
             "Leave": "toggle",
         }
 
