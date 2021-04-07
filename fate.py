@@ -501,7 +501,7 @@ class Fate(commands.AutoShardedBot):
                 for cog in cogs:
                     extensions.append(f"{category}.{cog}")
             self.load_extensions(*extensions)
-            self.log.info("Finished loading initial cogs\nLogging in..", color="yellow")
+            self.log.info("Finished loading initial cogs\nAuthenticating with token..", color="yellow")
 
         # Load in caches
         self.restricted = self.utils.cache("restricted")
@@ -553,20 +553,21 @@ use_sentry(
 
 
 @bot.event
-async def on_shard_ready(shard_id):
+async def on_shard_connect(shard_id):
+    if shard_id == 0:
+        bot.log.info(
+            "------------"
+            "\nLogging in as"
+            f"\n{bot.user}"
+            f"\n{bot.user.id}"
+            "\n------------",
+            color="green",
+        )
     bot.log.info(f"Shard {shard_id} connected")
 
 
 @bot.event
 async def on_connect():
-    bot.log.info(
-        "------------"
-        "\nLogged in as"
-        f"\n{bot.user}"
-        f"\n{bot.user.id}"
-        "\n------------",
-        color="green",
-    )
     cprint("Initializing cache", "yellow", end="\r")
     index = 0
     chars = r"-/-\-"
