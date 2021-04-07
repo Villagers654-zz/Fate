@@ -389,16 +389,18 @@ class AntiSpam(commands.Cog):
     @commands.is_owner()
     async def stats(self, ctx):
         total = 0
-        errored = []
+        done = []
         for guild_id, timers in self.bot.tasks["antispam_mutes"].items():
             for user_id, task in timers.items():
                 total += 1
-                if task.done() and task.result():
-                    errored.append(task)
+                if task.done():
+                    done.append(task)
         e = discord.Embed(color=self.bot.config["theme_color"])
         e.set_author(name="AntiSpam Stats", icon_url=self.bot.user.avatar_url)
         emotes = self.bot.utils.emotes
+        errored = [task for task in done if task.result()]
         e.description = f"{emotes.online} {total} tasks running\n" \
+                        f"{emotes.idle} {len(done) - len(errored)} tasks done\n" \
                         f"{emotes.dnd} {len(errored)} tasks errored"
         if errored:
             e.add_field(
@@ -450,7 +452,7 @@ class AntiSpam(commands.Cog):
                 with suppress(NotFound, Forbidden):
                     await m.delete()
 
-    async def process_mute(self, guild_id, user_id, msg, reason="", original=False, timer=0):
+    async def process_mute(self, guild_id, user_id, msg, reason="", add_role=False, timer=0):
         """Handle the entire muting process separately"""
         guild = self.bot.get_guild(int(guild_id))
         if not guild:
@@ -460,10 +462,10 @@ class AntiSpam(commands.Cog):
             return await self.destroy_task(guild_id, user_id)
 
         with self.bot.utils.operation_lock(key=int(user_id)):
-            if original:
+            if add_role:
                 bot_user = msg.guild.me
                 perms = msg.channel.permissions_for(bot_user)
-                if not perms.manage_messages:
+                if not perms.manage_messages or not perms.manage_roles:
                     return await self.destroy_task(guild_id, user_id)
 
                 # Don't mute users with Administrator
@@ -508,7 +510,9 @@ class AntiSpam(commands.Cog):
                             await msg.channel.send(f"Failed to mute {msg.author}. {e}")
                         return await self.destroy_task(guild_id, user_id)
                     except Forbidden:
-                        return
+                        with suppress(Exception):
+                            await msg.channel.send(f"Failed to mute {msg.author}. Missing permissions")
+                        return await self.destroy_task(guild_id, user_id)
 
                     messages = []
                     if user_id in self.msgs:
@@ -544,6 +548,9 @@ class AntiSpam(commands.Cog):
                                 f"on duplicate key update "
                                 f"end_time = '{end_time}';"
                             )
+
+            if timer > 3600:
+                self.bot.log.critical(f"An antispam task is sleeping for {timer} seconds")
 
             await asyncio.sleep(timer)
             if user and mute_role and mute_role in user.roles:
@@ -582,6 +589,10 @@ class AntiSpam(commands.Cog):
         triggered = False
         if guild_id in self.config and self.config[guild_id]:
             if "ignored" in self.config[guild_id] and msg.channel.id in self.config[guild_id]["ignored"]:
+                return
+
+            perms = msg.channel.permissions_for(msg.guild.me)
+            if not perms.manage_messages or not perms.manage_roles:
                 return
 
             users = [msg.author]
@@ -870,7 +881,7 @@ class AntiSpam(commands.Cog):
                             guild_id=guild_id,
                             msg=msg,
                             reason=reason,
-                            original=True
+                            add_role=True
                         )
                     )
 
