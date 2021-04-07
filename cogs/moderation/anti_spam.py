@@ -3,6 +3,7 @@ import json
 from time import time
 from datetime import datetime, timedelta
 from contextlib import suppress
+import traceback
 
 import discord
 from discord.errors import Forbidden, NotFound, HTTPException
@@ -388,26 +389,37 @@ class AntiSpam(commands.Cog):
     @anti_spam.command(name="stats")
     @commands.is_owner()
     async def stats(self, ctx):
-        total = 0
+        running = 0
+        muted = 0
         done = []
         for guild_id, timers in self.bot.tasks["antispam_mutes"].items():
             for user_id, task in timers.items():
-                total += 1
                 if task.done():
                     done.append(task)
+                    guild = self.bot.get_guild(int(guild_id))
+                    if guild:
+                        mute_role = await self.bot.attrs.get_mute_role(guild)
+                        user = guild.get_member(int(user_id))
+                        if user and mute_role and mute_role in user.roles:
+                            muted += 1
+                else:
+                    running += 1
         e = discord.Embed(color=self.bot.config["theme_color"])
         e.set_author(name="AntiSpam Stats", icon_url=self.bot.user.avatar_url)
         emotes = self.bot.utils.emotes
-        errored = [task for task in done if task.exception()]
-        e.description = f"{emotes.online} {total} tasks running\n" \
-                        f"{emotes.idle} {len(done) - len(errored)} tasks done\n" \
-                        f"{emotes.dnd} {len(errored)} tasks errored"
-        if errored:
+        errored = []
+        try:
+            errored = [task for task in done if task.exception() or task.result()]
+        except:
             e.add_field(
                 name="◈ Error",
-                value=errored[0].result(),
+                value=traceback.format_exc(),
                 inline=False
             )
+        e.description = f"{emotes.online} {running} tasks running\n" \
+                        f"{emotes.idle} {len(done) - len(errored)} tasks done\n" \
+                        f"{emotes.dnd} {len(errored)} tasks errored\n" \
+                        f"{emotes.offline} {muted} still muted"
         await ctx.send(embed=e)
 
     async def handle_mute(self, channel, mute_role, guild_id, user_id: int, sleep_time: int):
@@ -589,7 +601,7 @@ class AntiSpam(commands.Cog):
         if not isinstance(msg.guild, discord.Guild) or msg.author.bot:
             return
         guild_id = msg.guild.id
-        user_id = str(msg.author.id)
+        user_id = msg.author.id
         triggered = False
         if guild_id in self.config and self.config[guild_id]:
             if "ignored" in self.config[guild_id] and msg.channel.id in self.config[guild_id]["ignored"]:
