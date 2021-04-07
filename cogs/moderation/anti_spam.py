@@ -398,7 +398,7 @@ class AntiSpam(commands.Cog):
         e = discord.Embed(color=self.bot.config["theme_color"])
         e.set_author(name="AntiSpam Stats", icon_url=self.bot.user.avatar_url)
         emotes = self.bot.utils.emotes
-        errored = [task for task in done if task.result()]
+        errored = [task for task in done if task.exception()]
         e.description = f"{emotes.online} {total} tasks running\n" \
                         f"{emotes.idle} {len(done) - len(errored)} tasks done\n" \
                         f"{emotes.dnd} {len(errored)} tasks errored"
@@ -461,6 +461,10 @@ class AntiSpam(commands.Cog):
         if not user:
             return await self.destroy_task(guild_id, user_id)
 
+        mute_role = await self.bot.attrs.get_mute_role(guild, upsert=True)
+        if not mute_role or mute_role.position >= guild.me.top_role.position:
+            return await self.destroy_task(guild_id, user_id)
+
         with self.bot.utils.operation_lock(key=int(user_id)):
             if add_role:
                 bot_user = msg.guild.me
@@ -477,10 +481,6 @@ class AntiSpam(commands.Cog):
                     return await self.destroy_task(guild_id, user_id)
 
                 async with msg.channel.typing():
-                    mute_role = await self.bot.attrs.get_mute_role(msg.guild, upsert=True)
-                    if not mute_role or mute_role.position >= msg.guild.me.top_role.position:
-                        return await self.destroy_task(guild_id, user_id)
-
                     # Increase the mute timer if multiple offenses in the last hour
                     multiplier = 1
                     if guild_id not in self.mutes:
@@ -554,19 +554,23 @@ class AntiSpam(commands.Cog):
 
             await asyncio.sleep(timer)
             if user and mute_role and mute_role in user.roles:
-                try:
-                    await user.remove_roles(mute_role)
-                except Forbidden:
-                    await msg.channel.send(f"Missing permissions to unmute {user.mention}")
-                except NotFound:
-                    await msg.channel.send(f"Couldn't find and unmute **{user}**")
-                except HTTPException:
-                    await msg.channel.send(f"Unknown error while unmuting {user.mention}")
+                if not msg:
+                    with suppress(NotFound, Forbidden, HTTPException):
+                        await user.remove_roles(mute_role)
                 else:
-                    await msg.channel.send(
-                        f"Unmuted **{user.mention}**",
-                        allowed_mentions=discord.AllowedMentions(users=True)
-                    )
+                    try:
+                        await user.remove_roles(mute_role)
+                    except Forbidden:
+                        await msg.channel.send(f"Missing permissions to unmute {user.mention}")
+                    except NotFound:
+                        await msg.channel.send(f"Couldn't find and unmute **{user}**")
+                    except HTTPException:
+                        await msg.channel.send(f"Unknown error while unmuting {user.mention}")
+                    else:
+                        await msg.channel.send(
+                            f"Unmuted **{user.mention}**",
+                            allowed_mentions=discord.AllowedMentions(users=True)
+                        )
 
             return await self.destroy_task(guild_id, user_id)
 
