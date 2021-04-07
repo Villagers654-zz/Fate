@@ -268,7 +268,7 @@ class Utility(commands.Cog):
                         )
                         if cur.rowcount:
                             r = await cur.fetchone()
-                            if hasattr(r[0], "replace"):
+                            if r and hasattr(r[0], "replace"):
                                 seconds = round(time() - float(r[0].replace(',', '')))
                                 activity_info["Last Online"] = f"{self.bot.utils.get_time(seconds)} ago"
                             else:
@@ -283,7 +283,7 @@ class Utility(commands.Cog):
                     )
                     if cur.rowcount:
                         r = await cur.fetchone()
-                        if hasattr(r[0], "replace"):
+                        if r and hasattr(r[0], "replace"):
                             seconds = round(time() - float(r[0].replace(',', '')))
                             activity_info["Last Msg"] = f"{self.bot.utils.get_time(seconds)} ago"
                         else:
