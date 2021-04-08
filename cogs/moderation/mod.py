@@ -188,6 +188,8 @@ class Moderation(commands.Cog):
         #         json.dump({}, f, indent=2)
         # with open(self.fp, 'r') as f:
         #     cache = json.load(f)  # type: dict
+        if not ctx.guild:
+            raise commands.errors.NoPrivateMessage("This command can't be ran in a DM")
         cmd = ctx.command.name
         if cmd not in cache:
             cache[cmd] = []
@@ -199,14 +201,15 @@ class Moderation(commands.Cog):
             self.config[str(ctx.guild.id)] = self.template
             await self.save_data()
         ctx.cls = self
+        ctx.guild_id = int(ctx.guild.id)
 
     async def cog_after_invoke(self, ctx):
         """ Index commands that are running """
         # with open(self.fp, 'r') as f:
         #     cache = json.load(f)  # type: dict
         cmd = ctx.command.name
-        if cmd in cache and ctx.guild.id in cache[cmd]:
-            cache[cmd].remove(ctx.guild.id)
+        if cmd in cache and ctx.guild_id in cache[cmd]:
+            cache[cmd].remove(ctx.guild_id)
         # with open(self.fp, 'w') as f:
         #     json.dump(cache, f, indent=2)
 
