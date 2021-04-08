@@ -37,6 +37,9 @@ def ensure_player_is_playing():
 
 def require_voting():
     async def predicate(ctx):
+        if not ctx.author.voice:
+            return False
+
         guild_id = ctx.guild.id
         has_admin = ctx.author.guild_permissions.administrator
         roles = [r.name for r in ctx.guild.roles]
@@ -143,6 +146,8 @@ class Music(commands.Cog):
         guild_check = ctx.guild is not None
         if guild_check:
             await self.ensure_voice(ctx)
+            if not ctx.guild:
+                return False
             ctx.player = self.bot.lavalink.player_manager.get(ctx.guild.id)
 
         return guild_check
