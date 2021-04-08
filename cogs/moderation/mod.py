@@ -201,15 +201,20 @@ class Moderation(commands.Cog):
             self.config[str(ctx.guild.id)] = self.template
             await self.save_data()
         ctx.cls = self
-        ctx.guild_id = int(ctx.guild.id)
 
     async def cog_after_invoke(self, ctx):
         """ Index commands that are running """
         # with open(self.fp, 'r') as f:
         #     cache = json.load(f)  # type: dict
+        for cmd, guild_ids in list(cache.items()):
+            for guild_id in guild_ids:
+                await asyncio.sleep(0)
+                if not self.bot.get_guild(guild_id):
+                    if cmd in cache and guild_id in cache[cmd]:
+                        cache[cmd].remove(guild_id)
         cmd = ctx.command.name
-        if cmd in cache and ctx.guild_id in cache[cmd]:
-            cache[cmd].remove(ctx.guild_id)
+        if cmd in cache and ctx.guild.id in cache[cmd]:
+            cache[cmd].remove(ctx.guild.id)
         # with open(self.fp, 'w') as f:
         #     json.dump(cache, f, indent=2)
 
