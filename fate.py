@@ -626,6 +626,9 @@ async def on_error(_event_method, *_args, **_kwargs):
     error = sys.exc_info()[1]
     if isinstance(error, bot.ignored_exit):
         return
+    elif isinstance(error, aiohttp.ClientOSError):
+        if "Connection reset" in str(error):
+            return
     raise error
 
 
