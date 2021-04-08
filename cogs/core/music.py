@@ -16,29 +16,29 @@ creds = auth.Lavalink()
 votes = {}
 
 
-def ensure_player_is_playing():
-    async def predicate(ctx):
-        await ctx.bot.cogs["Music"].ensure_voice(ctx)
-        player = ctx.bot.lavalink.player_manager.get(ctx.guild.id)
-        if not player or not player.is_connected:
-            await ctx.send("I'm not connected to any voice channel", delete_after=25)
-        elif not ctx.author.voice:
-            await ctx.end("You're not currently connected to a voice channel", delete_after=25)
-        elif not player.is_connected and ctx.author.voice.channel.id != int(player.channel_id):
-            await ctx.send("We don't currently share a voice channel", delete_after=25)
-        elif not player.is_playing:
-            await ctx.send("I'm not currently playing anything", delete_after=25)
-        else:
-            return True
-        raise ctx.bot.ignored_exit
+async def ensure_player_predicate(ctx):
+    await ctx.bot.cogs["Music"].ensure_voice(ctx)
+    player = ctx.bot.lavalink.player_manager.get(ctx.guild.id)
+    if not player or not player.is_connected:
+        await ctx.send("I'm not connected to any voice channel", delete_after=25)
+    elif not ctx.author.voice:
+        await ctx.end("You're not currently connected to a voice channel", delete_after=25)
+    elif not player.is_connected and ctx.author.voice.channel.id != int(player.channel_id):
+        await ctx.send("We don't currently share a voice channel", delete_after=25)
+    elif not player.is_playing:
+        await ctx.send("I'm not currently playing anything", delete_after=25)
+    else:
+        return True
+    raise ctx.bot.ignored_exit
 
-    return commands.check(predicate)
+
+def ensure_player_is_playing():
+    return commands.check(ensure_player_predicate)
 
 
 def require_voting():
     async def predicate(ctx):
-        if not ctx.author.voice:
-            return False
+        await ensure_player_predicate(ctx)
 
         guild_id = ctx.guild.id
         has_admin = ctx.author.guild_permissions.administrator
