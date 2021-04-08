@@ -847,8 +847,8 @@ class AntiSpam(commands.Cog):
                 # Mute the relevant users
                 for iteration, user in enumerate(list(set(users))):
                     with self.bot.utils.operation_lock(key=user.id):
-                        guild_id = str(msg.guild.id)
-                        user_id = str(user.id)
+                        guild_id = msg.guild.id
+                        user_id = user.id
                         bot_user = msg.guild.me
                         perms = msg.channel.permissions_for(bot_user)
                         if not perms.manage_messages:
