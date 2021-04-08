@@ -464,7 +464,7 @@ class AntiSpam(commands.Cog):
                 with suppress(NotFound, Forbidden):
                     await m.delete()
 
-    async def process_mute(self, guild_id, user_id, msg, reason="", add_role=False, timer=0):
+    async def process_mute(self, guild_id, user_id, msg, reason="", resume=False, timer=0):
         """Handle the entire muting process separately"""
         guild = self.bot.get_guild(int(guild_id))
         if not guild:
@@ -478,7 +478,7 @@ class AntiSpam(commands.Cog):
             return await self.destroy_task(guild_id, user_id)
 
         with self.bot.utils.operation_lock(key=int(user_id)):
-            if add_role:
+            if not resume:
                 bot_user = msg.guild.me
                 perms = msg.channel.permissions_for(bot_user)
                 if not perms.manage_messages or not perms.manage_roles:
@@ -896,8 +896,7 @@ class AntiSpam(commands.Cog):
                             user_id=user.id,
                             guild_id=guild_id,
                             msg=msg,
-                            reason=reason,
-                            add_role=True
+                            reason=reason
                         )
                     )
 
@@ -922,7 +921,8 @@ class AntiSpam(commands.Cog):
                                 user_id=user_id,
                                 msg=None,
                                 reason="",
-                                timer=round(float(data["end_time"]) - time())
+                                timer=round(float(data["end_time"]) - time()),
+                                resume=True
                             )
                         )
                         self.bot.log.info(f"Resumed a anti_spam mute in {guild}")
