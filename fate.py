@@ -372,7 +372,8 @@ class Fate(commands.AutoShardedBot):
         if await self.wait_for_pool():
             async with self.pool.acquire() as conn:
                 async with conn.cursor() as cur:
-                    await cur.execute(sql)
+                    with suppress(RuntimeError):
+                        await cur.execute(sql)
         return None
 
     async def fetch(self, sql: str) -> tuple:
