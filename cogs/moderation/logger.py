@@ -220,6 +220,10 @@ class Logger(commands.Cog):
 
         for _attempt in range(12 * 60):  # Timeout of 12 hours
             # Check if you have the required permission
+            guild = self.bot.get_guild(int(guild_id))
+            if not guild or not guild.me:
+                await asyncio.sleep(60)
+                continue
             if channel:
                 if eval(f"channel.permissions_for(guild.me).{permission}"):
                     if parent:
