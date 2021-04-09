@@ -828,7 +828,7 @@ class AntiSpam(commands.Cog):
                                         *[m.author for m in dupes if m], *users
                                     ]))
                                     for message in dupes:
-                                        with suppress(IndexError, ValueError):
+                                        with suppress(IndexError, ValueError, KeyError):
                                             self.dupes[channel_id].remove(message)
                                     with suppress(Forbidden, NotFound):
                                         await msg.channel.delete_messages([
