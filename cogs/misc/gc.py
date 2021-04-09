@@ -129,8 +129,11 @@ class GlobalChatRewrite(commands.Cog):
 
 
     @_gc.command(name="ban")
-    @commands.is_owner()
     async def _ban(self, ctx, *, target: Union[discord.User, discord.Guild]):
+        async with self.bot.cursor() as cur:
+            await cur.execute(f"select status from global_users where user_id = {ctx.author.id} and status = 'moderator';")
+            if not cur.rowcount:
+                return await ctx.send("Only global chat moderators can use this command")
         self.blocked.append(target.id)
         await ctx.send(f"Blocked {target}")
 
