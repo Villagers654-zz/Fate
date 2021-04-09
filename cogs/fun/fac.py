@@ -145,7 +145,7 @@ class FactionsRewrite(commands.Cog):
         owner = self.bot.get_user(owner_id)
         if owner:
             return owner.avatar_url
-        return None
+        return self.bot.user.avatar_url
 
     async def get_users_faction(self, ctx, user=None):
         """fetch a users faction by context or partial name"""
@@ -866,8 +866,8 @@ class FactionsRewrite(commands.Cog):
             rank += 1
 
         e = discord.Embed(color=purple())
-        e.set_author(name=faction, icon_url=owner.avatar_url if owner else None)
-        e.set_thumbnail(url=icon_url)
+        e.set_author(name=faction, icon_url=owner.avatar_url if owner else icon_url)
+        e.set_thumbnail(url=icon_url if icon_url else None)
         e.description = (
             f"**Owner:** **`@{owner}`**"
             f"\n**Members:** [`{len(dat['members'])}`] "
