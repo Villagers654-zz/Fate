@@ -196,7 +196,7 @@ class ChatBridges(commands.Cog):
 
         async def warn():
             if "warnings" not in self.config[bridge_id]:
-                with suppress(Forbidden):
+                with suppress(NotFound, Forbidden):
                     await msg.add_reaction("❌")
             return None
 
