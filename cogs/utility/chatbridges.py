@@ -306,10 +306,19 @@ class ChatBridges(commands.Cog):
 
     @commands.group(name="link", aliases=["chatbridge", "bridge"])
     @commands.cooldown(4, 10, commands.BucketType.user)
-    @commands.has_permissions(administrator=True)
     @commands.bot_has_permissions(manage_webhooks=True)
     async def link(self, ctx):
         """Start the process to link two channels"""
+        def check(m):
+            if m.channel.id != ctx.channel.id:
+                return False
+            if ".confirm link" not in m.content:
+                return False
+            member = ctx.guild.get_member(m.author.id)
+            if not member:
+                return False
+            return member.guild_permissions.administrator
+
         if not ctx.invoked_subcommand:
             linked_channels = len([
                 c for c in ctx.guild.text_channels if await self.get_bridge_id(c) in self.config
@@ -329,9 +338,15 @@ class ChatBridges(commands.Cog):
                     channel = channel
                     break
             else:
+                if not ctx.author.guild_permissions.administrator:
+                    await ctx.send("Someone with administrator send `.confirm link`")
+                    await self.bot.utils.get_message(check=check)
                 self.waiters[ctx.channel] = [ctx.author.id, time()]
                 return await ctx.send(f"Run `.link` in the other channel you wanna link")
 
+            if not ctx.author.guild_permissions.administrator:
+                await ctx.send("Someone with administrator send `.confirm link`")
+                await self.bot.utils.get_message(check=check)
             bridge_id = await self.get_bridge_id(channel)
             linked_channels = len([
                 c for c in ctx.guild.text_channels if await self.get_bridge_id(c) in self.config
