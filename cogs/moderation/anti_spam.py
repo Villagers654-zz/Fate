@@ -686,7 +686,7 @@ class AntiSpam(commands.Cog):
                                 ts for ts in self.typing[user_id]
                                 if (datetime.utcnow() - ts).seconds < 60
                             ])
-                            if count < 3:
+                            if count < 2:
                                 reason = "pasting bulky message"
                                 triggered = None
                     if user_id in self.typing:
@@ -838,10 +838,10 @@ class AntiSpam(commands.Cog):
                                     triggered = True
                                     break
 
-            if triggered is None:
+            if triggered is None or "ascii" in reason:
                 with suppress(HTTPException, NotFound, Forbidden):
                     await msg.delete()
-                    await msg.channel.send(f"No {reason}")
+                    return await msg.channel.send(f"No {reason}")
 
             if triggered and guild_id in self.config:
                 # Mute the relevant users
