@@ -37,14 +37,9 @@ class ErrorHandler(commands.Cog):
 
         # Parse the error object
         error = getattr(error, "original", error)
-        if isinstance(error, str):
-            self.bot.log(f"Error `{error}` was a string and not a object")
-            formatted = f"```python\n{error}```"
-        else:
-            formatted = "\n".join(traceback.format_tb(error.__traceback__))
-        error_str = str(error)
-        full_traceback = f"```python\n{formatted}\n{type(error).__name__}: {error}```"
-        if "EmptyException" in full_traceback or "NotFound" in full_traceback:
+        full_traceback = "\n".join(traceback.format_tb(error.__traceback__))
+        formatted = f"```python\n{full_traceback}\n{type(error).__name__}: {error}```"
+        if "EmptyException" in formatted:
             return
         if "DiscordServerError" in full_traceback:
             with suppress(Exception):
@@ -58,9 +53,7 @@ class ErrorHandler(commands.Cog):
                 return await ctx.send(f"`{ctx.command}` is disabled.")
 
             # Unaccepted, or improperly used arg was passed
-            elif isinstance(
-                error, (commands.BadArgument, commands.errors.BadUnionArgument)
-            ):
+            elif isinstance(error, (commands.BadArgument, commands.errors.BadUnionArgument)):
                 return await ctx.send(error)
 
             # Too fast, sMh
@@ -88,7 +81,7 @@ class ErrorHandler(commands.Cog):
                     return await ctx.send(error)
 
             # The bot tried to perform an action on a non existent or removed object
-            elif "NotFound" in error_str:
+            elif isinstance(error, discord.errors.NotFound):
                 await ctx.send(
                     f"Something I tried to do an operation on was removed or doesn't exist"
                 )
@@ -128,7 +121,7 @@ class ErrorHandler(commands.Cog):
             if not isinstance(error, discord.errors.NotFound):
                 e = discord.Embed(color=colors.red())
                 e.description = (
-                    f"[{error_str}](https://www.youtube.com/watch?v=t3otBjVZzT0)"
+                    f"[{str(error)}](https://www.youtube.com/watch?v=t3otBjVZzT0)"
                 )
                 e.set_footer(text="This error has been logged, and will be fixed soon")
                 await ctx.send(embed=e)
