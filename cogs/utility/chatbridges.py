@@ -143,8 +143,12 @@ class ChatBridges(commands.Cog):
                         if not self.config[bridge_id]["channels"]:
                             await self.destroy(bridge_id, "Disabled the chatbridge due to the only other channel removing their webhook")
 
-                    except HTTPException as error:
-                        await msg.channel.send(f"Error: couldn't send your message to the other channels. {error}")
+                    except aiohttp.ClientOSError:
+                        with suppress(Exception):
+                            await msg.channel.send("Couldn't send your message due to a connection reset")
+                    except Exception as error:
+                        with suppress(Exception):
+                            await msg.channel.send(f"Error: couldn't send your message to the other channels. {error}")
 
                 await asyncio.sleep(0.5)
 
@@ -298,7 +302,7 @@ class ChatBridges(commands.Cog):
             self.queue[bridge_id].put_nowait([msg, webhooks])
         except asyncio.QueueFull:
             if self.bot.tasks["bridges"][bridge_id].done():
-                await msg.channel.send("⚠")
+                await msg.add_reaction("⚠")
             else:
                 await msg.add_reaction("⏳")
         except KeyError:
