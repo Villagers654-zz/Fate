@@ -664,7 +664,7 @@ class AntiSpam(commands.Cog):
 
                 # ASCII / Spammed chars
                 if conf["ascii"]:
-                    if len(content) > 128 and len(content) / total_spaces > 10:
+                    if len(content) > 256 and len(content) / total_spaces > 10:
                         reason = "ascii"
                         triggered = True
 
