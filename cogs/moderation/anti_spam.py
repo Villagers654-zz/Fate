@@ -591,7 +591,7 @@ class AntiSpam(commands.Cog):
         if hasattr(channel, "guild") and channel.guild and channel.guild.id in self.config:
             guild_id = channel.guild.id
             if "inhuman" in self.config[guild_id] and self.config[guild_id]["inhuman"]["copy_paste"]:
-                user_id = str(user.id)
+                user_id = user.id
                 if user_id not in self.typing:
                     self.typing[user_id] = []
                 self.typing[user_id].append(when)
