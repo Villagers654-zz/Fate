@@ -65,6 +65,8 @@ class ChatBridges(commands.Cog):
         await self.bot.wait_until_ready()
         self.queue[bridge_id] = asyncio.Queue(maxsize=3)
         webhook_cache = {}
+        bans = {}
+        last = {}
         async with aiohttp.ClientSession() as session:
             while True:
                 msg, webhooks = await self.queue[bridge_id].get()
@@ -78,6 +80,26 @@ class ChatBridges(commands.Cog):
                 for channel_id, webhook_url in webhooks:
                     channel = self.bot.get_channel(int(channel_id))
                     ref = alternate_content = None
+
+                    # Check if they're banned in the sister server
+                    if channel and channel.guild:
+                        guild = channel.guild
+                        if guild.id not in last:
+                            last[guild.id] = 0
+                            bans[guild.id] = []
+                        member = guild.get_member(msg.author.id)
+                        if member:
+                            mute_role = await self.bot.attrs.get_mute_role(guild, upsert=False)
+                            if mute_role in member.roles:
+                                continue
+                        if channel.guild.me and  channel.guild.me.guild_permissions.ban_members:
+                            if time() - 30 > last[guild.id]:
+                                with suppress(Exception):
+                                    _bans = await guild.bans()
+                                    bans[guild.id] = [entry.user.id for entry in _bans]
+                                    last[guild.id] = time()
+                            if msg.author.id in bans[guild.id]:
+                                continue
 
                     # Reformat message replies into quoted messages
                     if msg.reference and msg.reference.cached_message:
