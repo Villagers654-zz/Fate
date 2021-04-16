@@ -686,7 +686,7 @@ class AntiSpam(commands.Cog):
                                 ts for ts in self.typing[user_id]
                                 if (datetime.utcnow() - ts).seconds < 60
                             ])
-                            if count < 2:
+                            if count < 3:
                                 reason = "pasting bulky message (check #3)"
                                 triggered = None
                     if user_id in self.typing:
