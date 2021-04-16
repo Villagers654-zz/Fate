@@ -229,13 +229,15 @@ class GlobalChatRewrite(commands.Cog):
                 return
 
             # Missing permissions to moderate global chat
-            if not msg.channel.permissions_for(msg.guild.me).manage_messages:
+            perms = msg.channel.permissions_for(msg.guild.me)
+            if not perms.send_messages or not perms.embed_links or not perms.manage_messages:
                 async with self.bot.cursor() as cur:
                     await cur.execute(f"delete from global_chat where guild_id = {msg.guild.id};")
                 del self.cache[msg.guild.id]
-                return await msg.channel.send(
-                    "Disabled global chat due to missing manage_message permissions"
-                )
+                with suppress(Exception):
+                    return await msg.channel.send(
+                        "Disabled global chat due to missing permissions"
+                    )
 
             async with self.bot.cursor() as cur:
                 await cur.execute(f"select status from global_users where user_id = {msg.author.id};")
