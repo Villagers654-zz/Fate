@@ -25,7 +25,7 @@ class User(commands.Cog):
         self.update_config(config)
         await ctx.message.add_reaction("👍")
 
-    @commands.command(name="block")
+    @commands.command(name="bblock")
     @commands.is_owner()
     async def block(self, ctx, user):
         if ctx.message.mentions:
@@ -45,7 +45,7 @@ class User(commands.Cog):
         self.bot.blocked.append(user.id)
         await ctx.send(f"Blocked {user}")
 
-    @commands.command(name="unblock")
+    @commands.command(name="bunblock")
     @commands.is_owner()
     async def unblock(self, ctx, user):
         if ctx.message.mentions:
