@@ -276,6 +276,7 @@ class ModMail(commands.Cog):
                 return None
             e = discord.Embed(color=self.bot.config["theme_color"])
             e.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
+            e.set_footer(text=str(ctx.author.id))
             e.description = f"**Case #{case}:**\n"
             reason = self.bot.decode(reason)
             if link:
