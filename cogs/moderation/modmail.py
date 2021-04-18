@@ -69,6 +69,10 @@ class ModMail(commands.Cog):
             await cur.execute(f"delete from modmail where guild_id = {ctx.guild.id} limit 1;")
         await ctx.send("Disabled modmail if it was enabled")
 
+    @commands.command(name="block", aliases=["unblock"])
+    async def aliases(self, ctx):
+        await getattr(self, ctx.invoked_with.lower()).invoke(ctx)
+
     @modmail.command(name="block")
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
