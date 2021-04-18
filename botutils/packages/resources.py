@@ -39,7 +39,8 @@ class Cache:
             elif value != self._db_state[key]:
                 await collection.replace_one(
                     filter={"_id": key},
-                    replacement=self._cache[key]
+                    replacement=self._cache[key],
+                    upsert=True
                 )
                 self._db_state[key] = value
 
