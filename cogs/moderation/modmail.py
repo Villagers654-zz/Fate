@@ -75,8 +75,11 @@ class ModMail(commands.Cog):
 
     @modmail.command(name="block")
     @commands.guild_only()
-    @commands.has_permissions(administrator=True)
     async def block(self, ctx, user: discord.User):
+        if not self.bot.attrs.is_moderator(ctx.author):
+            return await ctx.send("Only moderators can use this command")
+        if ctx.author.id == user.id:
+            return await ctx.send(f"<:waitThatsIllegal:590584708174184448> that's illegal")
         async with self.bot.cursor() as cur:
             await cur.execute(f"select blocked from modmail where guild_id = {ctx.guild.id} limit 1;")
             result = await cur.fetchone()
@@ -95,8 +98,9 @@ class ModMail(commands.Cog):
 
     @modmail.command(name="unblock")
     @commands.guild_only()
-    @commands.has_permissions(administrator=True)
     async def unblock(self, ctx, user: discord.User):
+        if not self.bot.attrs.is_moderator(ctx.author):
+            return await ctx.send("Only moderators can use this command")
         async with self.bot.cursor() as cur:
             await cur.execute(f"select blocked from modmail where guild_id = {ctx.guild.id} limit 1;")
             result = await cur.fetchone()
