@@ -841,7 +841,8 @@ class AntiSpam(commands.Cog):
             if triggered is None or "ascii" in reason:
                 with suppress(HTTPException, NotFound, Forbidden):
                     await msg.delete()
-                    return await msg.channel.send(f"No {reason}")
+                    await msg.channel.send(f"No {reason}")
+                return
 
             if triggered and guild_id in self.config:
                 # Mute the relevant users
