@@ -57,14 +57,9 @@ class Menus:
                 for iteration in range(redirections):
                     line_positions = (
                         # Beginning of line
-                        5 + (divide * iteration),
-                        fix_points[iteration],
+                        5 + (divide * iteration), fix_points[iteration],
                         # End of line
-                        max_range
-                        - (
-                            (divide * redirections)
-                            - sum([divide for _i in range(iteration + 1)])
-                        ),
+                        max_range - ((divide * redirections) - sum([divide for _i in range(iteration + 1)])),
                         fix_points[iteration + 1],
                     )
                     draw.line(line_positions, fill=color, width=2)
