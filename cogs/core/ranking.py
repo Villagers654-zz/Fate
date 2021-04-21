@@ -89,10 +89,12 @@ class Ranking(commands.Cog):
         self.clb_usage = "`.clb` displays the top used commands on the bot"
         self.top_help = "shows the top 10 ranked users in the server"
 
+        self.cmd_cleanup_task.start()
         self.monthly_cleanup_task.start()
         self.cooldown_cleanup_task.start()
 
     def cog_unload(self):
+        self.cmd_cleanup_task.cancel()
         self.monthly_cleanup_task.cancel()
         self.cooldown_cleanup_task.cancel()
 
@@ -121,6 +123,16 @@ class Ranking(commands.Cog):
         """ Saves static config as the guilds initial config """
         self.config[guild_id] = self.static_config()
         await self.save_config()
+
+    @tasks.loop(hours=1)
+    async def cmd_cleanup_task(self):
+        for cmd, dat in list(self.cmds.items()):
+            for date in dat["uses"]:
+                await asyncio.sleep(0)
+                if (datetime.now() - date).days > 30:
+                    self.cmds[cmd]["uses"].remove(date)
+                    self.cmds[cmd]["total"] -= 1
+        await self.cmds.flush()
 
     @tasks.loop(minutes=1)
     async def cooldown_cleanup_task(self):
@@ -1131,14 +1143,6 @@ class Ranking(commands.Cog):
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def clb(self, ctx):
         # Remove old uses from the db
-        for cmd, dat in list(self.cmds.items()):
-            for date in dat["uses"]:
-                await asyncio.sleep(0)
-                if (datetime.now() - date).days > 30:
-                    self.cmds[cmd].remove(date)
-                    self.cmds[cmd]["total"] -= 1
-                    await self.cmds.flush()
-
         e = discord.Embed(color=colors.fate())
         e.set_author(name="Command Leaderboard", icon_url=self.bot.user.avatar_url)
         e.description = ""
