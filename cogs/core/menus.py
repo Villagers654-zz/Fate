@@ -84,6 +84,7 @@ class ConfigureModules:
 
     async def main(self):
         """The structure of the help menu"""
+        sort = ["Mod Cmds", "Misc"]
         modules = {
             "Core": [
                 self.bot.cogs["Core"],
@@ -156,11 +157,22 @@ class ConfigureModules:
                     if isinstance(v, list):
                         modules[key][k] = []
                         for cog in v:
-                            v = modules[key][k] = [*cog.walk_commands(), *modules[key][k]]
+                            if k in sort:
+                                v = modules[key][k] = [
+                                    *sorted(cog.walk_commands(), key=lambda c: c.name),
+                                    *modules[key][k]
+                                ]
+                            else:
+                                v = modules[key][k] = [*cog.walk_commands(), *modules[key][k]]
                     if not isinstance(v, dict):
-                        modules[key][k] = {
-                            cmd: None for cmd in v if can_run(cmd)
-                        }
+                        if k in sort:
+                            modules[key][k] = {
+                                cmd: None for cmd in sorted(v, key=lambda c: c.name) if can_run(cmd)
+                            }
+                        else:
+                            modules[key][k] = {
+                                cmd: None for cmd in v if can_run(cmd)
+                            }
 
         return modules
 
