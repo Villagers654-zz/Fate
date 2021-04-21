@@ -264,6 +264,7 @@ class Custom(commands.Cog):
             embed=discord.Embed(
                 color=0x64FF00,
                 image_url="https://cdn.discordapp.com/attachments/732085276733603974/732156247243227176/image0.jpg",
+                description=u"\u200b"
             )
         )
 
