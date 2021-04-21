@@ -912,8 +912,11 @@ class Utility(commands.Cog):
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
     async def servericon(self, ctx):
+        if not ctx.guild.icon_url or not str(ctx.guild.icon_url):
+            return await ctx.send("This server has no icon")
         e = discord.Embed(color=0x80B0FF)
         e.set_image(url=ctx.guild.icon_url)
+        e.description = "Server Icon"
         await ctx.send(embed=e)
 
     @commands.command(name="makepoll", aliases=["mp"])
