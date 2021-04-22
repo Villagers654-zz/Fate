@@ -14,11 +14,13 @@ import asyncio
 from time import time
 from contextlib import suppress
 import os
+from io import BytesIO
 
 from discord.ext import commands
 from discord.ext.commands import CheckFailure
 from discord.errors import Forbidden
 import discord
+from PIL import Image, ImageDraw, ImageFont
 
 from botutils.colors import purple, pink
 from botutils import checks
@@ -118,7 +120,6 @@ class FactionsRewrite(commands.Cog):
 
     async def save_data(self):
         """Save the current variables without blocking the event loop"""
-
         data = await self.bot.loop.run_in_executor(None, self.__get_dump)
         async with self.bot.open(self.path, "w+", cache=True) as f:
             await f.write(data)
@@ -126,13 +127,11 @@ class FactionsRewrite(commands.Cog):
 
     def init(self, guild_id: str):
         """Creates guild dictionary if it doesnt exist"""
-
         if guild_id not in self.factions:
             self.factions[guild_id] = {}
 
     def get_factions_icon(self, ctx, faction: str):
         """Returns an icon for the faction"""
-
         guild_id = str(ctx.guild.id)
         if not faction:
             return None
@@ -149,7 +148,6 @@ class FactionsRewrite(commands.Cog):
 
     async def get_users_faction(self, ctx, user=None):
         """fetch a users faction by context or partial name"""
-
         if not user:
             user = ctx.author
         if not isinstance(user, (discord.User, discord.Member)):
@@ -169,7 +167,6 @@ class FactionsRewrite(commands.Cog):
 
     async def get_authors_faction(self, ctx):
         """ fetch a users faction by context or partial name """
-
         user = ctx.author
         guild_id = str(ctx.guild.id)
         if guild_id in self.factions:
@@ -181,7 +178,6 @@ class FactionsRewrite(commands.Cog):
 
     async def get_owned_faction(self, ctx, user=None):
         """ returns a users owned faction if it exists """
-
         if not user:
             user = ctx.author
         elif not isinstance(user, (discord.User, discord.Member)):
@@ -201,7 +197,6 @@ class FactionsRewrite(commands.Cog):
 
     async def get_faction_named(self, ctx, name):
         """ gets a faction via partial name """
-
         guild_id = str(ctx.guild.id)
         if guild_id not in self.factions:
             raise CheckFailure("This server has no factions")
@@ -228,7 +223,6 @@ class FactionsRewrite(commands.Cog):
     async def collect_claims(self, guild_id, faction=None) -> dict:
         """Fetches claims for the whole guild or a single faction
         for easy use when needing all the claims"""
-
         async def claims(faction) -> dict:
             """ returns claims & their data """
             fac_claims = {}
@@ -457,7 +451,7 @@ class FactionsRewrite(commands.Cog):
                   f"\n{p}f balance"
                   f"\n{p}f pay [faction] [amount]"
                   f"\n{p}f raid [faction]"
-                  f"\n~~{p}f battle [faction]~~"  # incomplete
+                  f"\n{p}f battle @user"
                   f"\n{p}f annex [faction]"
                   f"\n{p}f claim #channel"
                   f"\n{p}f unclaim #channel"
@@ -1077,9 +1071,139 @@ class FactionsRewrite(commands.Cog):
         await ctx.send(embed=e)
 
     @factions.command(name="battle")
-    async def battle(self, ctx, *args):
-        """ Battle other factions in games like scrabble """
-        await ctx.send("This command isn't developed yet")
+    async def battle(self, ctx, user: discord.User, amount=50):
+        """ Battle other faction members """
+        guild_id = str(ctx.guild.id)
+        fac1 = await self.get_authors_faction(ctx)
+        fac2 = await self.get_users_faction(ctx, user)
+        if not fac2:
+            return await ctx.send(f"The other user needs to be in a faction in order to battle")
+        if self.factions[guild_id][fac1]["balance"] < 50:
+            return await ctx.send("Your faction needs at least $50 to battle")
+        if self.factions[guild_id][fac2]["balance"] < 50:
+            return await ctx.send("The other faction needs at least $50 to battle")
+        await ctx.send(
+            f"{user.mention} do you agree to bet ${amount} on a battle with {ctx.author.mention}? "
+            f"reply with `.confirm {amount}` to agree"
+        )
+
+        def check(m):
+            if m.author.id != user.id and m.author.id != 264838866480005122:
+                return False
+            if not m.content.endswith(str(amount)):
+                return False
+            return ".confirm" in m.content
+
+        reply = await self.bot.utils.get_message(check)
+        if not reply:
+            return
+
+        large_font = ImageFont.truetype("./botutils/fonts/pdark.ttf", 70)
+        W, H = 350, 125
+        border_color = "black"
+        background_url = "https://cdn.discordapp.com/attachments/632084935506788385/834605220302553108/battle.jpg"
+        frame_url = "https://cdn.discordapp.com/attachments/632084935506788385/834609401855213598/1619056781596.png"
+
+        background = await self.bot.get_resource(background_url)
+        frame = await self.bot.get_resource(frame_url)
+        av1 = await self.bot.get_resource(str(ctx.author.avatar_url))
+        av2 = await self.bot.get_resource(str(user.avatar_url))
+
+        def generate_card(frame, av1, av2):
+            card = Image.new("RGBA", (W, H), (0, 0, 0, 100))
+            im = Image.open(BytesIO(background)).convert("RGBA").resize((W, H))
+            card.paste(im, (0, 0), im)
+
+            draw = ImageDraw.Draw(card)
+            w, h = draw.textsize("VS", font=large_font)
+            draw.text(((W - w) / 2, (H - h) / 2), text="VS", fill="white", font=large_font)
+
+            frame = Image.open(BytesIO(frame)).convert("RGBA").resize((70, 70), Image.BICUBIC)
+            av1 = Image.open(BytesIO(av1)).convert("RGBA").resize((70, 70), Image.BICUBIC)
+            av2 = Image.open(BytesIO(av2)).convert("RGBA").resize((70, 70), Image.BICUBIC)
+            av1.paste(frame, (0, 0), frame)
+            av2.paste(frame, (0, 0), frame)
+            card.paste(av1, (25, 30), av1)
+            card.paste(av2, (255, 30), av1)
+
+            draw.line((0, 0, W, 0), border_color, 5)
+            draw.line((W, 0, W, H), border_color, 5)
+            draw.line((0, 0, 0, H), border_color, 5)
+            draw.line((0, H, W, H), border_color, 5)
+
+            mem_file = BytesIO()
+            card.save(mem_file, format="PNG")
+            mem_file.seek(0)
+            return mem_file
+
+        e = discord.Embed(color=discord.Color.red())
+        e.title = f"{ctx.author.name} Vs. {user.name}"
+        create_card = lambda: generate_card(frame, av1, av2)
+
+        mem_file = await self.bot.loop.run_in_executor(None, create_card)
+        msg = await ctx.send(
+            embed=e,
+            file=discord.File(mem_file, filename="card.png")
+        )
+        e.description = ""
+        health1 = 150
+        health2 = 150
+        attacker = 1
+
+        attacks = {
+            "🔪 | !user shanked !target `-15HP`": 15,
+            "⚔ | !user ran a sword right through !target's stomach `-20HP`": 20,
+            "⚔ | !user ran a sword right through !target's chest `-35HP`": 30,
+            "🏹 | !user shot !target in the arm with an arrow `-10HP`": 10,
+            "🏹 | !user shot !target in the leg with an arrow `-10HP`": 10,
+            "🏹 | !user shot !target in the chest with an arrow `-30HP`": 30,
+            "🔫 | Pew pew! !target got shot by !user `-50HP`": 50,
+            "💣 | YEET!.. 💥 !target got blown up `-100HP`": 100,
+            "⚡ | !user struck !target with lightning `-50HP`": 50,
+            "🔥 | !user set !target on fire `-10HP`": 10,
+            "🌠 | !user used astral power to strike !target `-100HP`": 100,
+            "🚗 | !user ran into !target `-25HP`": 25,
+            "🛴 | !user hit !target's ankles with a scooter `-10HP`": 10,
+            "👻 | !user scared !target shitless `-2HP`": 2,
+            "👊 | !user punched !target `-10HP`": 10,
+            "💅 | !user ignored !target `-1HP`": 1,
+            "🖐 | !user slapped !target `-5HP`": 5,
+            "😈 | !user triggered !target's vietnam war flashbacks `-10HP`": 10,
+            # "🏓 | !user played ping-pong with !targets nuts `-5HP`": 5
+        }
+
+        dodges = [
+            "🔮 | !target foretold !users attack and dodged",
+            "🥋 | !target used expert martial arts to dodge",
+            "💁‍♀️ | !target dodged because they're not like other girls"
+        ]
+
+        while True:
+            if health1 <= 0:
+                self.factions[guild_id][fac1]["balance"] -= amount
+                self.factions[guild_id][fac2]["balance"] += amount
+                return await ctx.send(f"{user.name} has won $50 from {ctx.author.name}")
+            if health2 <= 0:
+                self.factions[guild_id][fac2]["balance"] -= amount
+                self.factions[guild_id][fac1]["balance"] += amount
+                return await ctx.send(f"{ctx.author.name} has won $50 from {user.name}")
+            attack = random.choice(list(attacks.keys()))
+            dmg = attacks[attack]
+            if random.randint(1, 10) == 1:
+                attack = random.choice(dodges)
+                dmg = 0
+            if attacker == 1:
+                formatted = attack.replace('!user', ctx.author.name).replace('!target', user.name)
+                health2 -= dmg
+            else:
+                formatted = attack.replace('!user', user.name).replace('!target', ctx.author.name)
+                health1 -= dmg
+            e.description += f"\n{formatted}"
+            e.description = e.description[-2000:]
+            e.set_footer(text=f"{ctx.author.name} {health1}HP | {user.name} {health2}HP")
+            attacker = 2 if attacker == 1 else 1
+            await msg.edit(embed=e)
+            await asyncio.sleep(3)
 
     @factions.command(name="raid")
     @has_faction_permissions()
