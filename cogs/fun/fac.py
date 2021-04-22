@@ -1086,7 +1086,8 @@ class FactionsRewrite(commands.Cog):
             return await ctx.send("The other faction needs at least $50 to battle")
         await ctx.send(
             f"{user.mention} do you agree to bet ${amount} on a battle with {ctx.author.mention}? "
-            f"reply with `.confirm {amount}` to agree"
+            f"reply with `.confirm {amount}` to agree",
+            allowed_mentions=discord.AllowedMentions(users=True, roles=False, everyone=False)
         )
 
         def check(m):
