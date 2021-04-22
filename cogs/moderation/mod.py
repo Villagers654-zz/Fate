@@ -274,8 +274,16 @@ class Moderation(commands.Cog):
                 continue
             self.bot.restricted[guild_id]["users"].append(member.id)
             restricted += f"\n{member.mention}"
-        await self.bot.restricted.flush()
         e = discord.Embed(color=colors.fate(), description=restricted)
+        await ctx.send("Do you want this to effect moderators too? Reply with `yes` or `no`")
+        reply = await self.bot.utils.get_message(ctx)
+        if "yes" in reply.content.lower():
+            self.bot.restricted[guild_id]["effect_mods"] = True
+            await ctx.send("Alright, I'll restrict moderators too")
+        else:
+            if "effect_mods" in self.bot.restricted[guild_id]:
+                self.bot.restricted.remove_sub(guild_id, "effect_mods")
+        await self.bot.restricted.flush()
         await ctx.send(embed=e)
 
     @commands.command(name="unrestrict")
@@ -1460,6 +1468,7 @@ class Moderation(commands.Cog):
             if ctx.author.id != ctx.guild.owner.id:
                 if user.top_role.position >= ctx.author.top_role.position:
                     await ctx.send(f"{user.name} is above your paygrade, take a seat")
+                    continue
             await self.warn_user(ctx.channel, user, reason, ctx)
 
     @commands.command(name="delwarn", aliases=["del-warn"])
