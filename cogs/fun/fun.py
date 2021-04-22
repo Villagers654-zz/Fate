@@ -6,6 +6,7 @@ from os import path
 from random import random as rd
 from datetime import datetime, timedelta
 from contextlib import suppress
+from io import BytesIO
 
 import aiohttp
 import discord
@@ -13,6 +14,7 @@ import praw
 from discord import Webhook, AsyncWebhookAdapter
 from discord.ext import commands
 from discord.ext import tasks
+from PIL import Image, ImageDraw, ImageFont
 
 from botutils import colors, auth
 
@@ -242,6 +244,117 @@ class Fun(commands.Cog):
                 self.dat[channel_id] = {}
             self.dat[channel_id]["last"] = dat
             self.dat[channel_id][user_id] = dat
+
+    @commands.command(name="battle", aliases=["fight"])
+    @commands.cooldown(2, 30, commands.BucketType.user)
+    @commands.guild_only()
+    @commands.bot_has_permissions(attach_files=True, embed_links=True)
+    async def battle(self, ctx, user1: discord.User, user2: discord.User = None):
+        if not user2:
+            user2 = user1
+            user1 = ctx.author
+        large_font = ImageFont.truetype("./botutils/fonts/pdark.ttf", 70)
+        W, H = 350, 125
+        border_color = "black"
+        background_url = "https://cdn.discordapp.com/attachments/632084935506788385/834605220302553108/battle.jpg"
+        frame_url = "https://cdn.discordapp.com/attachments/632084935506788385/834609401855213598/1619056781596.png"
+
+        background = await self.bot.get_resource(background_url)
+        frame = await self.bot.get_resource(frame_url)
+        av1 = await self.bot.get_resource(str(user1.avatar_url))
+        av2 = await self.bot.get_resource(str(user2.avatar_url))
+
+        def generate_card(frame, av1, av2):
+            card = Image.new("RGBA", (W, H), (0, 0, 0, 100))
+            im = Image.open(BytesIO(background)).convert("RGBA").resize((W, H))
+            card.paste(im, (0, 0), im)
+
+            draw = ImageDraw.Draw(card)
+            w, h = draw.textsize("VS", font=large_font)
+            draw.text(((W - w) / 2, (H - h) / 2), text="VS", fill="white", font=large_font)
+
+            frame = Image.open(BytesIO(frame)).convert("RGBA").resize((70, 70), Image.BICUBIC)
+            av1 = Image.open(BytesIO(av1)).convert("RGBA").resize((70, 70), Image.BICUBIC)
+            av2 = Image.open(BytesIO(av2)).convert("RGBA").resize((70, 70), Image.BICUBIC)
+            av1.paste(frame, (0, 0), frame)
+            av2.paste(frame, (0, 0), frame)
+            card.paste(av1, (25, 30), av1)
+            card.paste(av2, (255, 30), av1)
+
+            draw.line((0, 0, W, 0), border_color, 5)
+            draw.line((W, 0, W, H), border_color, 5)
+            draw.line((0, 0, 0, H), border_color, 5)
+            draw.line((0, H, W, H), border_color, 5)
+
+            mem_file = BytesIO()
+            card.save(mem_file, format="PNG")
+            mem_file.seek(0)
+            return mem_file
+
+        e = discord.Embed(color=discord.Color.red())
+        e.title = f"{user1.name} Vs. {user2.name}"
+        create_card = lambda: generate_card(frame, av1, av2)
+
+        mem_file = await self.bot.loop.run_in_executor(None, create_card)
+        msg = await ctx.send(
+            embed=e,
+            file=discord.File(mem_file, filename="card.png")
+        )
+        e.description = ""
+        health1 = 150
+        health2 = 150
+        attacker = 1
+
+        attacks = {
+            "🔪 | !user shanked !target `-15HP`": 15,
+            "⚔ | !user ran a sword right through !target's stomach `-20HP`": 20,
+            "⚔ | !user ran a sword right through !target's chest `-35HP`": 30,
+            "🏹 | !user shot !target in the arm with an arrow `-10HP`": 10,
+            "🏹 | !user shot !target in the leg with an arrow `-10HP`": 10,
+            "🏹 | !user shot !target in the chest with an arrow `-30HP`": 30,
+            "🔫 | Pew pew! !target got shot by !user `-50HP`": 50,
+            "💣 | YEET!.. 💥 !target got blown up `-100HP`": 100,
+            "⚡ | !user struck !target with lightning `-50HP`": 50,
+            "🔥 | !user set !target on fire `-10HP`": 10,
+            "🌠 | !user used astral power to strike !target `-100HP`": 100,
+            "🚗 | !user ran into !target `-25HP`": 25,
+            "🛴 | !user hit !target's ankles with a scooter `-10HP`": 10,
+            "👻 | !user scared !target shitless `-2HP`": 2,
+            "👊 | !user punched !target `-10HP`": 10,
+            "💅 | !user ignored !target `-1HP`": 1,
+            "🖐 | !user slapped !target `-5HP`": 5,
+            "😈 | !user triggered !target's vietnam war flashbacks `-10HP`": 10,
+            # "🏓 | !user played ping-pong with !targets nuts `-5HP`": 5
+        }
+
+        dodges = [
+            "🔮 | !target foretold !users attack and dodged",
+            "🥋 | !target used expert martial arts to dodge",
+            "💁‍♀️ | !target dodged because they're not like other girls"
+        ]
+
+        while True:
+            if health1 <= 0:
+                return await ctx.send(f"{user2.name} won")
+            if health2 <= 0:
+                return await ctx.send(f"{user1.name} won")
+            attack = random.choice(list(attacks.keys()))
+            dmg = attacks[attack]
+            if random.randint(1, 10) == 1:
+                attack = random.choice(dodges)
+                dmg = 0
+            if attacker == 1:
+                formatted = attack.replace('!user', user1.name).replace('!target', user2.name)
+                health2 -= dmg
+            else:
+                formatted = attack.replace('!user', user2.name).replace('!target', user1.name)
+                health1 -= dmg
+            e.description += f"\n{formatted}"
+            e.description = e.description[-2000:]
+            e.set_footer(text=f"{user1.name} {health1}HP | {user2.name} {health2}HP")
+            attacker = 2 if attacker == 1 else 1
+            await msg.edit(embed=e)
+            await asyncio.sleep(3)
 
     @commands.command(name="sex", aliases=["sexdupe"])
     @commands.cooldown(1, 10, commands.BucketType.user)
