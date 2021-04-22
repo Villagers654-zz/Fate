@@ -1071,7 +1071,7 @@ class FactionsRewrite(commands.Cog):
         await ctx.send(embed=e)
 
     @factions.command(name="battle")
-    async def battle(self, ctx, user: discord.User, amount=50):
+    async def _battle(self, ctx, user: discord.User, amount=50):
         """ Battle other faction members """
         if amount > 1000:
             return await ctx.send("You can't bet more than $1000")
