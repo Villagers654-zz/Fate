@@ -1073,14 +1073,16 @@ class FactionsRewrite(commands.Cog):
     @factions.command(name="battle")
     async def battle(self, ctx, user: discord.User, amount=50):
         """ Battle other faction members """
+        if amount > 1000:
+            return await ctx.send("You can't bet more than $1000")
         guild_id = str(ctx.guild.id)
         fac1 = await self.get_authors_faction(ctx)
         fac2 = await self.get_users_faction(ctx, user)
         if not fac2:
             return await ctx.send(f"The other user needs to be in a faction in order to battle")
-        if self.factions[guild_id][fac1]["balance"] < 50:
+        if self.factions[guild_id][fac1]["balance"] < amount:
             return await ctx.send("Your faction needs at least $50 to battle")
-        if self.factions[guild_id][fac2]["balance"] < 50:
+        if self.factions[guild_id][fac2]["balance"] < amount:
             return await ctx.send("The other faction needs at least $50 to battle")
         await ctx.send(
             f"{user.mention} do you agree to bet ${amount} on a battle with {ctx.author.mention}? "
