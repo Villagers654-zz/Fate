@@ -319,36 +319,16 @@ class Core(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def disabled(self, ctx):
         """ Lists the guilds disabled commands """
-        async with self.bot.open(self.path, "r") as f:
-            config = json.loads(await f.read())  # type: dict
-        guild_id = str(ctx.guild.id)
-        if guild_id not in config:
+        guild_id = ctx.guild.id
+        if guild_id not in self.config:
             return await ctx.send("This server has no disabled commands")
-        conf = config[guild_id]
-        if guild_id not in config or not any(
-            conf[key]
-            if isinstance(conf[key], list)
-            else any(v[1] for v in conf[key].items())
-            for key in conf.keys()
-        ):
-            return await ctx.send("There are no disabled commands")
-        e = discord.Embed(color=colors.fate())
-        if config[guild_id]["global"]:
-            e.add_field(name="Global", value=", ".join(conf["global"]), inline=False)
-        channels = {}
-        dat = [*conf["channels"].items(), *conf["categories"].items()]
-        for channel_id, commands in dat:
+        e = discord.Embed(color=discord.Color.red())
+        for channel_id, commands in self.config[guild_id].items():
             await asyncio.sleep(0)
-            if commands:
-                channel = self.bot.get_channel(int(channel_id))
-                if channel:
-                    channels[channel] = []
-                    for cmd in commands:
-                        await asyncio.sleep(0)
-                        channels[channel].append(cmd)
-        for channel, commands in channels.items():
-            await asyncio.sleep(0)
-            e.add_field(name=channel.name, value=", ".join(commands), inline=False)
+            channel = self.bot.get_channel(int(channel_id))
+            if not channel:
+                continue
+            e.add_field(name=channel.name, value=", ".join([f"`{c}`" for c in commands]))
         await ctx.send(embed=e)
 
     @commands.command(name="ping")
