@@ -39,39 +39,6 @@ class Core(commands.Cog):
         self.path = "./data/userdata/disabled_commands.json"
         self.config = bot.utils.cache("disabled")
 
-        with open(self.path, "r") as f:
-            config = json.loads(f.read())  # type: dict
-        for guild_id, conf in list(config.items()):
-            guild_id = int(guild_id)
-            guild = self.bot.get_guild(int(guild_id))
-            if not guild:
-                continue
-            if guild_id not in self.config:
-                self.config[int(guild_id)] = {}
-            for command in conf["global"]:
-                for channel in guild.text_channels:
-                    if str(channel.id) not in self.config[guild_id]:
-                        self.config[guild_id][str(channel.id)] = []
-                    self.config[guild_id][str(channel.id)].append(command)
-            for channel_id, commands in conf["channels"].items():
-                if channel_id not in self.config[guild_id]:
-                    self.config[guild_id][channel_id] = []
-                for cmd in commands:
-                    if cmd not in self.config[guild_id][channel_id]:
-                        self.config[guild_id][channel_id].append(cmd)
-            for channel_id, commands in conf["categories"].items():
-                category = self.bot.get_channel(int(channel_id))
-                if not category:
-                    continue
-                for channel in category.text_channels:
-                    channel_id = str(channel.id)
-                    if channel_id not in self.config[guild_id]:
-                        self.config[int(guild_id)][channel_id] = []
-                    for cmd in commands:
-                        if cmd not in self.config[guild_id][channel_id]:
-                            self.config[guild_id][channel_id].append(cmd)
-            self.bot.loop.create_task(self.config.flush())
-
     async def on_guild_post(self):
         self.bot.log.debug("Server count posted successfully")
 
