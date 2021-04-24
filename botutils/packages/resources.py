@@ -3,6 +3,7 @@ from os.path import isfile
 import json
 import asyncio
 from copy import deepcopy
+from contextlib import suppress
 from botutils import colors
 
 
@@ -84,9 +85,11 @@ class Cache:
                 filter={"_id": key},
                 update={"$unset": {sub_key: 1}}
             )
-            del self._cache[key][sub_key]
-            if sub_key in self._db_state[key]:
-                del self._db_state[key][sub_key]
+            with suppress(KeyError):
+                del self._cache[key][sub_key]
+            with suppress(KeyError):
+                if sub_key in self._db_state[key]:
+                    del self._db_state[key][sub_key]
         else:
             await collection.delete_one({"_id": key})
             del self._cache[key]
