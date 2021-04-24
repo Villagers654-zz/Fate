@@ -141,26 +141,19 @@ def command_is_enabled(ctx):
     if not isinstance(ctx.guild, discord.Guild):
         return True
 
-    guild_id = str(ctx.guild.id)
-    if guild_id not in ctx.bot.disabled_commands:
+    guild_id = ctx.guild.id
+    cog = ctx.bot.get_cog("Core")
+    if not cog:
+        return True
+    if guild_id not in cog.config:
         return True  # command isn't disabled
 
     cmd = ctx.command.name
-    conf = ctx.bot.disabled_commands[guild_id]  # type: dict
+    conf = cog.config[guild_id]  # type: dict
     channel_id = str(ctx.channel.id)
 
-    if cmd in conf["global"]:
+    if channel_id in conf and cmd in conf[channel_id]:
         return False
-    if channel_id in conf["channels"]:
-        if cmd in conf["channels"][channel_id]:
-            return False
-
-    if ctx.channel.category:
-        channel_id = str(ctx.channel.category.id)
-        if channel_id in conf["categories"]:
-            if cmd in conf["categories"][channel_id]:
-                return False
-
     return True
 
 def blocked(ctx):

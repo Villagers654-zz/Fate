@@ -37,6 +37,40 @@ class Core(commands.Cog):
             webhook_port=creds["port"]
         )
         self.path = "./data/userdata/disabled_commands.json"
+        self.config = bot.utils.cache("disabled")
+
+        with open(self.path, "r") as f:
+            config = json.loads(f.read())  # type: dict
+        for guild_id, conf in list(config.items()):
+            guild_id = int(guild_id)
+            guild = self.bot.get_guild(int(guild_id))
+            if not guild:
+                continue
+            if guild_id not in self.config:
+                self.config[int(guild_id)] = {}
+            for command in conf["global"]:
+                for channel in guild.text_channels:
+                    if str(channel.id) not in self.config[guild_id]:
+                        self.config[guild_id][str(channel.id)] = []
+                    self.config[guild_id][str(channel.id)].append(command)
+            for channel_id, commands in conf["channels"].items():
+                if channel_id not in self.config[guild_id]:
+                    self.config[guild_id][channel_id] = []
+                for cmd in commands:
+                    if cmd not in self.config[guild_id][channel_id]:
+                        self.config[guild_id][channel_id].append(cmd)
+            for channel_id, commands in conf["categories"].items():
+                category = self.bot.get_channel(int(channel_id))
+                if not category:
+                    continue
+                for channel in category.text_channels:
+                    channel_id = str(channel.id)
+                    if channel_id not in self.config[guild_id]:
+                        self.config[int(guild_id)][channel_id] = []
+                    for cmd in commands:
+                        if cmd not in self.config[guild_id][channel_id]:
+                            self.config[guild_id][channel_id].append(cmd)
+            self.bot.loop.create_task(self.config.flush())
 
     async def on_guild_post(self):
         self.bot.log.debug("Server count posted successfully")
@@ -212,200 +246,106 @@ class Core(commands.Cog):
     @commands.command(name="enable-command", aliases=["enablecommand"])
     @commands.has_permissions(administrator=True)
     @commands.bot_has_permissions(embed_links=True)
-    async def enable_command(
-        self,
-        ctx,
-        command,
-        *,
-        location: Union[discord.TextChannel, discord.CategoryChannel] = None,
-    ):
-        """Enable or commands in a channel, or category"""
-        async with self.bot.open(self.path, "r") as f:
-            config = json.loads(await f.read())  # type: dict
-        guild_id = str(ctx.guild.id)
-        if guild_id not in config:
-            config[guild_id] = {
-                "global": [],
-                "channels": {},
-                "categories": {},
-            }
-        conf = config[guild_id]
-        if not location:
-            options = [
-                "Enable In All Channels",
-                "Enable in This Category",
-                "Enable in This Channel",
-            ]
-            choice = await self.bot.get_choice(
-                ctx, *options, user=ctx.author, timeout=45
-            )
-            if not choice:
-                return
-            index = options.index(choice)
-            enabled = False
-
-            if index == 0:  # Globally
-                if command in conf["global"]:
-                    conf["global"].remove(command)
-                    enabled = True
-                for category_id, disabled_commands in conf["categories"].items():
-                    if command in disabled_commands:
-                        conf["categories"][category_id].remove(command)
-                        enabled = True
-                for channel_id, disabled_commands in conf["channels"].items():
-                    if command in disabled_commands:
-                        conf["channels"][channel_id].remove(command)
-                        enabled = True
-                if enabled:
-                    await ctx.send(f"Globally enabled {command}")
-                else:
-                    await ctx.send(f"{command} isn't disabled anywhere")
-
-            elif index == 1:  # Category
-                if not ctx.channel.category:
-                    return await ctx.send("This channel has no category")
-                category_id = str(ctx.channel.category.id)
-                for channel_id in [
-                    str(channel.id) for channel in ctx.channel.category.channels
-                ]:
-                    if channel_id in conf["channels"]:
-                        if command in conf["channels"][channel_id]:
-                            conf["channels"][channel_id].remove(command)
-                            enabled = True
-                if category_id not in conf["categories"]:
-                    conf["categories"][category_id] = []
-                if command in conf["categories"][category_id]:
-                    conf["categories"][category_id].remove(command)
-                    enabled = True
-                if enabled:
-                    await ctx.send(f"Enabled {command} in {ctx.channel.category}")
-                else:
-                    await ctx.send(f"{command} isn't disabled in this category")
-
-            elif index == 2:  # Channel
-                channel_id = str(ctx.channel.id)
-                if channel_id not in conf["channels"]:
-                    conf["channels"][channel_id] = []
-                if command not in conf["channels"][channel_id]:
-                    return await ctx.send(f"{command} isn't disabled in this channel")
-                conf["channels"][channel_id].remove(command)
-                await ctx.send(f"Disabled {command} in {ctx.channel.mention}")
-
-        elif isinstance(location, discord.TextChannel):
-            channel_id = str(location.id)
-            if channel_id not in conf["channels"]:
-                return await ctx.send("That channel has no disabled commands")
-            if command not in conf["channels"][channel_id]:
-                return await ctx.send(f"{command} isn't disabled in that channel")
-            conf["channels"][channel_id].remove(command)
-            await ctx.send(f"Enabled {command} in that channel")
-        elif isinstance(location, discord.CategoryChannel):
-            channel_id = str(location.id)
-            if channel_id not in conf["categories"]:
-                return await ctx.send("That category has no disabled commands")
-            if command not in conf["categories"][channel_id]:
-                return await ctx.send(f"{command} isn't disabled in that category")
-            conf["categories"][channel_id].remove(command)
-            await ctx.send(f"Enabled {command} in that category")
-        for channel_id, values in list(conf["channels"].items()):
-            if not values:
-                del conf["channels"][channel_id]
-        for channel_id, values in list(conf["categories"].items()):
-            if not values:
-                del conf["categories"][channel_id]
-        config[guild_id] = conf
-        self.bot.disabled_commands = config
-        async with self.bot.open(self.path, "w") as f:
-            await f.write(json.dumps(config))
+    async def enable_command(self, ctx, *, command):
+        guild_id = ctx.guild.id
+        if guild_id not in self.config:
+            return await ctx.send("This server has no disabled commands")
+        if not self.bot.get_command(command):
+            return await ctx.send("That's not a command")
+        command = self.bot.get_command(command).name
+        for key, value in list(self.config[guild_id].items()):
+            await asyncio.sleep(0)
+            if command in value:
+                break
+        else:
+            return await ctx.send(f"`{command}` isn't disabled anywhere")
+        locations = [
+            "enable globally", "enable in category", "enable in this channel"
+        ]
+        choice = await self.bot.utils.get_choice(ctx, locations, user=ctx.author)
+        if not choice:
+            return
+        if choice == "enable globally":
+            for key, value in list(self.config[guild_id].items()):
+                await asyncio.sleep(0)
+                if command in value:
+                    self.config[guild_id][key].remove(command)
+                    if not self.config[guild_id][key]:
+                        await self.config.remove_sub(guild_id, key)
+            await ctx.send(f"Enabled `{command}` in all channels")
+        elif choice == "enable in category":
+            if not ctx.channel.category:
+                return await ctx.send("This channel has no category")
+            for channel in ctx.channel.category.text_channels:
+                await asyncio.sleep(0)
+                channel_id = str(channel.id)
+                if channel_id in self.config[guild_id]:
+                    if command in self.config[guild_id][channel_id]:
+                        self.config[guild_id][channel_id].remove(command)
+                        if not self.config[guild_id][channel_id]:
+                            await self.config.remove_sub(guild_id, channel_id)
+            await ctx.send(f"Enabled `{command}` in all of {ctx.channel.category}'s channels")
+        elif choice == "enable in this channel":
+            channel_id = str(ctx.channel.id)
+            if channel_id not in self.config[guild_id]:
+                return await ctx.send("This channel has no disabled commands")
+            if command not in self.config[guild_id][channel_id]:
+                return await ctx.send(f"`{command}` isn't disabled in this channel")
+            self.config[guild_id][channel_id].remove(command)
+            if not self.config[guild_id][channel_id]:
+                await self.config.remove_sub(guild_id, key)
+            await ctx.send(f"Enabled `{command}` in this channel")
+        if not self.config[guild_id]:
+            await self.config.remove(guild_id)
+        else:
+            await self.config.flush()
 
     @commands.command(name="disable-command", aliases=["disablecommand"])
     @commands.has_permissions(administrator=True)
     @commands.bot_has_permissions(embed_links=True)
-    async def disable_command(
-        self,
-        ctx,
-        command,
-        *,
-        location: Union[discord.TextChannel, discord.CategoryChannel] = None,
-    ):
-        """Enable or commands in a channel, or category"""
-        command = command.lower()
-        if command == "disable" or command == "enable" or "lucky" in command:
-            return await ctx.send("BiTcH nO")
-        if command not in [cmd.name for cmd in self.bot.commands]:
+    async def disable_command(self, ctx, *, command):
+        guild_id = ctx.guild.id
+        if not self.bot.get_command(command):
             return await ctx.send("That's not a command")
-        async with self.bot.open(self.path, "r") as f:
-            config = json.loads(await f.read())  # type: dict
-        guild_id = str(ctx.guild.id)
-        if guild_id not in config:
-            config[guild_id] = {
-                "global": [],
-                "channels": {},
-                "categories": {},
-            }
-        conf = config[guild_id]
-
-        if not location:
-            options = [
-                "Disable In All Channels",
-                "Disable in This Category",
-                "Disable in This Channel",
-            ]
-            choice = await self.bot.get_choice(
-                ctx, *options, user=ctx.author, timeout=45
-            )
-            if not choice:
-                return
-            index = options.index(choice)
-
-            if index == 0:  # Globally
-                if command in conf["global"]:
-                    return await ctx.send(f"{command} is already disabled")
-                conf["global"].append(command)
-                await ctx.send(f"Globally disabled {command}")
-
-            elif index == 1:  # Category
-                if not ctx.channel.category:
-                    return await ctx.send("This channel has no category")
-                category_id = str(ctx.channel.category.id)
-                if category_id not in conf["categories"]:
-                    conf["categories"][category_id] = []
-                if command in conf["categories"][category_id]:
-                    return await ctx.send(
-                        f"{command} is already disabled in this category"
-                    )
-                conf["categories"][category_id].append(command)
-                await ctx.send(f"Disabled {command} in {ctx.channel.category}")
-
-            elif index == 2:  # Channel
-                channel_id = str(ctx.channel.id)
-                if channel_id not in conf["channels"]:
-                    conf["channels"][channel_id] = []
-                if command in conf["channels"][channel_id]:
-                    return await ctx.send(
-                        f"{command} is already disabled in this channel"
-                    )
-                conf["channels"][channel_id].append(command)
-                await ctx.send(f"Disabled {command} in {ctx.channel.mention}")
-
-        elif isinstance(location, discord.TextChannel):
-            if str(location.id) not in conf["channels"]:
-                conf["channels"][str(location.id)] = []
-            if command in conf["channels"][str(location.id)]:
-                return await ctx.send(f"{command} is already disabled in that channel")
-            conf["channels"][str(location.id)].append(command)
-            await ctx.send(f"Disabled {command} in that channel")
-        elif isinstance(location, discord.CategoryChannel):
-            if str(location.id) not in conf["categories"]:
-                conf["categories"][str(location.id)] = []
-            if command in conf["categories"][str(location.id)]:
-                return await ctx.send(f"{command} is already disabled in that category")
-            conf["categories"][str(location.id)].append(command)
-            await ctx.send(f"Disabled {command} in that category")
-        config[guild_id] = conf
-        self.bot.disabled_commands = config
-        async with self.bot.open(self.path, "w") as f:
-            await f.write(json.dumps(config))
+        command = self.bot.get_command(command).name
+        if guild_id in self.config and "global" in self.config[guild_id]:
+            if command in self.config[guild_id]["global"]:
+                return await ctx.send(f"`{command}` is already disabled everywhere")
+        locations = [
+            "disable globally", "disable in category", "disable in this channel"
+        ]
+        choice = await self.bot.utils.get_choice(ctx, locations, user=ctx.author)
+        if not choice:
+            return
+        if guild_id not in self.config:
+            self.config[guild_id] = {}
+        if choice == "disable globally":
+            for channel in ctx.guild.text_channels:
+                await asyncio.sleep(0)
+                channel_id = str(channel.id)
+                if channel_id not in self.config[guild_id]:
+                    self.config[guild_id][channel_id] = []
+                if command not in self.config[guild_id][channel_id]:
+                    self.config[guild_id][channel_id].append(command)
+            await ctx.send(f"Disabled `{command}` in all existing channels")
+        elif choice == "disable in category":
+            if not ctx.channel.category:
+                return await ctx.send("This channel has no category")
+            for channel in ctx.channel.category.text_channels:
+                await asyncio.sleep(0)
+                channel_id = str(channel.id)
+                if channel_id not in self.config[guild_id]:
+                    self.config[guild_id][channel_id] = []
+                if command not in self.config[guild_id][channel_id]:
+                    self.config[guild_id][channel_id].append(command)
+            await ctx.send(f"Disabled `{command}` in all of {ctx.channel.category}'s channels")
+        elif choice == "disable in this channel":
+            channel_id = str(ctx.channel.id)
+            if command not in self.config[guild_id][channel_id]:
+                self.config[guild_id][channel_id].append(command)
+            self.config[guild_id][channel_id]["commands"].remove(command)
+            await ctx.send(f"Disabled `{command}` in this channel")
+        await self.config.flush()
 
     @commands.command(name="disabled")
     @commands.cooldown(1, 5, commands.BucketType.channel)
