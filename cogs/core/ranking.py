@@ -745,7 +745,11 @@ class Ranking(commands.Cog):
             if not background_url:
                 return card.save(path, format="PNG")
 
-            background = Image.open(BytesIO(raw_background)).convert("RGBA")
+            try:
+                background = Image.open(BytesIO(raw_background)).convert("RGBA")
+            except UnidentifiedImageError:
+                self.bot.loop.create_task(ctx.send("Invalid background. Change it via .set background"))
+                raise self.bot.ignored_exit
 
             # Ordinary image
             if "gif" not in background_url:
