@@ -55,14 +55,16 @@ class Lock(commands.Cog):
         for human_form, operator in operators.items():
             string = string.replace(human_form, operator)
             string = string.replace(human_form.rstrip('s'), operator)
-        timers = re.findall("[1-9]*[smhdwMy]", string[:8])
+        timers = re.findall("[0-9]*[smhdwMy]", string[:8])
         if not timers:
             return None
         timeframe = 0
         for timer in timers:
             operator = ''.join(c for c in timer if not c.isdigit())
-            num = int(timer.replace(operator, ''))
-            num *= formulas[operator]
+            num = timer.replace(operator, '')
+            if not num:
+                continue
+            num = int(num) * formulas[operator]
             timeframe += num
         return timeframe
 
