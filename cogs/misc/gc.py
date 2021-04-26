@@ -178,6 +178,16 @@ class GlobalChatRewrite(commands.Cog):
                 if str(ctx.author.id) == embed.description:
                     return await ctx.send("You already have an application waiting")
 
+        await ctx.send(
+            "Are, and were you aware that the global-chat channel is independent of, and has nothing "
+            "to do with the server you're planning on using it in? Reply with `yes` to confirm you understand "
+            "its purpose, and won't misuse such purpose. You can reply with `cancel`, or anything else "
+            "to stop the verification process"
+        )
+        reply = await self.bot.utils.get_message(ctx)
+        if "yes" not in reply.content.lower():
+            return await ctx.send("Alright, stopped the verification process. You can redo at any point in time")
+
         await ctx.send("What's your reason for wanting access to global chat. Send `cancel` to stop the process")
         reason = await self.bot.utils.get_message(ctx)
         if "cancel" in reason.content:
