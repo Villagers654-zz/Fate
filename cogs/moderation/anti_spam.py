@@ -17,11 +17,11 @@ defaults = {
     "rate_limit": [
         {
             "timespan": 3,
-            "threshold": 5
+            "threshold": 4
         },
         {
             "timespan": 10,
-            "threshold": 8
+            "threshold": 6
         }
     ],
     "mass_pings": {
@@ -29,7 +29,12 @@ defaults = {
         "thresholds": [{
             "timespan": 10,
             "threshold": 3
-        }]
+        },
+        {
+            "timespan": 30,
+            "threshold": 6
+        }
+        ]
     },
     "duplicates": {
         "per_message": 10,
@@ -63,6 +68,14 @@ class AntiSpam(commands.Cog):
         self.typing = {}
 
         self.cleanup_task.start()
+
+        # for guild_id, config in list(self.config.items()):
+        #     if "mass_pings" in config and len(config["mass_pings"]) == 1:
+        #         config["mass_pings"].append({
+        #             "timespan": 30,
+        #             "threshold": 6
+        #         })
+        # self.bot.loop.create_task(self.config.flush())
 
     def cog_unload(self):
         self.cleanup_task.stop()
@@ -190,24 +203,9 @@ class AntiSpam(commands.Cog):
             if guild_id in self.config:
                 return await ctx.send("Anti spam is already enabled")
             self.config[guild_id] = {
-                "rate_limit": [{
-                    "timespan": 5,
-                    "threshold": 4
-                }],
-                "mass_pings": {
-                    "per_message": 4,
-                    "thresholds": [{
-                        "timespan": 10,
-                        "threshold": 3
-                    }]
-                },
-                "duplicates": {
-                    "per_message": 10,
-                    "thresholds": [{
-                        "timespan": 25,
-                        "threshold": 4
-                    }]
-                }
+                "rate_limit": defaults["rate_limit"],
+                "mass_pings": defaults["mass_pings"],
+                "duplicates": defaults["duplicates"]
             }
             await self.config.flush()
             await ctx.send('Enabled the default anti-spam config')
