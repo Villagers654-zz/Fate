@@ -342,7 +342,7 @@ class ConfigureModules:
         if key == "Enable":
             cmd = self.bot.get_command("enable-command")
             if await cmd.can_run(self.ctx):
-                await cmd.__call__(self.ctx, self.command)
+                await cmd.__call__(ctx=self.ctx, command=self.command)
             else:
                 await self.ctx.send("You can't run this command")
 
@@ -350,7 +350,7 @@ class ConfigureModules:
         elif key == "Disable":
             cmd = self.bot.get_command("disable-command")
             if await cmd.can_run(self.ctx):
-                await cmd.__call__(self.ctx, self.command)
+                await cmd.__call__(ctx=self.ctx, command=self.command)
             else:
                 await self.ctx.send("You can't run this command")
 
