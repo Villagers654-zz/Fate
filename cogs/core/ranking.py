@@ -1062,6 +1062,11 @@ class Ranking(commands.Cog):
                 for user_id, xp in data.items()
                 if self.bot.get_user(int(user_id))
             ]
+            if not sorted_data or not sorted_data[0]:
+                return await ctx.send(
+                    "Insufficient leaderboard data. Try again later, or join the support server "
+                    f"and ask for help {self.bot.config['support_server']}"
+                )
             ems = await create_embed(
                 name=name,
                 rankings=sorted_data,
