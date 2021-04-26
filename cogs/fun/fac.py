@@ -1365,7 +1365,27 @@ class FactionsRewrite(commands.Cog):
             "water",
             "server",
             "toast",
-            "based"
+            "based",
+            "treat",
+            "scrabble",
+            "yeet",
+            "father",
+            "star",
+            "sky",
+            "earth",
+            "mars",
+            "saturn",
+            "pluto",
+            "chips",
+            "shell",
+            "movie",
+            "pet",
+            "soda",
+            "wine",
+            "vinegar",
+            "pizza",
+            "laptop",
+            "house"
         ]  # stay wholesome uwu
         word = random.choice(words)
         scrambled_word = list(str(word).lower())
