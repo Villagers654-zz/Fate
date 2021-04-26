@@ -182,7 +182,7 @@ class AntiSpam(commands.Cog):
                     e.add_field(name="◈ Config", value=conf, inline=False)
             await ctx.send(embed=e)
 
-    @anti_spam.command(name="configure")
+    @anti_spam.command(name="configure", aliases=["config"])
     @commands.has_permissions(administrator=True)
     @commands.bot_has_permissions(embed_links=True, add_reactions=True, manage_messages=True)
     async def _configure(self, ctx):
