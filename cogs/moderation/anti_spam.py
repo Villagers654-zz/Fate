@@ -202,11 +202,7 @@ class AntiSpam(commands.Cog):
             guild_id = ctx.guild.id
             if guild_id in self.config:
                 return await ctx.send("Anti spam is already enabled")
-            self.config[guild_id] = {
-                "rate_limit": defaults["rate_limit"],
-                "mass_pings": defaults["mass_pings"],
-                "duplicates": defaults["duplicates"]
-            }
+            self.config[guild_id] = defaults
             await self.config.flush()
             await ctx.send('Enabled the default anti-spam config')
 
