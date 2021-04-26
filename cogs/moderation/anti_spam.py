@@ -805,32 +805,37 @@ class AntiSpam(commands.Cog):
                         self.dupes[channel_id] = [
                             msg, *[
                                 msg for msg in self.dupes[channel_id]
-                                if msg.created_at > datetime.utcnow() - timedelta(seconds=20)
+                                if msg.created_at > datetime.utcnow() - timedelta(seconds=60)
                             ]
                         ]
-                        for message in list(self.dupes[channel_id]):
-                            await asyncio.sleep(0)
-                            dupes = [
-                                m for m in self.dupes[channel_id]
-                                if m and m.content and m.content == message.content
-                            ]
-                            lmt = 4 if len(message.content) > 3 else 8
-                            if len(dupes) > lmt:
-                                history = await msg.channel.history(limit=2).flatten()
-                                if not any(m.author.bot for m in history):
-                                    users = set(list([
-                                        *[m.author for m in dupes if m], *users
-                                    ]))
-                                    for message in dupes:
-                                        with suppress(IndexError, ValueError, KeyError):
-                                            self.dupes[channel_id].remove(message)
-                                    with suppress(Forbidden, NotFound):
-                                        await msg.channel.delete_messages([
-                                            message for message in dupes if message
-                                        ])
-                                    reason = "duplicate messages"
-                                    triggered = True
-                                    break
+                        for threshold in self.config[guild_id]["duplicates"]["thresholds"]:
+                            lmt = threshold["threshold"]
+                            timeframe = threshold["timespan"]
+                            for message in list(self.dupes[channel_id]):
+                                await asyncio.sleep(0)
+                                dupes = [
+                                    m for m in self.dupes[channel_id]
+                                    if m and m.content and m.content == message.content
+                                       and m.created_at > datetime.utcnow() - timedelta(seconds=timeframe)
+                                ]
+                                if len(dupes) > lmt:
+                                    history = await msg.channel.history(limit=2).flatten()
+                                    if not any(m.author.bot for m in history):
+                                        users = set(list([
+                                            *[m.author for m in dupes if m], *users
+                                        ]))
+                                        for message in dupes:
+                                            with suppress(IndexError, ValueError, KeyError):
+                                                self.dupes[channel_id].remove(message)
+                                        with suppress(Forbidden, NotFound):
+                                            await msg.channel.delete_messages([
+                                                message for message in dupes if message
+                                            ])
+                                        reason = "duplicate messages"
+                                        triggered = True
+                                        break
+                            if triggered:
+                                break
 
             if triggered is None or "ascii" in reason:
                 with suppress(HTTPException, NotFound, Forbidden):
@@ -977,7 +982,7 @@ class ConfigureModules:
     def modules(self):
         """Get their current AntiSpam config"""
         items = self.bot.cogs["AntiSpam"].config[self.guild_id].items()
-        ignored = ('ignored', 'anti_macro', 'duplicates')
+        ignored = ('ignored', 'anti_macro')
         return {
             module: data
             for module, data in items
