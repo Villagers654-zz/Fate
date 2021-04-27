@@ -95,8 +95,7 @@
       "apis",
       "gc",
       "nsfw",
-      "reactions",
-      "reddit_api"
+      "reactions"
     ],
     "moderation": [
       "anti_raid",
