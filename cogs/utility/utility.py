@@ -986,14 +986,15 @@ class Utility(commands.Cog):
         perms = [perm[0] for perm in [perm for perm in discord.Permissions()]]
         if not permission:
             return await ctx.send(f'Perms: {", ".join(perms)}')
-        if permission.lower() not in perms:
+        permission = permission.lower()
+        if permission not in perms:
             return await ctx.send("Unknown perm")
         e = discord.Embed(color=colors.fate())
         e.set_author(name=f"Things with {permission}", icon_url=ctx.author.avatar_url)
         e.set_thumbnail(url=ctx.guild.icon_url)
         members = ""
         for member in ctx.guild.members:
-            if eval(f"member.guild_permissions.{permission}"):
+            if getattr(member.guild_permissions, permission):
                 members += f"{member.mention}\n"
         if members:
             e.add_field(name="Members", value=members[:1000])
@@ -1168,6 +1169,9 @@ class Utility(commands.Cog):
         if user_id not in self.timers:
             self.timers[user_id] = {}
         msg = " ".join(args)
+        if "http" in msg or ctx.message.raw_mentions or len(msg) < 5:
+            return await ctx.send("No.")
+        msg = msg[:200]
         try:
             self.timers[user_id][msg] = {
                 "timer": str(datetime.utcnow() + timedelta(seconds=timer)),
