@@ -1,3 +1,4 @@
+import re
 from discord.ext import commands
 from botutils import colors
 import discord
@@ -5,11 +6,47 @@ import asyncio
 from contextlib import suppress
 
 
+aliases = {
+    "i": ['1', 'l', r'\|'],
+    "o": ["0", "@"]
+}
+
+
 class ChatFilter(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.config = bot.utils.cache("chatfilter")
         self.chatfilter_usage = self._chatfilter
+
+    async def filter(self, content: str, filtered_words: list):
+        def run_regex():
+            regexes = []
+            for word in filtered_words:
+                fmt = word.lower()
+                for letter, _aliases in aliases.items():
+                    regex = f"({letter + '|' + '|'.join(_aliases)})"
+                    fmt = fmt.replace(letter, regex)
+                regexes.append(fmt)
+
+            for regex in regexes:
+                result = re.search(regex, content)
+                if result:
+                    return f"Got flagged for {result.group()}"
+            return "Didn't get flagged"
+
+        content = str(content).lower()
+        return await self.bot.loop.run_in_executor(None, run_regex)
+
+    @commands.command(name="test-filter")
+    @commands.is_owner()
+    async def test_filter(self, ctx, *, content):
+        filter = [
+            "fuck",
+            "shit",
+            "some"
+        ]
+        result = await self.filter(content, filter)
+        return await ctx.send(result)
 
     @commands.group(name="chatfilter")
     @commands.bot_has_permissions(embed_links=True)
