@@ -72,10 +72,16 @@ class ChatBridges(commands.Cog):
                 msg, webhooks = await self.queue[bridge_id].get()
                 file = None
 
-                if isinstance(msg, Message) and msg.attachments and msg.attachments[0].size < 4000000:
-                    with suppress(NotFound, Forbidden, HTTPException):
-                        _file = await msg.attachments[0].to_file()
-                        file = _file
+                if isinstance(msg, Message) and msg.attachments:
+                    if msg.attachments[0].size > 4000000:
+                        if not msg.embeds:
+                            msg.embeds = [discord.Embed(
+                                description=f"[file too large to send]({msg.attachments[0].url})"
+                            )]
+                    else:
+                        with suppress(NotFound, Forbidden, HTTPException):
+                            _file = await msg.attachments[0].to_file()
+                            file = _file
 
                 for channel_id, webhook_url in webhooks:
                     channel = self.bot.get_channel(int(channel_id))
