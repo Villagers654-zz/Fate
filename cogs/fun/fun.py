@@ -639,6 +639,8 @@ class Fun(commands.Cog):
                 try:
                     if int(stripped) > 100:
                         return await ctx.send("That's too high of a percentage")
+                    if int(stripped) < 0:
+                        return await ctx.send("Yikes, must suck")
                 except ValueError:
                     return await ctx.send("The percentage needs to be an integer")
                 self.gay[invoked_with][user_id] = int(stripped)
