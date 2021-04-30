@@ -204,7 +204,8 @@ class GlobalChatRewrite(commands.Cog):
                             "5. No using bot commands in the global channel\n" \
                             "6. No advertising of any kind\n" \
                             "7. No absurdly long, or spam-ish names\n" \
-                            "8. Most importantly abide by discords TOS\n" \
+                            "8. Only speak in English\n" \
+                            "9. Most importantly abide by discords TOS\n" \
                             "**Breaking any of these rules results in being blocked from using the channel**"
         msg = await ctx.send(
             "Do you agree to **all** of the stated rules in this embed?",
