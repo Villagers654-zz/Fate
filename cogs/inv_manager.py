@@ -1,7 +1,7 @@
 # Less api spammy invite manager that relies on high uptime
 
 import asyncio
-from datetime import datetime, timedelta
+from time import time
 from contextlib import suppress
 
 from discord.ext import commands
@@ -12,8 +12,9 @@ import discord
 class InviteManager(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        if not hasattr(bot, "invites"):
-            bot.invites = self
+        if hasattr(bot, "invite_manager"):
+            del bot.invite_manager
+        bot.invite_manager = self
         self.index = bot.utils.cache("invites")
         self.suppressed = (HTTPException, NotFound, Forbidden)
 
@@ -34,7 +35,7 @@ class InviteManager(commands.Cog):
         try:
             invites = await guild.invites()
         except self.suppressed:
-            raise self.bot.ignored_exit
+            raise commands.BadArgument("Missing permissions to fetch server invites")
         self.index[guild.id] = {
             inv.code: self.invite_to_dict(inv) for inv in invites
         }
@@ -67,6 +68,24 @@ class InviteManager(commands.Cog):
         else:
             guild_id = int(guild)
         await self.index.remove(guild_id)
+
+    async def get_inviter(self, guild, member, timeout=2):
+        inviter = "unknown"
+        if guild.id not in self.index:
+            raise KeyError(f"{guild.id} not in index")
+        start = time()
+        while True:
+            if time() - start > timeout:
+                break
+            for invite in list(self.index[guild.id].values()):
+                await asyncio.sleep(0)
+                if member.id in invite["joins"]:
+                    user = self.bot.get_user(invite["user_id"])
+                    if not user:
+                        user = await self.bot.fetch_user(invite["user_id"])
+                    inviter = str(user)
+                    break
+        return inviter
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
