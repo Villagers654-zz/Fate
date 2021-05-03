@@ -1,7 +1,9 @@
 from discord.ext import commands
 from os.path import isfile
+from contextlib import suppress
 from botutils import colors
 import discord
+from discord.errors import NotFound, Forbidden
 import json
 
 
@@ -92,15 +94,18 @@ class AutoRole(commands.Cog):
         guild_id = str(m.guild.id)
         if guild_id in self.roles:
             if not m.guild.me.guild_permissions.manage_roles:
-                history = await m.guild.owner.dm_channel.history(limit=1).flatten()
-                if history and "AutoRole" in history[0].content:
+                try:
+                    history = await m.guild.owner.dm_channel.history(limit=1).flatten()
+                    if history and "AutoRole" in history[0].content:
+                        return
+                except (Forbidden, NotFound, AttributeError):
                     return
                 try:
                     await m.guild.owner.send(
                         f"**[AutoRole - {m.guild.name}] I'm missing manage_roles permissions "
                         f"in order to add roles to new users"
                     )
-                except discord.errors.Forbidden:
+                except (Forbidden, NotFound, AttributeError):
                     pass
                 return
             for role_id in self.roles[guild_id]:
