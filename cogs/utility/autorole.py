@@ -95,7 +95,10 @@ class AutoRole(commands.Cog):
         if guild_id in self.roles:
             if not m.guild.me.guild_permissions.manage_roles:
                 try:
-                    history = await m.guild.owner.dm_channel.history(limit=1).flatten()
+                    dm = m.guild.owner.dm_channel
+                    if not dm:
+                        dm = await m.guild.owner.create_dm()
+                    history = await dm.history(limit=1).flatten()
                     if history and "AutoRole" in history[0].content:
                         return
                 except (Forbidden, NotFound, AttributeError):
