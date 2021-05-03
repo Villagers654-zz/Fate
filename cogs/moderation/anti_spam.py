@@ -818,6 +818,13 @@ class AntiSpam(commands.Cog):
                                     if m and m.content and m.content == message.content
                                        and m.created_at > datetime.utcnow() - timedelta(seconds=timeframe)
                                 ]
+                                all_are_single_use = all(
+                                    len([m for m in dupes if m.author.id == dupes[i].author.id]) == 1
+                                    for i in range(len(dupes))
+                                )
+                                if len(dupes) > 1 and not all_are_single_use:
+                                    if len([d for d in dupes if d.author.id == dupes[0].author.id]) == 1:
+                                        dupes.pop(0)
                                 if len(dupes) > lmt:
                                     history = await msg.channel.history(limit=2).flatten()
                                     if not any(m.author.bot for m in history):
