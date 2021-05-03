@@ -5,9 +5,36 @@ from PIL import Image
 from typing import Union
 import asyncio
 from datetime import timedelta
+from time import time
 from colormap import rgb2hex
 import discord
-from discord.ext import commands
+
+
+class CooldownManager:
+    def __init__(self, bot, limit, timeframe, raise_error=False):
+        self.bot = bot
+        self.limit = limit
+        self.timeframe = timeframe
+        self.raise_error = raise_error
+        self.index = {}
+
+    def check(self, _id) -> bool:
+        now = int(time() / self.timeframe)
+        if _id not in self.index:
+            self.index[_id] = [now, 0]
+        if self.index[_id][0] == now:
+            self.index[_id][1] += 1
+        else:
+            self.index[_id] = [now, 0]
+        if self.index[_id][1] >= self.limit:
+            if self.raise_error:
+                raise self.bot.ignored_exit
+            return False
+        return True
+
+    def cleanup(self):
+        del self.index
+        self.index = {}
 
 
 class OperationLock:
@@ -328,4 +355,5 @@ def init(cls):
     cls.dump_json = formatting.dump_json
     OperationLock.bot = cls.bot
     cls.operation_lock = OperationLock
+    cls.cooldown_manager = lambda *args, **kwargs: CooldownManager(cls.bot, *args, **kwargs)
 
