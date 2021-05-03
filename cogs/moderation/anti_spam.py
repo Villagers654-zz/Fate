@@ -647,7 +647,9 @@ class AntiSpam(commands.Cog):
 
                 # Empty lines spam
                 if conf["empty_lines"]:
-                    if len([l for l in lines if not l]) > len([l for l in lines if l]) and len(lines) > 8:
+                    small_lines = len([l for l in lines if not l or len(l) < 3])
+                    large_lines = len([l for l in lines if l and len(l) > 2])
+                    if small_lines > large_lines and len(lines) > 8:
                         reason = "Inhuman: too many empty lines"
                         triggered = True
 
