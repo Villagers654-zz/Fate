@@ -244,7 +244,8 @@ class ChatBridges(commands.Cog):
         if len(msg.content) > 1000 or "\n\n\n" in msg.content:
             return await warn()
         if len(msg.content) > 50 and msg.content.count(" ") == 0:
-            return await warn()
+            if "http" not in msg.content or len(msg.content) > 750:
+                return await warn()
         if len(msg.content) > 5 and all(c == msg.content[0] for c in msg.content):
             return await warn()
 
