@@ -10,6 +10,7 @@ class Responses(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.responses = bot.utils.cache("responses")
+        self.cooldown = bot.utils.cooldown_manager(1, 10, raise_error=True)
         self.cd = {}
         self.spam_cd = {}
         self.last = {}
@@ -33,6 +34,8 @@ class Responses(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, m: discord.Message):
         if isinstance(m.guild, discord.Guild) and self.bot.is_ready():
+            if not m.channel.permissions_for(m.guild.me).send_messages:
+                return
             if self.bot.user.mentioned_in(m):
                 content = str(m.content).replace("@!", "@")
                 mention = f"<@{self.bot.user.id}> "
@@ -107,6 +110,7 @@ class Responses(commands.Cog):
             if m.guild.id in self.responses:
                 if not m.author.bot and m.channel.permissions_for(m.guild.me).send_messages:
                     if random.randint(1, 4) == 4:
+                        self.cooldown.check(m.channel.id)
                         if m.content.startswith("hello"):
                             await m.channel.send(
                                 random.choice(
