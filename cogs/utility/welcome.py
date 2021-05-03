@@ -116,7 +116,7 @@ class Welcome(commands.Cog):
         conf = {
             "enabled": True,
             "channel": None,
-            "format": "Welcome !user",
+            "format": "Welcome !mention",
             "useimages": False,
             "images": [],
             "wait_for_verify": False
@@ -168,6 +168,8 @@ class Welcome(commands.Cog):
             messages.append(msg)
             if "cancel" in msg.content.lower():
                 return
+            if "!inviter" in msg.content:
+                await self.bot.invite_manager.init(ctx.guild)
             conf["format"] = msg.content
             break
 
@@ -219,15 +221,21 @@ class Welcome(commands.Cog):
         await ctx.send(embed=e)
 
     @_welcome.command(name="test")
-    async def _test(self, ctx):
+    async def _test(self, ctx, user: discord.User=None):
         guild_id = ctx.guild.id
-        m = ctx.author
         channel = ctx.channel
+        if not user:
+            user = ctx.author
         if guild_id not in self.config:
             return await ctx.send("You need to enable the module first")
-        msg = self.config[guild_id]["format"]
-        msg = msg.replace("$MENTION", m.mention).replace("$SERVER", m.guild.name)
-        msg = msg.replace("!user", m.mention).replace("!server", m.guild.name)
+        msg = self.config[guild_id]["format"] \
+            .replace("!server", ctx.guild.name) \
+            .replace("!user", str(user)) \
+            .replace("!name", user.name) \
+            .replace("!mention", user.mention)
+        if "!inviter" in msg and ctx.guild.id in self.bot.invite_manager.index:
+            inviter = await self.bot.invite_manager.get_inviter(ctx.guild,user)
+            msg = msg.replace("!inviter", inviter)
         path = (
             os.getcwd()
             + "/data/images/reactions/welcome/"
@@ -340,12 +348,16 @@ class Welcome(commands.Cog):
         if guild_id not in self.config:
             return await ctx.send("Welcome messages aren't enabled")
         if message:
+            if "!inviter" in message:
+                await self.bot.invite_manager.init(ctx.guild)
             self.config[guild_id]["format"] = message
         else:
             await ctx.send(
                 "What format should I use?:```css\nExample:\nWelcome !user to !server```"
             )
             async with self.bot.require("message", ctx, handle_timeout=True) as msg:
+                if "!inviter" in msg.content:
+                    await self.bot.invite_manager.init(ctx.guild)
                 self.config[guild_id]["format"] = msg.content
         await ctx.send("Set the welcome format 👍")
         await self.config.flush()
@@ -363,9 +375,10 @@ class Welcome(commands.Cog):
         await self.config.flush()
 
     @commands.Cog.listener()
-    async def on_member_join(self, m: discord.Member, just_verified=False):
-        if isinstance(m.guild, discord.Guild):
-            guild_id = m.guild.id
+    async def on_member_join(self, member: discord.Member, just_verified=False):
+        if isinstance(member.guild, discord.Guild):
+            guild = member.guild
+            guild_id = guild.id
             if guild_id in self.config and self.config[guild_id]["enabled"]:
                 if not just_verified and self.config[guild_id]["wait_for_verify"]:
                     return
@@ -374,61 +387,50 @@ class Welcome(commands.Cog):
                 if not channel:
                     self.config[guild_id]["enabled"] = False
                     return await self.config.flush()
-                msg = conf["format"]
-                msg = msg.replace("$MENTION", m.mention).replace(
-                    "$SERVER", m.guild.name
-                )
-                msg = msg.replace("!user", m.mention).replace("!server", m.guild.name)
-                await asyncio.sleep(0)
-                path = (
-                    os.getcwd()
-                    + "/data/images/reactions/welcome/"
-                    + random.choice(
-                        os.listdir(os.getcwd() + "/data/images/reactions/welcome/")
-                    )
-                )
-                await asyncio.sleep(0)
+
+                # Format the welcome message
+                msg = conf["format"] \
+                    .replace("!server", guild.name) \
+                    .replace("!user", str(member)) \
+                    .replace("!name", member.name) \
+                    .replace("!mention", member.mention)
+                if "!inviter" in msg and guild.id in self.bot.invite_manager.index:
+                    inviter = await self.bot.invite_manager.get_inviter(guild, member)
+                    msg = msg.replace("!inviter", inviter)
+
+                # Attach images in an embed
                 if conf["useimages"]:
                     e = discord.Embed(color=colors.fate())
                     if conf["images"]:
                         e.set_image(url=random.choice(conf["images"]))
                         try:
-                            await channel.send(
-                                msg,
-                                embed=e,
-                                allowed_mentions=mentions,
-                            )
+                            return await channel.send(msg, embed=e, allowed_mentions=mentions)
                         except discord.errors.Forbidden:
                             self.config[guild_id]["enabled"] = False
                             return await self.config.flush()
-                        else:
-                            pass
-                    else:
-                        e.set_image(url="attachment://" + os.path.basename(path))
-                        try:
-                            await channel.send(
-                                msg,
-                                file=discord.File(
-                                    path, filename=os.path.basename(path)
-                                ),
-                                embed=e,
-                                allowed_mentions=mentions,
-                            )
-                        except discord.errors.Forbidden:
-                            self.config[guild_id]["enabled"] = False
-                            return await self.config.flush()
-                        else:
-                            pass
-                else:
+
+                    # Send with our own images
+                    path = os.getcwd() + "/data/images/reactions/welcome/" + random.choice(
+                        os.listdir(os.getcwd() + "/data/images/reactions/welcome/")
+                    )
+                    e.set_image(url="attachment://" + os.path.basename(path))
                     try:
-                        await channel.send(
-                            msg, allowed_mentions=mentions
+                        return await channel.send(
+                            msg,
+                            file=discord.File(path, filename=os.path.basename(path)),
+                            embed=e,
+                            allowed_mentions=mentions,
                         )
                     except discord.errors.Forbidden:
                         self.config[guild_id]["enabled"] = False
                         return await self.config.flush()
-                    else:
-                        pass
+
+                # Send without images
+                try:
+                    await channel.send(msg, allowed_mentions=mentions)
+                except discord.errors.Forbidden:
+                    self.config[guild_id]["enabled"] = False
+                    return await self.config.flush()
 
 
 def setup(bot):
