@@ -606,7 +606,7 @@ async def on_ready():
 @bot.event
 async def on_message(msg):
     # Send the prefix if the bot's mentioned
-    if bot.user.mentioned_in(msg) and len(msg.content.split()) == 1:
+    if not msg.bot and bot.user.mentioned_in(msg) and len(msg.content.split()) == 1:
         if str(bot.user.id) in msg.content:
             prefixes = "\n".join(
                 bot.utils.get_prefixes(bot, msg)[1:]  # type: list
@@ -626,7 +626,7 @@ async def on_error(_event_method, *_args, **_kwargs):
     error = sys.exc_info()[1]
     if isinstance(error, bot.ignored_exit):
         return
-    elif isinstance(error, aiohttp.ClientOSError):
+    if isinstance(error, aiohttp.ClientOSError):
         if "Connection reset" in str(error):
             return
     raise error
@@ -634,7 +634,7 @@ async def on_error(_event_method, *_args, **_kwargs):
 
 @bot.event
 async def on_guild_join(guild):
-    if not bot.is_ready():
+    if not bot.is_ready() or not guild:
         return
     channel = bot.get_channel(bot.config["log_channel"])
     e = discord.Embed(color=colors.pink())
