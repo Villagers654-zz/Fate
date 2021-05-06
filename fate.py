@@ -606,7 +606,7 @@ async def on_ready():
 @bot.event
 async def on_message(msg):
     # Send the prefix if the bot's mentioned
-    if not msg.bot and bot.user.mentioned_in(msg) and len(msg.content.split()) == 1:
+    if not msg.author.bot and bot.user.mentioned_in(msg) and len(msg.content.split()) == 1:
         if str(bot.user.id) in msg.content:
             prefixes = "\n".join(
                 bot.utils.get_prefixes(bot, msg)[1:]  # type: list
