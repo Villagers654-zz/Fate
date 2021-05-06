@@ -308,9 +308,11 @@ class Core(commands.Cog):
             await ctx.send(f"Disabled `{command}` in all of {ctx.channel.category}'s channels")
         elif choice == "disable in this channel":
             channel_id = str(ctx.channel.id)
+            if channel_id not in self.config[guild_id]:
+                self.config[guild_id][channel_id] = []
             if command not in self.config[guild_id][channel_id]:
                 self.config[guild_id][channel_id].append(command)
-            self.config[guild_id][channel_id]["commands"].remove(command)
+            self.config[guild_id][channel_id].remove(command)
             await ctx.send(f"Disabled `{command}` in this channel")
         await self.config.flush()
 
