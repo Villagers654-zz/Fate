@@ -69,14 +69,6 @@ class AntiSpam(commands.Cog):
 
         self.cleanup_task.start()
 
-        # for guild_id, config in list(self.config.items()):
-        #     if "mass_pings" in config and len(config["mass_pings"]) == 1:
-        #         config["mass_pings"].append({
-        #             "timespan": 30,
-        #             "threshold": 6
-        #         })
-        # self.bot.loop.create_task(self.config.flush())
-
     def cog_unload(self):
         self.cleanup_task.stop()
 
