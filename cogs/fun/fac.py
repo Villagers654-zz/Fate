@@ -214,7 +214,7 @@ class FactionsRewrite(commands.Cog):
         if len(factions) > 1:
             choice = await self.bot.utils.get_choice(ctx, factions, user=ctx.author)
             if not choice:
-                return
+                raise commands.CheckFailure("Timed out waiting for reply")
             return choice
         elif factions:
             return factions[0]
