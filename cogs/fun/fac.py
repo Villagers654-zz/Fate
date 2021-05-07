@@ -1385,8 +1385,15 @@ class FactionsRewrite(commands.Cog):
             "vinegar",
             "pizza",
             "laptop",
-            "house"
-        ]  # stay wholesome uwu
+            "house",
+            "empire",
+            "fan",
+            "van",
+            "tan",
+            "ban",
+            "yeet",
+            "poggers"
+        ]
         word = random.choice(words)
         scrambled_word = list(str(word).lower())
         random.shuffle(scrambled_word)
