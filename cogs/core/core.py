@@ -274,10 +274,9 @@ class Core(commands.Cog):
         guild_id = ctx.guild.id
         if not self.bot.get_command(command):
             return await ctx.send("That's not a command")
+        if guild_id not in self.config:
+            self.config[guild_id] = {}
         command = self.bot.get_command(command).name
-        if guild_id in self.config and "global" in self.config[guild_id]:
-            if command in self.config[guild_id]["global"]:
-                return await ctx.send(f"`{command}` is already disabled everywhere")
         locations = [
             "disable globally", "disable in category", "disable in this channel"
         ]
