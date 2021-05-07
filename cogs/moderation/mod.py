@@ -1469,7 +1469,7 @@ class Moderation(commands.Cog):
                 if user.top_role.position >= ctx.author.top_role.position:
                     await ctx.send(f"{user.name} is above your paygrade, take a seat")
                     continue
-            await self.warn_user(ctx.channel, user, reason, ctx)
+            self.bot.loop.create_task(self.warn_user(ctx.channel, user, reason, ctx))
 
     @commands.command(name="delwarn", aliases=["del-warn"])
     @commands.cooldown(*Utils.default_cooldown())
