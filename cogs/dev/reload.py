@@ -16,7 +16,7 @@ class Reload(commands.Cog):
     @commands.is_owner()
     async def reload(self, ctx, *modules: lambda x: x.lower()):
         if not modules:
-            modules = [*self.bot.initial_extensions, *self.bot.awaited_extensions]
+            modules = self.bot.config["initial_extensions"]
         successful = []
         unsuccessful = []
         for module in modules:
