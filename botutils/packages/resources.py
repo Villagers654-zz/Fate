@@ -36,14 +36,14 @@ class Cache:
                 await collection.insert_one({
                     "_id": key, **self._cache[key]
                 })
-                self._db_state[key] = value
+                self._db_state[key] = deepcopy(value)
             elif value != self._db_state[key]:
                 await collection.replace_one(
                     filter={"_id": key},
                     replacement=self._cache[key],
                     upsert=True
                 )
-                self._db_state[key] = value
+                self._db_state[key] = deepcopy(value)
 
     def keys(self):
         return self._cache.keys()
