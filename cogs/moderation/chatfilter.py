@@ -1,14 +1,16 @@
 import re
 from time import time
+import asyncio
+from contextlib import suppress
+from unicodedata import normalize
+from string import printable
 from discord.ext import commands
 from botutils import colors
 import discord
-import asyncio
-from contextlib import suppress
 
 
 aliases = {
-    "i": ['1', 'l', r'\|'],
+    "i": ['1', 'l', r'\|', "!", "/", "j", r"\*", ";"],
     "o": ["0", "@"]
 }
 
@@ -23,21 +25,39 @@ class ChatFilter(commands.Cog):
 
     async def filter(self, content: str, filtered_words: list):
         def run_regex():
+
             regexes = []
             for word in filtered_words:
+                if not all(c.lower() != c.upper() or c == "." for c in word):
+                    if word.lower() in content.lower():
+                        return word
+                    continue
                 fmt = word.lower()
                 for letter, _aliases in aliases.items():
                     regex = f"({letter + '|' + '|'.join(_aliases)})"
                     fmt = fmt.replace(letter, regex)
                 regexes.append(fmt)
 
+                if len(word) > 4 and len(content) > 4:
+                    for i in range(len(word)):
+                        _word = list(word)
+                        _word[i] = "."
+                        regexes.append("".join(_word))
+
             for regex in regexes:
+                if len(regex) == 1 or not regex:
+                    continue
                 result = re.search(regex, content)
                 if result:
-                    return f"Got flagged for {result.group()}"
-            return "Didn't get flagged"
+                    trigger = result.group()
+                    if any(trigger in word and trigger != word for word in content.split()):
+                        continue
+                    return f"{trigger}"
+            return False
 
         content = str(content).lower().replace("\\", "")
+        content = normalize('NFKD', content).encode('ascii', 'ignore').decode()
+        content = "".join(c for c in content if c in printable)
         return await self.bot.loop.run_in_executor(None, run_regex)
 
     @commands.command(name="test-filter")
@@ -178,8 +198,20 @@ class ChatFilter(commands.Cog):
         guild_id = ctx.guild.id
         if guild_id not in self.config:
             return await ctx.send("Chatfilter isn't enabled")
-        if phrase not in self.config[guild_id]["blacklist"]:
+        if phrase not in self.config[guild_id]["blacklist"] and not phrase.endswith("*"):
             return await ctx.send("Phrase/word not found")
+        removed = []
+        if phrase.endswith("*"):
+            phrase = phrase.rstrip("*")
+            for word in list(self.config[guild_id]["blacklist"]):
+                _word = normalize('NFKD', word).encode('ascii', 'ignore').decode().lower()
+                if _word.startswith(phrase):
+                    self.config[guild_id]["blacklist"].remove(word)
+                    removed.append(word)
+            if not removed:
+                return await ctx.send("No phrase/words found matching that")
+            await ctx.send(f"Removed {', '.join(f'`{w}`' for w in removed)}")
+            return await self.config.flush()
         self.config[guild_id]["blacklist"].remove(phrase)
         await ctx.send(f"Removed `{phrase}`")
         await self.config.flush()
@@ -203,11 +235,22 @@ class ChatFilter(commands.Cog):
     async def on_message(self, m: discord.Message):
         if hasattr(m.guild, "id") and m.guild.id in self.config:
             guild_id = m.guild.id
+            if not self.config[guild_id]["toggle"]:
+                return
             if not m.author.bot or "bots" in self.config[guild_id]:
                 if m.channel.id in self.config[guild_id]["ignored"]:
                     return
+                if m.guild.id == 613457449936224295:
+                    result = await self.filter(m.content, self.config[guild_id]["blacklist"])
+                    if result:
+                        with suppress(Exception):
+                            await m.delete()
+                            await m.channel.send(f"Deleted {m.author.mention}'s msg for {result}", delete_after=5)
+                    return
                 for phrase in self.config[guild_id]["blacklist"]:
                     await asyncio.sleep(0)
+
+
                     if "\\" in phrase:
                         m.content = m.content.replace("\\", "")
                     if m.author.bot or not self.bot.attrs.is_moderator(m.author):
@@ -225,6 +268,8 @@ class ChatFilter(commands.Cog):
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
         if hasattr(after.guild, "id") and after.guild.id in self.config:
+            if not self.config[after.guild.id]["toggle"]:
+                return
             guild_id = after.guild.id
             if not after.author.bot or "bots" in self.config[guild_id]:
                 if after.channel.id in self.config[guild_id]["ignored"]:
