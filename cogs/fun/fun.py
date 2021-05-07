@@ -202,6 +202,9 @@ class Fun(commands.Cog):
         if msg.embeds:
             await ctx.send(f"{msg.author} at {time}", embed=msg.embeds[0])
         else:
+            if ctx.guild.id in self.bot.filtered_messages:
+                if msg.id in self.bot.filtered_messages[ctx.guild.id]:
+                    return await ctx.send("I think not m8")
             if len(msg.content) > 1000 and not ctx.author.guild_permissions.administrator:
                 return await ctx.send("wHy would I snipe that?")
             e = discord.Embed(color=msg.author.color)

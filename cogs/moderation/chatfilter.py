@@ -1,4 +1,5 @@
 import re
+from time import time
 from discord.ext import commands
 from botutils import colors
 import discord
@@ -14,6 +15,8 @@ aliases = {
 
 class ChatFilter(commands.Cog):
     def __init__(self, bot):
+        if not hasattr(bot, "filtered_messages"):
+            bot.filtered_messages = {}
         self.bot = bot
         self.config = bot.utils.cache("chatfilter")
         self.chatfilter_usage = self._chatfilter
@@ -34,7 +37,7 @@ class ChatFilter(commands.Cog):
                     return f"Got flagged for {result.group()}"
             return "Didn't get flagged"
 
-        content = str(content).lower()
+        content = str(content).lower().replace("\\", "")
         return await self.bot.loop.run_in_executor(None, run_regex)
 
     @commands.command(name="test-filter")
@@ -214,6 +217,9 @@ class ChatFilter(commands.Cog):
                                 if phrase in chunk.lower():
                                     await asyncio.sleep(0.5)
                                     await m.delete()
+                                    if m.guild.id not in self.bot.filtered_messages:
+                                        self.bot.filtered_messages[m.guild.id] = {}
+                                    self.bot.filtered_messages[m.guild.id][m.id] = time()
                                     return
 
     @commands.Cog.listener()
@@ -236,6 +242,9 @@ class ChatFilter(commands.Cog):
                                     await asyncio.sleep(0.5)
                                     with suppress(discord.errors.NotFound):
                                         await after.delete()
+                                    if after.guild.id not in self.bot.filtered_messages:
+                                        self.bot.filtered_messages[after.guild.id] = {}
+                                    self.bot.filtered_messages[after.guild.id][after.id] = time()
                                     return
 
 
