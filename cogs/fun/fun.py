@@ -249,7 +249,9 @@ class Fun(commands.Cog):
             self.dat[channel_id][user_id] = dat
 
     @commands.command(name="battle", aliases=["fight"])
-    @commands.cooldown(2, 30, commands.BucketType.user)
+    @commands.cooldown(2, 60, commands.BucketType.user)
+    @commands.cooldown(2, 45, commands.BucketType.channel)
+    @commands.cooldown(2, 30, commands.BucketType.guild)
     @commands.guild_only()
     @commands.bot_has_permissions(attach_files=True, embed_links=True)
     async def battle(self, ctx, user1: discord.User, user2: discord.User = None):
@@ -327,6 +329,10 @@ class Fun(commands.Cog):
             "💅 | !user ignored !target `-1HP`": 1,
             "🖐 | !user slapped !target `-5HP`": 5,
             "😈 | !user triggered !target's vietnam war flashbacks `-10HP`": 10,
+            "🦝 | !user threw !target like a raccoon": 15,
+            "🦶 | !user tripped !target": 10,
+            "🦵 | !user hit the back of !target's knee and made them fold like origami": 10,
+            "📱 | !user got cancelled by !target on twitter": 25
             # "🏓 | !user played ping-pong with !targets nuts `-5HP`": 5
         }
 
@@ -336,12 +342,18 @@ class Fun(commands.Cog):
             "💁‍♀️ | !target dodged because they're not like other girls"
         ]
 
+        last = None
         while True:
             if health1 <= 0:
-                return await ctx.send(f"{user2.name} won")
+                await msg.edit(content=f"🏆 **{user2.name} won** 🏆")
+                return await ctx.send(f"⚔ **{user2.name}** won against **{user1.name}**")
             if health2 <= 0:
-                return await ctx.send(f"{user1.name} won")
+                await msg.edit(content=f"🏆 **{user1.name} won** 🏆")
+                return await ctx.send(f"⚔ **{user1.name}** won against **{user2.name}**")
             attack = random.choice(list(attacks.keys()))
+            if attack == last:
+                attack = random.choice(list(attacks.keys()))
+            last = attack
             dmg = attacks[attack]
             if random.randint(1, 10) == 1:
                 attack = random.choice(dodges)
