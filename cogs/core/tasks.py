@@ -19,6 +19,7 @@ class Tasks(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.enabled_tasks = [
+            self.cog_cleanup,
             self.status_task,
             self.log_queue,
             self.debug_log,
@@ -41,6 +42,36 @@ class Tasks(commands.Cog):
             if not task.is_running():
                 task.start()
                 self.bot.log(f"Started task {task.coro.__name__}", color="cyan")
+
+    @tasks.loop(minutes=1)
+    async def cog_cleanup(self):
+        # Clean the filtered messages index by only keeping recent deletes
+        objects_removed = 0
+        for guild_id, msgs in list(self.bot.filtered_messages.items()):
+            await asyncio.sleep(0)
+            for msg_id, deleted_at in msgs.items():
+                if time.time() - 1800 > deleted_at:
+                    del self.bot.filtered_messages[guild_id][msg_id]
+                    objects_removed += 1
+            if not self.bot.filtered_messages[guild_id]:
+                del self.bot.filtered_messages[guild_id]
+                objects_removed += 1
+
+        for cog in list(self.bot.cogs.keys()):
+            await asyncio.sleep(0)
+            if hasattr(cog, "cooldown"):
+                count = len(cog.cooldown.index)
+                cog.cooldown.cleanup()
+                objects_removed += count
+            # for attr in dir(cog):
+            #     await asyncio.sleep(0)
+            #     if attr.endswith("cd"):
+            #         obj = getattr(cog, attr)
+            #         if isinstance(obj, dict):
+
+        if objects_removed:
+            self.bot.log.info(f"Cleaned up {objects_removed} objects")
+
 
     @tasks.loop(hours=1)
     async def cleanup_pool(self):
