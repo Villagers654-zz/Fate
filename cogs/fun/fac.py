@@ -1173,6 +1173,10 @@ class FactionsRewrite(commands.Cog):
             "💅 | !user ignored !target `-1HP`": 1,
             "🖐 | !user slapped !target `-5HP`": 5,
             "😈 | !user triggered !target's vietnam war flashbacks `-10HP`": 10,
+            "🦝 | !user threw !target like a raccoon": 15,
+            "🦶 | !user tripped !target": 10,
+            "🦵 | !user hit the back of !target's knee and made them fold like origami": 10,
+            "📱 | !user got cancelled by !target on twitter": 25
             # "🏓 | !user played ping-pong with !targets nuts `-5HP`": 5
         }
 
@@ -1184,13 +1188,15 @@ class FactionsRewrite(commands.Cog):
 
         while True:
             if health1 <= 0:
+                await msg.edit(content=f"🏆 **{user.name} won** 🏆")
                 self.factions[guild_id][fac1]["balance"] -= amount
                 self.factions[guild_id][fac2]["balance"] += amount
-                return await ctx.send(f"{user.name} has won $50 from {ctx.author.name}")
+                return await ctx.send(f"⚔ **{user.name}** has won **${amount}** from **{ctx.author.name}**")
             if health2 <= 0:
+                await msg.edit(content=f"🏆 **{ctx.author.name} won** 🏆")
                 self.factions[guild_id][fac2]["balance"] -= amount
                 self.factions[guild_id][fac1]["balance"] += amount
-                return await ctx.send(f"{ctx.author.name} has won $50 from {user.name}")
+                return await ctx.send(f"⚔ **{ctx.author.name}** has won **${amount}** from **{user.name}**")
             attack = random.choice(list(attacks.keys()))
             dmg = attacks[attack]
             if random.randint(1, 10) == 1:
