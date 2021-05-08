@@ -59,6 +59,7 @@ class Utility(commands.Cog):
         if "timers" not in bot.tasks:
             bot.tasks["timers"] = {}
         self.database_cleanup_task.start()
+        self.cd = bot.utils.cooldown_manager(1, 120, raise_error=False)
 
     def cog_unload(self):
         self.database_cleanup_task.cancel()
@@ -1133,7 +1134,7 @@ class Utility(commands.Cog):
             del self.bot.tasks["timers"][f"timer-{dat['timer']}"]
 
     @commands.command(name="reminder", aliases=["timer", "remindme", "remind"])
-    @commands.cooldown(2, 5, commands.BucketType.user)
+    @commands.cooldown(2, 15, commands.BucketType.user)
     async def timer(self, ctx, *args):
         p = self.bot.utils.get_prefixes(self.bot, ctx.message)[2]
         usage = (
@@ -1165,12 +1166,21 @@ class Utility(commands.Cog):
             time_to_sleep[1].append(f"{raw} {_repr if raw == '1' else _repr + 's'}")
         timer, expanded_timer = time_to_sleep
 
+        if timer < 25:
+            r = self.cd.check(ctx.channel.id)
+            if r:
+                return await ctx.send("Why tho. Tell me. Why. Why has your life lead you up to this point. What even is the point. Definitely not for this. Please, ***please***  consider giving the outdoors a try. There's plenty fish in the sea even. Anything but ***this***")
+            return await ctx.send("That timer's too smol")
         user_id = str(ctx.author.id)
         if user_id not in self.timers:
             self.timers[user_id] = {}
         msg = " ".join(args)
-        if "http" in msg or ctx.message.raw_mentions or len(msg) < 5:
-            return await ctx.send("No.")
+        if "http" in msg:
+            return await ctx.send("You can't include links in timers")
+        if ctx.message.raw_mentions:
+            return await ctx.send("You can't include additional pings in timers")
+        if len(msg) <= 1:
+            return await ctx.send("Too smol")
         msg = msg[:200]
         try:
             self.timers[user_id][msg] = {
