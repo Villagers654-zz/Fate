@@ -448,6 +448,7 @@ class FactionsRewrite(commands.Cog):
                   f"\n{p}f vote"
                   f"\n{p}f forage"
                   f"\n{p}f scrabble"
+                  f"\n{p}f coinflip"
                   f"\n{p}f balance"
                   f"\n{p}f pay [faction] [amount]"
                   f"\n{p}f raid [faction]"
@@ -1430,6 +1431,27 @@ class FactionsRewrite(commands.Cog):
         else:
             self.factions[guild_id][faction]["income"][str(ctx.author.id)] = paycheck
         await ctx.send(embed=e)
+        await self.save_data()
+
+    @factions.command(name="coinflip", aliases=["flip"])
+    @commands.cooldown(1, 15, commands.BucketType.user)
+    async def coin_flip(self, ctx, amount: int):
+        faction = await self.get_authors_faction(ctx)
+        if amount > 1000:
+            return await ctx.send(f"You can't gamble more than $1,000")
+        async with ctx.channel.typing():
+            msg = await ctx.send(f"**{ctx.author.name}** flipped a coin anddd.. 🤞")
+            if random.randint(1, 3) == 2:
+                result = "🏆 won"
+                gain = amount
+            else:
+                result = "🙁 lost"
+                gain = -amount
+            await asyncio.sleep(3)
+        await msg.edit(
+            content=msg.content + f"\n{result} {amount}"
+        )
+        self.factions[str(ctx.guild.id)][faction]["balance"] += gain
         await self.save_data()
 
     @factions.command(name="vote")
