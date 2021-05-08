@@ -15,6 +15,7 @@ from contextlib import suppress
 
 from discord.ext import commands
 import discord
+from discord import Member, Role, TextChannel
 from discord.ext.commands import Greedy
 from discord.errors import NotFound, Forbidden, HTTPException
 
@@ -1317,6 +1318,34 @@ class Moderation(commands.Cog):
             await user.add_roles(role)
             msg = f"Gave **{role.name}** to **@{user.name}**"
         await ctx.send(msg)
+
+    @commands.command(name="rename")
+    @commands.cooldown(1, 3, commands.BucketType.user)
+    @commands.guild_only()
+    @commands.has_permissions(administrator=True)
+    @commands.bot_has_permissions(administrator=True)
+    async def rename(self, ctx, target: Union[Member, Role, TextChannel], *, new_name=""):
+        if not isinstance(target, Member) and not new_name:
+            return await ctx.send("You need to specify the new name after the target you're renaming")
+        old_name = str(target.display_name if hasattr(target, "display_name") else target.name)
+        new_name = new_name[:28]
+        try:
+            if isinstance(target, Member):
+                if target.top_role.position >= ctx.author.top_role.position:
+                    return await ctx.send("That user's above your paygrade, take a seat")
+                await target.edit(nick=new_name)
+            elif isinstance(target, Role):
+                if target.position >= ctx.author.top_role.position:
+                    return await ctx.send("This role is above your paygrade, take a seat")
+                await target.edit(name=new_name)
+            elif isinstance(target, TextChannel):
+                if not target.permissions_for(ctx.author).manage_channels:
+                    return await ctx.send("You don't have the required permissions to edit that channel")
+                await target.edit(name=new_name)
+        except Forbidden:
+            await ctx.send("I'm missing permissions to change that targets name")
+        else:
+            await ctx.send(f"Renamed {target.mention} from {old_name}")
 
     async def warn_user(self, channel, user, reason, context):
         guild = channel.guild
