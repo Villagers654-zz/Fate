@@ -1447,7 +1447,7 @@ class FactionsRewrite(commands.Cog):
             return await ctx.send(f"You can't gamble more than $1,000")
         async with ctx.channel.typing():
             msg = await ctx.send(f"**{ctx.author.name}** flipped a coin anddd.. 🤞")
-            if random.randint(1, 3) == 2:
+            if random.randint(1, 2) == 2:
                 result = "🏆 won"
                 gain = amount
             else:
