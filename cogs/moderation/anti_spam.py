@@ -840,7 +840,7 @@ class AntiSpam(commands.Cog):
                             if triggered:
                                 break
 
-            if triggered is None or "ascii" in reason:
+            if triggered is None or "ascii" in reason and not m.author.guild_permissions.administrator:
                 with suppress(HTTPException, NotFound, Forbidden):
                     await msg.delete()
                     await msg.channel.send(f"No {reason}")
