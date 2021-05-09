@@ -284,8 +284,8 @@ class ModMail(commands.Cog):
                 return None
             e = discord.Embed(color=self.bot.config["theme_color"])
             e.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
-            e.set_footer(text=str(ctx.author.id))
-            e.description = f"**Case #{case}:**\n"
+            e.set_footer(text="Use .reply to respond")
+            e.description = f"**Case #{case}:**\n**UserID:** {ctx.author.id}\n"
             reason = self.bot.decode(reason)
             if link:
                 e.description += f"Reason: [{reason}]({link})\n"
@@ -327,6 +327,8 @@ class ModMail(commands.Cog):
     async def close_thread(self, ctx):
         if "case-" not in ctx.channel.name:
             return await ctx.send("Unable to parse the channel name")
+        if "-closed" in ctx.channel.name:
+            return await ctx.send("This thread's already closed")
         case = ctx.channel.name.replace("case-", "").replace("-closed", "")
         if not case.isdigit():
             return await ctx.send("Unable to parse the channel name")
