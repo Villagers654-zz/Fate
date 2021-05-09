@@ -25,7 +25,6 @@ class ChatFilter(commands.Cog):
 
     async def filter(self, content: str, filtered_words: list):
         def run_regex():
-
             regexes = []
             for word in filtered_words:
                 if not all(c.lower() != c.upper() or c == "." for c in word):
@@ -55,7 +54,10 @@ class ChatFilter(commands.Cog):
                     return f"{trigger}"
             return False
 
-        content = str(content).lower().replace("\\", "")
+        illegal = ("\\", "*", "`", "_")
+        content = content.lower()
+        for char in illegal:
+            content = content.replace(char, "")
         content = normalize('NFKD', content).encode('ascii', 'ignore').decode()
         content = "".join(c for c in content if c in printable)
         return await self.bot.loop.run_in_executor(None, run_regex)
@@ -245,6 +247,9 @@ class ChatFilter(commands.Cog):
                     if result:
                         with suppress(Exception):
                             await m.delete()
+                            if m.guild.id not in self.bot.filtered_messages:
+                                self.bot.filtered_messages[m.guild.id] = {}
+                            self.bot.filtered_messages[m.guild.id][m.id] = time()
                             await m.channel.send(f"Deleted {m.author.mention}'s msg for {result}", delete_after=5)
                     return
                 for phrase in self.config[guild_id]["blacklist"]:
