@@ -1161,11 +1161,11 @@ class FactionsRewrite(commands.Cog):
             "🏹 | !user shot !target in the arm with an arrow `-10HP`": 10,
             "🏹 | !user shot !target in the leg with an arrow `-10HP`": 10,
             "🏹 | !user shot !target in the chest with an arrow `-30HP`": 30,
-            "🔫 | Pew pew! !target got shot by !user `-50HP`": 50,
-            "💣 | YEET!.. 💥 !target got blown up `-100HP`": 100,
-            "⚡ | !user struck !target with lightning `-50HP`": 50,
+            "🔫 | Pew pew! !target got shot by !user `-35HP`": 35,
+            "💣 | YEET!.. 💥 !target got blown up `-65HP`": 65,
+            "⚡ | !user struck !target with lightning `-35HP`": 35,
             "🔥 | !user set !target on fire `-10HP`": 10,
-            "🌠 | !user used astral power to strike !target `-100HP`": 100,
+            "🌠 | !user used astral power to strike !target `-65HP`": 65,
             "🚗 | !user ran into !target `-25HP`": 25,
             "🛴 | !user hit !target's ankles with a scooter `-10HP`": 10,
             "👻 | !user scared !target shitless `-2HP`": 2,
@@ -1173,10 +1173,10 @@ class FactionsRewrite(commands.Cog):
             "💅 | !user ignored !target `-1HP`": 1,
             "🖐 | !user slapped !target `-5HP`": 5,
             "😈 | !user triggered !target's vietnam war flashbacks `-10HP`": 10,
-            "🦝 | !user threw !target like a raccoon": 15,
-            "🦶 | !user tripped !target": 10,
-            "🦵 | !user hit the back of !target's knee and made them fold like origami": 10,
-            "📱 | !user got cancelled by !target on twitter": 25
+            "🦝 | !user threw !target like a raccoon `-15HP`": 15,
+            "🦶 | !user tripped !target `-10HP`": 10,
+            "🦵 | !user hit the back of !target's knee and made them fold like origami `-10HP`": 10,
+            "📱 | !user got cancelled by !target on twitter `-25HP`": 25
             # "🏓 | !user played ping-pong with !targets nuts `-5HP`": 5
         }
 
@@ -1186,6 +1186,7 @@ class FactionsRewrite(commands.Cog):
             "💁‍♀️ | !target dodged because they're not like other girls"
         ]
 
+        attacks_used = []
         while True:
             if health1 <= 0:
                 await msg.edit(content=f"🏆 **{user.name} won** 🏆")
@@ -1197,7 +1198,14 @@ class FactionsRewrite(commands.Cog):
                 self.factions[guild_id][fac2]["balance"] -= amount
                 self.factions[guild_id][fac1]["balance"] += amount
                 return await ctx.send(f"⚔ **{ctx.author.name}** has won **${amount}** from **{user.name}**")
-            attack = random.choice(list(attacks.keys()))
+            while True:
+                if len(attacks_used) == len(attacks):
+                    attacks_used = []
+                attack = random.choice(list(attacks.keys()))
+                if attack in attacks_used:
+                    continue
+                attacks_used.append(attack)
+                break
             dmg = attacks[attack]
             if random.randint(1, 10) == 1:
                 attack = random.choice(dodges)
