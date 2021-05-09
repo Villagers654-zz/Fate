@@ -191,7 +191,7 @@ class Core(commands.Cog):
         if prefix.startswith('"') and prefix.endswith('"') and len(prefix) > 2:
             prefix = prefix.strip('"')
         prefix = prefix.strip("'\"")
-        if len(prefix) > 5:
+        if len(prefix) > 8:
             return await ctx.send("Your prefix can't be more than 8 chars long")
         if ctx.author.id in self.bot.user_prefixes:
             await self.bot.aio_mongo["UserPrefixes"].update_one(
