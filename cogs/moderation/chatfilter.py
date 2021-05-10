@@ -39,6 +39,8 @@ class ChatFilter(commands.Cog):
 
                 if len(word) > 4 and len(content) > 4:
                     for i in range(len(word)):
+                        if i == 0:
+                            continue
                         _word = list(word)
                         _word[i] = "."
                         regexes.append("".join(_word))
