@@ -645,12 +645,16 @@ class FactionsRewrite(commands.Cog):
         user = await self.bot.utils.get_user(ctx, user)
         if not user:
             return await ctx.send("User not found")
+        if user.id == ctx.author.id:
+            return await ctx.send("You can't promote yourself")
         guild_id = str(ctx.guild.id)
         faction = await self.get_authors_faction(ctx)
         if not faction or ctx.author.id != self.factions[guild_id][faction]["owner"]:
             return await ctx.send("You need to be owner of a faction to use this cmd")
         if user.id in self.factions[guild_id][faction]["co-owners"]:
-            return await ctx.send("That users already a co-owner")
+            return await ctx.send("That user's already a co-owner")
+        if user.id not in self.factions[guild_id][faction]["members"]:
+            return await ctx.send("That user's not in your faction")
         self.factions[guild_id][faction]["co-owners"].append(user.id)
         await ctx.send(f"Promoted {user.mention} to co-owner")
         await self.save_data()
@@ -1076,6 +1080,8 @@ class FactionsRewrite(commands.Cog):
         """ Battle other faction members """
         if amount > 1000:
             return await ctx.send("You can't bet more than $1000")
+        if amount <= 0:
+            return await ctx.send("That's not enough monies")
         guild_id = str(ctx.guild.id)
         fac1 = await self.get_authors_faction(ctx)
         fac2 = await self.get_users_faction(ctx, user)
@@ -1453,6 +1459,8 @@ class FactionsRewrite(commands.Cog):
         faction = await self.get_authors_faction(ctx)
         if amount > 1000:
             return await ctx.send(f"You can't gamble more than $1,000")
+        if amount <= 0:
+            return await ctx.send("That's not enough monies")
         async with ctx.channel.typing():
             msg = await ctx.send(f"**{ctx.author.name}** flipped a coin anddd.. 🤞")
             if random.randint(1, 2) == 2:
@@ -1759,22 +1767,23 @@ class FactionsRewrite(commands.Cog):
             guild_id = str(msg.guild.id)
             if guild_id in self.factions and "annex" not in msg.content.lower():
                 claims = await self.collect_claims(guild_id)  # type: dict
-                if msg.channel.id in claims:
-                    if msg.channel.id not in self.claim_counter:
-                        self.claim_counter[msg.channel.id] = 0
-                    self.claim_counter[msg.channel.id] += 1
-                    if self.claim_counter[msg.channel.id] == 5:
-                        self.claim_counter[msg.channel.id] = 0
-                        faction = claims[msg.channel.id]["faction"]
-                        pay = random.randint(1, 5)
-                        self.factions[guild_id][faction]["balance"] += pay
-                        await self.update_income_board(guild_id, faction, land_claims=pay)
-                        for ally in list(self.factions[guild_id][faction]["allies"]):
-                            if ally not in self.factions[guild_id]:
-                                self.factions[guild_id][faction]["allies"].remove(ally)
-                                continue
-                            self.factions[guild_id][ally]["balance"] += 1
-                            await self.update_income_board(guild_id, ally, alliances=1)
+                with suppress(KeyError):
+                    if msg.channel.id in claims:
+                        if msg.channel.id not in self.claim_counter:
+                            self.claim_counter[msg.channel.id] = 0
+                        self.claim_counter[msg.channel.id] += 1
+                        if self.claim_counter[msg.channel.id] == 5:
+                            self.claim_counter[msg.channel.id] = 0
+                            faction = claims[msg.channel.id]["faction"]
+                            pay = random.randint(1, 5)
+                            self.factions[guild_id][faction]["balance"] += pay
+                            await self.update_income_board(guild_id, faction, land_claims=pay)
+                            for ally in list(self.factions[guild_id][faction]["allies"]):
+                                if ally not in self.factions[guild_id]:
+                                    self.factions[guild_id][faction]["allies"].remove(ally)
+                                    continue
+                                self.factions[guild_id][ally]["balance"] += 1
+                                await self.update_income_board(guild_id, ally, alliances=1)
 
 
 def setup(bot):
