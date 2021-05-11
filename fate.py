@@ -456,6 +456,26 @@ class Fate(commands.AutoShardedBot):
         return await self.utils.get_choice(ctx, *options, user=user, timeout=timeout)
     # -------------------------------------------------------
 
+    def get_asset(self, asset):
+        asset = asset.lstrip("/")
+        if "." not in asset or not os.path.exists(f"./assets/{asset}"):
+            dir = "./assets/"
+            paths = asset.split("/")
+            filename = paths[-1:][0]
+            if "/" in asset:
+                dir += paths[0]
+            for file in os.listdir(dir):
+                if filename in file:
+                    asset = asset.replace(filename, file)
+                    break
+            else:
+                for root, dirs, files in os.walk(dir):
+                    for file in files:
+                        if filename in file:
+                            asset = os.path.join(root.lstrip("./assets/"), file)
+                            break
+        return f"http://assets.fatebot.xyz/{asset}"
+
     async def load(self, data):
         load_json = lambda: json.loads(data)
         return await self.loop.run_in_executor(None, load_json)
