@@ -99,16 +99,16 @@ class Music(commands.Cog):
 
         # Assets
         self.color = self.bot.utils.colors.green()
-        self._playlist = "https://cdn.discordapp.com/attachments/632084935506788385/797738904483528765/playlist.png"
-        self._player = "https://cdn.discordapp.com/attachments/498333830395199488/507170864614342676/75c21df998c0d0c97631853ea5619ea1.gif"
-        self._playing = "https://media.discordapp.net/attachments/498333830395199488/507136609897021455/Z23N.gif"
-        self._note = "https://cdn.discordapp.com/attachments/632084935506788385/797744681672507402/note.png"
-        self._notes = "https://cdn.discordapp.com/attachments/632084935506788385/797740072262303744/note.gif"
-        self._repeat = "https://cdn.discordapp.com/attachments/632084935506788385/797743421770432542/repeat.gif"
-        self._volume = "https://cdn.discordapp.com/attachments/632084935506788385/797782826484498432/volume.png"
-        self._skip = "https://cdn.discordapp.com/attachments/632084935506788385/797783872581795840/skip.png"
-        self._seek = "https://cdn.discordapp.com/attachments/632084935506788385/797793989947293767/seek.png"
-        self._pause = "https://cdn.discordapp.com/attachments/632084935506788385/798075784543207424/pause-play.png"
+        self._playlist = bot.get_asset("playlist")
+        self._player = bot.get_asset("player")
+        self._playing = bot.get_asset("playing")
+        self._note = bot.get_asset("note")
+        self._notes = bot.get_asset("notes")
+        self._repeat = bot.get_asset("repeat")
+        self._volume = bot.get_asset("volume")
+        self._skip = bot.get_asset("skip")
+        self._seek = bot.get_asset("seek")
+        self._pause = bot.get_asset("pause-play")
 
     def cog_unload(self):
         """ Cog unload handler. This removes any event hooks that were registered. """
