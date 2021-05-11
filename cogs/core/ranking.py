@@ -686,6 +686,7 @@ class Ranking(commands.Cog):
             def font(size):
                 return ImageFont.truetype("./botutils/fonts/Modern_Sans_Light.otf", size)
 
+            file = BytesIO()
             card = Image.open(BytesIO(raw_card))
             draw = ImageDraw.Draw(card)
             data = []
@@ -743,7 +744,8 @@ class Ranking(commands.Cog):
 
             # backgrounds and saving
             if not background_url:
-                return card.save(path, format="PNG")
+                card.save(file, format="PNG")
+                return file, "png"
 
             try:
                 background = Image.open(BytesIO(raw_background)).convert("RGBA")
@@ -756,8 +758,8 @@ class Ranking(commands.Cog):
                 background = background.convert("RGBA")
                 background = background.resize((1000, 500), Image.BICUBIC)
                 background.paste(card, (0, 0), card)
-                background.save(path, format="PNG")
-                return background.save(path, format="PNG")
+                background.save(file, format="PNG")
+                return file, "png"
 
             # Keep the size of gifs low
             dur = background.info["duration"]
@@ -773,18 +775,21 @@ class Ranking(commands.Cog):
                         frames.remove(frame)
                     skip = not skip
 
-            return frames[0].save(
-                fp=path,
+            frames[0].save(
+                fp=file,
                 save_all=True,
                 append_images=frames[1:],
                 loop=0,
                 duration=dur,
                 optimize=False,
+                format="GIF"
             )
+            return file, "gif"
 
-        await self.bot.loop.run_in_executor(None, create_card)
+        file, ext = await self.bot.loop.run_in_executor(None, create_card)
+        file.seek(0)
         ty = "Profile" if "profile" in ctx.message.content.lower() else "Rank"
-        await ctx.send(f"> **{ty} card for {user}**", file=discord.File(path))
+        await ctx.send(f"> **{ty} card for {user}**", file=discord.File(file, filename=f"card.{ext.lower()}"))
 
     @commands.command(name="top")
     @commands.cooldown(1, 25, commands.BucketType.user)
@@ -792,7 +797,8 @@ class Ranking(commands.Cog):
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True, attach_files=True)
     async def top(self, ctx):
-        await ctx.channel.trigger_typing()
+        if hasattr(ctx, "channel"):
+            await ctx.channel.trigger_typing()
 
         async def get_av_task(url):
             try:
@@ -868,15 +874,19 @@ class Ranking(commands.Cog):
 
                 card.paste(im, (5, 100 * i), im)
 
-            card.save(fp)
+            mem_file = BytesIO()
+            card.save(mem_file, format="PNG")
+            mem_file.seek(0)
+            return mem_file
 
-        await self.bot.loop.run_in_executor(None, create_card)
+        file = await self.bot.loop.run_in_executor(None, create_card)
+        if not hasattr(ctx, "channel"):
+            return file
 
         e = discord.Embed(color=colors.fate())
         e.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
-        e.set_image(url=f"attachment://{fp}")
-        await ctx.send(embed=e, file=discord.File(fp, filename=fp))
-        os.remove(fp)
+        e.set_image(url=f"attachment://top.png")
+        await ctx.send(embed=e, file=discord.File(file, filename="top.png"))
 
     @commands.command(
         name="leaderboard",
