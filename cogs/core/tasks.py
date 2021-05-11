@@ -49,7 +49,7 @@ class Tasks(commands.Cog):
         objects_removed = 0
         for guild_id, msgs in list(self.bot.filtered_messages.items()):
             await asyncio.sleep(0)
-            for msg_id, deleted_at in msgs.items():
+            for msg_id, deleted_at in list(msgs.items()):
                 if time.time() - 1800 > deleted_at:
                     del self.bot.filtered_messages[guild_id][msg_id]
                     objects_removed += 1
@@ -68,10 +68,6 @@ class Tasks(commands.Cog):
             #     if attr.endswith("cd"):
             #         obj = getattr(cog, attr)
             #         if isinstance(obj, dict):
-
-        if objects_removed:
-            self.bot.log.info(f"Cleaned up {objects_removed} objects")
-
 
     @tasks.loop(hours=1)
     async def cleanup_pool(self):
