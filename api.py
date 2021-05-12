@@ -1,7 +1,4 @@
-import nest_asyncio
-nest_asyncio.apply()
-
-from aiohttp import web
+from aiohttp import web, ClientSession
 import asyncio
 
 from discord.ext import commands
@@ -10,11 +7,44 @@ import discord
 from classes.exceptions import aiohttp as errors
 
 
-class Bot(commands.Bot):
+clients = {}
+API_ENDPOINT = 'https://discord.com/api/v8'
+CLIENT_ID = '506735111543193601'
+CLIENT_SECRET = '67_VttLomTPv55ialTsaCPEySX1l7Vm_'
+REDIRECT_URI = 'http://fatebot.xyz/success'
+scope = "https://discord.com/api/oauth2/authorize?client_id=506735111543193601&redirect_uri=http%3A%2F%2Ffatebot.xyz%2Fsuccess&response_type=code&scope=identify"
+
+async def exchange_code(code):
+  data = {
+    'client_id': CLIENT_ID,
+    'client_secret': CLIENT_SECRET,
+    'grant_type': 'authorization_code',
+    'code': code,
+    'redirect_uri': REDIRECT_URI
+  }
+  headers = {
+    'Content-Type': 'application/x-www-form-urlencoded'
+  }
+  async with ClientSession() as session:
+      url = "https://discord.com/api/v8/oauth2/token"
+      async with session.post(url, data=data, headers=headers) as resp:
+          return await resp.json()
+
+
+# header = {"Authorization": "Bearer " + dat["access_token"]}
+# r = requests.get(f"https://discord.com/api/users/@me", headers=header)
+# r.raise_for_status()
+# print(r.json())
+
+
+
+class Bot(commands.AutoShardedBot):
     def __init__(self, **kwargs):
         self.app = web.Application()
         self.app.router.add_get("/user/{tail:[0-9]*}", self.user_info)
         self.app.router.add_get("/guild", self.guild_info)
+        self.app.router.add_get("/ranks", self.ranks)
+        self.app.router.add_get("/success{tail:.*}", self.get_user)
         self.api_is_running = False
         self.secret = "1234"
         super().__init__(
@@ -23,12 +53,32 @@ class Bot(commands.Bot):
             **kwargs
         )
 
+    async def get_user(self, request):
+        code = request.rel_url.query["code"]
+        if code in clients:
+            return web.json_response(clients[code])
+        auth = await exchange_code(code)
+        if "access_token" not in auth:
+            raise web.HTTPFound(location=scope)
+        headers = {"Authorization": "Bearer " + auth["access_token"]}
+        async with ClientSession() as session:
+            url = "https://discord.com/api/users/@me"
+            async with session.get(url, headers=headers) as resp:
+                info = await resp.json()
+        if not info:
+            return web.Response(text="Invalid access token", status=404)
+        clients[code] = info
+        return web.json_response(info)
+
     async def on_ready(self):
         """Initialize the API if not running"""
         print(f"Logged in as {bot.user}")
         if not self.api_is_running:
             self.api_is_running = True
-            web.run_app(self.app, port=80)
+            runner = web.AppRunner(self.app)
+            await runner.setup()
+            site = web.TCPSite(runner, port=80)
+            await site.start()
 
     async def authenticate(self, request):
         """Ensure the request is legit"""
@@ -93,6 +143,9 @@ class Bot(commands.Bot):
         _root, _user_id = paths
 
         return web.json_response({})
+
+    async def ranks(self, request):
+        pass
 
 
 bot = Bot()
