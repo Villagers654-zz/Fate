@@ -22,6 +22,7 @@ class ChatFilter(commands.Cog):
         self.bot = bot
         self.config = bot.utils.cache("chatfilter")
         self.chatfilter_usage = self._chatfilter
+        self.webhooks = {}
 
     async def filter(self, content: str, filtered_words: list):
         def run_regex():
@@ -31,6 +32,12 @@ class ChatFilter(commands.Cog):
                     if word.lower() in content.lower():
                         return word
                     continue
+                for section in content.split():
+                    if word.lower() in section.lower():
+                        for section in section.split():
+                            if len(section) - len(word) > 2 and len(word) > 3:
+                                return word.lower()
+
                 fmt = word.lower()
                 for letter, _aliases in aliases.items():
                     regex = f"({letter + '|' + '|'.join(_aliases)})"
@@ -235,6 +242,20 @@ class ChatFilter(commands.Cog):
         toggle = "Enabled" if "bots" in self.config[guild_id] else "Disabled"
         await ctx.send(f"{toggle} filtering bot messages")
 
+    async def get_webhook(self, channel):
+        if channel.id not in self.webhooks:
+            webhook = await channel.create_webhook(name="Chatfilter")
+            if channel.id not in self.webhooks:
+                self.webhooks[channel.id] = webhook
+        return self.webhooks[channel.id]
+
+    async def delete_webhook(self, channel):
+        await asyncio.sleep(25)
+        if channel.id in self.webhooks:
+            webhook = self.webhooks[channel.id]
+            del self.webhooks[channel.id]
+            await webhook.delete()
+
     @commands.Cog.listener()
     async def on_message(self, m: discord.Message):
         if hasattr(m.guild, "id") and m.guild.id in self.config:
@@ -252,7 +273,20 @@ class ChatFilter(commands.Cog):
                             if m.guild.id not in self.bot.filtered_messages:
                                 self.bot.filtered_messages[m.guild.id] = {}
                             self.bot.filtered_messages[m.guild.id][m.id] = time()
-                            await m.channel.send(f"Deleted {m.author.mention}'s msg for {result}", delete_after=5)
+
+                            if m.channel.permissions_for(m.guild.me).manage_webhooks:
+                                w = await self.get_webhook(m.channel)
+
+                                backslash = "\\"
+                                word = f"{result[0]}{rf'{backslash}*'*(len(result)-1)}"
+                                new = m.content.lower().replace(result.lower(), word.lower())
+
+                                await w.send(
+                                    content=new,
+                                    avatar_url=m.author.avatar_url,
+                                    username=m.author.display_name
+                                )
+                                await self.delete_webhook(m.channel)
                     return
                 for phrase in self.config[guild_id]["blacklist"]:
                     await asyncio.sleep(0)
