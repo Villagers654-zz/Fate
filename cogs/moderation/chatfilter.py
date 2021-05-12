@@ -34,9 +34,8 @@ class ChatFilter(commands.Cog):
                     continue
                 for section in content.split():
                     if word.lower() in section.lower():
-                        for section in section.split():
-                            if len(section) - len(word) > 2 and len(word) > 3:
-                                return word.lower()
+                        if len(section) - len(word) > 2 and len(word) > 3:
+                            return word.lower()
 
                 fmt = word.lower()
                 for letter, _aliases in aliases.items():
