@@ -874,19 +874,17 @@ class Ranking(commands.Cog):
 
                 card.paste(im, (5, 100 * i), im)
 
-            mem_file = BytesIO()
-            card.save(mem_file, format="PNG")
-            mem_file.seek(0)
-            return mem_file
+            card.save(fp)
 
-        file = await self.bot.loop.run_in_executor(None, create_card)
+        await self.bot.loop.run_in_executor(None, create_card)
         if not hasattr(ctx, "channel"):
-            return file
+            return fp
 
         e = discord.Embed(color=colors.fate())
         e.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
-        e.set_image(url=f"attachment://top.png")
-        await ctx.send(embed=e, file=discord.File(file, filename="top.png"))
+        e.set_image(url=f"attachment://{fp}")
+        await ctx.send(embed=e, file=discord.File(fp, filename=fp))
+        os.remove(fp)
 
     @commands.command(
         name="leaderboard",
