@@ -105,6 +105,9 @@ class InviteManager(commands.Cog):
             if len(discrepancies) == 1:
                 inv = discrepancies[0]
                 self.index[guild.id][inv.code]["joins"].append(member.id)
+                if member.id in self.index[guild.id][inv.code]["leaves"]:
+                    self.index[guild.id][inv.code]["leaves"].remove(member.id)
+                self.index[guild.id][inv.code]["uses"] += 1
         await self.index.flush()
 
     @commands.Cog.listener()
@@ -119,6 +122,7 @@ class InviteManager(commands.Cog):
             if member.id in data["joins"]:
                 self.index[guild.id][code]["joins"].remove(member.id)
                 self.index[guild.id][code]["leaves"].append(member.id)
+                self.index[guild.id][code]["uses"] -= 1
         await self.index.flush()
 
     @commands.Cog.listener()
