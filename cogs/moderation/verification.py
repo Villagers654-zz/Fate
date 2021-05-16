@@ -1,8 +1,6 @@
 # Captcha human verification channels
 
 import asyncio
-from os import path
-import json
 from typing import Optional
 from contextlib import suppress
 from datetime import datetime, timedelta
@@ -20,6 +18,9 @@ class Verification(commands.Cog):
     def __init__(self, bot: Fate):
         self.bot = bot
         self.config = bot.utils.cache("verification")
+        for guild_id, config in self.config.items():
+            self.config[guild_id]["time_limit"] = 45
+        self.bot.loop.create_task(self.config.flush())
         self.queue = {}
         self.running_tasks = []
 
@@ -56,6 +57,8 @@ class Verification(commands.Cog):
                 f"\n{p}verification set-temp-role @role"
                 f"\n`set or change the role to remove whence verified. this is an optional feature, "
                 f"and isn't required in order for verification to work`"
+                f"\n{p}verification set-limit 45"
+                f"\n`sets the time limit for completing the captcha`"
                 f"\n{p}verification delete-after"
                 f"\n`toggles whether or not to delete the captcha after a user completes verification`"
                 f"\n{p}verification kick"
@@ -216,6 +219,7 @@ class Verification(commands.Cog):
             "kick_on_fail": kick_on_fail,
             "log_channel": log_channel,
             "auto_start": automatic,
+            "time_limit": 45
         }
         await ctx.send("Successfully setup the verification system")
         await self.config.flush()
@@ -247,6 +251,16 @@ class Verification(commands.Cog):
             )
         self.config[guild_id]["channel_id"] = channel.id
         await ctx.send("Set the verification channel")
+        await self.config.flush()
+
+    @verification.command(name="set-limit")
+    @commands.has_permissions(administrator=True)
+    async def set_limit(self, ctx, limit: int):
+        guild_id = ctx.guild.id
+        if guild_id not in self.config:
+            return await ctx.send("Verification isn't enabled")
+        self.config[guild_id]["time_limit"] = limit
+        await ctx.send(f"Updated the time limit to {limit} seconds")
         await self.config.flush()
 
     @verification.group(name="set-verified-role")
@@ -427,7 +441,7 @@ class Verification(commands.Cog):
             if verified_role in member.roles:
                 return
             verified = await self.bot.verify_user(
-                channel=channel, user=member, delete_after=conf["delete_after"]
+                channel=channel, user=member, delete_after=conf["delete_after"], timeout=conf["time_limit"]
             )
             if verified:
                 await member.add_roles(verified_role)
