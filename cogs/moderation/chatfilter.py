@@ -36,6 +36,8 @@ class ChatFilter(commands.Cog):
                     if word.lower() in section.lower():
                         if len(section) - len(word) > 2 and len(word) > 3:
                             return word.lower()
+                    if word.lower() == section[1:].lower():
+                        return word
 
                 fmt = word.lower()
                 for letter, _aliases in aliases.items():
