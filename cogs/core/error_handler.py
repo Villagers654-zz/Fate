@@ -53,6 +53,8 @@ class ErrorHandler(commands.Cog):
                 return await ctx.send(f"`{ctx.command}` is disabled.")
 
             # Unaccepted, or improperly used arg was passed
+            elif isinstance(error, commands.ExpectedClosingQuoteError):
+                return await ctx.send("You can't include a `\"` in that argument")
             elif isinstance(error, (commands.BadArgument, commands.errors.BadUnionArgument)):
                 return await ctx.send(error)
 
