@@ -49,7 +49,9 @@ class ErrorHandler(commands.Cog):
 
         try:
             # Disabled globally in the code
-            if isinstance(error, commands.DisabledCommand):
+            if isinstance(error, RuntimeError):
+                return await ctx.send("Oop, I had an internal error. Rerun the command")
+            elif isinstance(error, commands.DisabledCommand):
                 return await ctx.send(f"`{ctx.command}` is disabled.")
 
             # Unaccepted, or improperly used arg was passed
