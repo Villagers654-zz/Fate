@@ -9,17 +9,48 @@ from io import BytesIO
 import requests
 import aiohttp
 from time import time, monotonic
-from typing import Union
+from typing import Optional
 import asyncio
 from datetime import datetime
+from contextlib import suppress
 
 from discord.ext import commands
 import discord
 from discord import Webhook, AsyncWebhookAdapter
 import dbl
+from discord.ext.commands import Context
 
-from botutils import config, colors, auth
+from botutils import config, colors
 from cogs.core.utils import Utils as utils
+
+
+class Conversation:
+    """Emulate a realistic conversation process with typing"""
+    def __init__(self, ctx: Context, delay: int = 2):
+        self.ctx = ctx
+        self.bot = ctx.bot
+        self.delay = delay
+
+    async def send(self, *args, **kwargs):
+        """Sleep then return the object to send"""
+        await asyncio.sleep(0.5)
+        await self.ctx.channel.trigger_typing()
+        await asyncio.sleep(self.delay - 0.5)
+        return await self.ctx.send(*args, **kwargs)
+
+    async def ask(self, *args, **kwargs):
+        """Get the recipients reply"""
+        def predicate(m):
+            return m.author.id == self.ctx.author.id and m.channel.id == self.ctx.channel.id
+
+        await self.send(*args, **kwargs)
+        msg = await self.bot.utils.get_message(predicate)
+
+        if "cancel" in msg.content:
+            await self.ctx.send("Alright, operation cancelled")
+            raise self.bot.ignored_exit
+
+        return msg
 
 
 class Core(commands.Cog):
@@ -38,6 +69,8 @@ class Core(commands.Cog):
         )
         self.path = "./data/userdata/disabled_commands.json"
         self.config = bot.utils.cache("disabled")
+
+        self.setup_usage = "Helps you set the bot up via conversation"
 
     async def on_guild_post(self):
         self.bot.log.debug("Server count posted successfully")
@@ -68,6 +101,43 @@ class Core(commands.Cog):
     async def votes(self, ctx):
         votes = await self.dblpy.get_bot_upvotes()
         await ctx.send(", ".join(dat["username"] for dat in votes))
+
+    @commands.command(name="setup")
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.guild_only()
+    @commands.has_permissions(administrator=True)
+    @commands.cooldown(1, 10, commands.BucketType.guild)
+    async def setup(self, ctx):
+        convo = Conversation(ctx)
+        await convo.send(
+            "To follow with setup just reply with `yes/no` for whether or not you want "
+            "to use the given module. To stop just send `cancel`."
+        )
+
+        # Set the prefix
+        reply = await convo.ask("To start, what's the command prefix you want me to have")
+        await self.bot.get_command("prefix")(ctx, prefix=reply.content)
+
+        # Anti Spam
+        reply = await convo.ask("Do you want to use AntiSpam to mute any spammers I detect?")
+        if "yes" in reply.content.lower():
+            await convo.send("Alright, you can customize this more with `.antispam configure`")
+            await self.bot.get_command("antispam enable")(ctx)
+
+        # Logger
+        reply = await convo.ask(
+            "Do you want a logs channel set to show things like deleted messages? if so #mention the channel"
+        )
+        if reply.channel_mentions:
+            channel = reply.channel_mentions[0]
+            await self.bot.get_command("log setchannel")(ctx, channel=channel)
+
+        # Verification
+        reply = await convo.ask("Do you want users to verify via a captcha when they join the server?")
+        if "yes" in reply.content.lower():
+            await self.bot.get_command("verification enable")(ctx)
+
+        await convo.send("Setup complete")
 
     @commands.command(name="topguilds")
     @commands.cooldown(1, 5, commands.BucketType.user)
