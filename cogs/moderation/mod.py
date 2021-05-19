@@ -1134,7 +1134,10 @@ class Moderation(commands.Cog):
                 if (
                     i + 1
                 ) % 5 == 0:  # try checking the bots internal message cache instead
-                    msg = await ctx.channel.fetch_message(msg.id)
+                    try:
+                        msg = await ctx.channel.fetch_message(msg.id)
+                    except NotFound:
+                        return
                     await msg.edit(embed=gen_embed(i))
                 try:
                     await member.edit(nick=nick)
