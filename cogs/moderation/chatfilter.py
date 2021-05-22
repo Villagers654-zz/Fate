@@ -27,22 +27,33 @@ class ChatFilter(commands.Cog):
     async def filter(self, content: str, filtered_words: list):
         def run_regex():
             regexes = []
+            flags = []
             for word in filtered_words:
-                if not all(c.lower() != c.upper() or c == "." for c in word):
-                    if word.lower() in content.lower():
-                        return word
+                word = word.lower()
+                if not all(c.lower() != c.upper() or c != "." for c in word):
+                    if word in content:
+                        flags.append(word)
                     continue
                 for section in content.split():
-                    if word.lower() in section.lower():
+                    if word in section:
                         if len(section) - len(word) > 2 and len(word) > 3:
-                            return word.lower()
-                    if word.lower() == section[1:].lower():
-                        return word
+                            flags.append(word)
+                            continue
+                    if word == section[1:]:
+                        flags.append(word)
+                        continue
 
+                max_char_range = "{1,2000}"
                 fmt = word.lower()
+                # Add a max range of 2K chars for repeated letters like "fuuuuuck"
+                for i, letter in enumerate(fmt):
+                    if letter not in aliases:
+                        fmt = fmt.replace(letter, letter + max_char_range)
+                # Add regexes for alias characters
                 for letter, _aliases in aliases.items():
-                    regex = f"({letter + '|' + '|'.join(_aliases)})"
+                    regex = f"({letter + '|' + '|'.join(_aliases)})*"
                     fmt = fmt.replace(letter, regex)
+                fmt = fmt.replace(max_char_range * 2, max_char_range)  # Remove repeated ranges
                 regexes.append(fmt)
 
                 if len(word) > 4 and len(content) > 4:
@@ -61,16 +72,25 @@ class ChatFilter(commands.Cog):
                     trigger = result.group()
                     if any(trigger in word and trigger != word for word in content.split()):
                         continue
-                    return f"{trigger}"
-            return False
+                    flags.append(trigger)
+            return flags
 
         illegal = ("\\", "*", "`", "_")
-        content = content.lower()
+        content = str(content).lower()
         for char in illegal:
             content = content.replace(char, "")
         content = normalize('NFKD', content).encode('ascii', 'ignore').decode()
         content = "".join(c for c in content if c in printable)
-        return await self.bot.loop.run_in_executor(None, run_regex)
+
+        flags = await self.bot.loop.run_in_executor(None, run_regex)
+        if not flags:
+            return False
+
+        for flag in flags:
+            filtered_word = f"{flag[0]}{f'{illegal[0]}*' * (len(flag) - 1)}"
+            content = content.replace(flag, filtered_word)
+
+        return content
 
     @commands.command(name="test-filter")
     @commands.is_owner()
@@ -266,7 +286,7 @@ class ChatFilter(commands.Cog):
             if not m.author.bot or "bots" in self.config[guild_id]:
                 if m.channel.id in self.config[guild_id]["ignored"]:
                     return
-                if m.guild.id == 613457449936224295:
+                if m.guild.id in [613457449936224295, 397415086295089155]:
                     result = await self.filter(m.content, self.config[guild_id]["blacklist"])
                     if result:
                         with suppress(Exception):
@@ -277,13 +297,8 @@ class ChatFilter(commands.Cog):
 
                             if m.channel.permissions_for(m.guild.me).manage_webhooks:
                                 w = await self.get_webhook(m.channel)
-
-                                backslash = "\\"
-                                word = f"{result[0]}{rf'{backslash}*'*(len(result)-1)}"
-                                new = m.content.lower().replace(result.lower(), word.lower())
-
                                 await w.send(
-                                    content=new,
+                                    content=result,
                                     avatar_url=m.author.avatar_url,
                                     username=m.author.display_name
                                 )
@@ -291,7 +306,6 @@ class ChatFilter(commands.Cog):
                     return
                 for phrase in self.config[guild_id]["blacklist"]:
                     await asyncio.sleep(0)
-
 
                     if "\\" in phrase:
                         m.content = m.content.replace("\\", "")
