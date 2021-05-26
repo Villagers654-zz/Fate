@@ -284,7 +284,7 @@ class GlobalChatRewrite(commands.Cog):
                 e.colour = self.bot.config["theme_color"]
 
             # Edit & combine their last msg
-            if msg.author.id == self.last_id and self.msg_cache:
+            if msg.author.id == self.last_id and self.msg_cache and self.msg_cache[0].author.id == msg.author.id:
                 em = self.msg_cache[0].embeds[0]
                 if not isinstance(e.image.url, str):
                     if msg.attachments:
