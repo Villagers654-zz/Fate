@@ -261,13 +261,19 @@ class ChatFilter(commands.Cog):
         if channel.id not in self.webhooks:
             webhook = await channel.create_webhook(name="Chatfilter")
             if channel.id not in self.webhooks:
-                self.webhooks[channel.id] = webhook
-        return self.webhooks[channel.id]
+                self.webhooks[channel.id] = webhook, False
+            else:
+                await webhook.delete()
+                return self.webhooks[channel.id][0]
+        return self.webhooks[channel.id][0]
 
     async def delete_webhook(self, channel):
+        if self.webhooks[channel.id][1]:
+            return
+        self.webhooks[channel.id][1] = True
         await asyncio.sleep(25)
         if channel.id in self.webhooks:
-            webhook = self.webhooks[channel.id]
+            webhook = self.webhooks[channel.id][0]
             del self.webhooks[channel.id]
             await webhook.delete()
 
