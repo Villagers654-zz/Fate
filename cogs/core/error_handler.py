@@ -162,7 +162,7 @@ class ErrorHandler(commands.Cog):
         )
         if ctx.guild:
             e.set_thumbnail(url=ctx.guild.icon_url)
-        enum = enumerate(self.bot.utils.split(full_traceback, 980))
+        enum = enumerate(self.bot.utils.split(formatted, 980))
         for iteration, chunk in enum:
             e.add_field(
                 name="◈ Error ◈",
