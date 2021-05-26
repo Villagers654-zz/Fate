@@ -8,6 +8,7 @@ from aiohttp import ClientConnectorError, ClientOSError, ServerDisconnectedError
 from discord.ext import commands
 from discord.http import DiscordServerError
 from lavalink import NodeException
+from pymongo.errors import DuplicateKeyError
 
 from botutils import colors, checks
 
@@ -65,6 +66,10 @@ class ErrorHandler(commands.Cog):
             elif isinstance(error, NodeException):
                 self.bot.reload_extension("cogs.core.music")
                 return await ctx.send("Error connecting to my moosic server, please retry")
+
+            elif isinstance(error, DuplicateKeyError):
+                self.bot.log.critical(full_traceback)
+                return await ctx.send("Error saving changes because to a duplicate entry, it's likely you ran the command twice at once")
 
             # Too fast, sMh
             elif isinstance(error, commands.CommandOnCooldown):
