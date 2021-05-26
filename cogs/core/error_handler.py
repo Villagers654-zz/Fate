@@ -7,6 +7,7 @@ import discord
 from aiohttp import ClientConnectorError, ClientOSError, ServerDisconnectedError
 from discord.ext import commands
 from discord.http import DiscordServerError
+from lavalink import NodeException
 
 from botutils import colors, checks
 
@@ -60,6 +61,11 @@ class ErrorHandler(commands.Cog):
             elif isinstance(error, (commands.BadArgument, commands.errors.BadUnionArgument)):
                 return await ctx.send(error)
 
+            # Lavalink
+            elif isinstance(error, NodeException):
+                self.bot.reload_extension("cogs.core.music")
+                return await ctx.send("Error connecting to my moosic server, please retry")
+
             # Too fast, sMh
             elif isinstance(error, commands.CommandOnCooldown):
                 user_id = str(ctx.author.id)
@@ -86,7 +92,7 @@ class ErrorHandler(commands.Cog):
 
             # The bot tried to perform an action on a non existent or removed object
             elif isinstance(error, discord.errors.NotFound):
-                await ctx.send(
+                return await ctx.send(
                     f"Something I tried to do an operation on was removed or doesn't exist"
                 )
 
