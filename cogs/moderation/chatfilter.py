@@ -5,14 +5,16 @@ from contextlib import suppress
 from unicodedata import normalize
 from string import printable
 import json
-import traceback
 from discord.ext import commands
 from botutils import colors
 import discord
 
 
-conversions = {"a": ["o", "@"]}
-sanitize = lambda word, letter, alias: word.replace(alias, letter).replace(letter * 2, letter)
+aliases = {
+    "a": ["@"],
+    "i": ['1', 'l', r'\|', "!", "/", "j", r"\*", ";"],
+    "o": ["0", "@"]
+}
 
 
 class ChatFilter(commands.Cog):
@@ -25,76 +27,80 @@ class ChatFilter(commands.Cog):
         self.webhooks = {}
 
     async def filter(self, content: str, filtered_words: list):
-        """yeet"""
+        def run_regex():
+            regexes = {}
+            flags = []
+            for word in filtered_words:
+                word = word.lower()
+                if not all(c.lower() != c.upper() or c != "." for c in word):
+                    if word in content:
+                        flags.append(word)
+                    continue
+                for section in content.split():
+                    if word in section:
+                        if len(section) - len(word) > 2 and len(word) > 3:
+                            flags.append(word)
+                            continue
+                    if word == section[1:]:
+                        flags.append(word)
+                        continue
 
-        # Sanitize the content of special characters
+                regexes[word] = []
+                fmt = word.lower()
+
+                # Add a max range of 2K chars for repeated letters like "fuuuuuck"
+                matched = []
+                for i, letter in enumerate(fmt):
+                    if letter in matched:
+                        continue
+                    if letter not in aliases:
+                        rgx = letter + "+[\s]*"
+                        fmt = fmt.replace(letter, rgx)
+                        matched.append(letter)
+
+                # Add regexes for alias characters
+                for letter, _aliases in aliases.items():
+                    _aliases = [f"{alias}[\s]*" for alias in _aliases]
+                    regex = f"({letter + '|' + '|'.join(_aliases)})+"
+                    fmt = fmt.replace(letter, regex)
+                fmt = fmt.replace("++", "+")  # Remove repeated ranges
+                regexes[word].append(fmt)
+
+                # Account for a singular changed character if it's a long word
+                if len(word) > 4 and len(content) > 4:
+                    for i in range(len(word)):
+                        if i == 0:
+                            continue
+                        _word = list(word)
+                        _word[i] = "."
+                        regexes[word].append("".join(_word))
+
+            for word, queries in regexes.items():
+                query = "|".join(f"(?:{q})" for q in queries if len(q) > 1)
+                result = re.search(query, content)
+                if result:
+                    trigger = result.group()
+                    if any(trigger in word and trigger != word for word in content.split()):
+                        continue
+                    flags.append(trigger)
+                    break
+            return flags
+
         illegal = ("\\", "*", "`", "_", "||")
         content = str(content).lower()
-        filtered_words = list(filtered_words)
         for char in illegal:
             content = content.replace(char, "")
         content = normalize('NFKD', content).encode('ascii', 'ignore').decode()
         content = "".join(c for c in content if c in printable)
-        for letter in list(content):
-            content = content.replace(letter*2, letter)
 
-        flags = []
-        for word in list(filtered_words):
-            word = word.lower()
-
-            # Use a basic check for non abc characters
-            if not all(c.lower() != c.upper() or c != "." for c in word):
-                if word in content:
-                    flags.append(word)
-                continue
-
-            for section in content.split():
-                if word in section:
-                    if len(section) - len(word) > 2 and len(word) > 3:
-                        flags.append(word)
-                        continue
-                if word == section[1:]:
-                    flags.append(word)
-                    continue
-
-            # Normalize the msg to its most simple form
-            for i, word in enumerate(list(filtered_words)):
-                for letter, aliases in conversions.items():
-                    for alias in aliases:
-                        filtered_words[i] = sanitize(filtered_words[i], letter, alias)
-                        content = sanitize(content, letter, alias)
-
-            # Generate possibilities with space chars
-            for word in list(filtered_words):
-                for i in range(len(word)):
-                    await asyncio.sleep(0)
-                    _word = list(word)
-                    _word[i] = word[i] + " "
-                    filtered_words.append("".join(_word))
-                filtered_words.append(" ".join(list(word)))
-
-            print(list(set(filtered_words)))
-            for section in content.split():
-                await asyncio.sleep(0)
-                for word in filtered_words:
-                    if word in content:
-                        flags.append(word)
-                        continue
-                    matching_character_positions = len([
-                        char for i, char in enumerate(word)
-                        if i < len(section)
-                           and char == section[i]
-                    ])
-                    if matching_character_positions >= len(word) - 1:
-                        if word not in flags:
-                            flags.append(word)
-
+        flags = await self.bot.loop.run_in_executor(None, run_regex)
         if not flags:
             return flags
 
         for flag in flags:
             filtered_word = f"{flag[0]}{f'{illegal[0]}*' * (len(flag) - 1)}"
             content = content.replace(flag, filtered_word)
+
         return content
 
     @commands.group(name="chatfilter")
@@ -287,10 +293,9 @@ class ChatFilter(commands.Cog):
                 if m.channel.id in self.config[guild_id]["ignored"]:
                     return
                 if m.guild.id in [613457449936224295, 397415086295089155]:
-                    try:
-                        result = await asyncio.wait_for(self.filter(str(m.content), self.config[guild_id]["blacklist"]), timeout=3)
-                    except:
-                        return await m.channel.send("Timed out waiting for result")
+                    result = await self.filter(m.content, self.config[guild_id]["blacklist"])
+                    if "fat" in m.content:
+                        await m.channel.send(result)
                     if result:
                         with suppress(Exception):
                             await m.delete()
