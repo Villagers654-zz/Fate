@@ -112,7 +112,6 @@
       "verification"
     ],
     "utility": [
-      "archive",
       "audit",
       "autorole",
       "chatbridges",
