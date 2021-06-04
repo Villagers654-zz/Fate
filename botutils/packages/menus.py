@@ -7,6 +7,7 @@ from typing import Optional, Union
 
 import discord
 from discord.errors import NotFound, Forbidden
+from discord import ui
 from PIL import Image, ImageFont, ImageDraw
 
 
@@ -247,8 +248,58 @@ class Menus:
             await msg.delete()
 
 
+style = discord.ButtonStyle
+
+
+class ChoiceButtons(ui.View):
+    def __init__(self):
+        self.choice = None
+        self.asyncio_event = asyncio.Event()
+        super().__init__()
+
+    @ui.button(label="Yes", style=style.green)
+    async def yes(self, _button, interaction):
+        self.choice = True
+        await interaction.message.edit(view=None)
+        self.asyncio_event.set()
+        self.stop()
+
+    @ui.button(label="No", style=style.red)
+    async def no(self, _button, interaction):
+        self.choice = False
+        await interaction.message.edit(view=None)
+        self.asyncio_event.set()
+        self.stop()
+
+
+async def get_answers_from(message: discord.Message, questions: list, delete_after: bool = False):
+    choices = {}
+    for i, question in enumerate(questions):
+        # Update the message
+        q = f"{i + 1}/{len(questions)} {question}"
+        view = ChoiceButtons()
+        await message.edit(content=q, view=view)
+        # Wait for a button press
+        try:
+            await asyncio.wait_for(view.asyncio_event.wait(), timeout=25)
+        except asyncio.TimeoutError:
+            return await message.edit(content="Timed out waiting for response", view=None)
+
+        # Save the users choice and continue
+        choices[question] = view.choice
+
+    with suppress(Exception):
+        if delete_after:
+            await message.delete()
+        else:
+            await message.edit(view=None)
+
+    return choices
+
+
 def init(cls):
     menus = Menus(cls.bot)
     cls.verify_user = menus.verify_user
     cls.get_choice = menus.get_choice
     cls.configure = menus.configure
+    cls.get_answers = get_answers_from
