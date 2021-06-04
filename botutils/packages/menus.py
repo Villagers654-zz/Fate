@@ -3,12 +3,36 @@ import random
 from time import time
 import os
 from contextlib import suppress
-from typing import Optional, Union
+from typing import Optional, Union, Dict, Callable
 
 import discord
 from discord.errors import NotFound, Forbidden
-from discord import ui
+# from discord import ui
 from PIL import Image, ImageFont, ImageDraw
+
+
+# style = discord.ButtonStyle
+#
+#
+# class ChoiceButtons(ui.View):
+#     def __init__(self):
+#         self.choice = None
+#         self.asyncio_event = asyncio.Event()
+#         super().__init__()
+#
+#     @ui.button(label="Yes", style=style.green)
+#     async def yes(self, _button, interaction):
+#         self.choice = True
+#         await interaction.message.edit(view=None)
+#         self.asyncio_event.set()
+#         self.stop()
+#
+#     @ui.button(label="No", style=style.red)
+#     async def no(self, _button, interaction):
+#         self.choice = False
+#         await interaction.message.edit(view=None)
+#         self.asyncio_event.set()
+#         self.stop()
 
 
 class Menus:
@@ -247,54 +271,69 @@ class Menus:
             await message.edit(embed=overview())
             await msg.delete()
 
-
-style = discord.ButtonStyle
-
-
-class ChoiceButtons(ui.View):
-    def __init__(self):
-        self.choice = None
-        self.asyncio_event = asyncio.Event()
-        super().__init__()
-
-    @ui.button(label="Yes", style=style.green)
-    async def yes(self, _button, interaction):
-        self.choice = True
-        await interaction.message.edit(view=None)
-        self.asyncio_event.set()
-        self.stop()
-
-    @ui.button(label="No", style=style.red)
-    async def no(self, _button, interaction):
-        self.choice = False
-        await interaction.message.edit(view=None)
-        self.asyncio_event.set()
-        self.stop()
-
-
-async def get_answers_from(message: discord.Message, questions: list, delete_after: bool = False):
-    choices = {}
-    for i, question in enumerate(questions):
-        # Update the message
-        q = f"{i + 1}/{len(questions)} {question}"
-        view = ChoiceButtons()
-        await message.edit(content=q, view=view)
-        # Wait for a button press
-        try:
-            await asyncio.wait_for(view.asyncio_event.wait(), timeout=25)
-        except asyncio.TimeoutError:
-            return await message.edit(content="Timed out waiting for response", view=None)
-
-        # Save the users choice and continue
-        choices[question] = view.choice
-
-    with suppress(Exception):
-        if delete_after:
-            await message.delete()
-        else:
-            await message.edit(view=None)
-
-    return choices
+#     async def get_answers_from(self, user: discord.User, message: discord.Message, questions):
+#         choices = {}
+#         is_author = lambda m: m.author.id == user.id
+#
+#         check_presets = {
+#             str: lambda m: is_author(m) and m.content,
+#             discord.TextChannel: lambda m: is_author(m) and m.channel_mentions,
+#             discord.Attachment: lambda m: is_author(m) and m.attachments or "http" in m.content
+#         }
+#
+#         for i, (question, DesiredType) in enumerate(questions):
+#             # Update the message
+#             q = f"{i + 1}/{len(questions)} {question}"
+#             view = None
+#
+#             if DesiredType is bool:
+#                 view = ChoiceButtons()
+#             await message.edit(content=q, view=view)
+#
+#             # Wait for a button press
+#             try:
+#                 if DesiredType is bool:
+#                     # Use buttons to get the users answer
+#                     await asyncio.wait_for(view.asyncio_event.wait(), timeout=45)
+#                     answer = view.choice
+#                 else:
+#                     if DesiredType is Callable:
+#                         # Custom check function
+#                         check = DesiredType
+#                     else:
+#                         # Use a preset check function
+#                         check = check_presets[DesiredType]
+#
+#                     msg = await self.bot.wait_for("message", check=check, timeout=45)
+#
+#                     # Requesting the content of a message
+#                     if DesiredType is str:
+#                         answer = msg.content
+#                     # Using a non-preset check function
+#                     elif DesiredType is Callable:
+#                         answer = msg
+#                     # Requesting a channel
+#                     elif DesiredType is discord.TextChannel:
+#                         answer = msg.channel_mentions[0]
+#                     # Requesting a file-like object as Bytes
+#                     elif DesiredType is discord.Attachment:
+#                         if msg.attachments:
+#                             answer = await msg.attachments[0].read()
+#                         else:
+#                             url = [arg for arg in msg.content.split() if "http" in arg]
+#                             answer = await self.bot.download(url[0])
+#                     else:
+#                         return  # This line will never be reached
+#
+#             except asyncio.TimeoutError:
+#                 return await message.edit(content="Timed out waiting for response", view=None)
+#
+#             # Save the users choice and continue
+#             choices[question] = answer
+#
+#         await message.edit(view=None)
+#
+#         return choices
 
 
 def init(cls):
@@ -302,4 +341,4 @@ def init(cls):
     cls.verify_user = menus.verify_user
     cls.get_choice = menus.get_choice
     cls.configure = menus.configure
-    cls.get_answers = get_answers_from
+    # cls.get_answers = menus.get_answers_from
