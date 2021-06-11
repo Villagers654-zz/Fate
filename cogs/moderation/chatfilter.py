@@ -294,8 +294,6 @@ class ChatFilter(commands.Cog):
                     return
                 if m.guild.id in [613457449936224295, 397415086295089155]:
                     result = await self.filter(m.content, self.config[guild_id]["blacklist"])
-                    if "fat" in m.content:
-                        await m.channel.send(result)
                     if result:
                         with suppress(Exception):
                             await m.delete()
