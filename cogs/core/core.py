@@ -560,30 +560,10 @@ class Core(commands.Cog):
                         "https://discordapp.com/api/webhooks/673290242819883060/GDXiMBwbzw7dbom57ZupHsiEQ76w8TfV_mEwi7_pGw8CvVFL0LNgwRwk55yRPxNdPA4b",
                         adapter=AsyncWebhookAdapter(session),
                     )
-                    msg.content = discord.utils.escape_mentions(msg.content)
-                    if msg.attachments:
-                        for attachment in msg.attachments:
-                            return await webhook.send(
-                                username=msg.author.name,
-                                avatar_url=msg.author.avatar_url,
-                                content=msg.content,
-                                file=discord.File(
-                                    BytesIO(requests.get(attachment.url).content),
-                                    filename=attachment.filename,
-                                ),
-                            )
-                    if msg.embeds:
-                        if msg.author.id == self.bot.user.id:
-                            return await webhook.send(
-                                username=f"{msg.author.name} --> {msg.channel.recipient.name}",
-                                avatar_url=msg.author.avatar_url,
-                                embed=msg.embeds[0],
-                            )
-                        return await webhook.send(
-                            username=msg.author.name,
-                            avatar_url=msg.author.avatar_url,
-                            embed=msg.embeds[0],
-                        )
+                    files = []
+                    for attachment in msg.attachments:
+                        if attachment.size < 4000000:
+                            files.append(await attachment.to_file())
                     if msg.author.id == self.bot.user.id:
                         e = discord.Embed(color=colors.fate())
                         e.set_author(
@@ -594,12 +574,15 @@ class Core(commands.Cog):
                             username=msg.author.name,
                             avatar_url=msg.author.avatar_url,
                             content=msg.content,
+                            files=files,
                             embed=e,
                         )
                     await webhook.send(
                         username=msg.author.name,
                         avatar_url=msg.author.avatar_url,
                         content=msg.content,
+                        embeds=msg.embeds,
+                        files=files,
                     )
 
 
