@@ -143,7 +143,7 @@ class ConfigureModules:
             if isinstance(value, list):
                 modules[key] = []
                 for cog in value:
-                    value = modules[key] = [*cog.walk_commands(), *modules[key]]
+                   value = modules[key] = [*cog.walk_commands(), *modules[key]]
             if not isinstance(value, dict):
                 modules[key] = {
                     cmd: None for cmd in value if can_run(cmd)
