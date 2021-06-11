@@ -968,14 +968,14 @@ class Moderation(commands.Cog):
                 case = await self.cases.add_case(
                     ctx.guild.id, user.id, "ban", reason, ctx.message.jump_url, ctx.author.id
                 )
-                content = f"You've been banned in {ctx.guild} by {ctx.author} for {reason}"
-                rows = await self.bot.rowcount(f"select * from modmail where guild_id = {ctx.guild.id};")
-                if rows:
-                    content += f". Use `.appeal {case}` if you feel there's a mistake"
-                else:
-                    content += f" [Case #{case}]"
-                with suppress(NotFound, Forbidden, HTTPException):
-                    await user.send(content)
+                # content = f"You've been banned in {ctx.guild} by {ctx.author} for {reason}"
+                # rows = await self.bot.rowcount(f"select * from modmail where guild_id = {ctx.guild.id};")
+                # if rows:
+                #     content += f". Use `.appeal {case}` if you feel there's a mistake"
+                # else:
+                #     content += f" [Case #{case}]"
+                # with suppress(NotFound, Forbidden, HTTPException):
+                #     await user.send(content)
                 await ctx.guild.ban(
                     user, reason=f"{ctx.author}: {reason}"[:512], delete_message_days=0
                 )
@@ -1539,15 +1539,16 @@ class Moderation(commands.Cog):
                             await msg.clear_reactions()
                         return
                     else:
-                        if str(reaction.emoji) == "✔":
-                            self.config[guild_id]["warns"][user_id].remove(
-                                [reason, warn_time]
-                            )
-                            await self.save_data()
-                            await ctx.message.delete()
-                            await msg.delete()
-                        else:
-                            await msg.delete()
+                        with suppress(ValueError, NotFound, Forbidden):
+                            if str(reaction.emoji) == "✔":
+                                self.config[guild_id]["warns"][user_id].remove(
+                                    [reason, warn_time]
+                                )
+                                await self.save_data()
+                                await ctx.message.delete()
+                                await msg.delete()
+                            else:
+                                await msg.delete()
                         break
 
     @commands.command(name="clearwarns", aliases=["clear-warns"])
