@@ -12,7 +12,9 @@ class Attributes:
     def __init__(self, bot):
         self.bot = bot
 
-    def is_moderator(self, member) -> bool:
+    def is_moderator(self, member: discord.Member) -> bool:
+        if not isinstance(member, discord.Member):
+            return False
         if member.guild_permissions.administrator:
             return True
         guild_id = str(member.guild.id)
