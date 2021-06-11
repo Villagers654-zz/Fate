@@ -255,7 +255,7 @@ async def get_role(ctx, name):
                 return roles[0]
             index = 1
             role_list = ""
-            for role in roles:
+            for role in roles[:5]:
                 role_list += f"{index} : {role.mention}\n"
                 index += 1
             e = discord.Embed(color=ctx.bot.config["theme_color"], description=role_list)
