@@ -945,6 +945,8 @@ class Utility(commands.Cog):
                     return
             if role.id == ctx.guild.default_role.id:
                 return await ctx.send("biTcH nO")
+            if len(role.members) > 50:
+                return await ctx.send("That role has too many members :[")
             e = discord.Embed(color=role.color)
             e.set_author(name=role.name, icon_url=ctx.author.avatar_url)
             e.set_thumbnail(url=ctx.guild.icon_url)
