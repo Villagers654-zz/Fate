@@ -34,6 +34,8 @@ class Responses(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, m: discord.Message):
         if isinstance(m.guild, discord.Guild) and self.bot.is_ready():
+            if not m.channel or not m.channel.permissions_for(m.guild.me):
+                return
             if not m.channel.permissions_for(m.guild.me).send_messages:
                 return
             if self.bot.user.mentioned_in(m):
