@@ -813,6 +813,7 @@ class AntiSpam(commands.Cog):
                                     m for m in self.dupes[channel_id]
                                     if m and m.content and m.content == message.content
                                        and m.created_at > datetime.utcnow() - timedelta(seconds=timeframe)
+                                       and len(m.content) > 5
                                 ]
                                 all_are_single_use = all(
                                     len([m for m in dupes if m.author.id == dupes[i].author.id]) == 1
