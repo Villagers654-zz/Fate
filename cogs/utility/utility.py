@@ -103,7 +103,7 @@ class Utility(commands.Cog):
             )
 
     async def save_timers(self):
-        await self.bot.save_json(self.timer_path, self.timers)
+        await self.bot.utils.save_json(self.timer_path, self.timers)
 
     @staticmethod
     def avg_color(url):
@@ -604,7 +604,7 @@ class Utility(commands.Cog):
 
         else:
             options = ["Bot Info", "User Info", "Server Info", "Channel Info"]
-            choice = await self.bot.get_choice(ctx, *options, user=ctx.author)
+            choice = await self.bot.utils.get_choice(ctx, *options, user=ctx.author)
             if not choice:
                 return
             if choice == "User Info":

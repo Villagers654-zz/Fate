@@ -45,6 +45,7 @@ cd = {}
 
 
 class Fate(commands.AutoShardedBot):
+    loop: asyncio.BaseEventLoop
     def __init__(self, **options):
         self.app = web.Application()
         self.app.router.add_get("/top/{tail:[0-9]*}", self.get_top)
@@ -389,6 +390,26 @@ class Fate(commands.AutoShardedBot):
             }
         return data
 
+    def get_asset(self, asset):
+        asset = asset.lstrip("/")
+        if "." not in asset or not os.path.exists(f"./assets/{asset}"):
+            dir = "./assets/"
+            paths = asset.split("/")
+            filename = paths[-1:][0]
+            if "/" in asset:
+                dir += paths[0]
+            for file in os.listdir(dir):
+                if filename in file:
+                    asset = asset.replace(filename, file)
+                    break
+            else:
+                for root, dirs, files in os.walk(dir):
+                    for file in files:
+                        if filename in file:
+                            asset = os.path.join(root.lstrip("./assets/"), file)
+                            break
+        return f"http://assets.fatebot.xyz/{asset}"
+
     def load_extensions(self, *extensions) -> None:
         for cog in extensions:
             try:
@@ -430,8 +451,11 @@ class Fate(commands.AutoShardedBot):
         remap = not not self.toggles
         self.toggles.clear()
         for module, cls in self.cogs.items():
-            if hasattr(cls, "enable_command"):
-                self.toggles[module] = getattr(cls, "enable_command")
+            if hasattr(cls, "enable_command") and hasattr(cls, "disable_command"):
+                self.toggles[module] = [
+                    getattr(cls, "enable_command"),
+                    getattr(cls, "disable_command")
+                ]
         self.log(f"{'Rem' if remap else 'M'}apped modules")
 
     async def load(self, data):
@@ -481,6 +505,7 @@ class Fate(commands.AutoShardedBot):
                     extensions.append(f"{category}.{cog}")
             self.load_extensions(*extensions)
             self.log.info("Finished loading initial cogs\nAuthenticating with token..", color="yellow")
+            self.paginate()
 
         # Load in caches
         self.restricted = self.utils.cache("restricted")
