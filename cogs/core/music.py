@@ -8,8 +8,11 @@ import lavalink
 from discord.ext import commands
 from discord.errors import NotFound, Forbidden
 
+from botutils import auth
+
 
 url_rx = re.compile(r'https?://(?:www\.)?.+')
+creds = auth.Lavalink()
 votes = {}
 
 

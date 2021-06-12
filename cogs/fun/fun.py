@@ -16,6 +16,8 @@ from discord.ext import commands
 from discord.ext import tasks
 from PIL import Image, ImageDraw, ImageFont
 
+from botutils import colors, auth
+
 code = "```py\n{0}\n```"
 sexualities = [
     "allosexual",
@@ -83,6 +85,100 @@ class Fun(commands.Cog):
 
     def cog_unload(self):
         self.clear_old_messages_task.stop()
+
+    @commands.command(name="bully", enabled=False)
+    @commands.cooldown(1, 5, commands.BucketType.channel)
+    @commands.bot_has_permissions(send_messages=True)
+    async def bully(self, ctx, user: discord.Member):
+        """ Bullies a target user :] """
+
+        def cleanup():
+            """ remove channel from list of active bullying channels """
+            self.bullying.remove(ctx.channel.id)
+
+        if ctx.channel.id in self.bullying:
+            return await ctx.send("I'm already bullying someone :[")
+        self.bullying.append(ctx.channel.id)
+        await ctx.send("I might as well..")
+
+        try:
+            creds = auth.Reddit()
+            reddit = praw.Reddit(
+                client_id=creds.client_id,
+                client_secret=creds.client_secret,
+                user_agent=creds.user_agent,
+            )
+        except Exception as e:
+            await ctx.send(f"Error With Reddit Credentials\n{e}")
+            return cleanup()
+
+        reddits = ["insults", "rareinsults"]
+        reddit_posts = []  # type: praw.Reddit.submission
+
+        for reddit_page in reddits:
+            for submission in reddit.subreddit(reddit_page).hot(limit=250):
+                exts = [".png", ".jpg", ".jpeg", ".gif"]
+                if submission.title and all(ext not in submission.url for ext in exts):
+                    if (
+                        "insult" not in submission.title
+                        and "roast" not in submission.title
+                    ):
+                        reddit_posts.append(submission)
+
+        for i in range(5):
+            random.shuffle(reddit_posts)
+        for iteration, submission in enumerate(reddit_posts[:3]):
+
+            def pred(m):
+                return m.channel.id == ctx.channel.id and m.author.id == user.id
+
+            try:
+                msg = await self.bot.wait_for("message", check=pred, timeout=60)
+            except asyncio.TimeoutError:
+                continue
+            if "stop" in msg.content or "cancel" in msg.content:
+                await ctx.send("*yeets out the door*")
+                break
+            try:
+                await asyncio.sleep(random.randint(1, 3))
+                async with ctx.channel.typing():
+                    await asyncio.sleep(len(submission.title) * 0.1)
+                    await ctx.send(submission.title)
+            except discord.errors.Forbidden:
+                break
+
+        cleanup()
+
+    @commands.command(name="meme", enabled=False)
+    @commands.cooldown(1, 3, commands.BucketType.channel)
+    @commands.bot_has_permissions(embed_links=True)
+    async def meme(self, ctx):
+        """ fetches a random meme from a random meme subreddit """
+        creds = auth.Reddit()
+        reddit = praw.Reddit(
+            client_id=creds.client_id,
+            client_secret=creds.client_secret,
+            user_agent=creds.user_agent,
+        )
+
+        reddits = ["Memes_Of_The_Dank", "dankmemes"]
+        reddit_posts = []  # type: praw.Reddit.submission
+
+        for submission in reddit.subreddit(random.choice(reddits)).hot(limit=100):
+            extensions = [".png", ".jpg", ".jpeg", ".webp", "gif"]
+            if any(ext in submission.url for ext in extensions):
+                reddit_posts.append(submission)
+
+        post = random.choice(reddit_posts)
+        e = discord.Embed(color=colors.red())
+        e.set_author(
+            name=post.title, icon_url=post.author.icon_img if post.author else None
+        )
+        e.set_image(url=post.url)
+        e.set_footer(
+            text=f"{post.author.name} | 👍 {post.score} | 💬 {post.num_comments}"
+        )
+        await ctx.send(embed=e)
 
     @commands.command(name="snipe")
     @commands.cooldown(1, 10, commands.BucketType.channel)

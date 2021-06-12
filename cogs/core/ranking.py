@@ -20,6 +20,7 @@ from PIL import Image, ImageFont, ImageDraw, ImageSequence, UnidentifiedImageErr
 
 from botutils import colors
 from botutils.pillow import add_corners
+from cogs.core.utils import Utils as utils
 
 
 def profile_help():
@@ -355,7 +356,7 @@ class Ranking(commands.Cog):
         self.cmds[ctx.command.name]["total"] += 1
 
     @commands.command(name="role-rewards", aliases=["level-rewards", "level-roles", "lr"])
-    @commands.cooldown(2, 5, commands.BucketType.user)
+    @commands.cooldown(*utils.default_cooldown())
     @commands.bot_has_permissions(embed_links=True, manage_roles=True)
     async def role_rewards(self, ctx, *args):
         if not args or len(args) == 1:
@@ -363,7 +364,7 @@ class Ranking(commands.Cog):
             e.set_author(name="Level Roles", icon_url=self.bot.user.avatar_url)
             e.set_thumbnail(url=ctx.guild.icon_url)
             e.description = "Grant roles as a reward to users whence they reach a specified level"
-            p = self.bot.utils.get_prefix(ctx)  # type: str
+            p = utils.get_prefix(ctx)  # type: str
             e.add_field(
                 name="◈ Usage",
                 value=f"{p}level-rewards @role [level]\n"
@@ -439,7 +440,7 @@ class Ranking(commands.Cog):
         await ctx.send(f"Setup complete")
 
     @commands.command(name="xp-config")
-    @commands.cooldown(2, 5, commands.BucketType.user)
+    @commands.cooldown(*utils.default_cooldown())
     @commands.bot_has_permissions(embed_links=True)
     async def xp_config(self, ctx):
         """ Sends an overview for the current config """
@@ -454,19 +455,19 @@ class Ranking(commands.Cog):
             f"\n• Msgs Within Timeframe: {conf['msgs_within_timeframe']}"
             f"\n• First Lvl XP Req: {conf['first_lvl_xp_req']}"
         )
-        p = self.bot.utils.get_prefix(ctx)
+        p = utils.get_prefix(ctx)
         e.set_footer(text=f"Use {p}set to adjust these settings")
         await ctx.send(embed=e)
 
     @commands.group(name="set")
-    @commands.cooldown(2, 5, commands.BucketType.user)
+    @commands.cooldown(*utils.default_cooldown())
     @commands.guild_only()
     async def set(self, ctx):
         if not ctx.invoked_subcommand:
             e = discord.Embed(color=colors.fate())
             e.set_author(name="Set Usage", icon_url=ctx.author.avatar_url)
             e.set_thumbnail(url=self.bot.user.avatar_url)
-            p = self.bot.utils.get_prefix(ctx)  # type: str
+            p = utils.get_prefix(ctx)  # type: str
             e.description = "`[]` = your arguments / setting"
             e.add_field(
                 name="◈ Profile Stuff",
@@ -904,7 +905,7 @@ class Ranking(commands.Cog):
             "ggvcleaderboard",
         ],
     )
-    @commands.cooldown(2, 5, commands.BucketType.user)
+    @commands.cooldown(*utils.default_cooldown())
     @commands.cooldown(1, 2, commands.BucketType.channel)
     @commands.cooldown(6, 60, commands.BucketType.guild)
     @commands.guild_only()

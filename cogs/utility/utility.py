@@ -23,6 +23,7 @@ import psutil
 from discord.ext import commands, tasks
 
 from botutils import colors, config
+from cogs.core.utils import Utils
 
 
 class SatisfiableChannel(commands.Converter):
@@ -603,7 +604,7 @@ class Utility(commands.Cog):
 
         else:
             options = ["Bot Info", "User Info", "Server Info", "Channel Info"]
-            choice = await self.bot.utils.get_choice(ctx, *options, user=ctx.author)
+            choice = await self.bot.get_choice(ctx, *options, user=ctx.author)
             if not choice:
                 return
             if choice == "User Info":
@@ -1203,7 +1204,7 @@ class Utility(commands.Cog):
         await self.save_timers()
 
     @commands.command(name="timers", aliases=["reminders"])
-    @commands.cooldown(2, 5, commands.BucketType.user)
+    @commands.cooldown(*Utils.default_cooldown())
     async def timers(self, ctx):
         user_id = str(ctx.author.id)
         if user_id not in self.timers:

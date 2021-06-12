@@ -133,7 +133,7 @@ class Logger(commands.Cog):
 
     async def save_data(self) -> None:
         """ Saves local variables """
-        await self.bot.utils.save_json(self.path, self.config)
+        await self.bot.save_json(self.path, self.config)
 
     async def ensure_channels(self, guild):
         """Sets up channels in instances of them missing"""

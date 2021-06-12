@@ -21,6 +21,7 @@ import dbl
 from discord.ext.commands import Context
 
 from botutils import config, colors
+from cogs.core.utils import Utils as utils
 
 
 class Conversation:
@@ -209,7 +210,7 @@ class Core(commands.Cog):
             await ctx.send("Content is a required argument that is missing")
 
     @commands.command(name="prefix")
-    @commands.cooldown(2, 5, commands.BucketType.user)
+    @commands.cooldown(*utils.default_cooldown())
     @commands.guild_only()
     async def prefix(self, ctx, *, prefix = None):
         if not prefix:
@@ -255,7 +256,7 @@ class Core(commands.Cog):
         await ctx.send(f"Changed the servers prefix to `{prefix}`")
 
     @commands.command(name="personal-prefix", aliases=["pp"])
-    @commands.cooldown(2, 5, commands.BucketType.user)
+    @commands.cooldown(*utils.default_cooldown())
     async def personal_prefix(self, ctx, *, prefix=""):
         if prefix.startswith('"') and prefix.endswith('"') and len(prefix) > 2:
             prefix = prefix.strip('"')
