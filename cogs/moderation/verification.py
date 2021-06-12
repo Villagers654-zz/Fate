@@ -440,7 +440,7 @@ class Verification(commands.Cog):
                 return await self.config.remove(guild_id)
             if verified_role in member.roles:
                 return
-            verified = await self.bot.verify_user(
+            verified = await self.bot.utils.verify_user(
                 channel=channel, user=member, delete_after=conf["delete_after"], timeout=conf["time_limit"]
             )
             if verified:

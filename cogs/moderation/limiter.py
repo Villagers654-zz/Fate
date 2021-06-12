@@ -30,7 +30,7 @@ class Utility(commands.Cog):
             "boosters": self.boosters,
             "duplicate_images": self.dupe,
         }
-        await self.bot.save_json("./data/userdata/limiter.json", data)
+        await self.bot.utils.save_json("./data/userdata/limiter.json", data)
 
     @commands.group(name="limit", aliases=["limiter"])
     @commands.has_permissions(manage_guild=True)

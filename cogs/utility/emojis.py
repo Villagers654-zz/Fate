@@ -249,7 +249,7 @@ class Emojis(commands.Cog):
         mappings = {}
         try:
             mappings = {
-                await self.bot.download(arg): check(it)
+                await self.bot.utils.download(arg): check(it)
                 if "." not in check(it)
                 else "new_emoji"
                 for it, arg in enumerate(args)

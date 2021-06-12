@@ -47,10 +47,6 @@ cd = {}
 class Fate(commands.AutoShardedBot):
     loop: asyncio.BaseEventLoop
     def __init__(self, **options):
-        self.app = web.Application()
-        self.app.router.add_get("/top/{tail:[0-9]*}", self.get_top)
-        self.api_is_running = False
-
         # Bot Configuration
         with open("./data/config.json", "r") as f:
             self.config = json.load(f)  # type: dict
@@ -212,50 +208,6 @@ class Fate(commands.AutoShardedBot):
             max_messages=self.config["max_cached_messages"],
             **options,
         )
-
-    async def get_top(self, request):
-        ip = request.remote
-        now = int(time() / 25)
-        if ip not in cd:
-            cd[ip] = [now, 0]
-        if cd[ip][0] == now:
-            cd[ip][1] += 1
-        else:
-            cd[ip] = [now, 0]
-        if cd[ip][1] > 3:
-            return web.Response(text="You are being rate-limited", status=404)
-
-        guild_id = int(request.path.lstrip("/top/"))
-        guild = self.get_guild(guild_id)
-        if not guild:
-            return web.Response(text="Unknown server", status=404)
-        ctx = FakeCtx()
-        ctx.guild = guild
-
-        cog = self.cogs["Ranking"]
-        if guild_id in cards:
-            file = cards[guild_id]
-            created = False
-        else:
-            fp = await cog.top(ctx)
-            async with self.open(fp, "rb") as f:
-                file = await f.read()
-            cards[guild_id] = file
-            created = True
-
-        resp = web.StreamResponse()
-        resp.headers["Content-Type"] = f"Image/PNG"
-        resp.headers["Content-Disposition"] = f"filename='top.png';"
-        await resp.prepare(request)
-        await resp.write(file)
-        await resp.write_eof()
-
-        async def wait():
-            await asyncio.sleep(30)
-            del cards[guild_id]
-
-        if created:
-            self.loop.create_task(wait())
 
     @property
     def utils(self):
@@ -421,6 +373,7 @@ class Fate(commands.AutoShardedBot):
             except (commands.ExtensionError, commands.ExtensionFailed, Exception):
                 self.log.critical(f"Couldn't load {cog}``````{traceback.format_exc()}")
                 self.log.info("Continuing..")
+        self.paginate()
 
     def unload_extensions(self, *extensions, log=True) -> None:
         for cog in extensions:
@@ -445,6 +398,7 @@ class Fate(commands.AutoShardedBot):
                 self.log.info(
                     f"Ignoring exception in Cog: {cog}``````{traceback.format_exc()}"
                 )
+        self.paginate()
 
     def paginate(self):
         """Map out each modules enable command for use of `.enable module`"""
@@ -626,7 +580,7 @@ async def on_error(_event_method, *_args, **_kwargs):
     ignored = (
         bot.ignored_exit,
         aiohttp.ClientOSError,
-        asyncio.TimeoutError,
+        asyncio.exceptions.TimeoutError,
         discord.errors.DiscordServerError
     )
     if isinstance(error, ignored):

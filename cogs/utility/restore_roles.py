@@ -24,7 +24,7 @@ class RestoreRoles(commands.Cog):
     async def save_data(self):
         """ Saves any changes made """
         data = {"guilds": self.guilds, "allow_perms": self.allow_perms}
-        await self.bot.save_json(self.path, data)
+        await self.bot.utils.save_json(self.path, data)
 
     async def disable_module(self, guild_id: str):
         """ Disables the module and resets guild data """

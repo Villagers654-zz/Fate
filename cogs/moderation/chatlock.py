@@ -15,7 +15,7 @@ class ChatLock(commands.Cog):
                 self.toggle = json.load(f)
 
     async def save_data(self):
-        await self.bot.save_json("./data/userdata/chatlock.json", self.toggle)
+        await self.bot.utils.save_json("./data/userdata/chatlock.json", self.toggle)
 
     @commands.group(
         name="chatlock",

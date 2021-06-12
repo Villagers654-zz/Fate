@@ -22,7 +22,7 @@ class Notepad(commands.Cog):
 
     async def save(self):
         data = {"notes": self.notes, "timestamp": self.timestamp}
-        await self.bot.save_json("./data/userdata/notes.json", data)
+        await self.bot.utils.save_json("./data/userdata/notes.json", data)
 
     @commands.command(name="note")
     @commands.cooldown(1, 1, commands.BucketType.user)

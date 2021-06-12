@@ -39,7 +39,7 @@ class Cookies(commands.Cog):
             "eaten": self.eaten,
             "cd": self.cd,
         }
-        await self.bot.save_json("./data/userdata/cookies.json", data)
+        await self.bot.utils.save_json("./data/userdata/cookies.json", data)
 
     async def setup(self, _id):
         self.cookies[_id] = 0
