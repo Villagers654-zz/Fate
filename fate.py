@@ -45,6 +45,7 @@ cd = {}
 
 
 class Fate(commands.AutoShardedBot):
+    loop: asyncio.BaseEventLoop
     def __init__(self, **options):
         self.app = web.Application()
         self.app.router.add_get("/top/{tail:[0-9]*}", self.get_top)
@@ -72,11 +73,12 @@ class Fate(commands.AutoShardedBot):
         self.theme_color = self.config["theme_color"]
 
         # Cache
+        self.toggles = {}  # Mappings for `Module -> Enable Command`
         self.locks = {}
         self.operation_locks = []
         self.tasks = {}  # Task object storing for easy management
         self.logger_tasks = {}  # Same as Fate.tasks except dedicated to cogs.logger
-        self.chats = {}
+        self.chats = {}  # CleverBot API chat objects
 
         self.pool = None  # MySQL Pool initialized on_ready
         self.lavalink = None  # Music server
@@ -87,68 +89,6 @@ class Fate(commands.AutoShardedBot):
         self.allow_user_mentions = discord.AllowedMentions(
             users=True, roles=False, everyone=False
         )
-
-        self.module_index = {
-            # Cog Name      Help command             Enable Command                   Disable command
-            "Welcome": {
-                "help": "welcome",
-                "enable": "welcome.enable",
-                "disable": "welcome.disable",
-            },
-            "Leave": {
-                "help": "leave",
-                "enable": "leave.enable",
-                "disable": "leave.disable",
-            },
-            "AntiRaid": {
-                "help": "antiraid",
-                "enable": "antiraid.enable",
-                "disable": "antiraid.disable",
-            },
-            "AntiSpam": {
-                "help": "antispam",
-                "enable": "antispam.enable",
-                "disable": "antispam.disable",
-            },
-            "ChatFilter": {
-                "help": "chatfilter",
-                "enable": "chatfilter.enable",
-                "disable": "chatfilter.disable",
-            },
-            "ChatLock": {
-                "help": "chatlock",
-                "enable": "chatlock.enable",
-                "disable": "chatlock.disable",
-            },
-            # "ChatBot":    {"help": "chatbot",      "enable": "chatbot.enable",      "disable": "chatbot.disable"},
-            "GlobalChat": {
-                "help": "global-chat",
-                "enable": "global-chat.enable",
-                "disable": "global-chat.disable",
-            },
-            "Lock": {"help": None, "enable": "lock", "disable": "lock"},
-            "Lockb": {"help": None, "enable": "lockb", "disable": "lockb"},
-            "Logger": {
-                "help": "logger",
-                "enable": "logger.enable",
-                "disable": "logger.disable",
-            },
-            "Responses": {
-                "help": "responses",
-                "enable": "enableresponses",
-                "disable": "disableresponses",
-            },
-            "RestoreRoles": {
-                "help": "restoreroles",
-                "enable": "restoreroles.enable",
-                "disable": "restoreroles.disable",
-            },
-            "SelfRoles": {
-                "help": "selfroles",
-                "enable": "create-menu",
-                "disable": None,
-            },
-        }
 
         self.log = Logging(bot=self)         # Class to handle printing/logging
 
@@ -344,13 +284,6 @@ class Fate(commands.AutoShardedBot):
                 else:
                     raise self.ignored_exit
 
-    # async def on_error(self, event_method, *args, **kwargs):
-    #     full_error = str(traceback.format_exc())
-    #     ignored = ("NotFound")
-    #     if any(Type in full_error for Type in ignored):
-    #         return
-    #     self.log.critical(full_error)
-
     def get_message(self, message_id: int):
         """ Return a message from the internal cache if it exists """
         for message in self.cached_messages:
@@ -457,6 +390,26 @@ class Fate(commands.AutoShardedBot):
             }
         return data
 
+    def get_asset(self, asset):
+        asset = asset.lstrip("/")
+        if "." not in asset or not os.path.exists(f"./assets/{asset}"):
+            dir = "./assets/"
+            paths = asset.split("/")
+            filename = paths[-1:][0]
+            if "/" in asset:
+                dir += paths[0]
+            for file in os.listdir(dir):
+                if filename in file:
+                    asset = asset.replace(filename, file)
+                    break
+            else:
+                for root, dirs, files in os.walk(dir):
+                    for file in files:
+                        if filename in file:
+                            asset = os.path.join(root.lstrip("./assets/"), file)
+                            break
+        return f"http://assets.fatebot.xyz/{asset}"
+
     def load_extensions(self, *extensions) -> None:
         for cog in extensions:
             try:
@@ -493,45 +446,17 @@ class Fate(commands.AutoShardedBot):
                     f"Ignoring exception in Cog: {cog}``````{traceback.format_exc()}"
                 )
 
-    # Scheduled for removal whence all references are removed
-    async def download(self, url: str, timeout: int = 10):
-        return await self.utils.download(url, timeout)
-
-    async def save_json(self, fp, data, mode="w+", **json_kwargs) -> None:
-        return await self.utils.save_json(fp, data, mode, **json_kwargs)
-
-    async def wait_for_msg(self, ctx, *_args, **_kwargs) -> Optional[discord.Message]:
-        return await self.utils.wait_for_msg(ctx)
-
-    async def verify_user(self, context=None, channel=None, user=None, timeout=45, delete_after=False):
-        return await self.utils.verify_user(
-            context, channel, user, timeout, delete_after
-        )
-
-    async def get_choice(self, ctx, *options, user, timeout=30) -> Optional[object]:
-        """ Reaction based menu for users to choose between things """
-        return await self.utils.get_choice(ctx, *options, user=user, timeout=timeout)
-    # -------------------------------------------------------
-
-    def get_asset(self, asset):
-        asset = asset.lstrip("/")
-        if "." not in asset or not os.path.exists(f"./assets/{asset}"):
-            dir = "./assets/"
-            paths = asset.split("/")
-            filename = paths[-1:][0]
-            if "/" in asset:
-                dir += paths[0]
-            for file in os.listdir(dir):
-                if filename in file:
-                    asset = asset.replace(filename, file)
-                    break
-            else:
-                for root, dirs, files in os.walk(dir):
-                    for file in files:
-                        if filename in file:
-                            asset = os.path.join(root.lstrip("./assets/"), file)
-                            break
-        return f"http://assets.fatebot.xyz/{asset}"
+    def paginate(self):
+        """Map out each modules enable command for use of `.enable module`"""
+        remap = not not self.toggles
+        self.toggles.clear()
+        for module, cls in self.cogs.items():
+            if hasattr(cls, "enable_command") and hasattr(cls, "disable_command"):
+                self.toggles[module] = [
+                    getattr(cls, "enable_command"),
+                    getattr(cls, "disable_command")
+                ]
+        self.log(f"{'Rem' if remap else 'M'}apped modules")
 
     async def load(self, data):
         load_json = lambda: json.loads(data)
@@ -580,6 +505,7 @@ class Fate(commands.AutoShardedBot):
                     extensions.append(f"{category}.{cog}")
             self.load_extensions(*extensions)
             self.log.info("Finished loading initial cogs\nAuthenticating with token..", color="yellow")
+            self.paginate()
 
         # Load in caches
         self.restricted = self.utils.cache("restricted")
@@ -601,10 +527,6 @@ class Fate(commands.AutoShardedBot):
 
 # Reset log files on startup so they don't fill up and cause lag
 start_time = time()
-# if os.path.isfile("/home/luck/.pm2/logs/fate-out.log"):
-#     os.remove("/home/luck/.pm2/logs/fate-out.log")
-# if os.path.isfile("/home/luck/.pm2/logs/fate-error.log"):
-#     os.remove("/home/luck/.pm2/logs/fate-error.log")
 if os.path.isfile("discord.log"):
     os.remove("discord.log")
 
@@ -659,12 +581,6 @@ async def on_connect():
 
 @bot.event
 async def on_ready():
-    # if not bot.api_is_running:
-    #     bot.api_is_running = True
-    #     runner = web.AppRunner(bot.app)
-    #     await runner.setup()
-    #     site = web.TCPSite(runner, port=80)
-    #     await site.start()
     bot.log.info("Finished initializing cache", color="yellow")
     # Reconnect the nodes if the bot is reconnecting
     if "Music" in bot.cogs:
@@ -710,6 +626,7 @@ async def on_error(_event_method, *_args, **_kwargs):
     ignored = (
         bot.ignored_exit,
         aiohttp.ClientOSError,
+        asyncio.TimeoutError,
         discord.errors.DiscordServerError
     )
     if isinstance(error, ignored):

@@ -58,6 +58,8 @@ class AntiSpam(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.config = bot.utils.cache("AntiSpam")
+        self.enable_command = self._enable
+        self.disable_command = self._disable
 
         # cache
         self.spam_cd = {}   # Cooldown cache for rate limiting

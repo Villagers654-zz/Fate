@@ -147,6 +147,7 @@ class Lock(commands.Cog):
         if "ban" in self.lock[guild_id] or "new" in self.lock[guild_id]:
             has_bans = True
         await self.lock.remove(guild_id)
+        await self.lock.flush()
         await ctx.send("Unlocked the server")
         if has_bans:
             await ctx.send("Do you want me to unban anyone that was banned by the lock?")
