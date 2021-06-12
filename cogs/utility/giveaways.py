@@ -74,7 +74,8 @@ class Giveaways(commands.Cog):
                         winners.append(users[i])
                     if len(winners) == 1:
                         await channel.send(
-                            f"Congratulations {winners[0].mention}, you won the giveaway for {dat['giveaway']}"
+                            f"Congratulations {winners[0].mention}, you won the giveaway for {dat['giveaway']}",
+                            mentions=discord.AllowedMentions(users=True, roles=False, everyone=False)
                         )
                     else:
                         with suppress(Forbidden):
