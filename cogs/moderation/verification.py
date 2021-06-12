@@ -11,7 +11,6 @@ from discord.errors import *
 
 from fate import Fate
 from botutils import colors
-from cogs.core.utils import Utils as utils
 
 
 class Verification(commands.Cog):
@@ -37,13 +36,13 @@ class Verification(commands.Cog):
         }
 
     @commands.group(name="verification")
-    @commands.cooldown(*utils.default_cooldown())
+    @commands.cooldown(2, 5, commands.BucketType.user)
     async def verification(self, ctx):
         if not ctx.invoked_subcommand:
             e = discord.Embed(color=colors.fate())
             e.set_author(name="User Verification")
             e.description = f"Require new members to complete a captcha when they join to prove they're human"
-            p = utils.get_prefix(ctx)
+            p = self.bot.utils.get_prefix(ctx)
             e.add_field(
                 name="◈ Usage",
                 value=f"{p}verification enable"

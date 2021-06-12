@@ -2,10 +2,9 @@ import requests
 import random
 import json
 import aiohttp
-from praw import Reddit
 from discord.ext import commands
 import discord
-from botutils import colors, auth
+from botutils import colors
 
 
 class APIS(commands.Cog):

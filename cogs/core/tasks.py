@@ -12,8 +12,6 @@ import subprocess
 import discord
 from discord.ext import commands, tasks
 
-from botutils import auth
-
 
 class Tasks(commands.Cog):
     def __init__(self, bot):
@@ -294,7 +292,7 @@ class Tasks(commands.Cog):
         try:
             await asyncio.sleep(sleep_for)
             keep_for = self.bot.config["keep_backups_for_?_days"]
-            creds = auth.MySQL()
+            creds = self.bot.auth["MySQL"]
 
             # Backup MySQL DB
             before = time.monotonic()

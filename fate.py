@@ -5,15 +5,12 @@ from datetime import datetime
 import os
 import asyncio
 import logging
-from typing import *
-import aiofiles
 from contextlib import suppress
 from base64 import b64decode, b64encode
 import sys
 from cryptography.fernet import Fernet
 from getpass import getpass
 import aiohttp
-from aiohttp import web
 
 from discord.ext import commands
 import discord
@@ -27,29 +24,20 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from cleverbot import async_ as cleverbot
 
 from botutils import colors, checks
-from botutils.custom_logging import Logging
-from cogs.core.utils import Utils, Cache, CacheWriter
 from cogs.core.tasks import Tasks
-
-
-class EmptyException(Exception):
-    pass
-
-
-class FakeCtx:
-    guild = None
-
-
-cards = {}
-cd = {}
+import botutils
+from classes.exceptions import *
 
 
 class Fate(commands.AutoShardedBot):
     loop: asyncio.BaseEventLoop
     def __init__(self, **options):
-        self.app = web.Application()
-        self.app.router.add_get("/top/{tail:[0-9]*}", self.get_top)
-        self.api_is_running = False
+        self.utils = botutils
+        self.utils.OperationLock.bot = self
+        self.utils.cache = lambda *args, **kwargs: botutils.Cache(self, *args, **kwargs)
+        self.utils.Formatting = botutils.Formatting(self)
+        self.utils.format_dict = self.utils.Formatting.format_dict
+        self.log = botutils.custom_logging.Logging(self)
 
         # Bot Configuration
         with open("./data/config.json", "r") as f:
@@ -65,12 +53,13 @@ class Fate(commands.AutoShardedBot):
         if not os.path.exists(self.config["datastore_location"]):
             os.mkdir(self.config["datastore_location"])
 
-        self.auth = {}
         self.debug_mode = self.config["debug_mode"]
         self.owner_ids = set(
             list([self.config["bot_owner_id"], *self.config["bot_owner_ids"]])
         )
         self.theme_color = self.config["theme_color"]
+        self.loading = None
+        self.last_cog = None
 
         # Cache
         self.toggles = {}  # Mappings for `Module -> Enable Command`
@@ -79,6 +68,10 @@ class Fate(commands.AutoShardedBot):
         self.tasks = {}  # Task object storing for easy management
         self.logger_tasks = {}  # Same as Fate.tasks except dedicated to cogs.logger
         self.chats = {}  # CleverBot API chat objects
+        self.auth = {}
+        self.pw = ""
+        self.utils.cache = lambda *args, **kwargs: botutils.Cache(self, *args, **kwargs)
+        self.utils.cooldown_manager = lambda *args, **kwargs: botutils.CooldownManager(self, *args, **kwargs)
 
         self.pool = None  # MySQL Pool initialized on_ready
         self.lavalink = None  # Music server
@@ -90,115 +83,10 @@ class Fate(commands.AutoShardedBot):
             users=True, roles=False, everyone=False
         )
 
-        self.log = Logging(bot=self)         # Class to handle printing/logging
-
         # ContextManager for quick sql cursor access
-        class Cursor:
-            def __init__(this, max_retries: int = 10):
-                this.conn = None
-                this.cursor = None
-                this.retries = max_retries
-
-            async def __aenter__(this):
-                while not self.pool:
-                    await asyncio.sleep(10)
-                for _ in range(this.retries):
-                    try:
-                        this.conn = await self.pool.acquire()
-                    except (pymysql.OperationalError, RuntimeError):
-                        await asyncio.sleep(1.21)
-                        continue
-                    this.cursor = await this.conn.cursor()
-                    break
-                else:
-                    raise pymysql.OperationalError("Can't connect to db")
-                return this.cursor
-
-            async def __aexit__(this, _type, _value, _tb):
-                with suppress(RuntimeError):
-                    self.pool.release(this.conn)
-
-        self.cursor = Cursor
-
-        self.cache = Cache(self)  # type: Cache
-        self.user_config_cache = [
-            0,  # Time last updated
-            {}  # User data
-        ]
-
-        # Async compatible file manager using aiofiles and asyncio.Lock
-        class AsyncFileManager:
-            def __init__(this, file: str, mode: str = "r", lock: bool = True, cache=False):
-                this.file = this.temp_file = file
-                if "w" in mode:
-                    this.temp_file += ".tmp"
-                this.mode = mode
-                this.fp_manager = None
-                this.lock = lock if not cache else False
-                this.cache = cache
-                if lock and file not in self.locks and not this.cache:
-                    self.locks[file] = asyncio.Lock()
-                this.writer = None
-
-            async def __aenter__(this):
-                if this.cache:
-                    this.writer = CacheWriter(self.cache, this.file)
-                    return this.writer
-                if this.lock:
-                    await self.locks[this.file].acquire()
-                this.fp_manager = await aiofiles.open(
-                    file=this.temp_file, mode=this.mode
-                )
-                return this.fp_manager
-
-            async def __aexit__(this, _exc_type, _exc_value, _exc_traceback):
-                if this.cache:
-                    del this.writer
-                    return None
-                await this.fp_manager.close()
-                if this.file != this.temp_file:
-                    os.rename(this.temp_file, this.file)
-                if this.lock:
-                    self.locks[this.file].release()
-                return None
-
-        self.open = AsyncFileManager
-
-        class WaitForEvent:
-            def __init__(this, event, check=None, channel=None, handle_timeout=False, timeout=60):
-                this.event = event
-                this.channel = channel
-                this.check = check
-                this.handle_timeout = handle_timeout
-                this.timeout = timeout
-
-                ctx = check if isinstance(check, commands.Context) else None
-                if ctx and not this.channel:
-                    this.channel = this.channel
-                if ctx and this.event == "message":
-                    this.check = (
-                        lambda m: m.author.id == ctx.author.id
-                        and m.channel.id == ctx.channel.id
-                    )
-
-            async def __aenter__(this):
-                try:
-                    message = await self.wait_for(
-                        this.event, check=this.check, timeout=this.timeout
-                    )
-                except asyncio.TimeoutError as error:
-                    if not this.handle_timeout:
-                        raise error
-                    if this.channel:
-                        await this.channel.send(f"Timed out waiting for {this.event}")
-                    raise self.ignored_exit()
-                else:
-                    return message
-
-            async def __aexit__(this, exc_type, exc_val, exc_tb):
-                pass
-
-        self.require = WaitForEvent
+        self.cursor = lambda *args, **kwargs: botutils.Cursor(self, *args, **kwargs)
+        self.open = lambda *args, **kwargs: botutils.AsyncFileManager(self, *args, **kwargs)
+        self.require = lambda *args, **kwargs: botutils.WaitForEvent(self, *args, **kwargs)
 
         # Set the oauth_url for users to invite the bot with
         perms = discord.Permissions(0)
@@ -206,63 +94,12 @@ class Fate(commands.AutoShardedBot):
         self.invite_url = discord.utils.oauth_url(self.config["bot_user_id"], perms)
 
         super().__init__(
-            command_prefix=Utils.get_prefixes_async,
+            command_prefix=botutils.get_prefixes_async,
             intents=discord.Intents.all(),
             activity=discord.Game(name=self.config["startup_status"]),
             max_messages=self.config["max_cached_messages"],
             **options,
         )
-
-    async def get_top(self, request):
-        ip = request.remote
-        now = int(time() / 25)
-        if ip not in cd:
-            cd[ip] = [now, 0]
-        if cd[ip][0] == now:
-            cd[ip][1] += 1
-        else:
-            cd[ip] = [now, 0]
-        if cd[ip][1] > 3:
-            return web.Response(text="You are being rate-limited", status=404)
-
-        guild_id = int(request.path.lstrip("/top/"))
-        guild = self.get_guild(guild_id)
-        if not guild:
-            return web.Response(text="Unknown server", status=404)
-        ctx = FakeCtx()
-        ctx.guild = guild
-
-        cog = self.cogs["Ranking"]
-        if guild_id in cards:
-            file = cards[guild_id]
-            created = False
-        else:
-            fp = await cog.top(ctx)
-            async with self.open(fp, "rb") as f:
-                file = await f.read()
-            cards[guild_id] = file
-            created = True
-
-        resp = web.StreamResponse()
-        resp.headers["Content-Type"] = f"Image/PNG"
-        resp.headers["Content-Disposition"] = f"filename='top.png';"
-        await resp.prepare(request)
-        await resp.write(file)
-        await resp.write_eof()
-
-        async def wait():
-            await asyncio.sleep(30)
-            del cards[guild_id]
-
-        if created:
-            self.loop.create_task(wait())
-
-    @property
-    def utils(self):
-        """Return the cog containing utility functions"""
-        if "Utils" not in self.cogs:
-            raise self.ignored_exit
-        return self.get_cog("Utils")
 
     @property
     def core_tasks(self) -> Tasks:
@@ -293,18 +130,16 @@ class Fate(commands.AutoShardedBot):
 
     @property
     def mongo(self):
-        conf = self.auth["MongoDB"]
-        return pymongo.MongoClient(conf["url"])[conf["db"]]
+        if not self.auth:
+            self.decrypt()
+        return pymongo.MongoClient(self.auth["MongoDB"]["url"])[self.auth["MongoDB"]["db"]]
 
     @property
     def aio_mongo(self):
-        conf = self.auth["MongoDB"]
+        conf = dict(self.auth["MongoDB"])
         client = AsyncIOMotorClient(conf["url"], **conf["connection_args"])
         db = client.get_database(conf["db"])
         return db
-
-    async def update_mongo(self, collection, filter, data):
-        pass
 
     async def remove_mongo(self, collection, filter):
         self.aio_mongo[collection].delete_many(filter)
@@ -345,7 +180,7 @@ class Fate(commands.AutoShardedBot):
             )
             self.unload_extensions(*self.config["extensions"], log=False)
             self.log.critical("Logging out..")
-            return await self.logout()
+            return await self.close()
         self.log.info(f"Initialized db {sql['db']} with {sql['user']}@{sql['host']}")
 
     async def wait_for_pool(self) -> bool:
@@ -449,7 +284,7 @@ class Fate(commands.AutoShardedBot):
     def paginate(self):
         """Map out each modules enable command for use of `.enable module`"""
         remap = not not self.toggles
-        self.toggles.clear()
+        self.toggles = {}
         for module, cls in self.cogs.items():
             if hasattr(cls, "enable_command") and hasattr(cls, "disable_command"):
                 self.toggles[module] = [
@@ -472,13 +307,18 @@ class Fate(commands.AutoShardedBot):
     def decode(self, string) -> str:
         return b64decode(string.encode()).decode()
 
-    def run(self):
-        # Decrypt auth data and login
-        cipher = Fernet(getpass().encode())
+    def decrypt(self):
+        if not self.pw:
+            self.pw = str(getpass())
+        self.cipher = Fernet(self.pw.encode())
         fp = os.path.join(self.config["datastore_location"], "auth.json")
         with open(fp, "r") as f:
-            data = cipher.decrypt(f.read().encode()).decode()
+            data = self.cipher.decrypt(f.read().encode()).decode()
         self.auth = json.loads(data)
+
+    def run(self):
+        # Decrypt auth data and login
+        self.decrypt()
 
         # Load in guild prefixes
         self.guild_prefixes = {}
@@ -625,12 +465,11 @@ async def on_error(_event_method, *_args, **_kwargs):
     error = sys.exc_info()[1]
     ignored = (
         bot.ignored_exit,
-        aiohttp.ClientOSError,
         asyncio.TimeoutError,
         discord.errors.DiscordServerError
     )
     if isinstance(error, ignored):
-        return
+        return botutils
     raise error
 
 

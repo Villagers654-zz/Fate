@@ -20,7 +20,6 @@ from discord.ext.commands import Greedy
 from discord.errors import NotFound, Forbidden, HTTPException
 
 from botutils import colors
-from cogs.core.utils import Utils
 
 
 cache = {}  # Keep track of what commands are still being ran
@@ -597,7 +596,7 @@ class Moderation(commands.Cog):
             del self.tasks[guild_id]
 
     @commands.command(name="mute", aliases=["shutup", "fuckoff", "shush", "shh", "shut", "oppress"])
-    @commands.cooldown(*Utils.default_cooldown())
+    @commands.cooldown(2, 5, commands.BucketType.user)
     @check_if_running()
     @has_required_permissions(manage_roles=True)
     @commands.bot_has_permissions(embed_links=True)
@@ -867,7 +866,7 @@ class Moderation(commands.Cog):
         await ctx.send(f"Unmuted {user.name}")
 
     @commands.command(name="kick")
-    @commands.cooldown(*Utils.default_cooldown())
+    @commands.cooldown(2, 5, commands.BucketType.user)
     @check_if_running()
     @has_required_permissions(kick_members=True)
     @commands.bot_has_permissions(embed_links=True, kick_members=True)
@@ -1028,7 +1027,7 @@ class Moderation(commands.Cog):
         await msg.edit(embed=e)
 
     @commands.command(name="unban")
-    @commands.cooldown(*Utils.default_cooldown())
+    @commands.cooldown(2, 5, commands.BucketType.user)
     @check_if_running()
     @has_required_permissions(ban_members=True)
     @commands.bot_has_permissions(
@@ -1082,7 +1081,7 @@ class Moderation(commands.Cog):
             await msg.edit(embed=e)
 
     @commands.command(name="mass-nick", aliases=["massnick"])
-    @commands.cooldown(*Utils.default_cooldown())
+    @commands.cooldown(2, 5, commands.BucketType.user)
     @check_if_running()
     @has_required_permissions(manage_nicknames=True)
     @commands.bot_has_guild_permissions(manage_nicknames=True)
@@ -1162,7 +1161,7 @@ class Moderation(commands.Cog):
             await msg.edit(content="Operation Complete", embed=gen_embed(i))
 
     @commands.command(name="mass-role", aliases=["massrole"])  # Have +/- support
-    @commands.cooldown(*Utils.default_cooldown())
+    @commands.cooldown(2, 5, commands.BucketType.user)
     @check_if_running()
     @has_required_permissions(manage_roles=True)
     @commands.bot_has_guild_permissions(manage_roles=True)
@@ -1485,7 +1484,7 @@ class Moderation(commands.Cog):
                 await channel.send("Failed to ban this user")
 
     @commands.command(name="warn")
-    @commands.cooldown(*Utils.default_cooldown())
+    @commands.cooldown(2, 5, commands.BucketType.user)
     @check_if_running()
     @has_warn_permission()
     async def warn(self, ctx, users: Greedy[discord.Member], *, reason="Unspecified"):
@@ -1504,7 +1503,7 @@ class Moderation(commands.Cog):
             self.bot.loop.create_task(self.warn_user(ctx.channel, user, reason, ctx))
 
     @commands.command(name="delwarn", aliases=["del-warn"])
-    @commands.cooldown(*Utils.default_cooldown())
+    @commands.cooldown(2, 5, commands.BucketType.user)
     @check_if_running()
     @has_warn_permission()
     @commands.bot_has_permissions(add_reactions=True)
@@ -1552,7 +1551,7 @@ class Moderation(commands.Cog):
                         break
 
     @commands.command(name="clearwarns", aliases=["clear-warns"])
-    @commands.cooldown(*Utils.default_cooldown())
+    @commands.cooldown(2, 5, commands.BucketType.user)
     @check_if_running()
     @has_warn_permission()
     async def clear_warns(self, ctx, user: Greedy[discord.Member]):

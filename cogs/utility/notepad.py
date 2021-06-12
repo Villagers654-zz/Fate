@@ -10,8 +10,6 @@ from discord.ext import commands
 import discord
 from PIL import Image, ImageDraw, ImageFont
 
-from cogs.core.utils import Utils as utils
-
 
 class NotePad(commands.Cog):
     def __init__(self, bot):
@@ -28,7 +26,7 @@ class NotePad(commands.Cog):
             await f.write(await self.bot.utils.dump_json(self.notes))
 
     @commands.command(name="notepad")
-    @commands.cooldown(*utils.default_cooldown())
+    @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.bot_has_permissions(attach_files=True, embed_links=True)
     async def notepad(self, ctx, your_note=None):
         def add_corners(im, rad):
