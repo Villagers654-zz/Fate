@@ -5,7 +5,6 @@ from datetime import datetime
 import os
 import asyncio
 import logging
-from typing import *
 import aiofiles
 from contextlib import suppress
 from base64 import b64decode, b64encode
@@ -13,7 +12,6 @@ import sys
 from cryptography.fernet import Fernet
 from getpass import getpass
 import aiohttp
-from aiohttp import web
 
 from discord.ext import commands
 import discord
