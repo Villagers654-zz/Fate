@@ -18,14 +18,8 @@ Proprietary and confidential
 Written by Michael Stollings <mrmichaelstollings@gmail.com>
 """
 
-__title__ = "StackCounter"
-__author__ = "Michael Stollings"
-__licence__ = "Proprietary and confidential"
-__copyright__ = "Copyright (C) 2018-present Michael Stollings"
-__version__ = "1.0.0"
 
-
-from time import time, sleep
+from time import time
 
 
 class Stack:
