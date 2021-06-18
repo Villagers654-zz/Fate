@@ -24,6 +24,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 from botutils.colors import purple, pink
 from botutils import checks
+from bothelpers.stack import Stack
 
 
 def is_faction_owner():
@@ -59,7 +60,7 @@ class FactionsRewrite(commands.Cog):
         self.path = bot.get_fp_for("userdata/test_factions.json")
         self.icon = "https://cdn.discordapp.com/attachments/641032731962114096/641742675808223242/13_Swords-512.png"
         self.banner = ""
-        self.boosts = {"extra-income": {}, "land-guard": {}, "anti-raid": {}}
+        self.boosts = {"extra-income": {}, "land-guard": {}, "anti-raid": {}, "time-chamber": {}}
         self.game_data = {}
         self.pending = []
         self.factions = {}
@@ -69,6 +70,7 @@ class FactionsRewrite(commands.Cog):
         self.work_counter = {}
         self.counter = {}
         self.claim_counter = {}
+        self.stack = Stack(60, 900, 3)
         if path.isfile(self.path):
             with open(self.path, "r") as f:
                 dat = json.load(f)  # type: dict
@@ -91,6 +93,18 @@ class FactionsRewrite(commands.Cog):
                 if dat["icon"] and "http" not in dat["icon"]:
                     self.factions[guild_id][faction]["icon"] = ""
 
+    async def filter_boosts(self):
+        for boost in list(self.boosts.keys()):
+            for guild_id, boosts in list(self.boosts[boost].items()):
+                await asyncio.sleep(0)
+                if guild_id not in self.boosts[boost]:
+                    continue
+                for faction, end_time in list(boosts.items()):
+                    if end_time - time() <= 0:
+                        del self.boosts[boost][guild_id][faction]
+                if not self.boosts[boost][guild_id]:
+                    del self.boosts[boost][guild_id]
+
     @property
     def extra_income(self):
         return self.boosts["extra-income"]
@@ -102,6 +116,10 @@ class FactionsRewrite(commands.Cog):
     @property
     def anti_raid(self):
         return self.boosts["anti-raid"]
+
+    @property
+    def time_chamber(self):
+        return self.boosts["time-chamber"]
 
     def cog_unload(self):
         with open(self.path + ".tmp", "w+") as f:
@@ -530,8 +548,7 @@ class FactionsRewrite(commands.Cog):
     @factions.command(name="join")
     async def join(self, ctx, *, faction):
         """ Joins a public faction via name """
-        is_in_faction = await self.get_users_faction(ctx)  # type: str
-        if is_in_faction:
+        if await self.get_users_faction(ctx):
             return await ctx.send("You're already in a faction")
         faction = await self.get_faction_named(ctx, faction)
         guild_id = str(ctx.guild.id)
@@ -966,29 +983,14 @@ class FactionsRewrite(commands.Cog):
             faction = await self.get_authors_faction(ctx)
             if not faction:
                 return await ctx.send("Faction not found")
+        await self.filter_boosts()
         active = {}
         guild_id = str(ctx.guild.id)
-        if guild_id in self.extra_income:
-            if faction in self.extra_income[guild_id]:
-                end_time = self.extra_income[guild_id][faction]  # type: float
-                if end_time - time() <= 0:
-                    del self.boosts["extra-income"][guild_id][faction]
-                else:
-                    active["Extra-Income"] = end_time - time()  # Remaining time
-        if guild_id in self.land_guard:
-            if faction in self.land_guard[guild_id]:
-                end_time = self.land_guard[guild_id][faction]
-                if end_time - time() <= 0:
-                    del self.boosts["land-guard"][guild_id][faction]
-                else:
-                    active["Land-Guard"] = end_time - time()
-        if guild_id in self.anti_raid:
-            if faction in self.anti_raid[guild_id]:
-                end_time = self.anti_raid[guild_id][faction]
-                if end_time - time() <= 0:
-                    del self.boosts["anti-raid"][guild_id][faction]
-                else:
-                    active["Anti-Raid"] = end_time - time()
+        for boost in self.boosts.keys():
+            if guild_id in self.boosts[boost]:
+                if faction in self.boosts[boost][guild_id]:
+                    end_time = self.boosts[boost][guild_id][faction]
+                    active[boost] = end_time - time()  # Remaining time
         if active:
             boosts = "\n".join([
                 f"• {boost} - {self.bot.utils.get_time(remaining_seconds)}"
@@ -1329,7 +1331,21 @@ class FactionsRewrite(commands.Cog):
 
         e = discord.Embed(color=purple())
         pay = random.randint(15, 25)
-        e.description = f"You earned {faction} ${pay}"
+        e.description = f"> **You earned {faction} ${pay}**"
+
+        await self.filter_boosts()
+        if guild_id in self.time_chamber:
+            if faction in self.time_chamber[guild_id]:
+                stack = self.stack.get_stack(f'{guild_id}-{faction}')
+                if stack > 1:
+                    extra = 0
+                    for i in range(stack):
+                        if i == 0:
+                            continue
+                        extra += random.randint(15, 25)
+                    pay += extra
+                    e.description += f"\nTime-Chamber: ${extra}"
+
         if guild_id in self.extra_income:
             if faction in self.extra_income[guild_id]:
                 if time() > self.extra_income[guild_id][faction]:
@@ -1392,7 +1408,6 @@ class FactionsRewrite(commands.Cog):
             "yeet",
             "father",
             "star",
-            "sky",
             "earth",
             "mars",
             "saturn",
@@ -1408,19 +1423,17 @@ class FactionsRewrite(commands.Cog):
             "laptop",
             "house",
             "empire",
-            "fan",
-            "van",
-            "tan",
-            "ban",
             "yeet",
             "poggers"
         ]
         word = random.choice(words)
-        scrambled_word = list(str(word).lower())
+        first = word[0]
+        last = word[-1:][0]
+        scrambled_word = list(str(word[1:-1]).lower())
         random.shuffle(scrambled_word)
 
         e = discord.Embed(color=purple())
-        e.description = f"Scrambled word: `{''.join(scrambled_word)}`"
+        e.description = f"Scrambled word: `{first}{''.join(scrambled_word)}{last}`"
         e.set_footer(text="You have 25 seconds..", icon_url=ctx.bot.user.avatar_url)
         await ctx.send(embed=e)
 
@@ -1705,7 +1718,9 @@ class FactionsRewrite(commands.Cog):
                   "》24h anti-raid\n"
                   "• $75\n"
                   "》2h land-guard\n"
-                  "• $100",
+                  "• $100\n"
+                  "》4h time-chamber\n"
+                  "• $500",
             inline=False
         )
         p = self.bot.utils.get_prefix(ctx)
@@ -1744,6 +1759,7 @@ class FactionsRewrite(commands.Cog):
                 return await ctx.send("You need $75 to buy this")
             if guild_id not in self.anti_raid:
                 self.boosts["anti-raid"][guild_id] = {}
+            self.factions[guild_id][faction]["balance"] -= 75
             self.boosts["anti-raid"][guild_id][faction] = time() + 60 * 60 * 12
             await ctx.send("Purchased 12h anti-raid")
 
@@ -1752,9 +1768,18 @@ class FactionsRewrite(commands.Cog):
                 return await ctx.send("You need $100 to buy this")
             if guild_id not in self.land_guard:
                 self.boosts["land-guard"][guild_id] = {}
+            self.factions[guild_id][faction]["balance"] -= 100
             self.boosts["land-guard"][guild_id][faction] = time() + 60 * 60 * 2
             await ctx.send("Purchased 2h land-guard")
 
+        elif "time" in item_name:
+            if ctx.guild.id != 397415086295089155 and not has_money(500):
+                return await ctx.send("You need $500 to buy this")
+            if guild_id not in self.boosts["time-chamber"]:
+                self.boosts["time-chamber"][guild_id] = {}
+            self.factions[guild_id][faction]["balance"] -= 500
+            self.boosts["time-chamber"][guild_id][faction] = time() + 60 * 60 * 4
+            await ctx.send("Purchased 4h time-chamber")
         else:
             p = self.bot.utils.get_prefix(ctx)
             await ctx.send(f"That's not an item in the shop, use {p}f shop")
