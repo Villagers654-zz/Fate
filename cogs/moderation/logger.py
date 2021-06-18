@@ -141,6 +141,8 @@ class Logger(commands.Cog):
         channel = self.bot.get_channel(self.config[guild_id]["channel"])
 
         if not channel:
+            if not self.config[guild_id]["secure"]:
+                return await self.destruct(guild_id)
             if not guild or not guild.me:
                 return await self.destruct(guild_id)
             if not guild.me.guild_permissions.manage_channels:
@@ -302,32 +304,33 @@ class Logger(commands.Cog):
                 self.queue[guild_id].task_done()
                 continue
 
-            for i, field in enumerate(embed.fields):
-                await asyncio.sleep(0)
-                if not field.value or field.value is discord.Embed.Empty:
-                    self.bot.log(
-                        f"A log of type {log_type} had no value", "CRITICAL"
-                    )
-                    for chunk in self.bot.utils.split(str(embed.to_dict()), 1900):
-                        self.bot.log(chunk, "CRITICAL")
-                    embed.fields[i].value = "None"
-                if len(field.value) > 1024:
-                    embed.remove_field(i)
-                    for it, chunk in enumerate(
-                        self.bot.utils.split(field.value, 1024)
-                    ):
-                        embed.insert_field_at(
-                            index=i + it,
-                            name=field.name,
-                            value=chunk,
-                            inline=field.inline,
+            if isinstance(embed, discord.Embed):
+                for i, field in enumerate(embed.fields):
+                    await asyncio.sleep(0)
+                    if not field.value or field.value is discord.Embed.Empty:
+                        self.bot.log(
+                            f"A log of type {log_type} had no value", "CRITICAL"
                         )
-                    self.bot.log(
-                        f"A log of type {log_type} had had a huge value",
-                        "CRITICAL",
-                    )
-                    for chunk in self.bot.utils.split(str(embed.to_dict()), 1900):
-                        self.bot.log(chunk, "CRITICAL")
+                        for chunk in self.bot.utils.split(str(embed.to_dict()), 1900):
+                            self.bot.log(chunk, "CRITICAL")
+                        embed.fields[i].value = "None"
+                    if len(field.value) > 1024:
+                        embed.remove_field(i)
+                        for it, chunk in enumerate(
+                            self.bot.utils.split(field.value, 1024)
+                        ):
+                            embed.insert_field_at(
+                                index=i + it,
+                                name=field.name,
+                                value=chunk,
+                                inline=field.inline,
+                            )
+                        self.bot.log(
+                            f"A log of type {log_type} had had a huge value",
+                            "CRITICAL",
+                        )
+                        for chunk in self.bot.utils.split(str(embed.to_dict()), 1900):
+                            self.bot.log(chunk, "CRITICAL")
 
             embed.timestamp = datetime.fromtimestamp(created_at)
 
