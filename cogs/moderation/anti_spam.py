@@ -660,7 +660,8 @@ class AntiSpam(commands.Cog):
 
                 # Pasting large messages without typing much, or at all
                 lmt = 250 if "http" in msg.content else 100
-                if conf["copy_paste"] and len(msg.content) > lmt:
+                check = msg.channel.permissions_for(msg.author).manage_messages
+                if not check and conf["copy_paste"] and len(msg.content) > lmt:
                     if user_id not in self.typing:
                         reason = "pasting bulky message (check #1)"
                         triggered = None
