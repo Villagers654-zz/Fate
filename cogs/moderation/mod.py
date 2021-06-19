@@ -968,14 +968,15 @@ class Moderation(commands.Cog):
                 case = await self.cases.add_case(
                     ctx.guild.id, user.id, "ban", reason, ctx.message.jump_url, ctx.author.id
                 )
-                # content = f"You've been banned in {ctx.guild} by {ctx.author} for {reason}"
-                # rows = await self.bot.rowcount(f"select * from modmail where guild_id = {ctx.guild.id};")
-                # if rows:
-                #     content += f". Use `.appeal {case}` if you feel there's a mistake"
-                # else:
-                #     content += f" [Case #{case}]"
-                # with suppress(NotFound, Forbidden, HTTPException):
-                #     await user.send(content)
+                if ctx.guild.get_member(user.id):
+                    content = f"You've been banned in {ctx.guild} by {ctx.author} for {reason}"
+                    rows = await self.bot.rowcount(f"select * from modmail where guild_id = {ctx.guild.id};")
+                    if rows:
+                        content += f". Use `.appeal {case}` if you feel there's a mistake"
+                    else:
+                        content += f" [Case #{case}]"
+                    with suppress(NotFound, Forbidden, HTTPException):
+                        await user.send(content)
                 await ctx.guild.ban(
                     user, reason=f"{ctx.author}: {reason}"[:512], delete_message_days=0
                 )
