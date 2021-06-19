@@ -188,7 +188,7 @@ class Emojis(commands.Cog):
                         )
                     continue
                 name = emoji.name
-                img = await self.bot.download(emoji.url)
+                img = await self.bot.utils.download(emoji.url)
                 await self.upload_emoji(ctx, name=name, img=img, reason=str(ctx.author))
 
         # PartialEmoji IDS
@@ -198,7 +198,7 @@ class Emojis(commands.Cog):
                 emoji = emoji.url
             else:
                 emoji = f"https://cdn.discordapp.com/emojis/{emoji_id}.png"
-            img = await self.bot.download(emoji)
+            img = await self.bot.utils.download(emoji)
             if not img:
                 ctx.msg = await self.bot.utils.update_msg(
                     ctx.msg, f"{emoji_id} - Couldn't Fetch"
