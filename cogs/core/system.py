@@ -1,9 +1,12 @@
-from discord.ext import commands
-from botutils import checks, colors
 import requests
-import discord
 import asyncio
 import random
+
+import discord
+from discord.ext import commands\
+
+from botutils import colors
+from classes import checks
 
 
 class System(commands.Cog):
@@ -55,7 +58,7 @@ class System(commands.Cog):
                 self.last_voice_state = voice_state
 
     @commands.command(name="save")
-    @commands.check(checks.luck)
+    @commands.is_owner()
     async def save_file(self, ctx, *, filename=None):
         for attachment in ctx.message.attachments:
             if not filename:
@@ -66,7 +69,7 @@ class System(commands.Cog):
             await ctx.message.delete()
 
     @commands.command(name="stealfrom")
-    @commands.check(checks.luck)
+    @commands.is_owner()
     async def steal_emojis(self, ctx, guild_id: int):
         guild = self.bot.get_guild(guild_id)
         for emoji in guild.emojis:

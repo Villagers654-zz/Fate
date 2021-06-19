@@ -1,3 +1,17 @@
+
+"""
+Helper class for fetching a user via any means
+
+Classes:
+    GetUser
+
+Copyright (C) 2020-present Michael Stollings
+Unauthorized copying, or reuse of anything in this module written by its owner, via any medium is strictly prohibited.
+This copyright notice, and this permission notice must be included in all copies, or substantial portions of the Software
+Proprietary and confidential
+Written by Michael Stollings <mrmichaelstollings@gmail.com>
+"""
+
 from discord.ext import commands
 import discord
 from discord.errors import NotFound, Forbidden, HTTPException
@@ -150,5 +164,4 @@ class GetUser:
             return users[choices.index(choice)]
 
         return users[0]
-
 

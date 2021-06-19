@@ -36,7 +36,7 @@ class ChatLock(commands.Cog):
                         channel += f"{self.bot.get_channel(_id).name}"
                     else:
                         channel += f", {self.bot.get_channel(_id).name}"
-            e = discord.Embed(color=colors.fate())
+            e = discord.Embed(color=colors.fate)
             e.set_author(name="| Chatlock", icon_url=ctx.author.avatar_url)
             e.set_thumbnail(url=ctx.guild.icon_url)
             e.description = (

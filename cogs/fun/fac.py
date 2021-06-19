@@ -23,8 +23,8 @@ import discord
 from PIL import Image, ImageDraw, ImageFont
 
 from botutils.colors import purple, pink
-from botutils import checks
-from bothelpers.stack import Stack
+from botutils.stack import Stack
+from botutils import get_prefix, get_time
 
 
 def is_faction_owner():
@@ -139,7 +139,7 @@ class FactionsRewrite(commands.Cog):
     async def save_data(self):
         """Save the current variables without blocking the event loop"""
         data = await self.bot.loop.run_in_executor(None, self.__get_dump)
-        async with self.bot.open(self.path, "w+", cache=True) as f:
+        async with self.bot.utils.open(self.path, "w+", cache=True) as f:
             await f.write(data)
         return None
 
@@ -358,55 +358,6 @@ class FactionsRewrite(commands.Cog):
         else:
             return msg
 
-    @commands.command(name="convert-factions")
-    @commands.check(checks.luck)
-    async def convert_factions(self, ctx):
-        new_dict = {}
-        with open("./data/userdata/factions.json", "r") as f:
-            dat = json.load(f)  # type: dict
-        await ctx.send(f"Converting {len(dat['factions'].items())}")
-        for guild_id, factions in dat["factions"].items():
-            new_dict[guild_id] = {}
-            for faction, metadata in factions.items():
-                if faction == "category":
-                    continue
-                claims = []
-                if guild_id in dat["land_claims"]:
-                    if faction in dat["land_claims"][guild_id]:
-                        claims = [
-                            int(k) for k in dat["land_claims"][guild_id][faction].keys()
-                        ]
-                new_dict[guild_id][faction] = {
-                    "owner": metadata["owner"],
-                    "co-owners": metadata["co-owners"],
-                    "members": metadata["members"],
-                    "balance": metadata["balance"],
-                    "claims": claims,
-                    "public": True,
-                    "allies": [],
-                    "slots": 15,
-                    "income": {},
-                    "bio": None,
-                    "icon": None,
-                    "banner": None
-                }
-                if "limit" in metadata:
-                    new_dict[guild_id][faction]["slots"] = metadata["limit"]
-                if "access" in metadata:
-                    new_dict[guild_id][faction]["public"] = (
-                        True if metadata["access"] == "public" else False
-                    )
-                if "co-owners" in metadata:
-                    new_dict[guild_id][faction]["co-owners"] = metadata["co-owners"]
-                if "bio" in metadata:
-                    new_dict[guild_id][faction]["bio"] = metadata["bio"] if metadata["bio"] else None
-                if "icon" in metadata:
-                    new_dict[guild_id][faction]["icon"] = metadata["icon"]
-                if "banner" in metadata:
-                    new_dict[guild_id][faction]["banner"] = metadata["banner"]
-        self.factions = new_dict
-        await ctx.send(f"Converted {len(new_dict)} factions")
-
     @commands.group(name="factions", aliases=["f"])
     @commands.cooldown(4, 6, commands.BucketType.user)
     @commands.guild_only()
@@ -414,10 +365,10 @@ class FactionsRewrite(commands.Cog):
     async def factions(self, ctx):
         """ Information about the module """
         if not ctx.invoked_subcommand:
-            p = self.bot.utils.get_prefix(ctx)  # type: str
+            p = get_prefix(ctx)  # type: str
             if len(ctx.message.content.split()) > 1:
                 return await ctx.send(f"Unknown command\nTry using `{p}factions help`")
-            e = discord.Embed(color=purple())
+            e = discord.Embed(color=purple)
             e.set_author(name="Discord Factions", icon_url=self.icon)
             e.description = (
                 "Create factions, group up, complete work tasks to earn "
@@ -434,10 +385,10 @@ class FactionsRewrite(commands.Cog):
     @commands.cooldown(2, 120, commands.BucketType.channel)
     async def _help(self, ctx):
         """ Command usage and descriptions """
-        e = discord.Embed(color=purple())
+        e = discord.Embed(color=purple)
         e.set_author(name="Usage", icon_url=ctx.author.avatar_url)
         e.set_thumbnail(url=ctx.guild.icon_url)
-        p = self.bot.utils.get_prefix(ctx)  # type: str
+        p = get_prefix(ctx)  # type: str
         e.add_field(
             name="◈ Core ◈",
             value=f"  {p}f create [name]"
@@ -534,7 +485,7 @@ class FactionsRewrite(commands.Cog):
         await ctx.send(
             "Are you sure you want to delete your faction?\nReply with 'yes' or 'no'"
         )
-        async with self.bot.require("message", ctx) as msg:
+        async with self.bot.utils.require("message", ctx) as msg:
             if "yes" in str(msg.content).lower():
                 for fac, data in self.factions[guild_id].items():
                     if faction in data["allies"]:
@@ -555,10 +506,10 @@ class FactionsRewrite(commands.Cog):
         if not self.factions[guild_id][faction]["public"]:
             return await ctx.send("That factions not public :[")
         if len(self.factions[guild_id][faction]["members"]) == self.factions[guild_id][faction]["slots"]:
-            p = self.bot.utils.get_prefix(ctx)
+            p = get_prefix(ctx)
             return await ctx.send(f"Your faction is currently full. Buy more slots for $250 with {p}f buy slots")
         self.factions[guild_id][faction]["members"].append(ctx.author.id)
-        e = discord.Embed(color=purple())
+        e = discord.Embed(color=purple)
         e.set_author(name=faction, icon_url=ctx.author.avatar_url)
         e.set_thumbnail(url=self.get_factions_icon(ctx, faction))
         e.description = (
@@ -583,7 +534,7 @@ class FactionsRewrite(commands.Cog):
         faction = await self.get_authors_faction(ctx)
         guild_id = str(ctx.guild.id)
         if len(self.factions[guild_id][faction]["members"]) == self.factions[guild_id][faction]["slots"]:
-            p = self.bot.utils.get_prefix(ctx)
+            p = get_prefix(ctx)
             return await ctx.send(f"Your faction is currently full. Buy more slots for $250 with {p}f buy slots")
         if not faction:
             return await ctx.send(
@@ -727,7 +678,7 @@ class FactionsRewrite(commands.Cog):
                 "Note this is a one time transaction, and you can set the icon as many times "
                 "as you want after without having to buy this again"
             )
-            async with self.bot.require("message", ctx) as msg:
+            async with self.bot.utils.require("message", ctx) as msg:
                 if "ye" not in str(msg.content).lower():
                     return await ctx.send("Aight.. maybe next time")
             self.factions[guild_id][faction]["balance"] -= 250
@@ -765,7 +716,7 @@ class FactionsRewrite(commands.Cog):
                 "Note this is a one time purchase, and you can set the banner as many times "
                 "as you want after without having to buy this again"
             )
-            async with self.bot.require("message", ctx, handle_timeout=True) as msg:
+            async with self.bot.utils.require("message", ctx, handle_timeout=True) as msg:
                 if "ye" not in str(msg.content).lower():
                     return await ctx.send("Aight.. maybe next time")
             self.factions[guild_id][faction]["balance"] -= 500
@@ -809,7 +760,7 @@ class FactionsRewrite(commands.Cog):
         def predicate(m):
             return m.channel.id == ctx.channel.id and m.author.id == dat["owner"]
 
-        async with self.bot.require("message", predicate, handle_timeout=True) as msg:
+        async with self.bot.utils.require("message", predicate, handle_timeout=True) as msg:
             if ".confirm annex" not in str(msg.content).lower():
                 return await ctx.send("Alright, merge has been rejected")
 
@@ -881,7 +832,7 @@ class FactionsRewrite(commands.Cog):
                 break
             rank += 1
 
-        e = discord.Embed(color=purple())
+        e = discord.Embed(color=purple)
         e.set_author(name=faction, icon_url=owner.avatar_url if owner else icon_url)
         e.set_thumbnail(url=icon_url if icon_url else None)
         e.description = (
@@ -926,7 +877,7 @@ class FactionsRewrite(commands.Cog):
         #         user = self.bot.get_user(int(key))
         #         if user:
         #             info += f"\n{user.name}: ${income}"
-        e = discord.Embed(color=purple())
+        e = discord.Embed(color=purple)
         e.set_author(name="Income History", icon_url=self.get_factions_icon(ctx, faction))
         e.description = info
         await ctx.send(embed=e)
@@ -965,7 +916,7 @@ class FactionsRewrite(commands.Cog):
             else:
                 users.append([user, income])
 
-        e = discord.Embed(color=purple())
+        e = discord.Embed(color=purple)
         e.set_author(name=f"{faction}'s members", icon_url=owner.avatar_url)
         e.set_thumbnail(url=self.get_factions_icon(ctx, faction))
         e.description = f"**O:** `{owner.name}` - ${owner_income}\n"
@@ -993,12 +944,12 @@ class FactionsRewrite(commands.Cog):
                     active[boost] = end_time - time()  # Remaining time
         if active:
             boosts = "\n".join([
-                f"• {boost} - {self.bot.utils.get_time(remaining_seconds)}"
+                f"• {boost} - {get_time(remaining_seconds)}"
                 for boost, remaining_seconds in active.items()
             ])
         else:
             boosts = "None Active"
-        e = discord.Embed(color=pink())
+        e = discord.Embed(color=pink)
         e.set_author(name=f"{faction}s boosts", icon_url=self.get_factions_icon(ctx, faction))
         e.description = boosts
         await ctx.send(embed=e)
@@ -1015,7 +966,7 @@ class FactionsRewrite(commands.Cog):
         cost = 500
         if channel.id in claims:
             if claims[channel.id]["guarded"]:
-                end_time = self.bot.utils.get_time(
+                end_time = get_time(
                     self.land_guard[guild_id][claims[channel.id]["faction"]] - time()
                 )
                 return await ctx.send(
@@ -1028,7 +979,7 @@ class FactionsRewrite(commands.Cog):
                                   f"this channel. You need ${needed} more")
         await ctx.send(f"Claiming that channel will cost you ${cost}, "
                        f"reply with `.confirm` to claim it")
-        async with self.bot.require("message", ctx, handle_timeout=True) as msg:
+        async with self.bot.utils.require("message", ctx, handle_timeout=True) as msg:
             if ".confirm" not in str(msg.content).lower():
                 return await ctx.send("Alright.. maybe next time")
         if channel.id in claims:
@@ -1050,7 +1001,7 @@ class FactionsRewrite(commands.Cog):
         if channel.id not in self.factions[guild_id][faction]["claims"]:
             return await ctx.send(f"You don't have {channel.mention} claimed")
         await ctx.send("Unclaiming this channel will give you $250, are you sure?")
-        async with self.bot.require("message", ctx, handle_timeout=True) as msg:
+        async with self.bot.utils.require("message", ctx, handle_timeout=True) as msg:
             if "ye" not in str(msg.content).lower():
                 return await ctx.send("Aight, maybe next time")
         self.factions[guild_id][faction]["claims"].remove(channel.id)
@@ -1065,7 +1016,7 @@ class FactionsRewrite(commands.Cog):
         else:
             faction = await self.get_authors_faction(ctx)
         guild_id = str(ctx.guild.id)
-        e = discord.Embed(color=purple())
+        e = discord.Embed(color=purple)
         e.set_author(
             name=f"{faction}'s claims", icon_url=self.get_factions_icon(ctx, faction)
         )
@@ -1250,7 +1201,7 @@ class FactionsRewrite(commands.Cog):
                 if time() > self.anti_raid[guild_id][defender]:
                     del self.boosts["anti-raid"][guild_id][defender]
                 else:
-                    end_time = self.bot.utils.get_time(
+                    end_time = get_time(
                         self.boosts["anti-raid"][guild_id][defender] - time()
                     )
                     return await ctx.send(
@@ -1272,7 +1223,7 @@ class FactionsRewrite(commands.Cog):
 
         if defender_bal > attacker_bal:
             await ctx.send("The odds are against us. Are you sure you wish to attempt a raid?")
-            async with self.bot.require("message", ctx, handle_timeout=True) as msg:
+            async with self.bot.utils.require("message", ctx, handle_timeout=True) as msg:
                 if "ye" not in str(msg.content).lower():
                     return await ctx.send("Wise choice")
 
@@ -1290,7 +1241,7 @@ class FactionsRewrite(commands.Cog):
         self.factions[guild_id][winner]["balance"] += loot
         self.factions[guild_id][loser]["balance"] -= loot
 
-        e = discord.Embed(color=purple())
+        e = discord.Embed(color=purple)
         if winner == attacker:
             e.description = f"You raided {defender} and gained ${loot}. GG"
         else:
@@ -1315,7 +1266,7 @@ class FactionsRewrite(commands.Cog):
             self.work_counter[ctx.author.id] = 0
         self.work_counter[ctx.author.id] += 1
         if self.work_counter[ctx.author.id] >= 45:
-            passed_verification = await self.bot.verify_user(ctx, user=ctx.author)
+            passed_verification = await self.bot.utils.verify_user(ctx, user=ctx.author)
             if not passed_verification:
                 self.blocked.append(ctx.author.id)
                 self.work_counter[ctx.author.id] = 30
@@ -1329,7 +1280,7 @@ class FactionsRewrite(commands.Cog):
             return await ctx.send(f"You're on cooldown! You have {remainder}s left")
         self.cooldowns[guild_id][ctx.author.id] = time() + 60
 
-        e = discord.Embed(color=purple())
+        e = discord.Embed(color=purple)
         pay = random.randint(15, 25)
         e.description = f"> **You earned {faction} ${pay}**"
 
@@ -1432,7 +1383,7 @@ class FactionsRewrite(commands.Cog):
         scrambled_word = list(str(word[1:-1]).lower())
         random.shuffle(scrambled_word)
 
-        e = discord.Embed(color=purple())
+        e = discord.Embed(color=purple)
         e.description = f"Scrambled word: `{first}{''.join(scrambled_word)}{last}`"
         e.set_footer(text="You have 25 seconds..", icon_url=ctx.bot.user.avatar_url)
         await ctx.send(embed=e)
@@ -1447,7 +1398,7 @@ class FactionsRewrite(commands.Cog):
             return await ctx.send(f"Uh. It seems the faction called `{faction}` doesn't exist anymore ._.")
 
         paycheck = random.randint(3, 7)
-        e = discord.Embed(color=purple())
+        e = discord.Embed(color=purple)
         e.description = f"You earned {faction} ${paycheck}"
         if guild_id in self.extra_income:
             if faction in self.extra_income[guild_id]:
@@ -1493,7 +1444,7 @@ class FactionsRewrite(commands.Cog):
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def _vote(self, ctx):
         faction = await self.get_authors_faction(ctx)
-        async with self.bot.cursor() as cur:
+        async with self.bot.utils.cursor() as cur:
             await cur.execute(
                 f"select vote_time from votes "
                 f"where user_id = {ctx.author.id} "
@@ -1503,7 +1454,7 @@ class FactionsRewrite(commands.Cog):
         if not results:
             return await ctx.send(f"Vote at http://vote.fatebot.xyz to earn $250."
                                   f"\nRerun the command after to redeem")
-        async with self.bot.cursor() as cur:
+        async with self.bot.utils.cursor() as cur:
             await cur.execute(
                 f"delete from votes "
                 f"where user_id = {ctx.author.id} "
@@ -1536,7 +1487,7 @@ class FactionsRewrite(commands.Cog):
         ]
 
         pay = random.randint(3, 7)
-        e = discord.Embed(color=purple())
+        e = discord.Embed(color=purple)
         e.description = random.choice(places).replace("$", f"${pay}")
         guild_id = str(ctx.guild.id)
         if guild_id in self.extra_income:
@@ -1565,7 +1516,7 @@ class FactionsRewrite(commands.Cog):
         else:
             faction = await self.get_authors_faction(ctx)
         guild_id = str(ctx.guild.id)
-        e = discord.Embed(color=purple())
+        e = discord.Embed(color=purple)
         e.set_author(name=str(faction), icon_url=self.get_factions_icon(ctx, str(faction)))
         e.description = f"${self.factions[guild_id][faction]['balance']}"
         await ctx.send(embed=e)
@@ -1610,7 +1561,7 @@ class FactionsRewrite(commands.Cog):
         emojis = ["💰", "⚔"]
         self.bot.loop.create_task(add_emojis_task())
 
-        net_leaderboard = discord.Embed(color=purple())
+        net_leaderboard = discord.Embed(color=purple)
         net_leaderboard.set_author(name="Net Worth Leaderboard")
         net_leaderboard.set_thumbnail(
             url="https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png"
@@ -1619,14 +1570,14 @@ class FactionsRewrite(commands.Cog):
         for i, (faction, value) in enumerate(dat["net"][:9]):
             net_leaderboard.description += f"\n#{i + 1}. {faction} - ${value}"
 
-        bal_leaderboard = discord.Embed(color=purple())
+        bal_leaderboard = discord.Embed(color=purple)
         bal_leaderboard.set_author(name="Balance Leaderboard")
         bal_leaderboard.set_thumbnail(url=ctx.guild.icon_url)
         bal_leaderboard.description = ""
         for i, (faction, balance) in enumerate(dat["bal"][:9]):
             bal_leaderboard.description += f"\n#{i + 1}. {faction} - ${balance}"
 
-        alliance_net_leaderboard = discord.Embed(color=purple())
+        alliance_net_leaderboard = discord.Embed(color=purple)
         alliance_net_leaderboard.set_author(name="Alliance Net Leaderboard")
         alliance_net_leaderboard.set_thumbnail(
             url="https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png"
@@ -1637,7 +1588,7 @@ class FactionsRewrite(commands.Cog):
             value = sum(f[1] for f in alliance)
             alliance_net_leaderboard.description += f"\n\n${value} from {factions}"
 
-        alliance_bal_leaderboard = discord.Embed(color=purple())
+        alliance_bal_leaderboard = discord.Embed(color=purple)
         alliance_bal_leaderboard.set_author(name="Alliance Bal Leaderboard")
         alliance_bal_leaderboard.set_thumbnail(url=ctx.guild.icon_url)
         alliance_bal_leaderboard.description = ""
@@ -1692,7 +1643,7 @@ class FactionsRewrite(commands.Cog):
         )
         while True:
             await asyncio.sleep(0.5)
-            async with self.bot.require("message", predicate, handle_timeout=True) as msg:
+            async with self.bot.utils.require("message", predicate, handle_timeout=True) as msg:
                 if await self.get_owned_faction(ctx, user=msg.author) == ally_name:
                     self.factions[guild_id][faction_name]["allies"].append(ally_name)
                     self.factions[guild_id][ally_name]["allies"].append(faction_name)
@@ -1703,7 +1654,7 @@ class FactionsRewrite(commands.Cog):
 
     @factions.command(name="shop")
     async def shop(self, ctx):
-        e = discord.Embed(color=purple())
+        e = discord.Embed(color=purple)
         e.set_author(name="Factions Shop", icon_url=self.bot.user.avatar_url)
         e.add_field(
             name="◈ Attributes",
@@ -1723,7 +1674,7 @@ class FactionsRewrite(commands.Cog):
                   "• $500",
             inline=False
         )
-        p = self.bot.utils.get_prefix(ctx)
+        p = get_prefix(ctx)
         e.set_footer(text=f"Usage | {p}f buy item_name")
         await ctx.send(embed=e)
 
@@ -1781,7 +1732,7 @@ class FactionsRewrite(commands.Cog):
             self.boosts["time-chamber"][guild_id][faction] = time() + 60 * 60 * 4
             await ctx.send("Purchased 4h time-chamber")
         else:
-            p = self.bot.utils.get_prefix(ctx)
+            p = get_prefix(ctx)
             await ctx.send(f"That's not an item in the shop, use {p}f shop")
 
         await self.save_data()

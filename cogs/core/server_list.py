@@ -1,8 +1,11 @@
-from discord.ext import commands
-from botutils import checks, colors
 from os.path import isfile
-import discord
 import json
+
+from discord.ext import commands
+import discord
+
+from botutils import colors
+from classes import checks
 
 
 class ServerList(commands.Cog):
@@ -36,7 +39,7 @@ class ServerList(commands.Cog):
                 icon_url="https://cdn.discordapp.com/attachments/514213558549217330/514345278669848597/8yx98C.gif",
             )
             msg = await ctx.send(embed=e)
-            e = discord.Embed(color=colors.fate())
+            e = discord.Embed(color=colors.fate)
             e.set_author(name="Server List", icon_url=self.bot.user.avatar_url)
             e.set_thumbnail(
                 url="https://cdn.discordapp.com/icons/397415086295089155/e31d9034f418c48ba766389ab9bf3d39.webp?size=1024"
@@ -65,7 +68,7 @@ class ServerList(commands.Cog):
             await msg.edit(embed=e)
 
     @_serverlist.command(name="addserver", aliases=["add"])
-    @commands.check(checks.luck)
+    @commands.is_owner()
     async def _addserver(self, ctx, invite, category):
         code = discord.utils.resolve_invite(invite)
         try:
@@ -81,7 +84,7 @@ class ServerList(commands.Cog):
         self.save_data()
 
     @_serverlist.command(name="delcategory", aliases=["delcat"])
-    @commands.check(checks.luck)
+    @commands.is_owner()
     async def _delcategory(self, ctx, category):
         if category not in self.servers:
             return await ctx.send(f"Category '{category}' not found")
@@ -90,7 +93,7 @@ class ServerList(commands.Cog):
         self.save_data()
 
     @_serverlist.command(name="remove", aliases=["del"])
-    @commands.check(checks.luck)
+    @commands.is_owner()
     async def _remove(self, ctx, invite):
         for category, invites in list(self.servers.items()):
             if invite in invites:

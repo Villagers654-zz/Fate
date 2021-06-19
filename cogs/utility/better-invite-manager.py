@@ -118,7 +118,7 @@ class BetterInviteManager(commands.Cog):
                     inviter = await self.bot.fetch_user(
                         config["invites"][code]["inviter"]
                     )
-                e = discord.Embed(color=colors.fate())
+                e = discord.Embed(color=colors.fate)
                 e.set_author(name=f"{member} has joined", icon_url=member.avatar_url)
                 e.set_thumbnail(url=inviter.avatar_url)
                 e.description = (

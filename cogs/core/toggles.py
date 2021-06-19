@@ -1,5 +1,6 @@
 from discord.ext import commands
 from fate import Fate
+from botutils import get_prefix
 
 
 class Toggles(commands.Cog):
@@ -12,7 +13,7 @@ class Toggles(commands.Cog):
                 enable, disable = commands
                 break
         else:
-            p = self.bot.utils.get_prefix(ctx)  # type: str
+            p = get_prefix(ctx)  # type: str
             return await ctx.send(
                 f"Module not found. If you're trying to {key} "
                 f"a command, use `{p}{key}-command your_command`"

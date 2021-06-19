@@ -8,7 +8,8 @@ from typing import Optional
 import discord
 from discord.ext import commands
 
-from botutils import colors, checks
+from botutils import colors
+from classes import checks
 
 
 mentions = discord.AllowedMentions(everyone=False, roles=False, users=True)
@@ -50,7 +51,7 @@ class Factions(commands.Cog):
         self.bot.loop.create_task(self.save_data())
 
     async def save_data(self):
-        async with self.bot.open(self.dir, "w+", cache=True) as f:
+        async with self.bot.utils.open(self.dir, "w+", cache=True) as f:
             await f.write(
                 json.dumps(
                     {

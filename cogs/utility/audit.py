@@ -1,7 +1,7 @@
 import asyncio
 from discord.ext import commands
 import discord
-from botutils import colors
+from botutils import colors, get_prefix
 
 
 class Audit(commands.Cog):
@@ -12,7 +12,7 @@ class Audit(commands.Cog):
     @commands.group(name="audit", description="Helps search through the audit")
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def _audit(self, ctx, *args):
-        p = self.bot.utils.get_prefix(ctx)
+        p = get_prefix(ctx)
         if not args or len(args) > 2:
             e = discord.Embed(color=colors.cyan())
             e.set_author(name="Audit Log Data", icon_url=ctx.author.avatar_url)

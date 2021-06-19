@@ -20,7 +20,7 @@ class Statistics(commands.Cog):
 
     @commands.command(name="statistics", aliases=["stats"])
     async def statistics(self, ctx):
-        e = discord.Embed(color=colors.fate())
+        e = discord.Embed(color=colors.fate)
         owner = await self.bot.fetch_user(self.bot.config["bot_owner_id"])
         e.set_author(name="Module Statistics", icon_url=owner.avatar_url)
         e.description = self.bot.utils.format_dict({

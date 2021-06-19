@@ -5,7 +5,6 @@ import json
 from time import time, monotonic
 from random import *
 import asyncio
-import requests
 from io import BytesIO
 from datetime import datetime
 import aiohttp
@@ -18,13 +17,12 @@ import discord
 from discord.errors import NotFound, Forbidden
 from PIL import Image, ImageFont, ImageDraw, ImageSequence, UnidentifiedImageError
 
-from botutils import colors
+from botutils import colors, get_prefix
 from botutils.pillow import add_corners
-from cogs.core.utils import Utils as utils
 
 
 def profile_help():
-    e = discord.Embed(color=colors.purple())
+    e = discord.Embed(color=colors.purple)
     e.add_field(
         name=".set title your_new_title",
         value="Changes the title field in your profile card",
@@ -105,7 +103,7 @@ class Ranking(commands.Cog):
     async def save_config(self):
         """ Saves per-server configuration """
         pass
-        # async with self.bot.open(self.path, "w+") as f:
+        # async with self.bot.utils.open(self.path, "w+") as f:
         #     raw = json.dumps(self.config)
         #     await f.write(raw)
 
@@ -253,7 +251,7 @@ class Ranking(commands.Cog):
             if self.global_cd[user_id] < time():
                 self.global_cd[user_id] = time() + 10
                 try:
-                    async with self.bot.cursor() as cur:
+                    async with self.bot.utils.cursor() as cur:
                         await cur.execute(
                             f"insert into global_msg "
                             f"values ({user_id}, 1) "
@@ -292,7 +290,7 @@ class Ranking(commands.Cog):
             if len(msgs) < conf["msgs_within_timeframe"]:
                 self.cd[guild_id][user_id].append(time())
                 try:
-                    async with self.bot.cursor() as cur:
+                    async with self.bot.utils.cursor() as cur:
                         # Guilded xp
                         await cur.execute(
                             f"insert into msg "
@@ -318,7 +316,7 @@ class Ranking(commands.Cog):
                         if not result:
                             return
                     dat = await self.calc_lvl_info(result[0], conf)
-                    async with self.bot.cursor() as cur:
+                    async with self.bot.utils.cursor() as cur:
                         await cur.execute(
                             f"select role_id from role_rewards "
                             f"where guild_id = {guild_id} "
@@ -356,7 +354,7 @@ class Ranking(commands.Cog):
         self.cmds[ctx.command.name]["total"] += 1
 
     @commands.command(name="role-rewards", aliases=["level-rewards", "level-roles", "lr"])
-    @commands.cooldown(*utils.default_cooldown())
+    @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.bot_has_permissions(embed_links=True, manage_roles=True)
     async def role_rewards(self, ctx, *args):
         if not args or len(args) == 1:
@@ -364,7 +362,7 @@ class Ranking(commands.Cog):
             e.set_author(name="Level Roles", icon_url=self.bot.user.avatar_url)
             e.set_thumbnail(url=ctx.guild.icon_url)
             e.description = "Grant roles as a reward to users whence they reach a specified level"
-            p = utils.get_prefix(ctx)  # type: str
+            p = get_prefix(ctx)  # type: str
             e.add_field(
                 name="◈ Usage",
                 value=f"{p}level-rewards @role [level]\n"
@@ -379,7 +377,7 @@ class Ranking(commands.Cog):
                       "and replace `[level]` with the level you want the role to be given at",
                 inline=False
             )
-            async with self.bot.cursor() as cur:
+            async with self.bot.utils.cursor() as cur:
                 await cur.execute(
                     f"select role_id, lvl from role_rewards "
                     f"where guild_id = {ctx.guild.id} "
@@ -413,7 +411,7 @@ class Ranking(commands.Cog):
                 "The level argument you put wasn't a number"
             )
 
-        async with self.bot.cursor() as cur:
+        async with self.bot.utils.cursor() as cur:
             await cur.execute(
                 f"select * from role_rewards "
                 f"where guild_id = {ctx.guild.id};"
@@ -428,7 +426,7 @@ class Ranking(commands.Cog):
             "Should I remove this role when the user gets a higher role reward? "
             "Reply with `yes` or `no`"
         )
-        async with self.bot.require("message", ctx) as msg:
+        async with self.bot.utils.require("message", ctx) as msg:
             if "yes" in msg.content.lower():
                 stack = False
 
@@ -440,7 +438,7 @@ class Ranking(commands.Cog):
         await ctx.send(f"Setup complete")
 
     @commands.command(name="xp-config")
-    @commands.cooldown(*utils.default_cooldown())
+    @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.bot_has_permissions(embed_links=True)
     async def xp_config(self, ctx):
         """ Sends an overview for the current config """
@@ -455,19 +453,19 @@ class Ranking(commands.Cog):
             f"\n• Msgs Within Timeframe: {conf['msgs_within_timeframe']}"
             f"\n• First Lvl XP Req: {conf['first_lvl_xp_req']}"
         )
-        p = utils.get_prefix(ctx)
+        p = get_prefix(ctx)
         e.set_footer(text=f"Use {p}set to adjust these settings")
         await ctx.send(embed=e)
 
     @commands.group(name="set")
-    @commands.cooldown(*utils.default_cooldown())
+    @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.guild_only()
     async def set(self, ctx):
         if not ctx.invoked_subcommand:
-            e = discord.Embed(color=colors.fate())
+            e = discord.Embed(color=colors.fate)
             e.set_author(name="Set Usage", icon_url=ctx.author.avatar_url)
             e.set_thumbnail(url=self.bot.user.avatar_url)
-            p = utils.get_prefix(ctx)  # type: str
+            p = get_prefix(ctx)  # type: str
             e.description = "`[]` = your arguments / setting"
             e.add_field(
                 name="◈ Profile Stuff",
@@ -619,7 +617,7 @@ class Ranking(commands.Cog):
         # xp variables
         guild_rank = "unranked"  # this is required, remember to get this here
         who = 'You' if user.id == ctx.author.id else 'They'
-        async with self.bot.cursor() as cur:
+        async with self.bot.utils.cursor() as cur:
             if "global" in ctx.message.content or "profile" in ctx.message.content.lower():
                 await cur.execute(f"select xp from global_msg where user_id = {user_id} limit 1;")
                 results = await cur.fetchone()  # type: tuple
@@ -880,7 +878,7 @@ class Ranking(commands.Cog):
         if not hasattr(ctx, "channel"):
             return fp
 
-        e = discord.Embed(color=colors.fate())
+        e = discord.Embed(color=colors.fate)
         e.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
         e.set_image(url=f"attachment://{fp}")
         await ctx.send(embed=e, file=discord.File(fp, filename=fp))
@@ -905,7 +903,7 @@ class Ranking(commands.Cog):
             "ggvcleaderboard",
         ],
     )
-    @commands.cooldown(*utils.default_cooldown())
+    @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.cooldown(1, 2, commands.BucketType.channel)
     @commands.cooldown(6, 60, commands.BucketType.guild)
     @commands.guild_only()
@@ -986,7 +984,7 @@ class Ranking(commands.Cog):
 
             return embeds
 
-        async with self.bot.open("./data/userdata/config.json", "r") as f:
+        async with self.bot.utils.open("./data/userdata/config.json", "r") as f:
             config = json.loads(await f.read())  # type: dict
         prefix = "."  # default prefix
         guild_id = str(ctx.guild.id)
@@ -1019,7 +1017,7 @@ class Ranking(commands.Cog):
         embeds = []
         leaderboards = {}
 
-        async with self.bot.cursor() as cur:
+        async with self.bot.utils.cursor() as cur:
             await cur.execute(
                 f"select user_id, xp from msg where guild_id = {guild_id} order by xp desc limit 256;"
             )
@@ -1160,7 +1158,7 @@ class Ranking(commands.Cog):
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def clb(self, ctx):
         # Remove old uses from the db
-        e = discord.Embed(color=colors.fate())
+        e = discord.Embed(color=colors.fate)
         e.set_author(name="Command Leaderboard", icon_url=self.bot.user.avatar_url)
         e.description = ""
         rank = 1

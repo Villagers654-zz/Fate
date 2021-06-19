@@ -11,8 +11,7 @@ import subprocess
 
 import discord
 from discord.ext import commands, tasks
-
-from botutils import auth
+from botutils import split
 
 
 class Tasks(commands.Cog):
@@ -107,9 +106,9 @@ class Tasks(commands.Cog):
         keep_for = self.bot.config["log_uptime_for_?_days"]  # type: int
         path = "./data/uptime.json"
         if not os.path.isfile(path):
-            async with self.bot.open(path, "w") as f:
+            async with self.bot.utils.open(path, "w") as f:
                 await f.write(json.dumps([]))
-        async with self.bot.open(path, "r") as f:
+        async with self.bot.utils.open(path, "r") as f:
             uptime_data = json.loads(await f.read())  # type: list
 
         for date_entry in list(uptime_data):
@@ -122,7 +121,7 @@ class Tasks(commands.Cog):
         if now not in uptime_data:
             uptime_data.append(now)
 
-        async with self.bot.open(path, "w+") as f:
+        async with self.bot.utils.open(path, "w+") as f:
             await f.write(json.dumps(uptime_data))
 
     @tasks.loop()
@@ -184,7 +183,7 @@ class Tasks(commands.Cog):
         while True:
             await asyncio.sleep(1)
             reads += 1
-            async with self.bot.open("discord.log", "r") as f:
+            async with self.bot.utils.open("discord.log", "r") as f:
                 lines = await f.readlines()
             new_lines = len(lines) - len(log)
             if new_lines > 0:
@@ -202,7 +201,7 @@ class Tasks(commands.Cog):
                         await channel.send(f"```{group}```")
                 log = [*log, *added_lines]
             if reads == 1000:
-                async with self.bot.open("discord.log", "w") as f:
+                async with self.bot.utils.open("discord.log", "w") as f:
                     await f.write("")
                 log = []
                 reads = 0
@@ -238,7 +237,7 @@ class Tasks(commands.Cog):
             if original in self.bot.logs:
                 self.bot.logs.remove(original)
             if len(log) >= 2000:
-                for group in self.bot.utils.split(log, 1990):
+                for group in split(log, 1990):
                     await channel.send(f"{mention}```{group}```")
                 continue
             if len(message) + len(log) >= 1990:
@@ -294,14 +293,14 @@ class Tasks(commands.Cog):
         try:
             await asyncio.sleep(sleep_for)
             keep_for = self.bot.config["keep_backups_for_?_days"]
-            creds = auth.MySQL()
+            creds = self.bot.auth["MySQL"]
 
             # Backup MySQL DB
             before = time.monotonic()
             db_path = os.path.join(self.bot.config["backups_location"], "mysql")
             fp = os.path.join(db_path, f"backup_{datetime.now()}.sql")
             process = subprocess.Popen(
-                f"mysqldump -u root -p{creds.password} fate > '{fp}'",
+                f"mysqldump -u root -p{creds['password']} fate > '{fp}'",
                 shell=True
             )
             while True:

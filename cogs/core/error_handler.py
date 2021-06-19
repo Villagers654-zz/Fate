@@ -10,7 +10,8 @@ from discord.http import DiscordServerError
 from lavalink import NodeException
 from pymongo.errors import DuplicateKeyError
 
-from botutils import colors, checks
+from botutils import colors, split
+from classes import checks
 
 
 class ErrorHandler(commands.Cog):
@@ -134,7 +135,7 @@ class ErrorHandler(commands.Cog):
 
             # Send a user-friendly error and state that it'll be fixed soon
             if not isinstance(error, discord.errors.NotFound):
-                e = discord.Embed(color=colors.red())
+                e = discord.Embed(color=colors.red)
                 e.description = (
                     f"[{str(error)}](https://www.youtube.com/watch?v=t3otBjVZzT0)"
                 )
@@ -160,14 +161,14 @@ class ErrorHandler(commands.Cog):
 
         # Prepare to log the error to a dedicated error channel
         channel = self.bot.get_channel(self.bot.config["error_channel"])
-        e = discord.Embed(color=colors.red())
+        e = discord.Embed(color=colors.red)
         e.description = f"[{ctx.message.content}]({ctx.message.jump_url})"
         e.set_author(
             name=f"| Fatal Error | in {ctx.command}", icon_url=ctx.author.avatar_url
         )
         if ctx.guild:
             e.set_thumbnail(url=ctx.guild.icon_url)
-        enum = enumerate(self.bot.utils.split(formatted, 980))
+        enum = enumerate(split(formatted, 980))
         for iteration, chunk in enum:
             e.add_field(
                 name="◈ Error ◈",
@@ -187,7 +188,7 @@ class ErrorHandler(commands.Cog):
         message = await channel.send(embed=e)
         await message.add_reaction("✔")
         if ctx.author.id in self.bot.owner_ids:
-            e = discord.Embed(color=colors.fate())
+            e = discord.Embed(color=colors.fate)
             e.set_author(
                 name=f"Here's the full traceback:", icon_url=ctx.author.avatar_url
             )

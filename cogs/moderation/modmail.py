@@ -2,7 +2,6 @@
 import json
 from time import time
 from contextlib import suppress
-import asyncio
 from datetime import datetime, timedelta
 
 from discord.ext import commands
@@ -46,14 +45,14 @@ class ModMail(commands.Cog):
     @commands.bot_has_permissions(view_audit_log=True)
     async def enable(self, ctx):
         await ctx.send("What's the category ID I should use for modmail")
-        async with self.bot.require("message", ctx, handle_timeout=True) as msg:
+        async with self.bot.utils.require("message", ctx, handle_timeout=True) as msg:
             if not msg.content.isdigit():
                 return await ctx.send("That's not a category ID. Rerun the command >:(")
             category_id = int(msg.content)
         channel = self.bot.get_channel(category_id)
         if not isinstance(channel, discord.CategoryChannel):
             return await ctx.send("I can't find a category with that ID. Rerun the command to try again")
-        async with self.bot.cursor() as cur:
+        async with self.bot.utils.cursor() as cur:
             await cur.execute(
                 f"insert into modmail "
                 f"values ({ctx.guild.id}, {category_id}, '{self.bot.encode(json.dumps([]))}') "
@@ -65,7 +64,7 @@ class ModMail(commands.Cog):
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
     async def disable(self, ctx):
-        async with self.bot.cursor() as cur:
+        async with self.bot.utils.cursor() as cur:
             await cur.execute(f"delete from modmail where guild_id = {ctx.guild.id} limit 1;")
         await ctx.send("Disabled modmail if it was enabled")
 
@@ -80,7 +79,7 @@ class ModMail(commands.Cog):
             return await ctx.send("Only moderators can use this command")
         if ctx.author.id == user.id:
             return await ctx.send(f"<:waitThatsIllegal:590584708174184448> that's illegal")
-        async with self.bot.cursor() as cur:
+        async with self.bot.utils.cursor() as cur:
             await cur.execute(f"select blocked from modmail where guild_id = {ctx.guild.id} limit 1;")
             result = await cur.fetchone()
             if not result:
@@ -101,7 +100,7 @@ class ModMail(commands.Cog):
     async def unblock(self, ctx, user: discord.User):
         if not self.bot.attrs.is_moderator(ctx.author):
             return await ctx.send("Only moderators can use this command")
-        async with self.bot.cursor() as cur:
+        async with self.bot.utils.cursor() as cur:
             await cur.execute(f"select blocked from modmail where guild_id = {ctx.guild.id} limit 1;")
             result = await cur.fetchone()
             if not result:
@@ -119,7 +118,7 @@ class ModMail(commands.Cog):
 
     async def mod_reply(self, ctx, msg):
         case_number = int(msg.channel.name.replace("case-", ""))
-        async with self.bot.cursor() as cur:
+        async with self.bot.utils.cursor() as cur:
             await cur.execute(
                 f"select user_id "
                 f"from cases "
@@ -193,7 +192,7 @@ class ModMail(commands.Cog):
         if ctx.message.attachments:
             attachment = ctx.message.attachments[0].url
 
-        async with self.bot.cursor() as cur:
+        async with self.bot.utils.cursor() as cur:
             if isinstance(case_number, str) and case_number.isdigit():
                 case_number = int(case_number)
             if case_number and isinstance(case_number, int):
@@ -238,7 +237,7 @@ class ModMail(commands.Cog):
             result = sorted_results[formatted_results.index(choice)]
         guild_id, case, reason, link, created_at = result
 
-        async with self.bot.cursor() as cur:
+        async with self.bot.utils.cursor() as cur:
             await cur.execute(
                 f"select channel_id, blocked from modmail "
                 f"where guild_id = {guild_id} "
@@ -338,7 +337,7 @@ class ModMail(commands.Cog):
                 f"To close the thread, delete the channel, or give me permissions to and rerun the cmd"
             )
         case_number = int(case)
-        async with self.bot.cursor() as cur:
+        async with self.bot.utils.cursor() as cur:
             await cur.execute(
                 f"select user_id from cases "
                 f"where guild_id = {ctx.guild.id} "

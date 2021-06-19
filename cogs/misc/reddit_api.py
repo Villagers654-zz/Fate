@@ -7,7 +7,8 @@ from discord.ext import commands, tasks
 import discord
 import asyncpraw
 
-from botutils import colors, auth
+from botutils import colors
+from botutils import split
 
 
 class Reddit(commands.Cog):
@@ -148,7 +149,7 @@ class Reddit(commands.Cog):
 
                     # Set to use text
                     if text and (post.title or post.selftext):
-                        enum = enumerate(self.bot.utils.split(get_description(post), 914))
+                        enum = enumerate(split(get_description(post), 914))
                         for i, chunk in enum:
                             if i == 0:
                                 e.description = chunk
@@ -213,7 +214,7 @@ class Reddit(commands.Cog):
 
                 # Set to use text
                 if post.title or post.selftext:
-                    enum = enumerate(self.bot.utils.split(
+                    enum = enumerate(split(
                         post.selftext if post.selftext else post.title, 914
                     ))
                     for i, chunk in enum:

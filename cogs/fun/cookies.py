@@ -51,7 +51,7 @@ class Cookies(commands.Cog):
 
     @commands.command(name="cookie")
     async def _cookie(self, ctx, user: discord.Member = None):
-        e = discord.Embed(color=colors.fate())
+        e = discord.Embed(color=colors.fate)
         e.set_footer(text=f"Powered by Cookie Mix")
         author_id = str(ctx.author.id)
         if author_id not in self.cookies:
@@ -107,7 +107,7 @@ class Cookies(commands.Cog):
         user_id = str(user.id)
         if user_id not in self.cookies:
             await self.setup(user_id)
-        e = discord.Embed(color=colors.fate())
+        e = discord.Embed(color=colors.fate)
         e.set_author(
             name=f"| 📤 {self.sent[user_id]} | 📥 {self.received[user_id]} | 🍪 {self.cookies[user_id]}",
             icon_url=user.avatar_url,

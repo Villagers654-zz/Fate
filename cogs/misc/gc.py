@@ -92,13 +92,13 @@ class GlobalChatRewrite(commands.Cog):
                 await asyncio.sleep(1)
                 continue
             break
-        async with self.bot.cursor() as cur:
+        async with self.bot.utils.cursor() as cur:
             await cur.execute(f"select guild_id, channel_id from global_chat;")
             ids = await cur.fetchall()
         for guild_id, channel_id in ids:
             channel = self.bot.get_channel(channel_id)
             if not channel:
-                async with self.bot.cursor() as cur:
+                async with self.bot.utils.cursor() as cur:
                     await cur.execute(
                         f"delete from global_chat "
                         f"where guild_id = {guild_id};"
@@ -113,7 +113,7 @@ class GlobalChatRewrite(commands.Cog):
     @_gc.command(name="mod")
     @commands.is_owner()
     async def _mod(self, ctx, user: discord.User):
-        async with self.bot.cursor() as cur:
+        async with self.bot.utils.cursor() as cur:
             await cur.execute(f"select status from global_users where user_id = {user.id} and status = 'moderator';")
             if cur.rowcount:
                 await cur.execute(f"update global_users set status = 'verified' where user_id = {user.id};")
@@ -130,7 +130,7 @@ class GlobalChatRewrite(commands.Cog):
 
     @_gc.command(name="ban")
     async def _ban(self, ctx, *, target: Union[discord.User, discord.Guild]):
-        async with self.bot.cursor() as cur:
+        async with self.bot.utils.cursor() as cur:
             await cur.execute(f"select status from global_users where user_id = {ctx.author.id} and status = 'moderator';")
             if not cur.rowcount:
                 return await ctx.send("Only global chat moderators can use this command")
@@ -141,7 +141,7 @@ class GlobalChatRewrite(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def _enable(self, ctx):
         msg = await ctx.send("Enabling global chat")
-        async with self.bot.cursor() as cur:
+        async with self.bot.utils.cursor() as cur:
             await cur.execute(
                 f"insert into global_chat values ("
                 f"{ctx.guild.id}, {ctx.channel.id}"
@@ -155,7 +155,7 @@ class GlobalChatRewrite(commands.Cog):
     @_gc.command(name="disable")
     @commands.has_permissions(administrator=True)
     async def _disable(self, ctx):
-        async with self.bot.cursor() as cur:
+        async with self.bot.utils.cursor() as cur:
             await cur.execute(f"select * from global_chat where guild_id = {ctx.guild.id};")
             if not cur.rowcount:
                 return await ctx.send("Global chat isn't enabled")
@@ -168,7 +168,7 @@ class GlobalChatRewrite(commands.Cog):
     @commands.cooldown(1, 60, commands.BucketType.user)
     @commands.cooldown(6, 60, commands.BucketType.guild)
     async def verify(self, ctx):
-        async with self.bot.cursor() as cur:
+        async with self.bot.utils.cursor() as cur:
             await cur.execute(f"select status from global_users where user_id = {ctx.author.id};")
             if cur.rowcount:
                 return await ctx.send("You're already registered")
@@ -242,7 +242,7 @@ class GlobalChatRewrite(commands.Cog):
             # Missing permissions to moderate global chat
             perms = msg.channel.permissions_for(msg.guild.me)
             if not perms.send_messages or not perms.embed_links or not perms.manage_messages:
-                async with self.bot.cursor() as cur:
+                async with self.bot.utils.cursor() as cur:
                     await cur.execute(f"delete from global_chat where guild_id = {msg.guild.id};")
                 del self.cache[msg.guild.id]
                 with suppress(Exception):
@@ -250,7 +250,7 @@ class GlobalChatRewrite(commands.Cog):
                         "Disabled global chat due to missing permissions"
                     )
 
-            async with self.bot.cursor() as cur:
+            async with self.bot.utils.cursor() as cur:
                 await cur.execute(f"select status from global_users where user_id = {msg.author.id};")
                 if not cur.rowcount:
                     return await msg.channel.send("You're not verified into using this channel. Run `.gc verify` in a different channel")
@@ -334,7 +334,7 @@ class GlobalChatRewrite(commands.Cog):
             user = await self.bot.fetch_user(user_id)
             e = discord.Embed(color=self.bot.utils.colors.green())
             if str(payload.emoji) == "👍":
-                async with self.bot.cursor() as cur:
+                async with self.bot.utils.cursor() as cur:
                     await cur.execute(f"insert into global_users values ({user_id}, 'verified');")
                 e.set_author(name=f"{user} was verified", icon_url=user.avatar_url)
                 self._queue.append([e, False, msg])

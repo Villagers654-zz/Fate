@@ -17,7 +17,6 @@ import aiohttp
 import aiofiles
 from contextlib import suppress
 import traceback
-from random import randint
 
 from discord.ext import commands
 import discord
@@ -26,6 +25,7 @@ from discord.errors import NotFound, Forbidden
 from PIL import Image
 
 from botutils.colors import *
+from botutils import get_prefix, split, get_time
 
 
 def is_guild_owner():
@@ -311,13 +311,13 @@ class Logger(commands.Cog):
                         self.bot.log(
                             f"A log of type {log_type} had no value", "CRITICAL"
                         )
-                        for chunk in self.bot.utils.split(str(embed.to_dict()), 1900):
+                        for chunk in split(str(embed.to_dict()), 1900):
                             self.bot.log(chunk, "CRITICAL")
                         embed.fields[i].value = "None"
                     if len(field.value) > 1024:
                         embed.remove_field(i)
                         for it, chunk in enumerate(
-                            self.bot.utils.split(field.value, 1024)
+                            split(field.value, 1024)
                         ):
                             embed.insert_field_at(
                                 index=i + it,
@@ -329,7 +329,7 @@ class Logger(commands.Cog):
                             f"A log of type {log_type} had had a huge value",
                             "CRITICAL",
                         )
-                        for chunk in self.bot.utils.split(str(embed.to_dict()), 1900):
+                        for chunk in split(str(embed.to_dict()), 1900):
                             self.bot.log(chunk, "CRITICAL")
 
             embed.timestamp = datetime.fromtimestamp(created_at)
@@ -377,7 +377,7 @@ class Logger(commands.Cog):
                 e.set_author(name=guild if guild else "Unknown Guild")
                 e.description = traceback.format_exc()
                 embed_data = str(json.dumps(embed.to_dict(), indent=2))
-                for text_group in self.bot.utils.split(embed_data, 1024):
+                for text_group in split(embed_data, 1024):
                     e.add_field(name="Embed Data", value=text_group, inline=False)
                 e.set_footer(text=str(guild.id) if guild else "Unknown Guild")
                 debug = self.bot.get_channel(self.bot.config["debug_channel"])
@@ -471,7 +471,7 @@ class Logger(commands.Cog):
     @commands.bot_has_permissions(embed_links=True)
     async def logger(self, ctx):
         if not ctx.invoked_subcommand:
-            e = discord.Embed(color=fate())
+            e = discord.Embed(color=fate)
             e.set_author(name="| Action Logger", icon_url=ctx.guild.icon_url)
             e.set_thumbnail(url=self.bot.user.avatar_url)
             e.description = "*A more detailed audit log that logs changes to the server and more to ~~a~~ dedicated channel(s)*"
@@ -481,7 +481,7 @@ class Logger(commands.Cog):
                       "re-creates deleted log channels and resends the last 12 hours of logs",
                 inline=False,
             )
-            p = self.bot.utils.get_prefix(ctx)
+            p = get_prefix(ctx)
             e.add_field(
                 name="◈ Commands",
                 value=f"{p}log enable - `creates a log`"
@@ -735,7 +735,7 @@ class Logger(commands.Cog):
         guild_id = str(ctx.guild.id)
         if guild_id not in self.config:
             return await ctx.send("There's currently no config for this server")
-        e = discord.Embed(color=fate())
+        e = discord.Embed(color=fate)
         e.set_author(name="Logger Config", icon_url=ctx.guild.owner.avatar_url)
         e.set_thumbnail(url=self.bot.user.avatar_url)
         e.description = (
@@ -749,7 +749,7 @@ class Logger(commands.Cog):
                 if isinstance(channel, discord.TextChannel):
                     channels.append(channel.mention)
             if channels:
-                for chunk in self.bot.utils.split("\n".join(channels), 1024):
+                for chunk in split("\n".join(channels), 1024):
                     e.add_field(name="◈ Ignored channels", value=chunk, inline=False)
         if self.config[guild_id]["ignored_bots"]:
             bots = []
@@ -769,7 +769,7 @@ class Logger(commands.Cog):
                 if channel:
                     channels.append(f"{channel.mention} - {log_type}")
             if channels:
-                for chunk in self.bot.utils.split("\n".join(channels), 1024):
+                for chunk in split("\n".join(channels), 1024):
                     e.add_field(name="◈ Log Redirects", value=chunk, inline=False)
         await ctx.send(embed=e)
 
@@ -798,7 +798,7 @@ class Logger(commands.Cog):
                 if "!here" in content:
                     mention = "@here"
                 if mention:
-                    e = discord.Embed(color=white())
+                    e = discord.Embed(color=white)
                     e.title = f"~==🍸{mention} mentioned🍸==~"
                     e.set_thumbnail(url=msg.author.avatar_url)
                     is_successful = False
@@ -820,7 +820,7 @@ class Logger(commands.Cog):
                             "Channel": msg.channel.mention,
                             f"[Jump to MSG]({msg.jump_url})": None,
                         })
-                        for group in self.bot.utils.split(msg.content, 1024):
+                        for group in split(msg.content, 1024):
                             e.add_field(name="Content", value=group, inline=False)
                         log = Log("everyone_mention", embed=e)
                         self.put_nowait(guild_id, log)
@@ -836,7 +836,7 @@ class Logger(commands.Cog):
                     if before.channel.id in self.config[guild_id]["ignored_channels"]:
                         return
 
-                    e = discord.Embed(color=pink())
+                    e = discord.Embed(color=pink)
                     e.set_author(
                         name="~==🍸Msg Edited🍸==~", icon_url=before.author.avatar_url
                     )
@@ -876,7 +876,7 @@ class Logger(commands.Cog):
                             0.5
                         )  # prevent updating too fast and not showing on the users end
                         return await after.edit(suppress=False, embed=before.embeds[0])
-                    e = discord.Embed(color=pink())
+                    e = discord.Embed(color=pink)
                     e.set_author(
                         name="~==🍸Embed Hidden🍸==~", icon_url=before.author.avatar_url
                     )
@@ -890,7 +890,7 @@ class Logger(commands.Cog):
                     )
                     em = before.embeds[0].to_dict()
                     fp = f"./static/embed-{before.id}.json"
-                    async with self.bot.open(fp, "w+") as f:
+                    async with self.bot.utils.open(fp, "w+") as f:
                         f.write(json.dumps(
                             em, sort_keys=True, indent=4, separators=(",", ": ")
                         ))
@@ -900,7 +900,7 @@ class Logger(commands.Cog):
                 if before.pinned != after.pinned:
                     action = "Unpinned" if before.pinned else "Pinned"
                     audit_dat = await self.search_audit(after.guild, audit.message_pin)
-                    e = discord.Embed(color=cyan())
+                    e = discord.Embed(color=cyan)
 
                     e.set_author(
                         name=f"~==🍸Msg {action}🍸==~", icon_url=after.author.avatar_url
@@ -914,7 +914,7 @@ class Logger(commands.Cog):
                             f"[Jump to MSG]({after.jump_url})": None,
                         }
                     )
-                    for text_group in self.bot.utils.split(after.content, 1000):
+                    for text_group in split(after.content, 1000):
                         e.add_field(name="◈ Content", value=text_group, inline=False)
                     log = Log("message_pin", embed=e)
                     self.put_nowait(guild_id, log)
@@ -933,7 +933,7 @@ class Logger(commands.Cog):
                     return
                 if msg.channel.id in self.config[guild_id]["ignored_channels"]:
                     return
-                e = discord.Embed(color=pink())
+                e = discord.Embed(color=pink)
                 e.set_author(name="Uncached Msg Edited", icon_url=msg.author.avatar_url)
                 e.set_thumbnail(url=msg.author.avatar_url)
                 e.description = self.bot.utils.format_dict({
@@ -941,7 +941,7 @@ class Logger(commands.Cog):
                     "Channel": channel.mention,
                     f"[Jump to MSG]({msg.jump_url})": None,
                 })
-                for text_group in self.bot.utils.split(msg.content, 1024):
+                for text_group in split(msg.content, 1024):
                     e.add_field(name="◈ Content", value=text_group, inline=False)
                 log = Log("message_edit", embed=e)
                 self.put_nowait(guild_id, log)
@@ -995,7 +995,7 @@ class Logger(commands.Cog):
                 ):
                     return
 
-                e = discord.Embed(color=purple())
+                e = discord.Embed(color=purple)
                 dat = await self.search_audit(msg.guild, audit.message_delete)
                 if dat["thumbnail_url"] == msg.guild.icon_url:
                     dat["thumbnail_url"] = msg.author.avatar_url
@@ -1006,7 +1006,7 @@ class Logger(commands.Cog):
                     "Channel": msg.channel.mention,
                     "Deleted by": dat["user"],
                 })
-                for text_group in self.bot.utils.split(msg.content, 1024):
+                for text_group in split(msg.content, 1024):
                     e.add_field(name="◈ MSG Content", value=text_group, inline=False)
                 if msg.embeds:
                     e.set_footer(text="⇓ Embed ⇓")
@@ -1035,7 +1035,7 @@ class Logger(commands.Cog):
             if payload.channel_id in self.config[guild_id]["ignored_channels"]:
                 return
             guild = self.bot.get_guild(payload.guild_id)
-            e = discord.Embed(color=purple())
+            e = discord.Embed(color=purple)
             dat = await self.search_audit(guild, audit.message_delete)
             e.set_author(name="Uncached Message Deleted", icon_url=dat["icon_url"])
             e.set_thumbnail(url=dat["thumbnail_url"])
@@ -1078,11 +1078,11 @@ class Logger(commands.Cog):
             if payload.cached_messages and not purged_messages:  # only logs were purged
                 return
 
-            fp = f"./static/purged-messages-{r.randint(0, 9999)}.txt"
-            async with self.bot.open(fp, "w") as f:
+            fp = f"./static/purged-messages-{randint(0, 9999)}.txt"
+            async with self.bot.utils.open(fp, "w") as f:
                 await f.write(purged_messages)
 
-            e = discord.Embed(color=lime_green())
+            e = discord.Embed(color=lime_green)
             dat = await self.search_audit(guild, audit.message_bulk_delete)
             if dat["extra"] and dat["icon_url"]:
                 e.set_author(
@@ -1117,7 +1117,7 @@ class Logger(commands.Cog):
                 return
             if msg.channel.id in self.config[guild_id]["ignored_channels"]:
                 return
-            e = discord.Embed(color=yellow())
+            e = discord.Embed(color=yellow)
             e.set_author(
                 name="~==🍸Reactions Cleared🍸==~", icon_url=msg.author.avatar_url
             )
@@ -1138,7 +1138,7 @@ class Logger(commands.Cog):
 
             def create_template_embed():
                 """ Creates a new embed to work with """
-                em = discord.Embed(color=lime_green())
+                em = discord.Embed(color=lime_green)
                 em.set_author(name="~==🍸Server Updated🍸==~", icon_url=dat["icon_url"])
                 em.set_thumbnail(url=after.icon_url)
                 return em
@@ -1252,7 +1252,7 @@ class Logger(commands.Cog):
                     log = Log("features_change", embed=e)
                     self.put_nowait(guild_id, log)
             if before.premium_tier != after.premium_tier:
-                e = discord.Embed(color=pink())
+                e = discord.Embed(color=pink)
                 action = (
                     "lowered" if before.premium_tier > after.premium_tier else "raised"
                 )
@@ -1290,7 +1290,7 @@ class Logger(commands.Cog):
     async def on_guild_channel_create(self, channel):
         guild_id = str(channel.guild.id)
         if guild_id in self.config:
-            e = discord.Embed(color=yellow())
+            e = discord.Embed(color=yellow)
             dat = await self.search_audit(channel.guild, audit.channel_create)
             e.set_author(name="~==🍸Channel Created🍸==~", icon_url=dat["icon_url"])
             e.set_thumbnail(url=dat["thumbnail_url"])
@@ -1331,7 +1331,7 @@ class Logger(commands.Cog):
             if channel.category:
                 category = channel.category.name
 
-            e = discord.Embed(color=red())
+            e = discord.Embed(color=red)
             e.set_author(name="~==🍸Channel Deleted🍸==~", icon_url=dat["icon_url"])
             e.set_thumbnail(url=dat["thumbnail_url"])
             e.description = self.bot.utils.format_dict({
@@ -1347,14 +1347,14 @@ class Logger(commands.Cog):
                 self.put_nowait(guild_id, log)
                 return
 
-            fp = f"./static/members-{r.randint(1, 9999)}.txt"
+            fp = f"./static/members-{randint(1, 9999)}.txt"
             members = f"{channel.name} - Member List"
             for member in channel.members:
                 await asyncio.sleep(0)
                 members += (
                     f"\n{member.id}, {member.mention}, {member}, {member.display_name}"
                 )
-            async with self.bot.open(fp, "w") as f:
+            async with self.bot.utils.open(fp, "w") as f:
                 await f.write(members)
 
             log = Log("channel_delete", embed=e, files=[fp])
@@ -1364,7 +1364,7 @@ class Logger(commands.Cog):
     async def on_guild_channel_update(self, before, after):  # due for rewrite
         guild_id = str(after.guild.id)
         if guild_id in self.config:
-            e = discord.Embed(color=orange())
+            e = discord.Embed(color=orange)
             dat = await self.search_audit(after.guild, audit.channel_update)
             e.set_thumbnail(url=after.guild.icon_url)
             # category = 'None, or Changed'
@@ -1417,12 +1417,12 @@ class Logger(commands.Cog):
                             inline=False,
                         )
                         if before.topic:
-                            for text_group in self.bot.utils.split(before.topic):
+                            for text_group in split(before.topic):
                                 e.add_field(
                                     name="◈ Before", value=text_group, inline=False
                                 )
                         if after.topic:
-                            for text_group in self.bot.utils.split(after.topic):
+                            for text_group in split(after.topic):
                                 e.add_field(
                                     name="◈ After", value=text_group, inline=False
                                 )
@@ -1525,7 +1525,7 @@ class Logger(commands.Cog):
         guild_id = str(role.guild.id)
         if guild_id in self.config:
             dat = await self.search_audit(role.guild, audit.role_create)
-            e = discord.Embed(color=lime_green())
+            e = discord.Embed(color=lime_green)
             e.set_author(name="~==🍸Role Created🍸==~", icon_url=dat["icon_url"])
             e.set_thumbnail(url=dat["thumbnail_url"])
             e.description = self.bot.utils.format_dict({
@@ -1539,7 +1539,7 @@ class Logger(commands.Cog):
         guild_id = str(role.guild.id)
         if guild_id in self.config:
             dat = await self.search_audit(role.guild, audit.role_delete)
-            e = discord.Embed(color=dark_green())
+            e = discord.Embed(color=dark_green)
             e.set_author(name="~==🍸Role Deleted🍸==~", icon_url=dat["icon_url"])
             e.set_thumbnail(url=dat["thumbnail_url"])
             e.description = self.bot.utils.format_dict(
@@ -1551,20 +1551,20 @@ class Logger(commands.Cog):
                 }
             )
             card = Image.new("RGBA", (25, 25), color=role.color.to_rgb())
-            fp = os.getcwd() + f"/static/color-{r.randint(1111, 9999)}.png"
+            fp = os.getcwd() + f"/static/color-{randint(1111, 9999)}.png"
             card.save(fp, format="PNG")
             e.set_footer(
                 text=f"Hex {role.color} | RGB {role.color.to_rgb()}",
                 icon_url="attachment://" + os.path.basename(fp),
             )
-            fp1 = f"./static/role-members-{r.randint(1, 9999)}.txt"
+            fp1 = f"./static/role-members-{randint(1, 9999)}.txt"
             members = f"{role.name} - Member List"
             for member in role.members:
                 await asyncio.sleep(0)
                 members += (
                     f"\n{member.id}, {member.mention}, {member}, {member.display_name}"
                 )
-            async with self.bot.open(fp1, "w") as f:
+            async with self.bot.utils.open(fp1, "w") as f:
                 await f.write(members)
             log = Log("role_delete", embed=e, files=[fp1, fp])
             self.put_nowait(guild_id, log)
@@ -1575,7 +1575,7 @@ class Logger(commands.Cog):
         if guild_id in self.config:
             fp = None
             dat = await self.search_audit(after.guild, audit.role_update)
-            e = discord.Embed(color=green())
+            e = discord.Embed(color=green)
             e.set_author(name="~==🍸Role Updated🍸==~", icon_url=dat["thumbnail_url"])
             e.set_thumbnail(url=dat["thumbnail_url"])
             e.description = self.bot.utils.format_dict({
@@ -1671,7 +1671,7 @@ class Logger(commands.Cog):
     async def on_guild_integrations_update(self, guild):
         guild_id = str(guild.id)
         if guild_id in self.config:
-            e = discord.Embed(color=light_gray())
+            e = discord.Embed(color=light_gray)
             e.set_author(
                 name="~==🍸Integrations Update🍸==~", icon_url=guild.owner.avatar_url
             )
@@ -1704,7 +1704,7 @@ class Logger(commands.Cog):
             else:  # webhook update
                 action = "Updated"
 
-            e = discord.Embed(color=cyan())
+            e = discord.Embed(color=cyan)
             e.set_author(name=f"~==🍸Webhook {action}🍸==~", icon_url=dat["icon_url"])
             e.set_thumbnail(url=dat["thumbnail_url"])
             e.description = ""
@@ -1736,7 +1736,7 @@ class Logger(commands.Cog):
         if guild_id in self.config:
             if member.bot:
                 dat = await self.search_audit(member.guild, audit.bot_add)
-                e = discord.Embed(color=light_gray())
+                e = discord.Embed(color=light_gray)
                 e.set_author(name="~==🍸Bot Added🍸==~", icon_url=dat["icon_url"])
                 e.set_thumbnail(url=dat["thumbnail_url"])
                 inv = f"https://discordapp.com/oauth2/authorize?client_id={member.id}&permissions=0&scope=bot"
@@ -1769,7 +1769,7 @@ class Logger(commands.Cog):
                         invite = invite
                         break
 
-            e = discord.Embed(color=lime_green())
+            e = discord.Embed(color=lime_green)
             icon_url = member.avatar_url
             inviter = "Unknown"
             if invite and invite.inviter:
@@ -1777,7 +1777,7 @@ class Logger(commands.Cog):
                 inviter = invite.inviter
             e.set_author(name="~==🍸Member Joined🍸==~", icon_url=icon_url)
             e.set_thumbnail(url=member.avatar_url)
-            created = self.bot.utils.get_time(round((datetime.utcnow() - member.created_at).total_seconds()))
+            created = get_time(round((datetime.utcnow() - member.created_at).total_seconds()))
             desc = {
                 "Name": member.name,
                 "Mention": member.mention,
@@ -1806,7 +1806,7 @@ class Logger(commands.Cog):
     async def on_member_remove(self, member):
         guild_id = str(member.guild.id)
         if guild_id in self.config:
-            e = discord.Embed(color=red())
+            e = discord.Embed(color=red)
             e.description = self.bot.utils.format_dict({
                 "Username": member,
                 "Mention": member.mention,
@@ -1853,7 +1853,7 @@ class Logger(commands.Cog):
     async def on_member_update(self, before, after):
         guild_id = str(before.guild.id)
         if guild_id in self.config:
-            e = discord.Embed(color=blue())
+            e = discord.Embed(color=blue)
             if before.display_name != after.display_name:
                 e.set_author(name="~==🍸Nick Changed🍸==~")
                 e.description = self.bot.utils.format_dict(

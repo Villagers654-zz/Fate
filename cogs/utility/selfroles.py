@@ -18,7 +18,7 @@ from contextlib import suppress
 import discord
 from discord.ext import commands
 
-from botutils import colors
+from botutils import colors, get_prefix
 
 
 class SelfRoles(commands.Cog):
@@ -107,7 +107,7 @@ class SelfRoles(commands.Cog):
     @commands.bot_has_permissions(embed_links=True)
     async def selfroles(self, ctx):
         """ Sends info & usage help on self roles """
-        e = discord.Embed(color=colors.fate())
+        e = discord.Embed(color=colors.fate)
         e.set_author(name="Self-Role Menus", icon_url=ctx.author.avatar_url)
         e.set_thumbnail(url=self.bot.user.avatar_url)
         e.description = (
@@ -223,12 +223,12 @@ class SelfRoles(commands.Cog):
                 if not msg:
                     return
                 if "skip" in msg.content.lower():
-                    menu["color"] = colors.fate()
+                    menu["color"] = colors.fate
                     break
                 try:
                     _hex = int(f"0x{msg.content}", 0)
                     if _hex > 16777215:
-                        _hex = colors.fate()
+                        _hex = colors.fate
                     menu["color"] = _hex
                 except:
                     await msg.delete()
@@ -312,7 +312,7 @@ class SelfRoles(commands.Cog):
             await asyncio.sleep(0.5)
             await msg.delete()
         else:
-            menu["color"] = colors.fate()
+            menu["color"] = colors.fate
             menu["mentions"] = True
 
         await instructions.edit(
@@ -361,7 +361,7 @@ class SelfRoles(commands.Cog):
         guild_id = str(ctx.guild.id)
         if guild_id not in self.menus:
             return await ctx.send(f"This guild has no self-role menus")
-        p = self.bot.utils.get_prefix(ctx)
+        p = get_prefix(ctx)
         usage = f"{p}set-color msg_id hex"
         if not msg_id:
             return await ctx.send(usage)
@@ -388,7 +388,7 @@ class SelfRoles(commands.Cog):
         guild_id = str(ctx.guild.id)
         if guild_id not in self.menus:
             return await ctx.send(f"This guild has no self-role menus")
-        p = self.bot.utils.get_prefix(ctx)
+        p = get_prefix(ctx)
         usage = f"{p}set-name msg_id new_name"
         if not msg_id:
             return await ctx.send(usage)
@@ -408,7 +408,7 @@ class SelfRoles(commands.Cog):
         guild_id = str(ctx.guild.id)
         if guild_id not in self.menus:
             return await ctx.send(f"This guild has no self-role menus")
-        p = self.bot.utils.get_prefix(ctx)
+        p = get_prefix(ctx)
         usage = f"{p}set-indent msg_id 0-2"
         if not msg_id:
             return await ctx.send(usage)
@@ -430,7 +430,7 @@ class SelfRoles(commands.Cog):
     @commands.has_permissions(manage_roles=True)
     async def add_role(self, ctx, msg_id, emoji=None, *, role=None):
         """ Adds a role to an existing menu """
-        p = self.bot.utils.get_prefix(ctx)
+        p = get_prefix(ctx)
         usage = f"{p}add-role msg_id emoji rolename"
         if not emoji or not role:
             return await ctx.send(usage)
@@ -509,7 +509,7 @@ class SelfRoles(commands.Cog):
         guild_id = str(ctx.guild.id)
         if guild_id not in self.menus:
             return await ctx.send(f"This guild has no self-role menus")
-        p = self.bot.utils.get_prefix(ctx)
+        p = get_prefix(ctx)
         usage = f"{p}set-limit msg_id limit"
         if not msg_id:
             return await ctx.send(usage)
@@ -531,7 +531,7 @@ class SelfRoles(commands.Cog):
         guild_id = str(ctx.guild.id)
         if guild_id not in self.menus:
             return await ctx.send(f"This guild has no self-role menus")
-        p = self.bot.utils.get_prefix(ctx)
+        p = get_prefix(ctx)
         usage = f"{p}toggle-mentions msg_id"
         if not msg_id:
             return await ctx.send(usage)

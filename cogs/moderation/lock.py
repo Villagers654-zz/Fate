@@ -8,7 +8,7 @@ from discord.ext import commands
 from discord.errors import HTTPException, NotFound, Forbidden
 import discord
 
-from bothelpers import extract_time
+from botutils import extract_time
 
 
 locks = {

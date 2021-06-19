@@ -93,7 +93,7 @@ class Logger(commands.Cog):
 
     async def save_data(self) -> None:
         """ Saves local variables """
-        async with self.bot.open(self.path, "w+") as f:
+        async with self.bot.utils.open(self.path, "w+") as f:
             await f.write(json.dumps(self.config))
 
     async def keep_alive_task(self) -> None:
@@ -986,7 +986,7 @@ class Logger(commands.Cog):
                 return
 
             fp = f"./static/purged-messages-{r.randint(0, 9999)}.txt"
-            async with self.bot.open(fp, "w") as f:
+            async with self.bot.utils.open(fp, "w") as f:
                 await f.write(purged_messages)
 
             e = discord.Embed(color=lime_green())

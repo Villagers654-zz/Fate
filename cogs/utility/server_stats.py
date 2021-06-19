@@ -1,6 +1,7 @@
 import asyncio
 from discord.ext import commands
 import discord
+from botutils import get_prefix
 
 
 class ServerStatistics(commands.Cog):
@@ -59,7 +60,7 @@ class ServerStatistics(commands.Cog):
             e.set_thumbnail(url="https://cdn.discordapp.com/attachments/514213558549217330/514345278669848597/8yx98C.gif")
             e.description = "• Use voice channels to automatically update and show server statistics\n" \
                             "• Display things like the member count, bot count, and boost count"
-            p = self.bot.utils.get_prefix(ctx)
+            p = get_prefix(ctx)
             e.add_field(
                 name="◈ Usage",
                 value=f"{p}server-stats enable\n"

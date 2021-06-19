@@ -38,7 +38,7 @@ class RestoreRoles(commands.Cog):
     @commands.bot_has_permissions(embed_links=True)
     async def restore_roles(self, ctx):
         if not ctx.invoked_subcommand:
-            e = discord.Embed(color=colors.fate())
+            e = discord.Embed(color=colors.fate)
             e.set_author(name="Restore Roles", icon_url=ctx.author.avatar_url)
             e.set_thumbnail(url=ctx.guild.icon_url)
             e.description = "Adds a users roles back if they leave and rejoin"

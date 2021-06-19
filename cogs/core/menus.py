@@ -6,6 +6,8 @@ import discord
 from discord.ext import commands
 from discord.errors import NotFound, Forbidden, HTTPException
 
+from botutils import emojis
+
 
 command_attrs = (commands.core.Command, commands.core.Group)
 
@@ -58,7 +60,6 @@ class ConfigureModules:
         self.row = 0
         self.config = self.key = self.command = None
 
-        emojis = ctx.bot.utils.emotes
         self.emotes = [
             getattr(emojis, name) for name in [
                 "home", "up", "down", "double_down", "yes"
@@ -178,7 +179,7 @@ class ConfigureModules:
 
     def create_embed(self):
         """Get default embed style"""
-        e = discord.Embed(color=8433919)
+        e = discord.Embed(color=self.bot.config["theme_color"])
         owner = self.bot.get_user(264838866480005122)
         e.set_author(name="~==🥂🍸🍷Help🍷🍸🥂==~", icon_url=owner.avatar_url)
         e.set_thumbnail(url=self.bot.user.avatar_url)
@@ -195,7 +196,6 @@ class ConfigureModules:
 
     async def get_description(self):
         # Format the current options
-        emojis = self.bot.utils.emotes
         description = []
         keys = [k for k in list(self.cursor.keys()) if k != "command_help"]
 
@@ -239,7 +239,6 @@ class ConfigureModules:
         if reaction:
             self.bot.loop.create_task(self.msg.remove_reaction(reaction, user))
         e = self.create_embed()
-        emojis = self.bot.utils.emotes
 
         # Home button
         if reaction.emoji == emojis.home:

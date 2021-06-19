@@ -4,7 +4,7 @@ import asyncio
 from contextlib import suppress
 from unicodedata import normalize
 from string import printable
-import json
+
 from discord.ext import commands
 from botutils import colors
 import discord
@@ -111,7 +111,7 @@ class ChatFilter(commands.Cog):
             toggle = "disabled"
             if ctx.guild.id in self.config and self.config[guild_id]["toggle"]:
                 toggle = "enabled"
-            e = discord.Embed(color=colors.pink())
+            e = discord.Embed(color=colors.pink)
             e.set_author(name="| Chat Filter", icon_url=ctx.author.avatar_url)
             e.set_thumbnail(url=ctx.guild.icon_url)
             e.description = "Deletes messages containing blocked words/phrases"

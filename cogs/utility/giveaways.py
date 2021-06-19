@@ -25,7 +25,7 @@ class Giveaways(commands.Cog):
                 self.data = json.load(f)  # type: dict
 
     async def save_data(self):
-        async with self.bot.open(self.path, "w+") as f:
+        async with self.bot.utils.open(self.path, "w+") as f:
             await f.write(json.dumps(self.data))
 
     async def make_embed(self, dat):
@@ -123,7 +123,7 @@ class Giveaways(commands.Cog):
         )
         message = await ctx.send("How long should the giveaway last" + usage)
         for i in range(5):
-            async with self.bot.require("message", ctx, handle_timeout=True) as msg:
+            async with self.bot.utils.require("message", ctx, handle_timeout=True) as msg:
                 timers = []
                 for timer in [
                     re.findall("[0-9]+[smhd]", arg) for arg in msg.content.split()
@@ -168,7 +168,7 @@ class Giveaways(commands.Cog):
 
         # Giveaway information
         message = await ctx.send("Send a description of what you're giving out")
-        async with self.bot.require("message", ctx, handle_timeout=True) as msg:
+        async with self.bot.utils.require("message", ctx, handle_timeout=True) as msg:
             msg = await ctx.channel.fetch_message(msg.id)
             giveaway = msg.content
             await message.delete()
@@ -180,7 +180,7 @@ class Giveaways(commands.Cog):
         )
         for i in range(5):
             attempts += 1
-            async with self.bot.require("message", ctx, handle_timeout=True) as msg:
+            async with self.bot.utils.require("message", ctx, handle_timeout=True) as msg:
                 if not msg.content.isdigit():
                     await message.delete()
                     message = await ctx.send("That isn't a number, please retry")
@@ -198,7 +198,7 @@ class Giveaways(commands.Cog):
             f"#Mention the channel I should use in {ctx.channel.mention} format"
         )
         for i in range(5):
-            async with self.bot.require("message", ctx, handle_timeout=True) as msg:
+            async with self.bot.utils.require("message", ctx, handle_timeout=True) as msg:
                 if not msg.channel_mentions:
                     await message.delete()
                     message = await ctx.send(

@@ -29,7 +29,7 @@ class Reload(commands.Cog):
                 successful.append(module)
             except:
                 unsuccessful.append([module, traceback.format_exc()])
-        e = discord.Embed(color=colors.fate())
+        e = discord.Embed(color=colors.fate)
         e.set_author(name=f"| {ctx.author.name} | 🍪", icon_url=ctx.author.avatar_url)
         e.set_thumbnail(
             url="https://cdn.discordapp.com/attachments/501871950260469790/513637799530856469/fzilwhwdxgubnoohgsas.png"
@@ -68,7 +68,7 @@ class Reload(commands.Cog):
             self.bot.unload_extension("cogs." + module)
         except:
             return await ctx.send("That module isn't loaded")
-        e = discord.Embed(color=colors.fate())
+        e = discord.Embed(color=colors.fate)
         e.set_author(name=f"| {ctx.author.name} | 🍪", icon_url=ctx.author.avatar_url)
         e.set_thumbnail(
             url="https://cdn.discordapp.com/attachments/501871950260469790/513637799530856469/fzilwhwdxgubnoohgsas.png"

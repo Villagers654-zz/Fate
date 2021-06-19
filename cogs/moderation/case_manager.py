@@ -15,7 +15,7 @@ class CaseManager(commands.Cog):
     async def add_case(self, guild_id: int, user_id, action: str, reason, link: str, created_by):
         if reason:
             reason = self.bot.encode(reason)
-        async with self.bot.cursor() as cur:
+        async with self.bot.utils.cursor() as cur:
             await cur.execute(
                 f"select case_number from cases "
                 f"where guild_id = {guild_id} "
@@ -66,7 +66,7 @@ class CaseManager(commands.Cog):
         # Get logs from a specific user
         if ctx.message.raw_mentions or (args.isdigit() if args else False):
             usr_id = ctx.message.raw_mentions[0] if ctx.message.raw_mentions else int(args)
-            async with self.bot.cursor() as cur:
+            async with self.bot.utils.cursor() as cur:
                 await cur.execute(
                     f"select user_id, case_action, reason, link, case_number, created_by, created_at "
                     f"from cases where guild_id = {guild_id} and user_id = {usr_id} order by case_number desc;"
@@ -85,7 +85,7 @@ class CaseManager(commands.Cog):
         # Get mod logs with a specific reason
         elif args:
             query = f"%{args}%"
-            async with self.bot.cursor() as cur:
+            async with self.bot.utils.cursor() as cur:
                 await cur.execute(
                     f"select user_id, case_action, reason, link, case_number, created_by, created_at "
                     f"from cases where guild_id = {guild_id} and reason like '{query}' order by case_number desc;"
@@ -104,7 +104,7 @@ class CaseManager(commands.Cog):
 
         # Get all the mod logs
         else:
-            async with self.bot.cursor() as cur:
+            async with self.bot.utils.cursor() as cur:
                 await cur.execute(
                     f"select user_id, case_action, reason, link, case_number, created_by, created_at "
                     f"from cases where guild_id = {guild_id} order by case_number desc;"
@@ -208,7 +208,7 @@ class CaseManager(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def del_log(self, ctx, case_number: int):
         guild_id = str(ctx.guild.id)
-        async with self.bot.cursor() as cur:
+        async with self.bot.utils.cursor() as cur:
             await cur.execute(
                 f"select case_number from cases "
                 f"where guild_id = {guild_id} "

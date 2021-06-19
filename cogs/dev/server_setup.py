@@ -1,6 +1,5 @@
 from discord.ext import commands
 import discord
-from botutils.checks import luck
 
 
 class ServerSetup(commands.Cog):
@@ -82,7 +81,7 @@ class ServerSetup(commands.Cog):
 
     @commands.command(name="cleanup")
     @commands.cooldown(1, 5, commands.BucketType.user)
-    @commands.check(luck)
+    @commands.is_owner()
     @commands.bot_has_permissions(manage_roles=True, manage_channels=True)
     async def cleanup(self, ctx):
         await self.configure(ctx)
@@ -92,7 +91,7 @@ class ServerSetup(commands.Cog):
 
     @commands.command(name="sync")
     @commands.cooldown(1, 5, commands.BucketType.user)
-    @commands.check(luck)
+    @commands.is_owner()
     @commands.bot_has_permissions(manage_roles=True, manage_channels=True)
     async def sync(self, ctx, arg=None):
         if not arg:  # sync everything
@@ -107,7 +106,7 @@ class ServerSetup(commands.Cog):
 
     @commands.command(name="strip")
     @commands.cooldown(1, 5, commands.BucketType.user)
-    @commands.check(luck)
+    @commands.is_owner()
     @commands.bot_has_permissions(manage_roles=True, manage_channels=True)
     async def strip(self, ctx, arg=None):
         if not arg:  # strip everything

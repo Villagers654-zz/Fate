@@ -19,8 +19,7 @@ from discord import Member, Role, TextChannel
 from discord.ext.commands import Greedy
 from discord.errors import NotFound, Forbidden, HTTPException
 
-from botutils import colors
-from cogs.core.utils import Utils
+from botutils import colors, get_prefix, get_time
 
 
 cache = {}  # Keep track of what commands are still being ran
@@ -153,7 +152,7 @@ class Moderation(commands.Cog):
         return self.bot.cogs["CaseManager"]
 
     async def save_data(self):
-        async with self.bot.open(self.path, "w+") as f:
+        async with self.bot.utils.open(self.path, "w+") as f:
             await f.write(await self.bot.dump(self.config))
 
     @commands.command(name="convert-mod")
@@ -222,7 +221,7 @@ class Moderation(commands.Cog):
     async def save_config(self, config):
         """ Save things like channel restrictions """
         self.bot.restricted = config
-        async with self.bot.open("./data/userdata/config.json", "w") as f:
+        async with self.bot.utils.open("./data/userdata/config.json", "w") as f:
             await f.write(json.dumps(config))
 
     @commands.command(
@@ -251,7 +250,7 @@ class Moderation(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def restrict(self, ctx, args=None):
         if not args:
-            e = discord.Embed(color=colors.fate())
+            e = discord.Embed(color=colors.fate)
             e.set_author(name="Channel Restricting")
             e.description = "Prevents everyone except mods from using commands"
             e.add_field(
@@ -275,7 +274,7 @@ class Moderation(commands.Cog):
                 continue
             self.bot.restricted[guild_id]["users"].append(member.id)
             restricted += f"\n{member.mention}"
-        e = discord.Embed(color=colors.fate(), description=restricted)
+        e = discord.Embed(color=colors.fate, description=restricted)
         await ctx.send("Do you want this to effect moderators too? Reply with `yes` or `no`")
         reply = await self.bot.utils.get_message(ctx)
         if "yes" in reply.content.lower():
@@ -306,7 +305,7 @@ class Moderation(commands.Cog):
                 self.bot.restricted[guild_id]["users"].remove(member.id)
                 unrestricted += f"\n{member.mention}"
         await self.bot.restricted.flush()
-        e = discord.Embed(color=colors.fate(), description=unrestricted)
+        e = discord.Embed(color=colors.fate, description=unrestricted)
         await ctx.send(embed=e)
 
     @commands.command(name="addmod")
@@ -331,7 +330,7 @@ class Moderation(commands.Cog):
             if target.id in self.config[guild_id]["rolemod"]:
                 return await ctx.send("That role's already a mod role")
             self.config[guild_id]["rolemod"].append(target.id)
-        e = discord.Embed(color=colors.fate())
+        e = discord.Embed(color=colors.fate)
         e.description = f"Made {target.mention} a mod"
         await ctx.send(embed=e)
         await self.save_data()
@@ -358,7 +357,7 @@ class Moderation(commands.Cog):
             if target.id not in self.config[guild_id]["rolemod"]:
                 return await ctx.send("That role's isn't a mod role")
             self.config[guild_id]["rolemod"].remove(target.id)
-        e = discord.Embed(color=colors.fate())
+        e = discord.Embed(color=colors.fate)
         e.description = f"Removed {target.mention} mod"
         await ctx.send(embed=e)
         await self.save_data()
@@ -371,7 +370,7 @@ class Moderation(commands.Cog):
         config = self.config[str(ctx.guild.id)]
         if not config["usermod"] and not config["rolemod"]:
             return await ctx.send("There are no mod users or mod roles")
-        e = discord.Embed(color=colors.fate())
+        e = discord.Embed(color=colors.fate)
         users = [self.bot.get_user(uid) for uid in config["usermod"]]
         users = [u for u in users if u]
         roles = [ctx.guild.get_role(rid) for rid in config["rolemod"]]
@@ -399,7 +398,7 @@ class Moderation(commands.Cog):
         if guild_id not in self.bot.restricted:
             return await ctx.send("This server doesn't have anything restricted")
         dat = self.bot.restricted[guild_id]
-        e = discord.Embed(color=colors.fate())
+        e = discord.Embed(color=colors.fate)
         e.set_author(name="Restricted:", icon_url=ctx.author.avatar_url)
         e.description = ""
         if dat["channels"]:
@@ -432,7 +431,7 @@ class Moderation(commands.Cog):
     @has_required_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True)
     async def beta_purge(self, ctx, *args):
-        _help = discord.Embed(color=colors.fate())
+        _help = discord.Embed(color=colors.fate)
         _help.description = (
             ".purge amount\n"
             ".purge @user amount\n"
@@ -597,7 +596,7 @@ class Moderation(commands.Cog):
             del self.tasks[guild_id]
 
     @commands.command(name="mute", aliases=["shutup", "fuckoff", "shush", "shh", "shut", "oppress"])
-    @commands.cooldown(*Utils.default_cooldown())
+    @commands.cooldown(2, 5, commands.BucketType.user)
     @check_if_running()
     @has_required_permissions(manage_roles=True)
     @commands.bot_has_permissions(embed_links=True)
@@ -616,7 +615,7 @@ class Moderation(commands.Cog):
                 if not mute_role:
                     perms = ctx.guild.me.guild_permissions
                     if not perms.manage_channels or not perms.manage_roles:
-                        p = self.bot.utils.get_prefix(ctx)
+                        p = get_prefix(ctx)
                         return await ctx.send(
                             "No muted role found, and I'm missing manage_role and manage_channel permissions to set "
                             f"one up. You can set a mute role manually with `{p}mute-role @role` which doesn't "
@@ -745,7 +744,7 @@ class Moderation(commands.Cog):
             case = await self.cases.add_case(ctx.guild.id, user.id, "mute", reason, ctx.message.jump_url, ctx.author.id)
             additional = ""
             usr_additional = ""
-            async with self.bot.cursor() as cur:
+            async with self.bot.utils.cursor() as cur:
                 await cur.execute(f"select channel_id from modmail where guild_id = {guild_id};")
                 result = await cur.fetchone()
             if result:
@@ -847,7 +846,7 @@ class Moderation(commands.Cog):
         if not mute_role:
             mute_role = await self.bot.utils.get_role(ctx, "muted")
         if not mute_role:
-            p = self.bot.utils.get_prefix(ctx)
+            p = get_prefix(ctx)
             return await ctx.send(
                 f"No mute role found? If it doesn't have `muted` in the name use `{p}mute-role @role` "
                 f"which doesn't need to be a role @mention, and you can just the roles name."
@@ -867,14 +866,14 @@ class Moderation(commands.Cog):
         await ctx.send(f"Unmuted {user.name}")
 
     @commands.command(name="kick")
-    @commands.cooldown(*Utils.default_cooldown())
+    @commands.cooldown(2, 5, commands.BucketType.user)
     @check_if_running()
     @has_required_permissions(kick_members=True)
     @commands.bot_has_permissions(embed_links=True, kick_members=True)
     async def kick(self, ctx, members: Greedy[discord.Member], *, reason="Unspecified"):
         if not members:
             return await ctx.send("You need to properly specify who to kick")
-        e = discord.Embed(color=colors.fate())
+        e = discord.Embed(color=colors.fate)
         e.set_author(name=f"Kicking members", icon_url=ctx.author.avatar_url)
         msg = await ctx.send(embed=e)
         e.description = ""
@@ -913,17 +912,11 @@ class Moderation(commands.Cog):
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(embed_links=True, ban_members=True)
     async def ban(
-        self,
-        ctx,
-        ids: Greedy[int],
-        users: Greedy[DiscordMember],
-        *,
-        reason="Unspecified",
-    ):
+        self, ctx, ids: Greedy[int], users: Greedy[DiscordMember], *, reason="Unspecified"):
         """ Ban cmd that supports more than just members """
         reason = reason[:128]
         users_to_ban = len(ids if ids else []) + len(users if users else [])
-        e = discord.Embed(color=colors.fate())
+        e = discord.Embed(color=colors.fate)
         if users_to_ban == 0:
             return await ctx.send("You need to specify who to ban")
         elif users_to_ban > 1:
@@ -977,12 +970,15 @@ class Moderation(commands.Cog):
                         content += f" [Case #{case}]"
                     with suppress(NotFound, Forbidden, HTTPException):
                         await user.send(content)
-                await ctx.guild.ban(
-                    user, reason=f"{ctx.author}: {reason}"[:512], delete_message_days=0
-                )
-                e.add_field(
-                    name=f"◈ Banned {user} [Case #{case}]", value=f"Reason: {reason}", inline=False
-                )
+                try:
+                    await ctx.guild.ban(
+                        user, reason=f"{ctx.author}: {reason}"[:512], delete_message_days=0
+                    )
+                    e.add_field(
+                        name=f"◈ Banned {user} [Case #{case}]", value=f"Reason: {reason}", inline=False
+                    )
+                except HTTPException as error:
+                    e.add_field(name=f"◈ Failed to ban {user} [Case #{case}]", value=str(error), inline=False)
             for i, field in enumerate(e.fields):
                 if len(field.name) > 256:
                     e.fields[i] = field.name[:256]
@@ -1029,7 +1025,7 @@ class Moderation(commands.Cog):
         await msg.edit(embed=e)
 
     @commands.command(name="unban")
-    @commands.cooldown(*Utils.default_cooldown())
+    @commands.cooldown(2, 5, commands.BucketType.user)
     @check_if_running()
     @has_required_permissions(ban_members=True)
     @commands.bot_has_permissions(
@@ -1083,18 +1079,18 @@ class Moderation(commands.Cog):
             await msg.edit(embed=e)
 
     @commands.command(name="mass-nick", aliases=["massnick"])
-    @commands.cooldown(*Utils.default_cooldown())
+    @commands.cooldown(2, 5, commands.BucketType.user)
     @check_if_running()
     @has_required_permissions(manage_nicknames=True)
     @commands.bot_has_guild_permissions(manage_nicknames=True)
     async def mass_nick(self, ctx, *, nick=""):
         def gen_embed(iteration):
-            e = discord.Embed(color=colors.fate())
+            e = discord.Embed(color=colors.fate)
             e.set_author(name="Mass Updating Nicknames", icon_url=ctx.author.avatar_url)
             e.description = (
                 f"{iteration + 1}/{len(members)} complete"
                 f"\n1 nick per 1.21 seconds"
-                f"\nETA of {self.bot.utils.get_time(round((len(members) - (iteration + 1)) * 1.21))}"
+                f"\nETA of {get_time(round((len(members) - (iteration + 1)) * 1.21))}"
             )
             return e
 
@@ -1163,27 +1159,27 @@ class Moderation(commands.Cog):
             await msg.edit(content="Operation Complete", embed=gen_embed(i))
 
     @commands.command(name="mass-role", aliases=["massrole"])  # Have +/- support
-    @commands.cooldown(*Utils.default_cooldown())
+    @commands.cooldown(2, 5, commands.BucketType.user)
     @check_if_running()
     @has_required_permissions(manage_roles=True)
     @commands.bot_has_guild_permissions(manage_roles=True)
     async def mass_role(self, ctx, *, role=None):
         def gen_embed(iteration):
-            e = discord.Embed(color=colors.fate())
+            e = discord.Embed(color=colors.fate)
             e.set_author(name=f"Mass {action} Roles", icon_url=ctx.author.avatar_url)
             e.description = (
                 f"{iteration + 1}/{len(members)} complete"
                 f"\n1 role per 1.21 seconds"
-                f"\nETA of {self.bot.utils.get_time(round((len(members) - (iteration + 1)) * 1.21))}"
+                f"\nETA of {get_time(round((len(members) - (iteration + 1)) * 1.21))}"
             )
 
             return e
 
         if not role:
-            e = discord.Embed(color=colors.fate())
+            e = discord.Embed(color=colors.fate)
             e.set_author(name="MassRole Usages", icon_url=ctx.author.avatar_url)
             e.description = f"Add, or remove roles from members in mass"
-            p = self.bot.utils.get_prefix(ctx)
+            p = get_prefix(ctx)
             e.add_field(name=f"{p}massrole @Role", value="Mass adds roles")
             e.add_field(name=f"{p}massrole -@Role", value="Mass removes roles")
             e.add_field(
@@ -1358,7 +1354,7 @@ class Moderation(commands.Cog):
         if guild_id not in self.config:
             self.config[guild_id] = self.template
         warns = self.config[guild_id]["warns"]
-        async with self.bot.open("./data/userdata/config.json", "r") as f:
+        async with self.bot.utils.open("./data/userdata/config.json", "r") as f:
             config = await self.bot.load(await f.read())  # type: dict
         punishments = ["None", "None", "Mute", "Kick", "Softban", "Ban"]
         if guild_id in config["warns"]["punishments"]:
@@ -1388,7 +1384,7 @@ class Moderation(commands.Cog):
         else:
             next_punishment = punishments[total_warns]
 
-        e = discord.Embed(color=colors.fate())
+        e = discord.Embed(color=colors.fate)
         url = self.bot.user.avatar_url
         if user.avatar_url:
             url = user.avatar_url
@@ -1486,7 +1482,7 @@ class Moderation(commands.Cog):
                 await channel.send("Failed to ban this user")
 
     @commands.command(name="warn")
-    @commands.cooldown(*Utils.default_cooldown())
+    @commands.cooldown(2, 5, commands.BucketType.user)
     @check_if_running()
     @has_warn_permission()
     async def warn(self, ctx, users: Greedy[discord.Member], *, reason="Unspecified"):
@@ -1505,7 +1501,7 @@ class Moderation(commands.Cog):
             self.bot.loop.create_task(self.warn_user(ctx.channel, user, reason, ctx))
 
     @commands.command(name="delwarn", aliases=["del-warn"])
-    @commands.cooldown(*Utils.default_cooldown())
+    @commands.cooldown(2, 5, commands.BucketType.user)
     @check_if_running()
     @has_warn_permission()
     @commands.bot_has_permissions(add_reactions=True)
@@ -1521,7 +1517,7 @@ class Moderation(commands.Cog):
                 continue
             for reason, warn_time in self.config[guild_id]["warns"][user_id]:
                 if partial_reason in reason:
-                    e = discord.Embed(color=colors.fate())
+                    e = discord.Embed(color=colors.fate)
                     e.set_author(name="Is this the right warn?")
                     e.description = reason
                     msg = await ctx.send(embed=e)
@@ -1553,7 +1549,7 @@ class Moderation(commands.Cog):
                         break
 
     @commands.command(name="clearwarns", aliases=["clear-warns"])
-    @commands.cooldown(*Utils.default_cooldown())
+    @commands.cooldown(2, 5, commands.BucketType.user)
     @check_if_running()
     @has_warn_permission()
     async def clear_warns(self, ctx, user: Greedy[discord.Member]):
@@ -1589,7 +1585,8 @@ class Moderation(commands.Cog):
             self.config[guild_id]["warns"][user_id] = []
         warns = 0
         reasons = ""
-        conf = self.bot.utils.get_config()
+        async with self.bot.utils.open("./data/userdata/config.json", "r") as f:
+            conf = await self.bot.load(await f.read())
         for reason, time in self.config[guild_id]["warns"][user_id]:
             time = datetime.strptime(time, "%Y-%m-%d %H:%M:%S.%f")
             if (datetime.now() - time).days > 30:
@@ -1602,7 +1599,7 @@ class Moderation(commands.Cog):
                     continue
             warns += 1
             reasons += f"\n• `{reason}`"
-        e = discord.Embed(color=colors.fate())
+        e = discord.Embed(color=colors.fate)
         url = self.bot.user.avatar_url
         if user.avatar_url:
             url = user.avatar_url

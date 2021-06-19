@@ -8,9 +8,7 @@ import os
 import requests
 import re
 from typing import Optional, Union
-from os import path
 from time import time
-import aiofiles
 import platform
 from contextlib import suppress
 
@@ -22,8 +20,7 @@ from colormap import rgb2hex
 import psutil
 from discord.ext import commands, tasks
 
-from botutils import colors, config
-from cogs.core.utils import Utils
+from botutils import colors, split, cleanup_msg, bytes2human, get_time, emojis
 
 
 class SatisfiableChannel(commands.Converter):
@@ -77,7 +74,7 @@ class Utility(commands.Cog):
             return
         lmt = time() + 60 * 60 * 24 * 30
         set_to_remove = 0
-        async with self.bot.cursor() as cur:
+        async with self.bot.utils.cursor() as cur:
             # Invites
             await cur.execute(f"select * from invites where created_at > {lmt};")
             set_to_remove += cur.rowcount
@@ -109,7 +106,7 @@ class Utility(commands.Cog):
     def avg_color(url):
         """Gets an image and returns the average color"""
         if not url:
-            return colors.fate()
+            return colors.fate
         im = Image.open(BytesIO(requests.get(url).content)).convert("RGBA")
         pixels = list(im.getdata())
         r = g = b = c = 0
@@ -164,13 +161,12 @@ class Utility(commands.Cog):
                 if isinstance(tmp, discord.Member):
                     user = tmp  # type: discord.Member
 
-            e = discord.Embed(color=colors.fate())
+            e = discord.Embed(color=colors.fate)
             e.set_author(
                 name="Here's what I got on them..", icon_url=self.bot.user.avatar_url
             )
             e.set_thumbnail(url=user.avatar_url)
             e.description = ""
-            emojis = self.bot.utils.emojis
 
             # User Information
             user_info = {
@@ -195,7 +191,7 @@ class Utility(commands.Cog):
             if isinstance(user, discord.Member):
                 user_info[
                     "Profile"
-                ] = f"{user.mention} {self.bot.utils.emojis(user.status)}"
+                ] = f"{user.mention}"
 
                 if user.name != user.display_name:
                     member_info["Display Name"] = user.display_name
@@ -230,7 +226,7 @@ class Utility(commands.Cog):
                 ]
                 member_info[
                     "Access"
-                ] = f"{emojis('text_channel')} {text} {emojis('voice_channel')} {voice}"
+                ] = f"{emojis.text_channel} {text} {emojis.voice_channel} {voice}"
                 if any(k in notable and v for k, v in list(user.guild_permissions)):
                     perms = [k for k, v in user.guild_permissions if k in notable and v]
                     perms = (
@@ -259,7 +255,7 @@ class Utility(commands.Cog):
             ]
             if mutual:
                 user = mutual[0].get_member(user.id)  # type: discord.Member
-                async with self.bot.cursor() as cur:
+                async with self.bot.utils.cursor() as cur:
                     if user.status is discord.Status.offline:
                         await cur.execute(
                             f"select format(last_online, 3) from activity "
@@ -271,7 +267,7 @@ class Utility(commands.Cog):
                             r = await cur.fetchone()
                             if r and hasattr(r[0], "replace"):
                                 seconds = round(time() - float(r[0].replace(',', '')))
-                                activity_info["Last Online"] = f"{self.bot.utils.get_time(seconds)} ago"
+                                activity_info["Last Online"] = f"{get_time(seconds)} ago"
                             else:
                                 activity_info["Last Online"] = "Unknown"
                         else:
@@ -286,7 +282,7 @@ class Utility(commands.Cog):
                         r = await cur.fetchone()
                         if r and hasattr(r[0], "replace"):
                             seconds = round(time() - float(r[0].replace(',', '')))
-                            activity_info["Last Msg"] = f"{self.bot.utils.get_time(seconds)} ago"
+                            activity_info["Last Msg"] = f"{get_time(seconds)} ago"
                         else:
                             activity_info["Last Msg"] = "Unknown"
                     else:
@@ -300,7 +296,7 @@ class Utility(commands.Cog):
                         activity_info["Active on PC 🖥"] = None
 
             # Username history
-            async with self.bot.cursor() as cur:
+            async with self.bot.utils.cursor() as cur:
                 await cur.execute(f"select username from usernames where user_id = {user.id};")
                 if cur.rowcount:
                     results = await cur.fetchall()
@@ -322,7 +318,7 @@ class Utility(commands.Cog):
             await ctx.send(embed=e)
 
         elif isinstance(target, TextChannel):
-            e = discord.Embed(color=colors.fate())
+            e = discord.Embed(color=colors.fate)
             e.set_author(
                 name="Alright, here's what I got..", icon_url=self.bot.user.avatar_url
             )
@@ -350,12 +346,12 @@ class Utility(commands.Cog):
             e.set_footer(text="🖥 Topic | ♻ History")
 
             msg = await ctx.send(embed=e)
-            emojis = ["🖥", "♻"]
-            for emoji in emojis:
+            ems = ["🖥", "♻"]
+            for emoji in ems:
                 await msg.add_reaction(emoji)
 
             def predicate(r, u):
-                return str(r.emoji) in emojis and r.message.id == msg.id and not u.bot
+                return str(r.emoji) in ems and r.message.id == msg.id and not u.bot
 
             while True:
                 await asyncio.sleep(0.5)
@@ -375,9 +371,9 @@ class Utility(commands.Cog):
                     topic = channel.topic
                     if not topic:
                         topic = "None set."
-                    for group in self.bot.utils.split(topic, 1024):
+                    for group in split(topic, 1024):
                         e.add_field(name="◈ Channel Topic", value=group, inline=False)
-                    emojis.remove("🖥")
+                    ems.remove("🖥")
                 elif str(reaction.emoji) == "♻":  # Requested channel history
                     if not bot_has_audit_access:
                         if ctx.channel.permissions_for(ctx.guild.me).manage_messages:
@@ -407,7 +403,7 @@ class Utility(commands.Cog):
                                 seconds = (
                                     datetime.utcnow() - m.created_at
                                 ).total_seconds()
-                                total_time = self.bot.utils.get_time(round(seconds))
+                                total_time = get_time(round(seconds))
                                 history["Last Message"] = f"{total_time} ago\n"
 
                         action = discord.AuditLogAction.channel_update
@@ -441,11 +437,11 @@ class Utility(commands.Cog):
                             ),
                             inline=False,
                         )
-                        emojis.remove("♻")
+                        ems.remove("♻")
                 await msg.edit(embed=e)
 
         elif "discord.gg" in ctx.message.content:
-            e = discord.Embed(color=colors.fate())
+            e = discord.Embed(color=colors.fate)
             e.set_author(
                 name="Alright, here's what I got..", icon_url=self.bot.user.avatar_url
             )
@@ -465,7 +461,7 @@ class Utility(commands.Cog):
                     "channel_id": invite.channel.id
                 }
             except (discord.errors.NotFound, discord.errors.Forbidden):
-                async with self.bot.cursor() as cur:
+                async with self.bot.utils.cursor() as cur:
                     await cur.execute(
                         f"select guild_id, guild_name, channel_id, channel_name "
                         f"from invites "
@@ -496,7 +492,7 @@ class Utility(commands.Cog):
             await ctx.send(embed=e)
 
         elif isinstance(target, Role):
-            e = discord.Embed(color=colors.fate())
+            e = discord.Embed(color=colors.fate)
             e.set_author(
                 name="Alright, here's what I got..", icon_url=self.bot.user.avatar_url
             )
@@ -531,13 +527,13 @@ class Utility(commands.Cog):
             e.set_footer(text="React With ♻ For History")
 
             msg = await ctx.send(embed=e)
-            emojis = ["♻"]
+            ems = ["♻"]
 
-            for emoji in emojis:
+            for emoji in ems:
                 await msg.add_reaction(emoji)
 
             def predicate(r, u):
-                return str(r.emoji) in emojis and r.message.id == msg.id and not u.bot
+                return str(r.emoji) in ems and r.message.id == msg.id and not u.bot
 
             while True:
                 await asyncio.sleep(0.5)
@@ -598,7 +594,7 @@ class Utility(commands.Cog):
                         ),
                         inline=False,
                     )
-                    emojis.remove("♻")
+                    ems.remove("♻")
                     return await msg.edit(embed=e)
                 await msg.edit(embed=e)
 
@@ -623,15 +619,15 @@ class Utility(commands.Cog):
             guilds = len(list(self.bot.guilds))
             users = len(list(self.bot.users))
             bot_pid = psutil.Process(os.getpid())
-            e = discord.Embed(color=colors.fate())
+            e = discord.Embed(color=colors.fate)
             e.set_author(
                 name="Fate Bot: Core Info",
-                icon_url=self.bot.get_user(config.owner_id()).avatar_url,
+                icon_url=self.bot.get_user(self.bot.config["bot_owner_id"]).avatar_url,
             )
             lines = 0
             cog = self.bot.cogs["Ranking"]
             commands = sum(cmd[1]["total"] for cmd in list(cog.cmds.items()))
-            async with self.bot.open("fate.py", "r") as f:
+            async with self.bot.utils.open("fate.py", "r") as f:
                 lines += len(await f.readlines())
 
             locations = ["botutils", "cogs"]
@@ -639,7 +635,7 @@ class Utility(commands.Cog):
                 for root, dirs, files in os.walk(location):
                     for file in files:
                         if file.endswith(".py"):
-                            async with self.bot.open(f"{root}/{file}", "r") as f:
+                            async with self.bot.utils.open(f"{root}/{file}", "r") as f:
                                 lines += len(await f.readlines())
             e.description = f"Commands Used This Month: {commands}" \
                             f"\nLines of code: {lines}"
@@ -679,11 +675,11 @@ class Utility(commands.Cog):
                 p = self.bot.utils
                 c_temp = round(psutil.sensors_temperatures(fahrenheit=False)['coretemp'][0].current)
                 f_temp = round(psutil.sensors_temperatures(fahrenheit=True)['coretemp'][0].current)
-                value = f"**Storage (NVME)**: {p.bytes2human(disk.used)}/{p.bytes2human(disk.total)} - ({round(disk.percent)}%)\n" \
-                        f"**RAM (DDR4)**: {p.bytes2human(ram.used)}/{p.bytes2human(ram.total)} - ({round(ram.percent)}%)\n" \
+                value = f"**Storage (NVME)**: {bytes2human(disk.used)}/{bytes2human(disk.total)} - ({round(disk.percent)}%)\n" \
+                        f"**RAM (DDR4)**: {bytes2human(ram.used)}/{bytes2human(ram.total)} - ({round(ram.percent)}%)\n" \
                         f"**CPU i9-10900K:** {round(psutil.cpu_percent())}% @{cur}/{max}\n" \
                         f"**CPU Temp:** {c_temp}°C {f_temp}°F\n" \
-                        f"**Bot Usage:** **RAM:** {p.bytes2human(bot_pid.memory_full_info().rss)} **CPU:** {round(bot_pid.cpu_percent())}%"
+                        f"**Bot Usage:** **RAM:** {bytes2human(bot_pid.memory_full_info().rss)} **CPU:** {round(bot_pid.cpu_percent())}%"
 
                 return value
 
@@ -696,7 +692,7 @@ class Utility(commands.Cog):
             online_for = datetime.now() - self.bot.start_time
             e.add_field(
                 name="◈ Uptime ◈",
-                value=f"Online for {self.bot.utils.get_time(round(online_for.total_seconds()))}\n",
+                value=f"Online for {get_time(round(online_for.total_seconds()))}\n",
                 inline=False,
             )
             e.set_footer(
@@ -771,7 +767,7 @@ class Utility(commands.Cog):
             "created_at": f"case when created_at is null then {time()} else created_at end"
         }
 
-        async with self.bot.cursor() as cur:
+        async with self.bot.utils.cursor() as cur:
             await cur.execute(f"select * from invites where code = {iv['code']} limit 1;")
             if cur.rowcount:
                 await cur.execute(
@@ -835,7 +831,7 @@ class Utility(commands.Cog):
     @commands.Cog.listener()
     async def on_user_update(self, before, after):
         if before and after and str(before) != str(after):
-            async with self.bot.cursor() as cur:
+            async with self.bot.utils.cursor() as cur:
                 await cur.execute(
                     f"select * from usernames "
                     f"where user_id = {after.id} "
@@ -877,7 +873,7 @@ class Utility(commands.Cog):
         try:
             e = discord.Embed(color=self.avg_color(ctx.guild.icon_url))
         except ZeroDivisionError:
-            e = discord.Embed(color=colors.fate())
+            e = discord.Embed(color=colors.fate)
         e.description = f"id: {ctx.guild.id}\nOwner: {ctx.guild.owner}"
         e.set_author(name=f"{ctx.guild.name}:", icon_url=ctx.guild.owner.avatar_url)
         e.set_thumbnail(url=ctx.guild.icon_url)
@@ -970,7 +966,7 @@ class Utility(commands.Cog):
             humans = len([m for m in ctx.guild.members if not m.bot])
             bots = len([m for m in ctx.guild.members if m.bot])
             online = len([m for m in ctx.guild.members if m.status in status_list])
-            e = discord.Embed(color=colors.fate())
+            e = discord.Embed(color=colors.fate)
             e.set_author(name=f"Member Count", icon_url=ctx.guild.owner.avatar_url)
             e.set_thumbnail(url=ctx.guild.icon_url)
             e.description = (
@@ -992,7 +988,7 @@ class Utility(commands.Cog):
         permission = permission.lower()
         if permission not in perms:
             return await ctx.send("Unknown perm")
-        e = discord.Embed(color=colors.fate())
+        e = discord.Embed(color=colors.fate)
         e.set_author(name=f"Things with {permission}", icon_url=ctx.author.avatar_url)
         e.set_thumbnail(url=ctx.guild.icon_url)
         members = ""
@@ -1051,7 +1047,7 @@ class Utility(commands.Cog):
         else:
             e.set_image(url=user.avatar_url_as(format="png"))
         await ctx.send(
-            f"◈ {self.bot.utils.cleanup_msg(ctx.message, user.display_name)}'s avatar ◈", embed=e
+            f"◈ {cleanup_msg(ctx.message, user.display_name)}'s avatar ◈", embed=e
         )
 
     @commands.command(name="owner")
@@ -1059,7 +1055,7 @@ class Utility(commands.Cog):
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
     async def owner(self, ctx):
-        e = discord.Embed(color=colors.fate())
+        e = discord.Embed(color=colors.fate)
         e.description = f"**Server Owner:** {ctx.guild.owner.mention}"
         await ctx.send(embed=e)
 
@@ -1138,7 +1134,8 @@ class Utility(commands.Cog):
     @commands.command(name="reminder", aliases=["timer", "remindme", "remind"])
     @commands.cooldown(2, 15, commands.BucketType.user)
     async def timer(self, ctx, *args):
-        p = self.bot.utils.get_prefixes(self.bot, ctx.message)[2]
+        p = await self.bot.utils.get_prefixes_async(self.bot, ctx.message)
+        p = p[2]
         usage = (
             f">>> Usage: `{p}reminder [30s|5m|1h|2d]`"
             f"Example: `{p}reminder 1h take out da trash`"
@@ -1204,14 +1201,14 @@ class Utility(commands.Cog):
         await self.save_timers()
 
     @commands.command(name="timers", aliases=["reminders"])
-    @commands.cooldown(*Utils.default_cooldown())
+    @commands.cooldown(2, 5, commands.BucketType.user)
     async def timers(self, ctx):
         user_id = str(ctx.author.id)
         if user_id not in self.timers:
             return await ctx.send("You currently have no timers")
         if not self.timers[user_id]:
             return await ctx.send("You currently have no timers")
-        e = discord.Embed(color=colors.fate())
+        e = discord.Embed(color=colors.fate)
         for msg, dat in list(self.timers[user_id].items()):
             end_time = datetime.strptime(dat["timer"], "%Y-%m-%d %H:%M:%S.%f")
             if datetime.utcnow() > end_time:
@@ -1246,7 +1243,7 @@ class Utility(commands.Cog):
     @commands.cooldown(1, 5, commands.BucketType.channel)
     async def _findmsg(self, ctx, *, content=None):
         if content is None:
-            e = discord.Embed(color=colors.fate())
+            e = discord.Embed(color=colors.fate)
             e.set_author(name="Error ⚠", icon_url=ctx.author.avatar_url)
             e.set_thumbnail(url=ctx.guild.icon_url)
             e.description = (
@@ -1264,7 +1261,7 @@ class Utility(commands.Cog):
             async for msg in ctx.channel.history(limit=25000):
                 if ctx.message.id != msg.id:
                     if content.lower() in msg.content.lower():
-                        e = discord.Embed(color=colors.fate())
+                        e = discord.Embed(color=colors.fate)
                         e.set_author(
                             name="Message Found 🔍", icon_url=ctx.author.avatar_url
                         )
@@ -1309,7 +1306,7 @@ class Utility(commands.Cog):
                 last_entry = entry
         if not last_entry:
             return await ctx.send(f"I couldn't find anything")
-        e = discord.Embed(color=colors.fate())
+        e = discord.Embed(color=colors.fate)
         e.description = self.bot.utils.format_dict(
             {
                 "Action": last_entry.action.name,
@@ -1335,7 +1332,7 @@ class Utility(commands.Cog):
             return await ctx.send(user.id)
         for channel in ctx.message.channel_mentions:
             return await ctx.send(channel.id)
-        e = discord.Embed(color=colors.fate())
+        e = discord.Embed(color=colors.fate)
         e.description = (
             f"{ctx.author.mention}: {ctx.author.id}\n"
             f"{ctx.channel.mention}: {ctx.channel.id}"
@@ -1348,7 +1345,7 @@ class Utility(commands.Cog):
     @commands.bot_has_permissions(kick_members=True)
     async def estimate_inactives(self, ctx, days: int):
         inactive_count = await ctx.guild.estimate_pruned_members(days=days)
-        e = discord.Embed(color=colors.fate())
+        e = discord.Embed(color=colors.fate)
         e.description = f"Inactive Users: {inactive_count}"
         await ctx.send(embed=e)
 
@@ -1368,7 +1365,7 @@ class Utility(commands.Cog):
         if ctx.message.attachments:
             avatar = await ctx.message.attachments[0].read()
         webhook = await ctx.channel.create_webhook(name=name, avatar=avatar)
-        e = discord.Embed(color=colors.fate())
+        e = discord.Embed(color=colors.fate)
         e.set_author(name=f"Webhook: {webhook.name}", icon_url=webhook.url)
         e.set_thumbnail(url=ctx.guild.icon_url)
         e.description = webhook.url
@@ -1385,7 +1382,7 @@ class Utility(commands.Cog):
     @commands.bot_has_permissions(manage_webhooks=True)
     async def webhooks(self, ctx, channel: discord.TextChannel = None):
         """ Return all the servers webhooks """
-        e = discord.Embed(color=colors.fate())
+        e = discord.Embed(color=colors.fate)
         e.set_author(name="Webhooks", icon_url=ctx.author.avatar_url)
         e.set_thumbnail(url=ctx.guild.icon_url)
         if channel:
@@ -1503,7 +1500,7 @@ class Utility(commands.Cog):
             return await ctx.send("nO")
         if ctx.author.id in self.afk:
             return
-        e = discord.Embed(color=colors.fate())
+        e = discord.Embed(color=colors.fate)
         if len(reason) > 64:
             return await ctx.send("Your afk message can't be greater than 64 characters")
         e.set_author(name="You are now afk", icon_url=ctx.author.avatar_url)

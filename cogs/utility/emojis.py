@@ -11,7 +11,7 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import Greedy
 
-from botutils import colors
+from botutils import colors, download, update_msg
 
 
 class Emojis(commands.Cog):
@@ -40,14 +40,14 @@ class Emojis(commands.Cog):
 
         # Missing required permissions to add emojis
         except discord.errors.Forbidden:
-            await ctx.bot.utils.update_msg(
+            await update_msg(
                 ctx.msg, "I'm missing manage_emoji permission(s)"
             )
             return None
 
         # Not a proper image
         except (AttributeError, discord.errors.InvalidArgument):
-            await ctx.bot.utils.update_msg(ctx.msg, f"{name} - Unsupported Image Type")
+            await update_msg(ctx.msg, f"{name} - Unsupported Image Type")
             return None
 
         # Something went wrong uploading the emoji
@@ -55,15 +55,15 @@ class Emojis(commands.Cog):
             error = str(traceback.format_exc()).lower()
             # Emoji Limit Reached
             if "maximum" in error:
-                await self.bot.utils.update_msg(
+                await update_msg(
                     ctx.msg, f"{name} - Emoji Limit Reached"
                 )
             # 256KB Filesize Limit
             elif "256" in error:
-                await ctx.bot.utils.update_msg(ctx.msg, f"{name} - File Too Large")
+                await update_msg(ctx.msg, f"{name} - File Too Large")
             return None
 
-        await ctx.bot.utils.update_msg(ctx.msg, f"Added {emoji} - {name}")
+        await update_msg(ctx.msg, f"Added {emoji} - {name}")
         return None
 
     @commands.command(name="emoji", aliases=["emote", "jumbo"])
@@ -76,7 +76,7 @@ class Emojis(commands.Cog):
         if len(emojis) > 1 and all(e == emojis[0] for e in emojis):
             return await ctx.send("No")
         for emoji in emojis[:3]:
-            e = discord.Embed(color=colors.fate())
+            e = discord.Embed(color=colors.fate)
             e.description = str(emoji.id)
             author_name = emoji.name
             author_url = ctx.author.avatar_url
@@ -177,18 +177,18 @@ class Emojis(commands.Cog):
             if not at_emoji_limit():
                 if emoji.animated and total_animated() == limit:
                     if "Animated Limit Reached" not in ctx.msg.content:
-                        ctx.msg = await self.bot.utils.update_msg(
+                        ctx.msg = await update_msg(
                             ctx.msg, f"Animated Limit Reached"
                         )
                     continue
                 elif not emoji.animated and total_emotes() == limit:
                     if "Emote Limit Reached" not in ctx.msg.content:
-                        ctx.msg = await self.bot.utils.update_msg(
+                        ctx.msg = await update_msg(
                             ctx.msg, f"Emote Limit Reached"
                         )
                     continue
                 name = emoji.name
-                img = await self.bot.utils.download(emoji.url)
+                img = await download(emoji.url)
                 await self.upload_emoji(ctx, name=name, img=img, reason=str(ctx.author))
 
         # PartialEmoji IDS
@@ -198,9 +198,9 @@ class Emojis(commands.Cog):
                 emoji = emoji.url
             else:
                 emoji = f"https://cdn.discordapp.com/emojis/{emoji_id}.png"
-            img = await self.bot.utils.download(emoji)
+            img = await download(emoji)
             if not img:
-                ctx.msg = await self.bot.utils.update_msg(
+                ctx.msg = await update_msg(
                     ctx.msg, f"{emoji_id} - Couldn't Fetch"
                 )
                 continue
@@ -212,7 +212,7 @@ class Emojis(commands.Cog):
                     and total_animated() == limit
                 ):
                     if "Animated Limit Reached" not in ctx.msg.content:
-                        ctx.msg = await self.bot.utils.update_msg(
+                        ctx.msg = await update_msg(
                             ctx.msg, f"Animated Limit Reached"
                         )
                     continue
@@ -222,7 +222,7 @@ class Emojis(commands.Cog):
                     and total_emotes() == limit
                 ):
                     if "Emote Limit Reached" not in ctx.msg.content:
-                        ctx.msg = await self.bot.utils.update_msg(
+                        ctx.msg = await update_msg(
                             ctx.msg, f"Emote Limit Reached"
                         )
                     continue
@@ -249,7 +249,7 @@ class Emojis(commands.Cog):
         mappings = {}
         try:
             mappings = {
-                await self.bot.utils.download(arg): check(it)
+                await download(arg): check(it)
                 if "." not in check(it)
                 else "new_emoji"
                 for it, arg in enumerate(args)
@@ -257,13 +257,13 @@ class Emojis(commands.Cog):
             }
             for img, name in mappings.items():
                 if not img:
-                    ctx.msg = await self.bot.utils.update_msg(
+                    ctx.msg = await update_msg(
                         ctx.msg, f"{name} - Dead Link"
                     )
                     continue
                 await self.upload_emoji(ctx, name=name, img=img, reason=str(ctx.author))
         except aiohttp.InvalidURL as e:
-            ctx.msg = await self.bot.utils.update_msg(ctx.msg, str(e))
+            ctx.msg = await update_msg(ctx.msg, str(e))
 
         # Attached Images/GIFsK
         allowed_extensions = ["png", "jpg", "jpeg", "gif"]
@@ -272,19 +272,19 @@ class Emojis(commands.Cog):
                 not attachment.filename.endswith(ext) for ext in allowed_extensions
             )
             if not attachment.height or not file_is_allowed:
-                ctx.msg = await self.bot.utils.update_msg(
+                ctx.msg = await update_msg(
                     ctx.msg, f"{attachment.filename} - Not an image or gif"
                 )
                 continue
             if "gif" in attachment.filename and total_animated == limit:
                 if "Animated Limit Reached" not in ctx.msg:
-                    ctx.msg = await self.bot.utils.update_msg(
+                    ctx.msg = await update_msg(
                         ctx.msg, f"Animated Limit Reached"
                     )
                 continue
             elif "gif" not in attachment.filename and total_emotes == limit:
                 if "Emote Limit Reached" not in ctx.msg.content:
-                    ctx.msg = await self.bot.utils.update_msg(
+                    ctx.msg = await update_msg(
                         ctx.msg, f"Emote Limit Reached"
                     )
                 continue
@@ -293,7 +293,7 @@ class Emojis(commands.Cog):
             try:
                 file = await attachment.read()  # Raw bytes file
             except discord.errors.HTTPException:
-                await self.bot.utils.update_msg(
+                await update_msg(
                     ctx.msg, f"{name} - failed to read attachment"
                 )
                 continue
@@ -303,7 +303,7 @@ class Emojis(commands.Cog):
             await self.upload_emoji(ctx, name=name, img=file, reason=str(ctx.author))
 
         if not len(ctx.msg.content.split("\n")) > 1:
-            ctx.msg = await self.bot.utils.update_msg(
+            ctx.msg = await update_msg(
                 ctx.msg, "No proper formats I can work with were provided"
             )
 

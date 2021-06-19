@@ -10,7 +10,7 @@ from discord.errors import Forbidden, NotFound, HTTPException
 from discord.ext import commands
 from discord.ext import tasks
 
-from botutils import colors
+from botutils import colors, get_time
 
 
 defaults = {
@@ -74,7 +74,7 @@ class AntiSpam(commands.Cog):
 
     async def get_mutes(self) -> dict:
         mutes = {}
-        async with self.bot.cursor() as cur:
+        async with self.bot.utils.cursor() as cur:
             await cur.execute(
                 f"select guild_id, channel_id, user_id, mute_role_id, end_time "
                 f"from anti_spam_mutes;"
@@ -91,7 +91,7 @@ class AntiSpam(commands.Cog):
         return mutes
 
     async def delete_timer(self, guild_id: int, user_id: int):
-        async with self.bot.cursor() as cur:
+        async with self.bot.utils.cursor() as cur:
             await cur.execute(
                 f"delete from anti_spam_mutes "
                 f"where guild_id = {guild_id} "
@@ -140,7 +140,7 @@ class AntiSpam(commands.Cog):
     @commands.bot_has_permissions(embed_links=True)
     async def anti_spam(self, ctx):
         if not ctx.invoked_subcommand and 'help' not in ctx.message.content:
-            e = discord.Embed(color=colors.fate())
+            e = discord.Embed(color=colors.fate)
             e.set_author(name='AntiSpam Usage', icon_url=ctx.author.avatar_url)
             e.set_thumbnail(url=ctx.guild.icon_url)
             e.description = '**.anti-spam enable**\n`• enables all anti-spam modules`\n' \
@@ -499,7 +499,7 @@ class AntiSpam(commands.Cog):
                     timer = 150
                     timer *= multiplier
                     end_time = time() + timer
-                    timer_str = self.bot.utils.get_time(timer)
+                    timer_str = get_time(timer)
 
                     try:
                         await user.add_roles(mute_role)
@@ -534,7 +534,7 @@ class AntiSpam(commands.Cog):
                                 self.bot.loop.create_task(self.cleanup_from_message(msg))
 
                     with suppress(Exception):
-                        async with self.bot.cursor() as cur:
+                        async with self.bot.utils.cursor() as cur:
                             await cur.execute(
                                 f"insert into anti_spam_mutes "
                                 f"values ("

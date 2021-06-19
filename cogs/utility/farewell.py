@@ -9,7 +9,7 @@ import os
 
 
 def leave_help():
-    e = discord.Embed(color=colors.tan())
+    e = discord.Embed(color=colors.tan)
     e.description = "Run `.leave` for a list of sub commands"
     e.add_field(
         name=".leave config",
@@ -80,7 +80,7 @@ class Leave(commands.Cog):
             "images": self.images,
             "format": self.format,
         }
-        async with self.bot.open("./data/userdata/leave.json", "w+") as f:
+        async with self.bot.utils.open("./data/userdata/leave.json", "w+") as f:
             await f.write(json.dumps(data))
 
     @commands.group(name="leave", aliases=["farewell"], usage=leave_help())
@@ -263,7 +263,7 @@ class Leave(commands.Cog):
             )
         )
         if guild_id in self.useimages:
-            e = discord.Embed(color=colors.fate())
+            e = discord.Embed(color=colors.fate)
             if guild_id in self.images:
                 if self.images[guild_id]:
                     e.set_image(url=random.choice(self.images[guild_id]))
@@ -376,7 +376,7 @@ class Leave(commands.Cog):
             await ctx.send(
                 "What format should I use?:```css\nExample:\n**!user has left the chat**```"
             )
-            async with self.bot.require("message", ctx, handle_timeout=True) as msg:
+            async with self.bot.utils.require("message", ctx, handle_timeout=True) as msg:
                 self.format[guild_id] = msg.content
         await ctx.send("Set the welcome format 👍")
         await self.save_data()
@@ -403,7 +403,7 @@ class Leave(commands.Cog):
                 )
                 await asyncio.sleep(0)
                 if guild_id in self.useimages:
-                    e = discord.Embed(color=colors.fate())
+                    e = discord.Embed(color=colors.fate)
                     if guild_id in self.images and self.images[guild_id]:
                         e.set_image(url=random.choice(self.images[guild_id]))
                         try:

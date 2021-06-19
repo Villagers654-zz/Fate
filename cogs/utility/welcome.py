@@ -1,7 +1,6 @@
 from discord.ext import commands
 from botutils import colors
 import discord
-import asyncio
 import random
 import os
 
@@ -10,7 +9,7 @@ mentions = discord.AllowedMentions(users=True, roles=True, everyone=False)
 
 
 def welcome_help():
-    e = discord.Embed(color=colors.tan())
+    e = discord.Embed(color=colors.tan)
     e.description = "Run `.leave` for a list of sub commands"
     e.add_field(
         name=".welcome config",
@@ -242,7 +241,7 @@ class Welcome(commands.Cog):
             + random.choice(os.listdir(os.getcwd() + "/data/images/reactions/welcome/"))
         )
         if self.config[guild_id]["useimages"]:
-            e = discord.Embed(color=colors.fate())
+            e = discord.Embed(color=colors.fate)
             if self.config[guild_id]["images"]:
                 e.set_image(url=random.choice(self.config[guild_id]["images"]))
                 try:
@@ -355,7 +354,7 @@ class Welcome(commands.Cog):
             await ctx.send(
                 "What format should I use?:```css\nExample:\nWelcome !user to !server```"
             )
-            async with self.bot.require("message", ctx, handle_timeout=True) as msg:
+            async with self.bot.utils.require("message", ctx, handle_timeout=True) as msg:
                 if "!inviter" in msg.content:
                     await self.bot.invite_manager.init(ctx.guild)
                 self.config[guild_id]["format"] = msg.content
@@ -400,7 +399,7 @@ class Welcome(commands.Cog):
 
                 # Attach images in an embed
                 if conf["useimages"]:
-                    e = discord.Embed(color=colors.fate())
+                    e = discord.Embed(color=colors.fate)
                     if conf["images"]:
                         e.set_image(url=random.choice(conf["images"]))
                         try:

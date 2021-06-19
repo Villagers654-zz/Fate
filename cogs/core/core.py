@@ -20,8 +20,7 @@ from discord import Webhook, AsyncWebhookAdapter
 import dbl
 from discord.ext.commands import Context
 
-from botutils import config, colors
-from cogs.core.utils import Utils as utils
+from botutils import colors, get_prefixes_async, cleanup_msg, emojis
 
 
 class Conversation:
@@ -163,7 +162,19 @@ class Core(commands.Cog):
     @commands.command(name="invite", aliases=["links", "support"])
     @commands.cooldown(1, 5, commands.BucketType.channel)
     async def invite(self, ctx):
-        await ctx.send(embed=config.links())
+        embed = discord.Embed(color=0x80B0FF)
+        embed.set_author(
+            name=f"| Links | 📚",
+            icon_url="https://images-ext-1.discordapp.net/external/kgeJxDOsmMoy2gdBr44IFpg5hpYzqxTkOUqwjYZbPtI/%3Fsize%3D1024/https/cdn.discordapp.com/avatars/506735111543193601/689cf49cf2435163ca420996bcb723a5.webp",
+        )
+        embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/501871950260469790/513636736492896271/mail-open-solid.png")
+        embed.description = (
+            f"[Invite]({self.bot.invite_url}) 📥\n"
+            f"[Support](https://discord.gg/wtjuznh) 📧\n"
+            f"[Discord](https://discord.gg/wtjuznh) <:discord:513634338487795732>\n"
+            f"[Vote](https://top.gg/bot/506735111543193601) ⬆"
+        )
+        await ctx.send(embed=embed)
 
     @staticmethod
     def invite_usage():
@@ -187,7 +198,7 @@ class Core(commands.Cog):
                 await ctx.message.delete()
             return
         if content:
-            content = self.bot.utils.cleanup_msg(ctx.message, content)
+            content = cleanup_msg(ctx.message, content)
             content = content[:2000]
         if ctx.message.attachments and ctx.channel.is_nsfw():
             file_data = [
@@ -210,13 +221,13 @@ class Core(commands.Cog):
             await ctx.send("Content is a required argument that is missing")
 
     @commands.command(name="prefix")
-    @commands.cooldown(*utils.default_cooldown())
+    @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.guild_only()
     async def prefix(self, ctx, *, prefix = None):
         if not prefix:
-            prefixes = await self.bot.utils.get_prefixes_async(self.bot, ctx.message)
+            prefixes = await get_prefixes_async(self.bot, ctx.message)
             formatted = "\n".join(prefixes[1::])
-            e = discord.Embed(color=colors.fate())
+            e = discord.Embed(color=colors.fate)
             e.set_author(name="Prefixes", icon_url=ctx.author.avatar_url)
             e.description = formatted
             return await ctx.send(embed=e)
@@ -256,7 +267,7 @@ class Core(commands.Cog):
         await ctx.send(f"Changed the servers prefix to `{prefix}`")
 
     @commands.command(name="personal-prefix", aliases=["pp"])
-    @commands.cooldown(*utils.default_cooldown())
+    @commands.cooldown(2, 5, commands.BucketType.user)
     async def personal_prefix(self, ctx, *, prefix=""):
         if prefix.startswith('"') and prefix.endswith('"') and len(prefix) > 2:
             prefix = prefix.strip('"')
@@ -406,8 +417,7 @@ class Core(commands.Cog):
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.bot_has_permissions(embed_links=True)
     async def ping(self, ctx):
-        emojis = self.bot.utils.emotes
-        e = discord.Embed(color=colors.fate())
+        e = discord.Embed(color=colors.fate)
         e.set_author(name="Measuring ping:")
         before = monotonic()
         msg = await ctx.send(embed=e)
@@ -440,7 +450,7 @@ class Core(commands.Cog):
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.bot_has_permissions(embed_links=True)
     async def devping(self, ctx):
-        e = discord.Embed(color=colors.fate())
+        e = discord.Embed(color=colors.fate)
         e.set_author(name="Measuring ping:")
         before = monotonic()
         message = await ctx.send(embed=e)
@@ -555,6 +565,7 @@ class Core(commands.Cog):
             else:
                 self.spam_cd[user_id] = [now, 0]
             if self.spam_cd[user_id][1] < 2 or msg.author.bot:
+                m = discord.AllowedMentions.none()
                 async with aiohttp.ClientSession() as session:
                     webhook = Webhook.from_url(
                         "https://discordapp.com/api/webhooks/673290242819883060/GDXiMBwbzw7dbom57ZupHsiEQ76w8TfV_mEwi7_pGw8CvVFL0LNgwRwk55yRPxNdPA4b",
@@ -565,7 +576,7 @@ class Core(commands.Cog):
                         if attachment.size < 4000000:
                             files.append(await attachment.to_file())
                     if msg.author.id == self.bot.user.id:
-                        e = discord.Embed(color=colors.fate())
+                        e = discord.Embed(color=colors.fate)
                         e.set_author(
                             name=msg.channel.recipient,
                             icon_url=msg.channel.recipient.avatar_url,
@@ -576,6 +587,7 @@ class Core(commands.Cog):
                             content=msg.content,
                             files=files,
                             embed=e,
+                            allowed_mentions=m
                         )
                     await webhook.send(
                         username=msg.author.name,
@@ -583,6 +595,7 @@ class Core(commands.Cog):
                         content=msg.content,
                         embeds=msg.embeds,
                         files=files,
+                        allowed_mentions=m
                     )
 
 

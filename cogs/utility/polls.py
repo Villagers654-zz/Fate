@@ -34,7 +34,7 @@ class SafePolls(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         await self.cache_msg_ids()
-        async with self.bot.cursor() as cur:
+        async with self.bot.utils.cursor() as cur:
             await cur.execute("select channel_id, msg_id, end_time from polls;")
             results = await cur.fetchall()
         for group in results:
@@ -43,13 +43,13 @@ class SafePolls(commands.Cog):
                 self.bot.tasks["polls"][group[1]] = task
 
     async def cache_msg_ids(self) -> None:
-        async with self.bot.cursor() as cur:
+        async with self.bot.utils.cursor() as cur:
             await cur.execute("select msg_id from polls;")
             results = await cur.fetchall()
         self.polls = list(set(self.polls + [r[0] for r in results]))
 
     async def cache_poll(self, message_id) -> None:
-        async with self.bot.cursor() as cur:
+        async with self.bot.utils.cursor() as cur:
             await cur.execute(
                 f"select channel_id, user_id, question, votes "
                 f"from polls "
@@ -77,7 +77,7 @@ class SafePolls(commands.Cog):
         votes = payload["votes"]
         emojis = votes.keys()
 
-        e = discord.Embed(color=colors.fate())
+        e = discord.Embed(color=colors.fate)
         e.set_author(name=f"Poll by {user}", icon_url=user.avatar_url if user else None)
         e.description = question
         e.set_footer(
@@ -89,7 +89,7 @@ class SafePolls(commands.Cog):
         """Sleep until the timer ends and close the poll"""
 
         async def delete(msg_id) -> None:
-            async with self.bot.cursor() as cur:
+            async with self.bot.utils.cursor() as cur:
                 await cur.execute(f"delete from polls where msg_id = {msg_id} limit 1;")
             if msg_id in self.polls:
                 self.polls.remove(msg_id)
@@ -131,7 +131,7 @@ class SafePolls(commands.Cog):
         timer = None
         instructions = "the `m` in `5m` stands for 5 minutes, the `h` stands for hours, and the `d` stands for days"
         while not timer:
-            async with self.bot.require("message", ctx, handle_timeout=True) as msg:
+            async with self.bot.utils.require("message", ctx, handle_timeout=True) as msg:
                 result = self.bot.utils.extract_timer(msg.content)
                 if not result:
                     await ctx.send(
@@ -155,7 +155,7 @@ class SafePolls(commands.Cog):
         )
         reaction_count = None
         while not reaction_count:
-            async with self.bot.require("message", ctx, handle_timeout=True) as msg:
+            async with self.bot.utils.require("message", ctx, handle_timeout=True) as msg:
                 if not msg.content.isdigit():
                     await ctx.send("That's not a number, please retry", delete_after=30)
                 elif int(msg.content) > 9:
@@ -172,7 +172,7 @@ class SafePolls(commands.Cog):
         message = await ctx.send("#mention the channel to send the poll into")
         channel = None
         while not channel:
-            async with self.bot.require("message", ctx, handle_timeout=True) as msg:
+            async with self.bot.utils.require("message", ctx, handle_timeout=True) as msg:
                 if not msg.channel_mentions:
                     await ctx.send(
                         f"Retry, but mention the channel like this: {ctx.channel.mention}",
@@ -234,7 +234,7 @@ class SafePolls(commands.Cog):
         vote_index = encode64(json.dumps({e: [] for e in emojis}).encode()).decode()
         end_time = time() + timer
 
-        async with self.bot.cursor() as cur:
+        async with self.bot.utils.cursor() as cur:
             await cur.execute(
                 f"insert into polls "
                 f"values ("
@@ -259,7 +259,7 @@ class SafePolls(commands.Cog):
     async def on_message_delete(self, msg):
         if msg.id in self.polls:
             self.polls.remove(msg.id)
-        async with self.bot.cursor() as cur:
+        async with self.bot.utils.cursor() as cur:
             await cur.execute(f"delete from polls where msg_id = {msg.id};")
 
     @commands.Cog.listener()

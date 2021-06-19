@@ -8,11 +8,10 @@ import lavalink
 from discord.ext import commands
 from discord.errors import NotFound, Forbidden
 
-from botutils import auth
+from botutils import colors
 
 
 url_rx = re.compile(r'https?://(?:www\.)?.+')
-creds = auth.Lavalink()
 votes = {}
 
 
@@ -98,7 +97,7 @@ class Music(commands.Cog):
         lavalink.add_event_hook(self.track_hook)
 
         # Assets
-        self.color = self.bot.utils.colors.green()
+        self.color = colors.green
         self._playlist = bot.get_asset("playlist")
         self._player = bot.get_asset("player")
         self._playing = bot.get_asset("playing")

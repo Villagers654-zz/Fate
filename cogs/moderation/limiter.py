@@ -3,9 +3,6 @@ from os.path import isfile
 import discord
 import asyncio
 import json
-from PIL import Image
-from io import BytesIO
-import requests
 
 
 class Utility(commands.Cog):
