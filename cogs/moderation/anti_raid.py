@@ -83,8 +83,8 @@ class AntiRaid(commands.Cog):
     @_anti_raid.command(name="disable")
     @commands.has_permissions(administrator=True)
     async def _disable(self, ctx):
-        if ctx.author.id != ctx.guild.owner.id:
-            return await ctx.send("Only the server owner can disable this")
+        # if ctx.author.id != ctx.guild.owner.id:
+        #     return await ctx.send("Only the server owner can disable this")
         guild_id = str(ctx.guild.id)
         if guild_id not in self.toggle:
             return await ctx.send("Anti raid is not enabled")
@@ -114,7 +114,7 @@ class AntiRaid(commands.Cog):
                 except discord.DiscordException:
                     pass
                 else:
-                    await asyncio.sleep(3600)
+                    await asyncio.sleep(600)
                     try:
                         await m.guild.unban(m, reason="Server locked due to raid")
                     except (discord.errors.Forbidden, discord.errors.NotFound):
@@ -144,7 +144,7 @@ class AntiRaid(commands.Cog):
                     await junkie.send(
                         f"**{m.guild.name}** is currently locked due to an attempted raid, you can try rejoining in an hour"
                     )
-                await asyncio.sleep(3600)
+                await asyncio.sleep(600)
                 self.locked.pop(self.locked.index(guild_id))
 
     @commands.Cog.listener()
