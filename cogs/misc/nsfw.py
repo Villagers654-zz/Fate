@@ -13,9 +13,9 @@ class NSFW(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    def get(self, filename):
-        with open(f"./data/images/urls/{filename}", "r") as f:
-            return choice([c for c in f.readlines() if len(c) > 5])
+    async def get(self, filename):
+        async with self.bot.utils.open(f"./data/images/urls/{filename}", "r") as f:
+            return choice([c for c in await f.readlines() if len(c) > 5])
 
     @commands.command(name="dan", aliases=["danbooru"])
     @commands.cooldown(1, 3, commands.BucketType.user)
@@ -82,8 +82,8 @@ class NSFW(commands.Cog):
     @commands.is_nsfw()
     @commands.bot_has_permissions(embed_links=True)
     async def trap(self, ctx):
-        e = discord.Embed(color=colors.purple())
-        e.set_image(url=self.get("traps.txt"))
+        e = discord.Embed(color=colors.purple)
+        e.set_image(url=await self.get("traps.txt"))
         await ctx.send(embed=e)
 
     @commands.command(name="neko")
@@ -92,8 +92,8 @@ class NSFW(commands.Cog):
     @commands.is_nsfw()
     @commands.bot_has_permissions(embed_links=True)
     async def neko(self, ctx):
-        e = discord.Embed(color=colors.purple())
-        e.set_image(url=self.get("nekos.txt"))
+        e = discord.Embed(color=colors.purple)
+        e.set_image(url=await self.get("nekos.txt"))
         await ctx.send(embed=e)
 
     @commands.command(name="yaoi")
@@ -102,8 +102,8 @@ class NSFW(commands.Cog):
     @commands.is_nsfw()
     @commands.bot_has_permissions(embed_links=True)
     async def _yaoi(self, ctx):
-        e = discord.Embed(color=colors.purple())
-        e.set_image(url=self.get("yaoi.txt"))
+        e = discord.Embed(color=colors.purple)
+        e.set_image(url=await self.get("yaoi.txt"))
         await ctx.send(embed=e)
 
 
