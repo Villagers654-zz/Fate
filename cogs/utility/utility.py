@@ -1505,7 +1505,7 @@ class Utility(commands.Cog):
             return await ctx.send("Your afk message can't be greater than 64 characters")
         e.set_author(name="You are now afk", icon_url=ctx.author.avatar_url)
         await ctx.send(embed=e, delete_after=5)
-        reason = self.bot.utils.cleanup_msg(ctx.message, reason)
+        reason = cleanup_msg(ctx.message, reason)
         self.afk[ctx.author.id] = reason
         await asyncio.sleep(5)
         await ctx.message.delete()

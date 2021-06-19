@@ -1671,7 +1671,7 @@ class Logger(commands.Cog):
     async def on_guild_integrations_update(self, guild):
         guild_id = str(guild.id)
         if guild_id in self.config:
-            e = discord.Embed(color=light_gray)
+            e = discord.Embed(color=light_grey)
             e.set_author(
                 name="~==🍸Integrations Update🍸==~", icon_url=guild.owner.avatar_url
             )
@@ -1736,7 +1736,7 @@ class Logger(commands.Cog):
         if guild_id in self.config:
             if member.bot:
                 dat = await self.search_audit(member.guild, audit.bot_add)
-                e = discord.Embed(color=light_gray)
+                e = discord.Embed(color=light_grey)
                 e.set_author(name="~==🍸Bot Added🍸==~", icon_url=dat["icon_url"])
                 e.set_thumbnail(url=dat["thumbnail_url"])
                 inv = f"https://discordapp.com/oauth2/authorize?client_id={member.id}&permissions=0&scope=bot"

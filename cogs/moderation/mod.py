@@ -623,7 +623,7 @@ class Moderation(commands.Cog):
                         )
                     await ctx.send("Creating mute role..")
                     mute_role = await ctx.guild.create_role(
-                        name="Muted", color=discord.Color(colors.black())
+                        name="Muted", color=discord.Color(colors.black)
                     )
 
                     # Set the overwrites for the mute role
@@ -1020,7 +1020,7 @@ class Moderation(commands.Cog):
                 name=f"◈ Banned {user} [Case #{case}]", value=f"Reason: {reason}", inline=False
             )
         if not e.fields:
-            e.colour = colors.red()
+            e.colour = colors.red
             e.set_author(name="Couldn't ban any of the specified user(s)")
         await msg.edit(embed=e)
 
@@ -1048,7 +1048,7 @@ class Moderation(commands.Cog):
             case = await self.cases.add_case(
                 ctx.guild.id, user.id, "unban", str(ctx.author), ctx.message.jump_url, ctx.author.id
             )
-            e = discord.Embed(color=colors.red())
+            e = discord.Embed(color=colors.red)
             e.set_author(name=f"{user} unbanned [Case #{case}]", icon_url=user.avatar_url)
             await ctx.send(embed=e)
         else:
@@ -1423,7 +1423,7 @@ class Moderation(commands.Cog):
                         "No muted role found, and I'm missing manage_channel permissions to set one up"
                     )
                 mute_role = await guild.create_role(
-                    name="Muted", color=discord.Color(colors.black())
+                    name="Muted", color=discord.Color(colors.black)
                 )
                 for chnl in guild.text_channels:
                     await chnl.set_permissions(mute_role, send_messages=False)

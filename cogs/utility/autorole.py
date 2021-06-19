@@ -28,7 +28,7 @@ class AutoRole(commands.Cog):
     async def _autorole(self, ctx, item: commands.clean_content = None):
         item = item  # type: str
         guild_id = str(ctx.guild.id)
-        e = discord.Embed(color=colors.fate())
+        e = discord.Embed(color=colors.fate)
         if item is None:
             e.set_author(name="Auto-Role Help", icon_url=self.bot.user.avatar_url)
             e.set_thumbnail(url=ctx.author.avatar_url)
