@@ -93,7 +93,7 @@ class Leave(commands.Cog):
             toggle = "disabled"
             if guild_id in self.toggle:
                 toggle = "enabled"
-            e = discord.Embed(color=colors.tan())
+            e = discord.Embed(color=colors.tan)
             e.set_author(name="Leave Messages", icon_url=self.bot.user.avatar_url)
             e.set_thumbnail(url=ctx.guild.icon_url)
             e.description = "Shows when members leave the server"
@@ -198,7 +198,7 @@ class Leave(commands.Cog):
             self.format[guild_id] = msg.content
             break
         self.toggle[guild_id] = "enabled"
-        e = discord.Embed(color=colors.tan())
+        e = discord.Embed(color=colors.tan)
         e.set_author(name="Enabled Leave Messages", icon_url=ctx.author.avatar_url)
         await ctx.send(embed=e, delete_after=10)
         await cleanup()
@@ -233,7 +233,7 @@ class Leave(commands.Cog):
             form = self.format[guild_id]
         if guild_id in self.images:
             images = len(self.images[guild_id])
-        e = discord.Embed(color=colors.tan())
+        e = discord.Embed(color=colors.tan)
         e.set_author(name="Leave Config", icon_url=self.bot.user.avatar_url)
         e.set_thumbnail(url=ctx.guild.icon_url)
         e.description = (

@@ -77,7 +77,7 @@ class Welcome(commands.Cog):
             toggle = "disabled"
             if guild_id in self.config:
                 toggle = "enabled"
-            e = discord.Embed(color=colors.tan())
+            e = discord.Embed(color=colors.tan)
             e.set_author(name="Welcome Messages", icon_url=self.bot.user.avatar_url)
             e.set_thumbnail(url=ctx.guild.icon_url)
             e.description = "Welcomes users when they join"
@@ -175,7 +175,7 @@ class Welcome(commands.Cog):
         conf["enabled"] = True
         self.config[guild_id] = conf
         await self.config.flush()
-        e = discord.Embed(color=colors.tan())
+        e = discord.Embed(color=colors.tan)
         e.set_author(name="Enabled Welcome Messages", icon_url=ctx.author.avatar_url)
         await ctx.send(embed=e, delete_after=10)
 
@@ -207,7 +207,7 @@ class Welcome(commands.Cog):
                 useimages = "enabled"
             form = conf["format"]
             images = len(conf["images"])
-        e = discord.Embed(color=colors.tan())
+        e = discord.Embed(color=colors.tan)
         e.set_author(name="Welcome Config", icon_url=self.bot.user.avatar_url)
         e.set_thumbnail(url=ctx.guild.icon_url)
         e.description = (

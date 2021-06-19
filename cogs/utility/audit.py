@@ -14,7 +14,7 @@ class Audit(commands.Cog):
     async def _audit(self, ctx, *args):
         p = get_prefix(ctx)
         if not args or len(args) > 2:
-            e = discord.Embed(color=colors.cyan())
+            e = discord.Embed(color=colors.cyan)
             e.set_author(name="Audit Log Data", icon_url=ctx.author.avatar_url)
             e.set_thumbnail(url=ctx.guild.icon_url)
             e.add_field(
