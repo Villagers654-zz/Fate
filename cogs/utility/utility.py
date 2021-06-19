@@ -20,7 +20,7 @@ from colormap import rgb2hex
 import psutil
 from discord.ext import commands, tasks
 
-from botutils import colors, split, cleanup_msg, bytes2human, get_time, emojis
+from botutils import colors, split, cleanup_msg, bytes2human, get_time, emojis, get_prefixes_async
 
 
 class SatisfiableChannel(commands.Converter):
@@ -1134,7 +1134,7 @@ class Utility(commands.Cog):
     @commands.command(name="reminder", aliases=["timer", "remindme", "remind"])
     @commands.cooldown(2, 15, commands.BucketType.user)
     async def timer(self, ctx, *args):
-        p = await self.bot.utils.get_prefixes_async(self.bot, ctx.message)
+        p = await get_prefixes_async(self.bot, ctx.message)
         p = p[2]
         usage = (
             f">>> Usage: `{p}reminder [30s|5m|1h|2d]`"
