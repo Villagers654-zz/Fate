@@ -2,7 +2,7 @@ import random as r
 
 
 def fate():
-    return 0x80b0ff
+    return 0x001269
 
 
 def luck():

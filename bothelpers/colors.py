@@ -12,7 +12,7 @@ Written by Michael Stollings <mrmichaelstollings@gmail.com>
 from random import randint
 
 
-fate = 0x80b0ff
+fate = 0x001269
 luck = 0x9EAFE3
 red = 0xFF0000
 pink = 0xFC88FF
