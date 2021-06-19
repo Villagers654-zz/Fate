@@ -8,6 +8,8 @@ from discord.ext import commands
 from discord.errors import HTTPException, NotFound, Forbidden
 import discord
 
+from bothelpers import extract_time
+
 
 locks = {
     "kick": "Kicks all new members",
@@ -17,26 +19,6 @@ locks = {
 }
 
 unique = ["kick", "ban"]
-
-operators = {
-    'seconds': 's',
-    'minutes': 'm',
-    'hours': 'h',
-    'days': 'd',
-    'weeks': 'w',
-    'months': 'M',
-    'years': 'y'
-}
-
-formulas = {
-    's': 1,
-    'm': 60,
-    'h': 3600,
-    'd': 86400,
-    'w': 604800,
-    'M': 2592000,
-    'y': 31536000
-}
 
 
 class Lock(commands.Cog):
@@ -49,24 +31,6 @@ class Lock(commands.Cog):
         if await ctx.command.can_run(ctx):
             if ctx.guild.id not in self.lock:
                 self.lock[ctx.guild.id] = {}
-
-    def extract_time(self, string):
-        string = string.replace(" ", "")[:20]
-        for human_form, operator in operators.items():
-            string = string.replace(human_form, operator)
-            string = string.replace(human_form.rstrip('s'), operator)
-        timers = re.findall("[0-9]*[smhdwMy]", string[:8])
-        if not timers:
-            return None
-        timeframe = 0
-        for timer in timers:
-            operator = ''.join(c for c in timer if not c.isdigit())
-            num = timer.replace(operator, '')
-            if not num:
-                continue
-            num = int(num) * formulas[operator]
-            timeframe += num
-        return timeframe
 
     @commands.command(name="lock")
     @commands.has_permissions(administrator=True)
@@ -102,7 +66,7 @@ class Lock(commands.Cog):
         if lock == "new":
             await ctx.send("How long should the minimum account age be?")
             reply = await self.bot.utils.get_message(ctx)
-            min_age = self.extract_time(reply.content)
+            min_age = extract_time(reply.content)
             if not min_age:
                 return await ctx.send("Invalid format")
             self.lock[guild_id][lock] = {"age_lmt": min_age}
