@@ -894,8 +894,8 @@ class Utility(commands.Cog):
                 f"• Boost Level [`{ctx.guild.premium_tier}`]\n"
                 f"• Total Boosts [`{ctx.guild.premium_subscription_count}`]\n"
                 f"• Max Emoji's [`{ctx.guild.emoji_limit}`]\n"
-                f'• Max Bitrate [`{self.bot.utils.bytes2human(ctx.guild.bitrate_limit).replace(".0", "")}`]\n'
-                f'• Max Filesize [`{self.bot.utils.bytes2human(ctx.guild.filesize_limit).replace(".0", "")}`]'
+                f'• Max Bitrate [`{bytes2human(ctx.guild.bitrate_limit).replace(".0", "")}`]\n'
+                f'• Max Filesize [`{bytes2human(ctx.guild.filesize_limit).replace(".0", "")}`]'
             )
             e.add_field(name="◈ Perks ◈", value=perks, inline=False)
         created = datetime.date(ctx.guild.created_at)

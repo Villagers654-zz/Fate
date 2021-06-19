@@ -440,9 +440,8 @@ async def on_message(msg):
     # Send the prefix if the bot's mentioned
     if not msg.author.bot and bot.user.mentioned_in(msg) and len(msg.content.split()) == 1:
         if str(bot.user.id) in msg.content:
-            prefixes = "\n".join(
-                await get_prefixes_async(bot, msg)[1:]  # type: list
-            )
+            r = await get_prefixes_async(bot, msg)
+            prefixes = "\n".join(r[1:])
             if len(prefixes.split("\n")) > 2:
                 return
             with suppress(NotFound, Forbidden, HTTPException, AttributeError):

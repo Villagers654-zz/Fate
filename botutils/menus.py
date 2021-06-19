@@ -98,7 +98,7 @@ class Menus:
         e = discord.Embed(color=colors.fate)
         e.set_author(name=str(user), icon_url=user.avatar_url)
         e.set_image(url="attachment://" + fp)
-        e.set_footer(text=f"You have {self.bot.utils.get_time(timeout)}")
+        e.set_footer(text=f"You have {get_time(timeout)}")
         message = await channel.send(
             f"{user.mention} please verify you're human", embed=e, file=discord.File(fp),
             allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=True)
