@@ -441,7 +441,9 @@ class Logger(commands.Cog):
             with suppress(discord.errors.Forbidden):
                 async for entry in guild.audit_logs(limit=5):
                     if entry.created_at > self.past and any(
-                        entry.action.name == action.name for action in actions
+                        entry.action.name == action.name
+                        for action in actions
+                          if hasattr(entry.action, "name")
                     ):
                         dat["action"] = entry.action
                         if entry.user:
