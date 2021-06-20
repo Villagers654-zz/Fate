@@ -169,7 +169,7 @@ class FileCache:
         for filepath, data in list(self.data.items()):
             args = data["args"]
             kwargs = data["kwargs"]
-            async with self.bot.open(filepath, "w+") as f:
+            async with self.bot.utils.open(filepath, "w+") as f:
                 await f.write(*args, *kwargs)
             del self.data[filepath]
             self.bot.log.debug(f"Wrote {filepath} from cache")
