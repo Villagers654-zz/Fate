@@ -3,16 +3,17 @@
 from os import path
 import json
 import asyncio
-from time import time as timestamp
+from datetime import datetime, timedelta
 import re
 import random
 from contextlib import suppress
 
 from discord.ext import commands
+from discord.ext.commands import Context
 import discord
 from discord.errors import NotFound, Forbidden
 
-from botutils import colors
+from botutils import colors, extract_time, get_time, Conversation
 
 
 class Giveaways(commands.Cog):
@@ -29,12 +30,13 @@ class Giveaways(commands.Cog):
             await f.write(json.dumps(self.data))
 
     async def make_embed(self, dat):
-        e = discord.Embed(color=colors.fate())
+        e = discord.Embed(color=colors.fate)
         user = await self.bot.fetch_user(dat["user"])
         e.set_author(name=f"Giveaway by {user}", icon_url=user.avatar_url)
         e.description = dat["giveaway"]
-        end_time = self.bot.utils.get_time(dat["end_time"] - timestamp())
-        if timestamp() >= dat["end_time"]:
+        _end_time = datetime.strptime(dat["end_time"], "%Y-%m-%d %H:%M:%S.%f")
+        end_time = get_time((_end_time - datetime.now()).seconds)
+        if datetime.now() >= _end_time:
             e.set_footer(text=f"Giveaway Ended")
         else:
             end_time = re.sub("\.[0-9]*", "", end_time)
@@ -49,21 +51,32 @@ class Giveaways(commands.Cog):
         except (NotFound, Forbidden):
             del self.data[guild_id][giveaway_id]
             return await self.save_data()
-        while timestamp() < dat["end_time"]:
+        end_time = datetime.strptime(dat["end_time"], "%Y-%m-%d %H:%M:%S.%f")
+
+        # Wait for the giveaway timer to end
+        while datetime.now() < end_time:
             await asyncio.sleep(30)
             try:
                 await message.edit(embed=await self.make_embed(dat))
             except (NotFound, Forbidden):
                 del self.data[guild_id][giveaway_id]
                 return await self.save_data()
-        await message.edit(content="Giveaway complete")
-        message = await channel.fetch_message(dat["message"])
-        for reaction in message.reactions:
-            if str(reaction.emoji) == "🎉":
+
+        for _ in range(3):
+            try:
+                await message.edit(content="Giveaway complete")
+                message = await channel.fetch_message(dat["message"])
+                for reaction in message.reactions:
+                    if str(reaction.emoji) == "🎉":
+                        reaction = reaction
+                        break
+                else:
+                    break
                 users = await reaction.users().flatten()
                 users = [user for user in users if not user.bot]
                 if not users:
                     await channel.send("There are no winners :[")
+                    break
                 else:
                     random.shuffle(users)
                     winners = []
@@ -75,14 +88,21 @@ class Giveaways(commands.Cog):
                     if len(winners) == 1:
                         await channel.send(
                             f"Congratulations {winners[0].mention}, you won the giveaway for {dat['giveaway']}",
-                            mentions=discord.AllowedMentions(users=True, roles=False, everyone=False)
+                            allowed_mentions=discord.AllowedMentions(users=True, roles=False, everyone=False)
                         )
                     else:
                         with suppress(Forbidden):
                             await channel.send(
-                                f"Congratulations {', '.join([w.mention for w in winners])}, you won the giveaway for {dat['giveaway']}"
+                                f"Congratulations {', '.join([w.mention for w in winners])}, you won the giveaway for {dat['giveaway']}",
+                                allowed_mentions=discord.AllowedMentions(users=True, roles=False, everyone=False)
                             )
+                    break
+            except (NotFound, Forbidden):
                 break
+            except discord.errors.HTTPException:
+                await asyncio.sleep(25)
+                continue
+
         del self.data[guild_id][giveaway_id]
         if not self.data[guild_id]:
             del self.data[guild_id]
@@ -121,107 +141,62 @@ class Giveaways(commands.Cog):
             "\nReply in the format of `1d6h9m`"
             "\n`d` represents days, `h` represents hours, `m` represents minutes"
         )
-        message = await ctx.send("How long should the giveaway last" + usage)
+        convo = Conversation(ctx, delete_after=True)
+
         for i in range(5):
-            async with self.bot.utils.require("message", ctx, handle_timeout=True) as msg:
-                timers = []
-                for timer in [
-                    re.findall("[0-9]+[smhd]", arg) for arg in msg.content.split()
-                ]:
-                    timers = [*timers, *timer]
-                if not timers:
-                    await ctx.send(usage)
-                    continue
-                time_to_sleep = [0, []]
-                for timer in timers:
-                    raw = "".join(x for x in list(timer) if x.isdigit())
-                    if "d" in timer:
-                        time = int(timer.replace("d", "")) * 60 * 60 * 24
-                        _repr = "day"
-                    elif "h" in timer:
-                        time = int(timer.replace("h", "")) * 60 * 60
-                        _repr = "hour"
-                    elif "m" in timer:
-                        time = int(timer.replace("m", "")) * 60
-                        _repr = "minute"
-                    else:  # 's' in timer
-                        time = int(timer.replace("s", ""))
-                        _repr = "second"
-                    time_to_sleep[0] += time
-                    time_to_sleep[1].append(
-                        f"{raw} {_repr if raw == '1' else _repr + 's'}"
-                    )
-                timer, expanded_timer = time_to_sleep
-                expanded_timer = ", ".join(expanded_timer)
-                if timer > 60 * 60 * 24 * 60:
-                    await ctx.send("Hell. Fucking. No.\nI'm not waiting that long. Send a smaller timer")
-                    continue
-                await ctx.send(
-                    f"Alright, set the timer to {expanded_timer}", delete_after=10
-                )
-                await message.delete()
-                await msg.delete()
-                attempts = 0
-                break
+            reply = await convo.ask("How long should the giveaway last" + usage)
+            timer = extract_time(reply.content)
+            if not timer:
+                await convo.send("That's not in the proper format, retry or send `cancel`")
+            if timer > 60 * 60 * 24 * 60:
+                await convo.send("Hell. Fucking. No.\nI'm not waiting that long. Send a smaller timer")
+                continue
+            await convo.send(
+                f"Alright, set the timer to {get_time(timer)}", delete_after=10
+            )
+            break
         else:
-            return await ctx.send("oop")
+            return
 
         # Giveaway information
-        message = await ctx.send("Send a description of what you're giving out")
-        async with self.bot.utils.require("message", ctx, handle_timeout=True) as msg:
-            msg = await ctx.channel.fetch_message(msg.id)
-            giveaway = msg.content
-            await message.delete()
-            await msg.delete()
+        reply = await convo.ask("Send a description of what you're giving out")
+        giveaway = reply.content
 
         # Winner count
-        message = await ctx.send(
-            "How many winners should there be. Reply in number form"
-        )
         for i in range(5):
-            attempts += 1
-            async with self.bot.utils.require("message", ctx, handle_timeout=True) as msg:
-                if not msg.content.isdigit():
-                    await message.delete()
-                    message = await ctx.send("That isn't a number, please retry")
-                    await msg.delete()
-                    continue
-                winners = int(msg.content)
-                await message.delete()
-                await msg.delete()
+            reply = await convo.ask("How many winners should there be. Reply in number form")
+            if reply.content.isdigit():
+                winners = int(reply.content)
                 break
+            await convo.send("That isn't a number, please retry")
         else:
             return
 
         # Giveaway channel
-        message = await ctx.send(
-            f"#Mention the channel I should use in {ctx.channel.mention} format"
-        )
         for i in range(5):
-            async with self.bot.utils.require("message", ctx, handle_timeout=True) as msg:
-                if not msg.channel_mentions:
-                    await message.delete()
-                    message = await ctx.send(
-                        f"That isn't a channel mention, make sure it's in the {ctx.channel.mention} format"
-                    )
-                    await msg.delete()
-                    continue
-                channel = msg.channel_mentions[0]
-                await message.delete()
-                await msg.delete()
-                break
+            reply = await convo.ask(f"#Mention the channel I should use in {ctx.channel.mention} format")
+            if not reply.channel_mentions:
+                await convo.send(
+                    f"That isn't a channel mention, make sure it's in the {ctx.channel.mention} format"
+                )
+                continue
+            channel = reply.channel_mentions[0]
+            break
         else:
             return
 
+        await convo.end()
+
         # Save giveaway info
         dat = {
-            "end_time": timestamp() + timer,
+            "end_time": str(datetime.now() + timedelta(seconds=timer)),
             "user": ctx.author.id,
             "giveaway": giveaway,
             "winners": winners,
             "channel": channel.id,
         }
         message = await channel.send(embed=await self.make_embed(dat))
+
         if guild_id not in self.data:
             self.data[guild_id] = {}
         key = random.randint(0, 10000)
@@ -229,11 +204,13 @@ class Giveaways(commands.Cog):
             key = random.randint(0, 10000)
         self.data[guild_id][key] = {**dat, "message": message.id}
         await self.save_data()
+
         task_id = f"giveaway-{guild_id}-{key}"
         task = self.bot.loop.create_task(self.run_giveaway(guild_id, key))
         if "giveaways" not in self.bot.tasks:
             self.bot.tasks["giveaways"] = {}
         self.bot.tasks["giveaways"][task_id] = task
+
         await ctx.send("Started your giveaway")
         await message.add_reaction("🎉")
 
