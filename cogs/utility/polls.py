@@ -13,7 +13,7 @@ from discord.errors import NotFound, Forbidden
 from base64 import b64encode as encode64, b64decode as decode64
 
 from fate import Fate
-from botutils import colors
+from botutils import colors, extract_time
 
 
 class SafePolls(commands.Cog):
@@ -132,7 +132,7 @@ class SafePolls(commands.Cog):
         instructions = "the `m` in `5m` stands for 5 minutes, the `h` stands for hours, and the `d` stands for days"
         while not timer:
             async with self.bot.utils.require("message", ctx, handle_timeout=True) as msg:
-                result = self.bot.utils.extract_timer(msg.content)
+                result = extract_time(msg.content)
                 if not result:
                     await ctx.send(
                         f"Couldn't find any timers in that, remember {instructions}. Please retry",
