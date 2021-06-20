@@ -22,7 +22,7 @@ from discord.ext import commands
 from . import colors, emojis, pillow
 from .attributes import Attributes
 from .get_user import GetUser
-from .listeners import WaitForEvent, Listener
+from .listeners import WaitForEvent, Listener, Conversation
 from .menus import Menus
 from .prefixes import *
 from .resources import *

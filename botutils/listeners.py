@@ -1,4 +1,5 @@
 import asyncio
+from contextlib import suppress
 
 from discord.ext.commands import Context
 from discord import User, Member, Message
@@ -7,6 +8,54 @@ from discord.ext import commands
 
 class CheckError(Exception):
     pass
+
+
+class Conversation:
+    """Emulate a realistic conversation process with typing"""
+    def __init__(self, ctx: Context, delay: int = 2, delete_after: bool = False):
+        self.ctx = ctx
+        self.bot = ctx.bot
+        self.delay = delay
+        self.delete_after = delete_after
+        self.msgs = []
+
+    async def send(self, *args, **kwargs):
+        """Sleep then return the object to send"""
+        await asyncio.sleep(0.5)
+        await self.ctx.channel.trigger_typing()
+        await asyncio.sleep(self.delay - 0.5)
+
+        if self.delete_after:
+            kwargs["delete_after"] = 25
+            msg = await self.ctx.send(*args, **kwargs)
+            self.msgs.append(msg)
+        else:
+            msg = await self.ctx.send(*args, **kwargs)
+        return msg
+
+    async def ask(self, *args, **kwargs):
+        """Get the recipients reply"""
+        def predicate(m):
+            return m.author.id == self.ctx.author.id and m.channel.id == self.ctx.channel.id
+
+        await self.send(*args, **kwargs)
+        msg = await self.bot.utils.get_message(predicate)
+        if self.delete_after:
+            self.msgs.append(msg)
+
+        if "cancel" in msg.content:
+            msg = await self.ctx.send("Alright, operation cancelled")
+            if self.delete_after:
+                self.msgs.append(msg)
+                await self.end()
+            raise self.bot.ignored_exit
+
+        return msg
+
+    async def end(self):
+        with suppress(Exception):
+            msgs = [msg for msg in self.msgs if msg]
+            await self.ctx.channel.delete_messages(msgs)
 
 
 class WaitForEvent:
