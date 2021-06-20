@@ -103,7 +103,7 @@ class Emojis(commands.Cog):
     @commands.guild_only()
     @commands.has_permissions(manage_emojis=True)
     async def emojis(self, ctx):
-        e = discord.Embed(color=colors.orange())
+        e = discord.Embed(color=colors.orange)
         e.set_author(name="Emoji Count", icon_url=ctx.guild.icon_url)
         emojis = [e for e in ctx.guild.emojis if not e.animated]
         a_emojis = [e for e in ctx.guild.emojis if e.animated]

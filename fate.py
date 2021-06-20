@@ -5,7 +5,6 @@ from datetime import datetime
 import os
 import asyncio
 import logging
-import aiofiles
 from contextlib import suppress
 from base64 import b64decode, b64encode
 import sys
