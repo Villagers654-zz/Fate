@@ -9,6 +9,8 @@ from discord.ext import commands, tasks
 from discord.errors import NotFound, Forbidden
 import discord
 
+from botutils import get_prefixes_async
+
 
 class GlobalChatRewrite(commands.Cog):
     def __init__(self, bot):
@@ -108,7 +110,25 @@ class GlobalChatRewrite(commands.Cog):
 
     @commands.group(name="gc", aliases=["global-chat", "globalchat", "global_chat"])
     async def _gc(self, ctx):
-        pass
+        e = discord.Embed(color=self.bot.config["theme_color"])
+        e.set_author(name="Global Chat", icon_url=self.bot.user.avatar_url)
+        e.description = "Link a channel into my global channel. " \
+                        "Msgs sent into it will be forwarded to other " \
+                        "configured channels alongside the same in reverse"
+        p = await get_prefixes_async(self.bot, ctx.message)
+        p = p[2]  # type: str
+        e.add_field(
+            name="Usage",
+            value=f"{p}gc enable\n{p}gc disable",
+            inline=False
+        )
+        async with self.bot.utils.cursor() as cur:
+            await cur.execute("select channel_id from global_chat;")
+            channel_count = cur.rowcount
+            await cur.execute("select user_id from global_users;")
+            user_count = cur.rowcount
+        e.set_footer(text=f"{channel_count} Channels | {user_count} Users")
+        await ctx.send(embed=e)
 
     @_gc.command(name="mod")
     @commands.is_owner()
