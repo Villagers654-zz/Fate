@@ -1,10 +1,8 @@
-import asyncio
 from datetime import datetime, timedelta
-from time import time
 
 from discord.ext import commands
-from discord.errors import NotFound, HTTPException, Forbidden
 import discord
+from botutils import get_time, emojis
 
 
 class Suggestions(commands.Cog):
@@ -54,7 +52,7 @@ class Suggestions(commands.Cog):
         async for msg in channel.history(limit=256, after=lmt):
             if msg.author.id == self.bot.user.id and msg.embeds and msg.embeds[0].author:
                 if str(ctx.author.id) in msg.embeds[0].author.icon_url:
-                    since = self.bot.utils.get_time((datetime.utcnow() - lmt).seconds)
+                    since = get_time((datetime.utcnow() - lmt).seconds)
                     return await ctx.send(
                         f"You've already sent a suggestion within the last {since}, you're on cooldown"
                     )
@@ -64,8 +62,9 @@ class Suggestions(commands.Cog):
         e.description = suggestion
         e.set_footer(text="New Suggestion")
         msg = await channel.send(embed=e)
-        await msg.add_reaction(self.bot.utils.emotes.approve)
-        await msg.add_reaction(self.bot.utils.emotes.disapprove)
+        await msg.add_reaction(emojis.approve)
+        await msg.add_reaction(emojis.disapprove)
+        await ctx.message.delete()
 
 
     @commands.group(name="suggestions")
