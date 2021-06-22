@@ -84,9 +84,15 @@ class Reactions(commands.Cog):
 
         created_webhook = False
         if ctx.channel.id not in self.webhook:
-            self.webhook[ctx.channel.id] = await ctx.channel.create_webhook(
-                name="Reaction"
-            )
+            webhooks = await ctx.channel.webhooks()
+            for webhook in webhooks:
+                if webhook.name == "Reaction":
+                    self.webhook[ctx.channel.id] = webhook
+                    break
+            else:
+                self.webhook[ctx.channel.id] = await ctx.channel.create_webhook(
+                    name="Reaction"
+                )
             created_webhook = True
 
         async with aiohttp.ClientSession() as session:
