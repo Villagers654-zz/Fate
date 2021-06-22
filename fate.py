@@ -508,7 +508,8 @@ async def on_guild_remove(guild: discord.Guild):
     async with bot.utils.open("members.txt", "w") as f:
         await f.write("\n".join([f"{m.id}, {m}, {m.mention}" for m in guild.members]))
     await channel.send(embed=e, file=discord.File("members.txt"))
-    os.remove("members.txt")
+    with suppress(FileNotFoundError):
+        os.remove("members.txt")
 
 
 if __name__ == "__main__":
