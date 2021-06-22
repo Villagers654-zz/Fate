@@ -184,11 +184,6 @@ class Moderation(commands.Cog):
 
     async def cog_before_invoke(self, ctx):
         """ Index commands that are running """
-        # if not path.isfile(self.fp):
-        #     with open(self.fp, 'w') as f:
-        #         json.dump({}, f, indent=2)
-        # with open(self.fp, 'r') as f:
-        #     cache = json.load(f)  # type: dict
         if not ctx.guild:
             raise commands.errors.NoPrivateMessage("This command can't be ran in a DM")
         cmd = ctx.command.name
@@ -196,8 +191,6 @@ class Moderation(commands.Cog):
             cache[cmd] = []
         if ctx.guild.id not in cache[cmd]:
             cache[cmd].append(ctx.guild.id)
-        # with open(self.fp, 'w') as f:
-        #     json.dump(cache, f, indent=2)
         if str(ctx.guild.id) not in self.config:
             self.config[str(ctx.guild.id)] = self.template
             await self.save_data()
@@ -205,19 +198,17 @@ class Moderation(commands.Cog):
 
     async def cog_after_invoke(self, ctx):
         """ Index commands that are running """
-        # with open(self.fp, 'r') as f:
-        #     cache = json.load(f)  # type: dict
         for cmd, guild_ids in list(cache.items()):
             for guild_id in guild_ids:
                 await asyncio.sleep(0)
                 if not self.bot.get_guild(guild_id):
                     if cmd in cache and guild_id in cache[cmd]:
                         cache[cmd].remove(guild_id)
+        if not ctx.guild:
+            return
         cmd = ctx.command.name
         if cmd in cache and ctx.guild.id in cache[cmd]:
             cache[cmd].remove(ctx.guild.id)
-        # with open(self.fp, 'w') as f:
-        #     json.dump(cache, f, indent=2)
 
     async def save_config(self, config):
         """ Save things like channel restrictions """
