@@ -31,7 +31,6 @@ def restricted(ctx):
         if ctx.channel.id in ctx.bot.restricted[guild_id]["channels"]:
             if ctx.channel.permissions_for(ctx.author).manage_messages:
                 if "effect_mods" in ctx.bot.restricted[guild_id]:
-                    print("Works")
                     return False
             else:
                 return False
