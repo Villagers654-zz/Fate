@@ -17,29 +17,6 @@ class NSFW(commands.Cog):
         async with self.bot.utils.open(f"./data/images/urls/{filename}", "r") as f:
             return choice([c for c in await f.readlines() if len(c) > 5])
 
-    @commands.command(name="dan", aliases=["danbooru"])
-    @commands.cooldown(1, 3, commands.BucketType.user)
-    @commands.guild_only()
-    @commands.is_nsfw()
-    @commands.bot_has_permissions(embed_links=True)
-    async def danbooru(self, ctx, *tags):
-        try:
-            client = Danbooru(
-                "danbooru", username="FrequencyX4", api_key="UKnXN9jBTYxrXUZvnk23NJ95"
-            )
-            results = client.post_list(limit=100, tags=tags)
-        except exceptions.PybooruHTTPError:
-            return await ctx.send("An internal server error occured; please retry")
-        results = [r for r in results if "file_url" in r]
-        if not results:
-            return await ctx.send("No results")
-        choice = random.choice(results)
-        e = discord.Embed(color=colors.random())
-        e.set_author(name=f'🔍 {", ".join(tags)}')
-        e.set_image(url=choice["file_url"])
-        e.set_footer(text=choice["created_at"])
-        await ctx.send(embed=e)
-
     @commands.command(name="gel")
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
