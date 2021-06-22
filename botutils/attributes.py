@@ -15,6 +15,8 @@ from contextlib import suppress
 from discord.ext import commands
 import discord
 
+from . import colors
+
 
 class Attributes:
     def __init__(self, bot):
@@ -91,7 +93,7 @@ class Attributes:
             return role
 
         if upsert:
-            color = discord.Color(self.bot.utils.colors.black())
+            color = discord.Color(colors.black)
             try:
                 mute_role = await guild.create_role(name="Muted", color=color)
             except discord.errors.HTTPException:
