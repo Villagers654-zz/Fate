@@ -9,7 +9,7 @@ from discord.ext import commands, tasks
 from discord.errors import NotFound, Forbidden
 import discord
 
-from botutils import get_prefixes_async
+from botutils import get_prefixes_async, colors
 
 
 class GlobalChatRewrite(commands.Cog):
@@ -352,7 +352,7 @@ class GlobalChatRewrite(commands.Cog):
             user_id = int(msg.embeds[0].description)
 
             user = await self.bot.fetch_user(user_id)
-            e = discord.Embed(color=self.bot.utils.colors.green())
+            e = discord.Embed(color=colors.green)
             if str(payload.emoji) == "👍":
                 async with self.bot.utils.cursor() as cur:
                     await cur.execute(f"insert into global_users values ({user_id}, 'verified');")
