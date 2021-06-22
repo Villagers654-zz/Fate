@@ -202,12 +202,13 @@ class ErrorHandler(commands.Cog):
         if user and not user.bot:
             if data.channel_id == self.bot.config["error_channel"]:
                 if str(data.emoji) == "✔":
-                    channel = self.bot.get_channel(data.channel_id)
-                    msg = await channel.fetch_message(data.message_id)
-                    for embed in msg.embeds:
-                        channel = self.bot.get_channel(self.bot.config["dump_channel"])
-                        await channel.send("Error Dismissed", embed=embed)
-                    await msg.delete()
+                    with suppress(discord.errors.NotFound):
+                        channel = self.bot.get_channel(data.channel_id)
+                        msg = await channel.fetch_message(data.message_id)
+                        for embed in msg.embeds:
+                            channel = self.bot.get_channel(self.bot.config["dump_channel"])
+                            await channel.send("Error Dismissed", embed=embed)
+                        await msg.delete()
 
 
 def setup(bot):
