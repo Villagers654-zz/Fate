@@ -257,15 +257,19 @@ class Logger(commands.Cog):
                     if not dm:
                         dm = guild.owner.dm_channel
                     if not dm:
-                        dm = await guild.owner.create_dm()
-                    async for msg in dm.history(limit=3):
-                        if f"I need {permission}" in msg.content:
-                            break
-                    else:
-                        await guild.owner.send(
-                            f"I need {permission} permissions in {guild} for the logger module to function. "
-                            f"Until that's satisfied, i'll keep a maximum 12 hours of logs in queue"
-                        )
+                        try:
+                            dm = await guild.owner.create_dm()
+                        except:
+                            pass
+                    if dm:
+                        async for msg in dm.history(limit=3):
+                            if f"I need {permission}" in msg.content:
+                                break
+                        else:
+                            await guild.owner.send(
+                                f"I need {permission} permissions in {guild} for the logger module to function. "
+                                f"Until that's satisfied, i'll keep a maximum 12 hours of logs in queue"
+                            )
                 except (discord.errors.Forbidden, discord.errors.NotFound):
                     pass
             await asyncio.sleep(60)
