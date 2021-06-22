@@ -106,13 +106,16 @@ class Fate(commands.AutoShardedBot):
         return os.path.join(self.config["datastore_location"], path)
 
     async def get_resource(self, url, method="get", *args, **kwargs):
-        async with aiohttp.ClientSession() as session:
-            operation = getattr(session, method.lower())
-            async with operation(url, *args, **kwargs) as resp:
-                if resp.status == 200:
-                    return await resp.read()
-                else:
-                    raise self.ignored_exit
+        try:
+            async with aiohttp.ClientSession() as session:
+                operation = getattr(session, method.lower())
+                async with operation(url, *args, **kwargs) as resp:
+                    if resp.status == 200:
+                        return await resp.read()
+                    else:
+                        raise self.ignored_exit
+        except aiohttp.ClientPayloadError:
+            raise commands.BadArgument("Failed to fetch an invalid resource")
 
     def get_message(self, message_id: int):
         """ Return a message from the internal cache if it exists """
