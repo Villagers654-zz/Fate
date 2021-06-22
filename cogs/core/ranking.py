@@ -907,7 +907,7 @@ class Ranking(commands.Cog):
     @commands.cooldown(1, 2, commands.BucketType.channel)
     @commands.cooldown(6, 60, commands.BucketType.guild)
     @commands.guild_only()
-    @commands.bot_has_permissions(embed_links=True, manage_messages=True)
+    @commands.bot_has_permissions(embed_links=True, manage_messages=True, add_reactions=True)
     async def leaderboard(self, ctx):
         """ Refined leaderboard command """
 
