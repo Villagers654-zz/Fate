@@ -137,12 +137,8 @@ class AntiRaid(commands.Cog):
                 self.join_cd[guild_id] = [now, 0]
             if self.join_cd[guild_id][1] > rate_limit:
                 self.locked.append(guild_id)
-                for junkie in list(
-                    filter(
-                        lambda _id: self.last[guild_id][_id] > time() - 15,
-                        self.last[guild_id].keys(),
-                    )
-                ):
+                for junkie in list(filter(lambda _id: self.last[guild_id][_id] > time() - 15,self.last[guild_id].keys())):
+                    junkie = m.guild.get_member(int(junkie))
                     await m.guild.ban(junkie, reason="raid")
                     await junkie.send(
                         f"**{m.guild.name}** is currently locked due to an attempted raid, you can try rejoining in an hour"
