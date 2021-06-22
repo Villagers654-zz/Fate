@@ -349,6 +349,8 @@ class GlobalChatRewrite(commands.Cog):
                 return
             channel = self.bot.get_channel(payload.channel_id)
             msg = await channel.fetch_message(payload.message_id)
+            if not isinstance(msg.embeds[0].description, int):
+                return
             user_id = int(msg.embeds[0].description)
 
             user = await self.bot.fetch_user(user_id)
