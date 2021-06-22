@@ -289,6 +289,8 @@ class Logger(commands.Cog):
             return await self.destruct(guild_id)
 
         while True: # Listen for new logs
+            if guild_id not in self.queue:
+                return
             log = await self.queue[guild_id].get()  # type: Log
             log_type = log.type                     # type: str            # Event name
             created_at = log.created_at             # type: float          # Timestamp
