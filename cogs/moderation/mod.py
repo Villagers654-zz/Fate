@@ -37,7 +37,8 @@ def check_if_running():
             cache[cmd] = []
         check_result = ctx.guild.id not in cache[cmd]
         if not check_result:
-            await ctx.send("That command is already running >:(")
+            with suppress(Forbidden):
+                await ctx.send("That command is already running >:(")
         return check_result
 
     return commands.check(predicate)
