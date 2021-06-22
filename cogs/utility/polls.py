@@ -138,13 +138,13 @@ class SafePolls(commands.Cog):
                         f"Couldn't find any timers in that, remember {instructions}. Please retry",
                         delete_after=30,
                     )
-                elif result[0] > 60 * 60 * 24 * 30:  # 30 Days
+                elif result > 60 * 60 * 24 * 30:  # 30 Days
                     await ctx.send(
                         "You can't pick a time greater than 30 days, please retry",
                         delete_after=16,
                     )
                 else:
-                    timer = result[0]
+                    timer = result
                 await msg.delete()
 
         await message.delete()
