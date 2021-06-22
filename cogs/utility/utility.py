@@ -1344,6 +1344,10 @@ class Utility(commands.Cog):
     @commands.guild_only()
     @commands.bot_has_permissions(kick_members=True)
     async def estimate_inactives(self, ctx, days: int):
+        if days > 30:
+            return await ctx.send("That's too big of a number to check with")
+        elif days < 1:
+            return await ctx.send("The number of days must at least be 1")
         inactive_count = await ctx.guild.estimate_pruned_members(days=days)
         e = discord.Embed(color=colors.fate)
         e.description = f"Inactive Users: {inactive_count}"
