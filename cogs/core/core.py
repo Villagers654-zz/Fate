@@ -20,36 +20,7 @@ from discord import Webhook, AsyncWebhookAdapter
 import dbl
 from discord.ext.commands import Context
 
-from botutils import colors, get_prefixes_async, cleanup_msg, emojis
-
-
-class Conversation:
-    """Emulate a realistic conversation process with typing"""
-    def __init__(self, ctx: Context, delay: int = 2):
-        self.ctx = ctx
-        self.bot = ctx.bot
-        self.delay = delay
-
-    async def send(self, *args, **kwargs):
-        """Sleep then return the object to send"""
-        await asyncio.sleep(0.5)
-        await self.ctx.channel.trigger_typing()
-        await asyncio.sleep(self.delay - 0.5)
-        return await self.ctx.send(*args, **kwargs)
-
-    async def ask(self, *args, **kwargs):
-        """Get the recipients reply"""
-        def predicate(m):
-            return m.author.id == self.ctx.author.id and m.channel.id == self.ctx.channel.id
-
-        await self.send(*args, **kwargs)
-        msg = await self.bot.utils.get_message(predicate)
-
-        if "cancel" in msg.content:
-            await self.ctx.send("Alright, operation cancelled")
-            raise self.bot.ignored_exit
-
-        return msg
+from botutils import colors, get_prefixes_async, cleanup_msg, emojis, Conversation
 
 
 class Core(commands.Cog):
@@ -101,7 +72,7 @@ class Core(commands.Cog):
         votes = await self.dblpy.get_bot_upvotes()
         await ctx.send(", ".join(dat["username"] for dat in votes))
 
-    @commands.command(name="setup")
+    @commands.command(name="setup", enabled=False)
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
@@ -146,18 +117,15 @@ class Core(commands.Cog):
         e.title = "Top Guilds"
         e.description = ""
         rank = 1
-        for guild in sorted(
-            [[g.name, g.member_count] for g in self.bot.guilds],
-            key=lambda k: k[1],
-            reverse=True,
-        )[:8]:
-            e.description += "**{}.** {}: `{}`\n".format(rank, guild[0], guild[1])
+        items = [[g.name, g.member_count] for g in self.bot.guilds]
+        for guild, count in sorted(items, key=lambda k: k[1], reverse=True, )[:8]:
+            e.description += f"**{rank}.** {guild}: `{count}`\n"
             rank += 1
         await ctx.send(embed=e)
 
     @staticmethod
     def topguilds_usage():
-        return "Displays the top 8 servers based on highest member count"
+        return "Displays the top 8 servers based on highest member count, just run `.topguilds`"
 
     @commands.command(name="invite", aliases=["links", "support"])
     @commands.cooldown(1, 5, commands.BucketType.channel)
@@ -184,41 +152,25 @@ class Core(commands.Cog):
     @commands.command(name="vote")
     @commands.cooldown(1, 5, commands.BucketType.channel)
     async def vote(self, ctx):
-        await ctx.send("https://top.gg/bot/506735111543193601")
+        await ctx.send("https://top.gg/bot/506735111543193601/vote")
 
     @commands.command(name="say")
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(attach_files=True)
-    async def say(self, ctx, *, content: commands.clean_content = None):
+    async def say(self, ctx, *, content: commands.clean_content):
         has_perms = ctx.channel.permissions_for(ctx.guild.me).manage_messages
         if len(str(content).split("\n")) > 4:
             await ctx.send(f"{ctx.author.mention} too many lines")
             if has_perms and ctx.message:
                 await ctx.message.delete()
             return
-        if content:
-            content = cleanup_msg(ctx.message, content)
-            content = content[:2000]
-        if ctx.message.attachments and ctx.channel.is_nsfw():
-            file_data = [
-                (f.filename, BytesIO(requests.get(f.url).content))
-                for f in ctx.message.attachments
-            ]
-            files = [
-                discord.File(file, filename=filename) for filename, file in file_data
-            ]
-            await ctx.send(content, files=files)
-            if has_perms:
-                await ctx.message.delete()
-        elif content and not ctx.message.attachments:
-            await ctx.send(content)
-            if has_perms and ctx.message:
-                await ctx.message.delete()
-        elif ctx.message.attachments:
-            await ctx.send("You can only attach files if the channel's nsfw")
-        else:
-            await ctx.send("Content is a required argument that is missing")
+        if len(str(content)) > 100:
+            return await ctx.send("That's too long")
+        content = cleanup_msg(ctx.message, content)
+        await ctx.send(content, allowed_mentions=discord.AllowedMentions.none())
+        if has_perms and ctx.message:
+            await ctx.message.delete()
 
     @commands.command(name="prefix")
     @commands.cooldown(2, 5, commands.BucketType.user)
@@ -492,67 +444,6 @@ class Core(commands.Cog):
         e.description = f"**Message Trip 1:** `{int(ping)}ms`\n**Message Trip 2:** `{int(second_ping)}ms`\n**Msg Edit Trip 1:** `{int(edit_ping)}ms`\n**Msg Edit Trip 2:** `{int(second_edit_ping)}ms`\n**Websocket Heartbeat:** `{api}ms`"
         await message.edit(embed=e)
 
-    @commands.is_nsfw()
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    @commands.bot_has_permissions(embed_links=True)
-    async def ud(self, ctx, *, query: str):
-        channel_id = str(ctx.channel.id)
-        if channel_id not in self.last:
-            self.last[channel_id] = (None, None)
-        if query == self.last[channel_id][0]:
-            if self.last[channel_id][1] > time() - 60:
-                return await ctx.message.add_reaction("❌")
-        self.last[channel_id] = (query, time())
-        url = "http://www.urbandictionary.com/define.php?term={}".format(
-            query.replace(" ", "%20")
-        )
-        async with aiohttp.ClientSession() as sess:
-            async with sess.get(url) as resp:
-                r = await resp.read()
-        resp = bs(r, "html.parser")
-        try:
-            if (
-                len(
-                    resp.find("div", {"class": "meaning"})
-                    .text.strip("\n")
-                    .replace("\u0027", "'")
-                )
-                >= 1000
-            ):
-                meaning = (
-                    resp.find("div", {"class": "meaning"})
-                    .text.strip("\n")
-                    .replace("\u0027", "'")[:1000]
-                    + "..."
-                )
-            else:
-                meaning = (
-                    resp.find("div", {"class": "meaning"})
-                    .text.strip("\n")
-                    .replace("\u0027", "'")
-                )
-            e = discord.Embed(color=0x80B0FF)
-            e.set_author(name=f"{query} 🔍", icon_url=ctx.author.avatar_url)
-            e.set_thumbnail(
-                url="https://cdn.discordapp.com/attachments/450528552199258123/524139193723781120/urban-dictionary-logo.png"
-            )
-            e.description = "**Meaning:**\n{}\n\n**Example:**\n{}\n".format(
-                meaning, resp.find("div", {"class": "example"}).text.strip("\n")
-            )
-
-            e.set_footer(
-                text="~{}".format(
-                    resp.find("div", {"class": "contributor"}).text.strip("\n")
-                )
-            )
-            await ctx.send(embed=e)
-        except AttributeError:
-            await ctx.send(
-                "Either the page doesn't exist, or you typed it in wrong. Either way, please try again."
-            )
-        except Exception as e:
-            await ctx.send(f"**```ERROR: {type(e).__name__} - {e}```**")
-
     @commands.Cog.listener()
     async def on_message(self, msg: discord.Message):
         if isinstance(msg.channel, discord.DMChannel):
@@ -566,37 +457,38 @@ class Core(commands.Cog):
                 self.spam_cd[user_id] = [now, 0]
             if self.spam_cd[user_id][1] < 2 or msg.author.bot:
                 m = discord.AllowedMentions.none()
-                async with aiohttp.ClientSession() as session:
-                    webhook = Webhook.from_url(
-                        "https://discordapp.com/api/webhooks/673290242819883060/GDXiMBwbzw7dbom57ZupHsiEQ76w8TfV_mEwi7_pGw8CvVFL0LNgwRwk55yRPxNdPA4b",
-                        adapter=AsyncWebhookAdapter(session),
-                    )
-                    files = []
-                    for attachment in msg.attachments:
-                        if attachment.size < 4000000:
-                            files.append(await attachment.to_file())
-                    if msg.author.id == self.bot.user.id:
-                        e = discord.Embed(color=colors.fate)
-                        e.set_author(
-                            name=msg.channel.recipient,
-                            icon_url=msg.channel.recipient.avatar_url,
+                with suppress(Exception):
+                    async with aiohttp.ClientSession() as session:
+                        webhook = Webhook.from_url(
+                            "https://discordapp.com/api/webhooks/673290242819883060/GDXiMBwbzw7dbom57ZupHsiEQ76w8TfV_mEwi7_pGw8CvVFL0LNgwRwk55yRPxNdPA4b",
+                            adapter=AsyncWebhookAdapter(session),
                         )
-                        return await webhook.send(
+                        files = []
+                        for attachment in msg.attachments:
+                            if attachment.size < 4000000:
+                                files.append(await attachment.to_file())
+                        if msg.author.id == self.bot.user.id:
+                            e = discord.Embed(color=colors.fate)
+                            e.set_author(
+                                name=msg.channel.recipient,
+                                icon_url=msg.channel.recipient.avatar_url,
+                            )
+                            return await webhook.send(
+                                username=msg.author.name,
+                                avatar_url=msg.author.avatar_url,
+                                content=msg.content,
+                                files=files,
+                                embed=e,
+                                allowed_mentions=m
+                            )
+                        await webhook.send(
                             username=msg.author.name,
                             avatar_url=msg.author.avatar_url,
                             content=msg.content,
+                            embeds=msg.embeds,
                             files=files,
-                            embed=e,
                             allowed_mentions=m
                         )
-                    await webhook.send(
-                        username=msg.author.name,
-                        avatar_url=msg.author.avatar_url,
-                        content=msg.content,
-                        embeds=msg.embeds,
-                        files=files,
-                        allowed_mentions=m
-                    )
 
 
 def setup(bot):
