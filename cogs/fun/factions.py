@@ -53,7 +53,7 @@ def has_faction_permissions():
     return commands.check(predicate)
 
 
-class FactionsRewrite(commands.Cog):
+class Factions(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.factions_usage = self._help
