@@ -465,8 +465,9 @@ class Core(commands.Cog):
                         )
                         files = []
                         for attachment in msg.attachments:
-                            if attachment.size < 4000000:
-                                files.append(await attachment.to_file())
+                            if attachment.size > 4000000:
+                                return
+                            files.append(await attachment.to_file())
                         if msg.author.id == self.bot.user.id:
                             e = discord.Embed(color=colors.fate)
                             e.set_author(
