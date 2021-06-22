@@ -337,7 +337,8 @@ class Logger(commands.Cog):
                         for chunk in split(str(embed.to_dict()), 1900):
                             self.bot.log(chunk, "CRITICAL")
 
-            embed.timestamp = datetime.fromtimestamp(created_at)
+            if isinstance(embed, discord.Embed):
+                embed.timestamp = datetime.fromtimestamp(created_at)
 
             # Permission checks to ensure the secure features can function
             if self.config[guild_id]["secure"]:
