@@ -157,6 +157,10 @@ class Music(commands.Cog):
 
     async def ensure_voice(self, ctx):
         """Ensures the bot and author are in the same voice channel"""
+        if not isinstance(ctx.author, discord.Member):
+            await ctx.send("This command can only be ran in servers")
+            raise self.bot.ignored_exit
+
         player = self.bot.lavalink.player_manager.create(ctx.guild.id, endpoint=str(ctx.guild.region))
         should_connect = ctx.command.name in ('play',)
 
