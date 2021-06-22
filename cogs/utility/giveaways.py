@@ -9,7 +9,6 @@ import random
 from contextlib import suppress
 
 from discord.ext import commands
-from discord.ext.commands import Context
 import discord
 from discord.errors import NotFound, Forbidden
 
