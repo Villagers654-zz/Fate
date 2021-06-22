@@ -1147,6 +1147,10 @@ class FactionsRewrite(commands.Cog):
 
         attacks_used = []
         while True:
+            if fac1 not in self.factions[guild_id]:
+                return await ctx.send(f"{fac1} no longer exists, ending the battle")
+            elif fac2 not in self.factions[guild_id]:
+                return await ctx.send(f"{fac2} no longer exists, ending the battle")
             if health1 <= 0:
                 await msg.edit(content=f"🏆 **{user.name} won** 🏆")
                 self.factions[guild_id][fac1]["balance"] -= amount
