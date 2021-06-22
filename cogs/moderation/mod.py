@@ -1052,7 +1052,7 @@ class Moderation(commands.Cog):
             e.set_author(name=f"{user} unbanned [Case #{case}]", icon_url=user.avatar_url)
             await ctx.send(embed=e)
         else:
-            e = discord.Embed(color=colors.green())
+            e = discord.Embed(color=colors.green)
             e.set_author(
                 name=f"Unbanning {len(users)} users", icon_url=ctx.author.avatar_url
             )

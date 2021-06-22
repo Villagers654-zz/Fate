@@ -1,90 +1,19 @@
-from discord.ext import commands
-from botutils import colors
-import discord
 import asyncio
-import json
+
+from discord.ext import commands
+import discord
+
+from botutils import colors
+from botutils import get_prefixes_async
 
 
 class Config(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    def save_config(self, config):
-        with open("./data/userdata/config.json", "w") as f:
-            json.dump(config, f, ensure_ascii=False)
-
-    def prefix(self, _id):
-        with open("./data/userdata/prefixes.json", "r") as f:
-            dat = json.load(f)
-            if _id in dat:
-                return dat[_id]
-            return "."
-
-    def restore_roles(self, _id):
-        with open("./data/userdata/restore_roles.json", "r") as f:
-            if _id in json.load(f)["guilds"]:
-                return "active"
-            return "inactive"
-
-    def chatfilter(self, _id):
-        with open("./data/userdata/chatfilter.json", "r") as f:
-            if int(_id) in json.load(f)["toggle"]:
-                return "active"
-            return "inactive"
-
-    def anti_spam(self, _id):
-        with open("./data/userdata/anti_spam.json", "r") as f:
-            if _id in json.load(f)["toggle"]:
-                return "active"
-            return "inactive"
-
-    def anti_raid(self, _id):
-        with open("./data/userdata/anti_raid.json", "r") as f:
-            if _id in json.load(f)["toggle"]:
-                return "active"
-            return "inactive"
-
-    def selfroles(self, _id):
-        with open("./data/userdata/selfroles.json", "r") as f:
-            if _id in json.load(f):
-                return "active"
-            return "inactive"
-
-    def autorole(self, _id):
-        with open("./data/userdata/autorole.json", "r") as f:
-            if _id in json.load(f)["roles"]:
-                return "active"
-            return "inactive"
-
-    def welcome(self, _id):
-        with open("./data/userdata/welcome.json", "r") as f:
-            if _id in json.load(f)["toggle"]:
-                return "active"
-            return "inactive"
-
-    def farewell(self, _id):
-        with open("./data/userdata/farewell.json", "r") as f:
-            if _id in json.load(f)["toggle"]:
-                return "active"
-            return "inactive"
-
-    def chatbot(self, _id):
-        with open("./data/userdata/chatbot.json", "r") as f:
-            if _id in json.load(f)["toggle"]:
-                return "active"
-            return "inactive"
-
-    def logger(self, _id):
-        with open("./data/userdata/logger.json", "r") as f:
-            if _id in json.load(f)["channel"]:
-                return "active"
-            return "inactive"
-
-    def lock(self, _id):
-        with open("./data/userdata/lock.json", "r") as f:
-            if _id in json.load(f)["lock"]:
-                return "active"
-            return "inactive"
+    async def save_config(self, config):
+        async with self.bot.utils.open("./data/userdata/config.json", "w") as f:
+            await f.write(await self.bot.dump(config))
 
     @commands.group(name="config", aliases=["conf"])
     @commands.guild_only()
@@ -92,28 +21,26 @@ class Config(commands.Cog):
     @commands.bot_has_permissions(embed_links=True)
     async def _config(self, ctx):
         if not ctx.invoked_subcommand:
-            guild_id = str(ctx.guild.id)
-            e = discord.Embed(color=colors.fate())
+            e = discord.Embed(color=colors.fate)
             e.set_author(
                 name="| 💎 Server Config 💎", icon_url=ctx.guild.owner.avatar_url
             )
             e.set_thumbnail(url=ctx.guild.icon_url)
-            e.description = f"**Prefix:** [`{self.prefix(guild_id)}`]\n"
-            module_config = (
-                f"**Restore Roles:** [`{self.restore_roles(guild_id)}`]\n"
-                f"**Chat Filter:** [`{self.chatfilter(guild_id)}`]\n"
-                f"**Anti Spam:** [`{self.anti_spam(guild_id)}`]\n"
-                f"**Anti Raid:** [`{self.anti_raid(guild_id)}`]\n"
-                f"**Self Roles:** [`{self.selfroles(guild_id)}`]\n"
-                f"**Auto Role:** [`{self.autorole(guild_id)}`]\n"
-                f"**Welcome:** [`{self.welcome(guild_id)}`]\n"
-                f"**Farewell:** [`{self.farewell(guild_id)}`]\n"
-                f"**Chatbot:** [`{self.chatbot(guild_id)}`]\n"
-                f"**Logger:** [`{self.logger(guild_id)}`]\n"
-                f"**Lock:** [`{self.lock(guild_id)}`]"
-            )
-            e.add_field(name="◈ Modules ◈", value=module_config, inline=False)
-            subcommands = f"{self.prefix(guild_id)}config warns"
+            p = await get_prefixes_async(self.bot, ctx.message)
+            e.description = f"**Prefix:** [`{p[2]}`]\n"
+
+            cogs = ""
+            for name, cog in self.bot.cogs.items():
+                await asyncio.sleep(0)
+                if hasattr(cog, "is_enabled"):
+                    toggle = cog.is_enabled(ctx.guild.id)
+                    if hasattr(toggle, "__await__"):
+                        toggle = await toggle
+                    toggle = "active" if toggle else "inactive"
+                    cogs += f"\n**{name}:** [`{toggle}`]"
+
+            e.add_field(name="◈ Modules ◈", value=cogs, inline=False)
+            subcommands = f"{p[2]}config warns"
             e.add_field(name="◈ Editable Configs ◈", value=subcommands, inline=False)
             await ctx.send(embed=e)
 
@@ -130,7 +57,7 @@ class Config(commands.Cog):
             config["warns"]["expire"] = []
         if "punishments" not in config["warns"]:
             config["warns"]["punishments"] = {}
-        self.save_config(config)
+        await self.save_config(config)
         if guild_id not in config:
             config["warns"][guild_id] = {}
 
@@ -209,7 +136,7 @@ class Config(commands.Cog):
                 if reaction == "✔":
                     if guild_id not in config["warns"]["expire"]:
                         config["warns"]["expire"].append(guild_id)
-                        self.save_config(config)
+                        await self.save_config(config)
                 else:
                     if guild_id in config["warns"]["expire"]:
                         index = config["warns"]["expire"].index(guild_id)
@@ -225,7 +152,7 @@ class Config(commands.Cog):
                     config = self.bot.utils.get_config()  # type: dict
                     if guild_id in config["warns"]["punishments"]:
                         del config["warns"]["punishments"][guild_id]
-                        self.save_config(config)
+                        await self.save_config(config)
                 else:
                     await msg.clear_reactions()
                     punishments = []

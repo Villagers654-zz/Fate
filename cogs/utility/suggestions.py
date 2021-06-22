@@ -25,6 +25,9 @@ class Suggestions(commands.Cog):
         self.suggestions_usage = f"> Setup a channel to receive suggestions from server members via `.suggest`\n" \
                                  f"For full usage & how to setup run `.suggest`"
 
+    def is_enabled(self, guild_id):
+        return guild_id in self.config
+
     @commands.command(name="suggest")
     @commands.guild_only()
     async def suggest(self, ctx, *, suggestion):

@@ -72,6 +72,9 @@ class AntiSpam(commands.Cog):
     def cog_unload(self):
         self.cleanup_task.stop()
 
+    def is_enabled(self, guild_id):
+        return guild_id in self.config
+
     async def get_mutes(self) -> dict:
         mutes = {}
         async with self.bot.utils.cursor() as cur:

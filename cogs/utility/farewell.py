@@ -83,6 +83,9 @@ class Leave(commands.Cog):
         async with self.bot.utils.open("./data/userdata/leave.json", "w+") as f:
             await f.write(json.dumps(data))
 
+    def is_enabled(self, guild_id):
+        return str(guild_id) in self.toggle
+
     @commands.group(name="leave", aliases=["farewell"], usage=leave_help())
     @commands.cooldown(1, 3, commands.BucketType.channel)
     @commands.guild_only()

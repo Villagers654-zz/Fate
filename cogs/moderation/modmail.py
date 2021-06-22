@@ -13,6 +13,11 @@ class ModMail(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    async def is_enabled(self, guild_id):
+        async with self.bot.utils.cursor() as cur:
+            await cur.execute(f"select guild_id from modmail where guild_id = {guild_id} limit 1;")
+            return True if cur.rowcount else False
+
     @commands.group(name="modmail", aliases=["mod-mail", "mod_mail"])
     @commands.cooldown(2, 5, commands.BucketType.user)
     async def modmail(self, ctx):

@@ -27,6 +27,9 @@ class Lock(commands.Cog):
         self.lock = bot.utils.cache("locks")
         self.cd = {}
 
+    def is_enabled(self, guild_id):
+        return guild_id in self.lock
+
     async def cog_before_invoke(self, ctx):
         if await ctx.command.can_run(ctx):
             if ctx.guild.id not in self.lock:

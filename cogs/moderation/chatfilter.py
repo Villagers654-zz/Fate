@@ -26,6 +26,9 @@ class ChatFilter(commands.Cog):
         self.chatfilter_usage = self._chatfilter
         self.webhooks = {}
 
+    def is_enabled(self, guild_id):
+        return guild_id in self.config
+
     async def filter(self, content: str, filtered_words: list):
         def run_regex():
             regexes = {}

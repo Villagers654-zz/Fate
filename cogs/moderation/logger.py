@@ -116,6 +116,9 @@ class Logger(commands.Cog):
                 task.cancel()
             del self.bot.logger_tasks[task_id]
 
+    def is_enabled(self, guild_id):
+        return str(guild_id) in self.config
+
     @property
     def template(self):
         return {

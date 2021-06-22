@@ -20,6 +20,9 @@ class AutoRole(commands.Cog):
     async def save_data(self):
         await self.bot.utils.save_json("./data/userdata/autorole.json", {"roles": self.roles})
 
+    def is_enabled(self, guild_id):
+        return str(guild_id) in self.roles
+
     @commands.command(
         name="autorole", description="Adds x roles to a user when they join"
     )

@@ -17,6 +17,9 @@ class ChatLock(commands.Cog):
     async def save_data(self):
         await self.bot.utils.save_json("./data/userdata/chatlock.json", self.toggle)
 
+    def is_enabled(self, guild_id):
+        return str(guild_id) in self.toggle
+
     @commands.group(
         name="chatlock",
         description="Deletes messages by users without the manage_messages permission",

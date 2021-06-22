@@ -23,6 +23,9 @@ class Verification(commands.Cog):
         self.queue = {}
         self.running_tasks = []
 
+    def is_enabled(self, guild_id):
+        return guild_id in self.config
+
     @property
     def template_config(self):
         return {

@@ -31,6 +31,9 @@ class AntiRaid(commands.Cog):
         async with self.bot.utils.open(fp, "w+") as f:
             await f.write(await self.bot.dump(data))
 
+    def is_enabled(self, guild_id):
+        return str(guild_id) in self.toggle
+
     async def ensure_permissions(self, guild):
         guild_id = str(guild.id)
         bot = guild.get_member(self.bot.user.id)

@@ -33,6 +33,9 @@ class SelfRoles(commands.Cog):
     async def save_data(self):
         await self.bot.utils.save_json(self.path, self.menus)
 
+    def is_enabled(self, guild_id):
+        return str(guild_id) in self.menus
+
     def build_menu(self, guild_id: str, data: dict):
         """ Creates an embed from menu data """
 

@@ -67,6 +67,9 @@ class Welcome(commands.Cog):
         self.config = bot.utils.cache("welcome")
         self.welcome_usage = welcome_help()
 
+    def is_enabled(self, guild_id):
+        return guild_id in self.config
+
     @commands.group(name="welcome", usage=welcome_help())
     @commands.cooldown(1, 3, commands.BucketType.channel)
     @commands.guild_only()
