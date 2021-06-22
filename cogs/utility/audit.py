@@ -60,8 +60,8 @@ class Audit(commands.Cog):
                     user = await converter.convert(ctx, args[0])
                 except discord.errors.NotFound:
                     return await ctx.send("User not found")
-            elif args[0] in self.perms or args[0]:
-                log_type = eval(f"_audit.{args[0]}")
+            elif args[0] in self.perms:
+                log_type = getattr(_audit, args[0])
             else:
                 return await ctx.send("Invalid usage")
             if not args[1].isdigit():
