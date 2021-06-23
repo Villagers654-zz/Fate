@@ -89,8 +89,7 @@ class ConfigureModules:
         modules = {
             "Core": [
                 self.bot.cogs["Core"],
-                self.bot.cogs["Statistics"],
-                self.bot.cogs["ServerList"]
+                self.bot.cogs["Statistics"]
             ],
             "Moderation": {
                 "Mod Cmds": [
@@ -127,7 +126,7 @@ class ConfigureModules:
             },
             "Ranking": self.bot.cogs["Ranking"],
             "Fun": {
-                "Factions": self.bot.cogs["FactionsRewrite"],
+                "Factions": self.bot.cogs["Factions"],
                 "Actions": self.bot.cogs["Actions"],
                 "Reactions": self.bot.cogs["Reactions"],
                 "Misc": self.bot.cogs["Fun"]
