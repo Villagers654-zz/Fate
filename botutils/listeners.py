@@ -58,42 +58,6 @@ class Conversation:
             await self.ctx.channel.delete_messages(msgs)
 
 
-class WaitForEvent:
-    def __init__(self, bot, event, check=None, channel=None, handle_timeout=False, timeout=60):
-        self.bot = bot
-        self.event = event
-        self.channel = channel
-        self.check = check
-        self.handle_timeout = handle_timeout
-        self.timeout = timeout
-
-        ctx = check if isinstance(check, commands.Context) else None
-        if ctx and not self.channel:
-            self.channel = self.channel
-        if ctx and self.event == "message":
-            self.check = (
-                lambda m: m.author.id == ctx.author.id
-                          and m.channel.id == ctx.channel.id
-            )
-
-    async def __aenter__(self):
-        try:
-            message = await self.bot.wait_for(
-                self.event, check=self.check, timeout=self.timeout
-            )
-        except asyncio.TimeoutError as error:
-            if not self.handle_timeout:
-                raise error
-            if self.channel:
-                await self.channel.send(f"Timed out waiting for {self.event}")
-            raise self.bot.ignored_exit()
-        else:
-            return message
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        pass
-
-
 def parse_check(check) -> int:
     if hasattr(check, "__call__"):
         return check

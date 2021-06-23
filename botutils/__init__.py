@@ -22,7 +22,7 @@ from discord.ext import commands
 from . import colors, emojis, pillow
 from .attributes import Attributes
 from .get_user import GetUser
-from .listeners import WaitForEvent, Listener, Conversation
+from .listeners import Listener, Conversation
 from .menus import Menus
 from .prefixes import *
 from .resources import *
@@ -44,7 +44,6 @@ class Utils(commands.Cog):
         self.cache = lambda *args, **kwargs: Cache(bot, *args, **kwargs)
         self.cooldown_manager = lambda *args, **kwargs: CooldownManager(bot, *args, **kwargs)
         self.open = lambda *args, **kwargs: AsyncFileManager(bot, *args, **kwargs)
-        self.require = lambda *args, **kwargs: WaitForEvent(bot, *args, **kwargs)
         self.save_json = lambda *args, **kwargs: save_json(bot, *args, **kwargs)
 
         # Menus

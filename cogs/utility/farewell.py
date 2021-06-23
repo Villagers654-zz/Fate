@@ -379,8 +379,8 @@ class Leave(commands.Cog):
             await ctx.send(
                 "What format should I use?:```css\nExample:\n**!user has left the chat**```"
             )
-            async with self.bot.utils.require("message", ctx, handle_timeout=True) as msg:
-                self.format[guild_id] = msg.content
+            msg = await self.bot.utils.get_message(ctx)
+            self.format[guild_id] = msg.content
         await ctx.send("Set the welcome format 👍")
         await self.save_data()
 

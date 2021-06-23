@@ -50,10 +50,10 @@ class ModMail(commands.Cog):
     @commands.bot_has_permissions(view_audit_log=True)
     async def enable(self, ctx):
         await ctx.send("What's the category ID I should use for modmail")
-        async with self.bot.utils.require("message", ctx, handle_timeout=True) as msg:
-            if not msg.content.isdigit():
-                return await ctx.send("That's not a category ID. Rerun the command >:(")
-            category_id = int(msg.content)
+        msg = await self.bot.utils.get_message(ctx)
+        if not msg.content.isdigit():
+            return await ctx.send("That's not a category ID. Rerun the command >:(")
+        category_id = int(msg.content)
         channel = self.bot.get_channel(category_id)
         if not isinstance(channel, discord.CategoryChannel):
             return await ctx.send("I can't find a category with that ID. Rerun the command to try again")

@@ -357,10 +357,10 @@ class Welcome(commands.Cog):
             await ctx.send(
                 "What format should I use?:```css\nExample:\nWelcome !user to !server```"
             )
-            async with self.bot.utils.require("message", ctx, handle_timeout=True) as msg:
-                if "!inviter" in msg.content:
-                    await self.bot.invite_manager.init(ctx.guild)
-                self.config[guild_id]["format"] = msg.content
+            msg = await self.bot.utils.get_message(ctx)
+            if "!inviter" in msg.content:
+                await self.bot.invite_manager.init(ctx.guild)
+            self.config[guild_id]["format"] = msg.content
         await ctx.send("Set the welcome format 👍")
         await self.config.flush()
 

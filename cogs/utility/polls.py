@@ -131,21 +131,21 @@ class SafePolls(commands.Cog):
         timer = None
         instructions = "the `m` in `5m` stands for 5 minutes, the `h` stands for hours, and the `d` stands for days"
         while not timer:
-            async with self.bot.utils.require("message", ctx, handle_timeout=True) as msg:
-                result = extract_time(msg.content)
-                if not result:
-                    await ctx.send(
-                        f"Couldn't find any timers in that, remember {instructions}. Please retry",
-                        delete_after=30,
-                    )
-                elif result > 60 * 60 * 24 * 30:  # 30 Days
-                    await ctx.send(
-                        "You can't pick a time greater than 30 days, please retry",
-                        delete_after=16,
-                    )
-                else:
-                    timer = result
-                await msg.delete()
+            msg = await self.bot.utils.get_message(ctx)
+            result = extract_time(msg.content)
+            if not result:
+                await ctx.send(
+                    f"Couldn't find any timers in that, remember {instructions}. Please retry",
+                    delete_after=30,
+                )
+            elif result > 60 * 60 * 24 * 30:  # 30 Days
+                await ctx.send(
+                    "You can't pick a time greater than 30 days, please retry",
+                    delete_after=16,
+                )
+            else:
+                timer = result
+            await msg.delete()
 
         await message.delete()
 
@@ -155,58 +155,58 @@ class SafePolls(commands.Cog):
         )
         reaction_count = None
         while not reaction_count:
-            async with self.bot.utils.require("message", ctx, handle_timeout=True) as msg:
-                if not msg.content.isdigit():
-                    await ctx.send("That's not a number, please retry", delete_after=30)
-                elif int(msg.content) > 9:
-                    await ctx.send(
-                        "You can't choose a reaction count greater than 9",
-                        delete_after=16,
-                    )
-                else:
-                    reaction_count = int(msg.content)
-                await msg.delete()
+            msg = await self.bot.utils.get_message(ctx)
+            if not msg.content.isdigit():
+                await ctx.send("That's not a number, please retry", delete_after=30)
+            elif int(msg.content) > 9:
+                await ctx.send(
+                    "You can't choose a reaction count greater than 9",
+                    delete_after=16,
+                )
+            else:
+                reaction_count = int(msg.content)
+            await msg.delete()
         await message.delete()
 
         # Get the channel to put the poll message in
         message = await ctx.send("#mention the channel to send the poll into")
         channel = None
         while not channel:
-            async with self.bot.utils.require("message", ctx, handle_timeout=True) as msg:
-                if not msg.channel_mentions:
+            msg = await self.bot.utils.get_message(ctx)
+            if not msg.channel_mentions:
+                await ctx.send(
+                    f"Retry, but mention the channel like this: {ctx.channel.mention}",
+                    delete_after=16,
+                )
+            elif not msg.channel_mentions[0].permissions_for(ctx.guild.me).send_messages:
+                await ctx.send(
+                    "I'm missing perms to send messages in there, you can fix and retry",
+                    delete_after=16,
+                )
+            elif not msg.channel_mentions[0].permissions_for(ctx.guild.me).embed_links:
+                await ctx.send(
+                    "I'm missing perms to send embeds there, you can fix and retry",
+                    delete_after=16,
+                )
+            elif not msg.channel_mentions[0].permissions_for(ctx.guild.me).add_reactions:
+                await ctx.send(
+                    "I'm missing perms to add reactions there, you can fix and retry",
+                    delete_after=16,
+                )
+            else:
+                if not msg.channel_mentions[0].permissions_for(ctx.author).send_messages:
                     await ctx.send(
-                        f"Retry, but mention the channel like this: {ctx.channel.mention}",
+                        "You can't send in that channel, please select another",
                         delete_after=16,
                     )
-                elif not msg.channel_mentions[0].permissions_for(ctx.guild.me).send_messages:
+                elif self.bot.attrs.is_restricted(msg.channel_mentions[0], ctx.author):
                     await ctx.send(
-                        "I'm missing perms to send messages in there, you can fix and retry",
-                        delete_after=16,
-                    )
-                elif not msg.channel_mentions[0].permissions_for(ctx.guild.me).embed_links:
-                    await ctx.send(
-                        "I'm missing perms to send embeds there, you can fix and retry",
-                        delete_after=16,
-                    )
-                elif not msg.channel_mentions[0].permissions_for(ctx.guild.me).add_reactions:
-                    await ctx.send(
-                        "I'm missing perms to add reactions there, you can fix and retry",
-                        delete_after=16,
+                        "Due to channel restrictions you can't send in that channel",
+                        delete_after=16
                     )
                 else:
-                    if not msg.channel_mentions[0].permissions_for(ctx.author).send_messages:
-                        await ctx.send(
-                            "You can't send in that channel, please select another",
-                            delete_after=16,
-                        )
-                    elif self.bot.attrs.is_restricted(msg.channel_mentions[0], ctx.author):
-                        await ctx.send(
-                            "Due to channel restrictions you can't send in that channel",
-                            delete_after=16
-                        )
-                    else:
-                        channel = msg.channel_mentions[0]
-                await msg.delete()
+                    channel = msg.channel_mentions[0]
+            await msg.delete()
         await message.delete()
 
         # Format and send the poll

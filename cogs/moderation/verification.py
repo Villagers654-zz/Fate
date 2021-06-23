@@ -10,7 +10,7 @@ import discord
 from discord.errors import *
 
 from fate import Fate
-from botutils import colors, get_prefix
+from botutils import colors, get_prefix, Conversation
 
 
 class Verification(commands.Cog):
@@ -110,108 +110,107 @@ class Verification(commands.Cog):
 
     @verification.group(name="enable")
     @commands.has_permissions(administrator=True)
+    @commands.bot_has_permissions(manage_messages=True)
     async def _enable(self, ctx):
         guild_id = ctx.guild.id
+        convo = Conversation(ctx, delete_after=True)
 
-        await ctx.send("Mention the channel I should use for each verification process")
-        async with self.bot.utils.require("message", ctx, handle_timeout=True) as msg:
-            if not msg.channel_mentions:
-                return await ctx.send(
-                    "m, that's an invalid response\nRerun the command and try again"
-                )
-            channel = msg.channel_mentions[0]
+        msg = await convo.ask("Mention the channel I should use for each verification process")
+        if not msg.channel_mentions:
+            await ctx.send(
+                "m, that's an invalid response\nRerun the command and try again",
+                delete_after=10
+            )
+            return await convo.end()
+        channel = msg.channel_mentions[0]
         perms = channel.permissions_for(ctx.guild.me)
         if (
             not perms.send_messages
             or not perms.embed_links
             or not perms.manage_messages
         ):
-            return await ctx.send(
+            await ctx.send(
                 "Before you can enable verification I need permissions in that channel to send "
-                "messages, embed links, and manage messages"
+                "messages, embed links, and manage messages",
+                delete_after=15
             )
+            return await convo.end()
 
-        await ctx.send(
+        msg = await convo.ask(
             "Send the name, or mention of the role I should give whence someone completes verification"
         )
-        async with self.bot.utils.require("message", ctx, handle_timeout=True) as msg:
-            role = await self.bot.utils.get_role(ctx, msg.content)
+        role = await self.bot.utils.get_role(ctx, msg.content)
         if not role:
-            return await ctx.send(
-                "m, that's not a valid role\nRerun the command and try again"
+            await ctx.send(
+                "m, that's not a valid role\nRerun the command and try again",
+                delete_after=15
             )
+            return await convo.end()
         if role.position >= ctx.guild.me.top_role.position:
-            return await ctx.send("That role's higher than I can access")
+            await ctx.send("That role's higher than I can access", delete_after=10)
+            return await convo.end()
 
-        await ctx.send(
+        msg = await convo.ask(
             "Send the name, or mention of the role I should remove whence someone completes verification"
             "\nThis one's optional, so you can reply with `skip` if you don't wish to use one"
         )
-        async with self.bot.utils.require("message", ctx, handle_timeout=True) as msg:
-            temp_role = None
-            if str(msg.content).lower() != "skip":
-                target = await self.bot.utils.get_role(ctx, msg.content)
-                if not target:
-                    return await ctx.send(
-                        "m, that's not a valid role\nRerun the command and try again"
-                    )
-                if role.position >= ctx.guild.me.top_role.position:
-                    return await ctx.send("That role's higher than I can access")
-                temp_role = target.id
+        temp_role = None
+        if msg.content.lower() != "skip":
+            target = await self.bot.utils.get_role(ctx, msg.content)
+            if not target:
+                await ctx.send(
+                    "m, that's not a valid role\nRerun the command and try again",
+                    delete_after=10
+                )
+                return await convo.end()
+            if role.position >= ctx.guild.me.top_role.position:
+                await ctx.send("That role's higher than I can access", delete_after=10)
+                return await convo.end()
+            temp_role = target.id
 
-        await ctx.send(
+        msg = await convo.ask(
             "Should I delete the captcha message that shows if a user passed or failed verification after "
             "completion? Reply with `yes` or `no`"
         )
-        async with self.bot.utils.require("message", ctx, handle_timeout=True) as msg:
-            if (
-                "ye" not in str(msg.content).lower()
-                and "no" not in str(msg.content).lower()
-            ):
-                return await ctx.send("Invalid response, please rerun the command")
-            elif "ye" in str(msg.content).lower():
-                delete_after = True
-            else:
-                delete_after = False
+        if "ye" not in msg.content.lower() and "no" not in msg.content.lower():
+            await ctx.send("Invalid response, please rerun the command", delete_after=10)
+            return await convo.end()
+        elif "ye" in msg.content.lower():
+            delete_after = True
+        else:
+            delete_after = False
 
-        await ctx.send(
+        msg = await convo.ask(
             "Should I kick members if they fail verification? Reply with `yes` or `no`"
         )
-        async with self.bot.utils.require("message", ctx, handle_timeout=True) as msg:
-            if (
-                "ye" not in str(msg.content).lower()
-                and "no" not in str(msg.content).lower()
-            ):
-                return await ctx.send("Invalid response, please rerun the command")
-            elif "ye" in str(msg.content).lower():
-                kick_on_fail = True
-            else:
-                kick_on_fail = False
+        if "ye" not in msg.content.lower() and "no" not in msg.content.lower():
+            await ctx.send("Invalid response, please rerun the command", delete_after=10)
+            return await convo.end()
+        elif "ye" in msg.content.lower():
+            kick_on_fail = True
+        else:
+            kick_on_fail = False
 
-        await ctx.send(
+        msg = await convo.ask(
             "Now, should I log whether or not someone passes, fails, or kick to a channel? "
             "If so, #mention the channel I should use; otherwise send `skip`"
         )
-        async with self.bot.utils.require("message", ctx, handle_timeout=True) as msg:
-            if msg.channel_mentions:
-                log_channel = msg.channel_mentions[0].id
-            else:
-                log_channel = None
+        if msg.channel_mentions:
+            log_channel = msg.channel_mentions[0].id
+        else:
+            log_channel = None
 
-        await ctx.send(
+        msg = await convo.ask(
             "When a new member joins, should I start captcha verification on my own, or "
             "wait until they run .verify. Reply with `yes` to start automatically, or `no` to not"
         )
-        async with self.bot.utils.require("message", ctx, handle_timeout=True) as msg:
-            if (
-                "ye" not in str(msg.content).lower()
-                and "no" not in str(msg.content).lower()
-            ):
-                return await ctx.send("Invalid response, please rerun the command")
-            elif "ye" in str(msg.content).lower():
-                automatic = True
-            else:
-                automatic = False
+        if "ye" not in msg.content.lower() and "no" not in msg.content.lower():
+            await ctx.send("Invalid response, please rerun the command", delete_after=10)
+            return await convo.end()
+        elif "ye" in msg.content.lower():
+            automatic = True
+        else:
+            automatic = False
 
         self.config[guild_id] = {
             "channel_id": channel.id,  # Verification channel, required incase the bot can't dm
@@ -225,6 +224,7 @@ class Verification(commands.Cog):
         }
         await ctx.send("Successfully setup the verification system")
         await self.config.flush()
+        await convo.end()
 
     @verification.group(name="disable")
     @commands.has_permissions(administrator=True)
@@ -356,7 +356,6 @@ class Verification(commands.Cog):
         guild_id = ctx.guild.id
         if guild_id not in self.config:
             return await ctx.send("Verification isn't enabled")
-        await ctx.send("Starting verification")
         await self.init_verification_process(ctx.author)
 
     async def bulk_purge(

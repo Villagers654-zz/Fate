@@ -426,9 +426,9 @@ class Ranking(commands.Cog):
             "Should I remove this role when the user gets a higher role reward? "
             "Reply with `yes` or `no`"
         )
-        async with self.bot.utils.require("message", ctx) as msg:
-            if "yes" in msg.content.lower():
-                stack = False
+        reply = await self.bot.utils.get_message(ctx)
+        if "yes" in reply.content.lower():
+            stack = False
 
         await self.bot.execute(
             f"insert into role_rewards "

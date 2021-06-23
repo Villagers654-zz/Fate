@@ -485,16 +485,16 @@ class Factions(commands.Cog):
         await ctx.send(
             "Are you sure you want to delete your faction?\nReply with 'yes' or 'no'"
         )
-        async with self.bot.utils.require("message", ctx) as msg:
-            if "yes" in str(msg.content).lower():
-                for fac, data in self.factions[guild_id].items():
-                    if faction in data["allies"]:
-                        self.factions[guild_id][fac]["allies"].remove(faction)
-                del self.factions[guild_id][faction]
-                await ctx.send("Ok.. deleted your faction")
-                await self.save_data()
-            else:
-                await ctx.send("Ok, I won't delet")
+        msg = await self.bot.utils.get_message(ctx)
+        if "yes" in msg.content.lower():
+            for fac, data in self.factions[guild_id].items():
+                if faction in data["allies"]:
+                    self.factions[guild_id][fac]["allies"].remove(faction)
+            del self.factions[guild_id][faction]
+            await ctx.send("Ok.. deleted your faction")
+            await self.save_data()
+        else:
+            await ctx.send("Ok, I won't delet")
 
     @factions.command(name="join")
     async def join(self, ctx, *, faction):
@@ -678,9 +678,9 @@ class Factions(commands.Cog):
                 "Note this is a one time transaction, and you can set the icon as many times "
                 "as you want after without having to buy this again"
             )
-            async with self.bot.utils.require("message", ctx) as msg:
-                if "ye" not in str(msg.content).lower():
-                    return await ctx.send("Aight.. maybe next time")
+            msg = await self.bot.utils.get_message(ctx)
+            if "ye" not in msg.content.lower():
+                return await ctx.send("Aight.. maybe next time")
             self.factions[guild_id][faction]["balance"] -= 250
             self.factions[guild_id][faction]["icon"] = ""
         if not url and not ctx.message.attachments:
@@ -716,9 +716,9 @@ class Factions(commands.Cog):
                 "Note this is a one time purchase, and you can set the banner as many times "
                 "as you want after without having to buy this again"
             )
-            async with self.bot.utils.require("message", ctx, handle_timeout=True) as msg:
-                if "ye" not in str(msg.content).lower():
-                    return await ctx.send("Aight.. maybe next time")
+            msg = await self.bot.utils.get_message(ctx)
+            if "ye" not in msg.content.lower():
+                return await ctx.send("Aight.. maybe next time")
             self.factions[guild_id][faction]["balance"] -= 500
             self.factions[guild_id][faction]["banner"] = ""
         if not url and not ctx.message.attachments:
@@ -760,9 +760,9 @@ class Factions(commands.Cog):
         def predicate(m):
             return m.channel.id == ctx.channel.id and m.author.id == dat["owner"]
 
-        async with self.bot.utils.require("message", predicate, handle_timeout=True) as msg:
-            if ".confirm annex" not in str(msg.content).lower():
-                return await ctx.send("Alright, merge has been rejected")
+        msg = await self.bot.utils.get_message(predicate)
+        if ".confirm annex" not in msg.content.lower():
+            return await ctx.send("Alright, merge has been rejected")
 
         self.factions[guild_id][authors_faction]["balance"] += dat["balance"]
         for member_id in dat["members"]:
@@ -979,9 +979,9 @@ class Factions(commands.Cog):
                                   f"this channel. You need ${needed} more")
         await ctx.send(f"Claiming that channel will cost you ${cost}, "
                        f"reply with `.confirm` to claim it")
-        async with self.bot.utils.require("message", ctx, handle_timeout=True) as msg:
-            if ".confirm" not in str(msg.content).lower():
-                return await ctx.send("Alright.. maybe next time")
+        msg = await self.bot.utils.get_message(ctx)
+        if ".confirm" not in msg.content.lower():
+            return await ctx.send("Alright.. maybe next time")
         if channel.id in claims:
             fac = claims[channel.id]["faction"]
             if channel.id in self.factions[guild_id][fac]["claims"]:
@@ -1001,9 +1001,9 @@ class Factions(commands.Cog):
         if channel.id not in self.factions[guild_id][faction]["claims"]:
             return await ctx.send(f"You don't have {channel.mention} claimed")
         await ctx.send("Unclaiming this channel will give you $250, are you sure?")
-        async with self.bot.utils.require("message", ctx, handle_timeout=True) as msg:
-            if "ye" not in str(msg.content).lower():
-                return await ctx.send("Aight, maybe next time")
+        msg = await self.bot.utils.get_message(ctx)
+        if "ye" not in msg.content.lower():
+            return await ctx.send("Aight, maybe next time")
         self.factions[guild_id][faction]["claims"].remove(channel.id)
         self.factions[guild_id][faction]["balance"] += 250
         await ctx.send(f"Unclaimed {channel.mention} and returned $250")
@@ -1227,10 +1227,9 @@ class Factions(commands.Cog):
 
         if defender_bal > attacker_bal:
             await ctx.send("The odds are against us. Are you sure you wish to attempt a raid?")
-            async with self.bot.utils.require("message", ctx, handle_timeout=True) as msg:
-                if "ye" not in str(msg.content).lower():
-                    return await ctx.send("Wise choice")
-
+            msg = await self.bot.utils.get_message(ctx)
+            if "ye" not in msg.content.lower():
+                return await ctx.send("Wise choice")
 
         max_range = round(lowest_bal / 4)
         loot = random.randint(50, max_range)
@@ -1647,14 +1646,14 @@ class Factions(commands.Cog):
         )
         while True:
             await asyncio.sleep(0.5)
-            async with self.bot.utils.require("message", predicate, handle_timeout=True) as msg:
-                if await self.get_owned_faction(ctx, user=msg.author) == ally_name:
-                    self.factions[guild_id][faction_name]["allies"].append(ally_name)
-                    self.factions[guild_id][ally_name]["allies"].append(faction_name)
-                    await ctx.send(
-                        f"Successfully created an alliance between `{faction_name}` and `{ally_name}`"
-                    )
-                    return await self.save_data()
+            msg = await self.bot.utils.get_message(predicate)
+            if await self.get_owned_faction(ctx, user=msg.author) == ally_name:
+                self.factions[guild_id][faction_name]["allies"].append(ally_name)
+                self.factions[guild_id][ally_name]["allies"].append(faction_name)
+                await ctx.send(
+                    f"Successfully created an alliance between `{faction_name}` and `{ally_name}`"
+                )
+                return await self.save_data()
 
     @factions.command(name="shop")
     async def shop(self, ctx):
@@ -1767,4 +1766,4 @@ class Factions(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(FactionsRewrite(bot))
+    bot.add_cog(Factions(bot))
