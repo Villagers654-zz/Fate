@@ -1,86 +1,71 @@
-from discord.ext import commands
-from os.path import isfile
-from botutils import colors
-import discord
+
+"""
+Discord.py Cookies Extension 🗿
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A wholesome module to give, receive, and eat virtual cookies
+
+:copyright: (C) 2018-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
+
 import random
-import json
-import time
 import os
+from discord.ext import commands
+import discord
+from botutils import colors
 
 
 class Cookies(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.cookies = {}
-        self.sent = {}
-        self.received = {}
-        self.eaten = {}
-        self.cd = {}
-        if isfile("./data/userdata/cookies.json"):
-            with open("./data/userdata/cookies.json", "r") as infile:
-                dat = json.load(infile)
-                if (
-                    "cookies" in dat
-                    and "sent" in dat
-                    and "received" in dat
-                    and "eaten" in dat
-                ):
-                    self.cookies = dat["cookies"]
-                    self.sent = dat["sent"]
-                    self.received = dat["received"]
-                    self.eaten = dat["eaten"]
-                    self.cd = dat["cd"]
+        self.dat = bot.utils.cache("cookies")
 
-    async def save(self):
-        data = {
-            "cookies": self.cookies,
-            "sent": self.sent,
-            "received": self.received,
-            "eaten": self.eaten,
-            "cd": self.cd,
+    def setup(self, user_id):
+        self.dat[user_id] = {
+            "cookies": 0,
+            "sent": 0,
+            "received": 0,
+            "eaten": 0
         }
-        await self.bot.utils.save_json("./data/userdata/cookies.json", data)
-
-    async def setup(self, _id):
-        self.cookies[_id] = 0
-        self.sent[_id] = 0
-        self.received[_id] = 0
-        self.eaten[_id] = 0
-        self.cd[_id] = 0
-        await self.save()
 
     @commands.command(name="cookie")
-    async def _cookie(self, ctx, user: discord.Member = None):
+    @commands.cooldown(2, 10, commands.BucketType.user)
+    @commands.bot_has_permissions(embed_links=True, attach_files=True)
+    async def cookie(self, ctx, user: discord.Member = None):
         e = discord.Embed(color=colors.fate)
         e.set_footer(text=f"Powered by Cookie Mix")
-        author_id = str(ctx.author.id)
-        if author_id not in self.cookies:
-            await self.setup(author_id)
+        author_id = ctx.author.id
+        if author_id not in self.dat:
+            self.setup(author_id)
+
+        # Giving a cookie
         if user:
-            user_id = str(user.id)
-            if user.bot is True:
+            user_id = user.id
+            if user.bot:
                 return await ctx.send("You cannot give cookies to bots")
-            if user_id not in self.cookies:
-                await self.setup(user_id)
-            self.sent[author_id] += 1
-            self.received[user_id] += 1
-            self.cookies[user_id] += 1
+            if user_id not in self.dat:
+                self.setup(user_id)
+            self.dat[author_id]["sent"] += 1
+            self.dat[user_id]["received"] += 1
+            self.dat[user_id]["cookies"] += 1
+            dat = self.dat[user_id]  # type: dict
             e.set_author(
-                name=f"| 📤 {self.sent[author_id]} | 📥 {self.received[author_id]} | 🍪 {self.cookies[author_id]}",
+                name=f"| 📤 {dat['sent']} | 📥 {dat['received']} | 🍪 {dat['cookies']}",
                 icon_url=ctx.author.avatar_url,
             )
-            e.description = (
-                f"{ctx.author.display_name} has given {user.display_name} a cookie"
-            )
-            self.cd[author_id] = time.time() + 3600
+            e.description = f"**{ctx.author.display_name}** has given **{user.display_name}** a cookie"
             await ctx.send(embed=e)
-            return await self.save()
-        if self.cookies[author_id] == 0:
+            return await self.dat.flush()
+
+        # Eating a cookie
+        if self.dat[author_id]["cookies"] == 0:
             return await ctx.send("You have no cookies to eat :(")
-        self.cookies[author_id] = self.cookies[author_id] - 1
-        self.eaten[author_id] += 1
+        self.dat[author_id]["cookies"] -= 1
+        self.dat[author_id]["eaten"] += 1
+        dat = self.dat[author_id]  # type: dict
         e.set_author(
-            name=f"| 📤 {self.sent[author_id]} | 📥 {self.received[author_id]} | 🍪 {self.cookies[author_id]}",
+            name=f"| 📤 {dat['sent']} | 📥 {dat['received']} | 🍪 {dat['cookies']}",
             icon_url=ctx.author.avatar_url,
         )
         actions = [
@@ -98,19 +83,20 @@ class Cookies(commands.Cog):
         await ctx.send(
             file=discord.File(path, filename=os.path.basename(path)), embed=e
         )
-        await self.save()
+        await self.dat.flush()
 
     @commands.command(name="cookies")
     async def _cookies(self, ctx, user: discord.Member = None):
         if user is None:
             user = ctx.author
-        user_id = str(user.id)
-        if user_id not in self.cookies:
-            await self.setup(user_id)
+        user_id = user.id
+        if user_id not in self.dat:
+            return await ctx.send("You have no cookie data")
         e = discord.Embed(color=colors.fate)
+        dat = self.dat[user_id]  # type: dict
         e.set_author(
-            name=f"| 📤 {self.sent[user_id]} | 📥 {self.received[user_id]} | 🍪 {self.cookies[user_id]}",
-            icon_url=user.avatar_url,
+            name=f"| 📤 {dat['sent']} | 📥 {dat['received']} | 🍪 {dat['cookies']}",
+            icon_url=ctx.author.avatar_url,
         )
         e.set_footer(text="Powered by Cookie Mix")
         await ctx.send(embed=e)
