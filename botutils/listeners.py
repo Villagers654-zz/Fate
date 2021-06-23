@@ -1,9 +1,27 @@
+
+"""
+Event Listeners
+~~~~~~~~~~~~~~~~
+
+Contains classes and functions for easily awaiting events
+
+Classes:
+    CheckError
+    Conversation
+    Listener
+
+Methods:
+    parse_check
+
+:copyright: (C) 2020-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
+
 import asyncio
 from contextlib import suppress
 
 from discord.ext.commands import Context
 from discord import User, Member, Message
-from discord.ext import commands
 
 
 class CheckError(Exception):

@@ -1,12 +1,12 @@
 
 """
+Attributes Helper
+~~~~~~~~~~~~~~~~~
+
 Helper class for easily checking if a users a mod, and getting the mute role
 
-Copyright (C) 2020-present Michael Stollings
-Unauthorized copying, or reuse of anything in this module written by its owner, via any medium is strictly prohibited.
-This copyright notice, and this permission notice must be included in all copies, or substantial portions of the Software
-Proprietary and confidential
-Written by Michael Stollings <mrmichaelstollings@gmail.com>
+:copyright: (C) 2021-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
 """
 
 import asyncio

@@ -1,6 +1,9 @@
 
 """
-Small util functions
+Tools
+~~~~~~
+
+A collection of utility functions
 
 Classes:
     TempConvo
@@ -26,24 +29,16 @@ Misc variables:
     operators
     formulas
 
-Copyright (C) 2020-present Michael Stollings
-Unauthorized copying, or reuse of anything in this module written by its owner, via any medium is strictly prohibited.
-This copyright notice, and this permission notice must be included in all copies, or substantial portions of the Software
-Proprietary and confidential
-Written by Michael Stollings <mrmichaelstollings@gmail.com>
+:copyright: (C) 2019-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
 """
 
 import re
-from io import BytesIO
-import requests
-from PIL import Image
 from typing import Union
 import asyncio
 from datetime import timedelta
 from time import time
-from colormap import rgb2hex
 import discord
-from .colors import fate
 from .emojis import arrow
 
 

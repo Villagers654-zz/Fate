@@ -1,15 +1,15 @@
 
 """
+Emojis Shortcut
+~~~~~~~~~~~~~~~~
+
 A module for quick access to (discord) emojis
 
 Functions:
     arrow : an emoji that changes depending on the holiday
 
-Copyright (C) 2020-present Michael Stollings
-Unauthorized copying, or reuse of anything in this module written by its owner, via any medium is strictly prohibited.
-This copyright notice, and this permission notice must be included in all copies, or substantial portions of the Software
-Proprietary and confidential
-Written by Michael Stollings <mrmichaelstollings@gmail.com>
+:copyright: (C) 2020-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
 """
 
 from datetime import datetime

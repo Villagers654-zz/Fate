@@ -1,4 +1,7 @@
 """
+External Resources
+~~~~~~~~~~~~~~~~~~~
+
 Utility module to make managing files & dbs easier
 
 Classes:
@@ -9,11 +12,8 @@ Methods:
     save_json
     download
 
-Copyright (C) 2020-present Michael Stollings
-Unauthorized copying, or reuse of anything in self module written by its owner, via any medium is strictly prohibited.
-self copyright notice, and self permission notice must be included in all copies, or substantial portions of the Software
-Proprietary and confidential
-Written by Michael Stollings <mrmichaelstollings@gmail.com>
+:copyright: (C) 2020-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
 """
 
 import asyncio

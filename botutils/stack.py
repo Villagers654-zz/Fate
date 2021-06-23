@@ -1,23 +1,12 @@
 """
-Module for building up a counter over time for unique IDs
+Stack Counter
+~~~~~~~~~~~~~~
 
-Classes:
-    Stack
+Class for building up a counter over time for unique IDs
 
-Misc variables:
-    __title__
-    __author__
-    __license__
-    __copyright__
-    __version__
-
-Copyright (C) 2018-present Michael Stollings
-Unauthorized copying, or reuse of anything in this repository written by the owner, via any medium is strictly prohibited.
-This copyright notice, and this permission notice must be included in all copies, or substantial portions of the Software
-Proprietary and confidential
-Written by Michael Stollings <mrmichaelstollings@gmail.com>
+:copyright: (C) 2021-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
 """
-
 
 from time import time
 
@@ -61,4 +50,3 @@ class Stack:
         # For first use with a ID, set the last_used_time and return 0
         self.index[unique_id] = time()
         return 0
-

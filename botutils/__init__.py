@@ -4,20 +4,15 @@ Utility Functions Wrapper
 
 An ease of use wrapper for use with Fate(written in discord.py)
 
-Copyright (C) 2020-present Michael Stollings
-Unauthorized copying, or reuse of anything in this module written by its owner, via any medium is strictly prohibited.
-This copyright notice, and this permission notice must be included in all copies, or substantial portions of the Software
-Proprietary and confidential
-Written by Michael Stollings <mrmichaelstollings@gmail.com>
+:copyright: (C) 2021-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
 """
 
 __title__ = "BotUtils"
 __author__ = "FrequencyX4"
-__license__ = "proprietary and confidential"
-__copyright__ = "Copyright (C) 2020-present Michael Stollings"
-__version__ = "2.0.0"
-
-from discord.ext import commands
+__license__ = "Proprietary and Confidential"
+__copyright__ = "Copyright (C) 2021-present Michael Stollings"
+__version__ = "1.0.0"
 
 from . import colors, emojis, pillow
 from .attributes import Attributes

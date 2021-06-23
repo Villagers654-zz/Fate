@@ -1,3 +1,13 @@
+"""
+Exceptions
+~~~~~~~~~~~
+
+Classes of custom exceptions
+
+:copyright: (C) 2019-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
+
 from aiohttp import web
 
 

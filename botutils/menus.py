@@ -1,3 +1,14 @@
+
+"""
+Menus Utils
+~~~~~~~~~~~~
+
+Contains classes for emulating menus
+
+:copyright: (C) 2020-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
+
 import asyncio
 import random
 from time import time

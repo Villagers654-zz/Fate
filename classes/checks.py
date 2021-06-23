@@ -1,3 +1,13 @@
+"""
+Command Checks
+~~~~~~~~~~~~~~~
+
+A collection of functions for checking if a command should run
+
+:copyright: (C) 2019-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
+
 import discord
 
 

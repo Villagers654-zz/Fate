@@ -1,8 +1,22 @@
+
+"""
+Pillow Utils
+~~~~~~~~~~~~~
+
+Helper functions for use with the Pillow/PIL module
+
+:copyright: (C) 2020-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
+
 from PIL import Image, ImageDraw
 
 
 def add_corners(im, rad):
-    """ Adds transparent corners to an img """
+    """
+    Adds transparent corners to an img
+    :copyright: none, this function is open sourced and doesn't belong to me
+    """
     circle = Image.new("L", (rad * 2, rad * 2), 0)
     d = ImageDraw.Draw(circle)
     d.ellipse((0, 0, rad * 2, rad * 2), fill=255)
