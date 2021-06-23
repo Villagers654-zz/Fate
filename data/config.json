@@ -64,6 +64,7 @@
   "extensions": {
     "core": [
       "error_handler",
+      "config",
       "core",
       "menus",
       "music",
@@ -83,12 +84,11 @@
     "fun": [
       "actions",
       "cookies",
-      "fac",
+      "factions",
       "fun",
       "responses"
     ],
     "misc": [
-      "apis",
       "gc",
       "nsfw",
       "reactions"

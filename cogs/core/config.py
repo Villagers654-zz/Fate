@@ -78,7 +78,7 @@ class Config(commands.Cog):
             return emojis[index - 1]
 
         def default():
-            e = discord.Embed(color=colors.fate())
+            e = discord.Embed(color=colors.fate)
             e.set_author(name="Warn Config", icon_url=ctx.author.avatar_url)
             e.description = (
                 f"{emoji(1)} : View Config\n"
@@ -111,7 +111,7 @@ class Config(commands.Cog):
                     index = 1
                     for punishment in dat["punishments"][guild_id]:
                         punishments += f"**#{index}. `{punishment}`**\n"
-                e = discord.Embed(color=colors.fate())
+                e = discord.Embed(color=colors.fate)
                 e.set_author(name="Warn Config", icon_url=ctx.author.avatar_url)
                 e.description = (
                     f"**Warns Expire: {expiring}\nCustom Punishments:**\n{punishments}"
@@ -126,7 +126,7 @@ class Config(commands.Cog):
                     continue
             if reaction == emoji(2):
                 await msg.clear_reactions()
-                e = discord.Embed(color=colors.fate())
+                e = discord.Embed(color=colors.fate)
                 e.description = "Should warns expire after a month?"
                 await msg.edit(embed=e)
                 await msg.add_reaction("✔")
@@ -142,7 +142,7 @@ class Config(commands.Cog):
                         index = config["warns"]["expire"].index(guild_id)
                         config["warns"]["expire"].pop(index)
                 await msg.clear_reactions()
-                e = discord.Embed(color=colors.fate())
+                e = discord.Embed(color=colors.fate)
                 e.description = "Set custom punishments?"
                 await msg.edit(embed=e)
                 await msg.add_reaction("✔")
@@ -186,7 +186,7 @@ class Config(commands.Cog):
                         if len(punishments) > 7:
                             dump()
                             break
-                        e = discord.Embed(color=colors.fate())
+                        e = discord.Embed(color=colors.fate)
                         e.description = (
                             f"**Punishments: {punishments}**\n\n"
                             f"Set the {pos(index)} punishment:\n"

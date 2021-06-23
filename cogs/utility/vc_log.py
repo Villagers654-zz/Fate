@@ -20,7 +20,7 @@ class VcLog(commands.Cog):
     @commands.bot_has_permissions(embed_links=True)
     async def _vclog(self, ctx):
         if not ctx.invoked_subcommand:
-            e = discord.Embed(color=colors.fate())
+            e = discord.Embed(color=colors.fate)
             e.set_author(name="Vc Logger", icon_url=ctx.author.avatar_url)
             if ctx.guild.icon_url:
                 e.set_thumbnail(url=ctx.guild.icon_url)

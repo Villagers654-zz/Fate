@@ -67,7 +67,7 @@ class User(commands.Cog):
     @commands.is_owner()
     async def blocked(self, ctx):
         config = self.get_config()  # type: dict
-        e = discord.Embed(color=colors.fate())
+        e = discord.Embed(color=colors.fate)
         e.set_author(name="Blocked Users", icon_url=self.bot.user.avatar_url)
         e.description = ""
         for user_id in config["blocked"]:
