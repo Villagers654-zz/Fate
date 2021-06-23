@@ -15,10 +15,6 @@ class Actions(commands.Cog):
         ]
         self.mentions = discord.AllowedMentions(everyone=False, roles=False, users=True)
 
-    @staticmethod
-    def luck(ctx):
-        return ctx.message.author.id == 264838866480005122
-
     @commands.command(description="Shoots a user")
     @commands.cooldown(1, 3, commands.BucketType.user)
     async def shoot(self, ctx, user: discord.Member):
