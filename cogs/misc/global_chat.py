@@ -358,7 +358,7 @@ class GlobalChat(commands.Cog):
                 return
             channel = self.bot.get_channel(payload.channel_id)
             msg = await channel.fetch_message(payload.message_id)
-            if not isinstance(msg.embeds[0].description, int):
+            if not msg.embeds[0].description.isdigit():
                 return
             user_id = int(msg.embeds[0].description)
 
