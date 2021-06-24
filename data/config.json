@@ -86,12 +86,12 @@
       "cookies",
       "factions",
       "fun",
+      "reactions",
       "responses"
     ],
     "misc": [
       "gc",
-      "nsfw",
-      "reactions"
+      "nsfw"
     ],
     "moderation": [
       "anti_raid",
