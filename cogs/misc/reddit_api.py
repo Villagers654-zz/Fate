@@ -1,3 +1,13 @@
+"""
+cogs.misc.reddit_api
+~~~~~~~~~~~~~~~~~~~~~
+
+Deprecated - A cog for use of Reddit with asyncpraw
+
+:copyright: (C) 2021-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
+
 import asyncio
 import traceback
 from time import time

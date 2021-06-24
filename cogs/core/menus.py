@@ -1,3 +1,13 @@
+"""
+cogs.core.menus
+~~~~~~~~~~~~~~~~
+
+Command paginator cog to index commands into a readable embed format
+
+:copyright: (C) 2021-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
+
 import asyncio
 import inspect
 from contextlib import suppress

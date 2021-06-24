@@ -1,3 +1,13 @@
+"""
+cogs.fun.actions
+~~~~~~~~~~~~~~~~~
+
+A cog for rp actions
+
+:copyright: (C) 2019-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
+
 from discord.ext import commands
 import discord
 import random

@@ -1,3 +1,13 @@
+"""
+cogs.fun.responses
+~~~~~~~~~~~~~~~~~~~
+
+A cog for adding random bot responses to messages in a server
+
+:copyright: (C) 2019-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
+
 import random
 import asyncio
 from time import time

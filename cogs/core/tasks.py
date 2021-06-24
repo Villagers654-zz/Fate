@@ -1,3 +1,13 @@
+"""
+cogs.core.tasks
+~~~~~~~~~~~~~~~~
+
+Cog for managing the core bot tasks like it's status, and backups
+
+:copyright: (C) 2021-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
+
 import asyncio
 import websockets
 import random

@@ -1,15 +1,15 @@
 """
-Core bot functions like:
-Prefix, Invite, and Ping
+cogs.core.core.py
+~~~~~~~~~~~~~~~~~~
+
+Core bot commands such as prefix, invite, and ping
+
+:copyright: (C) 2019-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
 """
 
-from bs4 import BeautifulSoup as bs
-import json
-from io import BytesIO
-import requests
 import aiohttp
 from time import time, monotonic
-from typing import Optional
 import asyncio
 from datetime import datetime
 from contextlib import suppress
@@ -18,7 +18,6 @@ from discord.ext import commands
 import discord
 from discord import Webhook, AsyncWebhookAdapter
 import dbl
-from discord.ext.commands import Context
 
 from botutils import colors, get_prefixes_async, cleanup_msg, emojis, Conversation
 

@@ -1,3 +1,13 @@
+"""
+cogs.core.user
+~~~~~~~~~~~~~~~
+
+An owner only cog for managing the bot user
+
+:copyright: (C) 2019-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
+
 from discord.ext import commands
 import discord
 import json

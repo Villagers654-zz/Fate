@@ -1,3 +1,13 @@
+"""
+cogs.core.toggles
+~~~~~~~~~~~~~~~~~~
+
+A cog for adding the functionality of `.enable module` instead of `.module enable`
+
+:copyright: (C) 2021-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
+
 from discord.ext import commands
 from fate import Fate
 from botutils import get_prefix

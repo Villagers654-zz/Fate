@@ -1,10 +1,11 @@
 """
-Factions Game For Discord.Py
-- Supports versions 1.1 - 1.3
-- Create factions, group up, complete work tasks to earn money
-- Raid other factions while they're not guarded
-- Challenge enemys to minigame battles
-- Rank up on the faction leaderboard
+cogs.fun.factions
+~~~~~~~~~~~~~~~~~~
+
+A cog for a factions game in discord.py
+
+:copyright: (C) 2020-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
 """
 
 import json

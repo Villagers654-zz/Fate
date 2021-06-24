@@ -1,3 +1,13 @@
+"""
+cogs.fun.fun
+~~~~~~~~~~~~~
+
+A cog containing generally fun commands
+
+:copyright: (C) 2019-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
+
 import asyncio
 import base64
 import random

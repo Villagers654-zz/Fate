@@ -1,9 +1,11 @@
 """
-Discord.Py v1.3+ Action Logs Module:
-+ can split up into multiple channels
-+ key security features to protect the log
-- logs can't be deleted or purged by anyone
-- re-creates deleted log channel(s) and resends the last x logs
+cogs.moderation.logger
+~~~~~~~~~~~~~~~~~~~~~~~
+
+A cog for logging event related actions to a text channel(s)
+
+:copyright: (C) 2020-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
 """
 
 import asyncio
@@ -158,8 +160,9 @@ class Logger(commands.Cog):
                 channel = await self.bot.fetch_channel(
                     self.config[guild_id]["channel"]
                 )
-            except NotFound:
+            except NotFound as err:
                 channel = await guild.create_text_channel(name="bot-logs")
+                await channel.send(f"Couldn't get the old channel with ID: {self.config[guild_id]['channel']}\n{err}")
             self.config[guild_id]["channel"] = channel.id
 
         # Remove channels that redirect logs if they're missing

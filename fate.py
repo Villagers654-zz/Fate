@@ -1,3 +1,14 @@
+
+"""
+Fate
+~~~~~
+
+Main file intended for starting the bot
+
+:copyright: (C) 2018-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
+
 import json
 import traceback
 from time import time

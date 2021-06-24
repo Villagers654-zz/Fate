@@ -1,4 +1,12 @@
-# Customizable xp ranking system
+"""
+cogs.core.ranking
+~~~~~~~~~~~~~~~~~~
+
+A customizable xp ranking cog
+
+:copyright: (C) 2019-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
 
 from os import path
 import json

@@ -1,10 +1,18 @@
-import random
+"""
+cogs.misc.nsfw
+~~~~~~~~~~~~~~~
+
+A cog for basic nsfw commands
+
+:copyright: (C) 2020-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
+
 from random import randint, choice
 
 import aiohttp
 import discord
 from discord.ext import commands
-from pybooru import Danbooru, exceptions
 
 from botutils import colors
 

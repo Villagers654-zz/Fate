@@ -1,3 +1,12 @@
+"""
+cogs.misc.gc
+~~~~~~~~~~~~~
+
+A cog to add functionality for a channel interconnected between multiple others
+
+:copyright: (C) 2020-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
 
 from contextlib import suppress
 import asyncio
@@ -12,7 +21,7 @@ import discord
 from botutils import get_prefixes_async, colors
 
 
-class GlobalChatRewrite(commands.Cog):
+class GlobalChat(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.cache = {}

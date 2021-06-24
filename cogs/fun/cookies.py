@@ -1,9 +1,8 @@
-
 """
-Discord.py Cookies Extension 🗿
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+cogs.fun.cookies
+~~~~~~~~~~~~~~~~~
 
-A wholesome module to give, receive, and eat virtual cookies
+A wholesome cog to give, receive, and eat virtual cookies
 
 :copyright: (C) 2018-present Michael Stollings
 :license: Proprietary and Confidential, see LICENSE for details

@@ -1,3 +1,13 @@
+"""
+cogs.core.music
+~~~~~~~~~~~~~~~~
+
+A basic music cog with Lavalink
+
+:copyright: (C) 2021-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
+
 import re
 import asyncio
 from contextlib import suppress
