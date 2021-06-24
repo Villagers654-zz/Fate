@@ -1,5 +1,5 @@
 """
-cogs.misc.gc
+cogs.misc.global_chat
 ~~~~~~~~~~~~~
 
 A cog to add functionality for a channel interconnected between multiple others
