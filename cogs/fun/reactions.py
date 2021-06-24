@@ -1,8 +1,19 @@
+"""
+cogs.fun.reactions
+~~~~~~~~~~~~~~~~~~~
+
+A cog for adding reaction gifs to your msgs
+
+:copyright: (C) 2019-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
+
 import aiohttp
 import os
 import random
 import asyncio
 from contextlib import suppress
+
 from discord.ext import commands
 from discord import Webhook, AsyncWebhookAdapter
 import discord
