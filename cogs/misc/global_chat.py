@@ -377,4 +377,4 @@ class GlobalChat(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(GlobalChatRewrite(bot))
+    bot.add_cog(GlobalChat(bot))

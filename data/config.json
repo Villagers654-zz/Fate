@@ -90,7 +90,7 @@
       "responses"
     ],
     "misc": [
-      "gc",
+      "global_chat",
       "nsfw"
     ],
     "moderation": [
