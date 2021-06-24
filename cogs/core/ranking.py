@@ -931,9 +931,10 @@ class Ranking(commands.Cog):
 
         async def add_emojis_task():
             """ So the bot can read reactions before all are added """
-            for emoji in emojis:
-                await msg.add_reaction(emoji)
-                await asyncio.sleep(0.5)
+            with suppress(Forbidden, NotFound):
+                for emoji in emojis:
+                    await msg.add_reaction(emoji)
+                    await asyncio.sleep(0.5)
             return
 
         async def create_embed(name: str, rankings: list, lmt, top_user=None):
