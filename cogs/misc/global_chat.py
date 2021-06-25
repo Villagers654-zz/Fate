@@ -299,13 +299,14 @@ class GlobalChat(commands.Cog):
                 if cur.rowcount:
                     mod = True
 
-            for i, char in enumerate(list(msg.content)):
-                await asyncio.sleep(0)
-                if char == "." and i != 0 and i + 1 != len(msg.content):
-                    l = msg.content[i - 1]
-                    r = msg.content[i + 1]
-                    if l and l != " " and r and r != " ":
-                        return await msg.channel.send("No links..")
+            if not mod:
+                for i, char in enumerate(list(msg.content)):
+                    await asyncio.sleep(0)
+                    if char == "." and i != 0 and i + 1 != len(msg.content):
+                        l = msg.content[i - 1]
+                        r = msg.content[i + 1]
+                        if l and l != " " and r and r != " ":
+                            return await msg.channel.send("No links..")
 
             e = discord.Embed()
             e.set_thumbnail(url=msg.author.avatar_url)
