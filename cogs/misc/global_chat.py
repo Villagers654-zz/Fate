@@ -311,7 +311,7 @@ class GlobalChat(commands.Cog):
             e = discord.Embed()
             e.set_thumbnail(url=msg.author.avatar_url)
             if mod:
-                e.colour = self.bot.config["theme_color"]
+                e.colour = msg.author.color
 
             # Edit & combine their last msg
             if msg.author.id == self.last_id and self.msg_cache:
