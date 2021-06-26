@@ -316,7 +316,7 @@ class GlobalChat(commands.Cog):
                             return await msg.channel.send("No links..")
 
             e = discord.Embed()
-            e.set_thumbnail(url=msg.author.avatar_url)
+            e.set_thumbnail(url=msg.guild.icon_url)
             if mod:
                 e.colour = msg.author.color
 
@@ -339,7 +339,10 @@ class GlobalChat(commands.Cog):
             if msg.attachments:
                 e.set_image(url=msg.attachments[0].url)
             e.set_author(name=str(msg.author), icon_url=msg.author.avatar_url)
-            e.set_thumbnail(url=msg.guild.icon_url)
+            if mod:
+                e.set_thumbnail(url="https://cdn.discordapp.com/attachments/831790213704581142/858138189527908372/fate-mod-test.png")
+            else:
+                e.set_thumbnail(url=msg.guild.icon_url)
             e.description = msg.content[:512]
             self._queue.append([e, False, msg])
             if msg.attachments:
