@@ -317,8 +317,11 @@ class GlobalChat(commands.Cog):
 
             e = discord.Embed()
             e.set_thumbnail(url=msg.guild.icon.url)
+            author = str(msg.author)
             if mod:
                 e.colour = msg.author.color
+                author += " 🛡"
+            e.set_author(name=author, icon_url=msg.author.avatar.url)
 
             # Edit & combine their last msg
             if msg.author.id == self.last_id and self.msg_cache:
@@ -339,10 +342,7 @@ class GlobalChat(commands.Cog):
             if msg.attachments:
                 e.set_image(url=msg.attachments[0].url)
             e.set_author(name=str(msg.author), icon_url=msg.author.avatar.url)
-            if mod:
-                e.set_thumbnail(url="https://cdn.discordapp.com/attachments/831790213704581142/858138189527908372/fate-mod-test.png")
-            else:
-                e.set_thumbnail(url=msg.guild.icon.url)
+            e.set_thumbnail(url=msg.guild.icon.url)
             e.description = msg.content[:512]
             self._queue.append([e, False, msg])
             if msg.attachments:
