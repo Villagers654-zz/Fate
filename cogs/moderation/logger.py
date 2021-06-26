@@ -451,32 +451,33 @@ class Logger(commands.Cog):
         }
         can_run = await self.wait_for_permission(guild, "view_audit_log")
         if can_run:
-            with suppress(discord.errors.Forbidden):
+            with suppress(Exception):
                 async for entry in guild.audit_logs(limit=5):
-                    if entry.created_at > self.past and any(
-                        entry.action.name == action.name
-                        for action in actions
-                          if hasattr(entry.action, "name")
-                    ):
-                        dat["action"] = entry.action
-                        if entry.user:
-                            dat["user"] = entry.user.mention
-                            dat["actual_user"] = entry.user
-                            dat["thumbnail_url"] = entry.user.avatar.url
-                        if entry.target and isinstance(entry.target, discord.Member):
-                            dat["target"] = entry.target.mention
-                            dat["icon_url"] = entry.target.avatar.url
-                        elif entry.target:
-                            dat["target"] = entry.target
-                        else:
+                    with suppress(Exception):
+                        if entry.created_at > self.past and any(
+                            entry.action.name == action.name
+                            for action in actions
+                              if hasattr(entry.action, "name")
+                        ):
+                            dat["action"] = entry.action
                             if entry.user:
-                                dat["icon_url"] = entry.user.avatar.url
-                        dat["reason"] = entry.reason
-                        dat["extra"] = entry.extra
-                        dat["before"] = entry.before
-                        dat["after"] = entry.after
-                        dat["recent"] = True
-                        break
+                                dat["user"] = entry.user.mention
+                                dat["actual_user"] = entry.user
+                                dat["thumbnail_url"] = entry.user.avatar.url
+                            if entry.target and isinstance(entry.target, discord.Member):
+                                dat["target"] = entry.target.mention
+                                dat["icon_url"] = entry.target.avatar.url
+                            elif entry.target:
+                                dat["target"] = entry.target
+                            else:
+                                if entry.user:
+                                    dat["icon_url"] = entry.user.avatar.url
+                            dat["reason"] = entry.reason
+                            dat["extra"] = entry.extra
+                            dat["before"] = entry.before
+                            dat["after"] = entry.after
+                            dat["recent"] = True
+                            break
         return dat
 
     @commands.group(name="logger", aliases=["log", "logging"])
@@ -1173,14 +1174,14 @@ class Logger(commands.Cog):
                     e.description += f"\n__**Icons no longer animated**__"
                 log = Log("new_server_icon", embed=e)
                 self.put_nowait(guild_id, log)
-            if before.banner_url != after.banner_url:
+            if before.banner.url != after.banner.url:
                 e = create_template_embed()
                 e.description = (
                     f"> 》__**Banner Changed**__《" f"\n**Changed by:** {dat['user']}"
                 )
                 log = Log("new_server_banner", embed=e)
                 self.put_nowait(guild_id, log)
-            if before.splash_url != after.splash_url:
+            if before.splash.url != after.splash.url:
                 e = create_template_embed()
                 e.description = (
                     f"> 》__**Splash Changed**__《" f"\n**Changed by:** {dat['user']}"
