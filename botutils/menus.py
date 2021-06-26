@@ -19,35 +19,35 @@ from typing import Optional, Union, Dict, Callable
 import discord
 from discord import TextChannel, Attachment
 from discord.errors import NotFound, Forbidden
-# from discord import ui
+from discord import ui
 from PIL import Image, ImageFont, ImageDraw
 
 from . import colors
 from .tools import get_time
 
 
-# style = discord.ButtonStyle
-#
-#
-# class ChoiceButtons(ui.View):
-#     def __init__(self):
-#         self.choice = None
-#         self.asyncio_event = asyncio.Event()
-#         super().__init__()
-#
-#     @ui.button(label="Yes", style=style.green)
-#     async def yes(self, _button, interaction):
-#         self.choice = True
-#         await interaction.message.edit(view=None)
-#         self.asyncio_event.set()
-#         self.stop()
-#
-#     @ui.button(label="No", style=style.red)
-#     async def no(self, _button, interaction):
-#         self.choice = False
-#         await interaction.message.edit(view=None)
-#         self.asyncio_event.set()
-#         self.stop()
+style = discord.ButtonStyle
+
+
+class ChoiceButtons(ui.View):
+    def __init__(self):
+        self.choice = None
+        self.asyncio_event = asyncio.Event()
+        super().__init__()
+
+    @ui.button(label="Yes", style=style.green)
+    async def yes(self, _button, interaction):
+        self.choice = True
+        await interaction.message.edit(view=None)
+        self.asyncio_event.set()
+        self.stop()
+
+    @ui.button(label="No", style=style.red)
+    async def no(self, _button, interaction):
+        self.choice = False
+        await interaction.message.edit(view=None)
+        self.asyncio_event.set()
+        self.stop()
 
 
 class Menus:
@@ -107,7 +107,7 @@ class Menus:
         await self.bot.loop.run_in_executor(None, create_card)
 
         e = discord.Embed(color=colors.fate)
-        e.set_author(name=str(user), icon_url=user.avatar_url)
+        e.set_author(name=str(user), icon_url=user.avatar.url)
         e.set_image(url="attachment://" + fp)
         e.set_footer(text=f"You have {get_time(timeout)}")
         message = await channel.send(
@@ -169,7 +169,7 @@ class Menus:
             user = ctx.author
 
         e = discord.Embed(color=colors.fate)
-        e.set_author(name=name, icon_url=ctx.author.avatar_url)
+        e.set_author(name=name, icon_url=ctx.author.avatar.url)
         e.description = "\n".join(
             f"{emojis[i]} {option}" for i, option in enumerate(options)
         )
@@ -282,90 +282,101 @@ class Menus:
             await message.edit(embed=overview())
             await msg.delete()
 
-    # async def get_answers_from(self, user, message, questions, delete_after=False):
-    #     """|coro|
-    #     Shortcut function to get answers to a series of questions
-#
-    #     Parameters
-    #     ----------
-    #     user: discord.User
-    #         The user to be questioned
-    #     message: discord.Message
-    #         The message to use
-    #     questions: dict
-    #         A dict of questions, and desired return types
-    #     delete_after: bool, optional
-    #         Delete the message used to ask questions when done (default is False)
-#
-    #     Raises
-    #     ------
-    #     exception: discord.errors.NotFound
-    #         the message was deleted
-    #     exception: discord.errors.Forbidden
-    #         lost access to the channel
-#
-    #     Returns
-    #     -------
-    #     dict
-    #         The dict of questions with their answers
-    #     """
-    #     choices = {}
-    #     is_author = lambda m: m.author.id == user.id
-#
-    #     check_presets = {
-    #         str: lambda m: is_author(m) and m.content,
-    #         TextChannel: lambda m: is_author(m) and m.channel_mentions,
-    #         Attachment: lambda m: is_author(m) and m.attachments or "http" in m.content
-    #     }
-#
-    #     for i, (question, ReturnType) in enumerate(questions):
-    #         # Update the message
-    #         q = f"{i + 1}/{len(questions)} {question}"
-    #         view = None
-#
-    #         # Use buttons if wanting a yes/no response
-    #         if ReturnType is bool:
-    #             view = ChoiceButtons()
-#
-    #         # Wait for a button press
-    #         await message.edit(content=q, view=view)
-    #         try:
-    #             if ReturnType is bool:
-    #                 # Use buttons to get the users answer
-    #                 await asyncio.wait_for(view.asyncio_event.wait(), timeout=45)
-    #                 answer = view.choice
-    #                 continue
-#
-    #             if ReturnType is Callable:  # Custom check function
-    #                 check = ReturnType
-    #             else:
-    #                 # Use a preset check function
-    #                 check = check_presets[ReturnType]
-#
-    #             msg = await self.bot.wait_for("message", check=check, timeout=45)
-#
-    #             # Requesting the message content
-    #             if ReturnType is (str, Callable):
-    #                 answer = msg.content
-#
-    #             # Requesting a channel object
-    #             elif ReturnType is TextChannel:
-    #                 answer = msg.channel_mentions[0]
-#
-    #             # Requesting a bytes-like object
-    #             elif ReturnType is Attachment:
-    #                 if msg.attachments:
-    #                     answer = await msg.attachments[0].read()
-    #                 else:
-    #                     urls = [section for section in msg.content.split() if "http" in section]
-    #                     answer = await self.bot.download(urls[0])
-#
-    #             else:
-    #                 raise TypeError("Invalid return-type in 'questions' parameter")
-#
-    #             choices[question] = answer
-    #         except asyncio.TimeoutError:
-    #             return None
-#
-    #     return choices
+    async def ask(self, message, ignore_timeout=True):
+        view = ChoiceButtons()
+        await message.edit(view=view)
+        try:
+            await asyncio.wait_for(view.asyncio_event.wait(), timeout=45)
+        except asyncio.TimeoutError as error:
+            if ignore_timeout:
+                raise self.bot.ignored_exit
+            raise error
+        return view.choice
+
+    async def get_answers_from(self, user, message, questions):
+        """|coro|
+        Shortcut function to get answers to a series of questions
+
+        Parameters
+        ----------
+        user: discord.User
+            The user to be questioned
+        message: discord.Message
+            The message to use
+        questions: dict
+            A dict of questions, and desired return types
+        delete_after: bool, optional
+            Delete the message used to ask questions when done (default is False)
+
+        Raises
+        ------
+        exception: discord.errors.NotFound
+            the message was deleted
+        exception: discord.errors.Forbidden
+            lost access to the channel
+
+        Returns
+        -------
+        dict
+            The dict of questions with their answers
+        """
+        choices = {}
+        is_author = lambda m: m.author.id == user.id
+
+        check_presets = {
+            str: lambda m: is_author(m) and m.content,
+            TextChannel: lambda m: is_author(m) and m.channel_mentions,
+            Attachment: lambda m: is_author(m) and m.attachments or "http" in m.content
+        }
+
+        for i, (question, ReturnType) in enumerate(questions.items()):
+            # Update the message
+            q = f"{i + 1}/{len(questions)} {question}"
+            view = None
+
+            # Use buttons if wanting a yes/no response
+            if ReturnType is bool:
+                view = ChoiceButtons()
+
+            # Wait for a button press
+            await message.edit(content=q, view=view)
+            try:
+                if ReturnType is bool:
+                    # Use buttons to get the users answer
+                    await asyncio.wait_for(view.asyncio_event.wait(), timeout=45)
+                    choices[question] = view.choice
+                    continue
+
+                if ReturnType is Callable:  # Custom check function
+                    check = ReturnType
+                else:
+                    # Use a preset check function
+                    check = check_presets[ReturnType]
+
+                msg = await self.bot.wait_for("message", check=check, timeout=45)
+
+                # Requesting the message content
+                if ReturnType is (str, Callable):
+                    answer = msg.content
+
+                # Requesting a channel object
+                elif ReturnType is TextChannel:
+                    answer = msg.channel_mentions[0]
+
+                # Requesting a bytes-like object
+                elif ReturnType is Attachment:
+                    if msg.attachments:
+                        answer = await msg.attachments[0].read()
+                    else:
+                        urls = [section for section in msg.content.split() if "http" in section]
+                        answer = await self.bot.download(urls[0])
+
+                else:
+                    raise TypeError("Invalid return-type in 'questions' parameter")
+
+                choices[question] = answer
+            except asyncio.TimeoutError:
+                return None
+
+        return choices
 
