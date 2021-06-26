@@ -320,7 +320,7 @@ class GlobalChat(commands.Cog):
             author = str(msg.author)
             if mod:
                 e.colour = msg.author.color
-                author += " 🔨"
+                author += " 🛡"
             e.set_author(name=author, icon_url=msg.author.avatar_url)
 
             # Edit & combine their last msg
