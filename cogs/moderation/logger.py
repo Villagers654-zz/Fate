@@ -80,6 +80,7 @@ class Logger(commands.Cog):
             "integrations_update",
             "webhook_update",
             "member_join",
+            "member_leave",
             "member_kick",
             "member_ban",
             "bot_add",
