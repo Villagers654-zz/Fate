@@ -4,13 +4,13 @@ nest_asyncio.apply()
 from aiohttp import web
 from time import time
 import os
+import ssl
 
 import aiofiles
 
 
 class ResourcesAPI:
-    def __init__(self, port=80):
-        self.port = port
+    def __init__(self):
         self.cd = {}
 
         self.app = web.Application()
@@ -18,7 +18,9 @@ class ResourcesAPI:
         self.app.router.add_get('/reactions/{tail:.*/[a-zA-Z0-9]*\\....}', self.get_resource)
 
     def run(self):
-        web.run_app(self.app, port=80)
+        ssl_context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
+        ssl_context.load_cert_chain("cert")
+        web.run_app(self.app, ssl_context=ssl_context)
 
     def is_on_cooldown(self, ip) -> bool:
         now = int(time() / 25)
