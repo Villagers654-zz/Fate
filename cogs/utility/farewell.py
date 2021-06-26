@@ -97,8 +97,8 @@ class Leave(commands.Cog):
             if guild_id in self.toggle:
                 toggle = "enabled"
             e = discord.Embed(color=colors.tan)
-            e.set_author(name="Leave Messages", icon_url=self.bot.user.avatar_url)
-            e.set_thumbnail(url=ctx.guild.icon_url)
+            e.set_author(name="Leave Messages", icon_url=self.bot.user.avatar.url)
+            e.set_thumbnail(url=ctx.guild.icon.url)
             e.description = "Shows when members leave the server"
             e.add_field(
                 name="◈ Command Usage ◈",
@@ -121,7 +121,7 @@ class Leave(commands.Cog):
                 images = f" | Custom Images: {len(self.images[guild_id])}"
             e.set_footer(
                 text=f"Current Status: {toggle}{images}",
-                icon_url=ctx.guild.owner.avatar_url,
+                icon_url=ctx.guild.owner.avatar.url,
             )
             await ctx.send(embed=e)
 
@@ -202,7 +202,7 @@ class Leave(commands.Cog):
             break
         self.toggle[guild_id] = "enabled"
         e = discord.Embed(color=colors.tan)
-        e.set_author(name="Enabled Leave Messages", icon_url=ctx.author.avatar_url)
+        e.set_author(name="Enabled Leave Messages", icon_url=ctx.author.avatar.url)
         await ctx.send(embed=e, delete_after=10)
         await cleanup()
         await self.save_data()
@@ -237,8 +237,8 @@ class Leave(commands.Cog):
         if guild_id in self.images:
             images = len(self.images[guild_id])
         e = discord.Embed(color=colors.tan)
-        e.set_author(name="Leave Config", icon_url=self.bot.user.avatar_url)
-        e.set_thumbnail(url=ctx.guild.icon_url)
+        e.set_author(name="Leave Config", icon_url=self.bot.user.avatar.url)
+        e.set_thumbnail(url=ctx.guild.icon.url)
         e.description = (
             f"**Toggle:** {toggle}\n"
             f"**Channel:** {channel}\n"
@@ -450,4 +450,4 @@ class Leave(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Leave(bot))
+    bot.add_cog(Leave(bot), override=True)

@@ -43,8 +43,8 @@ class RestoreRoles(commands.Cog):
     async def restore_roles(self, ctx):
         if not ctx.invoked_subcommand:
             e = discord.Embed(color=colors.fate)
-            e.set_author(name="Restore Roles", icon_url=ctx.author.avatar_url)
-            e.set_thumbnail(url=ctx.guild.icon_url)
+            e.set_author(name="Restore Roles", icon_url=ctx.author.avatar.url)
+            e.set_thumbnail(url=ctx.guild.icon.url)
             e.description = "Adds a users roles back if they leave and rejoin"
             usage = (
                 ".Restore-Roles enable\n• Enables the module\n"
@@ -143,4 +143,4 @@ class RestoreRoles(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(RestoreRoles(bot))
+    bot.add_cog(RestoreRoles(bot), override=True)

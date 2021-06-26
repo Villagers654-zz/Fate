@@ -115,8 +115,8 @@ class ChatFilter(commands.Cog):
             if ctx.guild.id in self.config and self.config[guild_id]["toggle"]:
                 toggle = "enabled"
             e = discord.Embed(color=colors.pink)
-            e.set_author(name="| Chat Filter", icon_url=ctx.author.avatar_url)
-            e.set_thumbnail(url=ctx.guild.icon_url)
+            e.set_author(name="| Chat Filter", icon_url=ctx.author.avatar.url)
+            e.set_thumbnail(url=ctx.guild.icon.url)
             e.description = "Deletes messages containing blocked words/phrases"
             e.add_field(
                 name="◈ Usage",
@@ -308,7 +308,7 @@ class ChatFilter(commands.Cog):
                                 w = await self.get_webhook(m.channel)
                                 await w.send(
                                     content=result,
-                                    avatar_url=m.author.avatar_url,
+                                    avatar_url=m.author.avatar.url,
                                     username=m.author.display_name
                                 )
                                 await self.delete_webhook(m.channel)
@@ -359,4 +359,4 @@ class ChatFilter(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(ChatFilter(bot))
+    bot.add_cog(ChatFilter(bot), override=True)

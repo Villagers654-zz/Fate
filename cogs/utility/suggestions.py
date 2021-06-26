@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 
 from discord.ext import commands
 import discord
@@ -51,17 +51,17 @@ class Suggestions(commands.Cog):
             return await ctx.send(f"I'm missing {', '.join(missing)} in the suggestions channel")
 
         # Check if the user has sent a suggestion within the cooldown
-        lmt = datetime.utcnow() - timedelta(seconds=self.config[guild_id]["cooldown"])
+        lmt = datetime.now(tz=timezone.utc) - timedelta(seconds=self.config[guild_id]["cooldown"])
         async for msg in channel.history(limit=256, after=lmt):
             if msg.author.id == self.bot.user.id and msg.embeds and msg.embeds[0].author:
-                if str(ctx.author.id) in msg.embeds[0].author.icon_url:
-                    since = get_time((datetime.utcnow() - lmt).seconds)
+                if str(ctx.author.id) in msg.embeds[0].author.icon.url:
+                    since = get_time((datetime.now(tz=timezone.utc) - lmt).seconds)
                     return await ctx.send(
                         f"You've already sent a suggestion within the last {since}, you're on cooldown"
                     )
 
         e = discord.Embed(color=self.bot.config["theme_color"])
-        e.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
+        e.set_author(name=str(ctx.author), icon_url=ctx.author.avatar.url)
         e.description = suggestion
         e.set_footer(text="New Suggestion")
         msg = await channel.send(embed=e)
@@ -75,9 +75,9 @@ class Suggestions(commands.Cog):
     async def suggestions(self, ctx):
         if not ctx.invoked_subcommand:
             e = discord.Embed(color=self.bot.config["theme_color"])
-            e.set_author(name="Member Suggestions", icon_url=self.bot.user.avatar_url)
+            e.set_author(name="Member Suggestions", icon_url=self.bot.user.avatar.url)
             if ctx.guild:
-                e.set_thumbnail(url=ctx.guild.icon_url)
+                e.set_thumbnail(url=ctx.guild.icon.url)
             e.description = "> Set a channel in which to receive suggestions from your server members " \
                             "via the `.suggest` command"
             e.add_field(
@@ -172,4 +172,4 @@ class Suggestions(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Suggestions(bot))
+    bot.add_cog(Suggestions(bot), override=True)

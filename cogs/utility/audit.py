@@ -15,8 +15,8 @@ class Audit(commands.Cog):
         p = get_prefix(ctx)
         if not args or len(args) > 2:
             e = discord.Embed(color=colors.cyan)
-            e.set_author(name="Audit Log Data", icon_url=ctx.author.avatar_url)
-            e.set_thumbnail(url=ctx.guild.icon_url)
+            e.set_author(name="Audit Log Data", icon_url=ctx.author.avatar.url)
+            e.set_thumbnail(url=ctx.guild.icon.url)
             e.add_field(
                 name="◈ Commands ◈",
                 value=".audit [action]\n"
@@ -90,8 +90,8 @@ class Audit(commands.Cog):
 
         def create_embed():
             e = discord.Embed(color=self.bot.config["theme_color"])
-            e.set_author(name="AuditLog Results", icon_url=ctx.author.avatar_url)
-            e.set_thumbnail(url=ctx.guild.icon_url)
+            e.set_author(name="AuditLog Results", icon_url=ctx.author.avatar.url)
+            e.set_thumbnail(url=ctx.guild.icon.url)
             e.description = "\n".join(_page)
             e.set_footer(text=f"Page 1/{len(pages)}")
             pages.append(e)
@@ -157,4 +157,4 @@ class Audit(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Audit(bot))
+    bot.add_cog(Audit(bot), override=True)

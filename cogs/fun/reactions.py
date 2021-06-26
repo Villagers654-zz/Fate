@@ -15,7 +15,7 @@ import asyncio
 from contextlib import suppress
 
 from discord.ext import commands
-from discord import Webhook, AsyncWebhookAdapter
+from discord import Webhook
 import discord
 
 
@@ -108,12 +108,12 @@ class Reactions(commands.Cog):
 
         async with aiohttp.ClientSession() as session:
             webhook = Webhook.from_url(
-                self.webhook[ctx.channel.id].url, adapter=AsyncWebhookAdapter(session)
+                self.webhook[ctx.channel.id].url, session=session
             )
             await webhook.send(
                 args,
                 username=ctx.author.name,
-                avatar_url=ctx.author.avatar_url,
+                avatar_url=ctx.author.avatar.url,
                 file=discord.File(
                     path, filename=reaction + path[-(len(path) - path.find(".")) :]
                 ),
@@ -303,4 +303,4 @@ class Reactions(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Reactions(bot))
+    bot.add_cog(Reactions(bot), override=True)

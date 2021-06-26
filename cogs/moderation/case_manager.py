@@ -125,13 +125,13 @@ class CaseManager(commands.Cog):
 
         embeds = []
         e = discord.Embed(color=self.bot.theme_color)
-        e.set_author(name="Moderation Logs", icon_url=ctx.guild.icon_url)
+        e.set_author(name="Moderation Logs", icon_url=ctx.guild.icon.url)
         e.description = ""
         for i, line in enumerate(lines):
             if i != 0 and i % 9 == 0:
                 embeds.append(e)
                 e = discord.Embed(color=self.bot.theme_color)
-                e.set_author(name="Mod Logs", icon_url=ctx.guild.icon_url)
+                e.set_author(name="Mod Logs", icon_url=ctx.guild.icon.url)
                 e.description = ""
             e.description += f"\n{line}"
             if i + 1 == len(lines):
@@ -228,4 +228,4 @@ class CaseManager(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(CaseManager(bot))
+    bot.add_cog(CaseManager(bot), override=True)

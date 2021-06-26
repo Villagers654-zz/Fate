@@ -2,10 +2,10 @@ import asyncio
 from time import time
 from contextlib import suppress
 import aiohttp
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 
 from discord.ext import commands
-from discord import Guild, Webhook, AsyncWebhookAdapter, AllowedMentions, Message
+from discord import Guild, Webhook, AllowedMentions, Message
 from discord.errors import NotFound, Forbidden, HTTPException
 import discord
 
@@ -52,7 +52,7 @@ class ChatBridges(commands.Cog):
             webhooks = self.get_webhook_urls(bridge_id)
             async with aiohttp.ClientSession() as session:
                 for webhook_url in webhooks:
-                    webhook = Webhook.from_url(webhook_url, adapter=AsyncWebhookAdapter(session))
+                    webhook = Webhook.from_url(webhook_url, session=session)
                     with suppress(NotFound, Forbidden, HTTPException):
                         await webhook.send(reason)
                         await webhook.delete()
@@ -140,7 +140,7 @@ class ChatBridges(commands.Cog):
                                 embeds=msg.embeds if msg.embeds else None,
                                 file=file,
                                 username=msg.author.display_name,
-                                avatar_url=msg.author.avatar_url,
+                                avatar_url=msg.author.avatar.url,
                                 allowed_mentions=mentions
                             )
                     except (NotFound, Forbidden):
@@ -303,7 +303,7 @@ class ChatBridges(commands.Cog):
 
         pongs = lambda s: [
             m for m in self.msgs[user_id]
-            if m and m.created_at > datetime.utcnow() - timedelta(seconds=s)
+            if m and m.created_at > datetime.now(tz=timezone.utc) - timedelta(seconds=s)
                and sum(len(group) for group in [
                 m.mentions, m.raw_mentions, m.role_mentions, m.raw_role_mentions
             ])
@@ -552,8 +552,8 @@ class ChatBridges(commands.Cog):
     @commands.command(name="bridges", aliases=["chatbridges"])
     async def chatbridges(self, ctx):
         e = discord.Embed(color=self.bot.config["theme_color"])
-        e.set_author(name="ChatBridges", icon_url=self.bot.user.avatar_url)
-        e.set_thumbnail(url=ctx.guild.icon_url)
+        e.set_author(name="ChatBridges", icon_url=self.bot.user.avatar.url)
+        e.set_thumbnail(url=ctx.guild.icon.url)
 
         bridges = ""
         for channel in ctx.guild.text_channels:
@@ -584,4 +584,4 @@ class ChatBridges(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(ChatBridges(bot))
+    bot.add_cog(ChatBridges(bot), override=True)

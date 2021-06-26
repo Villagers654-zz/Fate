@@ -14,7 +14,7 @@ from time import time, monotonic
 from random import *
 import asyncio
 from io import BytesIO
-from datetime import datetime
+from datetime import datetime, timezone
 import aiohttp
 from pymysql.err import DataError, InternalError
 from contextlib import suppress
@@ -73,6 +73,9 @@ class Ranking(commands.Cog):
         self.config = bot.utils.cache("ranking")
         self.profile = bot.utils.cache("profiles")
         self.cmds = bot.utils.cache("commands", auto_sync=True)
+        for key in self.cmds.keys():
+            self.cmds.remove(key)
+        self.bot.loop.create_task(self.cmds.flush())
 
         # Save storage
         for guild_id, config in list(self.config.items()):
@@ -135,7 +138,7 @@ class Ranking(commands.Cog):
         for cmd, dat in list(self.cmds.items()):
             for date in dat["uses"]:
                 await asyncio.sleep(0)
-                if (datetime.now() - date).days > 30:
+                if (datetime.now(tz=timezone.utc) - date).days > 30:
                     self.cmds[cmd]["uses"].remove(date)
                     self.cmds[cmd]["total"] -= 1
         await self.cmds.flush()
@@ -239,11 +242,11 @@ class Ranking(commands.Cog):
                 self.macro_cd[user_id] = {}
                 self.macro_cd[user_id]["intervals"] = []
             if "last" not in self.macro_cd[user_id]:
-                self.macro_cd[user_id]["last"] = datetime.now()
+                self.macro_cd[user_id]["last"] = datetime.now(tz=timezone.utc)
             else:
                 last = self.macro_cd[user_id]["last"]
                 self.macro_cd[user_id]["intervals"].append(
-                    (datetime.now() - last).seconds
+                    (datetime.now(tz=timezone.utc) - last).seconds
                 )
                 intervals = self.macro_cd[user_id]["intervals"]
                 self.macro_cd[user_id]["intervals"] = intervals[-3:]
@@ -252,7 +255,7 @@ class Ranking(commands.Cog):
                         return await punish()
 
             set_time = datetime.timestamp(
-                datetime.utcnow().replace(microsecond=0, second=0, minute=0, hour=0)
+                datetime.now(tz=timezone.utc).replace(microsecond=0, second=0, minute=0, hour=0)
             )
             if user_id not in self.global_cd:
                 self.global_cd[user_id] = 0
@@ -358,7 +361,7 @@ class Ranking(commands.Cog):
             ctx.command.name = "gay"
         if ctx.command.name not in self.cmds:
             self.cmds[ctx.command.name] = {"uses": [], "total": 0}
-        self.cmds[ctx.command.name]["uses"].append(datetime.now())
+        self.cmds[ctx.command.name]["uses"].append(datetime.now(tz=timezone.utc))
         self.cmds[ctx.command.name]["total"] += 1
 
     @commands.command(name="role-rewards", aliases=["level-rewards", "level-roles", "lr"])
@@ -367,8 +370,8 @@ class Ranking(commands.Cog):
     async def role_rewards(self, ctx, *args):
         if not args or len(args) == 1:
             e = discord.Embed(color=self.bot.config["theme_color"])
-            e.set_author(name="Level Roles", icon_url=self.bot.user.avatar_url)
-            e.set_thumbnail(url=ctx.guild.icon_url)
+            e.set_author(name="Level Roles", icon_url=self.bot.user.avatar.url)
+            e.set_thumbnail(url=ctx.guild.icon.url)
             e.description = "Grant roles as a reward to users whence they reach a specified level"
             p = get_prefix(ctx)  # type: str
             e.add_field(
@@ -451,8 +454,8 @@ class Ranking(commands.Cog):
     async def xp_config(self, ctx):
         """ Sends an overview for the current config """
         e = discord.Embed(color=0x4A0E50)
-        e.set_author(name="XP Configuration", icon_url=ctx.guild.owner.avatar_url)
-        e.set_thumbnail(url=self.bot.user.avatar_url)
+        e.set_author(name="XP Configuration", icon_url=ctx.guild.owner.avatar.url)
+        e.set_thumbnail(url=self.bot.user.avatar.url)
         conf = self.config[ctx.guild.id]
         e.description = (
             f"• Min XP Per Msg: {conf['min_xp_per_msg']}"
@@ -471,8 +474,8 @@ class Ranking(commands.Cog):
     async def set(self, ctx):
         if not ctx.invoked_subcommand:
             e = discord.Embed(color=colors.fate)
-            e.set_author(name="Set Usage", icon_url=ctx.author.avatar_url)
-            e.set_thumbnail(url=self.bot.user.avatar_url)
+            e.set_author(name="Set Usage", icon_url=ctx.author.avatar.url)
+            e.set_thumbnail(url=self.bot.user.avatar.url)
             p = get_prefix(ctx)  # type: str
             e.description = "`[]` = your arguments / setting"
             e.add_field(
@@ -671,7 +674,7 @@ class Ranking(commands.Cog):
         # Prepare the profile card
         url = "https://cdn.discordapp.com/attachments/632084935506788385/666158201867075585/rank-card.png"
         raw_card = await self.bot.get_resource(url)
-        raw_avatar = await self.bot.get_resource(str(user.avatar_url))
+        raw_avatar = await self.bot.get_resource(str(user.avatar.url))
         raw_status = await self.bot.get_resource(status)
         try:
             raw_background = await self.bot.get_resource(background_url)
@@ -837,7 +840,7 @@ class Ranking(commands.Cog):
             [
                 m, xp,
                 await self.calc_lvl_info(xp, conf),
-                self.bot.loop.create_task(get_av_task(m.avatar_url))
+                self.bot.loop.create_task(get_av_task(m.avatar.url))
             ] for m, xp in members[:9]
         ]
         for i in range(50):
@@ -887,7 +890,7 @@ class Ranking(commands.Cog):
             return fp
 
         e = discord.Embed(color=colors.fate)
-        e.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
+        e.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon.url)
         e.set_image(url=f"attachment://{fp}")
         await ctx.send(embed=e, file=discord.File(fp, filename=fp))
         os.remove(fp)
@@ -952,18 +955,18 @@ class Ranking(commands.Cog):
             # if top_user:
             # 	user = self.bot.get_user(int(top_user))
             # 	if isinstance(user, discord.User):
-            # 		icon_url = user.avatar_url
+            # 		icon_url = user.avatar.url
             # 	else:
             # 		guild = self.bot.get_guild(int(top_user))
             # 		if isinstance(guild, discord.Guild):
-            # 			icon_url = guild.icon_url
+            # 			icon_url = guild.icon.url
             embeds = []
             e = discord.Embed(color=0x4A0E50)
             # if icon_url:
             # 	e.set_author(name=name, icon_url=icon_url)
             # else:
-            # 	e.set_author(name=name, icon_url=self.bot.user.avatar_url)
-            e.set_author(name=name, icon_url=ctx.author.avatar_url)
+            # 	e.set_author(name=name, icon_url=self.bot.user.avatar.url)
+            e.set_author(name=name, icon_url=ctx.author.avatar.url)
             e.set_thumbnail(url=thumbnail_url)
             e.description = ""
             rank = 1
@@ -973,7 +976,7 @@ class Ranking(commands.Cog):
                 if index == lmt:
                     embeds.append(e)
                     e = discord.Embed(color=0x4A0E50)
-                    e.set_author(name=name, icon_url=ctx.author.avatar_url)
+                    e.set_author(name=name, icon_url=ctx.author.avatar.url)
                     e.set_thumbnail(url=thumbnail_url)
                     e.description = ""
                     index = 0
@@ -1168,7 +1171,7 @@ class Ranking(commands.Cog):
     async def clb(self, ctx):
         # Remove old uses from the db
         e = discord.Embed(color=colors.fate)
-        e.set_author(name="Command Leaderboard", icon_url=self.bot.user.avatar_url)
+        e.set_author(name="Command Leaderboard", icon_url=self.bot.user.avatar.url)
         e.description = ""
         rank = 1
         for cmd, uses in sorted(self.cmds.items(), key=lambda kv: kv[1]["total"], reverse=True)[:10]:
@@ -1254,4 +1257,4 @@ class Ranking(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Ranking(bot))
+    bot.add_cog(Ranking(bot), override=True)

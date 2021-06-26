@@ -9,4 +9,4 @@ class Uno(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Uno(bot))
+    bot.add_cog(Uno(bot), override=True)

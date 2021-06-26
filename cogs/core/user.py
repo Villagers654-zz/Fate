@@ -78,7 +78,7 @@ class User(commands.Cog):
     async def blocked(self, ctx):
         config = self.get_config()  # type: dict
         e = discord.Embed(color=colors.fate)
-        e.set_author(name="Blocked Users", icon_url=self.bot.user.avatar_url)
+        e.set_author(name="Blocked Users", icon_url=self.bot.user.avatar.url)
         e.description = ""
         for user_id in config["blocked"]:
             user = await self.bot.fetch_user(int(user_id))
@@ -87,4 +87,4 @@ class User(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(User(bot))
+    bot.add_cog(User(bot), override=True)

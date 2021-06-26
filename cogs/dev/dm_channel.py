@@ -83,7 +83,7 @@ class DMChannel(commands.Cog):
                                 return await webhook.send(
                                     msg.content,
                                     username=msg.author.name,
-                                    avatar_url=msg.author.avatar_url,
+                                    avatar_url=msg.author.avatar.url,
                                     file=discord.File(
                                         BytesIO(requests.get(file.url).content),
                                         filename=file.filename,
@@ -92,7 +92,7 @@ class DMChannel(commands.Cog):
                             if msg.attachments:
                                 return await webhook.send(
                                     username=msg.author.name,
-                                    avatar_url=msg.author.avatar_url,
+                                    avatar_url=msg.author.avatar.url,
                                     file=discord.File(
                                         BytesIO(requests.get(file.url).content),
                                         filename=file.filename,
@@ -101,7 +101,7 @@ class DMChannel(commands.Cog):
                             await webhook.send(
                                 msg.content,
                                 username=msg.author.name,
-                                avatar_url=msg.author.avatar_url,
+                                avatar_url=msg.author.avatar.url,
                             )
                     else:
                         if msg.channel.id == self.channel:
@@ -123,4 +123,4 @@ class DMChannel(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(DMChannel(bot))
+    bot.add_cog(DMChannel(bot), override=True)

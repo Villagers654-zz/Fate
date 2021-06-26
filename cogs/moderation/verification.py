@@ -3,7 +3,7 @@
 import asyncio
 from typing import Optional
 from contextlib import suppress
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 
 from discord.ext import commands
 import discord
@@ -404,7 +404,7 @@ class Verification(commands.Cog):
         guild_id = member.guild.id
         if guild_id in self.config and not member.bot:
             conf = self.config[guild_id]  # type: Verification.template_config
-            if member.joined_at > datetime.utcnow() - timedelta(seconds=2):
+            if member.joined_at > datetime.now(tz=timezone.utc) - timedelta(seconds=2):
                 if not conf["auto_start"]:
                     return
             try:
@@ -487,4 +487,4 @@ class Verification(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Verification(bot))
+    bot.add_cog(Verification(bot), override=True)

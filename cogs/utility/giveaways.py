@@ -3,7 +3,7 @@
 from os import path
 import json
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 import re
 import random
 from contextlib import suppress
@@ -31,11 +31,11 @@ class Giveaways(commands.Cog):
     async def make_embed(self, dat):
         e = discord.Embed(color=colors.fate)
         user = await self.bot.fetch_user(dat["user"])
-        e.set_author(name=f"Giveaway by {user}", icon_url=user.avatar_url)
+        e.set_author(name=f"Giveaway by {user}", icon_url=user.avatar.url)
         e.description = dat["giveaway"]
         _end_time = datetime.strptime(dat["end_time"], "%Y-%m-%d %H:%M:%S.%f")
-        end_time = get_time((_end_time - datetime.now()).seconds)
-        if datetime.now() >= _end_time:
+        end_time = get_time((_end_time - datetime.now(tz=timezone.utc)).seconds)
+        if datetime.now(tz=timezone.utc) >= _end_time:
             e.set_footer(text=f"Giveaway Ended")
         else:
             end_time = re.sub("\.[0-9]*", "", end_time)
@@ -53,7 +53,7 @@ class Giveaways(commands.Cog):
         end_time = datetime.strptime(dat["end_time"], "%Y-%m-%d %H:%M:%S.%f")
 
         # Wait for the giveaway timer to end
-        while datetime.now() < end_time:
+        while datetime.now(tz=timezone.utc) < end_time:
             await asyncio.sleep(30)
             try:
                 await message.edit(embed=await self.make_embed(dat))
@@ -188,7 +188,7 @@ class Giveaways(commands.Cog):
 
         # Save giveaway info
         dat = {
-            "end_time": str(datetime.now() + timedelta(seconds=timer)),
+            "end_time": str(datetime.now(tz=timezone.utc) + timedelta(seconds=timer)),
             "user": ctx.author.id,
             "giveaway": giveaway,
             "winners": winners,
@@ -215,4 +215,4 @@ class Giveaways(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Giveaways(bot))
+    bot.add_cog(Giveaways(bot), override=True)

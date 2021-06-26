@@ -18,4 +18,4 @@ class Embeds(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Embeds(bot))
+    bot.add_cog(Embeds(bot), override=True)

@@ -1,5 +1,5 @@
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 import asyncio
 import re
 from contextlib import suppress
@@ -79,7 +79,7 @@ class Lock(commands.Cog):
 
         # Check members that have already joined
         if lock == "new":
-            age_lmt = datetime.utcnow() - timedelta(seconds=self.lock[guild_id][lock]["age_lmt"])
+            age_lmt = datetime.now(tz=timezone.utc) - timedelta(seconds=self.lock[guild_id][lock]["age_lmt"])
             violations = []
             for member in list(ctx.guild.members):
                 await asyncio.sleep(0)
@@ -153,7 +153,7 @@ class Lock(commands.Cog):
                 except NotFound:
                     pass
             elif "new" in self.lock[guild_id]:
-                age_lmt = datetime.utcnow() - timedelta(seconds=self.lock[guild_id]["new"]["age_lmt"])
+                age_lmt = datetime.now(tz=timezone.utc) - timedelta(seconds=self.lock[guild_id]["new"]["age_lmt"])
                 if m.created_at > age_lmt:
                     with suppress(HTTPException, Forbidden):
                         await m.send(f"Your account's too new to join **{m.guild}**. Try again in the future")
@@ -171,4 +171,4 @@ class Lock(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Lock(bot))
+    bot.add_cog(Lock(bot), override=True)

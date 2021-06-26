@@ -40,7 +40,7 @@ class Notepad(commands.Cog):
                 if author_id not in self.timestamp:
                     self.timestamp[author_id] = []
                 self.timestamp[author_id].append(
-                    datetime.datetime.now().strftime("%m-%d-%Y %I:%M%p")
+                    datetime.datetime.now(tz=timezone.utc).strftime("%m-%d-%Y %I:%M%p")
                 )
                 if len(self.timestamp[author_id]) > 5:
                     del self.timestamp[author_id][0]
@@ -53,7 +53,7 @@ class Notepad(commands.Cog):
                     )
                 )
                 e = discord.Embed(color=0xFFC923)
-                e.set_author(name="Noted..", icon_url=ctx.author.avatar_url)
+                e.set_author(name="Noted..", icon_url=ctx.author.avatar.url)
                 e.set_image(url="attachment://" + os.path.basename(path))
                 await ctx.send(
                     file=discord.File(path, filename=os.path.basename(path)),
@@ -68,7 +68,7 @@ class Notepad(commands.Cog):
                 async with ctx.typing():
                     e = discord.Embed(color=0xFFC923)
                     e.title = "~~===🥂🍸🍷Note🍷🍸🥂===~~"
-                    e.set_thumbnail(url=ctx.author.avatar_url)
+                    e.set_thumbnail(url=ctx.author.avatar.url)
                     e.description = self.notes[author_id][-1]
                     e.set_footer(text=self.timestamp[author_id][-1])
                     await ctx.send(embed=e)
@@ -89,7 +89,7 @@ class Notepad(commands.Cog):
         if author_id not in self.timestamp:
             self.timestamp[author_id] = []
         self.timestamp[author_id].append(
-            datetime.datetime.now().strftime("%m-%d-%Y %I:%M%p")
+            datetime.datetime.now(tz=timezone.utc).strftime("%m-%d-%Y %I:%M%p")
         )
         if len(self.timestamp[author_id]) > 5:
             del self.timestamp[author_id][0]
@@ -105,7 +105,7 @@ class Notepad(commands.Cog):
         if author_id in self.notes:
             e = discord.Embed(color=0xFFC923)
             e.title = "~~===🥂🍸🍷Notes🍷🍸🥂===~~"
-            e.set_thumbnail(url=ctx.author.avatar_url)
+            e.set_thumbnail(url=ctx.author.avatar.url)
             e.description = f"**Your last {len(self.notes[author_id])} note(s):**"
             note = len(self.notes[author_id]) - 1
             position = 1
@@ -119,4 +119,4 @@ class Notepad(commands.Cog):
 
 
 def setup(bot: commands.Bot):
-    bot.add_cog(Notepad(bot))
+    bot.add_cog(Notepad(bot), override=True)

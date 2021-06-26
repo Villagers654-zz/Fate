@@ -56,7 +56,7 @@ class ServerStatistics(commands.Cog):
     async def server_statistics(self, ctx):
         if not ctx.invoked_subcommand:
             e = discord.Embed(color=self.bot.config["theme_color"])
-            e.set_author(name="Server Stat Channels", icon_url=self.bot.user.avatar_url)
+            e.set_author(name="Server Stat Channels", icon_url=self.bot.user.avatar.url)
             e.set_thumbnail(url="https://cdn.discordapp.com/attachments/514213558549217330/514345278669848597/8yx98C.gif")
             e.description = "• Use voice channels to automatically update and show server statistics\n" \
                             "• Display things like the member count, bot count, and boost count"
@@ -221,4 +221,4 @@ class ServerStatistics(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(ServerStatistics(bot))
+    bot.add_cog(ServerStatistics(bot), override=True)

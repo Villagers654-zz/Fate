@@ -41,4 +41,4 @@ class SecureOverwrites(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(SecureOverwrites(bot))
+    bot.add_cog(SecureOverwrites(bot), override=True)

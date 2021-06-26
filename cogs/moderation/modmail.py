@@ -2,7 +2,7 @@
 import json
 from time import time
 from contextlib import suppress
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 
 from discord.ext import commands
 import discord
@@ -23,7 +23,7 @@ class ModMail(commands.Cog):
     async def modmail(self, ctx):
         if not ctx.invoked_subcommand:
             e = discord.Embed(color=self.bot.config["theme_color"])
-            e.set_author(name="Modmail", icon_url=self.bot.user.avatar_url)
+            e.set_author(name="Modmail", icon_url=self.bot.user.avatar.url)
             p = self.bot.utils.get_prefix(ctx)  # type: str
             e.add_field(
                 name="◈ Usage",
@@ -144,7 +144,7 @@ class ModMail(commands.Cog):
                 return None
 
             e = discord.Embed(color=self.bot.config["theme_color"])
-            e.set_author(name=f"Case #{case_number} in {msg.guild}", icon_url=msg.guild.icon_url)
+            e.set_author(name=f"Case #{case_number} in {msg.guild}", icon_url=msg.guild.icon.url)
             e.description = f"Reply from {msg.author}"
             if msg.content:
                 e.add_field(
@@ -264,7 +264,7 @@ class ModMail(commands.Cog):
                 "server at the moment. Try again later"
             )
 
-        after = datetime.utcnow() - timedelta(hours=12)
+        after = datetime.now(tz=timezone.utc) - timedelta(hours=12)
         action = discord.AuditLogAction.channel_delete
         async for entry in category.guild.audit_logs(after=after, action=action):
             if "case-" in entry.changes.before.name and str(case) in entry.changes.before.name:
@@ -287,7 +287,7 @@ class ModMail(commands.Cog):
                 await ctx.send("Failed to create a thread due to my lacking manage_channel perms in that server")
                 return None
             e = discord.Embed(color=self.bot.config["theme_color"])
-            e.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
+            e.set_author(name=str(ctx.author), icon_url=ctx.author.avatar.url)
             e.set_footer(text="Use .reply to respond")
             e.description = f"**Case #{case}:**\n**UserID:** {ctx.author.id}\n"
             reason = self.bot.decode(reason)
@@ -315,7 +315,7 @@ class ModMail(commands.Cog):
             if "-closed" in channel.name:
                 return await ctx.send("That thread is closed")
             e = discord.Embed(color=self.bot.config["theme_color"])
-            e.set_author(name="New Reply", icon_url=ctx.author.avatar_url)
+            e.set_author(name="New Reply", icon_url=ctx.author.avatar.url)
             if message:
                 e.description = message
             if attachment:
@@ -359,4 +359,4 @@ class ModMail(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(ModMail(bot))
+    bot.add_cog(ModMail(bot), override=True)

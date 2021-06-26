@@ -54,7 +54,7 @@ class NotePad(commands.Cog):
         draw = ImageDraw.Draw(im)
 
         avatar = Image.open(
-            BytesIO(requests.get(ctx.author.avatar_url).content)
+            BytesIO(requests.get(ctx.author.avatar.url).content)
         ).convert("RGBA")
         avatar = add_corners(avatar.resize((175, 175), Image.BICUBIC), 87)
         avatar = avatar.resize((120, 120), Image.BICUBIC)
@@ -82,4 +82,4 @@ class NotePad(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(NotePad(bot))
+    bot.add_cog(NotePad(bot), override=True)

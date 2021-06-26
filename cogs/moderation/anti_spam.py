@@ -1,9 +1,10 @@
 import asyncio
 import json
 from time import time
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta, timezone
 from contextlib import suppress
 import traceback
+import pytz
 
 import discord
 from discord.errors import Forbidden, NotFound, HTTPException
@@ -13,6 +14,7 @@ from discord.ext import tasks
 from botutils import colors, get_time
 
 
+utc = pytz.UTC
 defaults = {
     "rate_limit": [
         {
@@ -111,7 +113,7 @@ class AntiSpam(commands.Cog):
                     if not msg:
                         self.msgs[user_id].remove(msg)
                         continue
-                    elif msg.created_at < datetime.utcnow() - timedelta(seconds=15):
+                    elif msg.created_at < datetime.now(tz=timezone.utc) - timedelta(seconds=15):
                         self.msgs[user_id].remove(msg)
             with suppress(KeyError):
                 if not self.msgs[user_id]:
@@ -124,7 +126,7 @@ class AntiSpam(commands.Cog):
                 with suppress(KeyError, ValueError, IndexError):
                     if not message:
                         self.dupes[channel_id].remove(message)
-                    elif message.created_at < datetime.utcnow() - timedelta(minutes=45):
+                    elif message.created_at < datetime.now(tz=timezone.utc) - timedelta(minutes=45):
                         self.dupes[channel_id].remove(message)
             with suppress(KeyError):
                 if not self.dupes[channel_id]:
@@ -133,7 +135,7 @@ class AntiSpam(commands.Cog):
         # Typing timestamps
         for user_id, timestamps in list(self.typing.items()):
             await asyncio.sleep(0)
-            if not any((datetime.utcnow() - date).seconds < 60 for date in self.typing[user_id]):
+            if not any((datetime.now(tz=timezone.utc) - date).seconds < 60 for date in self.typing[user_id]):
                 if user_id in self.typing:
                     del self.typing[user_id]
 
@@ -144,8 +146,8 @@ class AntiSpam(commands.Cog):
     async def anti_spam(self, ctx):
         if not ctx.invoked_subcommand and 'help' not in ctx.message.content:
             e = discord.Embed(color=colors.fate)
-            e.set_author(name='AntiSpam Usage', icon_url=ctx.author.avatar_url)
-            e.set_thumbnail(url=ctx.guild.icon_url)
+            e.set_author(name='AntiSpam Usage', icon_url=ctx.author.avatar.url)
+            e.set_thumbnail(url=ctx.guild.icon.url)
             e.description = '**.anti-spam enable**\n`• enables all anti-spam modules`\n' \
                             '**.anti-spam enable module**\n`• enables a single module`\n' \
                             '**.anti-spam disable**\n`• disables all anti-spam modules`\n' \
@@ -394,7 +396,7 @@ class AntiSpam(commands.Cog):
                 else:
                     running += 1
         e = discord.Embed(color=self.bot.config["theme_color"])
-        e.set_author(name="AntiSpam Stats", icon_url=self.bot.user.avatar_url)
+        e.set_author(name="AntiSpam Stats", icon_url=self.bot.user.avatar.url)
         emotes = self.bot.utils.emotes
         errored = []
         try:
@@ -670,7 +672,7 @@ class AntiSpam(commands.Cog):
                         triggered = None
                     elif len(msg.content) > 150:
                         typed_recently = any(
-                            (datetime.utcnow() - date).seconds < 25 for date in self.typing[user_id]
+                            (datetime.now(tz=timezone.utc) - date).seconds < 25 for date in self.typing[user_id]
                         )
                         if not typed_recently:
                             reason = "pasting bulky message (check #2)"
@@ -678,7 +680,7 @@ class AntiSpam(commands.Cog):
                         if len(msg.content) > 250:
                             count = len([
                                 ts for ts in self.typing[user_id]
-                                if (datetime.utcnow() - ts).seconds < 60
+                                if (datetime.now(tz=timezone.utc) - ts).seconds < 60
                             ])
                             if count < 3:
                                 reason = "pasting bulky message (check #3)"
@@ -736,7 +738,7 @@ class AntiSpam(commands.Cog):
                     self.msgs[user_id] = []
                 pongs = lambda s: [
                     m for m in self.msgs[user_id]
-                    if m and m.created_at > datetime.utcnow() - timedelta(seconds=s)
+                    if m and m.created_at > datetime.now(tz=timezone.utc) - timedelta(seconds=s)
                        and sum(len(group) for group in [
                         m.mentions, m.raw_mentions, m.role_mentions, m.raw_role_mentions
                     ])
@@ -805,7 +807,7 @@ class AntiSpam(commands.Cog):
                         self.dupes[channel_id] = [
                             msg, *[
                                 msg for msg in self.dupes[channel_id]
-                                if msg.created_at > datetime.utcnow() - timedelta(seconds=60)
+                                if msg.created_at > datetime.now(tz=timezone.utc) - timedelta(seconds=60)
                             ]
                         ]
                         for threshold in self.config[guild_id]["duplicates"]["thresholds"]:
@@ -816,7 +818,7 @@ class AntiSpam(commands.Cog):
                                 dupes = [
                                     m for m in self.dupes[channel_id]
                                     if m and m.content and m.content == message.content
-                                       and m.created_at > datetime.utcnow() - timedelta(seconds=timeframe)
+                                       and m.created_at > datetime.now(tz=timezone.utc) - timedelta(seconds=timeframe)
                                        and len(m.content) > 5
                                 ]
                                 all_are_single_use = all(
@@ -867,7 +869,7 @@ class AntiSpam(commands.Cog):
                         if user_id in self.msgs:
                             messages = [
                                 m for m in self.msgs[user_id]
-                                if m and m.created_at > datetime.utcnow() - timedelta(seconds=15)
+                                if m and m.created_at > datetime.now(tz=timezone.utc) - timedelta(seconds=15)
                             ]
                         self.msgs[user_id] = []  # Remove soon to be deleted messages from the list
                         with suppress(NotFound, Forbidden, HTTPException):
@@ -1234,4 +1236,4 @@ class ConfigureModules:
 
 
 def setup(bot):
-    bot.add_cog(AntiSpam(bot))
+    bot.add_cog(AntiSpam(bot), override=True)

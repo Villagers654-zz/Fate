@@ -190,8 +190,8 @@ class ConfigureModules:
         """Get default embed style"""
         e = discord.Embed(color=self.bot.config["theme_color"])
         owner = self.bot.get_user(264838866480005122)
-        e.set_author(name="~==🥂🍸🍷Help🍷🍸🥂==~", icon_url=owner.avatar_url)
-        e.set_thumbnail(url=self.bot.user.avatar_url)
+        e.set_author(name="~==🥂🍸🍷Help🍷🍸🥂==~", icon_url=owner.avatar.url)
+        e.set_thumbnail(url=self.bot.user.avatar.url)
         e.description = (
             f"[Support Server]({self.bot.config['support_server']}) | "
             f"[Bot Invite]({self.bot.invite_url})"
@@ -409,4 +409,4 @@ class ConfigureModules:
 
 
 def setup(bot):
-    bot.add_cog(Menus(bot))
+    bot.add_cog(Menus(bot), override=True)

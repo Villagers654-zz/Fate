@@ -12,7 +12,7 @@ Main file intended for starting the bot
 import json
 import traceback
 from time import time
-from datetime import datetime
+from datetime import datetime, timezone
 import os
 import asyncio
 import logging
@@ -487,7 +487,7 @@ async def on_guild_join(guild):
     e = discord.Embed(color=colors.pink)
     e.set_author(name="Bot Added to Guild", icon_url=bot.user.avatar_url)
     if guild.icon_url:
-        e.set_thumbnail(url=guild.icon_url)
+        e.set_thumbnail(url=guild.icon.url)
     inviter = "Unknown"
     if guild.me.guild_permissions.view_audit_log:
         async for entry in guild.audit_logs(
@@ -511,8 +511,8 @@ async def on_guild_remove(guild: discord.Guild):
     channel = bot.get_channel(bot.config["log_channel"])
     e = discord.Embed(color=colors.pink)
     e.set_author(name="Bot Left or Was Removed", icon_url=bot.user.avatar_url)
-    if guild.icon_url:
-        e.set_thumbnail(url=guild.icon_url)
+    if guild.icon.url:
+        e.set_thumbnail(url=guild.icon.url)
     e.description = (
         f"**Name:** {guild.name}\n"
         f"**ID:** {guild.id}\n"
@@ -528,7 +528,7 @@ async def on_guild_remove(guild: discord.Guild):
 
 if __name__ == "__main__":
     bot.log.info("Starting Bot", color="yellow")
-    bot.start_time = datetime.now()
+    bot.start_time = datetime.now(tz=timezone.utc)
     try:
         bot.run()
     except discord.errors.LoginFailure:

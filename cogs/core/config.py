@@ -33,9 +33,9 @@ class Config(commands.Cog):
         if not ctx.invoked_subcommand:
             e = discord.Embed(color=colors.fate)
             e.set_author(
-                name="| 💎 Server Config 💎", icon_url=ctx.guild.owner.avatar_url
+                name="| 💎 Server Config 💎", icon_url=ctx.guild.owner.avatar.url
             )
-            e.set_thumbnail(url=ctx.guild.icon_url)
+            e.set_thumbnail(url=ctx.guild.icon.url)
             p = await get_prefixes_async(self.bot, ctx.message)
             e.description = f"**Prefix:** [`{p[2]}`]\n"
 
@@ -89,7 +89,7 @@ class Config(commands.Cog):
 
         def default():
             e = discord.Embed(color=colors.fate)
-            e.set_author(name="Warn Config", icon_url=ctx.author.avatar_url)
+            e.set_author(name="Warn Config", icon_url=ctx.author.avatar.url)
             e.description = (
                 f"{emoji(1)} : View Config\n"
                 f"{emoji(2)} : Edit Config\n"
@@ -122,7 +122,7 @@ class Config(commands.Cog):
                     for punishment in dat["punishments"][guild_id]:
                         punishments += f"**#{index}. `{punishment}`**\n"
                 e = discord.Embed(color=colors.fate)
-                e.set_author(name="Warn Config", icon_url=ctx.author.avatar_url)
+                e.set_author(name="Warn Config", icon_url=ctx.author.avatar.url)
                 e.description = (
                     f"**Warns Expire: {expiring}\nCustom Punishments:**\n{punishments}"
                 )
@@ -228,4 +228,4 @@ class Config(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Config(bot))
+    bot.add_cog(Config(bot), override=True)

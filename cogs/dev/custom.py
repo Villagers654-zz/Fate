@@ -270,4 +270,4 @@ class Custom(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Custom(bot))
+    bot.add_cog(Custom(bot), override=True)

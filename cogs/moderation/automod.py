@@ -34,4 +34,4 @@ class AutoModeration(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(AutoModeration(bot))
+    bot.add_cog(AutoModeration(bot), override=True)

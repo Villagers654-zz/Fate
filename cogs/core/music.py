@@ -517,7 +517,7 @@ class Music(commands.Cog):
             name="◈ Song Progress ◈",
             value=f"{bar}\n**`{progress}`/`{duration}`** -{remaining}"
         )
-        e.set_footer(text=f"Requested by {requester}", icon_url=requester.avatar_url)
+        e.set_footer(text=f"Requested by {requester}", icon_url=requester.avatar.url)
 
         await ctx.send(embed=e, delete_after=25)
 
@@ -543,4 +543,4 @@ class Music(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Music(bot))
+    bot.add_cog(Music(bot), override=True)

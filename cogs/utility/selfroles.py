@@ -52,7 +52,7 @@ class SelfRoles(commands.Cog):
         name = data["name"]
         e.set_author(
             name=name if name else "Self-Role Menu",
-            icon_url=guild.icon_url,
+            icon_url=guild.icon.url,
         )
         e.set_thumbnail(
             url="https://cdn.discordapp.com/attachments/514213558549217330/514345278669848597/8yx98C.gif"
@@ -111,8 +111,8 @@ class SelfRoles(commands.Cog):
     async def selfroles(self, ctx):
         """ Sends info & usage help on self roles """
         e = discord.Embed(color=colors.fate)
-        e.set_author(name="Self-Role Menus", icon_url=ctx.author.avatar_url)
-        e.set_thumbnail(url=self.bot.user.avatar_url)
+        e.set_author(name="Self-Role Menus", icon_url=ctx.author.avatar.url)
+        e.set_thumbnail(url=self.bot.user.avatar.url)
         e.description = (
             "Let members pick their own role via reactions. If you're "
             "having trouble editing a menu, use the update-menu cmd"
@@ -629,4 +629,4 @@ class SelfRoles(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(SelfRoles(bot))
+    bot.add_cog(SelfRoles(bot), override=True)

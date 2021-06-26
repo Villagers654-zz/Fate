@@ -152,4 +152,4 @@ class Actions(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Actions(bot))
+    bot.add_cog(Actions(bot), override=True)

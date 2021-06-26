@@ -119,8 +119,8 @@ class BetterInviteManager(commands.Cog):
                         config["invites"][code]["inviter"]
                     )
                 e = discord.Embed(color=colors.fate)
-                e.set_author(name=f"{member} has joined", icon_url=member.avatar_url)
-                e.set_thumbnail(url=inviter.avatar_url)
+                e.set_author(name=f"{member} has joined", icon_url=member.avatar.url)
+                e.set_thumbnail(url=inviter.avatar.url)
                 e.description = (
                     f"**Inviter:** @{inviter}"
                     f"\n**Joins:** `{joins}` **Leaves:** `{leaves}`"
@@ -143,4 +143,4 @@ class BetterInviteManager(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(BetterInviteManager(bot))
+    bot.add_cog(BetterInviteManager(bot), override=True)

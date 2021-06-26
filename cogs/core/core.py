@@ -11,12 +11,12 @@ Core bot commands such as prefix, invite, and ping
 import aiohttp
 from time import time, monotonic
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone, timezone
 from contextlib import suppress
 
 from discord.ext import commands
 import discord
-from discord import Webhook, AsyncWebhookAdapter
+from discord import Webhook
 import dbl
 
 from botutils import colors, get_prefixes_async, cleanup_msg, emojis, Conversation
@@ -179,7 +179,7 @@ class Core(commands.Cog):
             prefixes = await get_prefixes_async(self.bot, ctx.message)
             formatted = "\n".join(prefixes[1::])
             e = discord.Embed(color=colors.fate)
-            e.set_author(name="Prefixes", icon_url=ctx.author.avatar_url)
+            e.set_author(name="Prefixes", icon_url=ctx.author.avatar.url)
             e.description = formatted
             return await ctx.send(embed=e)
         if not ctx.author.guild_permissions.manage_guild:
@@ -373,7 +373,7 @@ class Core(commands.Cog):
         before = monotonic()
         msg = await ctx.send(embed=e)
         api_ping = f"{emojis.discord} **Discord API:** `{round((monotonic() - before) * 1000)}ms`"
-        response_time = (datetime.utcnow() - ctx.message.created_at).total_seconds() * 1000
+        response_time = (datetime.now(tz=timezone.utc) - ctx.message.created_at).total_seconds() * 1000
         response_ping = f"\n{emojis.verified} **Message Trip:** `{round(response_time)}ms`"
         imgs = [
             "https://cdn.discordapp.com/emojis/562592256939393035.png?v=1",
@@ -392,7 +392,7 @@ class Core(commands.Cog):
         shard_ping = ""
         for shard, latency in self.bot.latencies:
             shard_ping += f"\n{emojis.boost} **Shard {shard}:** `{round(latency * 1000)}ms`"
-        e.set_author(name=f"Bots Latency", icon_url=self.bot.user.avatar_url)
+        e.set_author(name=f"Bots Latency", icon_url=self.bot.user.avatar.url)
         e.set_thumbnail(url=img)
         e.description = api_ping + response_ping + shard_ping
         await msg.edit(embed=e)
@@ -422,7 +422,7 @@ class Core(commands.Cog):
 
         api = str(self.bot.latency * 1000)
         api = api[: api.find(".")]
-        e.set_author(name=f"Bots Latency", icon_url=self.bot.user.avatar_url)
+        e.set_author(name=f"Bots Latency", icon_url=self.bot.user.avatar.url)
         e.set_thumbnail(url=img)
         e.description = (
             f"**Message Trip 1:** `{int(ping)}ms`\n**Websocket Heartbeat:** `{api}ms`"
@@ -460,7 +460,7 @@ class Core(commands.Cog):
                     async with aiohttp.ClientSession() as session:
                         webhook = Webhook.from_url(
                             "https://discordapp.com/api/webhooks/673290242819883060/GDXiMBwbzw7dbom57ZupHsiEQ76w8TfV_mEwi7_pGw8CvVFL0LNgwRwk55yRPxNdPA4b",
-                            adapter=AsyncWebhookAdapter(session),
+                            session=session,
                         )
                         files = []
                         for attachment in msg.attachments:
@@ -471,11 +471,11 @@ class Core(commands.Cog):
                             e = discord.Embed(color=colors.fate)
                             e.set_author(
                                 name=msg.channel.recipient,
-                                icon_url=msg.channel.recipient.avatar_url,
+                                icon_url=msg.channel.recipient.avatar.url,
                             )
                             return await webhook.send(
                                 username=msg.author.name,
-                                avatar_url=msg.author.avatar_url,
+                                avatar_url=msg.author.avatar.url,
                                 content=msg.content,
                                 files=files,
                                 embed=e,
@@ -483,7 +483,7 @@ class Core(commands.Cog):
                             )
                         await webhook.send(
                             username=msg.author.name,
-                            avatar_url=msg.author.avatar_url,
+                            avatar_url=msg.author.avatar.url,
                             content=msg.content,
                             embeds=msg.embeds,
                             files=files,
@@ -492,4 +492,4 @@ class Core(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Core(bot))
+    bot.add_cog(Core(bot), override=True)

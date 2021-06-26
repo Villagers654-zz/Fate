@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from contextlib import suppress
 from discord.ext import commands
 from os.path import isfile
@@ -61,8 +61,8 @@ class AntiRaid(commands.Cog):
             if str(ctx.guild.id) in self.toggle:
                 toggle = "enabled"
             e = discord.Embed(color=colors.red)
-            e.set_author(name="Anti Raid", icon_url=ctx.author.avatar_url)
-            e.set_thumbnail(url=ctx.guild.icon_url)
+            e.set_author(name="Anti Raid", icon_url=ctx.author.avatar.url)
+            e.set_thumbnail(url=ctx.guild.icon.url)
             e.description = "Prevents mass-join and mass-kick/ban raids"
             e.add_field(
                 name="Usage",
@@ -155,7 +155,7 @@ class AntiRaid(commands.Cog):
             return
         with suppress(discord.errors.Forbidden):
             async for entry in m.guild.audit_logs(limit=1):
-                if entry.created_at > datetime.utcnow() - timedelta(seconds=3):
+                if entry.created_at > datetime.now(tz=timezone.utc) - timedelta(seconds=3):
                     actions = [discord.AuditLogAction.kick, discord.AuditLogAction.ban]
                     if entry.action in actions:
                         user_id = str(entry.user.id)
@@ -191,7 +191,7 @@ class AntiRaid(commands.Cog):
             if not required_permission:
                 return
             async for entry in guild.audit_logs(limit=1):
-                if datetime.utcnow() - timedelta(seconds=3) < entry.created_at:
+                if datetime.now(tz=timezone.utc) - timedelta(seconds=3) < entry.created_at:
                     if str(entry.action) in ["AuditLogAction.channel_delete"]:
                         user_id = str(entry.user.id)
                         now = int(time() / 15)
@@ -242,4 +242,4 @@ class AntiRaid(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(AntiRaid(bot))
+    bot.add_cog(AntiRaid(bot), override=True)

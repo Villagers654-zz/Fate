@@ -7,7 +7,7 @@ Notes
 from os import path
 import json
 from typing import *
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 import asyncio
 import re
 from time import time as now
@@ -391,7 +391,7 @@ class Moderation(commands.Cog):
             return await ctx.send("This server doesn't have anything restricted")
         dat = self.bot.restricted[guild_id]
         e = discord.Embed(color=colors.fate)
-        e.set_author(name="Restricted:", icon_url=ctx.author.avatar_url)
+        e.set_author(name="Restricted:", icon_url=ctx.author.avatar.url)
         e.description = ""
         if dat["channels"]:
             changelog = ""
@@ -538,8 +538,7 @@ class Moderation(commands.Cog):
                 await asyncio.sleep(0.21)
             msgs = task.result()
         e = discord.Embed(
-            description=f"♻ Cleared {len(msgs)} message{'s' if len(msgs) > 1 else ''}",
-            delete_after=10,
+            description=f"♻ Cleared {len(msgs)} message{'s' if len(msgs) > 1 else ''}"
         )
         await ctx.send(embed=e, delete_after=5)
         await ctx.message.delete(delay=5)
@@ -866,7 +865,7 @@ class Moderation(commands.Cog):
         if not members:
             return await ctx.send("You need to properly specify who to kick")
         e = discord.Embed(color=colors.fate)
-        e.set_author(name=f"Kicking members", icon_url=ctx.author.avatar_url)
+        e.set_author(name=f"Kicking members", icon_url=ctx.author.avatar.url)
         msg = await ctx.send(embed=e)
         e.description = ""
         for i, member in enumerate(members):
@@ -914,7 +913,7 @@ class Moderation(commands.Cog):
         elif users_to_ban > 1:
             e.set_author(
                 name=f"Banning {users_to_ban} user{'' if users_to_ban > 1 else ''}",
-                icon_url=ctx.author.avatar_url,
+                icon_url=ctx.author.avatar.url,
             )
         if users_to_ban > 10:
             return await ctx.send("That's too many")
@@ -1041,12 +1040,12 @@ class Moderation(commands.Cog):
                 ctx.guild.id, user.id, "unban", str(ctx.author), ctx.message.jump_url, ctx.author.id
             )
             e = discord.Embed(color=colors.red)
-            e.set_author(name=f"{user} unbanned [Case #{case}]", icon_url=user.avatar_url)
+            e.set_author(name=f"{user} unbanned [Case #{case}]", icon_url=user.avatar.url)
             await ctx.send(embed=e)
         else:
             e = discord.Embed(color=colors.green)
             e.set_author(
-                name=f"Unbanning {len(users)} users", icon_url=ctx.author.avatar_url
+                name=f"Unbanning {len(users)} users", icon_url=ctx.author.avatar.url
             )
             e.description = ""
             msg = await ctx.send(embed=e)
@@ -1078,7 +1077,7 @@ class Moderation(commands.Cog):
     async def mass_nick(self, ctx, *, nick=""):
         def gen_embed(iteration):
             e = discord.Embed(color=colors.fate)
-            e.set_author(name="Mass Updating Nicknames", icon_url=ctx.author.avatar_url)
+            e.set_author(name="Mass Updating Nicknames", icon_url=ctx.author.avatar.url)
             e.description = (
                 f"{iteration + 1}/{len(members)} complete"
                 f"\n1 nick per 1.21 seconds"
@@ -1158,7 +1157,7 @@ class Moderation(commands.Cog):
     async def mass_role(self, ctx, *, role=None):
         def gen_embed(iteration):
             e = discord.Embed(color=colors.fate)
-            e.set_author(name=f"Mass {action} Roles", icon_url=ctx.author.avatar_url)
+            e.set_author(name=f"Mass {action} Roles", icon_url=ctx.author.avatar.url)
             e.description = (
                 f"{iteration + 1}/{len(members)} complete"
                 f"\n1 role per 1.21 seconds"
@@ -1169,7 +1168,7 @@ class Moderation(commands.Cog):
 
         if not role:
             e = discord.Embed(color=colors.fate)
-            e.set_author(name="MassRole Usages", icon_url=ctx.author.avatar_url)
+            e.set_author(name="MassRole Usages", icon_url=ctx.author.avatar.url)
             e.description = f"Add, or remove roles from members in mass"
             p = get_prefix(ctx)
             e.add_field(name=f"{p}massrole @Role", value="Mass adds roles")
@@ -1356,11 +1355,11 @@ class Moderation(commands.Cog):
         if not isinstance(warns[user_id], list):
             warns[user_id] = []
 
-        warns[user_id].append([reason, str(datetime.now())])
+        warns[user_id].append([reason, str(datetime.now(tz=timezone.utc))])
         total_warns = 0
         for reason, time in warns[user_id]:
             time = datetime.strptime(time, "%Y-%m-%d %H:%M:%S.%f")
-            if (datetime.now() - time).days > 30:
+            if (datetime.now(tz=timezone.utc) - time).days > 30:
                 if guild_id in config["warns"]["expire"]:
                     warns[user_id].remove([reason, str(time)])
                     continue
@@ -1377,9 +1376,9 @@ class Moderation(commands.Cog):
             next_punishment = punishments[total_warns]
 
         e = discord.Embed(color=colors.fate)
-        url = self.bot.user.avatar_url
-        if user.avatar_url:
-            url = user.avatar_url
+        url = self.bot.user.avatar.url
+        if user.avatar.url:
+            url = user.avatar.url
         e.set_author(name=f"{user.name} has been warned", icon_url=url)
         e.description = f"**Warns:** [`{total_warns}`] "
         if punishment != "None":
@@ -1436,7 +1435,7 @@ class Moderation(commands.Cog):
                 "action": "mute",
                 "channel": channel.id,
                 "user": user.id,
-                "end_time": str(datetime.now() + timedelta(seconds=7200)),
+                "end_time": str(datetime.now(tz=timezone.utc) + timedelta(seconds=7200)),
                 "mute_role": mute_role.id,
                 "roles": user_roles,
             }
@@ -1581,7 +1580,7 @@ class Moderation(commands.Cog):
             conf = await self.bot.load(await f.read())
         for reason, time in self.config[guild_id]["warns"][user_id]:
             time = datetime.strptime(time, "%Y-%m-%d %H:%M:%S.%f")
-            if (datetime.now() - time).days > 30:
+            if (datetime.now(tz=timezone.utc) - time).days > 30:
                 if (
                     guild_id in conf
                     and "expire" in conf[guild_id]["warns"]
@@ -1592,9 +1591,9 @@ class Moderation(commands.Cog):
             warns += 1
             reasons += f"\n• `{reason}`"
         e = discord.Embed(color=colors.fate)
-        url = self.bot.user.avatar_url
-        if user.avatar_url:
-            url = user.avatar_url
+        url = self.bot.user.avatar.url
+        if user.avatar.url:
+            url = user.avatar.url
         e.set_author(name=f"{user.name}'s Warns", icon_url=url)
         e.description = f"**Total Warns:** [`{warns}`]" + reasons
         await ctx.send(embed=e)

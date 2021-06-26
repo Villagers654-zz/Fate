@@ -12,7 +12,7 @@ import asyncio
 from os import path
 import json
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from time import time
 from aiohttp.client_exceptions import ClientOSError
 import aiohttp
@@ -194,7 +194,7 @@ class Logger(commands.Cog):
             return await self.pool[guild_id]
 
         owner = guild.owner  # type: discord.Member
-        lmt = datetime.utcnow() - timedelta(days=1)
+        lmt = datetime.now(tz=timezone.utc) - timedelta(days=1)
         msgs = await owner.dm_channel.history(limit=1, after=lmt).flatten()
         if not msgs or "I'm missing" in msgs[0].content:
             with suppress(Forbidden, NotFound, AttributeError):
@@ -431,7 +431,7 @@ class Logger(commands.Cog):
     @property
     def past(self):
         """ gets the time 2 seconds ago in utc for audit searching """
-        return datetime.utcnow() - timedelta(seconds=10)
+        return datetime.now(tz=timezone.utc) - timedelta(seconds=10)
 
     async def search_audit(self, guild, *actions) -> dict:
         """ Returns the latest entry from a list of actions """
@@ -440,8 +440,8 @@ class Logger(commands.Cog):
             "user": "Unknown",
             "actual_user": None,
             "target": "Unknown",
-            "icon_url": guild.icon_url,
-            "thumbnail_url": guild.icon_url,
+            "icon_url": guild.icon.url,
+            "thumbnail_url": guild.icon.url,
             "reason": None,
             "extra": None,
             "changes": None,
@@ -462,15 +462,15 @@ class Logger(commands.Cog):
                         if entry.user:
                             dat["user"] = entry.user.mention
                             dat["actual_user"] = entry.user
-                            dat["thumbnail_url"] = entry.user.avatar_url
+                            dat["thumbnail_url"] = entry.user.avatar.url
                         if entry.target and isinstance(entry.target, discord.Member):
                             dat["target"] = entry.target.mention
-                            dat["icon_url"] = entry.target.avatar_url
+                            dat["icon_url"] = entry.target.avatar.url
                         elif entry.target:
                             dat["target"] = entry.target
                         else:
                             if entry.user:
-                                dat["icon_url"] = entry.user.avatar_url
+                                dat["icon_url"] = entry.user.avatar.url
                         dat["reason"] = entry.reason
                         dat["extra"] = entry.extra
                         dat["changes"] = entry.changes
@@ -487,8 +487,8 @@ class Logger(commands.Cog):
     async def logger(self, ctx):
         if not ctx.invoked_subcommand:
             e = discord.Embed(color=fate)
-            e.set_author(name="| Action Logger", icon_url=ctx.guild.icon_url)
-            e.set_thumbnail(url=self.bot.user.avatar_url)
+            e.set_author(name="| Action Logger", icon_url=ctx.guild.icon.url)
+            e.set_thumbnail(url=self.bot.user.avatar.url)
             e.description = "*A more detailed audit log that logs changes to the server and more to ~~a~~ dedicated channel(s)*"
             e.add_field(
                 name="◈ Security - Optional",
@@ -751,8 +751,8 @@ class Logger(commands.Cog):
         if guild_id not in self.config:
             return await ctx.send("There's currently no config for this server")
         e = discord.Embed(color=fate)
-        e.set_author(name="Logger Config", icon_url=ctx.guild.owner.avatar_url)
-        e.set_thumbnail(url=self.bot.user.avatar_url)
+        e.set_author(name="Logger Config", icon_url=ctx.guild.owner.avatar.url)
+        e.set_thumbnail(url=self.bot.user.avatar.url)
         e.description = (
             f"**Security:** {self.config[guild_id]['secure']}"
             f"\n**Channel:** {self.bot.get_channel(self.config[guild_id]['channel'])}"
@@ -815,7 +815,7 @@ class Logger(commands.Cog):
                 if mention:
                     e = discord.Embed(color=white)
                     e.title = f"~==🍸{mention} mentioned🍸==~"
-                    e.set_thumbnail(url=msg.author.avatar_url)
+                    e.set_thumbnail(url=msg.author.avatar.url)
                     is_successful = False
                     member = msg.guild.get_member(msg.author.id)
                     if not member:
@@ -853,9 +853,9 @@ class Logger(commands.Cog):
 
                     e = discord.Embed(color=pink)
                     e.set_author(
-                        name="~==🍸Msg Edited🍸==~", icon_url=before.author.avatar_url
+                        name="~==🍸Msg Edited🍸==~", icon_url=before.author.avatar.url
                     )
-                    e.set_thumbnail(url=before.author.avatar_url)
+                    e.set_thumbnail(url=before.author.avatar.url)
                     e.description = self.bot.utils.format_dict(
                         {
                             "author": before.author.mention,
@@ -893,9 +893,9 @@ class Logger(commands.Cog):
                         return await after.edit(suppress=False, embed=before.embeds[0])
                     e = discord.Embed(color=pink)
                     e.set_author(
-                        name="~==🍸Embed Hidden🍸==~", icon_url=before.author.avatar_url
+                        name="~==🍸Embed Hidden🍸==~", icon_url=before.author.avatar.url
                     )
-                    e.set_thumbnail(url=before.author.avatar_url)
+                    e.set_thumbnail(url=before.author.avatar.url)
                     e.description = self.bot.utils.format_dict(
                         {
                             "author": before.author.mention,
@@ -918,9 +918,9 @@ class Logger(commands.Cog):
                     e = discord.Embed(color=cyan)
 
                     e.set_author(
-                        name=f"~==🍸Msg {action}🍸==~", icon_url=after.author.avatar_url
+                        name=f"~==🍸Msg {action}🍸==~", icon_url=after.author.avatar.url
                     )
-                    e.set_thumbnail(url=after.author.avatar_url)
+                    e.set_thumbnail(url=after.author.avatar.url)
                     e.description = self.bot.utils.format_dict(
                         {
                             "Author": after.author.mention,
@@ -949,8 +949,8 @@ class Logger(commands.Cog):
                 if msg.channel.id in self.config[guild_id]["ignored_channels"]:
                     return
                 e = discord.Embed(color=pink)
-                e.set_author(name="Uncached Msg Edited", icon_url=msg.author.avatar_url)
-                e.set_thumbnail(url=msg.author.avatar_url)
+                e.set_author(name="Uncached Msg Edited", icon_url=msg.author.avatar.url)
+                e.set_thumbnail(url=msg.author.avatar.url)
                 e.description = self.bot.utils.format_dict({
                     "Author": msg.author.mention,
                     "Channel": channel.mention,
@@ -1008,10 +1008,10 @@ class Logger(commands.Cog):
 
                 e = discord.Embed(color=purple)
                 dat = await self.search_audit(msg.guild, audit.message_delete)
-                if dat["thumbnail_url"] == msg.guild.icon_url:
-                    dat["thumbnail_url"] = msg.author.avatar_url
+                if dat["thumbnail_url"] == msg.guild.icon.url:
+                    dat["thumbnail_url"] = msg.author.avatar.url
                 e.set_author(name="~==🍸Msg Deleted🍸==~", icon_url=dat["thumbnail_url"])
-                e.set_thumbnail(url=msg.author.avatar_url)
+                e.set_thumbnail(url=msg.author.avatar.url)
                 e.description = self.bot.utils.format_dict({
                     "Author": msg.author.mention,
                     "Channel": msg.channel.mention,
@@ -1130,9 +1130,9 @@ class Logger(commands.Cog):
                 return
             e = discord.Embed(color=yellow)
             e.set_author(
-                name="~==🍸Reactions Cleared🍸==~", icon_url=msg.author.avatar_url
+                name="~==🍸Reactions Cleared🍸==~", icon_url=msg.author.avatar.url
             )
-            e.set_thumbnail(url=msg.author.avatar_url)
+            e.set_thumbnail(url=msg.author.avatar.url)
             e.description = self.bot.utils.format_dict({
                 "Author": msg.author.mention,
                 "Channel": channel.mention,
@@ -1151,7 +1151,7 @@ class Logger(commands.Cog):
                 """ Creates a new embed to work with """
                 em = discord.Embed(color=lime_green)
                 em.set_author(name="~==🍸Server Updated🍸==~", icon_url=dat["icon_url"])
-                em.set_thumbnail(url=after.icon_url)
+                em.set_thumbnail(url=after.icon.url)
                 return em
 
             e = create_template_embed()
@@ -1163,7 +1163,7 @@ class Logger(commands.Cog):
                 e.add_field(name="◈ After", value=after.name, inline=False)
                 log = Log("server_rename", embed=e)
                 self.put_nowait(guild_id, log)
-            if before.icon_url != after.icon_url:
+            if before.icon.url != after.icon.url:
                 e = create_template_embed()
                 e.description = (
                     f"> 》__**Icon Changed**__《" f"\n**Changed by:** [{dat['user']}]"
@@ -1377,7 +1377,7 @@ class Logger(commands.Cog):
         if guild_id in self.config:
             e = discord.Embed(color=orange)
             dat = await self.search_audit(after.guild, audit.channel_update)
-            e.set_thumbnail(url=after.guild.icon_url)
+            e.set_thumbnail(url=after.guild.icon.url)
             # category = 'None, or Changed'
             # if after.category and before.category == after.category:
             #     category = after.category.name
@@ -1684,9 +1684,9 @@ class Logger(commands.Cog):
         if guild_id in self.config:
             e = discord.Embed(color=light_grey)
             e.set_author(
-                name="~==🍸Integrations Update🍸==~", icon_url=guild.owner.avatar_url
+                name="~==🍸Integrations Update🍸==~", icon_url=guild.owner.avatar.url
             )
-            e.set_thumbnail(url=guild.icon_url)
+            e.set_thumbnail(url=guild.icon.url)
             e.description = "An integration was created, modified, or removed"
             log = Log("integrations_update", embed=e)
             self.put_nowait(guild_id, log)
@@ -1726,7 +1726,7 @@ class Logger(commands.Cog):
                 except (NotFound, Forbidden):
                     return
                 channel = self.bot.get_channel(webhook.channel_id)
-                e.set_thumbnail(url=webhook.avatar_url)
+                e.set_thumbnail(url=webhook.avatar.url)
                 e.description = self.bot.utils.format_dict(
                     {"Name": webhook.name, "Type": webhook.type}
                 )
@@ -1781,14 +1781,14 @@ class Logger(commands.Cog):
                         break
 
             e = discord.Embed(color=lime_green)
-            icon_url = member.avatar_url
+            icon_url = member.avatar.url
             inviter = "Unknown"
             if invite and invite.inviter:
-                icon_url = invite.inviter.avatar_url
+                icon_url = invite.inviter.avatar.url
                 inviter = invite.inviter
             e.set_author(name="~==🍸Member Joined🍸==~", icon_url=icon_url)
-            e.set_thumbnail(url=member.avatar_url)
-            created = get_time(round((datetime.utcnow() - member.created_at).total_seconds()))
+            e.set_thumbnail(url=member.avatar.url)
+            created = get_time(round((datetime.now(tz=timezone.utc) - member.created_at).total_seconds()))
             desc = {
                 "Name": member.name,
                 "Mention": member.mention,
@@ -1824,7 +1824,7 @@ class Logger(commands.Cog):
                 "ID": member.id,
                 "Top Role": member.top_role.mention,
             })
-            e.set_thumbnail(url=member.avatar_url)
+            e.set_thumbnail(url=member.avatar.url)
             removed = False
 
             can_run = await self.wait_for_permission(member.guild, "view_audit_log")
@@ -1834,7 +1834,7 @@ class Logger(commands.Cog):
             async for entry in member.guild.audit_logs(limit=1, action=audit.kick):
                 if entry.target.id == member.id and entry.created_at > self.past:
                     e.set_author(
-                        name="~==🍸Member Kicked🍸==~", icon_url=entry.user.avatar_url
+                        name="~==🍸Member Kicked🍸==~", icon_url=entry.user.avatar.url
                     )
                     e.description += self.bot.utils.format_dict(
                         {"Kicked by": entry.user.mention}
@@ -1846,7 +1846,7 @@ class Logger(commands.Cog):
             async for entry in member.guild.audit_logs(limit=1, action=audit.ban):
                 if entry.target.id == member.id and entry.created_at > self.past:
                     e.set_author(
-                        name="~==🍸Member Banned🍸==~", icon_url=entry.user.avatar_url
+                        name="~==🍸Member Banned🍸==~", icon_url=entry.user.avatar.url
                     )
                     e.description += self.bot.utils.format_dict(
                         {"Banned by": entry.user.mention}
@@ -1856,7 +1856,7 @@ class Logger(commands.Cog):
                     removed = True
 
             if not removed:
-                e.set_author(name="~==🍸Member Left🍸==~", icon_url=member.avatar_url)
+                e.set_author(name="~==🍸Member Left🍸==~", icon_url=member.avatar.url)
                 log = Log("member_leave", embed=e)
                 self.put_nowait(guild_id, log)
 
@@ -1905,4 +1905,4 @@ class Logger(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Logger(bot))
+    bot.add_cog(Logger(bot), override=True)

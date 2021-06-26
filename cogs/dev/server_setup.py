@@ -121,4 +121,4 @@ class ServerSetup(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(ServerSetup(bot))
+    bot.add_cog(ServerSetup(bot), override=True)

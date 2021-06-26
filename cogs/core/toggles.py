@@ -43,4 +43,4 @@ class Toggles(commands.Cog):
 
 
 def setup(bot: Fate):
-    bot.add_cog(Toggles(bot))
+    bot.add_cog(Toggles(bot), override=True)

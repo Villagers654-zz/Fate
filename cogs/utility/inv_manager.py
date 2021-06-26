@@ -133,4 +133,4 @@ class InviteManager(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(InviteManager(bot))
+    bot.add_cog(InviteManager(bot), override=True)

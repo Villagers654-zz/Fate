@@ -174,10 +174,10 @@ class ErrorHandler(commands.Cog):
         e = discord.Embed(color=colors.red)
         e.description = f"[{ctx.message.content}]({ctx.message.jump_url})"
         e.set_author(
-            name=f"| Fatal Error | in {ctx.command}", icon_url=ctx.author.avatar_url
+            name=f"| Fatal Error | in {ctx.command}", icon_url=ctx.author.avatar.url
         )
         if ctx.guild:
-            e.set_thumbnail(url=ctx.guild.icon_url)
+            e.set_thumbnail(url=ctx.guild.icon.url)
         enum = enumerate(split(formatted, 980))
         for iteration, chunk in enum:
             e.add_field(
@@ -200,9 +200,9 @@ class ErrorHandler(commands.Cog):
         if ctx.author.id in self.bot.owner_ids:
             e = discord.Embed(color=colors.fate)
             e.set_author(
-                name=f"Here's the full traceback:", icon_url=ctx.author.avatar_url
+                name=f"Here's the full traceback:", icon_url=ctx.author.avatar.url
             )
-            e.set_thumbnail(url=self.bot.user.avatar_url)
+            e.set_thumbnail(url=self.bot.user.avatar.url)
             e.description = full_traceback
             await ctx.send(embed=e)
 
@@ -222,4 +222,4 @@ class ErrorHandler(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(ErrorHandler(bot))
+    bot.add_cog(ErrorHandler(bot), override=True)

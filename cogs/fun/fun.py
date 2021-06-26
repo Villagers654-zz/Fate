@@ -12,13 +12,13 @@ import asyncio
 import base64
 import random
 from random import random as rd
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from contextlib import suppress
 from io import BytesIO
 
 import aiohttp
 import discord
-from discord import Webhook, AsyncWebhookAdapter
+from discord import Webhook
 from discord.ext import commands
 from discord.ext import tasks
 from PIL import Image, ImageDraw, ImageFont
@@ -122,7 +122,7 @@ class Fun(commands.Cog):
             if len(msg.content) > 1000 and not ctx.author.guild_permissions.administrator:
                 return await ctx.send("wHy would I snipe that?")
             e = discord.Embed(color=msg.author.color)
-            e.set_author(name=msg.author, icon_url=msg.author.avatar_url)
+            e.set_author(name=msg.author, icon_url=msg.author.avatar.url)
             e.description = msg.content[:2048]
             e.set_footer(text=time)
             await ctx.send(embed=e)
@@ -140,7 +140,7 @@ class Fun(commands.Cog):
 
     @tasks.loop(minutes=25)
     async def clear_old_messages_task(self):
-        expiration = datetime.utcnow() - timedelta(hours=1)
+        expiration = datetime.now(tz=timezone.utc) - timedelta(hours=1)
         for channel_id, data in list(self.dat.items()):
             if data["last"][0].created_at < expiration:
                 del self.dat[channel_id]
@@ -180,8 +180,8 @@ class Fun(commands.Cog):
 
         background = await self.bot.get_resource(background_url)
         frame = await self.bot.get_resource(frame_url)
-        av1 = await self.bot.get_resource(str(user1.avatar_url))
-        av2 = await self.bot.get_resource(str(user2.avatar_url))
+        av1 = await self.bot.get_resource(str(user1.avatar.url))
+        av2 = await self.bot.get_resource(str(user2.avatar.url))
 
         def generate_card(frame, av1, av2):
             card = Image.new("RGBA", (W, H), (0, 0, 0, 100))
@@ -321,12 +321,12 @@ class Fun(commands.Cog):
             webhook = await ctx.channel.create_webhook(name="Fancify")
             async with aiohttp.ClientSession() as session:
                 webhook = Webhook.from_url(
-                    webhook.url, adapter=AsyncWebhookAdapter(session)
+                    webhook.url, session=session
                 )
                 await webhook.send(
                     output,
                     username=ctx.author.display_name,
-                    avatar_url=ctx.author.avatar_url,
+                    avatar_url=ctx.author.avatar.url,
                     allowed_mentions=self.bot.allowed_mentions
                 )
                 await webhook.delete()
@@ -377,7 +377,7 @@ class Fun(commands.Cog):
         r = random.randint(50, 100)
         e = discord.Embed(color=0x0000FF)
         e.set_author(
-            name="{}'s msg analysis".format(member.name), icon_url=member.avatar_url
+            name="{}'s msg analysis".format(member.name), icon_url=member.avatar.url
         )
         e.description = "{}% {}".format(
             r, random.choice(["truth", "the truth", "a lie", "lie"])
@@ -396,9 +396,9 @@ class Fun(commands.Cog):
             )
         )
         e.set_author(
-            name="{}'s Personality".format(member.name), icon_url=member.avatar_url
+            name="{}'s Personality".format(member.name), icon_url=member.avatar.url
         )
-        e.set_thumbnail(url=member.avatar_url)
+        e.set_thumbnail(url=member.avatar.url)
         e.add_field(
             name="Type",
             value=f'{random.choice(["psychopath", "depressed", "cheerful", "bright", "dark", "god", "deceiver", "funny", "fishy", "cool", "insecure", "lonely", "optimistic", "brave", "brilliant", "dreamer", "Nurturer", "Peaceful", "Overthinker", "Idealist", "Pussy"])}',
@@ -501,7 +501,7 @@ class Fun(commands.Cog):
             member = ctx.author
         r = random.randint(0, 1000)
         e = discord.Embed(color=0xFFFF00)
-        e.set_author(name=f"{member.name}'s Soul Analysis", icon_url=member.avatar_url)
+        e.set_author(name=f"{member.name}'s Soul Analysis", icon_url=member.avatar.url)
         e.description = f"{r} grams of soul"
         await ctx.send(embed=e)
 
@@ -578,7 +578,7 @@ class Fun(commands.Cog):
                 )
             await self.gay.flush()
         e = discord.Embed(color=user.color)
-        e.set_author(name=str(user), icon_url=user.avatar_url)
+        e.set_author(name=str(user), icon_url=user.avatar.url)
         percentage = random.randint(0, 100)
         if user_id in self.gay[invoked_with]:
             percentage = self.gay[invoked_with][user_id]
@@ -614,7 +614,7 @@ class Fun(commands.Cog):
         if ctx.message.mentions:
             user = ctx.message.mentions[0]
         e = discord.Embed(color=user.color)
-        e.set_author(name=str(user), icon_url=user.avatar_url)
+        e.set_author(name=str(user), icon_url=user.avatar.url)
         percentage = random.randint(0, 100)
         if ctx.invoked_with == "hitler":
             if random.randint(1, 4) == 1:
@@ -637,7 +637,7 @@ class Fun(commands.Cog):
         else:
             result = discord.Embed(color=0x80B0FF)
             result.set_author(
-                name="Rock, Paper, Scissors", icon_url=ctx.author.avatar_url
+                name="Rock, Paper, Scissors", icon_url=ctx.author.avatar.url
             )
             r = random.randint(0, 2)
             result.set_thumbnail(
@@ -663,7 +663,7 @@ class Fun(commands.Cog):
         e = discord.Embed(color=0xAAF200)
         e.set_author(
             name=f"{ctx.author.name} has sued {user.name}",
-            icon_url=ctx.author.avatar_url,
+            icon_url=ctx.author.avatar.url,
         )
         e.set_thumbnail(
             url="https://cdn.discordapp.com/attachments/501871950260469790/511997534181392424/money-png-12.png"
@@ -683,4 +683,4 @@ class Fun(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Fun(bot))
+    bot.add_cog(Fun(bot), override=True)

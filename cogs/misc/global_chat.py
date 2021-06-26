@@ -126,7 +126,7 @@ class GlobalChat(commands.Cog):
     @commands.group(name="gc", aliases=["global-chat", "globalchat", "global_chat"])
     async def _gc(self, ctx):
         e = discord.Embed(color=self.bot.config["theme_color"])
-        e.set_author(name="Global Chat", icon_url=self.bot.user.avatar_url)
+        e.set_author(name="Global Chat", icon_url=self.bot.user.avatar.url)
         e.description = "Link a channel into my global channel. " \
                         "Msgs sent into it will be forwarded to other " \
                         "configured channels alongside the same in reverse"
@@ -255,10 +255,10 @@ class GlobalChat(commands.Cog):
             return await ctx.send("Ok")
 
         e = discord.Embed(color=self.bot.config["theme_color"])
-        e.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
+        e.set_author(name=str(ctx.author), icon_url=ctx.author.avatar.url)
         e.description = str(ctx.author.id)
         e.add_field(name="Reason", value=reason.content)
-        e.set_footer(text=ctx.guild.name, icon_url=ctx.guild.icon_url)
+        e.set_footer(text=ctx.guild.name, icon_url=ctx.guild.icon.url)
         msg = await channel.send(embed=e)
         await msg.add_reaction("👍")
         await msg.add_reaction("👎")
@@ -316,7 +316,7 @@ class GlobalChat(commands.Cog):
                             return await msg.channel.send("No links..")
 
             e = discord.Embed()
-            e.set_thumbnail(url=msg.guild.icon_url)
+            e.set_thumbnail(url=msg.guild.icon.url)
             if mod:
                 e.colour = msg.author.color
 
@@ -338,11 +338,11 @@ class GlobalChat(commands.Cog):
             # Send a new msg
             if msg.attachments:
                 e.set_image(url=msg.attachments[0].url)
-            e.set_author(name=str(msg.author), icon_url=msg.author.avatar_url)
+            e.set_author(name=str(msg.author), icon_url=msg.author.avatar.url)
             if mod:
                 e.set_thumbnail(url="https://cdn.discordapp.com/attachments/831790213704581142/858138189527908372/fate-mod-test.png")
             else:
-                e.set_thumbnail(url=msg.guild.icon_url)
+                e.set_thumbnail(url=msg.guild.icon.url)
             e.description = msg.content[:512]
             self._queue.append([e, False, msg])
             if msg.attachments:
@@ -378,7 +378,7 @@ class GlobalChat(commands.Cog):
             if str(payload.emoji) == "👍":
                 async with self.bot.utils.cursor() as cur:
                     await cur.execute(f"insert into global_users values ({user_id}, 'verified');")
-                e.set_author(name=f"{user} was verified", icon_url=user.avatar_url)
+                e.set_author(name=f"{user} was verified", icon_url=user.avatar.url)
                 self._queue.append([e, False, msg])
                 self.last_id = None
             else:
@@ -388,4 +388,4 @@ class GlobalChat(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(GlobalChat(bot))
+    bot.add_cog(GlobalChat(bot), override=True)

@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 import aiohttp
 import asyncio
 import random
@@ -163,9 +163,9 @@ class Utility(commands.Cog):
 
             e = discord.Embed(color=colors.fate)
             e.set_author(
-                name="Here's what I got on them..", icon_url=self.bot.user.avatar_url
+                name="Here's what I got on them..", icon_url=self.bot.user.avatar.url
             )
-            e.set_thumbnail(url=user.avatar_url)
+            e.set_thumbnail(url=user.avatar.url)
             e.description = ""
 
             # User Information
@@ -320,7 +320,7 @@ class Utility(commands.Cog):
         elif isinstance(target, TextChannel):
             e = discord.Embed(color=colors.fate)
             e.set_author(
-                name="Alright, here's what I got..", icon_url=self.bot.user.avatar_url
+                name="Alright, here's what I got..", icon_url=self.bot.user.avatar.url
             )
 
             channel = target  # type: discord.TextChannel
@@ -401,7 +401,7 @@ class Utility(commands.Cog):
                         if channel.permissions_for(ctx.guild.me).read_messages:
                             async for m in channel.history(limit=1):
                                 seconds = (
-                                    datetime.utcnow() - m.created_at
+                                    datetime.now(tz=timezone.utc) - m.created_at
                                 ).total_seconds()
                                 total_time = get_time(round(seconds))
                                 history["Last Message"] = f"{total_time} ago\n"
@@ -443,14 +443,14 @@ class Utility(commands.Cog):
         elif "discord.gg" in ctx.message.content:
             e = discord.Embed(color=colors.fate)
             e.set_author(
-                name="Alright, here's what I got..", icon_url=self.bot.user.avatar_url
+                name="Alright, here's what I got..", icon_url=self.bot.user.avatar.url
             )
             inv = [arg for arg in ctx.message.content.split() if "discord.gg" in arg][0]
             code = discord.utils.resolve_invite(inv)
             try:
                 invite = await self.bot.fetch_invite(code)
                 e.set_author(
-                    name="Alright, here's what I got..", icon_url=invite.guild.icon_url
+                    name="Alright, here's what I got..", icon_url=invite.guild.icon.url
                 )
                 e.set_thumbnail(url=invite.guild.splash_url)
                 e.set_image(url=invite.guild.banner_url)
@@ -494,7 +494,7 @@ class Utility(commands.Cog):
         elif isinstance(target, Role):
             e = discord.Embed(color=colors.fate)
             e.set_author(
-                name="Alright, here's what I got..", icon_url=self.bot.user.avatar_url
+                name="Alright, here's what I got..", icon_url=self.bot.user.avatar.url
             )
             role = target  # type: discord.Role
 
@@ -622,7 +622,7 @@ class Utility(commands.Cog):
             e = discord.Embed(color=colors.fate)
             e.set_author(
                 name="Fate Bot: Core Info",
-                icon_url=self.bot.get_user(self.bot.config["bot_owner_id"]).avatar_url,
+                icon_url=self.bot.get_user(self.bot.config["bot_owner_id"]).avatar.url,
             )
             lines = 0
             cog = self.bot.cogs["Ranking"]
@@ -639,7 +639,7 @@ class Utility(commands.Cog):
                                 lines += len(await f.readlines())
             e.description = f"Commands Used This Month: {commands}" \
                             f"\nLines of code: {lines}"
-            e.set_thumbnail(url=self.bot.user.avatar_url)
+            e.set_thumbnail(url=self.bot.user.avatar.url)
             e.add_field(
                 name="◈ Summary ◈",
                 value="Fate is a ~~multipurpose~~ hybrid bot created for fun",
@@ -689,7 +689,7 @@ class Utility(commands.Cog):
                 inline=False,
             )
 
-            online_for = datetime.now() - self.bot.start_time
+            online_for = datetime.now(tz=timezone.utc) - self.bot.start_time
             e.add_field(
                 name="◈ Uptime ◈",
                 value=f"Online for {get_time(round(online_for.total_seconds()))}\n",
@@ -793,7 +793,7 @@ class Utility(commands.Cog):
         # Keep track of their last message time
         await asyncio.sleep(1)
         await self.bot.execute(
-            f"insert into activity values ({msg.author.id}, null, '{datetime.now()}') "
+            f"insert into activity values ({msg.author.id}, null, '{datetime.now(tz=timezone.utc)}') "
             f"on duplicate key update "
             f"last_message = '{time()}';"
         )
@@ -848,7 +848,7 @@ class Utility(commands.Cog):
             status = discord.Status
             if before.status != status.offline and after.status == status.offline:
                 await self.bot.execute(
-                    f"insert into activity values ({before.id}, '{datetime.now()}', null) "
+                    f"insert into activity values ({before.id}, '{datetime.now(tz=timezone.utc)}', null) "
                     f"on duplicate key update "
                     f"last_online = '{time()}';"
                 )
@@ -871,12 +871,12 @@ class Utility(commands.Cog):
     @commands.bot_has_permissions(embed_links=True)
     async def serverinfo(self, ctx):
         try:
-            e = discord.Embed(color=self.avg_color(ctx.guild.icon_url))
+            e = discord.Embed(color=self.avg_color(ctx.guild.icon.url))
         except ZeroDivisionError:
             e = discord.Embed(color=colors.fate)
         e.description = f"id: {ctx.guild.id}\nOwner: {ctx.guild.owner}"
-        e.set_author(name=f"{ctx.guild.name}:", icon_url=ctx.guild.owner.avatar_url)
-        e.set_thumbnail(url=ctx.guild.icon_url)
+        e.set_author(name=f"{ctx.guild.name}:", icon_url=ctx.guild.owner.avatar.url)
+        e.set_thumbnail(url=ctx.guild.icon.url)
         main = (
             f"• AFK Timeout [`{ctx.guild.afk_timeout}`]\n"
             f"• Region [`{ctx.guild.region}`]\n"
@@ -909,10 +909,10 @@ class Utility(commands.Cog):
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
     async def servericon(self, ctx):
-        if not ctx.guild.icon_url or not str(ctx.guild.icon_url):
+        if not ctx.guild.icon.url or not str(ctx.guild.icon.url):
             return await ctx.send("This server has no icon")
         e = discord.Embed(color=0x80B0FF)
-        e.set_image(url=ctx.guild.icon_url)
+        e.set_image(url=ctx.guild.icon.url)
         e.description = "Server Icon"
         await ctx.send(embed=e)
 
@@ -944,8 +944,8 @@ class Utility(commands.Cog):
             if len(role.members) > 50:
                 return await ctx.send("That role has too many members :[")
             e = discord.Embed(color=role.color)
-            e.set_author(name=role.name, icon_url=ctx.author.avatar_url)
-            e.set_thumbnail(url=ctx.guild.icon_url)
+            e.set_author(name=role.name, icon_url=ctx.author.avatar.url)
+            e.set_thumbnail(url=ctx.guild.icon.url)
             e.description = ""
             dat = [(m, m.top_role.position) for m in role.members][:10]
             for member, position in sorted(dat, key=lambda kv: kv[1], reverse=True):
@@ -967,8 +967,8 @@ class Utility(commands.Cog):
             bots = len([m for m in ctx.guild.members if m.bot])
             online = len([m for m in ctx.guild.members if m.status in status_list])
             e = discord.Embed(color=colors.fate)
-            e.set_author(name=f"Member Count", icon_url=ctx.guild.owner.avatar_url)
-            e.set_thumbnail(url=ctx.guild.icon_url)
+            e.set_author(name=f"Member Count", icon_url=ctx.guild.owner.avatar.url)
+            e.set_thumbnail(url=ctx.guild.icon.url)
             e.description = (
                 f"**Total:** [`{ctx.guild.member_count}`]\n"
                 f"**Online:** [`{online}`]\n"
@@ -989,8 +989,8 @@ class Utility(commands.Cog):
         if permission not in perms:
             return await ctx.send("Unknown perm")
         e = discord.Embed(color=colors.fate)
-        e.set_author(name=f"Things with {permission}", icon_url=ctx.author.avatar_url)
-        e.set_thumbnail(url=ctx.guild.icon_url)
+        e.set_author(name=f"Things with {permission}", icon_url=ctx.author.avatar.url)
+        e.set_thumbnail(url=ctx.guild.icon.url)
         members = ""
         for member in ctx.guild.members:
             if getattr(member.guild_permissions, permission):
@@ -1042,10 +1042,7 @@ class Utility(commands.Cog):
             if not user:
                 return await ctx.send("User not found")
         e = discord.Embed(color=0x80B0FF)
-        if "gif" in str(user.avatar_url):
-            e.set_image(url=str(user.avatar_url))
-        else:
-            e.set_image(url=user.avatar_url_as(format="png"))
+        e.set_image(url=str(user.avatar.url))
         await ctx.send(
             f"◈ {cleanup_msg(ctx.message, user.display_name)}'s avatar ◈", embed=e
         )
@@ -1074,7 +1071,7 @@ class Utility(commands.Cog):
         if len(args) == 0:
             color = colors.random()
             e = discord.Embed(color=color)
-            e.set_author(name=f"#{color}", icon_url=ctx.author.avatar_url)
+            e.set_author(name=f"#{color}", icon_url=ctx.author.avatar.url)
             return await ctx.send(embed=e)
         if len(args) == 1:
             _hex = args[0].strip("#")
@@ -1183,7 +1180,7 @@ class Utility(commands.Cog):
         msg = msg[:200]
         try:
             self.timers[user_id][msg] = {
-                "timer": str(datetime.utcnow() + timedelta(seconds=timer)),
+                "timer": str(datetime.now(tz=timezone.utc) + timedelta(seconds=timer)),
                 "channel": ctx.channel.id,
                 "mention": ctx.author.mention,
                 "expanded_timer": expanded_timer,
@@ -1211,11 +1208,11 @@ class Utility(commands.Cog):
         e = discord.Embed(color=colors.fate)
         for msg, dat in list(self.timers[user_id].items()):
             end_time = datetime.strptime(dat["timer"], "%Y-%m-%d %H:%M:%S.%f")
-            if datetime.utcnow() > end_time:
+            if datetime.now(tz=timezone.utc) > end_time:
                 del self.timers[user_id][msg]
                 await self.save_timers()
                 continue
-            expanded_time = timedelta(seconds=(end_time - datetime.utcnow()).seconds)
+            expanded_time = timedelta(seconds=(end_time - datetime.now(tz=timezone.utc)).seconds)
             channel = self.bot.get_channel(dat["channel"])
             if not channel:
                 del self.timers[user_id][msg]
@@ -1244,8 +1241,8 @@ class Utility(commands.Cog):
     async def _findmsg(self, ctx, *, content=None):
         if content is None:
             e = discord.Embed(color=colors.fate)
-            e.set_author(name="Error ⚠", icon_url=ctx.author.avatar_url)
-            e.set_thumbnail(url=ctx.guild.icon_url)
+            e.set_author(name="Error ⚠", icon_url=ctx.author.avatar.url)
+            e.set_thumbnail(url=ctx.guild.icon.url)
             e.description = (
                 "Content is a required argument\n"
                 "Usage: `.find {content}`\n"
@@ -1263,9 +1260,9 @@ class Utility(commands.Cog):
                     if content.lower() in msg.content.lower():
                         e = discord.Embed(color=colors.fate)
                         e.set_author(
-                            name="Message Found 🔍", icon_url=ctx.author.avatar_url
+                            name="Message Found 🔍", icon_url=ctx.author.avatar.url
                         )
-                        e.set_thumbnail(url=ctx.guild.icon_url)
+                        e.set_thumbnail(url=ctx.guild.icon.url)
                         e.description = (
                             f"**Author:** `{msg.author}`\n"
                             f"[Jump to MSG]({msg.jump_url})"
@@ -1371,7 +1368,7 @@ class Utility(commands.Cog):
         webhook = await ctx.channel.create_webhook(name=name, avatar=avatar)
         e = discord.Embed(color=colors.fate)
         e.set_author(name=f"Webhook: {webhook.name}", icon_url=webhook.url)
-        e.set_thumbnail(url=ctx.guild.icon_url)
+        e.set_thumbnail(url=ctx.guild.icon.url)
         e.description = webhook.url
         try:
             await ctx.author.send(embed=e)
@@ -1387,8 +1384,8 @@ class Utility(commands.Cog):
     async def webhooks(self, ctx, channel: discord.TextChannel = None):
         """ Return all the servers webhooks """
         e = discord.Embed(color=colors.fate)
-        e.set_author(name="Webhooks", icon_url=ctx.author.avatar_url)
-        e.set_thumbnail(url=ctx.guild.icon_url)
+        e.set_author(name="Webhooks", icon_url=ctx.author.avatar.url)
+        e.set_thumbnail(url=ctx.guild.icon.url)
         if channel:
             if not channel.permissions_for(ctx.guild.me).manage_webhooks:
                 return await ctx.send(
@@ -1432,12 +1429,12 @@ class Utility(commands.Cog):
         msgs = await ctx.channel.history(limit=amount + 1).flatten()
 
         e = discord.Embed()
-        e.set_author(name=f"Progress: 0/{amount}", icon_url=ctx.author.avatar_url)
+        e.set_author(name=f"Progress: 0/{amount}", icon_url=ctx.author.avatar.url)
         e.set_footer(text=f"Moving to #{channel.name}")
         transfer_msg = await ctx.send(embed=e)
 
         em = discord.Embed()
-        em.set_author(name=f"Progress: 0/{amount}", icon_url=ctx.author.avatar_url)
+        em.set_author(name=f"Progress: 0/{amount}", icon_url=ctx.author.avatar.url)
         em.set_footer(text=f"Moving from #{channel.name}")
         channel_msg = await channel.send(embed=em)
 
@@ -1447,7 +1444,7 @@ class Utility(commands.Cog):
         for iteration, msg in enumerate(msgs[::-1]):
             if ctx.message.id == msg.id:
                 continue
-            avatar = msg.author.avatar_url
+            avatar = msg.author.avatar.url
             embed = None
             if msg.embeds:
                 embed = msg.embeds[0]
@@ -1474,11 +1471,11 @@ class Utility(commands.Cog):
             if index == 5:
                 e.set_author(
                     name=f"Progress: {iteration+1}/{amount}",
-                    icon_url=ctx.author.avatar_url,
+                    icon_url=ctx.author.avatar.url,
                 )
                 em.set_author(
                     name=f"Progress: {iteration+1}/{amount}",
-                    icon_url=ctx.author.avatar_url,
+                    icon_url=ctx.author.avatar.url,
                 )
                 await transfer_msg.edit(embed=e)
                 await channel_msg.edit(embed=em)
@@ -1490,8 +1487,8 @@ class Utility(commands.Cog):
 
         await webhook.delete()
         result = f"Progress: {amount}/{amount}"
-        e.set_author(name=result, icon_url=ctx.author.avatar_url)
-        em.set_author(name=result, icon_url=ctx.author.avatar_url)
+        e.set_author(name=result, icon_url=ctx.author.avatar.url)
+        em.set_author(name=result, icon_url=ctx.author.avatar.url)
         await transfer_msg.edit(embed=e)
         await channel_msg.edit(embed=em)
 
@@ -1507,7 +1504,7 @@ class Utility(commands.Cog):
         e = discord.Embed(color=colors.fate)
         if len(reason) > 64:
             return await ctx.send("Your afk message can't be greater than 64 characters")
-        e.set_author(name="You are now afk", icon_url=ctx.author.avatar_url)
+        e.set_author(name="You are now afk", icon_url=ctx.author.avatar.url)
         await ctx.send(embed=e, delete_after=5)
         reason = cleanup_msg(ctx.message, reason)
         self.afk[ctx.author.id] = reason
@@ -1522,5 +1519,5 @@ class Utility(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Utility(bot))
+    bot.add_cog(Utility(bot), override=True)
 

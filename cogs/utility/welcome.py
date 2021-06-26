@@ -81,8 +81,8 @@ class Welcome(commands.Cog):
             if guild_id in self.config:
                 toggle = "enabled"
             e = discord.Embed(color=colors.tan)
-            e.set_author(name="Welcome Messages", icon_url=self.bot.user.avatar_url)
-            e.set_thumbnail(url=ctx.guild.icon_url)
+            e.set_author(name="Welcome Messages", icon_url=self.bot.user.avatar.url)
+            e.set_thumbnail(url=ctx.guild.icon.url)
             e.description = "Welcomes users when they join"
             e.add_field(
                 name="◈ Command Usage ◈",
@@ -106,7 +106,7 @@ class Welcome(commands.Cog):
                 images = f" | Custom Images: {len(self.config[guild_id]['images'])}"
             e.set_footer(
                 text=f"Current Status: {toggle}{images}",
-                icon_url=ctx.guild.owner.avatar_url,
+                icon_url=ctx.guild.owner.avatar.url,
             )
             await ctx.send(embed=e)
 
@@ -179,7 +179,7 @@ class Welcome(commands.Cog):
         self.config[guild_id] = conf
         await self.config.flush()
         e = discord.Embed(color=colors.tan)
-        e.set_author(name="Enabled Welcome Messages", icon_url=ctx.author.avatar_url)
+        e.set_author(name="Enabled Welcome Messages", icon_url=ctx.author.avatar.url)
         await ctx.send(embed=e, delete_after=10)
 
     @_welcome.command(name="disable")
@@ -211,8 +211,8 @@ class Welcome(commands.Cog):
             form = conf["format"]
             images = len(conf["images"])
         e = discord.Embed(color=colors.tan)
-        e.set_author(name="Welcome Config", icon_url=self.bot.user.avatar_url)
-        e.set_thumbnail(url=ctx.guild.icon_url)
+        e.set_author(name="Welcome Config", icon_url=self.bot.user.avatar.url)
+        e.set_thumbnail(url=ctx.guild.icon.url)
         e.description = (
             f"**Toggle:** {toggle}\n"
             f"**Channel:** {channel}\n"
@@ -436,4 +436,4 @@ class Welcome(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Welcome(bot))
+    bot.add_cog(Welcome(bot), override=True)

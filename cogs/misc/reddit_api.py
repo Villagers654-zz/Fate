@@ -11,7 +11,7 @@ Deprecated - A cog for use of Reddit with asyncpraw
 import asyncio
 import traceback
 from time import time
-from datetime import datetime
+from datetime import datetime, timezone
 
 from discord.ext import commands, tasks
 import discord
@@ -108,7 +108,7 @@ class Reddit(commands.Cog):
         reduced_time = None
         history = await channel.history(limit=1).flatten()
         if history and history[0].author.id == self.bot.user.id:
-            time_since = (datetime.utcnow() - history[0].created_at).total_seconds()
+            time_since = (datetime.now(tz=timezone.utc) - history[0].created_at).total_seconds()
             if rate > time_since:
                 reduced_time = round(rate - time_since)
 
@@ -152,7 +152,7 @@ class Reddit(commands.Cog):
                     await post.subreddit.load()
 
                     e = discord.Embed(color=colors.red())
-                    icon_img = self.bot.user.avatar_url
+                    icon_img = self.bot.user.avatar.url
                     if hasattr(post.author, "icon_img"):
                         icon_img = post.author.icon_img
                     e.set_author(name=f"u/{post.author.name}", icon_url=icon_img, url=post.url)
@@ -217,7 +217,7 @@ class Reddit(commands.Cog):
                 await post.author.load()
 
                 e = discord.Embed(color=colors.red())
-                icon_img = self.bot.user.avatar_url
+                icon_img = self.bot.user.avatar.url
                 if hasattr(post.author, "icon_img"):
                     icon_img = post.author.icon_img
                 e.set_author(name=f"u/{post.author.name}", icon_url=icon_img, url=post.url)
@@ -263,7 +263,7 @@ class Reddit(commands.Cog):
                 return await ctx.send(embed=e)
 
             e = discord.Embed(color=colors.red())
-            e.set_author(name="Reddit", icon_url=ctx.author.avatar_url)
+            e.set_author(name="Reddit", icon_url=ctx.author.avatar.url)
             e.set_thumbnail(
                 url="https://cdn3.iconfinder.com/data/icons/2018-social-media-logotypes/1000/2018_social_media_popular_app_logo_reddit-512.png"
             )
@@ -366,4 +366,4 @@ class Reddit(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Reddit(bot))
+    bot.add_cog(Reddit(bot), override=True)

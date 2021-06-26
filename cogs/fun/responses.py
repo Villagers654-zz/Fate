@@ -176,4 +176,4 @@ class Responses(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Responses(bot))
+    bot.add_cog(Responses(bot), override=True)

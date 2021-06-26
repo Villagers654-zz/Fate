@@ -78,7 +78,7 @@ class SafePolls(commands.Cog):
         emojis = votes.keys()
 
         e = discord.Embed(color=colors.fate)
-        e.set_author(name=f"Poll by {user}", icon_url=user.avatar_url if user else None)
+        e.set_author(name=f"Poll by {user}", icon_url=user.avatar.url if user else None)
         e.description = question
         e.set_footer(
             text=" | ".join(f"{emoji} {len(votes[emoji])}" for emoji in emojis)
@@ -303,4 +303,4 @@ class SafePolls(commands.Cog):
 
 
 def setup(bot: Fate):
-    bot.add_cog(SafePolls(bot))
+    bot.add_cog(SafePolls(bot), override=True)
