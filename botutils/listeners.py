@@ -56,7 +56,15 @@ class Conversation:
         def predicate(m):
             return m.author.id == self.ctx.author.id and m.channel.id == self.ctx.channel.id
 
-        await self.send(*args, **kwargs)
+        buttons = False
+        if "use_buttons" in kwargs:
+            buttons = True
+            del kwargs["use_buttons"]
+
+        m = await self.send(*args, **kwargs)
+        if buttons:
+            return await self.bot.utils.get_answer(m)
+
         msg = await self.bot.utils.get_message(predicate)
         if self.delete_after:
             self.msgs.append(msg)

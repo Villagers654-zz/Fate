@@ -71,12 +71,13 @@ class Core(commands.Cog):
         votes = await self.dblpy.get_bot_upvotes()
         await ctx.send(", ".join(dat["username"] for dat in votes))
 
-    @commands.command(name="setup", enabled=False)
+    @commands.command(name="setup")
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
     @commands.cooldown(1, 10, commands.BucketType.guild)
     async def setup(self, ctx):
+        await ctx.send("Note this cmd doesn't actually do anything", delete_after=5)
         convo = Conversation(ctx)
         await convo.send(
             "To follow with setup just reply with `yes/no` for whether or not you want "
@@ -88,8 +89,8 @@ class Core(commands.Cog):
         await self.bot.get_command("prefix")(ctx, prefix=reply.content)
 
         # Anti Spam
-        reply = await convo.ask("Do you want to use AntiSpam to mute any spammers I detect?")
-        if "yes" in reply.content.lower():
+        reply = await convo.ask("Do you want to use AntiSpam to mute any spammers I detect?", use_buttons=True)
+        if reply:
             await convo.send("Alright, you can customize this more with `.antispam configure`")
             await self.bot.get_command("antispam enable")(ctx)
 
@@ -102,8 +103,8 @@ class Core(commands.Cog):
             await self.bot.get_command("log setchannel")(ctx, channel=channel)
 
         # Verification
-        reply = await convo.ask("Do you want users to verify via a captcha when they join the server?")
-        if "yes" in reply.content.lower():
+        reply = await convo.ask("Do you want users to verify via a captcha when they join the server?", use_buttons=True)
+        if reply:
             await self.bot.get_command("verification enable")(ctx)
 
         await convo.send("Setup complete")
