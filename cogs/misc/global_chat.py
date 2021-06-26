@@ -315,12 +315,11 @@ class GlobalChat(commands.Cog):
                         if l and l in abcs and r and r in abcs:
                             return await msg.channel.send("No links..")
 
-            e = discord.Embed()
+            e = discord.Embed(color=msg.author.color)
             e.set_thumbnail(url=msg.guild.icon.url)
             author = str(msg.author)
             if mod:
-                e.colour = msg.author.color
-                author += " 🛡"
+                author += " 👮‍♂️"
             e.set_author(name=author, icon_url=msg.author.avatar.url)
 
             # Edit & combine their last msg
