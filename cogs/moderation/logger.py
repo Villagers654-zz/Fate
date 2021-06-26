@@ -473,7 +473,6 @@ class Logger(commands.Cog):
                                 dat["icon_url"] = entry.user.avatar.url
                         dat["reason"] = entry.reason
                         dat["extra"] = entry.extra
-                        dat["changes"] = entry.changes
                         dat["before"] = entry.before
                         dat["after"] = entry.after
                         dat["recent"] = True
