@@ -13,12 +13,18 @@ import asyncio
 import json
 from os import path
 from typing import Union
+import random
 
 from discord.ext import commands, tasks
 from discord.errors import NotFound, Forbidden
 import discord
 
 from botutils import get_prefixes_async, colors
+
+
+ban_hammers = [
+    "https://media1.tenor.com/images/1e46ced92e2521749ca6f72602765c1a/tenor.gif?itemid=18219363"
+]
 
 
 class GlobalChat(commands.Cog):
@@ -300,12 +306,13 @@ class GlobalChat(commands.Cog):
                     mod = True
 
             if not mod:
+                abcs = "abcdefghijklmnopqrstuvwxyz"
                 for i, char in enumerate(list(msg.content)):
                     await asyncio.sleep(0)
                     if char == "." and i != 0 and i + 1 != len(msg.content):
                         l = msg.content[i - 1]
                         r = msg.content[i + 1]
-                        if l and l != " " and r and r != " ":
+                        if l and l in abcs and r and r in abcs:
                             return await msg.channel.send("No links..")
 
             e = discord.Embed()
