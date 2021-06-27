@@ -22,7 +22,8 @@ luck.py
 
 /beta/config.json
 
-/cogs/dev/dev.py
+/cogs/dev/
+/cogs/dev/*
 /data/auth.json
 /data/clipboard.txt
 /data/4b4t/
