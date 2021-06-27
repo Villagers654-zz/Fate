@@ -1,15 +1,25 @@
 """
-Module for viewing and managing emojis
+cogs.utility.emojis
+~~~~~~~~~~~~~~~~~~~~
+
+A cog for viewing and managing emojis
+
+:copyright: (C) 2019-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
 """
 
 import asyncio
 import traceback
 from typing import Union
+from io import BytesIO
+import sys
 
 import aiohttp
 import discord
 from discord.ext import commands
 from discord.ext.commands import Greedy
+from discord.errors import HTTPException, Forbidden, InvalidArgument
+from PIL import Image
 
 from botutils import colors, download, update_msg
 
@@ -31,40 +41,79 @@ class Emojis(commands.Cog):
                 result += char
         return result if result else "new_emoji"
 
-    async def upload_emoji(self, ctx, name, img, reason, roles=None) -> None:
-        """Creates partial emojis with a queue to prevent spammy messages"""
+    async def compress(self, img):
+        def do_compress():
+            image = Image.open(BytesIO(img)).convert("RGBA")
+            for _attempt in range(10):
+                width, height = image.size
+                width -= width / 4
+                height -= height / 4
+                image = image.resize((round(width), round(height)))
+
+                # Save the image to memory instead of the filesystem
+                file = BytesIO()
+                image.save(file, format="png")
+                file.seek(0)
+                file_in_bytes = file.read()
+                if sys.getsizeof(file) < 256000:
+                    break
+                del file
+            else:
+                return None
+
+            return file_in_bytes
+
+        return await self.bot.loop.run_in_executor(
+            None, do_compress
+        )
+
+    async def _upload_emoji(self, ctx, name, img, reason, roles=None) -> str:
+        """ Creates a partial emoji and returns the result as str """
+        async def upload(image):
+            return await ctx.guild.create_custom_emoji(name=name, image=image, roles=roles, reason=reason)
+
+        if sys.getsizeof(img) > 4000000:
+            return f"{name} - File exceeds 4MB"
+
         try:
-            emoji = await ctx.guild.create_custom_emoji(
-                name=name, image=img, roles=roles, reason=reason
-            )
+            emoji = await upload(img)
 
-        # Missing required permissions to add emojis
-        except discord.errors.Forbidden:
-            await update_msg(
-                ctx.msg, "I'm missing manage_emoji permission(s)"
-            )
-            return None
+        # Missing permissions
+        except Forbidden:
+            return "I'm missing manage_emoji permission(s)"
 
-        # Not a proper image
-        except (AttributeError, discord.errors.InvalidArgument):
-            await update_msg(ctx.msg, f"{name} - Unsupported Image Type")
-            return None
+        # Unsupported file type
+        except (AttributeError, InvalidArgument):
+            return f"{name} - Unsupported Image Type"
 
-        # Something went wrong uploading the emoji
-        except discord.errors.HTTPException:
-            error = str(traceback.format_exc()).lower()
-            # Emoji Limit Reached
+        # Varying causes to fail
+        except HTTPException as err:
+            error = traceback.format_exc().lower()
+
+            # Emoji limit reached
             if "maximum" in error:
-                await update_msg(
-                    ctx.msg, f"{name} - Emoji Limit Reached"
-                )
-            # 256KB Filesize Limit
-            elif "256" in error:
-                await update_msg(ctx.msg, f"{name} - File Too Large")
-            return None
+                return f"{name} - Emoji Limit Reached"
 
-        await update_msg(ctx.msg, f"Added {emoji} - {name}")
-        return None
+            if "256" not in error:
+                return f"{name} - {err}"
+
+            # Attempt to compress the image
+            new_img = await self.compress(img)
+            if not new_img:
+                return f"{name} - Couldn't compress within 5 attempts"
+
+            # Try uploading the compressed image
+            try:
+                emoji = await upload(new_img)
+                return f"Compressed and added {emoji} - {name}"
+            except HTTPException:
+                return f"{name} - Couldn't compress, simply too large"
+
+        return f"Added {emoji} - {name}"
+
+    async def upload_emoji(self, ctx, *args, **kwargs):
+        result = await self._upload_emoji(ctx, *args, **kwargs)
+        await update_msg(ctx.msg, result)
 
     @commands.command(name="emoji", aliases=["emote", "jumbo"])
     @commands.cooldown(1, 3, commands.BucketType.user)
