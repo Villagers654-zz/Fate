@@ -987,9 +987,6 @@ class Logger(commands.Cog):
                                 files.append(fp)
                             log = Log("message_delete", embed=msg.embeds[0], files=files)
                             self.put_nowait(guild_id, log)
-                        else:
-                            log = Log("message_delete", embed=msg.embeds[0])
-                            self.put_nowait(guild_id, log)
                         return
 
                 if (
