@@ -322,6 +322,11 @@ class GlobalChat(commands.Cog):
                 author += " 👮‍♂️"
             e.set_author(name=author, icon_url=msg.author.avatar.url)
 
+            if "balls" in msg.content.lower() or "ba11s" in msg.content.lower():
+                msg.content = msg.content\
+                    .replace("balls", "<:milk:814928895316852756>")\
+                    .replace("ba11s", "<:milk:814928895316852756>")
+
             # Edit & combine their last msg
             if msg.author.id == self.last_id and self.msg_cache:
                 em = self.msg_cache[0].embeds[0]
@@ -340,7 +345,6 @@ class GlobalChat(commands.Cog):
             # Send a new msg
             if msg.attachments:
                 e.set_image(url=msg.attachments[0].url)
-            e.set_author(name=str(msg.author), icon_url=msg.author.avatar.url)
             e.set_thumbnail(url=msg.guild.icon.url)
             e.description = msg.content[:512]
             self._queue.append([e, False, msg])
