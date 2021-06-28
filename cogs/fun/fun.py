@@ -11,20 +11,19 @@ A cog containing generally fun commands
 import asyncio
 import base64
 import random
-from random import random as rd
-from datetime import datetime, timezone, timedelta
 from contextlib import suppress
+from datetime import datetime, timedelta
 from io import BytesIO
-
+from random import random as rd
 import aiohttp
+
 import discord
+from PIL import Image, ImageDraw, ImageFont
 from discord import Webhook
 from discord.ext import commands
 from discord.ext import tasks
-from PIL import Image, ImageDraw, ImageFont
 
-from botutils import get_prefix
-
+from botutils import get_prefix, format_date_difference
 
 code = "```py\n{0}\n```"
 sexualities = [
@@ -101,38 +100,43 @@ class Fun(commands.Cog):
     async def snipe(self, ctx):
         channel_id = ctx.channel.id
         if channel_id not in self.dat:
-            await ctx.send("Nothing to snipe", delete_after=1)
-            return await ctx.message.delete()
+            return await ctx.send("Nothing to snipe")
+
+        # Snipe a specific user
         if ctx.message.mentions:
             user_id = ctx.message.mentions[0].id
             if user_id not in self.dat[channel_id]:
-                await ctx.send("Nothing to snipe", delete_after=1)
-                return await ctx.message.delete()
+                return await ctx.send("Nothing to snipe")
             msg, time = self.dat[channel_id][user_id]
             del self.dat[channel_id][user_id]
+
+        # Snipe the last message in the channel
         else:
             msg, time = self.dat[channel_id]["last"]
             del self.dat[channel_id]
+
         if msg.embeds:
-            await ctx.send(f"{msg.author} at {time}", embed=msg.embeds[0])
-        else:
-            if ctx.guild.id in self.bot.filtered_messages:
-                if msg.id in self.bot.filtered_messages[ctx.guild.id]:
-                    return await ctx.send("I think not m8")
-            if len(msg.content) > 1000 and not ctx.author.guild_permissions.administrator:
-                return await ctx.send("wHy would I snipe that?")
-            e = discord.Embed(color=msg.author.color)
-            e.set_author(name=msg.author, icon_url=msg.author.avatar.url)
-            e.description = msg.content[:2048]
-            e.set_footer(text=time)
-            await ctx.send(embed=e)
+            return await ctx.send(f"{msg.author} deleted {format_date_difference(time)} ago", embed=msg.embeds[0])
+        if len(msg.content) > 256 and not ctx.author.guild_permissions.administrator:
+            return await ctx.send("And **wHy** would I snipe that?")
+
+        # Prevent sniping messaged deleted by the ChatFilter module
+        if ctx.guild.id in self.bot.filtered_messages:
+            if msg.id in self.bot.filtered_messages[ctx.guild.id]:
+                return await ctx.send("I think not m8")
+
+        e = discord.Embed(color=msg.author.color)
+        e.set_author(name=msg.author, icon_url=msg.author.avatar.url)
+        e.description = msg.content[:2048]
+        e.set_footer(text=f"Deleted {format_date_difference(time)} ago")
+        await ctx.send(embed=e)
 
     @commands.Cog.listener()
     async def on_message_delete(self, m: discord.Message):
         if m.content or m.embeds:
             channel_id = m.channel.id
             user_id = m.author.id
-            dat = (m, m.created_at.strftime("%I:%M%p UTC on %b %d, %Y"))
+            dat = (m, datetime.now())
             if channel_id not in self.dat:
                 self.dat[channel_id] = {}
             self.dat[channel_id]["last"] = dat
@@ -140,14 +144,14 @@ class Fun(commands.Cog):
 
     @tasks.loop(minutes=25)
     async def clear_old_messages_task(self):
-        expiration = datetime.now(tz=timezone.utc) - timedelta(hours=1)
+        expiration = datetime.now() - timedelta(hours=1)
         for channel_id, data in list(self.dat.items()):
-            if data["last"][0].created_at < expiration:
+            if data["last"][1] < expiration:
                 del self.dat[channel_id]
                 continue
             for key, value in list(data.items()):
                 if key != "last":
-                    if value[0].created_at < expiration:
+                    if value[1] < expiration:
                         with suppress(KeyError, ValueError):
                             del self.dat[channel_id][key]
 
@@ -315,8 +319,8 @@ class Fun(commands.Cog):
             else:
                 output += letter
         if (
-            isinstance(ctx.guild, discord.Guild)
-            and ctx.channel.permissions_for(ctx.guild.me).manage_webhooks
+                isinstance(ctx.guild, discord.Guild)
+                and ctx.channel.permissions_for(ctx.guild.me).manage_webhooks
         ):
             webhook = await ctx.channel.create_webhook(name="Fancify")
             async with aiohttp.ClientSession() as session:
