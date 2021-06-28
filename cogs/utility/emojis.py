@@ -141,7 +141,8 @@ class Emojis(commands.Cog):
                     author_name += f" by {emoji.user}"
                     e.description = f"ID: {emoji.id}"
                     author_url = emoji.user.avatar.url
-                e.set_footer(text=emoji.guild.name, icon_url=emoji.guild.icon.url)
+                icon_url = emoji.guild.icon.url if emoji.guild.icon else None
+                e.set_footer(text=emoji.guild.name, icon_url=icon_url)
             e.set_author(name=author_name, icon_url=author_url)
             e.set_image(url=emoji.url)
             await ctx.send(embed=e)
