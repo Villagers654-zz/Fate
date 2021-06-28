@@ -188,11 +188,11 @@ def format_date_difference(dt: datetime.date) -> str:
         fmt += f"{days}d"
         remainder -= 60 * 60 * 24 * days
 
-    if hours := remainder / 60 / 60 >= 1:
+    if hours := int(remainder / 60 / 60):
         fmt += f"{space()}{int(hours)}h"
         remainder -= 60 * 60 * hours
 
-    if minutes := remainder / 60 >= 1:
+    if minutes := int(remainder / 60):
         fmt += f"{space()}{int(minutes)}m"
         remainder -= 60 * minutes
 
