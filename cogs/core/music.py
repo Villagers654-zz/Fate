@@ -171,7 +171,11 @@ class Music(commands.Cog):
             await ctx.send("This command can only be ran in servers")
             raise self.bot.ignored_exit
 
-        player = self.bot.lavalink.player_manager.create(ctx.guild.id, endpoint=str(ctx.guild.region))
+        try:
+            player = self.bot.lavalink.player_manager.create(ctx.guild.id, endpoint=str(ctx.guild.region))
+        except lavalink.exceptions.NodeException:
+            await ctx.send("I don't appear to have any nodes. I've reported this and music will be back soon")
+            raise self.bot.ignored_exit
         should_connect = ctx.command.name in ('play',)
 
         if not ctx.author.voice or not ctx.author.voice.channel:
