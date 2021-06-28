@@ -1207,7 +1207,7 @@ class Utility(commands.Cog):
             return await ctx.send("You currently have no timers")
         e = discord.Embed(color=colors.fate)
         for msg, dat in list(self.timers[user_id].items()):
-            end_time = datetime.strptime(dat["timer"], "%Y-%m-%d %H:%M:%S.%f")
+            end_time = datetime.strptime(dat["timer"], "%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=timezone.utc)
             if datetime.now(tz=timezone.utc) > end_time:
                 del self.timers[user_id][msg]
                 await self.save_timers()
