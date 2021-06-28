@@ -1166,10 +1166,6 @@ class Logger(commands.Cog):
                 e.description = (
                     f"> 》__**Icon Changed**__《" f"\n**Changed by:** [{dat['user']}]"
                 )
-                if not before.is_icon_animated() and after.is_icon_animated():
-                    e.description += f"\n__**Icons now animated**__"
-                if not after.is_icon_animated() and before.is_icon_animated():
-                    e.description += f"\n__**Icons no longer animated**__"
                 log = Log("new_server_icon", embed=e)
                 self.put_nowait(guild_id, log)
             before_url = before.banner or before.banner.url if before.banner else None
