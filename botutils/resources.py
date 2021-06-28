@@ -23,6 +23,7 @@ import json
 import os
 import aiohttp
 import aiofiles
+import pymongo.errors
 import pymysql
 from discord.ext import tasks
 
@@ -54,9 +55,10 @@ class Cache:
             if key not in self._cache:
                 continue
             if key not in self._db_state:
-                await collection.insert_one({
-                    "_id": key, **self._cache[key]
-                })
+                with suppress(pymongo.errors.DuplicateKeyError):
+                    await collection.insert_one({
+                        "_id": key, **self._cache[key]
+                    })
                 self._db_state[key] = deepcopy(value)
             elif value != self._db_state[key]:
                 await collection.replace_one(
