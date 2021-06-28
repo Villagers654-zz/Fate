@@ -610,36 +610,6 @@ class Fun(commands.Cog):
         e.description = f"{percentage}% {ctx.invoked_with}"
         await ctx.send(embed=e)
 
-    @commands.command()
-    async def rps(self, ctx):
-        try:
-
-            def pred(m):
-                return m.author == ctx.author and m.channel == ctx.channel
-
-            choose = await ctx.send("Choose: rock, paper, or scissors")
-            await asyncio.sleep(0.5)
-            msg = await self.bot.wait_for("message", check=pred, timeout=10.0)
-        except asyncio.TimeoutError:
-            await ctx.send(f"You took too long!", delete_after=5)
-        else:
-            result = discord.Embed(color=0x80B0FF)
-            result.set_author(
-                name="Rock, Paper, Scissors", icon_url=ctx.author.avatar.url
-            )
-            r = random.randint(0, 2)
-            result.set_thumbnail(
-                url=(
-                    "https://cdn.discordapp.com/attachments/501871950260469790/511284253728702465/5a0ac29f5a997e1c2cea10a1.png",
-                    "https://cdn.discordapp.com/attachments/501871950260469790/511284234275782656/1541969980955.png",
-                    "https://cdn.discordapp.com/attachments/501871950260469790/511284246506110997/Scissor-PNG.png",
-                )[r]
-            )
-            result.description = f'**Fate [Zero] chose: **{("rock", "paper", "scissors")[r]}\n**{ctx.author.name} chose:** {msg.content} '
-            await choose.delete()
-            await ctx.message.delete()
-            await msg.delete()
-
     @commands.command(name="sue")
     @commands.cooldown(1, 60, commands.BucketType.user)
     async def sue(self, ctx, user: discord.Member):
