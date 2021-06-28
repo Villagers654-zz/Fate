@@ -655,9 +655,8 @@ class Utility(commands.Cog):
             e.add_field(
                 name="◈ Credits ◈",
                 value="\n• **Cortex** ~ `teacher of many things..`"
-                      "\n• **Discord.py** ~ `existing for me to use`"
                       "\n• **Luck** ~ `owner & main developer`"
-                      "\n• **Opal, Koro, Vco** ~ `code management`"
+                      "\n• **Opal** ~ `artwork / graphic design`"
                       "\n• **Legit** ~ `identifying many design flaws`"
             )
 
