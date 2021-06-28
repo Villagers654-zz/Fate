@@ -293,13 +293,13 @@ class Fun(commands.Cog):
     @commands.cooldown(1, 10, commands.BucketType.user)
     async def sex(self, ctx, user: discord.User):
         await ctx.send(f"Sent instructions on the {user.name} sex dupe to dms")
+        choices = [
+            "There isn't one for *you*",
+            "Err.. maybe try being more attractive",
+            "Sike! You're nobodys type",
+            "I can't dupe your micro penis. zero times 2 is still zero"
+        ]
         try:
-            choices = [
-                "There isn't one for *you*",
-                "Err.. maybe try being more attractive",
-                "Sike! You're nobodys type",
-                "I can't dupe your micro penis. zero times 2 is still zero"
-            ]
             await ctx.author.send(random.choice(choices))
         except:
             pass
@@ -318,23 +318,17 @@ class Fun(commands.Cog):
                 output += " "
             else:
                 output += letter
-        if (
-                isinstance(ctx.guild, discord.Guild)
-                and ctx.channel.permissions_for(ctx.guild.me).manage_webhooks
-        ):
+        if ctx.guild and ctx.channel.permissions_for(ctx.guild.me).manage_webhooks:
             webhook = await ctx.channel.create_webhook(name="Fancify")
-            async with aiohttp.ClientSession() as session:
-                webhook = Webhook.from_url(
-                    webhook.url, session=session
-                )
-                await webhook.send(
-                    output,
-                    username=ctx.author.display_name,
-                    avatar_url=ctx.author.avatar.url,
-                    allowed_mentions=self.bot.allowed_mentions
-                )
-                await webhook.delete()
-            await ctx.message.delete()
+            await webhook.send(
+                output,
+                username=ctx.author.display_name,
+                avatar_url=ctx.author.avatar.url,
+                allowed_mentions=self.bot.allowed_mentions
+            )
+            await webhook.delete()
+            with suppress(Exception):
+                await ctx.message.delete()
         else:
             await ctx.send(output)
 
@@ -342,52 +336,46 @@ class Fun(commands.Cog):
     async def encode(self, ctx, encoder: int, *, message):
         usage = "`.encode {16, 32, or 64} {message}`"
         if encoder not in [16, 32, 64]:
-            await ctx.send(usage)
+            return await ctx.send(usage)
+        if encoder == 16:
+            encode = base64.b16encode(message.encode())
+        elif encoder == 32:
+            encode = base64.b32encode(message.encode())
         else:
-            if encoder == 16:
-                encode = base64.b16encode(message.encode())
-            elif encoder == 32:
-                encode = base64.b32encode(message.encode())
-            elif encoder == 64:
-                encode = base64.b64encode(message.encode())
-            else:
-                return await ctx.send(f"Invalid Encoder:\n{usage}")
-            await ctx.send(encode.decode())
+            encode = base64.b64encode(message.encode())
+        await ctx.send(encode.decode())
 
     @commands.command(pass_context=True)
     async def decode(self, ctx, decoder: int, *, message):
         usage = "`.decode {16, 32, or 64} {message}`"
         if decoder not in {16, 32, 64}:
-            await ctx.send(usage)
-        else:
-            try:
-                if decoder == 16:
-                    decode = base64.b16decode(message.encode())
-                elif decoder == 32:
-                    decode = base64.b32decode(message.encode())
-                elif decoder == 64:
-                    decode = base64.b64decode(message.encode())
-                else:
-                    return await ctx.send(f"Invalid decoder:\n{usage}")
-                await ctx.send(self.bot.utils.cleanup_msg(str(decode.decode())))
-            except:
-                await ctx.send(f"That's not properly encoded in {decoder}")
+            return await ctx.send(usage)
+        try:
+            if decoder == 16:
+                decode = base64.b16decode(message.encode())
+            elif decoder == 32:
+                decode = base64.b32decode(message.encode())
+            elif decoder == 64:
+                decode = base64.b64decode(message.encode())
+            else:
+                return await ctx.send(f"Invalid decoder:\n{usage}")
+            await ctx.send(self.bot.utils.cleanup_msg(str(decode.decode())))
+        except:
+            await ctx.send(f"That's not properly encoded in {decoder}")
 
     @commands.command(name="liedetector", aliases=["ld"])
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def liedetector(self, ctx, *, member: discord.Member = None):
         if member is None:
             member = ctx.author
-        r = random.randint(50, 100)
         e = discord.Embed(color=0x0000FF)
-        e.set_author(
-            name="{}'s msg analysis".format(member.name), icon_url=member.avatar.url
-        )
-        e.description = "{}% {}".format(
-            r, random.choice(["truth", "the truth", "a lie", "lie"])
-        )
+        e.set_author(name=f"{member.display_name}'s msg analysis", icon_url=member.avatar.url)
+        percentage = random.randint(50, 100)
+        choices = ["truth", "the truth", "a lie", "lie"]
+        e.description = f"{percentage}% {random.choice(choices)}"
         await ctx.send(embed=e)
-        await ctx.message.delete()
+        if ctx.channel.permissions_for(ctx.guild.me).manage_messages:
+            await ctx.message.delete()
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -426,31 +414,30 @@ class Fun(commands.Cog):
         await ctx.send(embed=e)
         await ctx.message.delete()
 
-    @commands.command()
+    @commands.command(name="notice")
+    @commands.cooldown(1, 10, commands.BucketType.channel)
     async def notice(self, ctx):
-        await ctx.send(
-            random.choice(
-                [
-                    "Depression Strikes Again",
-                    "Would you like an espresso for your depresso",
-                    "You're not you when you're hungry",
-                    "Tfw you realise flies get laid more than you^",
-                    "*crippling depression*",
-                    "Really? That's the sperm that won?",
-                    "Breakdown sponsored by Samsung",
-                    "pUrE wHiTe pRiVelIdgEd mALe^",
-                ]
-            )
-        )
-        await ctx.message.delete()
+        choices = [
+            "Depression Strikes Again",
+            "Would you like an espresso for your depresso",
+            "You're not you when you're hungry",
+            "Tfw you realise flies get laid more than you^",
+            "*crippling depression*",
+            "Really? That's the sperm that won?",
+            "Breakdown sponsored by Samsung",
+            "pUrE wHiTe pRiVelIdgEd mALe^",
+        ]
+        await ctx.send(random.choice(choices))
+        if ctx.channel.permissions_for(ctx.guild.me).manage_messages:
+            await ctx.message.delete()
 
-    @commands.command()
-    @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.command(name="pain")
+    @commands.cooldown(1, 10, commands.BucketType.channel)
     async def pain(self, ctx):
         await ctx.send("Spain but the s is silent")
 
-    @commands.command()
-    @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.command(name="spain")
+    @commands.cooldown(1, 10, commands.BucketType.channel)
     async def spain(self, ctx):
         await ctx.send("Pain but with an s")
 
@@ -510,39 +497,36 @@ class Fun(commands.Cog):
         await ctx.send(embed=e)
 
     @commands.command()
+    @commands.cooldown(2, 5, commands.BucketType.channel)
     async def roll(self, ctx):
         await ctx.send(random.choice(["1", "2", "3", "4", "5", "6"]))
 
     @commands.command(name="ask", aliases=["8ball"])
+    @commands.cooldown(2, 5, commands.BucketType.channel)
     async def ask(self, ctx):
-        await ctx.send(
-            random.choice(
-                [
-                    "Yes",
-                    "No",
-                    "It's certain",
-                    "110% no",
-                    "It's uncertain",
-                    "Ofc",
-                    "I think not m8",
-                    "Ig",
-                    "Why not ¯\_(ツ)_/¯",
-                    "Ye",
-                    "Yep",
-                    "Yup",
-                    "tHe AnSwEr LiEs WiThIn",
-                    "Basically yes^",
-                    "Not really",
-                    "Well duh",
-                    "hell yeah",
-                    "hell no",
-                ]
-            )
-        )
+        choices = [
+            "Yes",
+            "No",
+            "It's certain",
+            "110% no",
+            "It's uncertain",
+            "Ofc",
+            "I think not m8",
+            "Ig",
+            "Why not ¯\_(ツ)_/¯",
+            "Ye",
+            "Yep",
+            "Yup",
+            "tHe AnSwEr LiEs WiThIn",
+            "Basically yes^",
+            "Not really",
+            "Well duh",
+            "hell yeah",
+            "hell no",
+        ]
+        await ctx.send(random.choice(choices))
 
-    @commands.command(
-        name="sexuality", aliases=[s.strip(" ") for s in sexualities[::1]]
-    )
+    @commands.command(name="sexuality", aliases=[s.strip(" ") for s in sexualities[::1]])
     @commands.cooldown(3, 5, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
@@ -656,7 +640,7 @@ class Fun(commands.Cog):
             await ctx.message.delete()
             await msg.delete()
 
-    @commands.command()
+    @commands.command(name="sue")
     @commands.cooldown(1, 60, commands.BucketType.user)
     async def sue(self, ctx, user: discord.Member):
         r = random.randint(1, 1000)
@@ -676,9 +660,9 @@ class Fun(commands.Cog):
         await ctx.send(embed=e)
         await ctx.message.delete()
 
-    @commands.command()
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    async def rr(self, ctx):
+    @commands.command(name="roulette", aliases=["rr"])
+    @commands.cooldown(2, 5, commands.BucketType.channel)
+    async def roulette(self, ctx):
         async with self.bot.utils.open("data/users") as f:
             users = await self.bot.load(await f.read())
         if ctx.author.id in users:
