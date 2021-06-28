@@ -73,8 +73,6 @@ class Ranking(commands.Cog):
         self.config = bot.utils.cache("ranking")
         self.profile = bot.utils.cache("profiles")
         self.cmds = bot.utils.cache("commands", auto_sync=True)
-        for key in self.cmds.keys():
-            self.cmds.remove(key)
         self.bot.loop.create_task(self.cmds.flush())
 
         # Save storage
@@ -138,7 +136,7 @@ class Ranking(commands.Cog):
         for cmd, dat in list(self.cmds.items()):
             for date in dat["uses"]:
                 await asyncio.sleep(0)
-                if (datetime.now(tz=timezone.utc) - date).days > 30:
+                if (datetime.now() - date).days > 30:
                     self.cmds[cmd]["uses"].remove(date)
                     self.cmds[cmd]["total"] -= 1
         await self.cmds.flush()
@@ -361,7 +359,7 @@ class Ranking(commands.Cog):
             ctx.command.name = "gay"
         if ctx.command.name not in self.cmds:
             self.cmds[ctx.command.name] = {"uses": [], "total": 0}
-        self.cmds[ctx.command.name]["uses"].append(datetime.now(tz=timezone.utc))
+        self.cmds[ctx.command.name]["uses"].append(datetime.now())
         self.cmds[ctx.command.name]["total"] += 1
 
     @commands.command(name="role-rewards", aliases=["level-rewards", "level-roles", "lr"])
