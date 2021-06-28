@@ -14,6 +14,7 @@ Classes:
 Methods:
     split
     cleanup_msg
+    format_date_difference
     bytes2human
     extract_time
     get_seconds
