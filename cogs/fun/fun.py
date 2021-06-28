@@ -509,7 +509,8 @@ class Fun(commands.Cog):
         await ctx.send(random.choice(choices))
 
     @commands.command(name="sexuality", aliases=[s.strip(" ") for s in sexualities[::1]])
-    @commands.cooldown(3, 5, commands.BucketType.user)
+    @commands.cooldown(2, 10, commands.BucketType.user)
+    @commands.cooldown(3, 6, commands.BucketType.channel)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
     async def sexuality(self, ctx, percentage=None):
