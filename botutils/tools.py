@@ -199,7 +199,7 @@ def format_date_difference(dt: datetime.date) -> str:
     if remainder >= 1 or not fmt:
         fmt += f"{space()}{round(remainder, 0 if fmt else 1)}s"
 
-    return fmt
+    return fmt.replace('.0', '')
 
 
 def bytes2human(n):
