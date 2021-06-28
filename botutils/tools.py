@@ -36,7 +36,7 @@ Misc variables:
 import re
 from typing import Union
 import asyncio
-from datetime import timedelta
+from datetime import datetime, timedelta
 from time import time
 import discord
 from .emojis import arrow
@@ -172,6 +172,34 @@ def cleanup_msg(msg, content=None):
             content[content.index(target)] = "**forbidden-link**"
     content = " ".join(content) if len(content) > 1 else content[0]
     return content
+
+
+def format_date_difference(dt: datetime.date) -> str:
+    """ Formats the time since the provided datetime object """
+    def space():
+        """ Add a space to the start only if fmt has existing content """
+        return " " if fmt else ""
+
+    fmt = ""
+    dt = datetime.now() - dt
+    remainder = dt.total_seconds()
+
+    if days := dt.days:
+        fmt += f"{days}d"
+        remainder -= 60 * 60 * 24 * days
+
+    if hours := remainder / 60 / 60 >= 1:
+        fmt += f"{space()}{int(hours)}h"
+        remainder -= 60 * 60 * hours
+
+    if minutes := remainder / 60 >= 1:
+        fmt += f"{space()}{int(minutes)}m"
+        remainder -= 60 * minutes
+
+    if remainder >= 1 or not fmt:
+        fmt += f"{space()}{round(remainder, 0 if fmt else 1)}s"
+
+    return fmt
 
 
 def bytes2human(n):
