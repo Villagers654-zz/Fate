@@ -616,7 +616,7 @@ class Ranking(commands.Cog):
         if ctx.guild.splash:
             background_url = str(ctx.guild.splash.url)
         if ctx.guild.banner:
-            background_url = str(ctx.guild.banner_url)
+            background_url = str(ctx.guild.banner.url)
         if user_id in self.profile:
             if "title" in self.profile[user_id]:
                 title = self.profile[user_id]["title"]
