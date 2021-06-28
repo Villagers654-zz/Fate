@@ -160,7 +160,7 @@ class Fun(commands.Cog):
         if before.embeds and not after.embeds:
             channel_id = before.channel.id
             user_id = before.author.id
-            dat = (before, before.created_at.strftime("%I:%M%p UTC on %b %d, %Y"))
+            dat = (before, datetime.now())
             if channel_id not in self.dat:
                 self.dat[channel_id] = {}
             self.dat[channel_id]["last"] = dat
