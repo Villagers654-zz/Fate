@@ -475,18 +475,6 @@ class Fun(commands.Cog):
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def rate(self, ctx):
-        async for msg in ctx.channel.history(limit=3):
-            if msg.id != ctx.message.id:
-                await msg.add_reaction(
-                    random.choice(
-                        ["1⃣", "2⃣", "3⃣", "4⃣", "5⃣", "6⃣", "7⃣", "8⃣", "9⃣"]
-                    )
-                )
-                return await ctx.message.delete()
-
-    @commands.command()
-    @commands.cooldown(1, 5, commands.BucketType.user)
     async def soul(self, ctx, *, member: discord.Member = None):
         if member is None:
             member = ctx.author
