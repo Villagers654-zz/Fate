@@ -658,6 +658,7 @@ class Utility(commands.Cog):
                       "\n• **Discord.py** ~ `existing for me to use`"
                       "\n• **Luck** ~ `owner & main developer`"
                       "\n• **Opal, Koro, Vco** ~ `code management`"
+                      "\n• **Legit** ~ `identifying many design flaws`
             )
 
             def get_info() -> str:
