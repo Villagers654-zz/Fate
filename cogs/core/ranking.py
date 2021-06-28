@@ -162,7 +162,7 @@ class Ranking(commands.Cog):
             await self.bot.wait_until_ready()
         while self.bot.pool is None:
             await asyncio.sleep(5)
-        async with self.bot.pool.acquire() as conn:
+        async with self.bot.utils.pool.acquire() as conn:
             async with conn.cursor() as cur:
                 limit = time() - 60 * 60 * 24 * 30  # One month
                 await cur.execute(f"delete from monthly_msg where msg_time < {limit};")
