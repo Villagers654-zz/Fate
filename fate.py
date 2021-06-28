@@ -95,7 +95,7 @@ class Fate(commands.AutoShardedBot):
         # Set the oauth_url for users to invite the bot with
         perms = discord.Permissions(0)
         perms.update(**self.config["bot_invite_permissions"])
-        self.invite_url = discord.utils.oauth_url(self.config["bot_user_id"], perms)
+        self.invite_url = discord.utils.oauth_url(self.config["bot_user_id"], permissions=perms)
 
         super().__init__(
             command_prefix=get_prefixes_async,
