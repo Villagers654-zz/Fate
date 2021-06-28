@@ -1355,11 +1355,11 @@ class Moderation(commands.Cog):
         if not isinstance(warns[user_id], list):
             warns[user_id] = []
 
-        warns[user_id].append([reason, str(datetime.now(tz=timezone.utc))])
+        warns[user_id].append([reason, str(datetime.now())])
         total_warns = 0
         for reason, time in warns[user_id]:
-            time = datetime.strptime(time, "%Y-%m-%d %H:%M:%S.%f")
-            if (datetime.now(tz=timezone.utc) - time).days > 30:
+            time = datetime.strptime(time.replace("+00:00", ""), "%Y-%m-%d %H:%M:%S.%f")
+            if (datetime.now() - time).days > 30:
                 if guild_id in config["warns"]["expire"]:
                     warns[user_id].remove([reason, str(time)])
                     continue
@@ -1435,7 +1435,7 @@ class Moderation(commands.Cog):
                 "action": "mute",
                 "channel": channel.id,
                 "user": user.id,
-                "end_time": str(datetime.now(tz=timezone.utc) + timedelta(seconds=7200)),
+                "end_time": str(datetime.now() + timedelta(seconds=7200)),
                 "mute_role": mute_role.id,
                 "roles": user_roles,
             }
@@ -1580,7 +1580,7 @@ class Moderation(commands.Cog):
             conf = await self.bot.load(await f.read())
         for reason, time in self.config[guild_id]["warns"][user_id]:
             time = datetime.strptime(time, "%Y-%m-%d %H:%M:%S.%f")
-            if (datetime.now(tz=timezone.utc) - time).days > 30:
+            if (datetime.now() - time).days > 30:
                 if (
                     guild_id in conf
                     and "expire" in conf[guild_id]["warns"]
