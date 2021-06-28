@@ -985,7 +985,7 @@ class Logger(commands.Cog):
                                 async with aiofiles.open(fp, "wb") as f:
                                     await f.write(file)
                                 files.append(fp)
-                            log = Log("message_delete", embed=msg.embeds[0], files=files)
+                            log = Log("message_delete", embed=msg.embeds[0] if msg.embeds else None, files=files)
                             self.put_nowait(guild_id, log)
                         return
 
