@@ -50,7 +50,7 @@ class Giveaways(commands.Cog):
         except (NotFound, Forbidden):
             del self.data[guild_id][giveaway_id]
             return await self.save_data()
-        end_time = datetime.strptime(dat["end_time"], "%Y-%m-%d %H:%M:%S.%f")
+        end_time = datetime.strptime(dat["end_time"], "%Y-%m-%d %H:%M:%S.%f%z")
 
         # Wait for the giveaway timer to end
         while datetime.now(tz=timezone.utc) < end_time:
