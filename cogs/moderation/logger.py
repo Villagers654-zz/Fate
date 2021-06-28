@@ -1332,7 +1332,7 @@ class Logger(commands.Cog):
             if self.config[guild_id]["secure"]:
                 if channel.id == self.config[guild_id]["channel"]:
                     for embed in self.recent_logs[guild_id]:
-                        log = Log("message_delete", embed=embed)
+                        log = Log("message_delete", embed=embed[0])
                         await self.queue[guild_id].put(log)
                     return
 
