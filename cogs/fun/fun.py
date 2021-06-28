@@ -146,7 +146,8 @@ class Fun(commands.Cog):
     async def clear_old_messages_task(self):
         expiration = datetime.now() - timedelta(hours=1)
         for channel_id, data in list(self.dat.items()):
-            if data["last"][1] < expiration:
+            date = datetime.strptime(data["last"], "%Y-%m-%d %H:%M:%S.%f")
+            if date < expiration:
                 del self.dat[channel_id]
                 continue
             for key, value in list(data.items()):
