@@ -150,4 +150,4 @@ class Bot(commands.AutoShardedBot):
 
 
 bot = Bot()
-bot.run("NTExMTQxMzM1ODY1MjI5MzMz.W-gTdw.7XvdSnq6nwgdZQM5vzwhs3RABOc")
+bot.run("")
