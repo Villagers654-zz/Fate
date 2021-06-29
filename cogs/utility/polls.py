@@ -1,12 +1,18 @@
-# Create un-abusable polls for users to react to
-# - works by keeping the tally saved, and once reacted you can only change
-#   your reaction, and not remove it in order to prevent mods removing reactions
+"""
+cogs.utility.polls
+~~~~~~~~~~~~~~~~~~~
 
-from time import time
+Create un-mod-abusable polls for users. This cog prevents mods
+from deleting reactions to alter the outcome of a poll
+
+:copyright: (C) 2020-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
+
+from datetime import datetime, timedelta, timezone
 import json
 import asyncio
 from contextlib import suppress
-from datetime import datetime, timedelta, timezone
 
 from discord.ext import commands
 import discord
