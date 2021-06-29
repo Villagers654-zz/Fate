@@ -13,7 +13,7 @@ import asyncio
 import json
 from os import path
 from typing import Union
-import random
+from datetime import datetime
 
 from discord.ext import commands, tasks
 from discord.errors import NotFound, Forbidden
@@ -305,6 +305,14 @@ class GlobalChat(commands.Cog):
                 if cur.rowcount:
                     mod = True
 
+                # Update the last use for this server
+                await cur.execute(
+                    f"insert into global_activity values ("
+                    f"{msg.guild.id}, '{str(datetime.now())}') "
+                    f"on duplicate key update "
+                    f"last_used = '{str(datetime.now())}';"
+                )
+
             if not mod:
                 abcs = "abcdefghijklmnopqrstuvwxyz"
                 for i, char in enumerate(list(msg.content)):
@@ -322,10 +330,11 @@ class GlobalChat(commands.Cog):
                 author += " 👮‍♂️"
             e.set_author(name=author, icon_url=msg.author.avatar.url)
 
-            if "balls" in msg.content.lower() or "ba11s" in msg.content.lower():
-                msg.content = msg.content\
+            if "balls" in msg.content.lower() or "ba11s" in msg.content.lower() or "bals" in msg.content.lower():
+                msg.content = msg.content.lower()\
                     .replace("balls", "<:milk:814928895316852756>")\
-                    .replace("ba11s", "<:milk:814928895316852756>")
+                    .replace("ba11s", "<:milk:814928895316852756>")\
+                    .replace("bals", "<:milk:814928895316852756>")
 
             # Edit & combine their last msg
             if msg.author.id == self.last_id and self.msg_cache:
