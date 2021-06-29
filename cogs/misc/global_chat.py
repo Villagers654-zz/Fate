@@ -307,7 +307,7 @@ class GlobalChat(commands.Cog):
                     await asyncio.sleep(0)
                     if any(reaction.message.id == m.id for m in data["messages"] if m):
                         if user.id not in data[reaction.emoji]:
-                            self.polls[user.id][reaction.emoji].append(user.id)
+                            self.polls[user_id][reaction.emoji].append(user.id)
                             emoji = "👍" if reaction.emoji == "👎" else "👎"
                             if user.id in data[emoji]:
                                 self.polls[user_id][emoji].remove(user.id)
