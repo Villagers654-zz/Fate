@@ -486,13 +486,11 @@ async def on_guild_join(guild):
     channel = bot.get_channel(bot.config["log_channel"])
     e = discord.Embed(color=colors.pink)
     e.set_author(name="Bot Added to Guild", icon_url=bot.user.avatar.url)
-    if guild.icon.url:
+    if guild.icon:
         e.set_thumbnail(url=guild.icon.url)
     inviter = "Unknown"
     if guild.me.guild_permissions.view_audit_log:
-        async for entry in guild.audit_logs(
-            action=discord.AuditLogAction.bot_add, limit=1
-        ):
+        async for entry in guild.audit_logs(action=discord.AuditLogAction.bot_add, limit=1):
             inviter = str(entry.user)
     e.description = (
         f"**Name:** {guild.name}"
