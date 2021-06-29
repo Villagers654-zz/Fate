@@ -1901,6 +1901,58 @@ class Logger(commands.Cog):
                 log = Log("member_roles_update", embed=e)
                 self.put_nowait(guild_id, log)
 
+    @commands.Cog.listener()
+    async def on_guild_emojis_update(self, guild, before: list, after: list):
+        guild_id = str(guild.id)
+        if guild_id in self.config:
+
+            # Emoji rename
+            index = {}
+            for emoji in before:
+                await asyncio.sleep(0)
+                index[emoji.id] = emoji
+            for emoji in after:
+                await asyncio.sleep(0)
+                if emoji.id in index and emoji.name != index[emoji.id].name:
+                    e = discord.Embed(color=orange)
+                    e.set_author(name="~==🍸Emoji Renamed🍸==~")
+                    e.set_thumbnail(url=guild.icon.url)
+                    e.description = self.bot.utils.format_dict({
+                        "Emoji": str(emoji),
+                        "Before": emoji.name,
+                        "After": index[emoji.id].name
+                    })
+                    log = Log("emoji_rename", embed=e)
+                    self.put_nowait(guild_id, log)
+
+            # Emoji delete
+            for emoji in before:
+                await asyncio.sleep(0)
+                if not any(emoji.id == e.id for e in after):
+                    e = discord.Embed(color=orange)
+                    e.set_author(name="~==🍸Emoji Deleted🍸==~")
+                    e.set_thumbnail(url=guild.icon.url)
+                    e.description = self.bot.utils.format_dict({
+                        "Emoji": emoji.name,
+                        "Animated": str(emoji.animated)
+                    })
+                    log = Log("emoji_delete", embed=e)
+                    self.put_nowait(guild_id, log)
+
+            # Emoji create
+            for emoji in after:
+                await asyncio.sleep(0)
+                if not any(emoji.id == e.id for e in before):
+                    e = discord.Embed(color=orange)
+                    e.set_author(name="~==🍸Emoji Created🍸==~")
+                    e.set_thumbnail(url=guild.icon.url)
+                    e.description = self.bot.utils.format_dict({
+                        "Emoji": str(emoji)
+                    })
+                    log = Log("emoji_create", embed=e)
+                    self.put_nowait(guild_id, log)
+
+
 
 def setup(bot):
     bot.add_cog(Logger(bot), override=True)
