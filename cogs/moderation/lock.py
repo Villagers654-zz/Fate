@@ -133,7 +133,7 @@ class Lock(commands.Cog):
     @commands.Cog.listener()
     async def on_member_join(self, m: discord.Member):
         guild_id = m.guild.id
-        if guild_id in self.lock:
+        if not m.bot and guild_id in self.lock:
             if "kick" in self.lock[guild_id]:
                 with suppress(HTTPException, Forbidden):
                     await m.send(f"**{m.guild.name}** is currently locked. Contact an admin or try again later")
