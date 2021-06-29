@@ -120,7 +120,7 @@ class Responses(commands.Cog):
                     return await m.channel.send(reply)
 
             if m.guild.id in self.responses:
-                if not m.author.bot and m.channel.permissions_for(m.guild.me).send_messages:
+                if not m.author.bot and m.channel and m.guild.me and m.channel.permissions_for(m.guild.me).send_messages:
                     if random.randint(1, 4) == 4:
                         self.cooldown.check(m.channel.id)
                         if m.content.startswith("hello"):
