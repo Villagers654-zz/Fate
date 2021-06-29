@@ -20,7 +20,7 @@ from colormap import rgb2hex
 import psutil
 from discord.ext import commands, tasks
 
-from botutils import colors, split, cleanup_msg, bytes2human, get_time, emojis, get_prefixes_async
+from botutils import colors, split, cleanup_msg, bytes2human, get_time, emojis, get_prefixes_async, format_date_difference
 
 
 class SatisfiableChannel(commands.Converter):
@@ -1180,7 +1180,7 @@ class Utility(commands.Cog):
         msg = msg[:200]
         try:
             self.timers[user_id][msg] = {
-                "timer": str(datetime.now(tz=timezone.utc) + timedelta(seconds=timer)),
+                "timer": str(datetime.now() + timedelta(seconds=timer)),
                 "channel": ctx.channel.id,
                 "mention": ctx.author.mention,
                 "expanded_timer": expanded_timer,
@@ -1208,14 +1208,12 @@ class Utility(commands.Cog):
         e = discord.Embed(color=colors.fate)
         for msg, dat in list(self.timers[user_id].items()):
             fmt = "%Y-%m-%d %H:%M:%S.%f"
-            if "+" in dat["timer"]:
-                fmt += "%z"
-            end_time = datetime.strptime(dat["timer"], fmt).replace(tzinfo=timezone.utc)
-            if datetime.now(tz=timezone.utc) > end_time:
+            end_time = datetime.strptime(dat["timer"], fmt)
+            if datetime.now() > end_time:
                 del self.timers[user_id][msg]
                 await self.save_timers()
                 continue
-            expanded_time = timedelta(seconds=(end_time - datetime.now(tz=timezone.utc)).seconds)
+            expanded_time = format_date_difference(end_time)
             channel = self.bot.get_channel(dat["channel"])
             if not channel:
                 del self.timers[user_id][msg]
