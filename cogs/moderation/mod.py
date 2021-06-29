@@ -1041,8 +1041,6 @@ class Moderation(commands.Cog):
                     users_to_ban.append([entry.user, entry.reason])
         if not users_to_ban:
             return await ctx.send("No bans left to import")
-        if len(users_to_ban) > 100:
-            await ctx.send("I can only import a max of 50 bans at a time", delete_after=10)
         msg = await ctx.send(f"Importing bans (0/{len(users_to_ban)})")
         try:
             for i, (user, reason) in enumerate(users_to_ban):
