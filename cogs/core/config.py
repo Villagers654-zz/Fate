@@ -60,7 +60,8 @@ class Config(commands.Cog):
     async def _warns(self, ctx):
         guild_id = str(ctx.guild.id)
         emojis = ["1⃣", "2⃣", "3⃣", "4⃣", "5⃣"]
-        config = self.bot.utils.get_config()  # type: dict
+        async with self.bot.utils.open("./data/userdata/config.json", "r") as f:
+            config = await self.bot.load(await f.read())
         if "warns" not in config:
             config["warns"] = {}
         if "expire" not in config["warns"]:
