@@ -1,5 +1,5 @@
 # Fate
-![black](https://img.shields.io/badge/code%20style-black-black) ![black](https://img.shields.io/badge/version-1.0.0-green)
+![black](https://img.shields.io/badge/code%20style-black-black?style=flat-square) ![black](https://img.shields.io/badge/version-1.0.0-brightgreen?style=flat-square)
 
 A multipurpose discord bot
 
