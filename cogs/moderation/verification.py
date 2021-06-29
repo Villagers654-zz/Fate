@@ -40,6 +40,7 @@ class Verification(commands.Cog):
 
     @commands.group(name="verification")
     @commands.cooldown(2, 5, commands.BucketType.user)
+    @commands.guild_only()
     async def verification(self, ctx):
         if not ctx.invoked_subcommand:
             e = discord.Embed(color=colors.fate)
@@ -352,6 +353,7 @@ class Verification(commands.Cog):
 
     @commands.command(name="verify")
     @commands.cooldown(1, 10, commands.BucketType.user)
+    @commands.guild_only()
     async def verify(self, ctx):
         guild_id = ctx.guild.id
         if guild_id not in self.config:
