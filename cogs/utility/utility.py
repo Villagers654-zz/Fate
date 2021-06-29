@@ -1167,6 +1167,11 @@ class Utility(commands.Cog):
             if r:
                 return await ctx.send("Why tho. Tell me. Why. Why has your life lead you up to this point. What even is the point. Definitely not for this. Please, ***please***  consider giving the outdoors a try. There's plenty fish in the sea even. Anything but ***this***")
             return await ctx.send("That timer's too smol")
+        if timer > 60 * 60 * 24 * 365:
+            r = self.cd.check(ctx.channel.id)
+            if r:
+                return await ctx.send("Why tho. Tell me. Why. Why has your life lead you up to this point. What even is the point. Definitely not for this. Please, ***please***  consider giving the outdoors a try. There's plenty fish in the sea even. Anything but ***this***")
+            return await ctx.send("You can't set a timer that long")
         user_id = str(ctx.author.id)
         if user_id not in self.timers:
             self.timers[user_id] = {}
