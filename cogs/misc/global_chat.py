@@ -40,6 +40,7 @@ rules = "1. No spamming\n" \
 class GlobalChat(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.polls = {}
         self.cache = {}
         self.msg_cache = []
         self.msg_chunks = []
@@ -273,9 +274,56 @@ class GlobalChat(commands.Cog):
         await msg.add_reaction("👎")
         await ctx.send("Sent your application")
 
+    @_gc.command(name="poll")
+    async def poll(self, ctx, *, poll):
+        active = [m.id for m in list(self.cache.values()) if m]
+        if ctx.channel.id not in active:
+            return await ctx.send("Global chat isn't active")
+        e = discord.Embed()
+        e.set_author(name=f"Poll by {ctx.author} 📊", icon_url=ctx.author.avatar.url)
+        e.description = poll
+        e.set_footer(text="👍 0 | 👎 0")
+        self.polls[ctx.author.id] = {
+            "messages": [],
+            "👍": [],
+            "👎": []
+        }
+        for guild_id, channel in self.cache.items():
+            with suppress(NotFound, Forbidden):
+                msg = await channel.send(embed=e)
+                await msg.add_reaction("👍")
+                await msg.add_reaction("👎")
+                self.polls[ctx.author.id]["messages"].append(msg)
+        self.last_id = None
+        with suppress(NotFound, Forbidden):
+            await ctx.message.delete()
+
+    @commands.Cog.listener()
+    async def on_reaction_add(self, reaction, user):
+        if not user.bot and reaction.emoji in ["👍", "👎"]:
+            active = [m.id for m in list(self.cache.values()) if m]
+            if reaction.message.channel.id in active:
+                for user_id, data in list(self.polls.items()):
+                    await asyncio.sleep(0)
+                    if any(reaction.message.id == m.id for m in data["messages"] if m):
+                        if user.id not in data[reaction.emoji]:
+                            self.polls[user.id][reaction.emoji].append(user.id)
+                            emoji = "👍" if reaction.emoji == "👎" else "👎"
+                            if user.id in data[emoji]:
+                                self.polls[user_id][emoji].remove(user.id)
+                            for message in [m for m in data["messages"] if m and m.embeds]:
+                                with suppress(Exception):
+                                    e = message.embeds[0]
+                                    e.set_footer(text=f"👍 {len(data['👍'])} | 👎 {len(data['👎'])}")
+                                    await message.edit(embed=e)
+                        with suppress(Exception):
+                            await reaction.message.remove_reaction(reaction.emoji, user)
+
     @commands.Cog.listener()
     async def on_message(self, msg):
-        active = [m.id for m in list(self.cache.values())]
+        if msg.content.startswith("."):
+            return
+        active = [m.id for m in list(self.cache.values()) if m]
         if not msg.author.bot and msg.channel.id in active:
             # Duplicate messages
             if msg.content and any(msg.content == m.content for m in self.msg_cache):
