@@ -512,7 +512,7 @@ async def on_guild_remove(guild: discord.Guild):
     e = discord.Embed(color=colors.pink)
     e.set_author(name="Bot Left or Was Removed", icon_url=bot.user.avatar.url)
     if guild.icon.url:
-        e.set_thumbnail(url=guild.icon.url)
+        e.set_thumbnail(url=guild.icon.url if guild.icon else None)
     e.description = (
         f"**Name:** {guild.name}\n"
         f"**ID:** {guild.id}\n"
