@@ -186,9 +186,9 @@ class GlobalChat(commands.Cog):
 
     @_gc.command(name="rules")
     async def rules(self, ctx):
-        rules = discord.Embed(color=self.bot.config["theme_color"])
-        rules.description = rules
-        await ctx.send(embed=rules)
+        e = discord.Embed(color=self.bot.config["theme_color"])
+        e.description = rules
+        await ctx.send(embed=e)
 
     @_gc.command(name="enable")
     @commands.has_permissions(administrator=True)
@@ -249,11 +249,11 @@ class GlobalChat(commands.Cog):
             return
         if not reason.content:
             return await ctx.send("That's not a valid response. Rerun the command")
-        rules = discord.Embed(color=self.bot.config["theme_color"])
-        rules.description = rules
+        e = discord.Embed(color=self.bot.config["theme_color"])
+        e.description = rules
         msg = await ctx.send(
             "Do you agree to **all** of the stated rules in this embed?",
-            embed=rules
+            embed=e
         )
         await msg.add_reaction("👍")
         await msg.add_reaction("👎")
