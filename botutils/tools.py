@@ -182,7 +182,10 @@ def format_date_difference(dt: datetime.date) -> str:
         return " " if fmt else ""
 
     fmt = ""
-    dt = datetime.now() - dt
+    if datetime.now() > dt:
+        dt = datetime.now() - dt
+    else:
+        dt = dt - datetime.now()
     remainder = dt.total_seconds()
 
     if days := dt.days:
