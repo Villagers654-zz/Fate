@@ -85,7 +85,10 @@ class Logger(commands.Cog):
             "member_ban",
             "bot_add",
             "nick_change",
-            "member_roles_update"
+            "member_roles_update",
+            "emoji_create",
+            "emoji_delete",
+            "emoji_rename"
         ]
 
         self.config = {}
