@@ -129,6 +129,9 @@ class Moderation(commands.Cog):
 
         self.subs = {"warn": ["delwarn", "clearwarns"], "mute": ["unmute"]}
 
+        self.import_bans_usage = "Transfer bans from one server to another. Usage is just `.import-bans 1234` " \
+                                 "with 1234 being the ID of the server you're importing from"
+
     @property
     def template(self):
         return {
@@ -1014,6 +1017,48 @@ class Moderation(commands.Cog):
             e.colour = colors.red
             e.set_author(name="Couldn't ban any of the specified user(s)")
         await msg.edit(embed=e)
+
+    @commands.command(name="import-bans", aliases=["importbans", "transfer-bans", "transferbans"])
+    @commands.cooldown(1, 10, commands.BucketType.user)
+    @check_if_running()
+    @has_required_permissions(ban_members=True)
+    @commands.bot_has_permissions(ban_members=True)
+    async def import_bans(self, ctx, server_id: int):
+        guild = self.bot.get_guild(server_id)
+        if not guild:
+            return await ctx.send("Server not found. Maybe i'm not in it?")
+        user = guild.get_member(ctx.author.id)
+        if not user:
+            return await ctx.send("It doesn't seem you're in that server")
+        if not user.guild_permissions.ban_members:
+            return await ctx.send("You need ban_member permission(s) in that server to import its ban list")
+        bans = await guild.bans()
+        current_bans = await ctx.guild.bans()
+        users_to_ban = []
+        for entry in bans:
+            if not any(entry.user.id == e.user.id for e in current_bans):
+                if not ctx.guild.get_member(entry.user.id):
+                    users_to_ban.append([entry.user, entry.reason])
+        if not users_to_ban:
+            return await ctx.send("No bans left to import")
+        if len(users_to_ban) > 100:
+            await ctx.send("I can only import a max of 50 bans at a time", delete_after=10)
+        msg = await ctx.send(f"Importing bans (0/{len(users_to_ban)})")
+        try:
+            for i, (user, reason) in enumerate(users_to_ban):
+                if i % round(len(users_to_ban) / 5) == 0:
+                    await msg.edit(content=f"Importing bans ({i + 1}/{len(users_to_ban)})")
+                if not reason:
+                    reason = f"{ctx.author} importing bans"
+                await ctx.guild.ban(user, reason=reason, delete_message_days=0)
+        except Forbidden:
+            with suppress(Exception):
+                await ctx.send("I no longer have permission(s) to ban. Operation cancelled")
+        except HTTPException as error:
+            await ctx.send(error)
+        else:
+            await msg.edit(content=f"Importing bans ({len(users_to_ban)}/{len(users_to_ban)})")
+            await ctx.send("Finished importing bans")
 
     @commands.command(name="unban")
     @commands.cooldown(2, 5, commands.BucketType.user)
