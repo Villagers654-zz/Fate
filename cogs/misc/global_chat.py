@@ -339,6 +339,12 @@ class GlobalChat(commands.Cog):
                 author += " 👮‍♂️"
             e.set_author(name=author, icon_url=msg.author.avatar.url)
 
+            # Convert mentions to nicknames so everyone can read them
+            ctx = await self.bot.get_context(msg)
+            converter = commands.clean_content(use_nicknames=True)
+            msg.content = await converter.convert(ctx, msg.content)
+
+            # The fact that I have to do this is sad
             if "balls" in msg.content.lower() or "ba11s" in msg.content.lower() or "bals" in msg.content.lower():
                 msg.content = msg.content.lower()\
                     .replace("balls", "<:milk:814928895316852756>")\
