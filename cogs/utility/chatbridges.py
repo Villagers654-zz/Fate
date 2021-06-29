@@ -130,7 +130,7 @@ class ChatBridges(commands.Cog):
 
                     try:
                         if webhook_url not in webhook_cache:
-                            webhook = Webhook.from_url(webhook_url, adapter=AsyncWebhookAdapter(session))
+                            webhook = Webhook.from_url(webhook_url, session=session)
                             webhook_cache[webhook_url] = webhook
                         if isinstance(msg, str):
                             await webhook_cache[webhook_url].send(msg)
