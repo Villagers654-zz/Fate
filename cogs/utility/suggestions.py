@@ -54,7 +54,8 @@ class Suggestions(commands.Cog):
         lmt = datetime.now(tz=timezone.utc) - timedelta(seconds=self.config[guild_id]["cooldown"])
         async for msg in channel.history(limit=256, after=lmt):
             if msg.author.id == self.bot.user.id and msg.embeds and msg.embeds[0].author:
-                if str(ctx.author.id) in msg.embeds[0].author.icon.url:
+                e = msg.embeds[0]
+                if e.author.icon and str(ctx.author.id) in e.author.icon.url:
                     since = get_time((datetime.now(tz=timezone.utc) - lmt).seconds)
                     return await ctx.send(
                         f"You've already sent a suggestion within the last {since}, you're on cooldown"
