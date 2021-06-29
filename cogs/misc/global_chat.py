@@ -25,6 +25,16 @@ from botutils import get_prefixes_async, colors
 ban_hammers = [
     "https://media1.tenor.com/images/1e46ced92e2521749ca6f72602765c1a/tenor.gif?itemid=18219363"
 ]
+rules = "1. No spamming\n" \
+        "2. No NSFW content of any kind\n" \
+        "3. No harassment or bullying\n" \
+        "4. No content that may trigger epilepsy. This includes emojis\n" \
+        "5. No using bot commands in the global channel\n" \
+        "6. No advertising of any kind\n" \
+        "7. No absurdly long, or spam-ish names\n" \
+        "8. Only speak in English\n" \
+        "9. Most importantly abide by discords TOS\n" \
+        "**Breaking any of these rules results in being blocked from using the channel**"
 
 
 class GlobalChat(commands.Cog):
@@ -125,25 +135,28 @@ class GlobalChat(commands.Cog):
 
     @commands.group(name="gc", aliases=["global-chat", "globalchat", "global_chat"])
     async def _gc(self, ctx):
-        e = discord.Embed(color=self.bot.config["theme_color"])
-        e.set_author(name="Global Chat", icon_url=self.bot.user.avatar.url)
-        e.description = "Link a channel into my global channel. " \
-                        "Msgs sent into it will be forwarded to other " \
-                        "configured channels alongside the same in reverse"
-        p = await get_prefixes_async(self.bot, ctx.message)
-        p = p[2]  # type: str
-        e.add_field(
-            name="Usage",
-            value=f"{p}gc enable\n{p}gc disable",
-            inline=False
-        )
-        async with self.bot.utils.cursor() as cur:
-            await cur.execute("select channel_id from global_chat;")
-            channel_count = cur.rowcount
-            await cur.execute("select user_id from global_users;")
-            user_count = cur.rowcount
-        e.set_footer(text=f"{channel_count} Channels | {user_count} Users")
-        await ctx.send(embed=e)
+        if not ctx.invoked_subcommand:
+            e = discord.Embed(color=self.bot.config["theme_color"])
+            e.set_author(name="Global Chat", icon_url=self.bot.user.avatar.url)
+            e.description = "Link a channel into my global channel. " \
+                            "Msgs sent into it will be forwarded to other " \
+                            "configured channels alongside the same in reverse"
+            p = await get_prefixes_async(self.bot, ctx.message)
+            p = p[2]  # type: str
+            e.add_field(
+                name="Usage",
+                value=f"{p}gc enable\n"
+                      f"{p}gc disable\n"
+                      f"{p}gc rules",
+                inline=False
+            )
+            async with self.bot.utils.cursor() as cur:
+                await cur.execute("select channel_id from global_chat;")
+                channel_count = cur.rowcount
+                await cur.execute("select user_id from global_users;")
+                user_count = cur.rowcount
+            e.set_footer(text=f"{channel_count} Channels | {user_count} Users")
+            await ctx.send(embed=e)
 
     @_gc.command(name="mod")
     @commands.is_owner()
@@ -162,7 +175,6 @@ class GlobalChat(commands.Cog):
                 )
                 await ctx.send(f"Added {user} as a mod")
 
-
     @_gc.command(name="ban")
     async def _ban(self, ctx, *, target: Union[discord.User, discord.Guild]):
         async with self.bot.utils.cursor() as cur:
@@ -171,6 +183,12 @@ class GlobalChat(commands.Cog):
                 return await ctx.send("Only global chat moderators can use this command")
         self.blocked.append(target.id)
         await ctx.send(f"Blocked {target}")
+
+    @_gc.command(name="rules")
+    async def rules(self, ctx):
+        rules = discord.Embed(color=self.bot.config["theme_color"])
+        rules.description = rules
+        await ctx.send(embed=rules)
 
     @_gc.command(name="enable")
     @commands.has_permissions(administrator=True)
@@ -214,8 +232,8 @@ class GlobalChat(commands.Cog):
                     return await ctx.send("You already have an application waiting")
 
         await ctx.send(
-            "Are, and were you aware that the global-chat channel is independent of, and has nothing "
-            "to do with the server you're planning on using it in? Reply with `yes` to confirm you understand "
+            "Are you aware that the global-chat channel is independent of, and has nothing "
+            "to do with the server you're using it in? Reply with `yes` to confirm you understand "
             "its purpose, and won't misuse such purpose. You can reply with `cancel`, or anything else "
             "to stop the verification process"
         )
@@ -232,16 +250,7 @@ class GlobalChat(commands.Cog):
         if not reason.content:
             return await ctx.send("That's not a valid response. Rerun the command")
         rules = discord.Embed(color=self.bot.config["theme_color"])
-        rules.description = "1. No spamming\n" \
-                            "2. No NSFW content of any kind\n" \
-                            "3. No harassment or bullying\n" \
-                            "4. No content that may trigger epilepsy. This includes emojis\n" \
-                            "5. No using bot commands in the global channel\n" \
-                            "6. No advertising of any kind\n" \
-                            "7. No absurdly long, or spam-ish names\n" \
-                            "8. Only speak in English\n" \
-                            "9. Most importantly abide by discords TOS\n" \
-                            "**Breaking any of these rules results in being blocked from using the channel**"
+        rules.description = rules
         msg = await ctx.send(
             "Do you agree to **all** of the stated rules in this embed?",
             embed=rules
