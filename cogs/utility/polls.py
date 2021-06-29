@@ -6,6 +6,7 @@ from time import time
 import json
 import asyncio
 from contextlib import suppress
+from datetime import datetime, timedelta, timezone
 
 from discord.ext import commands
 import discord
@@ -85,10 +86,11 @@ class SafePolls(commands.Cog):
         )
         await msg.edit(embed=e)
 
-    async def wait_for_termination(self, channel_id, msg_id, end_time: float) -> None:
+    async def wait_for_termination(self, channel_id, msg_id, end_time: str) -> None:
         """Sleep until the timer ends and close the poll"""
 
         async def delete(msg_id) -> None:
+            print("Deleting")
             async with self.bot.utils.cursor() as cur:
                 await cur.execute(f"delete from polls where msg_id = {msg_id} limit 1;")
             if msg_id in self.polls:
@@ -105,13 +107,15 @@ class SafePolls(commands.Cog):
         except discord.errors.NotFound:
             return await delete(msg_id)
 
-        if time() > end_time:
+        end_time = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S.%f%z")
+        if datetime.now(tz=timezone.utc) > end_time:
             with suppress(Forbidden, NotFound):
                 await msg.edit(content="Poll Ended")
                 await msg.clear_reactions()
             return await delete(msg_id)
 
-        await asyncio.sleep(end_time - time())
+        seconds = round((datetime.now(tz=timezone.utc) - end_time).seconds)
+        await asyncio.sleep(seconds)
         with suppress(Forbidden, NotFound):
             await msg.edit(content="Poll Ended")
             await msg.clear_reactions()
@@ -232,7 +236,7 @@ class SafePolls(commands.Cog):
 
         question = encode64(question.encode()).decode()
         vote_index = encode64(json.dumps({e: [] for e in emojis}).encode()).decode()
-        end_time = time() + timer
+        end_time = str(datetime.now(tz=timezone.utc) + timedelta(seconds=timer))
 
         async with self.bot.utils.cursor() as cur:
             await cur.execute(
@@ -243,7 +247,7 @@ class SafePolls(commands.Cog):
                 f"'{question}', "  # question: str
                 f"{poll_msg.id}, "  # msg_id: int
                 f"{reaction_count}, "  # reaction_count: int
-                f"{end_time}, "  # end_time: bool
+                f"'{end_time}', "  # end_time: str
                 f"'{vote_index}'"  # votes: str
                 f");"
             )
