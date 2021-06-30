@@ -348,7 +348,7 @@ class Core(commands.Cog):
             await ctx.send(f"Disabled `{command}` in this channel")
         await self.config.flush()
 
-    @commands.command(name="disabled")
+    @commands.command(name="disabled", aliases=["disabled-commands", "disabledcommands"])
     @commands.cooldown(1, 5, commands.BucketType.channel)
     @commands.has_permissions(administrator=True)
     async def disabled(self, ctx):
