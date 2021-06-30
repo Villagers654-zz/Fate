@@ -765,7 +765,7 @@ class Logger(commands.Cog):
                     if is_successful:
                         e.description = self.bot.utils.format_dict({
                             "Author": msg.author.mention,
-                            "Channel": msg.channel.mention,
+                            "Channel": f"<#{msg.channel.id}>",
                             f"[Jump to MSG]({msg.jump_url})": None,
                         })
                         for group in split(msg.content, 1024):
@@ -926,7 +926,7 @@ class Logger(commands.Cog):
                 e.set_thumbnail(url=msg.author.avatar.url)
                 e.description = self.bot.utils.format_dict({
                     "Author": msg.author.mention,
-                    "Channel": msg.channel.mention,
+                    "Channel": f"<#{msg.channel.id}>",
                     "Deleted by": dat["user"],
                 })
                 for text_group in split(msg.content, 1024):
