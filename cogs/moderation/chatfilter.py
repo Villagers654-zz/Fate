@@ -348,7 +348,9 @@ class ChatFilter(commands.Cog):
             guild_id = m.guild.id
             if not self.config[guild_id]["toggle"]:
                 return
-            if not self.bot.attrs.is_moderator(m.author) and not m.author.bot or "bots" in self.config[guild_id]:
+            if self.bot.attrs.is_moderator(m.author) and not m.author.bot:
+                return
+            if not m.author.bot or "bots" in self.config[guild_id]:
                 if m.channel.id in self.config[guild_id]["ignored"]:
                     return
                 if self.config[guild_id]["regex"]:
