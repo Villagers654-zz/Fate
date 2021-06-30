@@ -787,22 +787,14 @@ class Logger(commands.Cog):
                         name="~==🍸Msg Edited🍸==~", icon_url=before.author.avatar.url
                     )
                     e.set_thumbnail(url=before.author.avatar.url)
-                    e.description = self.bot.utils.format_dict(
-                        {
-                            "author": before.author.mention,
-                            "Channel": before.channel.mention,
-                            f"[Jump to MSG]({before.jump_url})": None,
-                        }
-                    )
-                    for group in [
-                        before.content[i : i + 1024]
-                        for i in range(0, len(before.content), 1024)
-                    ]:
+                    e.description = self.bot.utils.format_dict({
+                        "author": before.author.mention,
+                        "Channel": f"<#{before.channel.id}>",
+                        f"[Jump to MSG]({before.jump_url})": None,
+                    })
+                    for group in split(before.content, 1024):
                         e.add_field(name="◈ Before", value=group, inline=False)
-                    for group in [
-                        after.content[i : i + 1024]
-                        for i in range(0, len(after.content), 1024)
-                    ]:
+                    for group in split(after.content, 1024):
                         e.add_field(name="◈ After", value=group, inline=False)
                     log = Log("message_edit", embed=e)
                     self.put_nowait(guild_id, log)
@@ -813,27 +805,19 @@ class Logger(commands.Cog):
                     if before.channel.id in self.config[guild_id]["ignored_channels"]:
                         return
 
-                    if before.channel.id == self.config[guild_id][
-                        "channel"
-                    ] or (  # a message in the log was suppressed
+                    if before.channel.id == self.config[guild_id]["channel"] or (
                         before.channel.id in self.config[guild_id]["channels"]
                     ):
-                        await asyncio.sleep(
-                            0.5
-                        )  # prevent updating too fast and not showing on the users end
+                        await asyncio.sleep(0.5)  # prevent updating too fast and not showing on the users end
                         return await after.edit(suppress=False, embed=before.embeds[0])
                     e = discord.Embed(color=pink)
-                    e.set_author(
-                        name="~==🍸Embed Hidden🍸==~", icon_url=before.author.avatar.url
-                    )
+                    e.set_author(name="~==🍸Embed Hidden🍸==~", icon_url=before.author.avatar.url)
                     e.set_thumbnail(url=before.author.avatar.url)
-                    e.description = self.bot.utils.format_dict(
-                        {
-                            "author": before.author.mention,
-                            "Channel": before.channel.mention,
-                            f"[Jump to MSG]({before.jump_url})": None,
-                        }
-                    )
+                    e.description = self.bot.utils.format_dict({
+                        "author": before.author.mention,
+                        "Channel": f"<#{before.channel.id}>",
+                        f"[Jump to MSG]({before.jump_url})": None,
+                    })
                     em = before.embeds[0].to_dict()
                     fp = f"./static/embed-{before.id}.json"
                     async with self.bot.utils.open(fp, "w+") as f:
@@ -852,14 +836,12 @@ class Logger(commands.Cog):
                         name=f"~==🍸Msg {action}🍸==~", icon_url=after.author.avatar.url
                     )
                     e.set_thumbnail(url=after.author.avatar.url)
-                    e.description = self.bot.utils.format_dict(
-                        {
-                            "Author": after.author.mention,
-                            "Channel": after.channel.mention,
-                            "Who Pinned": audit_dat["user"],
-                            f"[Jump to MSG]({after.jump_url})": None,
-                        }
-                    )
+                    e.description = self.bot.utils.format_dict({
+                        "Author": after.author.mention,
+                        "Channel": f"<#{after.channel.id}>",
+                        "Who Pinned": audit_dat["user"],
+                        f"[Jump to MSG]({after.jump_url})": None,
+                    })
                     for text_group in split(after.content, 1000):
                         e.add_field(name="◈ Content", value=text_group, inline=False)
                     log = Log("message_pin", embed=e)
