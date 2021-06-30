@@ -44,7 +44,10 @@ class ChatFilter(commands.Cog):
                         if len(section) - len(word) > 2 and len(word) > 3:
                             flags.append(word)
                             continue
-                    if word == section[1:]:
+                    if word == section[1:] or word == section[:-1]:
+                        flags.append(word)
+                        continue
+                    if word == section[2:] or word == section[:-2]:
                         flags.append(word)
                         continue
 
@@ -270,25 +273,19 @@ class ChatFilter(commands.Cog):
 
     async def get_webhook(self, channel):
         if channel.id not in self.webhooks:
-            webhook = await channel.create_webhook(name="Chatfilter")
+            webhooks = await channel.webhooks()
+            for wh in webhooks:
+                if wh.name == "Chatfilter":
+                    webhook = wh
+                    break
+            else:
+                webhook = await channel.create_webhook(name="Chatfilter")
             if channel.id not in self.webhooks:
-                self.webhooks[channel.id] = webhook, False
+                self.webhooks[channel.id] = webhook
             else:
                 await webhook.delete()
-                return self.webhooks[channel.id][0]
-        return self.webhooks[channel.id][0]
-
-    async def delete_webhook(self, channel):
-        if self.webhooks[channel.id][1]:
-            return
-        self.webhooks[channel.id][1] = True
-        webhook = self.webhooks[channel.id][0]
-        await asyncio.sleep(25)
-        if webhook:
-            if channel.id in self.webhooks:
-                del self.webhooks[channel.id]
-            with suppress(Exception):
-                await webhook.delete()
+                return self.webhooks[channel.id]
+        return self.webhooks[channel.id]
 
     @commands.Cog.listener()
     async def on_message(self, m: discord.Message):
@@ -314,7 +311,6 @@ class ChatFilter(commands.Cog):
                                 avatar_url=m.author.avatar.url,
                                 username=m.author.display_name
                             )
-                            await self.delete_webhook(m.channel)
                 return
 
     @commands.Cog.listener()
