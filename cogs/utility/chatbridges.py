@@ -330,10 +330,11 @@ class ChatBridges(commands.Cog):
         try:
             self.queue[bridge_id].put_nowait([msg, webhooks])
         except asyncio.QueueFull:
-            if self.bot.tasks["bridges"][bridge_id].done():
-                await msg.add_reaction("⚠")
-            else:
-                await msg.add_reaction("⏳")
+            with suppress(Forbidden, NotFound):
+                if self.bot.tasks["bridges"][bridge_id].done():
+                    await msg.add_reaction("⚠")
+                else:
+                    await msg.add_reaction("⏳")
         except KeyError:
             pass
 
