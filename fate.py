@@ -448,18 +448,23 @@ async def on_ready():
         bot.log.critical(f"Error ignored during startup:\n{error}")
 
 
+get_prefix_cd = bot.utils.cooldown_manager(1, 10)
+
+
 @bot.event
 async def on_message(msg):
     # Send the prefix if the bot's mentioned
     if not msg.author.bot and bot.user.mentioned_in(msg) and len(msg.content.split()) == 1:
         if str(bot.user.id) in msg.content:
-            r = await get_prefixes_async(bot, msg)
-            prefixes = "\n".join(r[1:])
-            if len(prefixes.split("\n")) > 2:
+            rate_limited = get_prefix_cd.check(msg.author.id)
+            if not rate_limited:
+                r = await get_prefixes_async(bot, msg)
+                prefixes = "\n".join(r[1:])
+                if len(prefixes.split("\n")) > 2:
+                    return
+                with suppress(NotFound, Forbidden, HTTPException, AttributeError):
+                    await msg.channel.send(f"The prefixes you can use are:\n{prefixes}")
                 return
-            with suppress(NotFound, Forbidden, HTTPException, AttributeError):
-                await msg.channel.send(f"The prefixes you can use are:\n{prefixes}")
-            return
     if msg.guild and msg.guild.me and not msg.channel.permissions_for(msg.guild.me).send_messages:
         return
     await bot.process_commands(msg)
