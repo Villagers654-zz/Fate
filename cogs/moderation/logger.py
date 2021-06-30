@@ -137,7 +137,9 @@ class Logger(commands.Cog):
         }
 
     def put_nowait(self, guild_id, log):
-        with suppress(asyncio.QueueFull, KeyError):
+        if guild_id not in self.queue:
+            return
+        with suppress(asyncio.QueueFull):
             self.queue[guild_id].put_nowait(log)
 
     async def save_data(self) -> None:
@@ -767,7 +769,7 @@ class Logger(commands.Cog):
                             f"[Jump to MSG]({msg.jump_url})": None,
                         })
                         for group in split(msg.content, 1024):
-                            e.add_field(name="Content", value=group, inline=False)
+                            e.add_field(name="◈ Content", value=group, inline=False)
                         log = Log("everyone_mention", embed=e)
                         self.put_nowait(guild_id, log)
 
