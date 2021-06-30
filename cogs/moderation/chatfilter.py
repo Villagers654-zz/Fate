@@ -9,6 +9,8 @@ from discord.ext import commands
 from botutils import colors
 import discord
 
+from cogs.moderation.logger import Log
+
 
 aliases = {
     "a": ["@"],
@@ -23,6 +25,7 @@ class ChatFilter(commands.Cog):
             bot.filtered_messages = {}
         self.bot = bot
         self.config = bot.utils.cache("chatfilter")
+        self.bot.loop.create_task(self.config.flush())
         self.chatfilter_usage = self._chatfilter
         self.webhooks = {}
 
@@ -47,8 +50,9 @@ class ChatFilter(commands.Cog):
                     if word == section[1:] or word == section[:-1]:
                         flags.append(word)
                         continue
-                    if word == section[2:] or word == section[:-2]:
-                        flags.append(word)
+                    if not all(c.lower() != c.upper() or c != "." for c in section):
+                        if word in section:
+                            flags.append(word)
                         continue
 
                 regexes[word] = []
@@ -103,13 +107,13 @@ class ChatFilter(commands.Cog):
 
         flags = await self.bot.loop.run_in_executor(None, run_regex)
         if not flags:
-            return flags
+            return None, flags
 
         for flag in flags:
             filtered_word = f"{flag[0]}{f'{illegal[0]}*' * (len(flag) - 1)}"
             content = content.replace(flag.rstrip(" "), filtered_word)
 
-        return content
+        return content, flags
 
     @commands.group(name="chatfilter")
     @commands.bot_has_permissions(embed_links=True)
@@ -126,13 +130,17 @@ class ChatFilter(commands.Cog):
             e.add_field(
                 name="◈ Usage",
                 value=".chatfilter enable\n"
-                ".chatfilter disable\n"
-                ".chatfilter ignore #channel\n"
-                ".chatfilter unignore #channel\n"
-                ".chatfilter add {word/phrase}\n"
-                ".chatfilter remove {word/phrase}\n"
-                ".chatfilter toggle-bots\n"
-                "`whether to filter bot messages`",
+                    ".chatfilter disable\n"
+                    ".chatfilter ignore #channel\n"
+                    ".chatfilter unignore #channel\n"
+                    ".chatfilter add {word/phrase}\n"
+                    ".chatfilter remove {word/phrase}\n"
+                    ".chatfilter toggle-bots\n"
+                    "`whether to filter bot messages`\n"
+                    ".chatfilter toggle-regex\n"
+                    "`whether to use regex`\n"
+                    ".chatfilter toggle-webhooks\n"
+                    "`whether to resend but filter a msg`",
                 inline=False,
             )
             if guild_id in self.config and self.config[guild_id]["blacklist"]:
@@ -167,7 +175,9 @@ class ChatFilter(commands.Cog):
             self.config[ctx.guild.id] = {
                 "toggle": True,
                 "blacklist": [],
-                "ignored": []
+                "ignored": [],
+                "webhooks": False,
+                "regex": False
             }
         await ctx.send("Enabled chatfilter")
         await self.config.flush()
@@ -271,6 +281,28 @@ class ChatFilter(commands.Cog):
         toggle = "Enabled" if "bots" in self.config[guild_id] else "Disabled"
         await ctx.send(f"{toggle} filtering bot messages")
 
+    @_chatfilter.command(name="toggle-regex")
+    @commands.has_permissions(manage_messages=True)
+    @commands.bot_has_permissions(manage_messages=True)
+    async def toggle_regex(self, ctx):
+        guild_id = ctx.guild.id
+        if guild_id not in self.config:
+            return await ctx.send("Chatfilter isn't enabled")
+        self.config[guild_id]["regex"] = not self.config[guild_id]["regex"]
+        toggle = "Enabled" if self.config[guild_id]["regex"] else "Disabled"
+        await ctx.send(f"{toggle} regex")
+
+    @_chatfilter.command(name="toggle-webhooks")
+    @commands.has_permissions(manage_messages=True)
+    @commands.bot_has_permissions(manage_messages=True, manage_webhooks=True)
+    async def toggle_webhooks(self, ctx):
+        guild_id = ctx.guild.id
+        if guild_id not in self.config:
+            return await ctx.send("Chatfilter isn't enabled")
+        self.config[guild_id]["webhooks"] = not self.config[guild_id]["webhooks"]
+        toggle = "Enabled" if self.config[guild_id]["webhooks"] else "Disabled"
+        await ctx.send(f"{toggle} webhooks")
+
     async def get_webhook(self, channel):
         if channel.id not in self.webhooks:
             webhooks = await channel.webhooks()
@@ -287,6 +319,24 @@ class ChatFilter(commands.Cog):
                 return self.webhooks[channel.id]
         return self.webhooks[channel.id]
 
+    def log_action(self, m, flags):
+        e = discord.Embed(color=colors.white)
+        e.set_author(name="~==🍸msg Filtered🍸==~")
+        e.description = self.bot.utils.format_dict({
+            "Author": str(m.author),
+            "Mention": m.author.mention,
+            "ID": str(m.author.id),
+            "Flags": ", ".join(flags)
+        })
+        e.add_field(
+            name="◈ Content",
+            value=m.content,
+            inline=False
+        )
+        cog = self.bot.cogs["Logger"]
+        log = Log("chat_filter", embed=e)
+        cog.put_nowait(str(m.guild.id), log)
+
     @commands.Cog.listener()
     async def on_message(self, m: discord.Message):
         if hasattr(m.guild, "id") and m.guild.id in self.config:
@@ -296,21 +346,41 @@ class ChatFilter(commands.Cog):
             if not m.author.bot or "bots" in self.config[guild_id]:
                 if m.channel.id in self.config[guild_id]["ignored"]:
                     return
-                result = await self.filter(m.content, self.config[guild_id]["blacklist"])
-                if result:
+                if self.config[guild_id]["regex"]:
+                    result, flags = await self.filter(m.content, self.config[guild_id]["blacklist"])
+                    if not result:
+                        return
                     with suppress(Exception):
                         await m.delete()
                         if m.guild.id not in self.bot.filtered_messages:
                             self.bot.filtered_messages[m.guild.id] = {}
                         self.bot.filtered_messages[m.guild.id][m.id] = time()
 
-                        if m.channel.permissions_for(m.guild.me).manage_webhooks:
-                            w = await self.get_webhook(m.channel)
-                            await w.send(
-                                content=result,
-                                avatar_url=m.author.avatar.url,
-                                username=m.author.display_name
-                            )
+                        if self.config[guild_id]["webhooks"]:
+                            if m.channel.permissions_for(m.guild.me).manage_webhooks:
+                                w = await self.get_webhook(m.channel)
+                                await w.send(
+                                    content=result,
+                                    avatar_url=m.author.avatar.url,
+                                    username=m.author.display_name
+                                )
+
+                    self.log_action(m, flags)
+                    return
+                for phrase in self.config[guild_id]["blacklist"]:
+                    if "\\" in phrase:
+                        m.content = m.content.replace("\\", "")
+                    for chunk in m.content.split():
+                        await asyncio.sleep(0)
+                        if phrase in chunk.lower():
+                            await asyncio.sleep(0.5)
+                            with suppress(discord.errors.NotFound):
+                                await m.delete()
+                                if m.guild.id not in self.bot.filtered_messages:
+                                    self.bot.filtered_messages[m.guild.id] = {}
+                                self.bot.filtered_messages[m.guild.id][m.id] = time()
+                                self.log_action(m, [phrase])
+                            return
                 return
 
     @commands.Cog.listener()
