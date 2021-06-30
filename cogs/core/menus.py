@@ -379,25 +379,28 @@ class ConfigureModules:
             self.cursor = {}
             help = "No help"
 
-            usage_attr = str(key).split()[0].replace("-", "_") + "_usage"
-            if hasattr(cog, usage_attr):
-                usage = getattr(cog, usage_attr)
+            if cmd.usage:
+                help = cmd.usage
+            else:
+                usage_attr = str(key).split()[0].replace("-", "_") + "_usage"
+                if hasattr(cog, usage_attr):
+                    usage = getattr(cog, usage_attr)
 
-                # Do conversion from function to value/awaitable
-                if hasattr(usage, "__call__"):
-                    if isinstance(usage, command_attrs):
-                        usage = usage(self.ctx)
-                    elif "ctx" in usage.__code__.co_varnames:
-                        usage = usage(self.ctx)
-                    else:
-                        usage = usage()
+                    # Do conversion from function to value/awaitable
+                    if hasattr(usage, "__call__"):
+                        if isinstance(usage, command_attrs):
+                            usage = usage(self.ctx)
+                        elif "ctx" in usage.__code__.co_varnames:
+                            usage = usage(self.ctx)
+                        else:
+                            usage = usage()
 
-                if isinstance(usage, str):
-                    help = usage
-                elif isinstance(usage, discord.Embed):
-                    self.cursor["Command Help"] = usage
-                elif inspect.iscoroutine(usage):
-                    self.cursor["Command Help"] = usage
+                    if isinstance(usage, str):
+                        help = usage
+                    elif isinstance(usage, discord.Embed):
+                        self.cursor["Command Help"] = usage
+                    elif inspect.iscoroutine(usage):
+                        self.cursor["Command Help"] = usage
 
             if not self.cursor:
                 self.cursor["command_help"] = help
