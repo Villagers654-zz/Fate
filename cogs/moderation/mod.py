@@ -1132,7 +1132,7 @@ class Moderation(commands.Cog):
             name = "".join(c for c in name if c in printable)
             roles += f"\n{name}{' ' * (length - len(name))}{len(role.members)}"
         for chunk in split(roles, 1900):
-            chunk = chunk.strip("`").strip("\n")
+            chunk = chunk.lstrip("\n")
             await ctx.send(f"```\n{chunk}```")
 
     @commands.command(name="mass-nick", aliases=["massnick"])
