@@ -302,7 +302,7 @@ class ChatFilter(commands.Cog):
             return await ctx.send("Chatfilter isn't enabled")
         self.config[guild_id]["webhooks"] = not self.config[guild_id]["webhooks"]
         toggle = "Enabled" if self.config[guild_id]["webhooks"] else "Disabled"
-        await ctx.send(f"{toggle} webhooks")
+        await ctx.send(f"{toggle} webhooks. Note this only works with `.chatfilter toggle-regex` enabled")
         await self.config.flush()
 
     async def get_webhook(self, channel):
@@ -348,7 +348,7 @@ class ChatFilter(commands.Cog):
             guild_id = m.guild.id
             if not self.config[guild_id]["toggle"]:
                 return
-            if not m.author.bot or "bots" in self.config[guild_id]:
+            if not self.bot.attrs.is_moderator(m.author) and not m.author.bot or "bots" in self.config[guild_id]:
                 if m.channel.id in self.config[guild_id]["ignored"]:
                     return
                 if self.config[guild_id]["regex"]:
