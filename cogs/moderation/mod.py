@@ -7,11 +7,13 @@ Notes
 from os import path
 import json
 from typing import *
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 import asyncio
 import re
 from time import time as now
 from contextlib import suppress
+from string import printable
+from unicodedata import normalize
 
 from discord.ext import commands
 import discord
@@ -19,7 +21,7 @@ from discord import Member, Role, TextChannel
 from discord.ext.commands import Greedy
 from discord.errors import NotFound, Forbidden, HTTPException
 
-from botutils import colors, get_prefix, get_time
+from botutils import colors, get_prefix, get_time, split
 
 
 cache = {}  # Keep track of what commands are still being ran
@@ -131,6 +133,7 @@ class Moderation(commands.Cog):
 
         self.import_bans_usage = "Transfer bans from one server to another. Usage is just `.import-bans 1234` " \
                                  "with 1234 being the ID of the server you're importing from"
+        self.roles_usage = "Formats the role list to show how many members each role has. Usage is just `.roles`"
 
     @property
     def template(self):
@@ -1111,6 +1114,26 @@ class Moderation(commands.Cog):
                 else:
                     index += 1
             await msg.edit(embed=e)
+
+    @commands.command(name="roles")
+    @commands.cooldown(2, 5, commands.BucketType.user)
+    @check_if_running()
+    @commands.has_permissions(manage_roles=True)
+    @commands.cooldown(1, 15, commands.BucketType.channel)
+    @check_if_running()
+    async def roles(self, ctx):
+        """ Formats the role list to show how many members each role has """
+        longest = sorted(ctx.guild.roles, key=lambda r: len(r.name), reverse=True)[0]
+        length = len(longest.name) + 3
+        roles = f"Name:{' ' * (length - 5)}Members:\n"
+        for role in sorted(ctx.guild.roles, key=lambda r: r.position, reverse=True):
+            await asyncio.sleep(0)
+            name = normalize('NFKD', role.name).encode('ascii', 'ignore').decode()
+            name = "".join(c for c in name if c in printable)
+            roles += f"\n{name}{' ' * (length - len(name))}{len(role.members)}"
+        for chunk in split(roles, 1900):
+            chunk = chunk.strip("`").strip("\n")
+            await ctx.send(f"```\n{chunk}```")
 
     @commands.command(name="mass-nick", aliases=["massnick"])
     @commands.cooldown(2, 5, commands.BucketType.user)
