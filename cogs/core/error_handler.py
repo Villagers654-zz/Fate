@@ -176,7 +176,7 @@ class ErrorHandler(commands.Cog):
         e.set_author(
             name=f"| Fatal Error | in {ctx.command}", icon_url=ctx.author.avatar.url
         )
-        if ctx.guild:
+        if ctx.guild and ctx.guild.icon:
             e.set_thumbnail(url=ctx.guild.icon.url)
         enum = enumerate(split(formatted, 980))
         for iteration, chunk in enum:

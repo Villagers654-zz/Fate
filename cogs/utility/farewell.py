@@ -98,7 +98,8 @@ class Leave(commands.Cog):
                 toggle = "enabled"
             e = discord.Embed(color=colors.tan)
             e.set_author(name="Leave Messages", icon_url=self.bot.user.avatar.url)
-            e.set_thumbnail(url=ctx.guild.icon.url)
+            if ctx.guild.icon:
+                e.set_thumbnail(url=ctx.guild.icon.url)
             e.description = "Shows when members leave the server"
             e.add_field(
                 name="◈ Command Usage ◈",

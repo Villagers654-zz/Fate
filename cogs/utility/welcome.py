@@ -82,7 +82,8 @@ class Welcome(commands.Cog):
                 toggle = "enabled"
             e = discord.Embed(color=colors.tan)
             e.set_author(name="Welcome Messages", icon_url=self.bot.user.avatar.url)
-            e.set_thumbnail(url=ctx.guild.icon.url)
+            if ctx.guild.icon:
+                e.set_thumbnail(url=ctx.guild.icon.url)
             e.description = "Welcomes users when they join"
             e.add_field(
                 name="◈ Command Usage ◈",
