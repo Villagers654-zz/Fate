@@ -1622,7 +1622,7 @@ class Moderation(commands.Cog):
         async with self.bot.utils.open("./data/userdata/config.json", "r") as f:
             conf = await self.bot.load(await f.read())
         for reason, time in self.config[guild_id]["warns"][user_id]:
-            time = datetime.strptime(time, "%Y-%m-%d %H:%M:%S.%f")
+            time = datetime.strptime(time.replace("+00:00", ""), "%Y-%m-%d %H:%M:%S.%f")
             if (datetime.now() - time).days > 30:
                 if (
                     guild_id in conf
