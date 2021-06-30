@@ -125,7 +125,7 @@ class Core(commands.Cog):
 
     @staticmethod
     def topguilds_usage():
-        return "Displays the top 8 servers based on highest member count, just run `.topguilds`"
+        return "Displays the top 8 servers based on highest member count"
 
     @commands.command(name="invite", aliases=["links", "support"])
     @commands.cooldown(1, 5, commands.BucketType.channel)
@@ -149,7 +149,7 @@ class Core(commands.Cog):
         return "Gives the link to invite the bot to another server. " \
                "Alongside the invite to the support server. Just click the blue hyperlink text"
 
-    @commands.command(name="vote")
+    @commands.command(name="vote", usage="Sends the link to vote for the bot on top.gg")
     @commands.cooldown(1, 5, commands.BucketType.channel)
     async def vote(self, ctx):
         await ctx.send("https://top.gg/bot/506735111543193601/vote")
@@ -304,6 +304,8 @@ class Core(commands.Cog):
     @commands.has_permissions(administrator=True)
     @commands.bot_has_permissions(embed_links=True)
     async def disable_command(self, ctx, *, command):
+        if "enable" in command.lower() or "disable" in command.lower():
+            return await ctx.send("You can't disable commands with 'enable' or 'disable' in them")
         guild_id = ctx.guild.id
         if not self.bot.get_command(command):
             return await ctx.send("That's not a command")
