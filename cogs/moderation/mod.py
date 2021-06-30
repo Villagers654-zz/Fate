@@ -1514,8 +1514,9 @@ class Moderation(commands.Cog):
             await self.save_data()
             await asyncio.sleep(7200)
             if mute_role in user.roles:
-                await user.remove_roles(mute_role)
-                await channel.send(f"**Unmuted:** {user.name}")
+                with suppress(Forbidden, NotFound):
+                    await user.remove_roles(mute_role)
+                    await channel.send(f"**Unmuted:** {user.name}")
             if (
                 user_id in self.config[guild_id]["timers"]
                 and timer_info in self.config[guild_id]["timers"][user_id]
