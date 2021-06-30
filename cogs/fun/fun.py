@@ -123,7 +123,7 @@ class Fun(commands.Cog):
         # Prevent sniping messaged deleted by the ChatFilter module
         if ctx.guild.id in self.bot.filtered_messages:
             if msg.id in self.bot.filtered_messages[ctx.guild.id]:
-                return await ctx.send("I think not m8")
+                return await ctx.send("You can't snipe messages deleted by chatfilter")
 
         e = discord.Embed(color=msg.author.color)
         e.set_author(name=msg.author, icon_url=msg.author.avatar.url)
