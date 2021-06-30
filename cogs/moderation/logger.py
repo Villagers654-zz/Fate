@@ -155,7 +155,7 @@ class Logger(commands.Cog):
             if not guild or not guild.me:
                 return await self.destruct(guild_id)
             if not guild.me.guild_permissions.manage_channels:
-                result = await self.wait_for_permission(
+                result = await self.wait_for_permissions(
                     guild, "manage_channels"
                 )
                 if not result:
@@ -215,79 +215,6 @@ class Logger(commands.Cog):
         else:
             await self.destruct(guild_id)
             raise self.bot.ignored_exit
-
-    async def wait_for_permission(self, guild, permission: str, channel=None) -> bool:
-        """Notify the owner of missing permissions and wait until they've been granted"""
-
-        # Keep a 'process list' of sorts to prevent multiple events using this
-        # from causing a lot of API spam from the dm history searches
-        parent = False
-        guild_id = str(guild.id)
-        if guild_id not in self.wait_queue:
-            self.wait_queue[guild_id] = []
-        if permission not in self.wait_queue[guild_id]:
-            self.wait_queue[guild_id].append(permission)
-            parent = True
-        dm = None
-
-        for _attempt in range(12 * 60):  # Timeout of 12 hours
-            # Check if you have the required permission
-            guild = self.bot.get_guild(int(guild_id))
-            if not guild or not guild.me:
-                await asyncio.sleep(60)
-                continue
-            if channel:
-                if eval(f"channel.permissions_for(guild.me).{permission}"):
-                    if parent:
-                        self.wait_queue[guild_id].remove(permission)
-                        if not self.wait_queue[guild_id]:
-                            del self.wait_queue[guild_id]
-                    break
-            elif not guild or not guild.me:
-                if parent:
-                    self.wait_queue[guild_id].remove(permission)
-                    if not self.wait_queue[guild_id]:
-                        del self.wait_queue[guild_id]
-                return False
-            else:
-                if eval(f"guild.me.guild_permissions.{permission}"):
-                    if parent:
-                        self.wait_queue[guild_id].remove(permission)
-                        if not self.wait_queue[guild_id]:
-                            del self.wait_queue[guild_id]
-                    break
-
-            # See if the bot can send a dm notice
-            # This is only used by the parent to prevent API spam
-            if parent:
-                try:
-                    if not dm:
-                        dm = guild.owner.dm_channel
-                    if not dm:
-                        try:
-                            dm = await guild.owner.create_dm()
-                        except:
-                            pass
-                    if dm:
-                        async for msg in dm.history(limit=3):
-                            if f"I need {permission}" in msg.content:
-                                break
-                        else:
-                            await guild.owner.send(
-                                f"I need {permission} permissions in {guild} for the logger module to function. "
-                                f"Until that's satisfied, i'll keep a maximum 12 hours of logs in queue"
-                            )
-                except (discord.errors.Forbidden, discord.errors.NotFound):
-                    pass
-            await asyncio.sleep(60)
-
-        else:
-            if parent:
-                self.wait_queue[guild_id].remove(permission)
-                if not self.wait_queue[guild_id]:
-                    del self.wait_queue[guild_id]
-            return False
-        return True
 
     async def start_queue(self, guild_id: str) -> None:
         guild = self.bot.get_guild(int(guild_id))
@@ -353,7 +280,7 @@ class Logger(commands.Cog):
 
             # Permission checks to ensure the secure features can function
             if self.config[guild_id]["secure"]:
-                result = await self.wait_for_permission(guild, "administrator")
+                result = await self.wait_for_permissions(guild, "administrator")
                 if not result:
                     return await self.destruct(guild_id)
 
@@ -364,12 +291,12 @@ class Logger(commands.Cog):
                 channel = self.bot.get_channel(self.config[guild_id]["channels"][log_type])
 
             # Ensure basic send-embed level permissions
-            result = await self.wait_for_permission(
+            result = await self.wait_for_permissions(
                 guild, "send_messages", channel
             )
             if not result:
                 return await self.destruct(guild_id)
-            result = await self.wait_for_permission(
+            result = await self.wait_for_permissions(
                 guild, "embed_links", channel
             )
             if not result:
@@ -453,7 +380,7 @@ class Logger(commands.Cog):
             "after": None,
             "recent": False,
         }
-        can_run = await self.wait_for_permission(guild, "view_audit_log")
+        can_run = await self.wait_for_permissions(guild, "view_audit_log")
         if can_run:
             with suppress(Exception):
                 async for entry in guild.audit_logs(limit=5):
@@ -1828,7 +1755,7 @@ class Logger(commands.Cog):
             e.set_thumbnail(url=member.avatar.url)
             removed = False
 
-            can_run = await self.wait_for_permission(member.guild, "view_audit_log")
+            can_run = await self.wait_for_permissions(member.guild, "view_audit_log")
             if not can_run:
                 return
 
