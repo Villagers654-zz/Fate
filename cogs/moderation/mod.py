@@ -512,6 +512,9 @@ class Moderation(commands.Cog):
                         raise self.bot.ignored_exit
                 return messages
 
+            kwargs = {}
+            if check:
+                kwargs["check"] = check
             if ctx.message.reference:
                 ref = ctx.message.reference
                 if ref.cached_message:
@@ -520,15 +523,15 @@ class Moderation(commands.Cog):
                     purge_after = await ctx.channel.fetch_message(ref.message_id)
                 coro = ctx.channel.purge(
                     limit=1000,
-                    check=check,
                     before=ctx.message,
-                    after=purge_after
+                    after=purge_after,
+                    **kwargs
                 )
             else:
                 coro = ctx.channel.purge(
                     limit=amount_to_purge,
-                    check=check,
                     before=ctx.message,
+                    **kwargs
                 )
 
             task = self.bot.loop.create_task(purge_task(coro))
