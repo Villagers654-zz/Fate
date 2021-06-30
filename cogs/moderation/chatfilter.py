@@ -291,6 +291,7 @@ class ChatFilter(commands.Cog):
         self.config[guild_id]["regex"] = not self.config[guild_id]["regex"]
         toggle = "Enabled" if self.config[guild_id]["regex"] else "Disabled"
         await ctx.send(f"{toggle} regex")
+        await self.config.flush()
 
     @_chatfilter.command(name="toggle-webhooks")
     @commands.has_permissions(manage_messages=True)
@@ -302,6 +303,7 @@ class ChatFilter(commands.Cog):
         self.config[guild_id]["webhooks"] = not self.config[guild_id]["webhooks"]
         toggle = "Enabled" if self.config[guild_id]["webhooks"] else "Disabled"
         await ctx.send(f"{toggle} webhooks")
+        await self.config.flush()
 
     async def get_webhook(self, channel):
         if channel.id not in self.webhooks:
