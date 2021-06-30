@@ -84,12 +84,12 @@ class CooldownManager:
         if self.index[_id][0] == now:
             self.index[_id][1] += 1
         else:
-            self.index[_id] = [now, 0]
-        if self.index[_id][1] >= self.limit:
+            self.index[_id] = [now, 1]
+        if self.index[_id][1] > self.limit:
             if self.raise_error:
                 raise self.bot.ignored_exit
-            return False
-        return True
+            return True
+        return False
 
     def cleanup(self):
         del self.index
