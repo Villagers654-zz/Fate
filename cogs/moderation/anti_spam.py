@@ -746,6 +746,8 @@ class AntiSpam(commands.Cog):
 
                 for threshold in self.config[guild_id]["mass_pings"]["thresholds"]:
                     await asyncio.sleep(0)
+                    if user_id not in self.msgs:
+                        self.msgs[user_id] = []
                     if len(pongs(threshold["timespan"])) > threshold["threshold"]:
                         reason = "mass pinging"
                         triggered = True
