@@ -333,9 +333,12 @@ class ChatFilter(commands.Cog):
             value=m.content,
             inline=False
         )
-        cog = self.bot.cogs["Logger"]
-        log = Log("chat_filter", embed=e)
-        cog.put_nowait(str(m.guild.id), log)
+        try:
+            cog = self.bot.cogs["Logger"]
+            log = Log("chat_filter", embed=e)
+            cog.put_nowait(str(m.guild.id), log)
+        except KeyError:
+            return
 
     @commands.Cog.listener()
     async def on_message(self, m: discord.Message):
