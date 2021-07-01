@@ -8,6 +8,8 @@ from discord.ext import commands
 import discord
 from discord.errors import NotFound, Forbidden
 
+from botutils import get_prefix
+
 
 class ModMail(commands.Cog):
     def __init__(self, bot):
@@ -24,7 +26,7 @@ class ModMail(commands.Cog):
         if not ctx.invoked_subcommand:
             e = discord.Embed(color=self.bot.config["theme_color"])
             e.set_author(name="Modmail", icon_url=self.bot.user.avatar.url)
-            p = self.bot.utils.get_prefix(ctx)  # type: str
+            p = get_prefix(ctx)  # type: str
             e.add_field(
                 name="◈ Usage",
                 value=f"  {p}modmail enable"
@@ -219,7 +221,7 @@ class ModMail(commands.Cog):
             if case_number:
                 await ctx.send("Couldn't find any cases for you with that case number")
                 return None
-            p = self.bot.utils.get_prefix(ctx)  # type: str
+            p = get_prefix(ctx)  # type: str
             await ctx.send(
                 f"Couldn't find any cases from you from within the last 14 days. "
                 f"Use `{p}reply [case_number]` to specify which"
