@@ -448,7 +448,10 @@ class Verification(commands.Cog):
                 channel=channel, user=member, delete_after=conf["delete_after"], timeout=conf["time_limit"]
             )
             if verified:
-                await member.add_roles(verified_role)
+                try:
+                    await member.add_roles(verified_role)
+                except discord.errors.Forbidden:
+                    await channel.send("It appears I'm missing permission to give you the verified role 🗿")
                 if conf["temp_role_id"]:
                     temp_role = member.guild.get_role(conf["temp_role_id"])
                     if temp_role:
