@@ -1,8 +1,20 @@
-from discord.ext import commands
-from botutils import colors
-import discord
+"""
+cogs.utility.welcome
+~~~~~~~~~~~~~~~~~~~~~
+
+A cog for welcoming users to servers
+
+:copyright: (C) 2019-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
+
 import random
 import os
+
+from discord.ext import commands
+import discord
+
+from botutils import colors, Conversation
 
 
 mentions = discord.AllowedMentions(users=True, roles=True, everyone=False)
@@ -114,8 +126,8 @@ class Welcome(commands.Cog):
     @_welcome.command(name="enable")
     @commands.has_permissions(manage_guild=True)
     async def _enable(self, ctx):
+        convo = Conversation(ctx, delete_after=True)
         guild_id = ctx.guild.id
-        messages = []
         conf = {
             "enabled": True,
             "channel": None,
@@ -127,61 +139,42 @@ class Welcome(commands.Cog):
         if guild_id in self.config:
             conf = self.config[guild_id]
 
-        msg = await ctx.send("Mention the channel I should use")
-        messages.append(msg)
-        completed = False
-        while not completed:
-            msg = await self.bot.utils.get_message(ctx)
-            messages.append(msg)
-            if "cancel" in msg.content.lower():
-                return
-            if len(msg.channel_mentions) < 1:
-                msg = await ctx.send(
-                    'That\'s not a channel mention, reply with "cancel" to stop'
-                )
-                messages.append(msg)
+        for _ in range(5):
+            msg = await convo.ask("Mention the channel I should use")
+            if not msg.channel_mentions:
+                await convo.send("That's not a channel mention")
                 continue
             conf["channel"] = msg.channel_mentions[0].id
             break
+        else:
+            return await convo.end()
 
-        msg = await ctx.send("Should I use images/gifs?")
-        messages.append(msg)
-        while not completed:
-            msg = await self.bot.utils.get_message(ctx)
-            messages.append(msg)
-            if "cancel" in msg.content.lower():
-                return
+        for _ in range(5):
+            msg = await convo.ask("Should I use images/gifs?")
             if "ye" in msg.content.lower():
                 conf["useimages"] = True
-                msg = await ctx.send("Aight, I'll use images")
-                messages.append(msg)
-                break
-            else:
+                await convo.send("Aight, I'll use images")
+            elif "no" in msg.content.lower():
                 conf["useimages"] = False
-                msg = await ctx.send("kk")
-                messages.append(msg)
-                break
-
-        msg = await ctx.send(
-            "Now to set a message format:```css\nExample:\nWelcome !user to !server```"
-        )
-        messages.append(msg)
-        while not completed:
-            msg = await self.bot.utils.get_message(ctx)
-            messages.append(msg)
-            if "cancel" in msg.content.lower():
-                return
-            if "!inviter" in msg.content:
-                await self.bot.invite_manager.init(ctx.guild)
-            conf["format"] = msg.content
+                await convo.send("kk")
+            else:
+                continue
             break
+        else:
+            return await convo.end()
 
-        conf["enabled"] = True
+        msg = await convo.ask("Now to set a message format:```css\nExample:\nWelcome !user to !server```")
+        if "!inviter" in msg.content:
+            await self.bot.invite_manager.init(ctx.guild)
+        conf["format"] = msg.content
+
         self.config[guild_id] = conf
         await self.config.flush()
+
         e = discord.Embed(color=colors.tan)
         e.set_author(name="Enabled Welcome Messages", icon_url=ctx.author.avatar.url)
-        await ctx.send(embed=e, delete_after=10)
+        await ctx.send(embed=e)
+        await convo.end()
 
     @_welcome.command(name="disable")
     @commands.has_permissions(manage_guild=True)
