@@ -381,7 +381,8 @@ class GlobalChat(commands.Cog):
                             return await msg.channel.send("No links..")
 
             e = discord.Embed(color=msg.author.color)
-            e.set_thumbnail(url=msg.guild.icon.url)
+            if msg.guild.icon:
+                e.set_thumbnail(url=msg.guild.icon.url)
             author = str(msg.author)
             if mod:
                 author += " 👮‍♂️"
@@ -417,7 +418,8 @@ class GlobalChat(commands.Cog):
             # Send a new msg
             if msg.attachments:
                 e.set_image(url=msg.attachments[0].url)
-            e.set_thumbnail(url=msg.guild.icon.url)
+            if msg.guild.icon:
+                e.set_thumbnail(url=msg.guild.icon.url)
             e.description = msg.content[:512]
             self._queue.append([e, False, msg])
             if msg.attachments:
