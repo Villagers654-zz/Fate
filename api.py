@@ -1,3 +1,13 @@
+"""
+Discord OAuth2 API
+~~~~~~~~~~~~~~~~~~~
+
+A basic representation of how to use discords OAuth2
+
+:copyright: (C) 2021-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
+
 from aiohttp import web, ClientSession
 import asyncio
 from time import time
@@ -118,9 +128,9 @@ class Bot(commands.AutoShardedBot):
                 continue
             resp[guild.id] = {
                 "name": guild.name,
-                "icon_url": str(guild.icon_url),
-                "splash_url": str(guild.splash_url),
-                "banner_url": str(guild.banner_url),
+                "icon_url": str(guild.icon.url),
+                "splash_url": str(guild.splash.url),
+                "banner_url": str(guild.banner.url),
                 "user_guild_permissions": list(member.guild_permissions),
                 "bot_guild_permissions": list(guild.me.guild_permissions),
                 "channels": {}
