@@ -1,9 +1,16 @@
-# Captcha human verification channels
+"""
+cogs.moderation.verification
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A cog for verifying users into servers via a captcha image
+
+:copyright: (C) 2020-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
 
 import asyncio
 from typing import Optional
 from contextlib import suppress
-from datetime import datetime, timezone, timedelta
 
 from discord.ext import commands
 import discord
