@@ -276,7 +276,7 @@ class Tasks(commands.Cog):
             root = self.bot.config["backups_location"]
             path = os.path.join(root, "local")
             file_paths = get_all_file_paths("./data")
-            fp = os.path.join(path, f"backup_{datetime.now(tz=timezone.utc)}.zip")
+            fp = os.path.join(path, f"backup_{datetime.now()}.zip")
 
             with ZipFile(fp, "w") as _zip:
                 for file in file_paths:
