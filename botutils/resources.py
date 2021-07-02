@@ -8,7 +8,7 @@ Classes:
     Cache
     TempDownload
 
-Methods:
+Functions:
     save_json
     download
 

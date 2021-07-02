@@ -11,7 +11,7 @@ Classes:
     OperationLock
     Formatting
 
-Methods:
+Functions:
     split
     cleanup_msg
     format_date_difference
