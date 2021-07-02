@@ -325,7 +325,7 @@ class Verification(commands.Cog):
         await ctx.send(f"{'Enabled' if new_toggle else 'Disabled'} kicking on fail")
         await self.config.flush()
 
-    @verification.command(name="auto", aliases=["automatic"])
+    @verification.command(name="auto-start", aliases=["autostart", "auto"])
     @commands.has_permissions(administrator=True)
     async def auto_start(self, ctx, toggle: Optional[bool]):
         guild_id = ctx.guild.id
@@ -358,7 +358,7 @@ class Verification(commands.Cog):
         guild_id = ctx.guild.id
         if guild_id not in self.config:
             return await ctx.send("Verification isn't enabled")
-        await self.init_verification_process(ctx.author)
+        await self.verify_user(ctx.author)
 
     async def bulk_purge(
         self, channel: discord.TextChannel, collection_period: int = 5
@@ -403,12 +403,14 @@ class Verification(commands.Cog):
 
     @commands.Cog.listener("on_member_join")
     async def init_verification_process(self, member: discord.Member):
+        await self.verify_user(member, from_event=True)
+
+    async def verify_user(self, member, from_event=False):
         guild_id = member.guild.id
         if guild_id in self.config and not member.bot:
             conf = self.config[guild_id]  # type: Verification.template_config
-            if member.joined_at > datetime.now(tz=timezone.utc) - timedelta(seconds=2):
-                if not conf["auto_start"]:
-                    return
+            if from_event and not conf["auto_start"]:
+                return
             try:
                 channel = await self.bot.fetch_channel(conf["channel_id"])
             except (NotFound, HTTPException, Forbidden):
