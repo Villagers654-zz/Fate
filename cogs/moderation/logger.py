@@ -201,13 +201,14 @@ class Logger(commands.Cog):
 
         owner = guild.owner  # type: discord.Member
         lmt = datetime.now(tz=timezone.utc) - timedelta(days=1)
-        msgs = await owner.dm_channel.history(limit=1, after=lmt).flatten()
-        if not msgs or "I'm missing" in msgs[0].content:
-            with suppress(Forbidden, NotFound, AttributeError):
-                await owner.send(
-                    f"I need {permission} permissions in {guild} for the logger module to function. "
-                    f"Until that's satisfied, i'll keep a maximum 12 hours of logs in queue"
-                )
+        if owner.dm_channel:
+            msgs = await owner.dm_channel.history(limit=1, after=lmt).flatten()
+            if not msgs or "I'm missing" in msgs[0].content:
+                with suppress(Forbidden, NotFound, AttributeError):
+                    await owner.send(
+                        f"I need {permission} permissions in {guild} for the logger module to function. "
+                        f"Until that's satisfied, i'll keep a maximum 12 hours of logs in queue"
+                    )
 
         for _attempt in range(12 * 60):  # Timeout of 12 hours
             if getattr(perms(), permission):
@@ -1289,7 +1290,8 @@ class Logger(commands.Cog):
         if guild_id in self.config:
             e = discord.Embed(color=orange)
             dat = await self.search_audit(after.guild, audit.channel_update)
-            e.set_thumbnail(url=after.guild.icon.url)
+            if after.guild.icon:
+                e.set_thumbnail(url=after.guild.icon.url)
             # category = 'None, or Changed'
             # if after.category and before.category == after.category:
             #     category = after.category.name
@@ -1297,13 +1299,11 @@ class Logger(commands.Cog):
             if before.name != after.name:
                 e.add_field(
                     name="~==🍸Channel Renamed🍸==~",
-                    value=self.bot.utils.format_dict(
-                        {
-                            "Mention": after.mention,
-                            "ID": after.id,
-                            "Changed by": dat["user"],
-                        }
-                    ),
+                    value=self.bot.utils.format_dict({
+                        "Mention": after.mention,
+                        "ID": after.id,
+                        "Changed by": dat["user"],
+                    }),
                     inline=False,
                 )
                 e.add_field(name="◈ Before", value=before.name)
