@@ -921,7 +921,7 @@ class Logger(commands.Cog):
 
                 e = discord.Embed(color=purple)
                 dat = await self.search_audit(msg.guild, audit.message_delete)
-                if dat["thumbnail_url"] == msg.guild.icon.url:
+                if dat["thumbnail_url"] == msg.guild.icon.url if msg.guild.icon else None:
                     dat["thumbnail_url"] = msg.author.avatar.url
                 e.set_author(name="~==🍸Msg Deleted🍸==~", icon_url=dat["thumbnail_url"])
                 e.set_thumbnail(url=msg.author.avatar.url)
@@ -1064,7 +1064,8 @@ class Logger(commands.Cog):
                 """ Creates a new embed to work with """
                 em = discord.Embed(color=lime_green)
                 em.set_author(name="~==🍸Server Updated🍸==~", icon_url=dat["icon_url"])
-                em.set_thumbnail(url=after.icon.url)
+                if after.icon:
+                    em.set_thumbnail(url=after.icon.url)
                 return em
 
             e = create_template_embed()

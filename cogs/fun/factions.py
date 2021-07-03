@@ -253,7 +253,7 @@ class Factions(commands.Cog):
                 channel = self.bot.get_channel(int(claim))
                 if not isinstance(channel, discord.TextChannel):
                     self.factions[guild_id][faction]["balance"] += 250
-                    with suppress(KeyError):
+                    with suppress(KeyError, ValueError):
                         self.factions[guild_id][faction]["claims"].remove(claim)
                     continue
 
