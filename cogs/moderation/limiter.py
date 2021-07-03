@@ -94,7 +94,7 @@ class Utility(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, m: discord.Message):
-        if isinstance(m.guild, discord.Guild) and not m.author.guild_permissions.administrator:
+        if isinstance(m.author, discord.Member) and not m.author.guild_permissions.administrator:
             guild_id = str(m.guild.id)
             channel_id = str(m.channel.id)
             await asyncio.sleep(0.5)
