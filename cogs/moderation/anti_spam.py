@@ -817,6 +817,8 @@ class AntiSpam(commands.Cog):
                             timeframe = threshold["timespan"]
                             for message in list(self.dupes[channel_id]):
                                 await asyncio.sleep(0)
+                                if channel_id not in self.dupes:
+                                    break
                                 dupes = [
                                     m for m in self.dupes[channel_id]
                                     if m and m.content and m.content == message.content
