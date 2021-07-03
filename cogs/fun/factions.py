@@ -527,11 +527,9 @@ class Factions(commands.Cog):
         """ Invites a user to a private faction """
 
         def pred(msg):
-            return (
-                msg.channel.id == ctx.channel.id
-                and msg.author.id == user.id
-                and ("yes" in msg.content and "no" in msg.content)
-            )
+            return msg.channel.id == ctx.channel.id\
+                and msg.author.id == user.id\
+                and ("yes" in msg.content.lower() or "no" in msg.content.lower())
 
         faction = await self.get_authors_faction(ctx)
         guild_id = str(ctx.guild.id)
