@@ -94,12 +94,9 @@ class Utility(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, m: discord.Message):
-        if isinstance(m.guild, discord.Guild):
+        if isinstance(m.guild, discord.Guild) and not m.author.guild_permissions.administrator:
             guild_id = str(m.guild.id)
             channel_id = str(m.channel.id)
-            for i in [".limit", "limited **", "disabled channel"]:
-                if m.content.lower().startswith(i):
-                    return
             await asyncio.sleep(0.5)
 
             # image limiter
