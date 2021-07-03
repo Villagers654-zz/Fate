@@ -5,7 +5,7 @@ import asyncio
 import json
 
 
-class Utility(commands.Cog):
+class Limiter(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.images = {}
@@ -113,4 +113,4 @@ class Utility(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Utility(bot), override=True)
+    bot.add_cog(Limiter(bot), override=True)
