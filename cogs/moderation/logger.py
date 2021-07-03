@@ -1079,15 +1079,17 @@ class Logger(commands.Cog):
                 e.add_field(name="◈ After", value=after.name, inline=False)
                 log = Log("server_rename", embed=e)
                 self.put_nowait(guild_id, log)
-            if before.icon.url != after.icon.url:
+            before = before.icon.url if before.icon else None
+            after = after.icon.url if after.icon else None
+            if before.icon and after.icon and before.icon.url != after.icon.url:
                 e = create_template_embed()
                 e.description = (
                     f"> 》__**Icon Changed**__《" f"\n**Changed by:** [{dat['user']}]"
                 )
                 log = Log("new_server_icon", embed=e)
                 self.put_nowait(guild_id, log)
-            before_url = before.banner or before.banner.url if before.banner else None
-            after_url = after.banner or after.banner.url if after.banner else None
+            before_url = before.banner.url if before.banner else None
+            after_url = after.banner.url if after.banner else None
             if before_url != after_url:
                 e = create_template_embed()
                 e.description = (
@@ -1095,8 +1097,8 @@ class Logger(commands.Cog):
                 )
                 log = Log("new_server_banner", embed=e)
                 self.put_nowait(guild_id, log)
-            before_url = before.splash or before.splash.url if before.splash else None
-            after_url = before.splash or before.splash.url if before.splash else None
+            before_url = before.splash.url if before.splash else None
+            after_url = before.splash.url if before.splash else None
             if before_url != after_url:
                 e = create_template_embed()
                 e.description = (
