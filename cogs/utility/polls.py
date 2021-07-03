@@ -20,7 +20,7 @@ from discord.errors import NotFound, Forbidden
 from base64 import b64encode as encode64, b64decode as decode64
 
 from fate import Fate
-from botutils import colors, extract_time
+from botutils import colors, extract_time, Conversation
 
 
 class SafePolls(commands.Cog):
@@ -133,91 +133,58 @@ class SafePolls(commands.Cog):
     @commands.cooldown(2, 5, commands.BucketType.user)
     async def safe_poll(self, ctx, *, question):
         """Start the setup process for creating a poll"""
-
+        convo = Conversation(ctx, delete_after=True)
         # Get the wanted duration of the poll (Max 30 days)
-        message = await ctx.send(
-            "How long should the poll last? (in the format of 5m, 1h, 7d, etc)"
-        )
+
         timer = None
         instructions = "the `m` in `5m` stands for 5 minutes, the `h` stands for hours, and the `d` stands for days"
         while not timer:
-            msg = await self.bot.utils.get_message(ctx)
+            msg = await convo.ask("How long should the poll last? (in the format of 5m, 1h, 7d, etc)")
             result = extract_time(msg.content)
             if not result:
-                await ctx.send(
-                    f"Couldn't find any timers in that, remember {instructions}. Please retry",
-                    delete_after=30,
-                )
+                await convo.send(f"Couldn't find any timers in that, remember {instructions}. Please retry")
+                continue
             elif result > 60 * 60 * 24 * 30:  # 30 Days
-                await ctx.send(
-                    "You can't pick a time greater than 30 days, please retry",
-                    delete_after=16,
-                )
+                await convo.send("You can't pick a time greater than 30 days, please retry")
             else:
                 timer = result
-            await msg.delete()
-
-        await message.delete()
 
         # Get the wanted amount of reactions to add for users to vote with
-        message = await ctx.send(
-            "How many reactions should I add?"
-        )
         reaction_count = None
         while not reaction_count:
-            msg = await self.bot.utils.get_message(ctx)
+            msg = await convo.ask("How many reactions should I add?")
             if not msg.content.isdigit():
-                await ctx.send("That's not a number, please retry", delete_after=30)
+                await convo.send("That's not a number, please retry")
             elif int(msg.content) > 9:
-                await ctx.send(
-                    "You can't choose a reaction count greater than 9",
-                    delete_after=16,
-                )
+                await convo.send("You can't choose a reaction count greater than 9")
             else:
                 reaction_count = int(msg.content)
-            await msg.delete()
-        await message.delete()
+
+        emojis = self.emojis[:reaction_count]
+        if reaction_count == 2:
+            reply = await convo.ask("Do you want me to use thumbs up/down reactions instead of numbers?")
+            if "yes" in reply.content.lower():
+                emojis = ["👍", "👎"]
 
         # Get the channel to put the poll message in
-        message = await ctx.send("#mention the channel to send the poll into")
         channel = None
         while not channel:
-            msg = await self.bot.utils.get_message(ctx)
+            msg = await convo.ask("#mention the channel to send the poll into")
             if not msg.channel_mentions:
-                await ctx.send(
-                    f"Retry, but mention the channel like this: {ctx.channel.mention}",
-                    delete_after=16,
-                )
+                await convo.send(f"Retry, but mention the channel like this: {ctx.channel.mention}")
             elif not msg.channel_mentions[0].permissions_for(ctx.guild.me).send_messages:
-                await ctx.send(
-                    "I'm missing perms to send messages in there, you can fix and retry",
-                    delete_after=16,
-                )
+                await convo.send("I'm missing perms to send messages in there, you can fix and retry")
             elif not msg.channel_mentions[0].permissions_for(ctx.guild.me).embed_links:
-                await ctx.send(
-                    "I'm missing perms to send embeds there, you can fix and retry",
-                    delete_after=16,
-                )
+                await convo.send("I'm missing perms to send embeds there, you can fix and retry")
             elif not msg.channel_mentions[0].permissions_for(ctx.guild.me).add_reactions:
-                await ctx.send(
-                    "I'm missing perms to add reactions there, you can fix and retry",
-                    delete_after=16,
-                )
+                await convo.send("I'm missing perms to add reactions there, you can fix and retry")
             else:
                 if not msg.channel_mentions[0].permissions_for(ctx.author).send_messages:
-                    await ctx.send(
-                        "You can't send in that channel, please select another",
-                        delete_after=16,
-                    )
+                    await convo.send("You can't send in that channel, please select another")
                 elif self.bot.attrs.is_restricted(msg.channel_mentions[0], ctx.author):
-                    await ctx.send(
-                        "Due to channel restrictions you can't send in that channel",
-                        delete_after=16
-                    )
+                    await convo.send("Due to channel restrictions you can't send in that channel")
                 else:
                     channel = msg.channel_mentions[0]
-            await msg.delete()
-        await message.delete()
 
         # Format and send the poll
         poll_msg = await channel.send("Creating poll")
@@ -237,7 +204,6 @@ class SafePolls(commands.Cog):
                 elif reaction_count > 2:
                     await asyncio.sleep(0.5)
 
-        emojis = self.emojis[:reaction_count]
         self.bot.loop.create_task(add_reactions_task(poll_msg))
 
         question = encode64(question.encode()).decode()
@@ -263,6 +229,7 @@ class SafePolls(commands.Cog):
             self.wait_for_termination(channel.id, poll_msg.id, end_time)
         )
         await poll_msg.edit(content=None)
+        await convo.end()
         await ctx.send("Successfully setup your poll")
 
     @commands.Cog.listener()
@@ -281,7 +248,7 @@ class SafePolls(commands.Cog):
                 return
             if msg_id not in self.cache:
                 await self.cache_poll(payload.message_id)
-            if str(payload.emoji) not in self.cache[msg_id]:
+            if str(payload.emoji) not in self.cache[msg_id]["votes"]:
                 return
             for key, users in self.cache[msg_id]["votes"].items():
                 await asyncio.sleep(0)
