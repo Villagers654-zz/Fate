@@ -1598,7 +1598,8 @@ class Logger(commands.Cog):
             e.set_author(
                 name="~==🍸Integrations Update🍸==~", icon_url=guild.owner.avatar.url
             )
-            e.set_thumbnail(url=guild.icon.url)
+            if guild.icon:
+                e.set_thumbnail(url=guild.icon.url)
             e.description = "An integration was created, modified, or removed"
             log = Log("integrations_update", embed=e)
             self.put_nowait(guild_id, log)
@@ -1830,7 +1831,8 @@ class Logger(commands.Cog):
                 if emoji.id in index and emoji.name != index[emoji.id].name:
                     e = discord.Embed(color=orange)
                     e.set_author(name="~==🍸Emoji Renamed🍸==~")
-                    e.set_thumbnail(url=guild.icon.url)
+                    if guild.icon:
+                        e.set_thumbnail(url=guild.icon.url)
                     e.description = self.bot.utils.format_dict({
                         "Emoji": str(emoji),
                         "Before": emoji.name,
@@ -1845,7 +1847,8 @@ class Logger(commands.Cog):
                 if not any(emoji.id == e.id for e in after):
                     e = discord.Embed(color=orange)
                     e.set_author(name="~==🍸Emoji Deleted🍸==~")
-                    e.set_thumbnail(url=guild.icon.url)
+                    if guild.icon:
+                        e.set_thumbnail(url=guild.icon.url)
                     e.description = self.bot.utils.format_dict({
                         "Emoji": emoji.name,
                         "Animated": str(emoji.animated)
@@ -1859,7 +1862,8 @@ class Logger(commands.Cog):
                 if not any(emoji.id == e.id for e in before):
                     e = discord.Embed(color=orange)
                     e.set_author(name="~==🍸Emoji Created🍸==~")
-                    e.set_thumbnail(url=guild.icon.url)
+                    if guild.icon:
+                        e.set_thumbnail(url=guild.icon.url)
                     e.description = self.bot.utils.format_dict({
                         "Emoji": str(emoji)
                     })
