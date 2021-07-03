@@ -188,7 +188,7 @@ class Logger(commands.Cog):
 
     async def wait_for_permissions(self, guild, permission, channel=None, host=False):
         perms = lambda: channel.permissions_for(guild.me) if channel else guild.me.guild_permissions
-        if not guild.me:
+        if not guild or not guild.me:
             raise self.bot.ignored_exit
         if getattr(perms(), permission):
             return True
