@@ -47,7 +47,7 @@ class Core(commands.Cog):
     @commands.Cog.listener()
     async def on_dbl_test(self, data):
         self.bot.log.info(f"Received a test upvote from {self.bot.get_user(int(data['user']))}")
-        async with self.bot.cursor() as cur:
+        async with self.bot.utils.cursor() as cur:
             await cur.execute(
                 f"insert into votes values ({int(data['user'])}, {time()});"
             )
@@ -55,7 +55,7 @@ class Core(commands.Cog):
     @commands.Cog.listener()
     async def on_dbl_vote(self, data):
         self.bot.log.info(f"Received an upvote from {self.bot.get_user(int(data['user']))}")
-        async with self.bot.cursor() as cur:
+        async with self.bot.utils.cursor() as cur:
             await cur.execute(
                 f"insert into votes values ({int(data['user'])}, {time()});"
             )
