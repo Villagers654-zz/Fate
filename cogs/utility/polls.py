@@ -13,14 +13,23 @@ from datetime import datetime, timedelta, timezone
 import json
 import asyncio
 from contextlib import suppress
+import re
 
 from discord.ext import commands
 import discord
+from discord import TextChannel
 from discord.errors import NotFound, Forbidden
 from base64 import b64encode as encode64, b64decode as decode64
 
 from fate import Fate
 from botutils import colors, extract_time, Conversation
+
+
+def Timer(argument):
+    seconds = extract_time(argument)
+    if not seconds:
+        raise commands.BadArgument
+    return seconds
 
 
 class SafePolls(commands.Cog):
@@ -86,10 +95,12 @@ class SafePolls(commands.Cog):
 
         e = discord.Embed(color=colors.fate)
         e.set_author(name=f"Poll by {user}", icon_url=user.avatar.url if user else None)
+        fmt = " | ".join(f"{emoji} {len(votes[emoji])}" for emoji in emojis)
+        if any(key not in self.emojis and len(key) > 3 for key in votes.keys()):
+            question += f"\n\n{fmt}"
+        else:
+            e.set_footer(text=fmt)
         e.description = question
-        e.set_footer(
-            text=" | ".join(f"{emoji} {len(votes[emoji])}" for emoji in emojis)
-        )
         await msg.edit(embed=e)
 
     async def wait_for_termination(self, channel_id, msg_id, end_time: str) -> None:
@@ -126,6 +137,161 @@ class SafePolls(commands.Cog):
             await msg.edit(content="Poll Ended")
             await msg.clear_reactions()
         await delete(msg_id)
+
+    async def ensure_permissions(self, ctx, channel, exit_on_error=True):
+        if not channel.permissions_for(ctx.guild.me).send_messages:
+            return await ctx.send("I'm missing perms to send messages in there, you can fix and retry")
+        elif not channel.permissions_for(ctx.guild.me).embed_links:
+            await ctx.send("I'm missing perms to send embeds there, you can fix and retry")
+        elif not channel.permissions_for(ctx.guild.me).add_reactions:
+            await ctx.send("I'm missing perms to add reactions there, you can fix and retry")
+        elif not channel.permissions_for(ctx.author).send_messages:
+            await ctx.send("You can't send in that channel, please select another")
+        elif self.bot.attrs.is_restricted(channel, ctx.author):
+            await ctx.send("Due to channel restrictions you can't send in that channel")
+        else:
+            return True
+        if exit_on_error:
+            raise self.bot.ignored_exit
+        return False
+
+    @staticmethod
+    def instant_poll_usage() -> str:
+        return "Creates a poll in one message. This does require precise formatting.\n"\
+               "> Examples:\n"\
+               "```.instant-poll #polls 1h\n"\
+               "👍 do something\n"\
+               "👎 don't do something\n"\
+               "✌ do something else```\n"\
+               "> An alternative to override the emojis\n"\
+               "```.instant-poll #polls 1h\n"\
+               "👍 do something\n"\
+               "👎 don't do something\n"\
+               "✌ do something else|🏆⏳🔨```You can also set the override emojis as a range of numbers like 1-3"
+
+    @commands.command(name="instant-poll")
+    @commands.has_permissions(manage_messages=True)
+    async def instant_poll(self, ctx, channel: TextChannel, timer: Timer, *, data):
+        await self.ensure_permissions(ctx, channel)
+
+        converter = commands.EmojiConverter()
+        sections = data.split("|")
+        emojis = []
+        if len(sections) > 1:
+            args = sections[-1:][0]
+
+            # Set the emojis as numbers
+            if args.isdigit():
+                emojis = [self.emojis[int(char) - 1] for char in args]
+
+            # Set the emojis as a range of numbers
+            elif xrange := re.search("[0-9]-[0-9]", args):
+                min, max = xrange.group().split("-")
+                if int(min) > int(max):
+                    return await ctx.send("Min number for the emojis cannot be greater than the max number")
+                if int(min) < 1:
+                    return await ctx.send("Min number can't be below 1")
+                max = len(self.emojis) - int(max)
+                if max > 9:
+                    return await ctx.send("Max number can't be greater than 9")
+                emojis = self.emojis[int(min) - 1:-max]
+
+            # Set the emojis as custom emojis
+            elif " " in args:
+                for chars in args.split():
+                    if len(chars) < 4:
+                        try:
+                            await ctx.message.add_reaction(chars)
+                        except:
+                            return await ctx.send(f"Couldn't convert `{chars}` to an emoji")
+                        await ctx.message.remove_reaction(chars, self.bot.user)
+                        emojis.append(chars)
+                    else:
+                        try:
+                            emoji = await converter.convert(ctx, chars)
+                        except commands.BadArgument:
+                            return await ctx.send(f"Couldn't convert `{chars}` to an emoji")
+                        emojis.append(str(emoji))
+            else:
+                return await ctx.send("You need to separate the emojis with spaces")
+            data = data.rstrip("|" + args)
+
+        # Automatically detect the emojis
+        else:
+            for line in data.split("\n"):
+                await asyncio.sleep(0)
+                if not line:
+                    continue
+                if line[:0].isdigit():
+                    emojis.append(self.emojis[int(line[:0]) - 1])
+                elif match := re.search("[1-9]\.? ", line):
+                    num = match.group().rstrip().rstrip(".")
+                    emojis.append(self.emojis[int(num) - 1])
+                elif " " in line:
+                    chars = line.split()[0]
+                    if len(chars) < 4:
+                        try:
+                            await ctx.message.add_reaction(chars)
+                        except:
+                            continue
+                        await ctx.message.remove_reaction(chars, self.bot.user)
+                        emojis.append(chars)
+                    else:
+                        try:
+                            emoji = await converter.convert(ctx, chars)
+                        except commands.BadArgument:
+                            continue
+                        emojis.append(str(emoji))
+
+        if not emojis:
+            return await ctx.send("Invalid format")
+
+        # Format and send the poll
+        poll_msg = await channel.send("Creating poll")
+        self.polls.append(poll_msg.id)
+
+        async def add_reactions_task(message) -> None:
+            """Add the reactions in the background"""
+            for emoji in emojis:
+                if not message:
+                    return
+                try:
+                    await message.add_reaction(emoji)
+                except discord.errors.NotFound:
+                    raise self.bot.ignored_exit
+                if len(emojis) > 5:
+                    await asyncio.sleep(1)
+                elif len(emojis) > 2:
+                    await asyncio.sleep(0.5)
+
+        self.bot.loop.create_task(add_reactions_task(poll_msg))
+
+        question = encode64(data.encode()).decode()
+        vote_index = encode64(json.dumps({e: [] for e in emojis}).encode()).decode()
+        end_time = str(datetime.now(tz=timezone.utc) + timedelta(seconds=timer))
+
+        async with self.bot.utils.cursor() as cur:
+            await cur.execute(
+                f"insert into polls "
+                f"values ("
+                f"{channel.id}, "  # channel_id: int
+                f"{ctx.author.id}, "  # user_id: int
+                f"'{question}', "  # question: str
+                f"{poll_msg.id}, "  # msg_id: int
+                f"0, "  # reaction_count: int
+                f"'{end_time}', "  # end_time: str
+                f"'{vote_index}'"  # votes: str
+                f");"
+            )
+
+        await self.update_poll(poll_msg.id)
+        self.bot.tasks["polls"][poll_msg.id] = self.bot.loop.create_task(
+            self.wait_for_termination(channel.id, poll_msg.id, end_time)
+        )
+        await poll_msg.edit(content=None)
+        await ctx.send("Setup your poll", delete_after=3)
+        with suppress(Exception):
+            await ctx.message.delete()
 
     @commands.command(
         name="poll", aliases=["safepoll", "safe_poll", "createpoll", "create-poll"]
@@ -172,19 +338,8 @@ class SafePolls(commands.Cog):
             msg = await convo.ask("#mention the channel to send the poll into")
             if not msg.channel_mentions:
                 await convo.send(f"Retry, but mention the channel like this: {ctx.channel.mention}")
-            elif not msg.channel_mentions[0].permissions_for(ctx.guild.me).send_messages:
-                await convo.send("I'm missing perms to send messages in there, you can fix and retry")
-            elif not msg.channel_mentions[0].permissions_for(ctx.guild.me).embed_links:
-                await convo.send("I'm missing perms to send embeds there, you can fix and retry")
-            elif not msg.channel_mentions[0].permissions_for(ctx.guild.me).add_reactions:
-                await convo.send("I'm missing perms to add reactions there, you can fix and retry")
-            else:
-                if not msg.channel_mentions[0].permissions_for(ctx.author).send_messages:
-                    await convo.send("You can't send in that channel, please select another")
-                elif self.bot.attrs.is_restricted(msg.channel_mentions[0], ctx.author):
-                    await convo.send("Due to channel restrictions you can't send in that channel")
-                else:
-                    channel = msg.channel_mentions[0]
+            if await self.ensure_permissions(ctx, channel, error_if_fail=False):
+                channel = msg.channel_mentions[0]
 
         # Format and send the poll
         poll_msg = await channel.send("Creating poll")
