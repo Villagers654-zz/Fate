@@ -338,7 +338,7 @@ class SafePolls(commands.Cog):
             msg = await convo.ask("#mention the channel to send the poll into")
             if not msg.channel_mentions:
                 await convo.send(f"Retry, but mention the channel like this: {ctx.channel.mention}")
-            if await self.ensure_permissions(ctx, channel, exit_on_error=False):
+            if await self.ensure_permissions(ctx, msg.channel_mentions[0], exit_on_error=False):
                 channel = msg.channel_mentions[0]
 
         # Format and send the poll
