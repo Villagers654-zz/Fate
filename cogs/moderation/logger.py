@@ -1079,9 +1079,9 @@ class Logger(commands.Cog):
                 e.add_field(name="◈ After", value=after.name, inline=False)
                 log = Log("server_rename", embed=e)
                 self.put_nowait(guild_id, log)
-            before = before.icon.url if before.icon else None
-            after = after.icon.url if after.icon else None
-            if before.icon and after.icon and before.icon.url != after.icon.url:
+            before_url = before.icon.url if before.icon else None
+            after_url = after.icon.url if after.icon else None
+            if before_url != after_url:
                 e = create_template_embed()
                 e.description = (
                     f"> 》__**Icon Changed**__《" f"\n**Changed by:** [{dat['user']}]"
