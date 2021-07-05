@@ -169,24 +169,20 @@ class Utility(commands.Cog):
             e.description = ""
 
             # User Information
-            guilds = 0
-            for guild in self.bot.guilds:
+            guilds = user.mutual_guilds
+            nicks = []
+            for guild in guilds:
                 await asyncio.sleep(0)
                 if guild and user in guild.members:
-                    guilds += 1
+                    member = guild.get_member(user.id)
+                    if member.display_name != user.display_name:
+                        nicks = list(set(list([member.display_name, *nicks])))
             user_info = {
                 "Profile": f"{user.mention}",
                 "ID": user.id,
                 "Created at": user.created_at.strftime("%m/%d/%Y %I%p"),
-                "Shared Servers": str(guilds)
+                "Shared Servers": str(len(guilds))
             }
-            nicks = []
-            for guild in self.bot.guilds:
-                for member in guild.members:
-                    await asyncio.sleep(0)
-                    if member.id == user.id:
-                        if member.display_name != user.display_name:
-                            nicks = list(set(list([member.display_name, *nicks])))
             if nicks:
                 user_info["Nicks"] = ", ".join(nicks[:5])
 
@@ -254,11 +250,8 @@ class Utility(commands.Cog):
 
             # Activity Information
             activity_info = {}
-            mutual = [
-                g for g in self.bot.guilds if user.id in [m.id for m in g.members]
-            ]
-            if mutual:
-                user = mutual[0].get_member(user.id)  # type: discord.Member
+            if guilds:
+                user = guilds[0].get_member(user.id)  # type: discord.Member
                 async with self.bot.utils.cursor() as cur:
                     if user.status is discord.Status.offline:
                         await cur.execute(
@@ -676,7 +669,6 @@ class Utility(commands.Cog):
                     cur = f"{cur[0]}.{cur[1]}GHz"
                 max = str(round(freq.max))
                 max = f"{max[0]}.{max[1]}GHz"
-                p = self.bot.utils
                 c_temp = round(psutil.sensors_temperatures(fahrenheit=False)['coretemp'][0].current)
                 f_temp = round(psutil.sensors_temperatures(fahrenheit=True)['coretemp'][0].current)
                 value = f"**Storage (NVME)**: {bytes2human(disk.used)}/{bytes2human(disk.total)} - ({round(disk.percent)}%)\n" \
@@ -827,6 +819,7 @@ class Utility(commands.Cog):
                 if guild and guild.me.guild_permissions.administrator:
                     invites = await guild.invites()
                     for _invite in invites:
+                        await asyncio.sleep(0)
                         if invite.id == _invite.id:
                             invite = _invite
                             break
