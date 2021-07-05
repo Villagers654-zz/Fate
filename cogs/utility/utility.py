@@ -169,17 +169,21 @@ class Utility(commands.Cog):
             e.description = ""
 
             # User Information
+            guilds = 0
+            for guild in self.bot.guilds:
+                await asyncio.sleep(0)
+                if guild and user in guild.members:
+                    guilds += 1
             user_info = {
                 "Profile": f"{user.mention}",
                 "ID": user.id,
                 "Created at": user.created_at.strftime("%m/%d/%Y %I%p"),
-                "Shared Servers": str(
-                    len([s for s in self.bot.guilds if user in s.members])
-                )
+                "Shared Servers": str(guilds)
             }
             nicks = []
             for guild in self.bot.guilds:
                 for member in guild.members:
+                    await asyncio.sleep(0)
                     if member.id == user.id:
                         if member.display_name != user.display_name:
                             nicks = list(set(list([member.display_name, *nicks])))
