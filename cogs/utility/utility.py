@@ -23,6 +23,12 @@ from discord.ext import commands, tasks
 from botutils import colors, split, cleanup_msg, bytes2human, get_time, emojis, get_prefixes_async, format_date_difference
 
 
+default = {
+    "public": False,
+    "xp": True
+}
+
+
 class ProfileType(ui.View):
     def __init__(self, cls, ctx, msg, **kwargs):
         self.cls = cls
@@ -37,12 +43,12 @@ class ProfileType(ui.View):
         self.add_item(self.button)
 
     def get_style(self):
-        label = "Make Profile Private"
-        style = ButtonStyle.red
+        label = "Make Profile Public"
+        style = ButtonStyle.green
         if self.user.id in self.cls.settings:
-            if not self.cls.settings[self.user.id]["public"]:
-                label = "Make Profile Public"
-                style = ButtonStyle.green
+            if self.cls.settings[self.user.id]["public"]:
+                label = "Make Profile Private"
+                style = ButtonStyle.red
         return label, style
 
     async def process(self, interaction: discord.Interaction):
@@ -55,18 +61,13 @@ class ProfileType(ui.View):
         label, style = self.get_style()
         new = label.split()[2].lower()
         if new == "private":
-            if self.user.id not in self.cls.settings:
-                self.cls.settings[self.user.id] = {
-                    "public": False,
-                    "xp": True
-                }
-            else:
-                self.cls.settings[self.user.id]["public"] = False
+            self.cls.settings[self.user.id]["public"] = False
+            if self.cls.settings[self.user.id] == default:
+                await self.cls.settings.remove(self.user.id)
         else:
-            if self.user.id in self.cls.settings:
-                self.cls.settings[self.user.id]["public"] = True
-                if all(v is True for v in self.cls.settings[self.user.id].values()):
-                    await self.cls.settings.remove(self.user.id)
+            if self.user.id not in self.cls.settings:
+                self.cls.settings[self.user.id] = default
+            self.cls.settings[self.user.id]["public"] = True
 
         # Switch to the new style
         label, style = self.get_style()
@@ -99,7 +100,7 @@ class SatisfiableChannel(commands.Converter):
 class Utility(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.settings = bot.utils.cache("settings")
+        self.settings = bot.utils.cache("settings", auto_sync=True)
         self.find = {}
         self.afk = {}
         self.timer_path = "./data/userdata/timers.json"
@@ -216,7 +217,6 @@ class Utility(commands.Cog):
                     view = ProfileType(self, ctx, msg, timeout=15)
                     await msg.edit(view=view)
                     await view.wait()
-                    print("Waited till timeout")
                 await msg.edit(view=None)
 
         elif isinstance(target, TextChannel):
@@ -610,10 +610,10 @@ class Utility(commands.Cog):
         )
         e.set_thumbnail(url=user.avatar.url)
         e.description = ""
-        has_public_profile = True
+        has_public_profile = False
         if user.id in self.settings:
-            if not self.settings[user.id]["public"]:
-                has_public_profile = False
+            if self.settings[user.id]["public"]:
+                has_public_profile = True
 
         # User Information
         guilds = []
@@ -840,9 +840,10 @@ class Utility(commands.Cog):
                 return
 
         # Keep track of their last message time
-        if msg.author.id in self.settings:
-            if self.settings[msg.author.id]["private"]:
-                return
+        if msg.author.id not in self.settings:
+            return
+        if not self.settings[msg.author.id]["public"]:
+            return
         await asyncio.sleep(1)
         await self.bot.execute(
             f"insert into activity values ({msg.author.id}, null, '{datetime.now(tz=timezone.utc)}') "
@@ -918,11 +919,19 @@ class Utility(commands.Cog):
             f"where code = {self.to_num(invite.code)};"
         )
 
+    @commands.command(name="userinfo", aliases=["uinfo"])
+    @commands.cooldown(1, 3, commands.BucketType.user)
+    @commands.guild_only()
+    @commands.bot_has_permissions(embed_links=True)
+    async def user_info(self, ctx, *, user: Union[Member, User]):
+        e = await self.fetch_user_info(ctx, user)
+        await ctx.send(embed=e)
+
     @commands.command(name="serverinfo", aliases=["sinfo"])
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
-    async def serverinfo(self, ctx):
+    async def server_info(self, ctx):
         try:
             e = discord.Embed(color=self.avg_color(ctx.guild.icon.url))
         except ZeroDivisionError:
