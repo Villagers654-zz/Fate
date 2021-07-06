@@ -9,24 +9,18 @@ import requests
 import re
 from typing import Optional, Union
 from time import time
+import platform
 from contextlib import suppress
-from importlib import reload
 
 import discord
 from discord import User, Role, TextChannel, Member, ui, ButtonStyle
-from discord.errors import NotFound, HTTPException
+from discord.errors import NotFound, HTTPException, Forbidden
 from PIL import Image
 from colormap import rgb2hex
+import psutil
 from discord.ext import commands, tasks
 
-import botutils
-from botutils import colors, cleanup_msg, bytes2human, get_prefixes_async, format_date_difference
-from .info.user import fetch_user_info
-from .info.channel import fetch_channel_info
-from .info.invite import fetch_invite_info
-from .info.role import fetch_role_info
-from .info.bot import fetch_bot_info
-reload(botutils)
+from botutils import colors, split, cleanup_msg, bytes2human, get_time, emojis, get_prefixes_async, format_date_difference
 
 
 class ProfileType(ui.View):
@@ -78,7 +72,7 @@ class ProfileType(ui.View):
         label, style = self.get_style()
         self.button.label = label
         self.button.style = style
-        new_embed = await fetch_user_info(self.ctx, self.user)
+        new_embed = await self.cls.fetch_user_info(self.ctx, self.user)
         await interaction.message.edit(embed=new_embed, view=self)
 
 
@@ -207,36 +201,304 @@ class Utility(commands.Cog):
         # del self.user_logs[user_id]
         await ctx.send("Removed your data from .info")
 
-    @commands.command(name="info", aliases=["xinfo"])
+    @commands.command(name="info")
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.guild_only()
     async def info(self, ctx, *, target: Union[Member, User, Role, TextChannel, str] = None):
+        bot_has_audit_access = ctx.guild.me.guild_permissions.view_audit_log  # type: bool
+
         # Get a user or members profile
         if isinstance(target, (User, Member)):
-            e = await fetch_user_info(ctx, target)
+            e = await self.fetch_user_info(ctx, target)
             msg = await ctx.send(embed=e)
-
-            # Add a button for toggling their profile between public and private
             if target.id == ctx.author.id:
                 with suppress(Exception):
-                    view = ProfileType(self, ctx, msg, timeout=30)
+                    view = ProfileType(self, ctx, msg, timeout=15)
                     await msg.edit(view=view)
                     await view.wait()
+                    print("Waited till timeout")
                 await msg.edit(view=None)
 
         elif isinstance(target, TextChannel):
-            # This needs redone to return an embed object
-            # instead of doing everything on its own
-            await fetch_channel_info(ctx, target)
+            e = discord.Embed(color=colors.fate)
+            e.set_author(
+                name="Alright, here's what I got..", icon_url=self.bot.user.avatar.url
+            )
+
+            channel = target  # type: discord.TextChannel
+            channel_info = {
+                "Name": channel.name,
+                "ID": channel.id,
+                "Members": str(len(channel.members)),
+            }
+
+            if channel.category:
+                channel_info["Category"] = f"`{channel.category}`"
+            if channel.is_nsfw():
+                channel_info["Marked as NSFW"] = None
+            if channel.is_news():
+                channel_info["Is the servers news channel"] = None
+            channel_info["Created at"] = channel.created_at.strftime("%m/%d/%Y %I%p")
+
+            e.add_field(
+                name="◈ Channel Information",
+                value=self.bot.utils.format_dict(channel_info),
+                inline=False,
+            )
+            e.set_footer(text="🖥 Topic | ♻ History")
+
+            msg = await ctx.send(embed=e)
+            ems = ["🖥", "♻"]
+            for emoji in ems:
+                await msg.add_reaction(emoji)
+
+            def predicate(r, u):
+                return str(r.emoji) in ems and r.message.id == msg.id and not u.bot
+
+            while True:
+                await asyncio.sleep(0.5)
+                try:
+                    reaction, user = await self.bot.wait_for(
+                        "reaction_add", check=predicate, timeout=60
+                    )
+                except asyncio.TimeoutError:
+                    if (
+                        ctx.channel.permissions_for(ctx.guild.me).manage_messages
+                        and msg
+                    ):
+                        await msg.clear_reactions()
+                    return
+
+                if str(reaction.emoji) == "🖥":  # Requested topic information
+                    topic = channel.topic
+                    if not topic:
+                        topic = "None set."
+                    for group in split(topic, 1024):
+                        e.add_field(name="◈ Channel Topic", value=group, inline=False)
+                    ems.remove("🖥")
+                elif str(reaction.emoji) == "♻":  # Requested channel history
+                    if not bot_has_audit_access:
+                        if ctx.channel.permissions_for(ctx.guild.me).manage_messages:
+                            await msg.remove_reaction(reaction, user)
+                        err = "Missing view_audit_log permission(s)"
+                        if any(field.value == err for field in e.fields):
+                            continue
+                        e.add_field(name="◈ Channel History", value=err, inline=False)
+                    else:
+                        e.set_footer()
+                        history = {}
+                        e.add_field(
+                            name="◈ Channel History", value="Fetching..", inline=False
+                        )
+                        await msg.edit(embed=e)
+
+                        action = discord.AuditLogAction.channel_create
+                        async for entry in ctx.guild.audit_logs(
+                            limit=500, action=action
+                        ):
+                            if channel.id == entry.target.id:
+                                history["Creator"] = entry.user
+                                break
+
+                        if channel.permissions_for(ctx.guild.me).read_messages:
+                            async for m in channel.history(limit=1):
+                                seconds = (
+                                    datetime.now(tz=timezone.utc) - m.created_at
+                                ).total_seconds()
+                                total_time = get_time(round(seconds))
+                                history["Last Message"] = f"{total_time} ago\n"
+
+                        action = discord.AuditLogAction.channel_update
+                        async for entry in ctx.guild.audit_logs(
+                            limit=750, action=action
+                        ):
+                            if channel.id == entry.target.id:
+                                if not hasattr(entry.before, "name") or not hasattr(
+                                    entry.after, "name"
+                                ):
+                                    continue
+                                if entry.before.name != entry.after.name:
+                                    minute = str(entry.created_at.minute)
+                                    if len(minute) == 1:
+                                        minute = "0" + minute
+                                    when = entry.created_at.strftime(
+                                        f"%m/%d/%Y %I:{minute}%p"
+                                    )
+                                    history[f"**Name Changed on {when}**"] = None
+                                    history[
+                                        f"**Old Name:** `{entry.before.name}`\n"
+                                    ] = None
+
+                        if not history:
+                            history["None Found"] = None
+                        e.set_field_at(
+                            index=len(e.fields) - 1,
+                            name="◈ Channel History",
+                            value=self.bot.utils.format_dict(
+                                dict(list(history.items())[:6])
+                            ),
+                            inline=False,
+                        )
+                        ems.remove("♻")
+                await msg.edit(embed=e)
 
         elif "discord.gg" in ctx.message.content:
-            e = await fetch_invite_info(ctx)
+            e = discord.Embed(color=colors.fate)
+            e.set_author(
+                name="Alright, here's what I got..", icon_url=self.bot.user.avatar.url
+            )
+            inv = [arg for arg in ctx.message.content.split() if "discord.gg" in arg][0]
+            code = discord.utils.resolve_invite(inv)
+            try:
+                invite = await self.bot.fetch_invite(code)
+                e.set_author(
+                    name="Alright, here's what I got..", icon_url=invite.guild.icon.url
+                )
+                e.set_thumbnail(url=invite.guild.splash_url)
+                e.set_image(url=invite.guild.banner_url)
+                data = {
+                    "Guild": invite.guild.name,
+                    "GuildID": invite.guild.id,
+                    "channel_name": invite.channel.name,
+                    "channel_id": invite.channel.id
+                }
+            except (discord.errors.NotFound, discord.errors.Forbidden):
+                async with self.bot.utils.cursor() as cur:
+                    await cur.execute(
+                        f"select guild_id, guild_name, channel_id, channel_name "
+                        f"from invites "
+                        f"where code = {self.bot.encode(code)};"
+                    )
+                    if not cur.rowcount:
+                        return await ctx.send("Failed to query that invite")
+                    results = await cur.fetchone()
+                    data = {
+                        "guild_name": self.bot.decode(results[1]),
+                        "guild_id": results[0],
+                        "channel_name": self.bot.decode(results[3]),
+                        "channel_id": results[2],
+                    }
+                    e.set_footer(text="⚠ From Cache ⚠")
+
+            inviters = []
+
+            e.add_field(
+                name="◈ Invite Information",
+                value=self.bot.utils.format_dict(data),
+                inline=False,
+            )
+            if inviters:
+                e.add_field(
+                    name="◈ Inviters", value=", ".join(inviters[:16]), inline=False
+                )
             await ctx.send(embed=e)
 
         elif isinstance(target, Role):
-            # This needs redone to return an embed object
-            # instead of doing everything on its own
-            await fetch_role_info(ctx, target)
+            e = discord.Embed(color=colors.fate)
+            e.set_author(
+                name="Alright, here's what I got..", icon_url=self.bot.user.avatar.url
+            )
+            role = target  # type: discord.Role
+
+            core = {
+                "Name": role.name,
+                "Mention": role.mention,
+                "ID": role.id,
+                "Members": len(role.members) if role.members else "None",
+                "Created at": role.created_at.strftime("%m/%d/%Y %I%p"),
+            }
+
+            extra = {
+                "Mentionable": str(role.mentionable),
+                "HEX Color": role.color,
+                "RGB Color": role.colour.to_rgb(),
+            }
+            if role.hoist:
+                extra["**Shows Above Other Roles**"] = None
+            if role.managed:
+                extra["**And Is An Integrated Role**"] = None
+
+            e.add_field(
+                name="◈ Role Information",
+                value=self.bot.utils.format_dict(core),
+                inline=False,
+            )
+            e.add_field(
+                name="◈ Extra", value=self.bot.utils.format_dict(extra), inline=False
+            )
+            e.set_footer(text="React With ♻ For History")
+
+            msg = await ctx.send(embed=e)
+            ems = ["♻"]
+
+            for emoji in ems:
+                await msg.add_reaction(emoji)
+
+            def predicate(r, u):
+                return str(r.emoji) in ems and r.message.id == msg.id and not u.bot
+
+            while True:
+                await asyncio.sleep(0.5)
+                try:
+                    reaction, user = await self.bot.wait_for(
+                        "reaction_add", check=predicate, timeout=60
+                    )
+                except asyncio.TimeoutError:
+                    if (
+                        ctx.channel.permissions_for(ctx.guild.me).manage_messages
+                        and msg
+                    ):
+                        await msg.clear_reactions()
+                    return
+                if not bot_has_audit_access:
+                    if ctx.channel.permissions_for(ctx.guild.me).manage_messages:
+                        await msg.remove_reaction(reaction, user)
+                    err = "Missing view_audit_log permission(s)"
+                    if any(field.value == err for field in e.fields):
+                        continue
+                    e.add_field(name="◈ Role History", value=err, inline=False)
+                else:
+                    e.set_footer()
+                    history = {}
+                    e.add_field(name="◈ Role History", value="Fetching..", inline=False)
+                    await msg.edit(embed=e)
+
+                    action = discord.AuditLogAction.role_create
+                    async for entry in ctx.guild.audit_logs(limit=500, action=action):
+                        if role.id == entry.target.id:
+                            history["Creator"] = f"{entry.user}\n"
+                            break
+
+                    action = discord.AuditLogAction.role_update
+                    async for entry in ctx.guild.audit_logs(limit=500, action=action):
+                        if role.id == entry.target.id and hasattr(entry.after, "name"):
+                            minute = str(entry.created_at.minute)
+                            if len(minute) == 1:
+                                minute = "0" + minute
+                            when = datetime.date(entry.created_at).strftime(
+                                f"%m/%d/%Y %I:{minute}%p"
+                            )
+                            if not hasattr(entry.before, "name"):
+                                if entry.before.name != role.name:
+                                    history[f"**Name Changed on {when}**"] = None
+                                    history[f"**Changed to:** `{entry.before.name}`\n"] = None
+                            elif entry.before.name != entry.after.name:
+                                history[f"**Name Changed on {when}**"] = None
+                                history[f"**Old Name:** `{entry.before.name}`\n"] = None
+
+                    if not history:
+                        history["None Found"] = None
+                    e.set_field_at(
+                        index=len(e.fields) - 1,
+                        name="◈ Role History",
+                        value=self.bot.utils.format_dict(
+                            dict(list(history.items())[:6])
+                        ),
+                        inline=False,
+                    )
+                    ems.remove("♻")
+                    return await msg.edit(embed=e)
+                await msg.edit(embed=e)
 
         else:
             options = ["Bot Info", "User Info", "Server Info", "Channel Info"]
@@ -250,18 +512,244 @@ class Utility(commands.Cog):
             elif choice == "Channel Info":
                 return await ctx.command.__call__(ctx, target=ctx.channel)
 
-            # Indicate that the bots collecting all the necessary information
             e = discord.Embed()
             e.set_author(
                 name="Collecting Information..",
                 icon_url="https://cdn.discordapp.com/attachments/514213558549217330/514345278669848597/8yx98C.gif",
             )
             msg = await ctx.send(embed=e)
+            guilds = len(list(self.bot.guilds))
+            users = len(list(self.bot.users))
+            bot_pid = psutil.Process(os.getpid())
+            e = discord.Embed(color=colors.fate)
+            e.set_author(
+                name="Fate Bot: Core Info",
+                icon_url=self.bot.get_user(self.bot.config["bot_owner_id"]).avatar.url,
+            )
+            lines = 0
+            cog = self.bot.cogs["Ranking"]
+            commands = sum(cmd[1]["total"] for cmd in list(cog.cmds.items()))
+            async with self.bot.utils.open("fate.py", "r") as f:
+                lines += len(await f.readlines())
 
-            # Update the embed to the collected information when done
-            e = await fetch_bot_info(ctx)
+            locations = ["botutils", "cogs"]
+            for location in locations:
+                for root, dirs, files in os.walk(location):
+                    for file in files:
+                        if file.endswith(".py"):
+                            async with self.bot.utils.open(f"{root}/{file}", "r") as f:
+                                lines += len(await f.readlines())
+            e.description = f"Commands Used This Month: {commands}" \
+                            f"\nLines of code: {lines}"
+            e.set_thumbnail(url=self.bot.user.avatar.url)
+            e.add_field(
+                name="◈ Summary ◈",
+                value="Fate is a ~~multipurpose~~ hybrid bot created for fun",
+                inline=False,
+            )
+            e.add_field(
+                name="◈ Statistics ◈",
+                value=f"**Commands:** [{len(self.bot.commands)}]"
+                      f"\n**Modules:** [{len(self.bot.extensions)}]"
+                      f"\n**Servers:** [{guilds}]"
+                      f"\n**Users:** [{users}]",
+            )
+            e.add_field(
+                name="◈ Credits ◈",
+                value="\n• **Cortex** ~ `teacher of many things..`"
+                      "\n• **Luck** ~ `owner & main developer`"
+                      "\n• **Opal** ~ `artwork / graphic design`"
+                      "\n• **Legit** ~ `identifying many design flaws`"
+            )
+
+            def get_info() -> str:
+                disk = psutil.disk_usage('/')
+                ram = psutil.virtual_memory()
+                freq = psutil.cpu_freq()
+                cur = str(round(freq.current))
+
+                if freq.current < 1000:
+                    cur = f"{cur}GHz"
+                else:
+                    cur = f"{cur[0]}.{cur[1]}GHz"
+                max = str(round(freq.max))
+                max = f"{max[0]}.{max[1]}GHz"
+                c_temp = round(psutil.sensors_temperatures(fahrenheit=False)['coretemp'][0].current)
+                f_temp = round(psutil.sensors_temperatures(fahrenheit=True)['coretemp'][0].current)
+                value = f"**Storage (NVME)**: {bytes2human(disk.used)}/{bytes2human(disk.total)} - ({round(disk.percent)}%)\n" \
+                        f"**RAM (DDR4)**: {bytes2human(ram.used)}/{bytes2human(ram.total)} - ({round(ram.percent)}%)\n" \
+                        f"**CPU i9-10900K:** {round(psutil.cpu_percent())}% @{cur}/{max}\n" \
+                        f"**CPU Temp:** {c_temp}°C {f_temp}°F\n" \
+                        f"**Bot Usage:** **RAM:** {bytes2human(bot_pid.memory_full_info().rss)} **CPU:** {round(bot_pid.cpu_percent())}%"
+
+                return value
+
+            e.add_field(
+                name="◈ Memory ◈",
+                value=await self.bot.loop.run_in_executor(None, get_info),
+                inline=False,
+            )
+
+            online_for = datetime.now(tz=timezone.utc) - self.bot.start_time
+            e.add_field(
+                name="◈ Uptime ◈",
+                value=f"Online for {get_time(round(online_for.total_seconds()))}\n",
+                inline=False,
+            )
+            e.set_footer(
+                text=f"Powered by Python {platform.python_version()} and Discord.py {discord.__version__}",
+                icon_url="https://cdn.discordapp.com/attachments/501871950260469790/567779834533773315/RPrw70n.png",
+            )
             await msg.edit(embed=e)
             return await self.wait_for_dismissal(ctx, msg)
+
+    async def fetch_user_info(self, ctx, user):
+        e = discord.Embed(color=colors.fate)
+        e.set_author(
+            name="Here's what I got on them..", icon_url=self.bot.user.avatar.url
+        )
+        e.set_thumbnail(url=user.avatar.url)
+        e.description = ""
+        has_public_profile = True
+        if user.id in self.settings:
+            if not self.settings[user.id]["public"]:
+                has_public_profile = False
+
+        # User Information
+        guilds = []
+        nicks = []
+        if has_public_profile and user.id != self.bot.user.id:
+            guilds = user.mutual_guilds
+            for guild in guilds:
+                await asyncio.sleep(0)
+                if guild and user in guild.members:
+                    member = guild.get_member(user.id)
+                    if member.display_name != user.display_name:
+                        nicks = list(set(list([member.display_name, *nicks])))
+        user_info = {
+            "Profile": f"{user.mention}",
+            "ID": user.id,
+            "Created at": user.created_at.strftime("%m/%d/%Y %I%p"),
+            "Shared Servers": str(len(guilds))
+        }
+        if nicks:
+            user_info["Nicks"] = ", ".join(nicks[:5])
+
+        # Member Information
+        member_info = {}
+        if isinstance(user, discord.Member):
+            user_info["Profile"] = f"{user.mention}"
+
+            if user.name != user.display_name:
+                member_info["Display Name"] = user.display_name
+            if user.activity:
+                member_info["Activity"] = user.activity.name
+            member_info["Top Role"] = user.top_role.mention
+
+            text = len([
+                c for c in ctx.guild.text_channels
+                if c.permissions_for(user).read_messages
+            ])
+            voice = len([
+                c for c in ctx.guild.voice_channels
+                if c.permissions_for(user).read_messages
+            ])
+
+            notable = [
+                "view_audit_log",
+                "manage_roles",
+                "manage_channels",
+                "manage_emojis",
+                "kick_members",
+                "ban_members",
+                "manage_messages",
+                "mention_everyone",
+            ]
+            member_info["Access"] = f"{emojis.text_channel} {text} {emojis.voice_channel} {voice}"
+            if any(k in notable and v for k, v in list(user.guild_permissions)):
+                perms = [k for k, v in user.guild_permissions if k in notable and v]
+                perms = (
+                    ["administrator"]
+                    if user.guild_permissions.administrator
+                    else perms
+                )
+                member_info["Notable Perms"] = f"`{', '.join(perms)}`"
+
+            # Bot Information
+            if user.bot:  # search the audit log to see who invited the bot
+                inviter = "Unknown"
+                if ctx.guild.me.guild_permissions.view_audit_log:
+                    async for entry in ctx.guild.audit_logs(limit=250, action=discord.AuditLogAction.bot_add):
+                        if entry.target and entry.target.id == user.id:
+                            inviter = entry.user
+                            break
+                user_info["Inviter"] = inviter
+
+        # Activity Information
+        activity_info = {}
+        if guilds:
+            user = guilds[0].get_member(user.id)  # type: discord.Member
+            async with self.bot.utils.cursor() as cur:
+                if user.status is discord.Status.offline:
+                    await cur.execute(
+                        f"select format(last_online, 3) from activity "
+                        f"where user_id = {user.id} "
+                        f"and last_online is not null "
+                        f"limit 1;"
+                    )
+                    if cur.rowcount:
+                        r = await cur.fetchone()
+                        if r and hasattr(r[0], "replace"):
+                            seconds = round(time() - float(r[0].replace(',', '')))
+                            activity_info["Last Online"] = f"{get_time(seconds)} ago"
+                        else:
+                            activity_info["Last Online"] = "Unknown"
+                    else:
+                        activity_info["Last Online"] = "Unknown"
+                await cur.execute(
+                    f"select format(last_message, 3) from activity "
+                    f"where user_id = {user.id} "
+                    f"and last_message is not null "
+                    f"limit 1;"
+                )
+                if cur.rowcount:
+                    r = await cur.fetchone()
+                    if r and hasattr(r[0], "replace"):
+                        seconds = round(time() - float(r[0].replace(',', '')))
+                        activity_info["Last Msg"] = f"{get_time(seconds)} ago"
+                    else:
+                        activity_info["Last Msg"] = "Unknown"
+                else:
+                    activity_info["Last Msg"] = "Unknown"
+
+        if isinstance(user, discord.Member):
+            if user.status is discord.Status.online:
+                if user.is_on_mobile():
+                    activity_info["Active on Mobile 📱"] = None
+                else:
+                    activity_info["Active on PC 🖥"] = None
+
+        # Username history
+        if has_public_profile:
+            async with self.bot.utils.cursor() as cur:
+                await cur.execute(f"select username from usernames where user_id = {user.id};")
+                if cur.rowcount:
+                    results = await cur.fetchall()
+                    decoded_results = [self.bot.decode(r[0]) for r in results]
+                    names = [name for name in decoded_results if name != str(user)]
+                    if names:
+                        user_info["Usernames"] = ",".join(names)
+
+        e.description += (
+            f"◈ User Information{self.bot.utils.format_dict(user_info)}\n\n"
+        )
+        if member_info:
+            e.description += (
+                f"◈ Member Information{self.bot.utils.format_dict(member_info)}\n\n"
+            )
+        if activity_info:
+            e.description += f"◈ Activity Information{self.bot.utils.format_dict(activity_info)}\n\n"
+        return e
 
     def to_num(self, string):
         return int.from_bytes(string.encode('utf-8'), "little")
@@ -353,7 +841,7 @@ class Utility(commands.Cog):
 
         # Keep track of their last message time
         if msg.author.id in self.settings:
-            if not self.settings[msg.author.id]["public"]:
+            if self.settings[msg.author.id]["private"]:
                 return
         await asyncio.sleep(1)
         await self.bot.execute(
