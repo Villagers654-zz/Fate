@@ -189,7 +189,7 @@ class Emojis(commands.Cog):
     @commands.has_permissions(manage_emojis=True)
     @commands.bot_has_permissions(manage_emojis=True)
     async def _add_emoji(
-        self, ctx, custom: Greedy[discord.PartialEmoji], ids: Greedy[int], *args
+        self, ctx, custom: Greedy[discord.Emoji, discord.PartialEmoji], ids: Greedy[int], *args
     ):
         """ Uploads Emojis Via Various Methods """
         ctx.message = await ctx.channel.fetch_message(
