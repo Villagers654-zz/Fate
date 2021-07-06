@@ -189,7 +189,7 @@ class Emojis(commands.Cog):
     @commands.has_permissions(manage_emojis=True)
     @commands.bot_has_permissions(manage_emojis=True)
     async def _add_emoji(
-        self, ctx, custom: Greedy[discord.Emoji, discord.PartialEmoji], ids: Greedy[int], *args
+        self, ctx, custom: Greedy[discord.PartialEmoji], ids: Greedy[int], *args
     ):
         """ Uploads Emojis Via Various Methods """
         ctx.message = await ctx.channel.fetch_message(
@@ -227,9 +227,9 @@ class Emojis(commands.Cog):
 
         # Protect Cool Servers
         for emoji in custom:
-            if emoji.guild.id in [497860460117360660, 397415086295089155]:
-                await ctx.send(f"Nice try fatty! <:you:841098144536068106>")
-                continue
+            if emoji := self.bot.get_emoji(emoji.id):
+                if emoji.guild.id in [497860460117360660, 397415086295089155]:
+                    return await ctx.send(f"Nice try fatty! <:you:841098144536068106>")
 
         # PartialEmoji objects
         for emoji in custom:
