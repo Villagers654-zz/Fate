@@ -11,7 +11,7 @@ from discord.errors import Forbidden, NotFound, HTTPException
 from discord.ext import commands
 from discord.ext import tasks
 
-from botutils import colors, get_time
+from botutils import colors, get_time, emojis
 
 
 utc = pytz.UTC
@@ -397,7 +397,7 @@ class AntiSpam(commands.Cog):
                     running += 1
         e = discord.Embed(color=self.bot.config["theme_color"])
         e.set_author(name="AntiSpam Stats", icon_url=self.bot.user.avatar.url)
-        emotes = self.bot.utils.emotes
+        emotes = emojis
         errored = []
         try:
             errored = [task for task in done if task.exception() or task.result()]
@@ -974,7 +974,6 @@ class ConfigureModules:
         self.row = 0
         self.config = self.key = None
 
-        emojis = ctx.bot.utils.emotes
         self.emotes = [emojis.home, emojis.up, emojis.down, emojis.yes]
 
         self.msg = self.reaction = self.user = None
@@ -1011,7 +1010,6 @@ class ConfigureModules:
 
     def get_description(self):
         # Format the current options
-        emojis = self.bot.utils.emotes
         description = ""
         for i, key in enumerate(self.cursor.keys()):
             if i != 0:
@@ -1028,7 +1026,6 @@ class ConfigureModules:
         if reaction:
             self.bot.loop.create_task(self.msg.remove_reaction(reaction, user))
         e = self.create_embed()
-        emojis = self.bot.utils.emotes
 
         # Home button
         if reaction.emoji == emojis.home:
