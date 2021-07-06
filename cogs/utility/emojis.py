@@ -226,7 +226,7 @@ class Emojis(commands.Cog):
         ctx.msg = await ctx.send("Uploading emoji(s)..")
 
         # Protect Cool Servers
-        for emoji in emoji:
+        for emoji in custom:
             if emoji.guild.id in [497860460117360660, 397415086295089155]:
                 await ctx.send(f"Nice try fatty! <:you:841098144536068106>")
                 continue
