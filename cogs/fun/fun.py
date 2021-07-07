@@ -264,7 +264,7 @@ class Fun(commands.Cog):
             "🔮 | !target foretold !users attack and dodged",
             "🥋 | !target used expert martial arts to dodge",
             "💁‍♀️ | !target dodged because they're not like other girls",
-            "🦚 | !target's peacock put !user in a comma",
+            "🦚 | !target's peacock put !user in a coma",
             "🐒 | !target's monkey saved !user's waffles",
             "👠 | !target swiftly dodged !user's hit in high heels",
             "♟️ | !target pulled the Queen's Gambit and left !user homeless",
