@@ -256,8 +256,8 @@ class Fun(commands.Cog):
             "🎱 | !user summoned the Magic 8 Ball to erase !target `-420`": 420,
             "🗡️ | !user injected !target with uncle's secret recipe `-27`": 27,
             "📸 | !user caught !target in 4k `-50`": 50,
-            "👽 | !target was abducted by Jeff `-4000`: 4000,
-            "👾 | !user fed !target to the Martians above ur kitchen `-49
+            "👽 | !target was abducted by Jeff `-4000`": 4000,
+            "👾 | !user fed !target to the Martians above ur kitchen `-49`": 49
         }
 
         dodges = [
