@@ -224,8 +224,8 @@ class Fun(commands.Cog):
             file=discord.File(mem_file, filename="card.png")
         )
         e.description = ""
-        health1 = 150
-        health2 = 150
+        health1 = 200
+        health2 = 200
         attacker = 1
 
         attacks = {
@@ -257,7 +257,16 @@ class Fun(commands.Cog):
             "🗡️ | !user injected !target with uncle's secret recipe `-27`": 27,
             "📸 | !user caught !target in 4k `-50`": 50,
             "👽 | !target was abducted by Jeff `-4000`": 4000,
-            "👾 | !user fed !target to the Martians above ur kitchen `-49`": 49
+            "👾 | !user fed !target to the Martians above ur kitchen `-49`": 49,
+            "💳 | !user swiped both of !target's credit cards painfully `-20`": 20,
+            "🦈 | !user morphed into sharky and swallowed !target calmly `-300`": 300,
+            "🍆 | !user scared d!target away with his extra large benis `-21`": 21,
+            "🍩 | !target got too fat on DOUGHNUTS `-51`": 51,
+            "🍨 | !target licked and swallowed his ice cream way too roughly `-42`": 42,
+            "✨ | !user pulled a dream and increased his luck infinitely `∞`": 69420,
+            "💩 | Villagers654 ruined the vibe causing !target to breakdown `-71`": 71,
+            "🐄 | Luck's instructions were unclear leaving !target without food and shelter `-999`": 999,
+            "📉 | Legit told !target to buy all the dips but !target pressed the wrong button `-35`": 35
         }
 
         dodges = [
@@ -268,8 +277,10 @@ class Fun(commands.Cog):
             "🐒 | !target's monkey saved !user's waffles",
             "👠 | !target swiftly dodged !user's hit in high heels",
             "♟️ | !target pulled the Queen's Gambit and left !user homeless",
-            "🤣 | !target laughed at !user's weak slap",
-            "🐙 | !user sacrificed their pet octopus to save themself"
+            "🤣 | !target laughed at !user's weak attack",
+            "🐙 | !target sacrificed their pet octopus to dodge a bullet",
+            "⛈️ | a storm overlapped the arena and saved !target",
+            "🐧 | target's penguin absorbed the animal cruelty"
         ]
 
         attacks_used = []
