@@ -124,7 +124,9 @@ class Emojis(commands.Cog):
             return await ctx.send("Usage: `.emoji [custom emoji]`")
         if len(emojis) > 1 and all(e == emojis[0] for e in emojis):
             return await ctx.send("No")
-        for emoji in emojis[:3]:
+        if not ctx.author.guild_permissions.administrator:
+            emojis = emojis[:1]
+        for emoji in emojis[:5]:
             if emote := self.bot.get_emoji(emoji.id):
                 if emote.guild.id in [497860460117360660, 397415086295089155]:
                     return await ctx.send(f"Nice try fatty! <:you:841098144536068106>")
