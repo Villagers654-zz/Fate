@@ -9,7 +9,7 @@ A multipurpose discord bot
 
 ## Getting Started
 ### Compatibility
-Python 3.8 or higher due to required asyncio features
+Python 3.9 or higher
 ### Installing
 > Clone the Project
 ```
@@ -28,7 +28,7 @@ If not be sure to adjust the connection settings in [`cogs/music.py`](https://gi
 ###  Configuring - this is more compicated but is required for making the bot work!
 - create `./data/xp.json`
 - edit `./data/config.json` to your hearts content
-- create `./utils/auth.py` from `./utils/auth_template.py`
+- create `./data/auth.json` from `./data/auth_template.py`
 - edit `./data/userdata/config.json`
 ### Running
 ```py
@@ -39,5 +39,3 @@ This project is licensed for private, confidential, and only authorized use - se
 ## Acknowledgments
 - [CortexPE - Python Teacher](https://github.com/CortexPE)
 - [Lavalink - For Music Support](https://github.com/Devoxin/Lavalink.py)
-- [2B2T Stats & Information](https://2b2t.dev/)
-- [vzhou842 - ](https://github.com/vzhou842) [Profanity Filter](https://github.com/vzhou842/profanity-check)
