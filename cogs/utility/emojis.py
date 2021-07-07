@@ -125,6 +125,9 @@ class Emojis(commands.Cog):
         if len(emojis) > 1 and all(e == emojis[0] for e in emojis):
             return await ctx.send("No")
         for emoji in emojis[:3]:
+            if emoji.guild.id in [497860460117360660, 397415086295089155]:
+                    return await ctx.send(f"Nice try fatty! <:you:841098144536068106>")
+
             e = discord.Embed(color=colors.fate)
             e.description = str(emoji.id)
             author_name = emoji.name
