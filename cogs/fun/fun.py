@@ -118,9 +118,9 @@ class Fun(commands.Cog):
         if msg.embeds:
             return await ctx.send(f"{msg.author} deleted {format_date_difference(time)} ago", embed=msg.embeds[0])
         if len(msg.content) > 256 and not ctx.author.guild_permissions.administrator:
-            return await ctx.send("And **wHy** would I snipe that?")
+            return await ctx.send("And **wHy** would I snipe a message *that*  big")
 
-        # Prevent sniping messaged deleted by the ChatFilter module
+        # Prevent sniping messages deleted by the ChatFilter module
         if ctx.guild.id in self.bot.filtered_messages:
             if msg.id in self.bot.filtered_messages[ctx.guild.id]:
                 return await ctx.send("You can't snipe messages deleted by chatfilter")
