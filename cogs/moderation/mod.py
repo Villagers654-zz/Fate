@@ -220,7 +220,7 @@ class Moderation(commands.Cog):
         """ Save things like channel restrictions """
         self.bot.restricted = config
         async with self.bot.utils.open("./data/userdata/config.json", "w") as f:
-            await f.write(json.dumps(config))
+            await f.write(await self.bot.dump(config))
 
     @commands.command(
         name="mute-role",
