@@ -254,11 +254,11 @@ class Fun(commands.Cog):
             "🗡️ | !user injected !target with uncle's secret recipe `-27`": 27,
             "📸 | !user caught !target in 4k `-50`": 50,
             "👽 | !target was abducted by Jeff `-4000`": 4000,
-            "👾 | !user fed !target to the Martians above ur kitchen `-49`": 49,
+            "👾 | !user fed !target to the Martians above her kitchen `-49`": 49,
             "💳 | !user swiped both of !target's credit cards painfully `-20`": 20,
             "🦈 | !user morphed into sharky and swallowed !target calmly `-300`": 300,
             "🍆 | !user scared !target away with his extra large benis `-21`": 21,
-            "🍩 | !target got too fat on DOUGHNUTS `-51`": 51,
+            "🍩 | !target got too fat on DONUTS `-51`": 51,
             "🍨 | !target licked and swallowed his ice cream way too roughly `-42`": 42,
             "✨ | !user pulled a dream and increased his luck infinitely `∞`": 69420,
             "💩 | Villagers654 ruined the vibe causing !target to breakdown `-71`": 71,
@@ -267,7 +267,7 @@ class Fun(commands.Cog):
         }
 
         dodges = [
-            "🔮 | !target foretold !users attack and dodged",
+            "🔮 | !target foretold !user's attack and dodged",
             "🥋 | !target used expert martial arts to dodge",
             "💁‍♀️ | !target dodged because they're not like other girls",
             "🦚 | !target's peacock put !user in a coma",
@@ -278,7 +278,7 @@ class Fun(commands.Cog):
             "🐙 | !target sacrificed their pet octopus to dodge a bullet",
             "⛈️ | a storm overlapped the arena and saved !target",
             "🐧 | !target's penguin absorbed the animal cruelty",
-            "🕵️‍♂️ | Legit came into the arena and absorbed !user's attack"
+            "🕵️‍♂️ | Legit came into the arena and reflected !user's attack"
         ]
 
         attacks_used = []
