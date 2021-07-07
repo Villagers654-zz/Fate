@@ -127,7 +127,7 @@ class Fun(commands.Cog):
 
         e = discord.Embed(color=msg.author.color)
         e.set_author(name=msg.author, icon_url=msg.author.avatar.url)
-        e.description = msg.content[:2048]
+        e.description = msg.content[:4096]
         e.set_footer(text=f"🗑 {format_date_difference(time).replace('.0', '')} ago")
         await ctx.send(embed=e)
 
