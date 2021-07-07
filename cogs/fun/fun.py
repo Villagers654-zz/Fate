@@ -272,7 +272,7 @@ class Fun(commands.Cog):
             "🐙 | !user sacrificed their pet octopus to save themself"
         ]
 
-        last = None
+        attacks_used = []
         while True:
             if health1 <= 0:
                 await msg.edit(content=f"🏆 **{user2.name} won** 🏆")
@@ -280,10 +280,14 @@ class Fun(commands.Cog):
             if health2 <= 0:
                 await msg.edit(content=f"🏆 **{user1.name} won** 🏆")
                 return await ctx.send(f"⚔ **{user1.name}** won against **{user2.name}**")
-            attack = random.choice(list(attacks.keys()))
-            if attack == last:
+            while True:
+                if len(attacks_used) == len(attacks):
+                    attacks_used = []
                 attack = random.choice(list(attacks.keys()))
-            last = attack
+                if attack in attacks_used:
+                    continue
+                attacks_used.append(attack)
+                break
             dmg = attacks[attack]
             if random.randint(1, 10) == 1:
                 attack = random.choice(dodges)
