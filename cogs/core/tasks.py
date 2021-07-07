@@ -21,6 +21,9 @@ import subprocess
 
 import discord
 from discord.ext import commands, tasks
+from influxdb_client import InfluxDBClient, Point
+from influxdb_client.client.write_api import SYNCHRONOUS
+
 from botutils import split
 
 
@@ -33,11 +36,23 @@ class Tasks(commands.Cog):
             self.log_queue,
             self.debug_log,
             self.auto_backup,
-            self.cleanup_pool
+            self.cleanup_pool,
+            self.update_influxdb
         ]
         for task in self.enabled_tasks:
             task.start()
             bot.log(f"Started {task.coro.__name__}")
+        auth = self.bot.auth["InfluxDB"]
+        self.client = InfluxDBClient(
+            url=auth["url"],
+            token=auth["token"],
+            org=auth["org"]
+        )
+        self.write_api = self.client.write_api(write_options=SYNCHRONOUS)
+        self.last = {
+            "users": len(bot.users),
+            "guilds": len(bot.guilds)
+        }
 
     def cog_unload(self):
         for task in self.enabled_tasks:
@@ -77,6 +92,32 @@ class Tasks(commands.Cog):
             #     if attr.endswith("cd"):
             #         obj = getattr(cog, attr)
             #         if isinstance(obj, dict):
+
+    @tasks.loop(seconds=10)
+    async def update_influxdb(self):
+        def start_thread(pointer):
+            layer = lambda: self.write_api.write("542f070eec1976be", record=pointer)
+            return self.bot.loop.run_in_executor(None, layer)
+
+        if not self.bot.is_ready():
+            await self.bot.wait_until_ready()
+            self.last = {
+                "users": len(self.bot.users),
+                "guilds": len(self.bot.guilds)
+            }
+
+        # Update user count
+        if len(self.bot.users) != self.last["users"]:
+            pointer = Point("activity").field("users", len(self.bot.users))
+            await start_thread(pointer)
+            self.last["users"] = len(self.bot.users)
+
+        # Update server count
+        if len(self.bot.guilds) != self.last["guilds"]:
+            print("Updating guilds")
+            pointer = Point("activity").field("guilds", len(self.bot.guilds))
+            await start_thread(pointer)
+            self.last["guilds"] = len(self.bot.guilds)
 
     @tasks.loop(hours=1)
     async def cleanup_pool(self):
