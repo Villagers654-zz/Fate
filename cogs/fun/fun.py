@@ -263,7 +263,16 @@ class Fun(commands.Cog):
             "✨ | !user pulled a dream and increased his luck infinitely `∞`": 69420,
             "💩 | Villagers654 ruined the vibe causing !target to breakdown `-71`": 71,
             "🐄 | Luck's instructions were unclear leaving !target without food and shelter `-33`": 33,
-            "📉 | Legit told !target to buy all the dips but !target pressed the wrong button `-35`": 35
+            "📉 | Legit told !target to buy all the dips but !target pressed the wrong button `-35`": 35,
+            "❄️ | !user called Elsa to freeze !target's heart `-50`": 50,
+            "🚕 | !target was hit by a flying taxi aimed for his balls `-25`": 25,
+            "🚑 | !target experienced a saucy seizure sending him to the gulag `-99`": 99,
+            "🎲 | !user gambled his next move like an intellectual `-35`": 35,
+            "🚀 | !target's rocket sent him flying into Uranus ||*did it hurt?*|| `-51`": 51,
+            "📡 | !user paid the aliens in bitcoin to abduct !target `-1337`": 1337,
+            "🔭 | !user was on maximum render distance and still couldn't find who tf asked `-69`": 69,
+            "💊 | !target took the wrong kind of pills like the dumbass that she is `-42`": 42,
+            "⚰️ | !target decided to change their pronouns to was/were `-249`": 249
         }
 
         dodges = [
@@ -278,7 +287,9 @@ class Fun(commands.Cog):
             "🐙 | !target sacrificed their pet octopus to dodge a bullet",
             "⛈️ | a storm overlapped the arena and saved !target",
             "🐧 | !target's penguin absorbed the animal cruelty",
-            "🕵️‍♂️ | Legit came into the arena and reflected !user's attack"
+            "🛡️ | Legit came into the arena and reflected !user's attack",
+            "🧬 | !target modified his genetic structure to be immune against fat !user",
+            "🕹️ | !target encountered the Konami Code gifting them an extra life"
         ]
 
         attacks_used = []
