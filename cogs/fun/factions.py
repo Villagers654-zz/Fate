@@ -1182,7 +1182,7 @@ class Factions(commands.Cog):
                 formatted = attack.replace('!user', user.name).replace('!target', ctx.author.name)
                 health1 -= dmg
             e.description += f"\n{formatted}"
-            e.description = e.description[-2000:]
+            e.description = e.description[-4000:]
             e.set_footer(text=f"{ctx.author.name} {health1}HP | {user.name} {health2}HP")
             attacker = 2 if attacker == 1 else 1
             await msg.edit(embed=e)
