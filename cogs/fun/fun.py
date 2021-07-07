@@ -270,7 +270,7 @@ class Fun(commands.Cog):
             "📉 | Legit told !target to buy all the dips but !target pressed the wrong button `-25`": 25,
             "❄️ | !user called Elsa to freeze !target's heart `-50`": 50,
             "🌮 | !user fed !target with an expired taco `-15`": 15,
-            "🥑 | !user gave !target the luxury of eating a poisoned avocado `-10`": 10
+            "🥑 | !user gave !target the luxury of eating a poisoned avocado `-10`": 10,
             "🚕 | !target was hit by a flying taxi aimed for his balls `-40`": 40,
             "🚑 | !target experienced a saucy seizure sending him to the gulag `-50`": 50,
             "🎲 | !user gambled his next move like an intellectual `-5`": 5,
@@ -278,7 +278,7 @@ class Fun(commands.Cog):
             "📡 | !user paid the aliens in bitcoin to abduct !target `-35`": 35,
             "🔭 | !user was on maximum render distance and still couldn't find who tf asked `-69`": 69,
             "🤺 | !user used their fencing skills to whack !target in the face `-15`": 15,
-            "🦇 | !target thought they could become the next Batman `-10`,
+            "🦇 | !target thought they could become the next Batman `-10`": 10,
             "💯 | !target reached Age 100 so they legally could not live much longer `-30`": 30,
             "💊 | !target took the wrong kind of pills like the dumbass they are `-42`": 42,
             "⚰️ | !target decided to change their pronouns to was/were `-1`": 1
