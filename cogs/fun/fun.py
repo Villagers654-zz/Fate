@@ -257,7 +257,7 @@ class Fun(commands.Cog):
             "👾 | !user fed !target to the Martians above ur kitchen `-49`": 49,
             "💳 | !user swiped both of !target's credit cards painfully `-20`": 20,
             "🦈 | !user morphed into sharky and swallowed !target calmly `-300`": 300,
-            "🍆 | !user scared d!target away with his extra large benis `-21`": 21,
+            "🍆 | !user scared !target away with his extra large benis `-21`": 21,
             "🍩 | !target got too fat on DOUGHNUTS `-51`": 51,
             "🍨 | !target licked and swallowed his ice cream way too roughly `-42`": 42,
             "✨ | !user pulled a dream and increased his luck infinitely `∞`": 69420,
@@ -271,13 +271,14 @@ class Fun(commands.Cog):
             "🥋 | !target used expert martial arts to dodge",
             "💁‍♀️ | !target dodged because they're not like other girls",
             "🦚 | !target's peacock put !user in a coma",
-            "🐒 | !target's monkey saved !user's waffles",
+            "🐒 | !target's monkey saved his waffles from !user",
             "👠 | !target swiftly dodged !user's hit in high heels",
             "♟️ | !target pulled the Queen's Gambit and left !user homeless",
             "🤣 | !target laughed at !user's weak attack",
             "🐙 | !target sacrificed their pet octopus to dodge a bullet",
             "⛈️ | a storm overlapped the arena and saved !target",
-            "🐧 | target's penguin absorbed the animal cruelty"
+            "🐧 | !target's penguin absorbed the animal cruelty",
+            "🕵️‍♂️ | Legit came into the arena and absorbed !user's attack"
         ]
 
         attacks_used = []
@@ -529,6 +530,7 @@ class Fun(commands.Cog):
             "Well duh",
             "hell yeah",
             "hell no",
+            "silence fatty"
         ]
         await ctx.send(random.choice(choices))
 
@@ -621,9 +623,9 @@ class Fun(commands.Cog):
     @commands.cooldown(1, 60, commands.BucketType.user)
     async def sue(self, ctx, user: discord.Member):
         r = random.randint(1, 1000)
-        if user.id == [264838866480005122, 261451679239634944]:
+        if user.id in [264838866480005122, 261451679239634944]:
             r = 0
-        if ctx.author.id == [264838866480005122, 261451679239634944]:
+        if ctx.author.id in [264838866480005122, 261451679239634944]:
             r = random.randint(1000000, 1000000000)
         e = discord.Embed(color=0xAAF200)
         e.set_author(
