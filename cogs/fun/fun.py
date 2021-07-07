@@ -230,11 +230,8 @@ class Fun(commands.Cog):
 
         attacks = {
             "🔪 | !user shanked !target `-15HP`": 15,
-            "⚔ | !user ran a sword right through !target's stomach `-20HP`": 20,
             "⚔ | !user ran a sword right through !target's chest `-35HP`": 30,
-            "🏹 | !user shot !target in the arm with an arrow `-10HP`": 10,
             "🏹 | !user shot !target in the leg with an arrow `-10HP`": 10,
-            "🏹 | !user shot !target in the chest with an arrow `-30HP`": 30,
             "🔫 | Pew pew! !target got shot by !user `-50HP`": 50,
             "💣 | YEET!.. 💥 !target got blown up `-50HP`": 50,
             "⚡ | !user struck !target with lightning `-50HP`": 50,
@@ -265,7 +262,7 @@ class Fun(commands.Cog):
             "🍨 | !target licked and swallowed his ice cream way too roughly `-42`": 42,
             "✨ | !user pulled a dream and increased his luck infinitely `∞`": 69420,
             "💩 | Villagers654 ruined the vibe causing !target to breakdown `-71`": 71,
-            "🐄 | Luck's instructions were unclear leaving !target without food and shelter `-999`": 999,
+            "🐄 | Luck's instructions were unclear leaving !target without food and shelter `-33`": 33,
             "📉 | Legit told !target to buy all the dips but !target pressed the wrong button `-35`": 35
         }
 
