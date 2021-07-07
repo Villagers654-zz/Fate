@@ -283,6 +283,7 @@ class Factions(commands.Cog):
             return await claims(faction)
         global_claims = {}
         for faction in list(self.factions[guild_id].keys()):
+            await asyncio.sleep(0)
             fac_claims = await claims(faction)  # type: dict
             for claim, data in fac_claims.items():
                 global_claims[claim] = data
@@ -342,6 +343,7 @@ class Factions(commands.Cog):
 
     async def update_income_board(self, guild_id, faction, **kwargs) -> None:
         for key, value in kwargs.items():
+            await asyncio.sleep(0)
             if key not in self.factions[guild_id][faction]["income"]:
                 self.factions[guild_id][faction]["income"][key] = 0
             self.factions[guild_id][faction]["income"][key] += value

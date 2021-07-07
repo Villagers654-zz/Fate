@@ -151,6 +151,8 @@ class Ranking(commands.Cog):
                 total += 1
         ping = str(round((monotonic() - before) * 1000)) + "ms"
         self.bot.log.debug(f"Removed {total} cooldowns in {ping}")
+        self.spam_cd = {}
+        self.macro_cd = {}
 
     @tasks.loop(hours=1)
     async def monthly_cleanup_task(self):
