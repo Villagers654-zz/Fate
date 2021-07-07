@@ -250,14 +250,26 @@ class Fun(commands.Cog):
             "🦝 | !user threw !target like a raccoon": 15,
             "🦶 | !user tripped !target": 10,
             "🦵 | !user hit the back of !target's knee and made them fold like origami": 10,
-            "📱 | !user got cancelled by !target on twitter": 25
-            # "🏓 | !user played ping-pong with !targets nuts `-5HP`": 5
+            "📱 | !target got cancelled by !user on twitter `-25`": 25,
+            "🏓 | !user played ping-pong with !target's nuts `-7HP`": 7,
+            "🗝️ | !user unlocked Pandora's Box onto !target `-69`": 69,
+            "🎱 | !user summoned the Magic 8 Ball to erase !target `-420`": 420,
+            "🗡️ | !user injected !target with uncle's secret recipe `-27`": 27,
+            "📸 | !user caught !target in 4k `-50`": 50,
+            "👽 | !target was abducted by Jeff `-4000`: 4000,
+            "👾 | !user fed !target to the Martians above ur kitchen `-49
         }
 
         dodges = [
             "🔮 | !target foretold !users attack and dodged",
             "🥋 | !target used expert martial arts to dodge",
-            "💁‍♀️ | !target dodged because they're not like other girls"
+            "💁‍♀️ | !target dodged because they're not like other girls",
+            "🦚 | !target's peacock put !user in a comma",
+            "🐒 | !target's monkey saved !user's waffles",
+            "👠 | !target swiftly dodged !user's hit in high heels",
+            "♟️ | !target pulled the Queen's Gambit and left !user homeless",
+            "🤣 | !target laughed at !user's weak slap",
+            "🐙 | !user sacrificed their pet octopus to save themself"
         ]
 
         last = None
@@ -283,7 +295,7 @@ class Fun(commands.Cog):
                 formatted = attack.replace('!user', user2.name).replace('!target', user1.name)
                 health1 -= dmg
             e.description += f"\n{formatted}"
-            e.description = e.description[-2000:]
+            e.description = e.description[-4000:]
             e.set_footer(text=f"{user1.name} {health1}HP | {user2.name} {health2}HP")
             attacker = 2 if attacker == 1 else 1
             await msg.edit(embed=e)
@@ -597,9 +609,9 @@ class Fun(commands.Cog):
     @commands.cooldown(1, 60, commands.BucketType.user)
     async def sue(self, ctx, user: discord.Member):
         r = random.randint(1, 1000)
-        if user.id == 264838866480005122:
+        if user.id == [264838866480005122, 261451679239634944]:
             r = 0
-        if ctx.author.id == 264838866480005122:
+        if ctx.author.id == [264838866480005122, 261451679239634944]:
             r = random.randint(1000000, 1000000000)
         e = discord.Embed(color=0xAAF200)
         e.set_author(
