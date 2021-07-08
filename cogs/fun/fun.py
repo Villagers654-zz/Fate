@@ -528,7 +528,7 @@ class Fun(commands.Cog):
         e = discord.Embed(color=user.color)
         e.set_author(name=str(user), icon_url=user.avatar.url)
         percentage = random.randint(0, 100)
-        if ctx.invoked_with == "hitler":
+        if ctx.invoked_with == "hitler" and user.id != 261451679239634944:
             if random.randint(1, 4) == 1:
                 ctx.invoked_with = f"worse than {ctx.invoked_with}"
         if ctx.invoked_with in ["fat", "ugly", "dumb", "stupid", "shit", "hitler", "karen"] and user.id == 261451679239634944:
@@ -536,7 +536,7 @@ class Fun(commands.Cog):
         if ctx.invoked_with in ["chad", "epic", "swag"] and user.id == 261451679239634944:
             oop = [69, 99, 420, 999]
             percentage = random.choice(oop)
-        if ctx.invoked_with in ["fat", "gay", "stupid", "dumb", "shit", "hitler", "karen"] and user.id in [457210410819649536, 691433369384255518]:
+        if ctx.invoked_with in ["fat", "gay", "stupid", "dumb", "shit", "hitler", "karen"] and user.id in [457210410819649536, 691433369384255518, 264838866480005122, 588070631992590336, 807414650403815454, 481341919901777950]:
             troll = [69, 99, 100, 1000000]
             percentage = random.choice(troll)
         e.description = f"{percentage}% {ctx.invoked_with}"
