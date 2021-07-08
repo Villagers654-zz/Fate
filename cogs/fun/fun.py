@@ -543,6 +543,9 @@ class Fun(commands.Cog):
         if ctx.invoked_with in ["chad", "epic", "swag"] and user.id == 261451679239634944:
             oop = [69, 99, 420, 999]
             percentage = random.choice(oop)
+        if ctx.invoked_with in ["fat", "gay", "stupid", "dumb", "shit", "hitler", "karen"] and user.id in [457210410819649536, 691433369384255518]:
+            troll = [69, 99, 100, 1000000]
+            percentage = random.choice(troll)
         e.description = f"{percentage}% {ctx.invoked_with}"
         await ctx.send(embed=e)
 
