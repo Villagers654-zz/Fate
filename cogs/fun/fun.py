@@ -15,65 +15,23 @@ from contextlib import suppress
 from datetime import datetime, timedelta
 from io import BytesIO
 from random import random as rd
-import aiohttp
+import json
 
 import discord
 from PIL import Image, ImageDraw, ImageFont
-from discord import Webhook
 from discord.ext import commands
 from discord.ext import tasks
 
 from botutils import get_prefix, format_date_difference
 
+
 code = "```py\n{0}\n```"
 sexualities = [
-    "allosexual",
-    "allosexism",
-    "androsexual",
-    "asexual",
-    "aromantic",
-    "autosexual",
-    "autoromantic",
-    "bicurious",
-    "bisexual",
-    "biromantic",
-    "closeted",
-    "coming out",
-    "cupiosexual",
-    "demisexual",
-    "demiromantic",
-    "fluid",
-    "gay",
-    "graysexual",
-    "grayromantic",
-    "gynesexual",
-    "heterosexual",
-    "homosexual",
-    "lesbian",
-    "lgbtqia+",
-    "libidoist asexual",
-    "Monosexual",
-    "non-libidoist asexual",
-    "omnisexual",
-    "pansexual",
-    "panromantic",
-    "polysexual",
-    "pomosexual",
-    "passing",
-    "queer",
-    "questioning",
-    "romantic attraction",
-    "sapiosexual",
-    "sexual attraction",
-    "sex-averse",
-    "sex-favorable",
-    "sex-indifferent",
-    "sex-repulsed",
-    "skoliosexual",
-    "spectrasexual",
     "straight",
+    "gay",
     "bi",
     "ace",
+    "pan"
 ]
 
 
@@ -87,6 +45,10 @@ class Fun(commands.Cog):
         for sexuality in sexualities:
             if sexuality not in self.gay:
                 self.gay[sexuality] = {}
+        with open("./data/moves.json", "r") as f:
+            dat = json.load(f)
+        self.attacks = dat["attacks"]
+        self.dodges = dat["dodges"]
 
         self.clear_old_messages_task.start()
 
@@ -223,80 +185,13 @@ class Fun(commands.Cog):
             embed=e,
             file=discord.File(mem_file, filename="card.png")
         )
+
         e.description = ""
+        attacks = dict(self.attacks)
+        dodges = list(self.dodges)
         health1 = 200
         health2 = 200
         attacker = 1
-
-        attacks = {
-            "🔪 | !user shanked !target `-30HP`": 30,
-            "⚔ | !user ran a sword right through !target's chest `-50HP`": 50,
-            "🏹 | !user shot !target in the leg with an arrow `-25HP`": 25,
-            "🔫 | Pew pew! !target got shot by !user `-50HP`": 50,
-            "💣 | YEET!.. 💥 !target got blown up `-50HP`": 50,
-            "🦄 | !user's unicorn sent !target off a cliff `-75HP`": 75,
-            "⚡ | !user struck !target with lightning `-50HP`": 50,
-            "🔥 | !user set !target on fire `-25HP`": 25,
-            "🌠 | !user used astral power to strike !target `-50HP`": 50,
-            "🚗 | !user ran into !target `-25HP`": 25,
-            "🛴 | !user hit !target's ankles with a scooter `-10HP`": 10,
-            "👻 | !user scared !target shitless `-5HP`": 5,
-            "👊 | !user punched !target `-10HP`": 10,
-            "💅 | !user ignored !target `-1HP`": 1,
-            "🖐 | !user slapped !target `-5HP`": 5,
-            "😈 | !user triggered !target's vietnam war flashbacks `-10HP`": 10,
-            "🦝 | !user threw !target like a raccoon `-20HP`": 20,
-            "🦶 | !user tripped !target `-10HP`": 10,
-            "🦵 | !user hit the back of !target's knee and made them fold like origami": 10,
-            "📱 | !target got cancelled by !user on twitter `-25HP`": 25,
-            "🏓 | !user played ping-pong with !target's nuts `-7HP`": 7,
-            "🗝️ | !user unlocked Pandora's Box onto !target `-69HP`": 69,
-            "🍄 | !user drugged !target with Mushroom juice `-7HP`": 7,
-            "🍌 | !user launched bananas at !target `-9HP`": 9,
-            "🎱 | !user summoned the Magic 8 Ball to erase !target `-75HP`": 75,
-            "🗡️ | !user injected !target with uncle's secret recipe `-27HP`": 27,
-            "📸 | !user caught !target in 4k `-50HP`": 50,
-            "👽 | !target was abducted by Jeff `-75HP`": 75,
-            "👾 | !user fed !target to the Martians above her kitchen `-49HP`": 49,
-            "🦈 | !user morphed into sharky and swallowed !target calmly `-75HP`": 75,
-            "🐦 | !user ratioed !target on twitter `-25HP`": 25,
-            "🍩 | !target got too fat on DONUTS `-51`": 51,
-            "🍨 | !target licked and swallowed his ice cream way too roughly `-25HP`": 25,
-            "✨ | !user pulled a dream and increased his luck infinitely `∞`": 69420,
-            "🐄 | !user's instructions were unclear leaving !target without food and shelter `-33HP`": 33,
-            "📉 | !user told !target to buy all the dips but !target pressed the wrong button `-25HP`": 25,
-            "❄️ | !user called Elsa to freeze !target's heart `-50HP`": 50,
-            "🌮 | !user fed !target with an expired taco `-15HP`": 15,
-            "🥑 | !user gave !target the luxury of eating a poisoned avocado `-10HP`": 25,
-            "🚕 | !target was hit by a flying taxi aimed for his balls `-40HP`": 40,
-            "🚑 | !target experienced a saucy seizure sending him to the gulag `-40HP`": 40,
-            "🎲 | !user gambled his next move like an intellectual `-5HP`": 5,
-            "🚀 | !target's rocket sent them flying into Uranus ||*did it hurt?*|| `-51HP`": 51,
-            "📡 | !user paid the aliens in bitcoin to abduct !target `-55HP`": 55,
-            "🔭 | !user was on maximum render distance and still couldn't find who tf asked `-69HP`": 69,
-            "🤺 | !user used their fencing skills to whack !target in the face `-15HP`": 15,
-            "🦇 | !target thought they could become the next Batman `-10HP`": 10,
-            "💯 | !target reached Age 100 so they legally could not live much longer `-30HP`": 30,
-            "💊 | !target took the wrong kind of pills like the dumbass they are `-42HP`": 42,
-            "⚰️ | !target decided to change their pronouns to was/were `-1HP`": 1
-        }
-
-        dodges = [
-            "🔮 | !target foretold !user's attack and dodged",
-            "🥋 | !target used expert martial arts to dodge",
-            "💁‍♀️ | !target dodged because they're not like other girls",
-            "🦚 | !target's peacock put !user in a coma",
-            "🐒 | !target's monkey saved his waffles from !user",
-            "👠 | !target swiftly dodged !user's hit in high heels",
-            "♟️ | !target pulled the Queen's Gambit and left !user homeless",
-            "🤣 | !target laughed at !user's weak attack",
-            "🐙 | !target sacrificed their pet octopus to dodge a bullet",
-            "⛈️ | a storm overlapped the arena and saved !target",
-            "🐧 | !target's penguin absorbed the animal cruelty",
-            "🛡️ | Legit came into the arena and reflected !user's attack",
-            "🧬 | !target modified his genetic structure to be immune against fat !user",
-            "🕹️ | !target encountered the Konami Code gifting them an extra life"
-        ]
 
         attacks_used = []
         while True:
@@ -306,7 +201,10 @@ class Fun(commands.Cog):
             if health2 <= 0:
                 await msg.edit(content=f"🏆 **{user1.name} won** 🏆")
                 return await ctx.send(f"⚔ **{user1.name}** won against **{user2.name}**")
+
+            # Ensure we don't get an attack that was already used
             while True:
+                await asyncio.sleep(0)
                 if len(attacks_used) == len(attacks):
                     attacks_used = []
                 attack = random.choice(list(attacks.keys()))
@@ -314,6 +212,8 @@ class Fun(commands.Cog):
                     continue
                 attacks_used.append(attack)
                 break
+
+            # Subtract the damage from the targets health and format the attack with their names
             dmg = attacks[attack]
             if random.randint(1, 10) == 1:
                 attack = random.choice(dodges)
@@ -324,6 +224,9 @@ class Fun(commands.Cog):
             else:
                 formatted = attack.replace('!user', user2.name).replace('!target', user1.name)
                 health1 -= dmg
+            if dmg and "∞" not in attack:
+                formatted += f" `-{dmg}HP`"
+
             e.description += f"\n{formatted}"
             e.description = e.description[-4000:]
             e.set_footer(text=f"{user1.name} {health1}HP | {user2.name} {health2}HP")

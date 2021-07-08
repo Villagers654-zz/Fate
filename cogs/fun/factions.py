@@ -93,6 +93,10 @@ class Factions(commands.Cog):
             for faction, dat in data.items():
                 if dat["icon"] and "http" not in dat["icon"]:
                     self.factions[guild_id][faction]["icon"] = ""
+        with open("./data/moves.json", "r") as f:
+            dat = json.load(f)
+        self.attacks = dat["attacks"]
+        self.dodges = dat["dodges"]
 
     async def filter_boosts(self):
         for boost in list(self.boosts.keys()):
@@ -1110,63 +1114,13 @@ class Factions(commands.Cog):
             embed=e,
             file=discord.File(mem_file, filename="card.png")
         )
+
         e.description = ""
-        health1 = 150
-        health2 = 150
+        attacks = dict(self.attacks)
+        dodges = list(self.dodges)
+        health1 = 200
+        health2 = 200
         attacker = 1
-
-        attacks = {
-            "🔪 | !user shanked !target `-15HP`": 15,
-            "⚔ | !user ran a sword right through !target's chest `-35HP`": 30,
-            "🏹 | !user shot !target in the leg with an arrow `-10HP`": 10,
-            "🔫 | Pew pew! !target got shot by !user `-50HP`": 50,
-            "💣 | YEET!.. 💥 !target got blown up `-50HP`": 50,
-            "⚡ | !user struck !target with lightning `-50HP`": 50,
-            "🔥 | !user set !target on fire `-10HP`": 10,
-            "🌠 | !user used astral power to strike !target `-50HP`": 50,
-            "🚗 | !user ran into !target `-25HP`": 25,
-            "🛴 | !user hit !target's ankles with a scooter `-10HP`": 10,
-            "👻 | !user scared !target shitless `-2HP`": 2,
-            "👊 | !user punched !target `-10HP`": 10,
-            "💅 | !user ignored !target `-1HP`": 1,
-            "🖐 | !user slapped !target `-5HP`": 5,
-            "😈 | !user triggered !target's vietnam war flashbacks `-10HP`": 10,
-            "🦝 | !user threw !target like a raccoon": 15,
-            "🦶 | !user tripped !target": 10,
-            "🦵 | !user hit the back of !target's knee and made them fold like origami": 10,
-            "📱 | !target got cancelled by !user on twitter `-25`": 25,
-            "🏓 | !user played ping-pong with !target's nuts `-7HP`": 7,
-            "🗝️ | !user unlocked Pandora's Box onto !target `-69`": 69,
-            "🎱 | !user summoned the Magic 8 Ball to erase !target `-420`": 420,
-            "🗡️ | !user injected !target with uncle's secret recipe `-27`": 27,
-            "📸 | !user caught !target in 4k `-50`": 50,
-            "👽 | !target was abducted by Jeff `-4000`": 4000,
-            "👾 | !user fed !target to the Martians above ur kitchen `-49`": 49,
-            "💳 | !user swiped both of !target's credit cards painfully `-20`": 20,
-            "🦈 | !user morphed into sharky and swallowed !target calmly `-300`": 300,
-            "🍆 | !user scared !target away with his extra large benis `-21`": 21,
-            "🍩 | !target got too fat on DOUGHNUTS `-51`": 51,
-            "🍨 | !target licked and swallowed his ice cream way too roughly `-42`": 42,
-            "✨ | !user pulled a dream and increased his luck infinitely `∞`": 69420,
-            "💩 | Villagers654 ruined the vibe causing !target to breakdown `-71`": 71,
-            "🐄 | Luck's instructions were unclear leaving !target without food and shelter `-33`": 33,
-            "📉 | Legit told !target to buy all the dips but !target pressed the wrong button `-35`": 35
-        }
-
-        dodges = [
-            "🔮 | !target foretold !users attack and dodged",
-            "🥋 | !target used expert martial arts to dodge",
-            "💁‍♀️ | !target dodged because they're not like other girls",
-            "🦚 | !target's peacock put !user in a coma",
-            "🐒 | !target's monkey saved his waffles from !user",
-            "👠 | !target swiftly dodged !user's hit in high heels",
-            "♟️ | !target pulled the Queen's Gambit and left !user homeless",
-            "🤣 | !target laughed at !user's weak attack",
-            "🐙 | !target sacrificed their pet octopus to dodge a bullet",
-            "⛈️ | a storm overlapped the arena and saved !target",
-            "🐧 | !target's penguin absorbed the animal cruelty",
-            "🕵️‍♂️ | Legit came into the arena and absorbed !user's attack"
-        ]
 
         attacks_used = []
         while True:
@@ -1184,6 +1138,8 @@ class Factions(commands.Cog):
                 self.factions[guild_id][fac2]["balance"] -= amount
                 self.factions[guild_id][fac1]["balance"] += amount
                 return await ctx.send(f"⚔ **{ctx.author.name}** has won **${amount}** from **{user.name}**")
+
+            # Ensure we don't get an attack that was already used
             while True:
                 if len(attacks_used) == len(attacks):
                     attacks_used = []
@@ -1192,6 +1148,8 @@ class Factions(commands.Cog):
                     continue
                 attacks_used.append(attack)
                 break
+
+            # Subtract the damage from the targets health and format the attack with their names
             dmg = attacks[attack]
             if random.randint(1, 10) == 1:
                 attack = random.choice(dodges)
@@ -1202,6 +1160,9 @@ class Factions(commands.Cog):
             else:
                 formatted = attack.replace('!user', user.name).replace('!target', ctx.author.name)
                 health1 -= dmg
+            if dmg and "∞" not in attack:
+                formatted += f" `-{dmg}HP`"
+
             e.description += f"\n{formatted}"
             e.description = e.description[-4000:]
             e.set_footer(text=f"{ctx.author.name} {health1}HP | {user.name} {health2}HP")
