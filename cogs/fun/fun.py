@@ -538,6 +538,11 @@ class Fun(commands.Cog):
         if ctx.invoked_with == "hitler":
             if random.randint(1, 4) == 1:
                 ctx.invoked_with = f"worse than {ctx.invoked_with}"
+        if ctx.invoked_with in ["fat", "ugly", "dumb", "stupid", "shit", "hitler", "karen"] and user.id == 261451679239634944:
+            percentage = 0
+        if ctx.invoked_with in ["chad", "epic", "swag"] and user.id == 261451679239634944:
+            oop = [69, 99, 420, 999]
+            percentage = random.choice(oop)
         e.description = f"{percentage}% {ctx.invoked_with}"
         await ctx.send(embed=e)
 
