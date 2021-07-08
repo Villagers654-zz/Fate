@@ -114,7 +114,6 @@ class Tasks(commands.Cog):
 
         # Update server count
         if len(self.bot.guilds) != self.last["guilds"]:
-            print("Updating guilds")
             pointer = Point("activity").field("guilds", len(self.bot.guilds))
             await start_thread(pointer)
             self.last["guilds"] = len(self.bot.guilds)
