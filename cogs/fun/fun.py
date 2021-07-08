@@ -521,7 +521,9 @@ class Fun(commands.Cog):
             "sexy",
             "ugly",
             "hitler",
-            "swag"
+            "swag",
+            "fat",
+            "karen"
         ],
     )
     @commands.cooldown(3, 5, commands.BucketType.user)
