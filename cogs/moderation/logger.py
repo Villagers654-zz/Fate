@@ -968,7 +968,7 @@ class Logger(commands.Cog):
             e.description = self.bot.utils.format_dict({
                 "Author": dat["target"],
                 "MSG ID": payload.message_id,
-                "Channel": self.bot.get_channel(payload.channel_id).mention,
+                "Channel": f"<#{payload.channel_id}>",
                 "Deleted by": dat["user"],
             })
             log = Log("message_delete", embed=e)
