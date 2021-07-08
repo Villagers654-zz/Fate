@@ -14,9 +14,9 @@ import random
 import traceback
 import os
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from zipfile import ZipFile
-import json
+from contextlib import suppress
 import subprocess
 
 import discord
@@ -97,7 +97,8 @@ class Tasks(commands.Cog):
     async def update_influxdb(self):
         def start_thread(pointer):
             layer = lambda: self.write_api.write("542f070eec1976be", record=pointer)
-            return self.bot.loop.run_in_executor(None, layer)
+            with suppress(Exception):
+                return self.bot.loop.run_in_executor(None, layer)
 
         if not self.bot.is_ready():
             await self.bot.wait_until_ready()
