@@ -377,7 +377,7 @@ class Logger(commands.Cog):
             "actual_user": None,
             "target": "Unknown",
             "icon_url": guild.icon.url if guild.icon else None,
-            "thumbnail_url": guild.icon.url if guild.icon else None,
+            "thumbnail_url": guild.icon.url if guild and guild.icon else None,
             "reason": None,
             "extra": None,
             "changes": None,
