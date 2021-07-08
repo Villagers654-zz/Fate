@@ -11,7 +11,6 @@ __pycache__/
 /beta/*
 
 *.exe
-*.json
 *.sh
 
 testing.py
@@ -24,8 +23,10 @@ luck.py
 
 /cogs/dev/
 /cogs/dev/*
+
 /data/auth.json
-/data/clipboard.txt
+/data/info.json
+
 /data/4b4t/
 /data/images/
 /data/temp/
