@@ -213,6 +213,9 @@ class Logger(commands.Cog):
                     )
 
         for _attempt in range(12 * 60):  # Timeout of 12 hours
+            if not guild or not guild.me:
+                await self.destruct(guild_id)
+                raise self.bot.ignored_exit
             if getattr(perms(), permission):
                 del self.pool[guild_id]
                 return True
