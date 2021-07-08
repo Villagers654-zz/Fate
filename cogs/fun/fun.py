@@ -322,42 +322,46 @@ class Fun(commands.Cog):
         if ctx.channel.permissions_for(ctx.guild.me).manage_messages:
             await ctx.message.delete()
 
-    @commands.command()
+    @commands.command(name="personality")
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def personality(self, ctx, *, member: discord.Member = None):
         if member is None:
             member = ctx.author
-        e = discord.Embed(
-            color=random.choice(
-                [0xFF0000, 0xFF7F00, 0xFFFF00, 0x00FF00, 0x0000FF, 0x4B0082]
-            )
-        )
-        e.set_author(
-            name="{}'s Personality".format(member.name), icon_url=member.avatar.url
-        )
-        e.set_thumbnail(url=member.avatar.url)
-        e.add_field(
-            name="Type",
-            value=f'{random.choice(["psychopath", "depressed", "cheerful", "bright", "dark", "god", "deceiver", "funny", "fishy", "cool", "insecure", "lonely", "optimistic", "brave", "brilliant", "dreamer", "Nurturer", "Peaceful", "Overthinker", "Idealist", "Pussy"])}',
-            inline=False,
-        )
-        e.add_field(
-            name="Social Status",
-            value=f'{random.choice(["Ho", "Slut", "Loser", "The nice guy", "The dick", "Dank memer"])}',
-            inline=False,
-        )
-        e.add_field(
-            name="Hobby",
-            value=f'{random.choice(["Art", "Drawing", "Painting", "Singing", "Writing", "Anime", "Memes", "Minecraft", "Sucking dick"])}',
-            inline=False,
-        )
-        e.add_field(
-            name="Music Genre",
-            value=f'{random.choice(["Nightcore", "Heavy Metal", "Alternative", "Electronic", "Classical", "Dubstep", "Jazz", "Pop", "Rap"])}',
-            inline=False,
-        )
+        colors = [0xFF0000, 0xFF7F00, 0xFFFF00, 0x00FF00, 0x0000FF, 0x4B0082]
+        e = discord.Embed(color=random.choice(colors))
+        e.set_author(name=f"{member.display_name}'s Personality", icon_url=member.avatar.url)
+
+        # Personality types
+        types = [
+            "psychopath", "depressed", "cheerful", "bright", "dark", "god", "deceiver", "funny", "fishy", "cool",
+            "insecure", "lonely", "optimistic", "brave", "brilliant", "dreamer", "Nurturer", "Peaceful", "Overthinker",
+            "Idealist", "Pussy", "Pick-me girl", "Lovable"
+        ]
+        e.add_field(name="Type", value=f'{random.choice(types)}', inline=False)
+
+        # Social statuses
+        statuses = [
+            "Ho", "Slut", "Loser", "The nice guy", "The dick", "Dank memer", "Annoying", "Parties hard", "Cool guy",
+            "The chad", "Popular", "Unpopular", "Shut-in", "You need to leave the house to have a social status"
+        ]
+        e.add_field(name="Social Status", value=f'{random.choice(statuses)}', inline=False)
+
+        # Hobbies
+        hobbies = [
+            "Art", "Drawing", "Painting", "Singing", "Writing", "Anime", "Memes", "Minecraft", "Sucking dick",
+            "Gaming", "Programming", "Work", "Swimming"
+        ]
+        e.add_field(name="Hobby", value=f'{random.choice(hobbies)}', inline=False)
+
+        # Music Genre
+        genres = [
+            "Nightcore", "Heavy Metal", "Alternative", "Electronic", "Classical", "Dubstep", "Jazz", "Pop", "Rap"
+        ]
+        e.add_field(name="Music Genre", value=f'{random.choice(genres)}', inline=False)
+
         await ctx.send(embed=e)
-        await ctx.message.delete()
+        if ctx.channel.permissions_for(ctx.guild.me).manage_messages:
+            await ctx.message.delete()
 
     @commands.command(name="notice")
     @commands.cooldown(1, 10, commands.BucketType.channel)
