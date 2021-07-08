@@ -14,7 +14,7 @@ import random
 import traceback
 import os
 import time
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 from zipfile import ZipFile
 import json
 import subprocess
@@ -150,30 +150,6 @@ class Tasks(commands.Cog):
                 del self.bot.user_prefixes[user_id]
                 uncached += 1
         self.bot.log.debug(f"Removed {uncached} unused prefixes from guild cache")
-
-    @tasks.loop(seconds=24)
-    async def mark_alive(self):
-        await asyncio.sleep(1)
-        keep_for = self.bot.config["log_uptime_for_?_days"]  # type: int
-        path = "./data/uptime.json"
-        if not os.path.isfile(path):
-            async with self.bot.utils.open(path, "w") as f:
-                await f.write(json.dumps([]))
-        async with self.bot.utils.open(path, "r") as f:
-            uptime_data = json.loads(await f.read())  # type: list
-
-        for date_entry in list(uptime_data):
-            await asyncio.sleep(0)
-            date = datetime.strptime(date_entry, "%Y-%m-%d %H:%M:%S")
-            if date < datetime.now(tz=timezone.utc) - timedelta(days=keep_for):
-                uptime_data.remove(date_entry)
-
-        now = str(datetime.now(tz=timezone.utc).replace(second=0, microsecond=0))
-        if now not in uptime_data:
-            uptime_data.append(now)
-
-        async with self.bot.utils.open(path, "w+") as f:
-            await f.write(json.dumps(uptime_data))
 
     @tasks.loop()
     async def status_task(self):
@@ -333,7 +309,7 @@ class Tasks(commands.Cog):
                         backup_time = datetime.strptime(
                             backup, "%Y-%m-%d %H:%M:%S.%f"
                         )
-                    if (datetime.now(tz=timezone.utc) - backup_time).days > keep_for:
+                    if (datetime.now() - backup_time).days > keep_for:
                         if ".zip" in backup or ".sql" in backup:
                             os.remove(os.path.join(root, subdir, backup))
                         else:
@@ -349,7 +325,7 @@ class Tasks(commands.Cog):
             # Backup MySQL DB
             before = time.monotonic()
             db_path = os.path.join(self.bot.config["backups_location"], "mysql")
-            fp = os.path.join(db_path, f"backup_{datetime.now(tz=timezone.utc)}.sql")
+            fp = os.path.join(db_path, f"backup_{datetime.now()}.sql")
             process = subprocess.Popen(
                 f"mysqldump -u root -p{creds['password']} fate > '{fp}'",
                 shell=True
@@ -364,7 +340,7 @@ class Tasks(commands.Cog):
             # Backup MongoDB
             before = time.monotonic()
             db_path = os.path.join(self.bot.config["backups_location"], "mongo")
-            fp = os.path.join(db_path, f"{datetime.now(tz=timezone.utc)}")
+            fp = os.path.join(db_path, f"{datetime.now()}")
             process = subprocess.Popen(
                 f"mongodump --db fate --out '{fp}'", shell=True
             )
