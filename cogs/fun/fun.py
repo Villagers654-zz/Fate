@@ -16,23 +16,33 @@ from datetime import datetime, timedelta
 from io import BytesIO
 from random import random as rd
 import json
+from typing import List
 
 import discord
 from PIL import Image, ImageDraw, ImageFont
 from discord.ext import commands
 from discord.ext import tasks
 
-from botutils import get_prefix, format_date_difference
+from botutils import get_prefix, format_date_difference, colors
 
 
-code = "```py\n{0}\n```"
-sexualities = [
-    "straight",
-    "gay",
-    "bi",
-    "ace",
-    "pan"
-]
+class Personalities:
+    types: List[str] = [
+        "psychopath", "depressed", "cheerful", "bright", "dark", "god", "deceiver", "funny", "fishy", "cool",
+        "insecure", "lonely", "optimistic", "brave", "brilliant", "dreamer", "Nurturer", "Peaceful", "Overthinker",
+        "Idealist", "Pussy", "Pick-me girl", "Lovable"
+    ]
+    statuses: List[str] = [
+        "Ho", "Slut", "Loser", "The nice guy", "The dick", "Dank memer", "Annoying", "Parties hard", "Cool guy",
+        "The chad", "Popular", "Unpopular", "Shut-in", "You need to leave the house to have a social status"
+    ]
+    hobbies: List[str] = [
+        "Art", "Drawing", "Painting", "Singing", "Writing", "Anime", "Memes", "Minecraft", "Sucking dick",
+        "Gaming", "Programming", "Work", "Swimming"
+    ]
+    genres: List[str] = [
+        "Nightcore", "Heavy Metal", "Alternative", "Electronic", "Classical", "Dubstep", "Jazz", "Pop", "Rap"
+    ]
 
 
 class Fun(commands.Cog):
@@ -40,15 +50,20 @@ class Fun(commands.Cog):
         self.bot = bot
         self.dat = {}
         self.bullying = []
-        self.gay = {sexuality: {} for sexuality in sexualities}
         self.gay = bot.utils.cache("sexuality")
-        for sexuality in sexualities:
+        for sexuality in self.sexuality.aliases:
             if sexuality not in self.gay:
                 self.gay[sexuality] = {}
+
+        # Data for .fight
         with open("./data/moves.json", "r") as f:
-            dat = json.load(f)
+            dat = json.load(f)  # type: dict
         self.attacks = dat["attacks"]
         self.dodges = dat["dodges"]
+
+        # Data for .personality
+        with open("./data/personalities.json", "r") as f:
+            self.personalities = json.load(f)  # type: dict
 
         self.clear_old_messages_task.start()
 
@@ -327,38 +342,12 @@ class Fun(commands.Cog):
     async def personality(self, ctx, *, member: discord.Member = None):
         if member is None:
             member = ctx.author
-        colors = [0xFF0000, 0xFF7F00, 0xFFFF00, 0x00FF00, 0x0000FF, 0x4B0082]
-        e = discord.Embed(color=random.choice(colors))
+        e = discord.Embed(color=colors.random())
         e.set_author(name=f"{member.display_name}'s Personality", icon_url=member.avatar.url)
-
-        # Personality types
-        types = [
-            "psychopath", "depressed", "cheerful", "bright", "dark", "god", "deceiver", "funny", "fishy", "cool",
-            "insecure", "lonely", "optimistic", "brave", "brilliant", "dreamer", "Nurturer", "Peaceful", "Overthinker",
-            "Idealist", "Pussy", "Pick-me girl", "Lovable"
-        ]
-        e.add_field(name="Type", value=f'{random.choice(types)}', inline=False)
-
-        # Social statuses
-        statuses = [
-            "Ho", "Slut", "Loser", "The nice guy", "The dick", "Dank memer", "Annoying", "Parties hard", "Cool guy",
-            "The chad", "Popular", "Unpopular", "Shut-in", "You need to leave the house to have a social status"
-        ]
-        e.add_field(name="Social Status", value=f'{random.choice(statuses)}', inline=False)
-
-        # Hobbies
-        hobbies = [
-            "Art", "Drawing", "Painting", "Singing", "Writing", "Anime", "Memes", "Minecraft", "Sucking dick",
-            "Gaming", "Programming", "Work", "Swimming"
-        ]
-        e.add_field(name="Hobby", value=f'{random.choice(hobbies)}', inline=False)
-
-        # Music Genre
-        genres = [
-            "Nightcore", "Heavy Metal", "Alternative", "Electronic", "Classical", "Dubstep", "Jazz", "Pop", "Rap"
-        ]
-        e.add_field(name="Music Genre", value=f'{random.choice(genres)}', inline=False)
-
+        e.add_field(name="Type", value=f'{random.choice(Personalities.types)}', inline=False)
+        e.add_field(name="Social Status", value=f'{random.choice(Personalities.statuses)}', inline=False)
+        e.add_field(name="Hobby", value=f'{random.choice(Personalities.hobbies)}', inline=False)
+        e.add_field(name="Music Genre", value=f'{random.choice(Personalities.genres)}', inline=False)
         await ctx.send(embed=e)
         if ctx.channel.permissions_for(ctx.guild.me).manage_messages:
             await ctx.message.delete()
@@ -458,7 +447,7 @@ class Fun(commands.Cog):
         ]
         await ctx.send(random.choice(choices))
 
-    @commands.command(name="sexuality", aliases=[s.strip(" ") for s in sexualities[::1]])
+    @commands.command(name="gay", aliases=["straight", "bi", "ace", "pan"])
     @commands.cooldown(2, 10, commands.BucketType.user)
     @commands.cooldown(3, 6, commands.BucketType.channel)
     @commands.guild_only()
@@ -467,7 +456,7 @@ class Fun(commands.Cog):
         usage = (
             f"Usage: `{get_prefix(ctx)}{ctx.invoked_with} percentage/reset/help`"
             f"\nExample Usage: `{get_prefix(ctx)}{ctx.invoked_with} 75%`"
-            f"\n\nThe available sexualities are {', '.join(sexualities)}."
+            f"\n\nThe available sexualities are gay, {', '.join(self.sexuality.aliases)}."
         )
         invoked_with = str(ctx.invoked_with).lower()
         if invoked_with == "sexuality":
