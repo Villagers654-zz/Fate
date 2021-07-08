@@ -272,7 +272,6 @@ class Fun(commands.Cog):
             "🌮 | !user fed !target with an expired taco `-15HP`": 15,
             "🥑 | !user gave !target the luxury of eating a poisoned avocado `-10HP`": 10,
             "🚕 | !target was hit by a flying taxi aimed for his balls `-40HP`": 40,
-            "
             "🚑 | !target experienced a saucy seizure sending him to the gulag `-50HP`": 50,
             "🎲 | !user gambled his next move like an intellectual `-5HP`": 5,
             "🚀 | !target's rocket sent them flying into Uranus ||*did it hurt?*|| `-51HP`": 51,
