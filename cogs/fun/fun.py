@@ -541,7 +541,7 @@ class Fun(commands.Cog):
         if ctx.invoked_with in ["chad", "epic", "swag", "buff", "kind", "exotic"] and user.id == 261451679239634944:
             oop = [69, 99, 420, 999]
             percentage = random.choice(oop)
-        if ctx.invoked_with in ["fat", "gay", "stupid", "dumb", "shit", "hitler", "karen", "fake", "ego"] and user.id in [457210410819649536, 691433369384255518, 264838866480005122, 588070631992590336, 807414650403815454, 481341919901777950]:
+        if ctx.invoked_with in ["fat", "gay", "stupid", "dumb", "shit", "hitler", "karen", "fake", "ego"] and user.id in [457210410819649536, 691433369384255518, 264838866480005122, 588070631992590336, 807414650403815454, 481341919901777950, 629286402777022464]:
             troll = [69, 99, 100, 1000000]
             percentage = random.choice(troll)
         e.description = f"{percentage}% {ctx.invoked_with}"
