@@ -1024,6 +1024,40 @@ class Moderation(commands.Cog):
             e.set_author(name="Couldn't ban any of the specified user(s)")
         await msg.edit(embed=e)
 
+    @commands.command(name="get-ban", aliases=["getban", "searchban", "search-ban", "searchbans", "search-bans"])
+    @commands.cooldown(1, 10, commands.BucketType.user)
+    @check_if_running()
+    @has_required_permissions(ban_members=True)
+    @commands.bot_has_permissions(ban_members=True, view_audit_log=True)
+    async def get_ban(self, ctx, user: discord.User):
+        bans = await ctx.guild.bans()
+        for ban_entry in bans:
+            await asyncio.sleep(0)
+            if ban_entry.user.id == user.id:
+                ban = ban_entry
+                break
+        else:
+            return await ctx.send(f"{user} isn't banned")
+
+        action = discord.AuditLogAction.ban
+        async for entry in ctx.guild.audit_logs(limit=2500, action=action):
+            if entry.target.id == user.id:
+                entry: discord.AuditLogEntry = entry
+                break
+        else:
+            return await ctx.send("Couldn't find any results in the audit log. It's probably too old")
+
+        e = discord.Embed(color=self.bot.config["theme_color"])
+        e.set_author(name=f"Ban Entry for {user}", icon_url=user.avatar.url)
+        e.description = f"> {ban.reason if ban.reason else 'No reason specified'}"
+        e.add_field(
+            name="◈ Banned by",
+            value=str(entry.user)
+        )
+        when = entry.created_at.strftime("%b %d %Y %H:%M:%S")
+        e.set_footer(text=f"At {when}")
+        await ctx.send(embed=e)
+
     @commands.command(name="import-bans", aliases=["importbans", "transfer-bans", "transferbans"])
     @commands.cooldown(1, 10, commands.BucketType.user)
     @check_if_running()
