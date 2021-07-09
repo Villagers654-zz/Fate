@@ -14,7 +14,7 @@ from discord.ext import commands
 from discord import ui, Interaction
 import discord
 
-from botutils import Cache, Conversation
+from botutils import Conversation
 from fate import Fate
 
 
@@ -24,14 +24,18 @@ allowed_mentions = discord.AllowedMentions(everyone=False, roles=True, users=Fal
 class ButtonRoles(commands.Cog):
     def __init__(self, bot: Fate):
         self.bot = bot
-        self.menus: Cache = bot.utils.cache("testing")
-        print(self.menus.items())
-        if not hasattr(bot, "menus_loaded"):
-            bot.menus_loaded = False
-        if not bot.menus_loaded:
+        self.menus = bot.utils.cache("button_roles")
+        self.global_cooldown = bot.utils.cooldown_manager(1, 3)
+
+    @commands.Cog.listener("on_ready")
+    async def load_menus_on_start(self):
+        if not hasattr(self.bot, "menus_loaded"):
+            self.bot.menus_loaded = False
+        if not self.bot.menus_loaded:
             for msg_id in self.menus.keys():
+                self.bot.add_view(Menu(self, msg_id))
                 print(f"Added view {msg_id}")
-                bot.add_view(Menu(self, msg_id))
+            self.bot.menus_loaded = True
 
     @commands.command(name="test")
     @commands.is_owner()
@@ -67,13 +71,16 @@ class ButtonRoles(commands.Cog):
 
 class Menu(ui.View):
     def __init__(self, cls: ButtonRoles, message_id: int):
-        self.cls = cls
+        self.bot = cls.bot
+        self.menus = cls.menus
+        self.global_cooldown = cls.global_cooldown
+        self.cooldown = cls.bot.utils.cooldown_manager(5, 25)
         self.message_id = message_id
         self.buttons = {}
         super().__init__(timeout=None)
 
-        data: dict = cls.menus[message_id]
-        guild = cls.bot.get_guild(data["guild_id"])
+        data = self.menus[message_id]
+        guild = self.bot.get_guild(data["guild_id"])
         for role_id in data["roles"]:
             role = guild.get_role(role_id)
             if not role:
@@ -99,19 +106,27 @@ class Menu(ui.View):
             """ Remove a button that can no longer be used """
             self.remove_item(self.buttons[custom_id])
             with suppress(KeyError):
-                self.cls.menus[key]["roles"].remove(role_id)
-            await self.cls.menus.flush()
+                self.menus[key]["roles"].remove(role_id)
+            await self.menus.flush()
             await interaction.message.edit(view=self)
             return await interaction.response.send_message(reason, ephemeral=True)
+
+        # Ensure the user isn't spamming buttons
+        check1 = self.global_cooldown.check(interaction.user.id)
+        check2 = self.cooldown.check(interaction.user.id)
+        if check1 or check2:
+            return await interaction.response.send_message(
+                "You're on cooldown, try again in a moment", ephemeral=True
+            )
 
         # Parse the key and get its relative data
         custom_id = interaction.data["custom_id"]
         key = int(custom_id.split("@")[1])
         role_id = int(custom_id.split("@")[0])
-        data: dict = self.cls.menus[key]
+        data: dict = self.menus[key]
 
         # Fetch required variables
-        guild = self.cls.bot.get_guild(data["guild_id"])
+        guild = self.bot.get_guild(data["guild_id"])
         member = guild.get_member(interaction.user.id)
         role = guild.get_role(role_id)
         name = self.buttons[custom_id].label
