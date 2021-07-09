@@ -26,6 +26,7 @@ class ButtonRoles(commands.Cog):
         self.bot = bot
         self.menus = bot.utils.cache("button_roles")
         self.global_cooldown = bot.utils.cooldown_manager(1, 3)
+        bot.loop.create_task(self.load_menus_on_start())
 
     @commands.Cog.listener("on_ready")
     async def load_menus_on_start(self):
@@ -34,7 +35,6 @@ class ButtonRoles(commands.Cog):
         if not self.bot.menus_loaded:
             for msg_id in self.menus.keys():
                 self.bot.add_view(Menu(self, msg_id))
-                print(f"Added view {msg_id}")
             self.bot.menus_loaded = True
 
     @commands.command(name="test")
@@ -146,7 +146,6 @@ class Menu(ui.View):
             await member.add_roles(role)
         await interaction.response.send_message(
             f"{action} {role.mention}",
-            allowed_mentions=allowed_mentions,
             ephemeral=True
         )
 
