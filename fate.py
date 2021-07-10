@@ -467,6 +467,12 @@ async def on_message(msg):
                 return
     if msg.guild and msg.guild.me and not msg.channel.permissions_for(msg.guild.me).send_messages:
         return
+
+    # Replace mini numbers due to them being recognized as integers
+    for i, c in enumerate("⁰¹²³⁴⁵⁶⁷⁸⁹"):
+        if c in msg.content:
+            msg.content = msg.content.replace(c, i)
+
     await bot.process_commands(msg)
 
 
