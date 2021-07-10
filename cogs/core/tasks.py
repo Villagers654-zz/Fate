@@ -96,8 +96,8 @@ class Tasks(commands.Cog):
     @tasks.loop(seconds=10)
     async def update_influxdb(self):
         def start_thread(pointer):
-            layer = lambda: self.write_api.write("542f070eec1976be", record=pointer)
             with suppress(Exception):
+                layer = lambda: self.write_api.write("542f070eec1976be", record=pointer)
                 return self.bot.loop.run_in_executor(None, layer)
 
         if not self.bot.is_ready():
