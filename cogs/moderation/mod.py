@@ -505,7 +505,7 @@ class Moderation(commands.Cog):
                     try:
                         messages = []
                         async for msg in ctx.channel.history(before=ctx.message, limit=amount_to_purge):
-                            with suppress(discord.errors.Forbidden, discord.errors.NotFound):
+                            with suppress(Forbidden, NotFound, asyncio.TimeoutError):
                                 await msg.delete()
                                 messages.append(msg)
                     except discord.errors.NotFound:
