@@ -124,7 +124,8 @@ class Emojis(commands.Cog):
             return await ctx.send("Usage: `.emoji [custom emoji]`")
         if len(emojis) > 1 and all(e == emojis[0] for e in emojis):
             return await ctx.send("No")
-        if not ctx.author.guild_permissions.administrator:
+        is_member = isinstance(ctx.author, discord.Member)
+        if is_member and not ctx.author.guild_permissions.administrator:
             emojis = emojis[:1]
         for emoji in emojis[:5]:
             if emote := self.bot.get_emoji(emoji.id):
@@ -135,7 +136,7 @@ class Emojis(commands.Cog):
             e.description = str(emoji.id)
             author_name = emoji.name
             author_url = ctx.author.avatar.url
-            if isinstance(emoji, discord.Emoji):
+            if isinstance(emoji, discord.Emoji) and is_member:
                 perms = ctx.author.guild_permissions
                 bot_perms = emoji.guild.me.guild_permissions
                 if (
