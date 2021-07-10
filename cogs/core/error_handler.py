@@ -71,7 +71,8 @@ class ErrorHandler(commands.Cog):
             elif isinstance(error, commands.ExpectedClosingQuoteError):
                 return await ctx.send("You can't include a `\"` in that argument")
             elif isinstance(error, (commands.BadArgument, commands.errors.BadUnionArgument)):
-                return await ctx.send(error)
+                msg = str(error).lstrip("http://").lstrip("https://").lstrip("www.")
+                return await ctx.send(msg)
 
             # Lavalink
             elif isinstance(error, NodeException):
