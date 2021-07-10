@@ -472,6 +472,8 @@ async def on_message(msg):
 
 @bot.event
 async def on_error(_event_method, *_args, **_kwargs):
+    if "Unknown Interaction" in traceback.format_exc():
+        return
     error = sys.exc_info()[1]
     ignored = (
         bot.ignored_exit,

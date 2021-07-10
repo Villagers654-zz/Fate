@@ -134,6 +134,7 @@ class ButtonMenu(ui.View):
             self.add_item(button)
 
     async def surface_callback(self, interaction):
+        """ Suppress exceptions in the actual callback function """
         with suppress(discord.errors.NotFound):
             await self.callback(interaction)
 
