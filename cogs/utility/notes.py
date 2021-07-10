@@ -1,11 +1,13 @@
-from discord.ext import commands
+
 from os.path import isfile
-import datetime
-import discord
+from datetime import datetime, timezone
 import asyncio
 import random
 import json
 import os
+
+from discord.ext import commands
+import discord
 
 
 class Notepad(commands.Cog):
@@ -40,7 +42,7 @@ class Notepad(commands.Cog):
                 if author_id not in self.timestamp:
                     self.timestamp[author_id] = []
                 self.timestamp[author_id].append(
-                    datetime.datetime.now(tz=timezone.utc).strftime("%m-%d-%Y %I:%M%p")
+                    datetime.now(tz=timezone.utc).strftime("%m-%d-%Y %I:%M%p")
                 )
                 if len(self.timestamp[author_id]) > 5:
                     del self.timestamp[author_id][0]
@@ -89,7 +91,7 @@ class Notepad(commands.Cog):
         if author_id not in self.timestamp:
             self.timestamp[author_id] = []
         self.timestamp[author_id].append(
-            datetime.datetime.now(tz=timezone.utc).strftime("%m-%d-%Y %I:%M%p")
+            datetime.now(tz=timezone.utc).strftime("%m-%d-%Y %I:%M%p")
         )
         if len(self.timestamp[author_id]) > 5:
             del self.timestamp[author_id][0]
