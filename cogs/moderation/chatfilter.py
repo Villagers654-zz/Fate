@@ -6,9 +6,9 @@ from unicodedata import normalize
 from string import printable
 
 from discord.ext import commands
-from botutils import colors
 import discord
 
+from botutils import colors, split
 from cogs.moderation.logger import Log
 
 
@@ -330,11 +330,12 @@ class ChatFilter(commands.Cog):
             "ID": str(m.author.id),
             "Flags": ", ".join(flags)
         })
-        e.add_field(
-            name="◈ Content",
-            value=m.content,
-            inline=False
-        )
+        for chunk in split(m.content, 1024):
+            e.add_field(
+                name="◈ Content",
+                value=chunk,
+                inline=False
+            )
         try:
             cog = self.bot.cogs["Logger"]
             log = Log("chat_filter", embed=e)
