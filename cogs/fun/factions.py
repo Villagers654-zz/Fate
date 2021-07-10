@@ -1559,7 +1559,8 @@ class Factions(commands.Cog):
 
         bal_leaderboard = discord.Embed(color=purple)
         bal_leaderboard.set_author(name="Balance Leaderboard")
-        bal_leaderboard.set_thumbnail(url=ctx.guild.icon.url)
+        if ctx.guild.icon:
+            bal_leaderboard.set_thumbnail(url=ctx.guild.icon.url)
         bal_leaderboard.description = ""
         for i, (faction, balance) in enumerate(dat["bal"][:9]):
             bal_leaderboard.description += f"\n#{i + 1}. {faction} - ${balance}"
@@ -1577,7 +1578,8 @@ class Factions(commands.Cog):
 
         alliance_bal_leaderboard = discord.Embed(color=purple)
         alliance_bal_leaderboard.set_author(name="Alliance Bal Leaderboard")
-        alliance_bal_leaderboard.set_thumbnail(url=ctx.guild.icon.url)
+        if ctx.guild.icon:
+            alliance_bal_leaderboard.set_thumbnail(url=ctx.guild.icon.url)
         alliance_bal_leaderboard.description = ""
         for alliance in dat["ally_bal"][:9]:
             factions = ", ".join(f[0] for f in alliance)
