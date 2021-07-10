@@ -469,9 +469,10 @@ async def on_message(msg):
         return
 
     # Replace mini numbers due to them being recognized as integers
+    msg.content = msg.content.encode("utf-8").decode()
     for i, c in enumerate("⁰¹²³⁴⁵⁶⁷⁸⁹"):
         if c in msg.content:
-            msg.content = msg.content.replace(c, str(i).encode("utf-8"))
+            msg.content = msg.content.replace(c, str(i))
 
     await bot.process_commands(msg)
 
