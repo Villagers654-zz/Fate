@@ -31,7 +31,7 @@
     "👾 | !user fed !target to the Martians above her kitchen": 49,
     "🦈 | !user morphed into sharky and swallowed !target calmly": 75,
     "🐦 | !user ratioed !target on twitter": 25,
-    "🍩 | !target got too fat on DONUTS": 51,
+    "🍩 | !target got way too fat on DONUTS": 51,
     "🍨 | !target licked and swallowed his ice cream way too roughly": 25,
     "✨ | !user pulled a dream and increased his luck infinitely `∞`": 69420,
     "🐄 | !user's instructions were unclear leaving !target without food and shelter": 33,
@@ -40,7 +40,7 @@
     "🌮 | !user fed !target with an expired taco": 15,
     "🥑 | !user gave !target the luxury of eating a poisoned avocado": 25,
     "🚕 | !target was hit by a flying taxi aimed for his balls": 40,
-    "🚑 | !target experienced a saucy seizure sending him to the gulag": 40,
+    "🚑 | !target experienced a saucy seizure sending him to the hospital": 40,
     "🎲 | !user gambled his next move like an intellectual": 5,
     "🚀 | !target's rocket sent them flying into Uranus ||*did it hurt?*||": 51,
     "📡 | !user paid the aliens in bitcoin to abduct !target": 55,
@@ -49,7 +49,11 @@
     "🦇 | !target thought they could become the next Batman": 10,
     "💯 | !target reached Age 100 so they legally could not live much longer": 30,
     "💊 | !target took the wrong kind of pills like the dumbass they are": 42,
-    "⚰️ | !target decided to change their pronouns to was/were": 1
+    "⚰️ | !target decided to change their pronouns to was/were": 1,
+    "🖕 | !user cursed at joe mama": 10,
+    "😠 | !target coped way too hard": 20,
+    "💥 | !target was hit by a nuke sent from North Korea": 55,
+    "🕵️‍♂️ | !user hired a shitass to murder !target": 30
   },
   "dodges": [
     "🔮 | !target foretold !user's attack and dodged",
@@ -65,6 +69,8 @@
     "🐧 | !target's penguin absorbed the animal cruelty",
     "🛡️ | Legit came into the arena and reflected !user's attack",
     "🧬 | !target modified his genetic structure to be immune against fat !user",
-    "🕹️ | !target encountered the Konami Code gifting them an extra life"
+    "🕹️ | !target encountered the Konami Code gifting them an extra life",
+    "🏃‍♂️ | !target beat the world record Any% Glitchless",
+    "🛰️ | !target redirected a nuke from North Korea to Joe Mama"
   ]
 }
