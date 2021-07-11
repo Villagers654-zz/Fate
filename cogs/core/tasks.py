@@ -100,18 +100,26 @@ class Tasks(commands.Cog):
                 layer = lambda: self.write_api.write("542f070eec1976be", record=pointer)
                 return self.bot.loop.run_in_executor(None, layer)
 
+        async def user_count():
+            count = 0
+            for guild in list(self.bot.guilds):
+                await asyncio.sleep(0)
+                count += guild.member_count
+            return count
+
         if not self.bot.is_ready():
             await self.bot.wait_until_ready()
             self.last = {
-                "users": len(self.bot.users),
+                "users": await user_count(),
                 "guilds": len(self.bot.guilds)
             }
 
         # Update user count
-        if len(self.bot.users) != self.last["users"]:
-            pointer = Point("activity").field("users", len(self.bot.users))
+        new_count = await user_count()
+        if new_count != self.last["users"]:
+            pointer = Point("activity").field("users", new_count)
             await start_thread(pointer)
-            self.last["users"] = len(self.bot.users)
+            self.last["users"] = new_count
 
         # Update server count
         if len(self.bot.guilds) != self.last["guilds"]:
