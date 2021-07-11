@@ -246,9 +246,9 @@ class Fun(commands.Cog):
                 formatted += f" `-{dmg}HP`"
             if "∞" in attack:
                 if attacker == 1:
-                    health2 = dmg
+                    health2 = -dmg
                 else:
-                    health1 = dmg
+                    health1 = -dmg
 
             e.description += f"\n{formatted}"
             e.description = e.description[-4000:]
