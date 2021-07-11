@@ -225,6 +225,9 @@ class Fun(commands.Cog):
                 attack = random.choice(list(attacks.keys()))
                 if attack in attacks_used:
                     continue
+                if "∞" in attack:
+                    if random.randint(1, 2) != 1:
+                        continue
                 attacks_used.append(attack)
                 break
 
