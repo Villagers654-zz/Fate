@@ -679,7 +679,7 @@ class AntiSpam(commands.Cog):
                         if not typed_recently:
                             reason = "pasting bulky message (check #2)"
                             triggered = None
-                        if len(msg.content) > 250:
+                        if len(msg.content) > 750:
                             count = len([
                                 ts for ts in self.typing[user_id]
                                 if (datetime.now(tz=timezone.utc) - ts).seconds < 60
