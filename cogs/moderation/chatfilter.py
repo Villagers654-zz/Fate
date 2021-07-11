@@ -125,7 +125,8 @@ class ChatFilter(commands.Cog):
                 toggle = "enabled"
             e = discord.Embed(color=colors.pink)
             e.set_author(name="| Chat Filter", icon_url=ctx.author.avatar.url)
-            e.set_thumbnail(url=ctx.guild.icon.url)
+            if ctx.guild.icon:
+                e.set_thumbnail(url=ctx.guild.icon.url)
             e.description = "Deletes messages containing blocked words/phrases"
             e.add_field(
                 name="◈ Usage",

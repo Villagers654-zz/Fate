@@ -147,7 +147,8 @@ class AntiSpam(commands.Cog):
         if not ctx.invoked_subcommand and 'help' not in ctx.message.content:
             e = discord.Embed(color=colors.fate)
             e.set_author(name='AntiSpam Usage', icon_url=ctx.author.avatar.url)
-            e.set_thumbnail(url=ctx.guild.icon.url)
+            if ctx.guild.icon:
+                e.set_thumbnail(url=ctx.guild.icon.url)
             e.description = '**.anti-spam enable**\n`• enables all anti-spam modules`\n' \
                             '**.anti-spam enable module**\n`• enables a single module`\n' \
                             '**.anti-spam disable**\n`• disables all anti-spam modules`\n' \

@@ -62,7 +62,8 @@ class AntiRaid(commands.Cog):
                 toggle = "enabled"
             e = discord.Embed(color=colors.red)
             e.set_author(name="Anti Raid", icon_url=ctx.author.avatar.url)
-            e.set_thumbnail(url=ctx.guild.icon.url)
+            if ctx.guild.icon:
+                e.set_thumbnail(url=ctx.guild.icon.url)
             e.description = "Prevents mass-join and mass-kick/ban raids"
             e.add_field(
                 name="Usage",
