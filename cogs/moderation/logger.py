@@ -55,6 +55,7 @@ class Logger(commands.Cog):
             "everyone_mention",
             "message_edit",
             "message_delete",
+            "attachment_delete",
             "embed_hidden",
             "message_pin",
             "message_purge",
@@ -940,6 +941,7 @@ class Logger(commands.Cog):
                 if msg.embeds:
                     e.set_footer(text="⇓ Embed ⇓")
                 files = []
+                log_type = "message_delete"
                 if msg.attachments:
                     for attachment in msg.attachments:
                         if attachment.size > 8000000:
@@ -951,7 +953,9 @@ class Logger(commands.Cog):
                         async with aiofiles.open(fp, "wb") as f:
                             await f.write(file)
                         files.append(fp)
-                log = Log("message_delete", embed=e, files=files)
+                    if files and "attachment_delete" in self.config[guild_id]["channels"]:
+                        log_type = "attachment_delete"
+                log = Log(log_type, embed=e, files=files)
                 self.put_nowait(guild_id, log)
                 if msg.embeds:
                     log = Log("message_delete", embed=msg.embeds[0])
