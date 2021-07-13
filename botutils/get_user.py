@@ -54,7 +54,10 @@ class GetUser:
             elif isinstance(arg, str):
                 for word in arg.split():
                     if "@" in word and any(c.isdigit() for c in word):
-                        self.user_ids.append(int("".join([c for c in word if c.isdigit()])))
+                        try:
+                            self.user_ids.append(int("".join([c for c in word if c.isdigit()])))
+                        except ValueError:
+                            pass
                     elif "@" in word:
                         self.names.append(word.lstrip("@"))
                     else:
