@@ -16,13 +16,10 @@ import os
 import time
 from datetime import datetime
 from zipfile import ZipFile
-from contextlib import suppress
 import subprocess
 
 import discord
 from discord.ext import commands, tasks
-from influxdb_client import InfluxDBClient, Point
-from influxdb_client.client.write_api import SYNCHRONOUS
 
 from botutils import split
 
@@ -36,23 +33,11 @@ class Tasks(commands.Cog):
             self.log_queue,
             self.debug_log,
             self.auto_backup,
-            self.cleanup_pool,
-            self.update_influxdb
+            self.cleanup_pool
         ]
         for task in self.enabled_tasks:
             task.start()
             bot.log(f"Started {task.coro.__name__}")
-        auth = self.bot.auth["InfluxDB"]
-        self.client = InfluxDBClient(
-            url=auth["url"],
-            token=auth["token"],
-            org=auth["org"]
-        )
-        self.write_api = self.client.write_api(write_options=SYNCHRONOUS)
-        self.last = {
-            "users": len(bot.users),
-            "guilds": len(bot.guilds)
-        }
 
     def cog_unload(self):
         for task in self.enabled_tasks:
@@ -70,6 +55,8 @@ class Tasks(commands.Cog):
     @tasks.loop(minutes=1)
     async def cog_cleanup(self):
         # Clean the filtered messages index by only keeping recent deletes
+        if not hasattr(self.bot, "filtered_messages"):
+            self.bot.filtered_messages = {}
         objects_removed = 0
         for guild_id, msgs in list(self.bot.filtered_messages.items()):
             await asyncio.sleep(0)
@@ -92,40 +79,6 @@ class Tasks(commands.Cog):
             #     if attr.endswith("cd"):
             #         obj = getattr(cog, attr)
             #         if isinstance(obj, dict):
-
-    @tasks.loop(seconds=10)
-    async def update_influxdb(self):
-        def start_thread(pointer):
-            with suppress(Exception):
-                layer = lambda: self.write_api.write("542f070eec1976be", record=pointer)
-                return self.bot.loop.run_in_executor(None, layer)
-
-        async def user_count():
-            count = 0
-            for guild in list(self.bot.guilds):
-                await asyncio.sleep(0)
-                count += guild.member_count
-            return count
-
-        if not self.bot.is_ready():
-            await self.bot.wait_until_ready()
-            self.last = {
-                "users": await user_count(),
-                "guilds": len(self.bot.guilds)
-            }
-
-        # Update user count
-        new_count = await user_count()
-        if new_count != self.last["users"]:
-            pointer = Point("activity").field("users", new_count)
-            await start_thread(pointer)
-            self.last["users"] = new_count
-
-        # Update server count
-        if len(self.bot.guilds) != self.last["guilds"]:
-            pointer = Point("activity").field("guilds", len(self.bot.guilds))
-            await start_thread(pointer)
-            self.last["guilds"] = len(self.bot.guilds)
 
     @tasks.loop(hours=1)
     async def cleanup_pool(self):
