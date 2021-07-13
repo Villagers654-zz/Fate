@@ -94,22 +94,23 @@ class Limiter(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, m: discord.Message):
-        if isinstance(m.author, discord.Member) and not m.author.guild_permissions.administrator:
-            guild_id = str(m.guild.id)
-            channel_id = str(m.channel.id)
-            await asyncio.sleep(0.5)
+        if isinstance(m.author, discord.Member):
+            if m.guild.owner and not m.author.guild_permissions.administrator:
+                guild_id = str(m.guild.id)
+                channel_id = str(m.channel.id)
+                await asyncio.sleep(0.5)
 
-            # image limiter
-            if guild_id in self.images:
-                if channel_id in self.images[guild_id]:
-                    if len(m.attachments) < 1:
-                        await m.delete()
+                # image limiter
+                if guild_id in self.images:
+                    if channel_id in self.images[guild_id]:
+                        if len(m.attachments) < 1:
+                            await m.delete()
 
-            # booster limiter
-            if guild_id in self.boosters:
-                if channel_id in self.boosters[guild_id]:
-                    if not m.author.premium_since:
-                        await m.delete()
+                # booster limiter
+                if guild_id in self.boosters:
+                    if channel_id in self.boosters[guild_id]:
+                        if not m.author.premium_since:
+                            await m.delete()
 
 
 def setup(bot):
