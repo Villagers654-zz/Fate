@@ -170,8 +170,12 @@ class SafePolls(commands.Cog):
                "✌ do something else|🏆⏳🔨```You can also set the override emojis as a range of numbers like 1-3"
 
     @commands.command(name="instant-poll")
+    @commands.cooldown(1, 10, commands.BucketType.user)
+    @commands.cooldown(2, 10, commands.BucketType.channel)
     @commands.has_permissions(manage_messages=True)
-    async def instant_poll(self, ctx, channel: TextChannel, timer: Timer, *, data):
+    async def instant_poll(self, ctx, channel: TextChannel = None, timer: Timer = None, *, data = None):
+        if not channel or not timer or not data:
+            return await ctx.send(self.instant_poll_usage())
         await self.ensure_permissions(ctx, channel)
 
         converter = commands.EmojiConverter()
