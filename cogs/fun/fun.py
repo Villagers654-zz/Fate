@@ -242,17 +242,19 @@ class Fun(commands.Cog):
             else:
                 formatted = attack.replace('!user', user2.name).replace('!target', user1.name)
                 health1 -= dmg
+
+            # Reformatting
             if dmg and "∞" not in attack:
                 formatted += f" `-{dmg}HP`"
+            if health1 < 0:
+                health1 = 0
+            if health2 < 0:
+                health2 = 0
             if "∞" in attack:
                 if attacker == 1:
                     health2 = -dmg
                 else:
                     health1 = -dmg
-            if health1 < 0:
-                health1 = 0
-            if health2 < 0:
-                health2 = 0
 
             e.description += f"\n{formatted}"
             e.description = e.description[-4000:]
