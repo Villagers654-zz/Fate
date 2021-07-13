@@ -245,6 +245,8 @@ class Fun(commands.Cog):
 
         attacks_used = []
         while True:
+            if not msg:
+                msg = await ctx.send(embed=e)
             if health1 <= 0:
                 async with self.bot.utils.cursor() as cur:
                     await cur.execute(f"insert into battles values ({user2.id}, {user1.id});")
