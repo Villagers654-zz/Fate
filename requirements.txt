@@ -50,6 +50,8 @@ aiohttp
 websockets
 pysftp
 aiomysql==0.0.20
+motor
+pymongo
 
 
 # Misc
@@ -60,3 +62,5 @@ litereval
 pympler
 objgraph
 numpy
+imgkit
+gTTS
