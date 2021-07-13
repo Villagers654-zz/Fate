@@ -484,6 +484,8 @@ class AntiSpam(commands.Cog):
                 if not msg.channel.permissions_for(bot_user).send_messages or not perms.manage_roles:
                     return await self.destroy_task(guild_id, user_id)
 
+                if not msg.channel:
+                    return await self.destroy_task(guild_id, user_id)
                 async with msg.channel.typing():
                     # Increase the mute timer if multiple offenses in the last hour
                     multiplier = 1
@@ -599,7 +601,7 @@ class AntiSpam(commands.Cog):
             if "ignored" in self.config[guild_id] and msg.channel.id in self.config[guild_id]["ignored"]:
                 return
 
-            if not msg.guild.me:
+            if not msg.guild.me or msg.channel:
                 return
             perms = msg.channel.permissions_for(msg.guild.me)
             if not perms.manage_messages or not perms.manage_roles:
