@@ -53,7 +53,12 @@
     "🖕 | !user cursed at joe mama": 10,
     "😠 | !target coped way too hard": 20,
     "💥 | !target was hit by a nuke sent from North Korea": 55,
-    "🕵️‍♂️ | !user hired a shitass to murder !target": 30
+    "🕵️‍♂️ | !user hired a shitass to murder !target": 30,
+    "<:villa:855892484677042246> | Villa consumed !target with his fatness": 35,
+    "<a:pepeunfuckyou:858270196603420683> | !user rekt !target in a staring competition": 30,
+    "<a:vibe:817484146145493032> | !user violated !target in a rap battle": 25,
+    "<:buff:861180884027310110> | !user sent !target flying out of this world": 50,
+    "<:pinkphallicobject:642570416753475601> | !user went dicko mode on !target": 42
   },
   "dodges": [
     "🔮 | !target foretold !user's attack and dodged",
@@ -71,6 +76,7 @@
     "🧬 | !target modified his genetic structure to be immune against fat !user",
     "🕹️ | !target encountered the Konami Code gifting them an extra life",
     "🏃‍♂️ | !target beat the world record Any% Glitchless",
-    "🛰️ | !target redirected a nuke from North Korea to Joe Mama"
+    "🛰️ | !target redirected a nuke from North Korea to Joe Mama",
+    "<:angry_doggo:861694186909597716> | !target got way too close to !user's angry doggo"
   ]
 }
