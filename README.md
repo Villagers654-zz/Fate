@@ -9,7 +9,7 @@ A multipurpose discord bot
 
 ## Getting Started
 ### Compatibility
-Python 3.9 or higher
+Python 3.8 or higher
 ### Installing
 > Clone the Project
 ```
