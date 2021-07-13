@@ -249,6 +249,10 @@ class Fun(commands.Cog):
                     health2 = -dmg
                 else:
                     health1 = -dmg
+            if health1 < 0:
+                health1 = 0
+            if health2 < 0:
+                health2 = 0
 
             e.description += f"\n{formatted}"
             e.description = e.description[-4000:]
