@@ -147,6 +147,7 @@ class Giveaways(commands.Cog):
             timer = extract_time(reply.content)
             if not timer or not isinstance(timer, int):
                 await convo.send("That's not in the proper format, retry or send `cancel`")
+                continue
             if timer > 60 * 60 * 24 * 60:
                 await convo.send("Hell. Fucking. No.\nI'm not waiting that long. Send a smaller timer")
                 continue
