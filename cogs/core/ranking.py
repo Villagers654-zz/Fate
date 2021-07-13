@@ -890,7 +890,10 @@ class Ranking(commands.Cog):
             return fp
 
         e = discord.Embed(color=colors.fate)
-        e.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon.url)
+        icon_url = self.bot.user.avatar.url
+        if ctx.guild.icon:
+            icon_url = ctx.guild.icon.url
+        e.set_author(name=ctx.guild.name, icon_url=icon_url)
         e.set_image(url=f"attachment://{fp}")
         await ctx.send(embed=e, file=discord.File(fp, filename=fp))
         os.remove(fp)
