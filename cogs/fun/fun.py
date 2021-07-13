@@ -60,7 +60,6 @@ class Fun(commands.Cog):
             dat = json.load(f)  # type: dict
         self.attacks = dat["attacks"]
         self.dodges = dat["dodges"]
-        self.stats = bot.utils.cache("battle_stats")
 
         # Data for .personality
         with open("./data/personalities.json", "r") as f:
@@ -144,28 +143,6 @@ class Fun(commands.Cog):
             self.dat[channel_id]["last"] = dat
             self.dat[channel_id][user_id] = dat
 
-    def init_stats_info(self, user: discord.User, sub_user: discord.User):
-        if user.id not in self.stats:
-            self.stats[user.id] = {
-                "wins": 0,
-                "losses": 0,
-                "users": {}
-            }
-        if str(sub_user.id) not in self.stats[user.id]["users"]:
-            self.stats[user.id]["users"][str(sub_user.id)] = {
-                "wins": 0,
-                "losses": 0
-            }
-
-    async def process_stats(self, winner, loser):
-        self.init_stats_info(winner, loser)
-        self.init_stats_info(loser, winner)
-        self.stats[winner.id]["wins"] += 1
-        self.stats[loser.id]["losses"] += 1
-        self.stats[winner.id]["users"][str(loser.id)]["wins"] += 1
-        self.stats[loser.id]["users"][str(winner.id)]["losses"] += 1
-        await self.stats.flush()
-
     @commands.command(name="battle", aliases=["fight"])
     @commands.cooldown(2, 60, commands.BucketType.user)
     @commands.cooldown(2, 45, commands.BucketType.channel)
@@ -184,25 +161,28 @@ class Fun(commands.Cog):
             user_id = ctx.author.id
             if user2:
                 user_id = user2.id
-            if user_id not in self.stats:
-                pronoun = "They" if user1 else "You"
-                return await ctx.send(f"{pronoun} have no stats")
 
-            # Create the basic version of the embed
-            e = discord.Embed(color=self.bot.config["theme_color"])
-            conf = self.stats[user_id]  # type: dict
-            w = "win" if conf["wins"] == 1 else "wins"
-            e.description = f"**{conf['wins']}** {w} and **{conf['losses']}** losses"
+            async with self.bot.utils.cursor() as cur:
+                await cur.execute(f"select * from battles where winner = {user_id};")
+                wins = cur.rowcount
+                await cur.execute(f"select * from battles where loser = {user_id};")
+                losses = cur.rowcount
 
-            # Add the authors stats against the user
-            if user2 and ctx.author.id in self.stats:
-                conf = self.stats[ctx.author.id]  # type: dict
-                if str(user_id) in conf["users"]:
-                    wins = conf["users"][str(user_id)]["wins"]
-                    losses = conf["users"][str(user_id)]["losses"]
-                    e.description += f". You've won {wins} times against them and lost {losses} times"
+                # Create the basic version of the embed
+                e = discord.Embed(color=self.bot.config["theme_color"])
+                s = "s" if wins != 1 else ""
+                e.description = f"**{wins}** win{s} and **{losses}** losses"
 
-            return await ctx.send(embed=e)
+                # Add the authors stats against the user
+                if user2:
+                    await cur.execute(f"select * from battles where winner = {ctx.author.id} and loser = {user2.id}")
+                    wins = cur.rowcount
+                    await cur.execute(f"select * from battles where winner = {user2.id} and loser = {ctx.author.id}")
+                    losses = cur.rowcount
+                    s = "s" if wins != 1 else ""
+                    e.description += f". You've won {wins} time{s} against them and lost {losses} times"
+
+                return await ctx.send(embed=e)
 
         # Create a battle card
         if not user2:
@@ -266,11 +246,13 @@ class Fun(commands.Cog):
         attacks_used = []
         while True:
             if health1 <= 0:
-                await self.process_stats(user2, user1)
+                async with self.bot.utils.cursor() as cur:
+                    await cur.execute(f"insert into battles values ({user2.id}, {user1.id});")
                 await msg.edit(content=f"🏆 **{user2.name} won** 🏆")
                 return await ctx.send(f"⚔ **{user2.name}** won against **{user1.name}**")
             if health2 <= 0:
-                await self.process_stats(user1, user2)
+                async with self.bot.utils.cursor() as cur:
+                    await cur.execute(f"insert into battles values ({user1.id}, {user2.id});")
                 await msg.edit(content=f"🏆 **{user1.name} won** 🏆")
                 return await ctx.send(f"⚔ **{user1.name}** won against **{user2.name}**")
 
