@@ -49,7 +49,7 @@ requests
 aiohttp
 websockets
 pysftp
-aiomysql==0.0.20
+aiomysql
 motor
 pymongo
 
