@@ -93,7 +93,7 @@ class Fun(commands.Cog):
             del self.dat[channel_id]
 
         if msg.embeds:
-            return await ctx.send(f"{msg.author} deleted {format_date_difference(time)} ago", embed=msg.embeds[0])
+            return await ctx.send(f"{msg.author} | deleted by {self.dat["user"]} {format_date_difference(time)} ago", embed=msg.embeds[0])
         if len(msg.content) > 256 and not ctx.author.guild_permissions.administrator:
             return await ctx.send("And **wHy** would I snipe a message *that*  big")
 
