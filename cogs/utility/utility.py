@@ -971,7 +971,7 @@ class Utility(commands.Cog):
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
     async def servericon(self, ctx):
-        if not ctx.guild.icon.url or not str(ctx.guild.icon.url):
+        if not ctx.guild.icon or not str(ctx.guild.icon.url):
             return await ctx.send("This server has no icon")
         e = discord.Embed(color=0x80B0FF)
         e.set_image(url=ctx.guild.icon.url)
