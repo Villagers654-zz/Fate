@@ -152,7 +152,7 @@ class Fun(commands.Cog):
     async def battle(self, ctx, user1 = None, user2: discord.User = None):
         # Fetch user1 if the authors not getting stats info
         if user1 and user1 != "stats":
-            user1 = await self.bot.utils.get_user(user1)
+            user1 = await self.bot.utils.get_user(ctx, user1)
             if not user1:
                 return await ctx.send("User not found")
 
