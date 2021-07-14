@@ -185,6 +185,8 @@ class Fun(commands.Cog):
                 return await ctx.send(embed=e)
 
         # Create a battle card
+        if not user1:
+            return await ctx.send("You need to specify who to battle")
         if not user2:
             user2 = user1
             user1 = ctx.author
