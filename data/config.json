@@ -66,6 +66,7 @@
       "error_handler",
       "config",
       "core",
+      "influx",
       "menus",
       "music",
       "ranking",
