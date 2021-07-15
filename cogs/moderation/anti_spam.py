@@ -837,7 +837,7 @@ class AntiSpam(commands.Cog):
                                 if len(dupes) > 1 and not all_are_single_use:
                                     if len([d for d in dupes if d.author.id == dupes[0].author.id]) == 1:
                                         dupes.pop(0)
-                                if len(dupes) > lmt:
+                                if len(dupes) > lmt and msg.channel:
                                     history = await msg.channel.history(limit=2).flatten()
                                     if not any(m.author.bot for m in history):
                                         users = set(list([
