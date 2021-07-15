@@ -125,7 +125,8 @@ class Menus:
             m = await self.bot.wait_for("message", check=pred, timeout=timeout)
         except asyncio.TimeoutError:
             if delete_after:
-                await message.delete()
+                with suppress(NotFound, Forbidden):
+                    await message.delete()
             else:
                 e.set_footer(text="Captcha Failed")
                 with suppress(NotFound, Forbidden):
