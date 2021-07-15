@@ -57,7 +57,9 @@
     "<a:pepeunfuckyou:858270196603420683> | !user rekt !target in a staring competition": 10,
     "<a:vibe:817484146145493032> | !user violated !target in a rap battle": 15,
     "<:buff:861180884027310110> | !user sent !target flying out of this world": 25,
-    "<:pinkphallicobject:642570416753475601> | !user went dicko mode on !target": 30
+    "<:pinkphallicobject:642570416753475601> | !user went dicko mode on !target": 30,
+    "!user spin kicked !target to the 4th dimension": 20,
+    "!user pinged the discord mods on !target": 12
   },
   "dodges": [
     "🔮 | !target foretold !user's attack and dodged",
@@ -76,6 +78,7 @@
     "🕹️ | !target encountered the Konami Code gifting them an extra life",
     "🏃‍♂️ | !target beat the world record Any% Glitchless",
     "🛰️ | !target redirected a nuke from North Korea to Joe Mama",
-    "<:angry_doggo:861694186909597716> | !user got way too close to !targets angry doggo"
+    "<:angry_doggo:861694186909597716> | !user got way too close to !targets angry doggo",
+    "!target left a banana peel on the ground and !user slipped on it mid attack"
   ]
 }
