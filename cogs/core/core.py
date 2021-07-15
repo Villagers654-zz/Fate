@@ -60,11 +60,6 @@ class Core(commands.Cog):
                 f"insert into votes values ({int(data['user'])}, {time()});"
             )
 
-    @commands.command(name='dbl')
-    @commands.is_owner()
-    async def dbl(self, ctx):
-        await ctx.send()
-
     @commands.command(name="votes")
     @commands.is_owner()
     async def votes(self, ctx):
