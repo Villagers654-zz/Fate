@@ -182,6 +182,9 @@ class GlobalChat(commands.Cog):
             await cur.execute(f"select status from global_users where user_id = {ctx.author.id} and status = 'moderator';")
             if not cur.rowcount:
                 return await ctx.send("Only global chat moderators can use this command")
+            await cur.execute(f"select status from global_users where user_id = {target.id} and status = 'moderator';")
+            if cur.rowcount:
+                return await ctx.send("You can't ban global chat moderators")
         self.blocked.append(target.id)
         await ctx.send(f"Blocked {target}")
 
