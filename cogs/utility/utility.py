@@ -540,13 +540,11 @@ class Utility(commands.Cog):
                             async with self.bot.utils.open(f"{root}/{file}", "r") as f:
                                 lines += len(await f.readlines())
 
-            votes = []
-            if "Core" in self.bot.cogs:
-                votes = await self.bot.cogs["Core"].dblpy.get_bot_upvotes()
-
             e.description = f"Commands Used This Month: {commands}" \
-                            f"\nLines of Code: {lines}" \
-                            f"\nVotes This Month: {len(votes)}"
+                            f"\nLines of Code: {lines}"
+            if core := self.bot.get_cog("Core"):
+                e.description += f"\nVotes This Month: {len(await core.dblpy.get_bot_upvotes())}"
+
             e.set_thumbnail(url=self.bot.user.avatar.url)
             e.add_field(
                 name="◈ Summary ◈",
