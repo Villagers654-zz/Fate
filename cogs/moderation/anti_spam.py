@@ -601,7 +601,7 @@ class AntiSpam(commands.Cog):
             if "ignored" in self.config[guild_id] and msg.channel.id in self.config[guild_id]["ignored"]:
                 return
 
-            if not msg.guild.me or msg.channel:
+            if not msg.guild.me or not msg.channel:
                 return
             perms = msg.channel.permissions_for(msg.guild.me)
             if not perms.manage_messages or not perms.manage_roles:
@@ -856,7 +856,7 @@ class AntiSpam(commands.Cog):
                             if triggered:
                                 break
 
-            if triggered is None or "ascii" in reason and not msg.author.guild_permissions.administrator:
+            if (triggered is None or "ascii" in reason) and not msg.author.guild_permissions.administrator:
                 with suppress(HTTPException, NotFound, Forbidden):
                     await msg.delete()
                     await msg.channel.send(f"No {reason}")
