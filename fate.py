@@ -485,7 +485,8 @@ async def on_error(_event_method, *_args, **_kwargs):
         bot.ignored_exit,
         aiohttp.ClientOSError,
         asyncio.exceptions.TimeoutError,
-        discord.errors.DiscordServerError
+        discord.errors.DiscordServerError,
+        discord.errors.NotFound
     )
     if isinstance(error, ignored):
         return
