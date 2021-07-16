@@ -25,7 +25,6 @@ action = discord.AuditLogAction.message_delete
 class AntiDelete(commands.Cog):
     def __init__(self, bot: Fate):
         self.bot = bot
-        self.config = bot.utils.cache("anti_delete")
 
     @commands.group(name="anti-delete", aliases=["antidelete", "anti_delete"])
     @commands.cooldown(1, 5, commands.BucketType.user)
