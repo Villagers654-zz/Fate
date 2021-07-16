@@ -573,10 +573,11 @@ class AntiSpam(commands.Cog):
                     except HTTPException:
                         await msg.channel.send(f"Unknown error while unmuting {user.mention}")
                     else:
-                        await msg.channel.send(
-                            f"Unmuted **{user.mention}**",
-                            allowed_mentions=discord.AllowedMentions(users=True)
-                        )
+                        with suppress(Exception):
+                            await msg.channel.send(
+                                f"Unmuted **{user.mention}**",
+                                allowed_mentions=discord.AllowedMentions(users=True)
+                            )
 
             return await self.destroy_task(guild_id, user_id)
 
