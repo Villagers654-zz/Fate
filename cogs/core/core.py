@@ -290,7 +290,7 @@ class Core(commands.Cog):
             if not self.config[guild_id][channel_id]:
                 await self.config.remove_sub(guild_id, key)
             await ctx.send(f"Enabled `{command}` in this channel")
-        if not self.config[guild_id]:
+        if guild_id in self.config and not self.config[guild_id]:
             await self.config.remove(guild_id)
         else:
             await self.config.flush()
