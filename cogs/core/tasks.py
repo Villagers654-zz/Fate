@@ -78,9 +78,6 @@ class Tasks(commands.Cog):
                     attr.cleanup()
                     objects_removed += count
 
-        if objects_removed:
-            self.bot.log.info(f"Cleaned up {objects_removed} objects")
-
 
     @tasks.loop(hours=1)
     async def cleanup_pool(self):
