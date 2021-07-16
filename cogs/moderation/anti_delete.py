@@ -10,6 +10,7 @@ via resending it as a webhook replicating their profile
 """
 
 from datetime import datetime, timedelta, timezone
+import asyncio
 
 from discord.ext import commands
 import discord
@@ -100,10 +101,13 @@ class AntiDelete(commands.Cog):
     async def on_message_delete(self, msg):
         if not isinstance(msg.author, discord.Member) or not msg.content:
             return
+        await asyncio.sleep(1)
+        if msg.guild.id in self.bot.filtered_messages:
+            if msg.id in self.bot.filtered_messages[msg.guild.id]:
+                return
         async with self.bot.utils.cursor() as cur:
             await cur.execute(f"select * from anti_delete where channel_id = {msg.channel.id};")
             if cur.rowcount:
-                print("Enabled")
                 after = datetime.now(tz=timezone.utc) - timedelta(seconds=3)
                 try:
                     async for entry in msg.guild.audit_logs(limit=1, action=action):
