@@ -886,15 +886,18 @@ class AntiSpam(commands.Cog):
 
                         # Don't mute users with Administrator
                         if user.top_role.position >= bot_user.top_role.position or user.guild_permissions.administrator:
-                            return
+                            continue
                         # Don't continue if lacking permission(s) to operate
                         if not msg.channel.permissions_for(bot_user).send_messages or not perms.manage_roles:
-                            return
+                            continue
 
-                        async with msg.channel.typing():
-                            mute_role = await self.bot.attrs.get_mute_role(msg.guild, upsert=True)
-                            if not mute_role or mute_role.position >= msg.guild.me.top_role.position:
-                                return
+                        try:
+                            async with msg.channel.typing():
+                                mute_role = await self.bot.attrs.get_mute_role(msg.guild, upsert=True)
+                                if not mute_role or mute_role.position >= msg.guild.me.top_role.position:
+                                    return
+                        except NotFound:
+                            return
 
                     if "antispam_mutes" not in self.bot.tasks:
                         self.bot.tasks["antispam_mutes"] = {}
