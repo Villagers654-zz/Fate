@@ -857,6 +857,9 @@ class AntiSpam(commands.Cog):
                                 break
 
             if (triggered is None or "ascii" in reason) and not msg.author.guild_permissions.administrator:
+                if msg.guild.id not in self.bot.filtered_messages:
+                    self.bot.filtered_messages[msg.guild.id] = {}
+                self.bot.filtered_messages[msg.guild.id][msg.id] = time()
                 with suppress(HTTPException, NotFound, Forbidden):
                     await msg.delete()
                     await msg.channel.send(f"No {reason}")
@@ -881,6 +884,10 @@ class AntiSpam(commands.Cog):
                                 if m and m.created_at > datetime.now(tz=timezone.utc) - timedelta(seconds=15)
                             ]
                         self.msgs[user_id] = []  # Remove soon to be deleted messages from the list
+                        for m in messages:
+                            if m.guild.id not in self.bot.filtered_messages:
+                                self.bot.filtered_messages[m.guild.id] = {}
+                            self.bot.filtered_messages[m.guild.id][m.id] = time()
                         with suppress(NotFound, Forbidden, HTTPException):
                             await msg.channel.delete_messages(messages)
 
