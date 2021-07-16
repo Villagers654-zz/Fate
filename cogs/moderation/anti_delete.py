@@ -98,7 +98,7 @@ class AntiDelete(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_delete(self, msg):
-        if not isinstance(msg.author, discord.Member):
+        if not isinstance(msg.author, discord.Member) or not msg.content:
             return
         async with self.bot.utils.cursor() as cur:
             await cur.execute(f"select * from anti_delete where channel_id = {msg.channel.id};")
