@@ -75,6 +75,7 @@ class Fate(commands.AutoShardedBot):
         self.tasks = {}  # Task object storing for easy management
         self.logger_tasks = {}  # Same as Fate.tasks except dedicated to cogs.logger
         self.chats = {}  # CleverBot API chat objects
+        self.filtered_messages = {}
 
         self.pool = None  # MySQL Pool initialized on_ready
         self.lavalink = None  # Music server
