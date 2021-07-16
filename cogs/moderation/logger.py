@@ -947,12 +947,11 @@ class Logger(commands.Cog):
                         if attachment.size > 8000000:
                             continue
                         fp = os.path.join("static", attachment.filename)
-                        async with aiohttp.ClientSession() as session:
-                            async with session.get(attachment.proxy_url) as resp:
-                                file = await resp.read()
-                        async with aiofiles.open(fp, "wb") as f:
-                            await f.write(file)
-                        files.append(fp)
+                        with suppress(Exception):
+                            file = await self.bot.get_resource(attachment.proxy_url)
+                            async with aiofiles.open(fp, "wb") as f:
+                                await f.write(file)
+                            files.append(fp)
                     if files and "attachment_delete" in self.config[guild_id]["channels"]:
                         log_type = "attachment_delete"
                 log = Log(log_type, embed=e, files=files)
