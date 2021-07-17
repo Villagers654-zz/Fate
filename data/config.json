@@ -95,7 +95,6 @@
       "nsfw"
     ],
     "moderation": [
-      "anti_delete",
       "anti_raid",
       "anti_spam",
       "case_manager",

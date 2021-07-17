@@ -114,8 +114,7 @@ class ConfigureModules:
                 "AntiSpam": self.bot.cogs["AntiSpam"],
                 "AntiRaid": self.bot.cogs["AntiRaid"],
                 "Chatfilter": self.bot.cogs["ChatFilter"],
-                "Verification": self.bot.cogs["Verification"],
-                "Anti-Delete": self.bot.cogs["AntiDelete"]
+                "Verification": self.bot.cogs["Verification"]
             },
             "Utility": {
                 "Welcome Messages": self.bot.cogs["Welcome"],
