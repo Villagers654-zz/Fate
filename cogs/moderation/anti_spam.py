@@ -6,7 +6,7 @@ from contextlib import suppress
 import traceback
 import pytz
 import re
-from typing import List, Dict
+from typing import List, Dict, Union
 
 import discord
 from discord.errors import Forbidden, NotFound, HTTPException
@@ -69,9 +69,10 @@ class AntiSpam(commands.Cog):
         self.macro_cd = {}  # Per-user message interval cache to look for patterns
         self.dupes = {}     # Per-channel index to keep track of duplicate messages
         self.msgs = {}      # Limited message cache
-        self.mutes = {}     # Keep track of mutes to increment the timer per-mute
-        self.typing = {}
-        self.urls: Dict[int, List[str]] = {}  # Cache sent urls to prevent repeats
+        self.mutes: Dict[int, Dict[int, List[float]]] = {}      # Keep track of mutes to increment the timer per-mute
+        self.typing: Dict[int, datetime.now] = {}               # Keep track of typing to prevent large copy-pastes
+        self.urls: Dict[int, List[List[Union[str, int]]]] = {}  # Cache sent urls to prevent repeats
+        self.imgs: Dict[int, List[List[Union[str, int]]]] = {}  # Cache sent images to prevent repeats
 
         self.cleanup_task.start()
 
@@ -256,6 +257,7 @@ class AntiSpam(commands.Cog):
         self.config[guild_id]["duplicates"] = {
             "per_message": 10,
             "same_link": 25,
+            "same_image": 25,
             "thresholds": [{
                 "timespan": 25,
                 "threshold": 4
@@ -586,8 +588,8 @@ class AntiSpam(commands.Cog):
 
             return await self.destroy_task(guild_id, user_id)
 
-    async def temp_cache(self, channel, match):
-        """ Cache a url for x seconds to prevent it being resent"""
+    async def cache_link(self, channel, match) -> None:
+        """ Cache a url for x seconds to prevent it being resent """
         self.urls[channel.id].append(match)
         duration = self.config[channel.guild.id]["duplicates"]["same_link"]
         await asyncio.sleep(duration)
@@ -596,7 +598,18 @@ class AntiSpam(commands.Cog):
         if not self.urls[channel.id]:
             del self.urls[channel.id]
 
-    async def has_pattern(self, intervals):
+    async def cache_image(self, channel, data: List[Union[str, int]]) -> None:
+        """ Cache image properties for x seconds to prevent it being resent """
+        self.imgs[channel.id].append(data)
+        duration = self.config[channel.guild.id]["duplicates"]["same_image"]
+        await asyncio.sleep(duration)
+        with suppress(ValueError):
+            self.imgs[channel.id].remove(data)
+        if not self.imgs[channel.id]:
+            del self.imgs[channel.id]
+
+    async def has_pattern(self, intervals: List[int]) -> bool:
+        """ Looks for repeating intervals """
         total = []
         for index in range(len(intervals)):
             for i in range(5):
@@ -825,9 +838,9 @@ class AntiSpam(commands.Cog):
                             reason = "Using a bot/macro"
 
             # duplicate messages
-            if "duplicates" in self.config[guild_id] and msg.content and not triggered:
+            if "duplicates" in self.config[guild_id] and not triggered:
                 await asyncio.sleep(0)
-                if msg.channel.permissions_for(msg.guild.me).read_message_history:
+                if msg.channel.permissions_for(msg.guild.me).read_message_history and msg.content:
                     with self.bot.utils.operation_lock(key=msg.id):
                         channel_id = str(msg.channel.id)
                         if channel_id not in self.dupes:
@@ -877,7 +890,7 @@ class AntiSpam(commands.Cog):
                             if triggered:
                                 break
 
-                if "same_link" in self.config[guild_id]["duplicates"]:
+                if self.config[guild_id]["duplicates"]["same_link"]:
                     await asyncio.sleep(0)
                     if "http" in msg.content or "discord.gg" in msg.content:
                         search = lambda: re.findall("(https?://)|(www\.)|(discord\.gg/)[a-zA-Z0-9./]*", msg.content)
@@ -889,8 +902,19 @@ class AntiSpam(commands.Cog):
                             if match in self.urls[msg.channel.id]:
                                 reason = "Duplicates: Repeated link"
                                 triggered = True
-                                print("Link cd was triggered")
-                            self.bot.loop.create_task(self.temp_cache(msg.channel, match))
+                            self.bot.loop.create_task(self.cache_link(msg.channel, match))
+
+                if self.config[guild_id]["duplicates"]["same_image"] and msg.attachments:
+                    for attachment in msg.attachments:
+                        await asyncio.sleep(0)
+                        if msg.channel.id not in self.imgs:
+                            self.imgs[msg.channel.id] = []
+                        dat = [attachment.filename, attachment.size]
+                        if dat in self.imgs[msg.channel.id]:
+                            print(f"Flagged")
+                            reason = "Duplicates: Repeated image"
+                            triggered = True
+                        self.bot.loop.create_task(self.cache_image(msg.channel, dat))
 
             if (triggered is None or "ascii" in reason) and not msg.author.guild_permissions.administrator:
                 if msg.guild.id not in self.bot.filtered_messages:
@@ -1023,7 +1047,7 @@ class ConfigureModules:
 
         self.cursor: dict = self.modules
         self.row = 0
-        self.config = None
+        self.config = {}
         self.key = self.update = None
 
         self.emotes: List[str] = [emojis.home, emojis.up, emojis.down, emojis.yes]
@@ -1039,7 +1063,7 @@ class ConfigureModules:
 
     def reset(self) -> None:
         """Go back to the list of enabled modules"""
-        self.cursor = self.modules
+        self.cursor: dict = self.modules
         self.row = 0
         self.config = None
 
@@ -1163,14 +1187,17 @@ class ConfigureModules:
         self.cursor = {}
 
         # Add in options
-        for k, v in list(self.config.items()):
-            if isinstance(v, int):
-                del self.config[k]
-                self.config[k.replace("_", " ") + " cooldown"] = v
-        print(self.config)
-        if isinstance(self.config, list) or "thresholds" in self.config:
+        if isinstance(self.config, dict):
+            for k, v in list(self.config.items()):
+                if not v or isinstance(v, int):
+                    self.cursor[k.replace("_", " ") + " cooldown"] = None
+
+        # Add options to configure individual thresholds
+        is_dict_threshold = isinstance(self.config, dict) and "thresholds" in self.config
+        if isinstance(self.config, list) or is_dict_threshold:
             self.cursor["Add a custom threshold"] = None
             self.cursor["Remove a custom threshold"] = None
+
         self.cursor["Reset to default"] = None
 
     async def configure(self, key):
@@ -1194,8 +1221,8 @@ class ConfigureModules:
             if not reply.isdigit():
                 await self.ctx.send("Invalid format. Your reply must be a number", delete_after=5)
             else:
-                if int(reply) > 16:
-                    await self.ctx.send("At the moment you can't go above 16")
+                if int(reply) > 60:
+                    await self.ctx.send("At the moment you can't go above 60")
                     return self.reset()
                 self.config[self.option] = int(reply)
                 await self.update_data()
