@@ -658,7 +658,10 @@ class AntiSpam(commands.Cog):
 
                 # Mostly unknown chars spam
                 if conf["unknown_chars"]:
-                    if len(content) > 128 and len(content) / total_abcs > 3:
+                    lmt = 128
+                    if ":" in content:
+                        lmt = 256
+                    if len(content) > lmt and len(content) / total_abcs > 3:
                         if not ("http" in content and len(content) < 512):
                             reason = "Inhuman: mostly non abc characters"
                             triggered = True
