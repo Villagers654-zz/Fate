@@ -335,7 +335,7 @@ class AntiSpam(commands.Cog):
         if "duplicates" not in self.config[guild_id]:
             return await ctx.send("Duplicates isn't enabled")
         self.config.remove_sub(guild_id, "rate_limit")
-        await ctx.send('Disabled rate-limit module')
+        await ctx.send('Disabled duplicates module')
 
     @_disable.command(name='inhuman')
     @commands.has_permissions(manage_messages=True)
