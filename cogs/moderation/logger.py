@@ -427,7 +427,7 @@ class Logger(commands.Cog):
     async def logger(self, ctx):
         if not ctx.invoked_subcommand:
             e = discord.Embed(color=fate)
-            e.set_author(name="| Action Logger", icon_url=ctx.guild.icon.url if ctx.guild.icon else self.bot.user.avatar_url)
+            e.set_author(name="| Action Logger", icon_url=ctx.guild.icon.url if ctx.guild.icon else self.bot.user.avatar.url)
             e.set_thumbnail(url=self.bot.user.avatar.url)
             e.description = "*A more detailed audit log that logs changes to the server and more to ~~a~~ dedicated channel(s)*"
             e.add_field(
