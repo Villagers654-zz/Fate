@@ -1243,7 +1243,7 @@ class Factions(commands.Cog):
         faction = await self.get_authors_faction(ctx)
 
         if ctx.author.id in self.blocked:
-            passed_verification = await self.bot.verify_user(ctx, user=ctx.author)
+            passed_verification = await self.bot.utils.verify_user(ctx, user=ctx.author)
             if passed_verification:
                 self.blocked.remove(ctx.author.id)
             else:
