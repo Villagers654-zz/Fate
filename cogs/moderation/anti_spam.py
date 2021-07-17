@@ -1,10 +1,12 @@
 import asyncio
 import json
 from time import time
-from datetime import datetime, timezone, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from contextlib import suppress
 import traceback
 import pytz
+import re
+from typing import List, Dict
 
 import discord
 from discord.errors import Forbidden, NotFound, HTTPException
@@ -12,6 +14,7 @@ from discord.ext import commands
 from discord.ext import tasks
 
 from botutils import colors, get_time, emojis
+from fate import Fate
 
 
 utc = pytz.UTC
@@ -68,6 +71,7 @@ class AntiSpam(commands.Cog):
         self.msgs = {}      # Limited message cache
         self.mutes = {}     # Keep track of mutes to increment the timer per-mute
         self.typing = {}
+        self.urls: Dict[int, List[str]] = {}  # Cache sent urls to prevent repeats
 
         self.cleanup_task.start()
 
@@ -251,6 +255,7 @@ class AntiSpam(commands.Cog):
             self.config[guild_id] = {}
         self.config[guild_id]["duplicates"] = {
             "per_message": 10,
+            "same_link": 25,
             "thresholds": [{
                 "timespan": 25,
                 "threshold": 4
@@ -581,6 +586,41 @@ class AntiSpam(commands.Cog):
 
             return await self.destroy_task(guild_id, user_id)
 
+    async def temp_cache(self, channel, match):
+        """ Cache a url for x seconds to prevent it being resent"""
+        self.urls[channel.id].append(match)
+        duration = self.config[channel.guild.id]["duplicates"]["same_link"]
+        await asyncio.sleep(duration)
+        with suppress(ValueError):
+            self.urls[channel.id].remove(match)
+        if not self.urls[channel.id]:
+            del self.urls[channel.id]
+
+    async def has_pattern(self, intervals):
+        total = []
+        for index in range(len(intervals)):
+            for i in range(5):
+                await asyncio.sleep(0)
+                total.append(intervals[index:index + i])
+
+        total = [p for p in total if len(p) > 2]
+        top = []
+        for lst in sorted(total, key=lambda v: total.count(v), reverse=True):
+            await asyncio.sleep(0)
+            dat = [lst, total.count(lst)]
+            if dat not in top:
+                top.append(dat)
+
+        for lst, count in top[:5]:
+            await asyncio.sleep(0)
+            div = round(len(intervals) / len(lst))
+            if all(i < 3 for i in lst):
+                return False
+            elif count >= div - 1:
+                return True
+            else:
+                return False
+
     @commands.Cog.listener("on_typing")
     async def log_typing_timestamps(self, channel, user, when):
         if hasattr(channel, "guild") and channel.guild and channel.guild.id in self.config:
@@ -698,7 +738,8 @@ class AntiSpam(commands.Cog):
                         del self.typing[user_id]
 
             # Rate limit
-            if "rate_limit" in self.config[guild_id] and self.config[guild_id]["rate_limit"] and not triggered:
+            if "rate_limit" in self.config[guild_id] and self.config[guild_id]["rate_limit"]:
+                await asyncio.sleep(0)
                 if guild_id not in self.spam_cd:
                     self.spam_cd[guild_id] = {}
                 for rate_limit in list(self.config[guild_id]["rate_limit"]):
@@ -763,31 +804,7 @@ class AntiSpam(commands.Cog):
 
             # anti macro
             if "anti_macro" in self.config[guild_id] and not triggered:
-                async def has_pattern(intervals):
-                    total = []
-                    for index in range(len(intervals)):
-                        for i in range(5):
-                            await asyncio.sleep(0)
-                            total.append(intervals[index:index + i])
-
-                    total = [p for p in total if len(p) > 2]
-                    top = []
-                    for lst in sorted(total, key=lambda v: total.count(v), reverse=True):
-                        await asyncio.sleep(0)
-                        dat = [lst, total.count(lst)]
-                        if dat not in top:
-                            top.append(dat)
-
-                    for lst, count in top[:5]:
-                        await asyncio.sleep(0)
-                        div = round(len(intervals) / len(lst))
-                        if all(i < 3 for i in lst):
-                            return False
-                        elif count >= div - 1:
-                            return True
-                        else:
-                            return False
-
+                await asyncio.sleep(0)
                 ts = datetime.timestamp
                 if user_id not in self.macro_cd:
                     self.macro_cd[user_id] = [ts(msg.created_at), []]
@@ -803,7 +820,7 @@ class AntiSpam(commands.Cog):
                             if intervals[0] > 3 and intervals[0] < 3:
                                 triggered = True
                                 reason = "Repeated messages at the same interval"
-                        elif await has_pattern(intervals):
+                        elif await self.has_pattern(intervals):
                             triggered = True
                             reason = "Using a bot/macro"
 
@@ -854,11 +871,26 @@ class AntiSpam(commands.Cog):
                                             await msg.channel.delete_messages([
                                                 message for message in dupes if message
                                             ])
-                                        reason = "duplicate messages"
+                                        reason = f"Duplicates: {lmt} duplicates within {timeframe} seconds"
                                         triggered = True
                                         break
                             if triggered:
                                 break
+
+                if "same_link" in self.config[guild_id]["duplicates"]:
+                    await asyncio.sleep(0)
+                    if "http" in msg.content or "discord.gg" in msg.content:
+                        search = lambda: re.findall("(https?://)|(www\.)|(discord\.gg/)[a-zA-Z0-9./]*", msg.content)
+                        r: list = await self.bot.loop.run_in_executor(None, search)
+                        if r and msg.channel.id not in self.urls:
+                            self.urls[msg.channel.id]: List[str] = []
+                        for match in r:
+                            await asyncio.sleep(0)
+                            if match in self.urls[msg.channel.id]:
+                                reason = "Duplicates: Repeated link"
+                                triggered = True
+                                print("Link cd was triggered")
+                            self.bot.loop.create_task(self.temp_cache(msg.channel, match))
 
             if (triggered is None or "ascii" in reason) and not msg.author.guild_permissions.administrator:
                 if msg.guild.id not in self.bot.filtered_messages:
@@ -983,35 +1015,36 @@ class AntiSpam(commands.Cog):
 
 
 class ConfigureModules:
-    def __init__(self, ctx):
-        self.super = ctx.bot.cogs["AntiSpam"]
+    def __init__(self, ctx: commands.Context):
+        self.super: AntiSpam = ctx.bot.cogs["AntiSpam"]
         self.ctx = ctx
-        self.bot = ctx.bot
+        self.bot: Fate = ctx.bot
         self.guild_id = ctx.guild.id
 
-        self.cursor = self.modules
+        self.cursor: dict = self.modules
         self.row = 0
-        self.config = self.key = None
+        self.config = None
+        self.key = self.update = None
 
-        self.emotes = [emojis.home, emojis.up, emojis.down, emojis.yes]
+        self.emotes: List[str] = [emojis.home, emojis.up, emojis.down, emojis.yes]
 
         self.msg = self.reaction = self.user = None
         self.check = lambda r, u: r.message.id == self.msg.id and u.id == ctx.author.id
 
-    async def setup(self):
+    async def setup(self) -> None:
         """Initialize the reaction menu"""
         e = self.create_embed(description=self.get_description())
         self.msg = await self.ctx.send(embed=e)
         self.bot.loop.create_task(self.add_reactions())
 
-    def reset(self):
+    def reset(self) -> None:
         """Go back to the list of enabled modules"""
         self.cursor = self.modules
         self.row = 0
         self.config = None
 
     @property
-    def modules(self):
+    def modules(self) -> dict:
         """Get their current AntiSpam config"""
         items = self.bot.cogs["AntiSpam"].config[self.guild_id].items()
         ignored = ('ignored', 'anti_macro')
@@ -1021,13 +1054,13 @@ class ConfigureModules:
             if module not in ignored
         }
 
-    def create_embed(self, **kwargs):
+    def create_embed(self, **kwargs) -> discord.Embed:
         """Get default embed style"""
         return discord.Embed(
             title="Enabled Modules", color=self.bot.config["theme_color"], **kwargs
         )
 
-    def get_description(self):
+    def get_description(self) -> str:
         # Format the current options
         description = ""
         for i, key in enumerate(self.cursor.keys()):
@@ -1039,7 +1072,7 @@ class ConfigureModules:
                 description += f"{emojis.offline} {key}"
         return description
 
-    async def next(self):
+    async def next(self) -> None:
         """Wait for the next reaction"""
         reaction, user = await self.bot.utils.get_reaction(self.check)
         if reaction:
@@ -1096,14 +1129,14 @@ class ConfigureModules:
             )
         await self.msg.edit(embed=e)
 
-    async def add_reactions(self):
+    async def add_reactions(self) -> None:
         """Add the reactions in the background"""
         for i, emote in enumerate(self.emotes):
             await self.msg.add_reaction(emote)
             if i != len(self.emotes) - 1:
                 await asyncio.sleep(0.21)
 
-    async def get_reply(self, message):
+    async def get_reply(self, message: str) -> str:
         """Get new values for a config"""
         m = await self.ctx.send(message)
         reply = await self.bot.utils.get_message(self.ctx)
@@ -1130,11 +1163,11 @@ class ConfigureModules:
         self.cursor = {}
 
         # Add in options
-        if any(isinstance(v, bool) for v in dict(self.config).values()):
-            self.cursor["Enable a mod"] = None
-            self.cursor["Disable a mod"] = None
-        if "per_message" in self.config:
-            self.cursor["Per-message threshold"] = None
+        for k, v in list(self.config.items()):
+            if isinstance(v, int):
+                del self.config[k]
+                self.config[k.replace("_", " ") + " cooldown"] = v
+        print(self.config)
         if isinstance(self.config, list) or "thresholds" in self.config:
             self.cursor["Add a custom threshold"] = None
             self.cursor["Remove a custom threshold"] = None
@@ -1147,8 +1180,8 @@ class ConfigureModules:
             await self.update_data()
             self.reset()
 
-        elif key == "Per-message threshold":
-            # Get options to modify the per-message threshold
+        elif "cooldown" in key:
+            self.option = key.rstrip(" cooldown").replace(" ", "_")
             self.cursor = {
                 "Update": None,
                 "Disable": None
@@ -1164,14 +1197,14 @@ class ConfigureModules:
                 if int(reply) > 16:
                     await self.ctx.send("At the moment you can't go above 16")
                     return self.reset()
-                self.config["per_message"] = int(reply)
+                self.config[self.option] = int(reply)
                 await self.update_data()
             self.reset()
 
         elif key == "Disable":
             # Remove the per-message threshold
             if isinstance(self.config, dict):  # To satisfy pycharms warning
-                self.config["per_message"] = None
+                self.config[self.option] = None
             await self.update_data()
             self.reset()
 
