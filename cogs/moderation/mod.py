@@ -14,8 +14,6 @@ from time import time as now
 from contextlib import suppress
 from string import printable
 from unicodedata import normalize
-from typing import *
-from pathlib import Path
 
 from discord.ext import commands
 import discord
