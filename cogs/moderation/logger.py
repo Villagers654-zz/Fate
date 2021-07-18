@@ -931,10 +931,13 @@ class Logger(commands.Cog):
                     dat["thumbnail_url"] = msg.author.avatar.url
                 e.set_author(name="~==🍸Msg Deleted🍸==~", icon_url=dat["thumbnail_url"])
                 e.set_thumbnail(url=msg.author.avatar.url)
+                kwargs = {}
+                if dat["user"] != "Unknown":
+                    kwargs["Deleted by"] = dat["user"]
                 e.description = self.bot.utils.format_dict({
                     "Author": msg.author.mention,
                     "Channel": f"<#{msg.channel.id}>",
-                    "Deleted by": dat["user"],
+                    **kwargs
                 })
                 for text_group in split(msg.content, 1024):
                     e.add_field(name="◈ MSG Content", value=text_group, inline=False)
@@ -971,11 +974,14 @@ class Logger(commands.Cog):
             dat = await self.search_audit(guild, audit.message_delete)
             e.set_author(name="Uncached Message Deleted", icon_url=dat["icon_url"])
             e.set_thumbnail(url=dat["thumbnail_url"])
+            kwargs = {}
+            if dat["user"] != "Unknown":
+                kwargs["Deleted by"] = dat["user"]
             e.description = self.bot.utils.format_dict({
                 "Author": dat["target"],
                 "MSG ID": payload.message_id,
                 "Channel": f"<#{payload.channel_id}>",
-                "Deleted by": dat["user"],
+                **kwargs
             })
             log = Log("message_delete", embed=e)
             self.put_nowait(guild_id, log)
