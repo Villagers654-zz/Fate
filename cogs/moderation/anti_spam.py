@@ -931,7 +931,11 @@ class AntiSpam(commands.Cog):
                 self.bot.filtered_messages[msg.guild.id][msg.id] = time()
                 with suppress(HTTPException, NotFound, Forbidden):
                     await msg.delete()
-                    await msg.channel.send(f"No {reason}", delete_after=5)
+                    await msg.channel.send(
+                        content=f"{msg.author.mention} no {reason}",
+                        delete_after=5,
+                        allowed_mentions=discord.AllowedMentions(users=True, roles=False, everyone=False)
+                    )
                 return
 
             if triggered and guild_id in self.config:
