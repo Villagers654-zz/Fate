@@ -6,7 +6,7 @@ from contextlib import suppress
 import traceback
 import pytz
 import re
-from typing import List, Dict, Union
+from typing import *
 
 import discord
 from discord.errors import Forbidden, NotFound, HTTPException
@@ -43,6 +43,8 @@ defaults = {
     },
     "duplicates": {
         "per_message": 10,
+        "same_link": 25,
+        "same_image": 25,
         "thresholds": [{
             "timespan": 25,
             "threshold": 4
@@ -60,7 +62,15 @@ defaults = {
 
 
 class AntiSpam(commands.Cog):
-    def __init__(self, bot):
+    spam_cd: Dict[int, Dict[str, Dict[int, List[int]]]]
+    macro_cd: Dict[int, List[Union[float, List[float]]]]
+    dupes: Dict[str, List[Optional[discord.Message]]]
+    msgs: Dict[int, List[Optional[discord.Message]]]
+    mutes: Dict[int, Dict[int, List[float]]]
+    typing: Dict[int, datetime.now]
+    urls: Dict[int, List[List[Union[str, int]]]]
+    imgs: Dict[int, List[List[Union[str, int]]]]
+    def __init__(self, bot: Fate):
         self.bot = bot
         self.config = bot.utils.cache("AntiSpam")
 
@@ -69,10 +79,10 @@ class AntiSpam(commands.Cog):
         self.macro_cd = {}  # Per-user message interval cache to look for patterns
         self.dupes = {}     # Per-channel index to keep track of duplicate messages
         self.msgs = {}      # Limited message cache
-        self.mutes: Dict[int, Dict[int, List[float]]] = {}      # Keep track of mutes to increment the timer per-mute
-        self.typing: Dict[int, datetime.now] = {}               # Keep track of typing to prevent large copy-pastes
-        self.urls: Dict[int, List[List[Union[str, int]]]] = {}  # Cache sent urls to prevent repeats
-        self.imgs: Dict[int, List[List[Union[str, int]]]] = {}  # Cache sent images to prevent repeats
+        self.mutes = {}     # Keep track of mutes to increment the timer per-mute
+        self.typing = {}    # Keep track of typing to prevent large copy-pastes
+        self.urls = {}      # Cache sent urls to prevent repeats
+        self.imgs = {}      # Cache sent images to prevent repeats
 
         self.cleanup_task.start()
 
@@ -893,12 +903,11 @@ class AntiSpam(commands.Cog):
                 if self.config[guild_id]["duplicates"]["same_link"]:
                     await asyncio.sleep(0)
                     if "http" in msg.content or "discord.gg" in msg.content:
-                        search = lambda: re.findall("(https?://)|(www\.)|(discord\.gg/)[a-zA-Z0-9./]*", msg.content)
-                        r: list = await self.bot.loop.run_in_executor(None, search)
-                        if r and msg.channel.id not in self.urls:
-                            self.urls[msg.channel.id]: List[str] = []
-                        for match in r:
-                            await asyncio.sleep(0)
+                        search = lambda: re.search("((https?://)|(www\.)|(discord\.gg/))[a-zA-Z0-9./]+", msg.content)
+                        if r := await self.bot.loop.run_in_executor(None, search):
+                            if msg.channel.id not in self.urls:
+                                self.urls[msg.channel.id]: List[str] = []
+                            match: str = r.group()
                             if match in self.urls[msg.channel.id]:
                                 reason = "Duplicates: Repeated link"
                                 triggered = True
