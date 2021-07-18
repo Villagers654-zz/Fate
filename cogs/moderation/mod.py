@@ -14,6 +14,8 @@ from time import time as now
 from contextlib import suppress
 from string import printable
 from unicodedata import normalize
+from typing import *
+from pathlib import Path
 
 from discord.ext import commands
 import discord
@@ -22,6 +24,7 @@ from discord.ext.commands import Greedy
 from discord.errors import NotFound, Forbidden, HTTPException
 
 from botutils import colors, get_prefix, get_time, split
+from fate import Fate
 
 
 cache = {}  # Keep track of what commands are still being ran
@@ -108,10 +111,13 @@ class DiscordMember(commands.Converter):
 
 
 class Moderation(commands.Cog):
-    def __init__(self, bot):
+    config: Dict[str, Dict[str, Any]]
+    tasks: Dict[str, Dict[str, Any]]
+    subs: Dict[str, List[str]]
+    def __init__(self, bot: Fate):
         self.bot = bot
-        self.fp = "./static/mod-cache.json"
-        self.path = "./data/userdata/moderation.json"
+        self.fp: str = "./static/mod-cache.json"
+        self.path: str = "./data/userdata/moderation.json"
         self.config = {}
         self.tasks = {}
         if path.isfile(self.path):
@@ -131,9 +137,9 @@ class Moderation(commands.Cog):
 
         self.subs = {"warn": ["delwarn", "clearwarns"], "mute": ["unmute"]}
 
-        self.import_bans_usage = "Transfer bans from one server to another. Usage is just `.import-bans 1234` " \
+        self.import_bans_usage: str = "Transfer bans from one server to another. Usage is just `.import-bans 1234` " \
                                  "with 1234 being the ID of the server you're importing from"
-        self.roles_usage = "Formats the role list to show how many members each role has. Usage is just `.roles`"
+        self.roles_usage: str = "Formats the role list to show how many members each role has. Usage is just `.roles`"
 
     @property
     def template(self):
@@ -911,8 +917,7 @@ class Moderation(commands.Cog):
     @commands.guild_only()
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(embed_links=True, ban_members=True)
-    async def ban(
-        self, ctx, ids: Greedy[int], users: Greedy[DiscordMember], *, reason="Unspecified"):
+    async def ban(self, ctx, ids: Greedy[int], users: Greedy[DiscordMember], *, reason="Unspecified"):
         """ Ban cmd that supports more than just members """
         reason = reason[:128]
         users_to_ban = len(ids if ids else []) + len(users if users else [])
