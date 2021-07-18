@@ -931,8 +931,10 @@ class AntiSpam(commands.Cog):
                 self.bot.filtered_messages[msg.guild.id][msg.id] = time()
                 with suppress(HTTPException, NotFound, Forbidden):
                     await msg.delete()
+                    e = discord.Embed(color=self.bot.config["theme_color"])
+                    e.description = f"{msg.author.mention} no {reason}"
                     await msg.channel.send(
-                        content=f"{msg.author.mention} no {reason}",
+                        embed=e,
                         delete_after=5,
                         allowed_mentions=discord.AllowedMentions(users=True, roles=False, everyone=False)
                     )
