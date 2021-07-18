@@ -10,16 +10,17 @@ A cog to add functionality for a channel interconnected between multiple others
 
 from contextlib import suppress
 import asyncio
-import json
-from os import path
 from typing import Union
 from datetime import datetime
+from os import path
+import json
 
 from discord.ext import commands, tasks
 from discord.errors import NotFound, Forbidden
 import discord
 
 from botutils import get_prefixes_async, colors
+from fate import Fate
 
 
 ban_hammers = [
@@ -38,7 +39,17 @@ rules = "1. No spamming\n" \
 
 
 class GlobalChat(commands.Cog):
-    def __init__(self, bot):
+    """
+    Attributes
+    -----------
+    bot : fate.Fate
+    polls : Dict[int, Dict[str, List[int]]]
+    cache : Dict[int, discord.Channel]
+    _queue : Dict[int, Union[discord.Embed, bool, discord.Message]]
+    last_id : Optional[int]
+    config : Dict[str, List[int]]
+    """
+    def __init__(self, bot: Fate):
         self.bot = bot
         self.polls = {}
         self.cache = {}
@@ -48,10 +59,18 @@ class GlobalChat(commands.Cog):
         self.handle_queue.start()
         self._queue = []
         self.last_id = None
-        self.blocked = []
-        if path.isfile("data/gcb.json"):
-            with open("data/gcb.json") as f:
-                self.blocked = json.load(f)
+        self.config = {
+            "blocked": [],
+            "icon_blocked": [],
+            "images_blocked": []
+        }
+        if path.isfile("./data/gcb.json"):
+            with open("./data/gcb.json") as f:
+                self.config = json.load(f)
+
+    async def save_blacklist(self):
+        async with self.bot.utils.open("./data/gcb.json", "w") as f:
+            await f.write(await self.bot.dump(self.config))
 
     def cog_unload(self):
         self.handle_queue.cancel()
@@ -68,7 +87,7 @@ class GlobalChat(commands.Cog):
         queued_to_send = []
         sending = list(self.queue)
         if len(sending) > 3 and all(e[2].guild.id == sending[0][2].guild.id for e in sending):
-            self.blocked.append(sending[0][2].guild.id)
+            self.config["blocked"].append(sending[0][2].guild.id)
             await sending[0][2].channel.send("Andddddddd blocked")
             self._queue = []
             return
@@ -185,8 +204,71 @@ class GlobalChat(commands.Cog):
             await cur.execute(f"select status from global_users where user_id = {target.id} and status = 'moderator';")
             if cur.rowcount:
                 return await ctx.send("You can't ban global chat moderators")
-        self.blocked.append(target.id)
+        if target.id in self.config["blocked"]:
+            return await ctx.send(f"{target} is already blocked")
+        self.config["Blocked"].append(target.id)
         await ctx.send(f"Blocked {target}")
+        await self.save_blacklist()
+
+    @_gc.command(name="unban")
+    async def _unban(self, ctx, *, target: Union[discord.User, discord.Guild]):
+        async with self.bot.utils.cursor() as cur:
+            await cur.execute(f"select status from global_users where user_id = {ctx.author.id} and status = 'moderator';")
+            if not cur.rowcount:
+                return await ctx.send("Only global chat moderators can use this command")
+        if target.id not in self.config["blocked"]:
+            return await ctx.send(f"{target} isn't blocked")
+        self.config["blocked"].remove(target.id)
+        await ctx.send(f"Blocked {target}")
+        await self.save_blacklist()
+
+    @_gc.command(name="ban-icon")
+    async def _ban_icon(self, ctx, guild_id: int):
+        async with self.bot.utils.cursor() as cur:
+            await cur.execute(f"select status from global_users where user_id = {ctx.author.id} and status = 'moderator';")
+            if not cur.rowcount:
+                return await ctx.send("Only global chat moderators can use this command")
+        if guild_id in self.config["icon_blocked"]:
+            return await ctx.send("That servers icon is already blacklisted")
+        self.config["icon_blocked"].append(guild_id)
+        await ctx.send(f"Blacklisted {self.bot.get_guild(guild_id)}s icon")
+        await self.save_blacklist()
+
+    @_gc.command(name="unban-icon")
+    async def _unban_icon(self, ctx, guild_id: int):
+        async with self.bot.utils.cursor() as cur:
+            await cur.execute(f"select status from global_users where user_id = {ctx.author.id} and status = 'moderator';")
+            if not cur.rowcount:
+                return await ctx.send("Only global chat moderators can use this command")
+        if guild_id not in self.config["icon_blocked"]:
+            return await ctx.send("That servers icon isn't blacklisted")
+        self.config["icon_blocked"].remove(guild_id)
+        await ctx.send(f"Un-blacklisted {self.bot.get_guild(guild_id)}s icon")
+        await self.save_blacklist()
+
+    @_gc.command(name="ban-images")
+    async def _ban_images(self, ctx, target: Union[discord.User, discord.Guild]):
+        async with self.bot.utils.cursor() as cur:
+            await cur.execute(f"select status from global_users where user_id = {ctx.author.id} and status = 'moderator';")
+            if not cur.rowcount:
+                return await ctx.send("Only global chat moderators can use this command")
+        if target.id in self.config["images_blocked"]:
+            return await ctx.send(f"{target} is already blacklisted")
+        self.config["images_blocked"].append(target.id)
+        await ctx.send(f"Blacklisted images from {target}")
+        await self.save_blacklist()
+
+    @_gc.command(name="unban-images")
+    async def _unban_images(self, ctx, target: Union[discord.User, discord.Guild]):
+        async with self.bot.utils.cursor() as cur:
+            await cur.execute(f"select status from global_users where user_id = {ctx.author.id} and status = 'moderator';")
+            if not cur.rowcount:
+                return await ctx.send("Only global chat moderators can use this command")
+        if target.id not in self.config["images_blocked"]:
+            return await ctx.send(f"{target} isn't blacklisted")
+        self.config["images_blocked"].remove(target.id)
+        await ctx.send(f"Un-blacklisted images from {target}")
+        await self.save_blacklist()
 
     @_gc.command(name="rules")
     async def rules(self, ctx):
@@ -197,7 +279,6 @@ class GlobalChat(commands.Cog):
     @_gc.command(name="enable")
     @commands.has_permissions(administrator=True)
     async def _enable(self, ctx):
-        msg = await ctx.send("Enabling global chat")
         async with self.bot.utils.cursor() as cur:
             await cur.execute(
                 f"insert into global_chat values ("
@@ -331,7 +412,7 @@ class GlobalChat(commands.Cog):
             # Duplicate messages
             if msg.content and any(msg.content == m.content for m in self.msg_cache):
                 return
-            if msg.guild.id in self.blocked or msg.author.id in self.blocked:
+            if msg.guild.id in self.config["blocked"] or msg.author.id in self.config["blocked"]:
                 return
 
             # Missing permissions to moderate global chat
@@ -384,7 +465,7 @@ class GlobalChat(commands.Cog):
                             return await msg.channel.send("No links..")
 
             e = discord.Embed(color=msg.author.color)
-            if msg.guild.icon:
+            if msg.guild.icon and msg.guild.id not in self.config["icon_blocked"]:
                 e.set_thumbnail(url=msg.guild.icon.url)
             author = str(msg.author)
             if mod:
@@ -420,8 +501,10 @@ class GlobalChat(commands.Cog):
 
             # Send a new msg
             if msg.attachments:
-                e.set_image(url=msg.attachments[0].url)
-            if msg.guild.icon:
+                if msg.author.id not in self.config["images_blocked"]:
+                    if msg.guild.id not in self.config["images_blocked"]:
+                        e.set_image(url=msg.attachments[0].url)
+            if msg.guild.icon and msg.guild.id not in self.config["icon_blocked"]:
                 e.set_thumbnail(url=msg.guild.icon.url)
             e.description = msg.content[:512]
             self._queue.append([e, False, msg])
