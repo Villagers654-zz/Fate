@@ -59,7 +59,16 @@
     "<:buff:861180884027310110> | !user sent !target flying out of this world": 25,
     "<:pinkphallicobject:642570416753475601> | !user went dicko mode on !target": 30,
     "🥋 !user spin kicked !target to the 4th dimension": 23,
-    "💢 | !user pinged the discord mods on !target": 12
+    "💢 | !user pinged the discord mods on !target": 12,
+    "<a:rickroll2:624258122407608323> | !user rickrolled tf outta !target": 30,
+    "🍆 | !target vibed too hard with Конфетка": 21,
+    "🐾 | !user's angry doggo bit !target's tiny hand off": 36,
+    "🛒 | !target went shopping for the wrong type of toys": 11,
+    "🏎️ | !user ran over !target in an F1 brrrrr": 50,
+    "👁️ | !target was blinded by !user's punch": 10,
+    "🍑 | !user spanked tf outta !target": 31,
+    "🍓 | !user gave !target some expired strawberry": 25
+
   },
   "dodges": [
     "🔮 | !target foretold !user's attack and dodged",
@@ -78,8 +87,12 @@
     "🕹️ | !target encountered the Konami Code gifting them an extra life",
     "🏃‍♂️ | !target beat the world record Any% Glitchless",
     "🛰️ | !target redirected a nuke from North Korea to Joe Mama",
-    "<:angry_doggo:861694186909597716> | !user got way too close to !targets angry doggo",
+    "<:angry_doggo:861694186909597716> | !user got way too close to !target's angry doggo",
     "🍌 | !target left a banana peel on the ground and !user slipped on it mid attack",
-    "🥤 | !user choked on their juice and couldn't stop coughing in order to attack"
+    "🥤 | !user choked on their juice and couldn't stop coughing in order to attack",
+    "🎶 | !target played Dream - Mask Sus Remix to put off !user",
+    "📴 | !target virtually blocked !user's attack from entering the mainframe",
+    "🕷️ | Legit's Pet Spider spooked tf outta !user",
+    "🍥 | !target consumed some good stuff and went on a sugar rush"
   ]
 }
