@@ -26,6 +26,16 @@ from discord.ext import tasks
 from botutils import get_prefix, format_date_difference, colors
 
 
+tier_damage = {
+    "infinite": 69420,
+    "high": [41, 75],
+    "medium": [21, 40],
+    "low": [6, 20],
+    "light": [1, 5],
+    None: 0
+}
+
+
 class Personalities:
     types: List[str] = [
         "psychopath", "depressed", "cheerful", "bright", "dark", "god", "deceiver", "funny", "fishy", "cool",
@@ -240,12 +250,15 @@ class Fun(commands.Cog):
 
         e.description = ""
         attacks = dict(self.attacks)
-        dodges = list(self.dodges)
+        attacks[None] = list(self.dodges)
         health1 = 200
         health2 = 200
         attacker = 1
 
-        attacks_used = []
+        last_tier_used = {1: None, 2: None}
+        attacks_used = {k: [] for k in self.attacks}
+        attacks_used[None] = []
+
         while True:
             if not msg:
                 msg = await ctx.send(embed=e)
@@ -260,25 +273,31 @@ class Fun(commands.Cog):
                 await msg.edit(content=f"🏆 **{user1.name} won** 🏆")
                 return await ctx.send(f"⚔ **{user1.name}** won against **{user2.name}**")
 
+            # Set an attack tier
+            choices = [None, "light", "low", "medium", "high"]
+            choices.remove(last_tier_used[attacker])
+
+            tier = random.choice(choices)
+            last_tier_used[attacker] = tier
+
+            if random.randint(1, 100) <= 2:
+                tier = "infinite"
+
             # Ensure we don't get an attack that was already used
             while True:
                 await asyncio.sleep(0)
-                if len(attacks_used) == len(attacks):
-                    attacks_used = []
-                attack = random.choice(list(attacks.keys()))
-                if attack in attacks_used:
+                if len(attacks_used[tier]) == len(attacks[tier]):
+                    attacks_used[tier] = []
+                attack = random.choice(attacks[tier])
+                if attack in attacks_used[tier]:
                     continue
-                if "∞" in attack:
-                    if random.randint(1, 2) != 1:
-                        continue
-                attacks_used.append(attack)
+                attacks_used[tier].append(attack)
                 break
 
             # Subtract the damage from the targets health and format the attack with their names
-            dmg = attacks[attack]
-            if random.randint(1, 10) == 1:
-                attack = random.choice(dodges)
-                dmg = 0
+            dmg = tier_damage[tier]
+            if isinstance(dmg, list):
+                dmg = random.randint(*dmg)
             if attacker == 1:
                 formatted = attack.replace('!user', user1.name).replace('!target', user2.name)
                 health2 -= dmg
@@ -287,13 +306,13 @@ class Fun(commands.Cog):
                 health1 -= dmg
 
             # Reformatting
-            if dmg and "∞" not in attack:
+            if dmg and tier != "infinite":
                 formatted += f" `-{dmg}HP`"
             if health1 < 0:
                 health1 = 0
             if health2 < 0:
                 health2 = 0
-            if "∞" in attack:
+            if tier == "infinite":
                 if attacker == 1:
                     health2 = -dmg
                 else:
