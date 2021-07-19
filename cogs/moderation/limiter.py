@@ -94,7 +94,7 @@ class Limiter(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, m: discord.Message):
-        if isinstance(m.author, discord.Member):
+        if isinstance(m.author, discord.Member) and m.guild:
             if m.guild.owner and not m.author.guild_permissions.administrator:
                 guild_id = str(m.guild.id)
                 channel_id = str(m.channel.id)
