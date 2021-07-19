@@ -32,6 +32,7 @@ class Influx(commands.Cog):
             "users": len(bot.users),
             "guilds": len(bot.guilds)
         }
+        self.process = psutil.Process(os.getpid())
         self.messages = 0
         self.update_user_count.start()
         self.update_stats.start()
@@ -74,11 +75,9 @@ class Influx(commands.Cog):
         """ Updates the cpu usage and bot ping """
         def get_cpu_percentage():
             """ Returns the bots cpu usage over the span of 3s """
-            bot_process = psutil.Process(pid)
-            return bot_process.cpu_percent(interval=5)
+            return self.process.cpu_percent(interval=5)
 
         with suppress(Exception):
-            pid = os.getpid()
             result = await self.bot.loop.run_in_executor(
                 None, get_cpu_percentage
             )
@@ -96,7 +95,7 @@ class Influx(commands.Cog):
         self.last["guilds"] = len(self.bot.guilds)
 
     @commands.Cog.listener()
-    async def on_message(self, _msg):
+    async def on_message(self, _message):
         self.messages += 1
 
     @commands.Cog.listener()
