@@ -262,16 +262,6 @@ class Fun(commands.Cog):
         while True:
             if not msg:
                 msg = await ctx.send(embed=e)
-            if health1 <= 0 and user1.id == 261451679239634944:
-                async with self.bot.utils.cursor() as cur:
-                    await cur.execute(f"insert into battles values ({user1.id}, {user2.id});")
-                await msg.edit(content=f"🏆 **{user1.name} won** 🏆")
-                return await ctx.send(f"⚔ **{user1.name}** still won against **{user2.name}** somehow...")
-            if health2 <= 0 and user2.id == 261451679239634944:
-                async with self.bot.utils.cursor() as cur:
-                    await cur.execute(f"insert into battles values ({user2.id}, {user1.id});")
-                await msg.edit(content=f"🏆 **{user2.name} won** 🏆")
-                return await ctx.send(f"⚔ **{user2.name}** still won against **{user1.name}** somehow...")
             if health1 <= 0:
                 async with self.bot.utils.cursor() as cur:
                     await cur.execute(f"insert into battles values ({user2.id}, {user1.id});")
