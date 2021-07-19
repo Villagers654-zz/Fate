@@ -37,7 +37,7 @@ class ErrorHandler(commands.Cog):
             module = self.bot.cogs["Moderation"]
             await module.cog_after_invoke(ctx)
         ignored = (commands.CommandNotFound, commands.NoPrivateMessage)
-        if isinstance(error, ignored):
+        if isinstance(error, ignored) or not str(error):
             return
 
         # Don't bother if completely missing access
