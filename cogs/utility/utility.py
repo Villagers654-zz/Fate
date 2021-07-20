@@ -936,10 +936,14 @@ class Utility(commands.Cog):
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
     async def server_info(self, ctx):
-        try:
-            e = discord.Embed(color=self.avg_color(ctx.guild.icon.url))
-        except ZeroDivisionError:
-            e = discord.Embed(color=colors.fate)
+        color = colors.fate
+        if ctx.guild.icon:
+            try:
+                _color = self.avg_color(ctx.guild.icon.url)
+                color = _color
+            except ZeroDivisionError:
+                pass
+        e = discord.Embed(color=color)
         e.description = f"id: {ctx.guild.id}\nOwner: {ctx.guild.owner}"
         e.set_author(name=f"{ctx.guild.name}:", icon_url=ctx.guild.owner.avatar.url)
         e.set_thumbnail(url=ctx.guild.icon.url)
@@ -1178,20 +1182,17 @@ class Utility(commands.Cog):
         end_time = datetime.strptime(dat["timer"], "%Y-%m-%d %H:%M:%S.%f")
         await discord.utils.sleep_until(end_time)
         channel = self.bot.get_channel(dat["channel"])
-        try:
+        with suppress(Exception):
             await channel.send(
                 f"{dat['mention']} remember dat thing: {discord.utils.escape_mentions(msg)}",
                 allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=True)
             )
-        except (discord.errors.Forbidden, discord.errors.NotFound, AttributeError):
-            pass
-        with suppress(KeyError, ValueError):
-            del self.timers[user_id][msg]
-        with suppress(KeyError, ValueError):
+        del self.timers[user_id][msg]
+        with suppress(KeyError):
             if not self.timers[user_id]:
                 del self.timers[user_id]
         await self.save_timers()
-        with suppress(KeyError, ValueError):
+        with suppress(KeyError):
             del self.bot.tasks["timers"][f"timer-{dat['timer']}"]
 
     @commands.command(name="reminder", aliases=["timer", "remindme", "remind"])
