@@ -62,28 +62,18 @@ defaults = {
 
 
 class AntiSpam(commands.Cog):
-    spam_cd: Dict[int, Dict[str, Dict[int, List[int]]]]
-    macro_cd: Dict[int, List[Union[float, List[float]]]]
-    dupes: Dict[str, List[Optional[discord.Message]]]
-    msgs: Dict[int, List[Optional[discord.Message]]]
-    mutes: Dict[int, Dict[int, List[float]]]
-    typing: Dict[int, datetime.now]
-    urls: Dict[int, List[List[Union[str, int]]]]
-    imgs: Dict[int, List[List[Union[str, int]]]]
+    spam_cd: Dict[int, Dict[str, Dict[int, List[int]]]] = {}   # Cooldown cache for rate limiting
+    macro_cd: Dict[int, List[Union[float, List[float]]]] = {}  # Per-user message interval cache to look for patterns
+    dupes: Dict[str, List[Optional[discord.Message]]] = {}     # Per-channel index to keep track of duplicate messages
+    msgs: Dict[int, List[Optional[discord.Message]]] = {}      # Limited message cache
+    mutes: Dict[int, Dict[int, List[float]]] = {}              # Keep track of mutes to increment the timer per-mute
+    typing: Dict[int, datetime.now] = {}                       # Keep track of typing to prevent large copy-pastes
+    urls: Dict[int, List[List[Union[str, int]]]] = {}          # Cache sent urls to prevent repeats
+    imgs: Dict[int, List[List[Union[str, int]]]] = {}          # Cache sent images to prevent repeats
+
     def __init__(self, bot: Fate):
         self.bot = bot
         self.config = bot.utils.cache("AntiSpam")
-
-        # cache
-        self.spam_cd = {}   # Cooldown cache for rate limiting
-        self.macro_cd = {}  # Per-user message interval cache to look for patterns
-        self.dupes = {}     # Per-channel index to keep track of duplicate messages
-        self.msgs = {}      # Limited message cache
-        self.mutes = {}     # Keep track of mutes to increment the timer per-mute
-        self.typing = {}    # Keep track of typing to prevent large copy-pastes
-        self.urls = {}      # Cache sent urls to prevent repeats
-        self.imgs = {}      # Cache sent images to prevent repeats
-
         self.cleanup_task.start()
 
     def cog_unload(self):
@@ -760,249 +750,251 @@ class AntiSpam(commands.Cog):
                     if user_id in self.typing:
                         del self.typing[user_id]
 
-            # Rate limit
-            if "rate_limit" in self.config[guild_id] and self.config[guild_id]["rate_limit"]:
-                await asyncio.sleep(0)
-                if guild_id not in self.spam_cd:
-                    self.spam_cd[guild_id] = {}
-                for rate_limit in list(self.config[guild_id]["rate_limit"]):
-                    await asyncio.sleep(0)
-                    dat = [
-                        *list(rate_limit.values()),
-                        ",".join(str(v) for v in rate_limit.values())
-                    ]
-                    timespan, threshold, uid = dat
-                    if uid not in self.spam_cd[guild_id]:
-                        self.spam_cd[guild_id][uid] = {}
-                for rl_id in list(self.spam_cd[guild_id].keys()):
-                    await asyncio.sleep(0)
-                    raw = rl_id.split(",")
-                    dat = {
-                        "timespan": int(raw[0]),
-                        "threshold": int(raw[1])
-                    }
-                    if dat not in self.config[guild_id]["rate_limit"]:
-                        del self.spam_cd[guild_id][rl_id]
+            with suppress(KeyError):
 
-                for rl_id in list(self.spam_cd[guild_id].keys()):
+                # Rate limit
+                if "rate_limit" in self.config[guild_id] and self.config[guild_id]["rate_limit"]:
                     await asyncio.sleep(0)
-                    timeframe, threshold = rl_id.split(",")
-                    now = int(time() / int(timeframe))
-                    if user_id not in self.spam_cd[guild_id][rl_id]:
-                        self.spam_cd[guild_id][rl_id][user_id] = [now, 0]
-                    if self.spam_cd[guild_id][rl_id][user_id][0] == now:
-                        self.spam_cd[guild_id][rl_id][user_id][1] += 1
-                    else:
-                        self.spam_cd[guild_id][rl_id][user_id] = [now, 0]
-                    if self.spam_cd[guild_id][rl_id][user_id][1] >= int(threshold):
-                        reason = f"{threshold} messages within {timeframe} seconds"
-                        triggered = True
+                    if guild_id not in self.spam_cd:
+                        self.spam_cd[guild_id] = {}
+                    for rate_limit in list(self.config[guild_id]["rate_limit"]):
+                        await asyncio.sleep(0)
+                        dat = [
+                            *list(rate_limit.values()),
+                            ",".join(str(v) for v in rate_limit.values())
+                        ]
+                        timespan, threshold, uid = dat
+                        if uid not in self.spam_cd[guild_id]:
+                            self.spam_cd[guild_id][uid] = {}
+                    for rl_id in list(self.spam_cd[guild_id].keys()):
+                        await asyncio.sleep(0)
+                        raw = rl_id.split(",")
+                        dat = {
+                            "timespan": int(raw[0]),
+                            "threshold": int(raw[1])
+                        }
+                        if dat not in self.config[guild_id]["rate_limit"]:
+                            del self.spam_cd[guild_id][rl_id]
 
-            # mass pings
-            if "mass_pings" in self.config[guild_id] and not triggered:
-                await asyncio.sleep(0)
-                pings = [msg.raw_mentions, msg.raw_role_mentions]
-                total_pings = sum(len(group) for group in pings)
-                if total_pings > self.config[guild_id]["mass_pings"]["per_message"]:
-                    reason = "mass pinging"
-                    triggered = True
+                    for rl_id in list(self.spam_cd[guild_id].keys()):
+                        await asyncio.sleep(0)
+                        timeframe, threshold = rl_id.split(",")
+                        now = int(time() / int(timeframe))
+                        if user_id not in self.spam_cd[guild_id][rl_id]:
+                            self.spam_cd[guild_id][rl_id][user_id] = [now, 0]
+                        if self.spam_cd[guild_id][rl_id][user_id][0] == now:
+                            self.spam_cd[guild_id][rl_id][user_id][1] += 1
+                        else:
+                            self.spam_cd[guild_id][rl_id][user_id] = [now, 0]
+                        if self.spam_cd[guild_id][rl_id][user_id][1] >= int(threshold):
+                            reason = f"{threshold} messages within {timeframe} seconds"
+                            triggered = True
 
-                if user_id not in self.msgs:
-                    self.msgs[user_id] = []
-                pongs = lambda s: [
-                    m for m in self.msgs[user_id]
-                    if m and m.created_at > datetime.now(tz=timezone.utc) - timedelta(seconds=s)
-                       and sum(len(group) for group in [
-                        m.mentions, m.raw_mentions, m.role_mentions, m.raw_role_mentions
-                    ])
-                ]
-
-                for threshold in self.config[guild_id]["mass_pings"]["thresholds"]:
+                # mass pings
+                if "mass_pings" in self.config[guild_id] and not triggered:
                     await asyncio.sleep(0)
-                    if user_id not in self.msgs:
-                        self.msgs[user_id] = []
-                    if len(pongs(threshold["timespan"])) > threshold["threshold"]:
+                    pings = [msg.raw_mentions, msg.raw_role_mentions]
+                    total_pings = sum(len(group) for group in pings)  # type: ignore
+                    if total_pings > self.config[guild_id]["mass_pings"]["per_message"]:
                         reason = "mass pinging"
                         triggered = True
 
-            # anti macro
-            if "anti_macro" in self.config[guild_id] and not triggered:
-                await asyncio.sleep(0)
-                ts = datetime.timestamp
-                if user_id not in self.macro_cd:
-                    self.macro_cd[user_id] = [ts(msg.created_at), []]
-                else:
-                    self.macro_cd[user_id][1] = [
-                        *self.macro_cd[user_id][1][-20:],
-                        ts(msg.created_at) - self.macro_cd[user_id][0]
+                    if user_id not in self.msgs:
+                        self.msgs[user_id] = []
+                    pongs = lambda s: [
+                        m for m in self.msgs[user_id]
+                        if m and m.created_at > datetime.now(tz=timezone.utc) - timedelta(seconds=s)
+                           and sum(len(group) for group in [
+                            m.mentions, m.raw_mentions, m.role_mentions, m.raw_role_mentions
+                        ])
                     ]
-                    self.macro_cd[user_id][0] = ts(msg.created_at)
-                    intervals = [int(i) for i in self.macro_cd[user_id][1]]
-                    if len(intervals) > 12:
-                        if all(round(cd) == round(intervals[0]) for cd in intervals):
-                            if intervals[0] > 3 and intervals[0] < 3:
-                                triggered = True
-                                reason = "Repeated messages at the same interval"
-                        elif await self.has_pattern(intervals):
-                            triggered = True
-                            reason = "Using a bot/macro"
 
-            # duplicate messages
-            if "duplicates" in self.config[guild_id] and not triggered:
-                await asyncio.sleep(0)
-                if msg.channel.permissions_for(msg.guild.me).read_message_history and msg.content:
-                    with self.bot.utils.operation_lock(key=msg.id):
-                        channel_id = str(msg.channel.id)
-                        if channel_id not in self.dupes:
-                            self.dupes[channel_id] = []
-                        self.dupes[channel_id] = [
-                            msg, *[
-                                msg for msg in self.dupes[channel_id]
-                                if msg.created_at > datetime.now(tz=timezone.utc) - timedelta(seconds=60)
-                            ]
-                        ]
-                        for threshold in self.config[guild_id]["duplicates"]["thresholds"]:
-                            lmt = threshold["threshold"]
-                            timeframe = threshold["timespan"]
-                            for message in list(self.dupes[channel_id]):
-                                await asyncio.sleep(0)
-                                if channel_id not in self.dupes:
-                                    break
-                                dupes = [
-                                    m for m in self.dupes[channel_id]
-                                    if m and m.content and m.content == message.content
-                                       and m.created_at > datetime.now(tz=timezone.utc) - timedelta(seconds=timeframe)
-                                       and len(m.content) > 5
-                                ]
-                                all_are_single_use = all(
-                                    len([m for m in dupes if m.author.id == dupes[i].author.id]) == 1
-                                    for i in range(len(dupes))
-                                )
-                                if len(dupes) > 1 and not all_are_single_use:
-                                    if len([d for d in dupes if d.author.id == dupes[0].author.id]) == 1:
-                                        dupes.pop(0)
-                                if len(dupes) > lmt:
-                                    history = await msg.channel.history(limit=2).flatten()
-                                    if not any(m.author.bot for m in history):
-                                        users = set(list([
-                                            *[m.author for m in dupes if m], *users
-                                        ]))
-                                        for message in dupes:
-                                            with suppress(IndexError, ValueError, KeyError):
-                                                self.dupes[channel_id].remove(message)
-                                        with suppress(Forbidden, NotFound):
-                                            await msg.channel.delete_messages([
-                                                message for message in dupes if message
-                                            ])
-                                        reason = f"Duplicates: {lmt} duplicates within {timeframe} seconds"
-                                        triggered = True
-                                        break
-                            if triggered:
-                                break
-
-                if self.config[guild_id]["duplicates"]["same_link"]:
-                    await asyncio.sleep(0)
-                    if "http" in msg.content or "discord.gg" in msg.content:
-                        search = lambda: re.search("((https?://)|(www\.)|(discord\.gg/))[a-zA-Z0-9./]+", msg.content)
-                        if r := await self.bot.loop.run_in_executor(None, search):
-                            if msg.channel.id not in self.urls:
-                                self.urls[msg.channel.id]: List[str] = []
-                            match: str = r.group()
-                            if match in self.urls[msg.channel.id]:
-                                reason = "Duplicates: Repeated link"
-                                triggered = True
-                            self.bot.loop.create_task(self.cache_link(msg.channel, match))
-
-                if self.config[guild_id]["duplicates"]["same_image"] and msg.attachments:
-                    for attachment in msg.attachments:
+                    for threshold in self.config[guild_id]["mass_pings"]["thresholds"]:
                         await asyncio.sleep(0)
-                        if msg.channel.id not in self.imgs:
-                            self.imgs[msg.channel.id] = []
-                        dat = [attachment.filename, attachment.size]
-                        if dat in self.imgs[msg.channel.id]:
-                            print(f"Flagged")
-                            reason = "Duplicates: Repeated image"
+                        if user_id not in self.msgs:
+                            self.msgs[user_id] = []
+                        if len(pongs(threshold["timespan"])) > threshold["threshold"]:
+                            reason = "mass pinging"
                             triggered = True
-                        self.bot.loop.create_task(self.cache_image(msg.channel, dat))
 
-            if (triggered is None or "ascii" in reason) and not msg.author.guild_permissions.administrator:
-                if msg.guild.id not in self.bot.filtered_messages:
-                    self.bot.filtered_messages[msg.guild.id] = {}
-                self.bot.filtered_messages[msg.guild.id][msg.id] = time()
-                with suppress(HTTPException, NotFound, Forbidden):
-                    await msg.delete()
-                    e = discord.Embed(color=self.bot.config["theme_color"])
-                    e.description = f"{msg.author.mention} no {reason}"
-                    await msg.channel.send(
-                        embed=e,
-                        delete_after=5,
-                        allowed_mentions=discord.AllowedMentions(users=True, roles=False, everyone=False)
-                    )
-                return
+                # anti macro
+                if "anti_macro" in self.config[guild_id] and not triggered:
+                    await asyncio.sleep(0)
+                    ts = datetime.timestamp
+                    if user_id not in self.macro_cd:
+                        self.macro_cd[user_id] = [ts(msg.created_at), []]
+                    else:
+                        self.macro_cd[user_id][1] = [
+                            *self.macro_cd[user_id][1][-20:],
+                            ts(msg.created_at) - self.macro_cd[user_id][0]
+                        ]
+                        self.macro_cd[user_id][0] = ts(msg.created_at)
+                        intervals = [int(i) for i in self.macro_cd[user_id][1]]
+                        if len(intervals) > 12:
+                            if all(round(cd) == round(intervals[0]) for cd in intervals):
+                                if intervals[0] > 3 and intervals[0] < 3:
+                                    triggered = True
+                                    reason = "Repeated messages at the same interval"
+                            elif await self.has_pattern(intervals):
+                                triggered = True
+                                reason = "Using a bot/macro"
 
-            if triggered and guild_id in self.config:
-                # Mute the relevant users
-                for iteration, user in enumerate(list(set(users))):
-                    with self.bot.utils.operation_lock(key=user.id):
-                        guild_id = msg.guild.id
-                        user_id = user.id
-                        bot_user = msg.guild.me
-                        perms = msg.channel.permissions_for(bot_user)
-                        if not perms.manage_messages:
-                            return
-
-                        # Purge away spam
-                        messages = []
-                        if user_id in self.msgs:
-                            messages = [
-                                m for m in self.msgs[user_id]
-                                if m and m.created_at > datetime.now(tz=timezone.utc) - timedelta(seconds=15)
+                # duplicate messages
+                if "duplicates" in self.config[guild_id] and not triggered:
+                    await asyncio.sleep(0)
+                    if msg.channel.permissions_for(msg.guild.me).read_message_history and msg.content:
+                        with self.bot.utils.operation_lock(key=msg.id):
+                            channel_id = str(msg.channel.id)
+                            if channel_id not in self.dupes:
+                                self.dupes[channel_id] = []
+                            self.dupes[channel_id] = [
+                                msg, *[
+                                    msg for msg in self.dupes[channel_id]
+                                    if msg.created_at > datetime.now(tz=timezone.utc) - timedelta(seconds=60)
+                                ]
                             ]
-                        self.msgs[user_id] = []  # Remove soon to be deleted messages from the list
-                        for m in messages:
-                            if m.guild.id not in self.bot.filtered_messages:
-                                self.bot.filtered_messages[m.guild.id] = {}
-                            self.bot.filtered_messages[m.guild.id][m.id] = time()
-                        with suppress(NotFound, Forbidden, HTTPException):
-                            await msg.channel.delete_messages(messages)
+                            for threshold in self.config[guild_id]["duplicates"]["thresholds"]:
+                                lmt = threshold["threshold"]
+                                timeframe = threshold["timespan"]
+                                for message in list(self.dupes[channel_id]):
+                                    await asyncio.sleep(0)
+                                    if channel_id not in self.dupes:
+                                        break
+                                    dupes = [
+                                        m for m in self.dupes[channel_id]
+                                        if m and m.content and m.content == message.content
+                                           and m.created_at > datetime.now(tz=timezone.utc) - timedelta(seconds=timeframe)
+                                           and len(m.content) > 5
+                                    ]
+                                    all_are_single_use = all(
+                                        len([m for m in dupes if m.author.id == dupes[i].author.id]) == 1
+                                        for i in range(len(dupes))
+                                    )
+                                    if len(dupes) > 1 and not all_are_single_use:
+                                        if len([d for d in dupes if d.author.id == dupes[0].author.id]) == 1:
+                                            dupes.pop(0)
+                                    if len(dupes) > lmt:
+                                        history = await msg.channel.history(limit=2).flatten()
+                                        if not any(m.author.bot for m in history):
+                                            users = set(list([
+                                                *[m.author for m in dupes if m], *users
+                                            ]))
+                                            for message in dupes:
+                                                with suppress(IndexError, ValueError, KeyError):
+                                                    self.dupes[channel_id].remove(message)
+                                            with suppress(Forbidden, NotFound):
+                                                await msg.channel.delete_messages([
+                                                    message for message in dupes if message
+                                                ])
+                                            reason = f"Duplicates: {lmt} duplicates within {timeframe} seconds"
+                                            triggered = True
+                                            break
+                                if triggered:
+                                    break
 
-                        # Don't mute users with Administrator
-                        if user.top_role.position >= bot_user.top_role.position or user.guild_permissions.administrator:
-                            continue
-                        # Don't continue if lacking permission(s) to operate
-                        if not msg.channel.permissions_for(bot_user).send_messages or not perms.manage_roles:
-                            continue
+                    if self.config[guild_id]["duplicates"]["same_link"]:
+                        await asyncio.sleep(0)
+                        if "http" in msg.content or "discord.gg" in msg.content:
+                            search = lambda: re.search("((https?://)|(www\.)|(discord\.gg/))[a-zA-Z0-9./]+", msg.content)
+                            if r := await self.bot.loop.run_in_executor(None, search):
+                                if msg.channel.id not in self.urls:
+                                    self.urls[msg.channel.id]: List[str] = []
+                                match: str = r.group()
+                                if match in self.urls[msg.channel.id]:
+                                    reason = "Duplicates: Repeated link"
+                                    triggered = True
+                                self.bot.loop.create_task(self.cache_link(msg.channel, match))
 
-                        try:
-                            async with msg.channel.typing():
-                                mute_role = await self.bot.attrs.get_mute_role(msg.guild, upsert=True)
-                                if not mute_role or mute_role.position >= msg.guild.me.top_role.position:
-                                    return
-                        except NotFound:
-                            return
+                    if self.config[guild_id]["duplicates"]["same_image"] and msg.attachments:
+                        for attachment in msg.attachments:
+                            await asyncio.sleep(0)
+                            if msg.channel.id not in self.imgs:
+                                self.imgs[msg.channel.id] = []
+                            dat = [attachment.filename, attachment.size]
+                            if dat in self.imgs[msg.channel.id]:
+                                print(f"Flagged")
+                                reason = "Duplicates: Repeated image"
+                                triggered = True
+                            self.bot.loop.create_task(self.cache_image(msg.channel, dat))
 
-                    if "antispam_mutes" not in self.bot.tasks:
-                        self.bot.tasks["antispam_mutes"] = {}
-                    if guild_id not in self.bot.tasks["antispam_mutes"]:
-                        self.bot.tasks["antispam_mutes"][guild_id] = {}
-                    if user_id in self.bot.tasks["antispam_mutes"][guild_id]:
-                        task = self.bot.tasks["antispam_mutes"][guild_id][user_id]
-                        if task.done():
-                            if task.result():
-                                self.bot.log.critical(f"An antispam task errored.\n{task.result()}")
-                            else:
-                                self.bot.log.critical(f"An antispam task errored with no result")
-                        else:
-                            return
-
-                    self.bot.tasks["antispam_mutes"][guild_id][user_id] = self.bot.loop.create_task(
-                        self.process_mute(
-                            user_id=user.id,
-                            guild_id=guild_id,
-                            msg=msg,
-                            reason=reason
+                if (triggered is None or "ascii" in reason) and not msg.author.guild_permissions.administrator:
+                    if msg.guild.id not in self.bot.filtered_messages:
+                        self.bot.filtered_messages[msg.guild.id] = {}
+                    self.bot.filtered_messages[msg.guild.id][msg.id] = time()
+                    with suppress(HTTPException, NotFound, Forbidden):
+                        await msg.delete()
+                        e = discord.Embed(color=self.bot.config["theme_color"])
+                        e.description = f"{msg.author.mention} no {reason}"
+                        await msg.channel.send(
+                            embed=e,
+                            delete_after=5,
+                            allowed_mentions=discord.AllowedMentions(users=True, roles=False, everyone=False)
                         )
-                    )
+                    return
+
+                if triggered and guild_id in self.config:
+                    # Mute the relevant users
+                    for iteration, user in enumerate(list(set(users))):
+                        with self.bot.utils.operation_lock(key=user.id):
+                            guild_id = msg.guild.id
+                            user_id = user.id
+                            bot_user = msg.guild.me
+                            perms = msg.channel.permissions_for(bot_user)
+                            if not perms.manage_messages:
+                                return
+
+                            # Purge away spam
+                            messages = []
+                            if user_id in self.msgs:
+                                messages = [
+                                    m for m in self.msgs[user_id]
+                                    if m and m.created_at > datetime.now(tz=timezone.utc) - timedelta(seconds=15)
+                                ]
+                            self.msgs[user_id] = []  # Remove soon to be deleted messages from the list
+                            for m in messages:
+                                if m.guild.id not in self.bot.filtered_messages:
+                                    self.bot.filtered_messages[m.guild.id] = {}
+                                self.bot.filtered_messages[m.guild.id][m.id] = time()
+                            with suppress(NotFound, Forbidden, HTTPException):
+                                await msg.channel.delete_messages(messages)
+
+                            # Don't mute users with Administrator
+                            if user.top_role.position >= bot_user.top_role.position or user.guild_permissions.administrator:
+                                continue
+                            # Don't continue if lacking permission(s) to operate
+                            if not msg.channel.permissions_for(bot_user).send_messages or not perms.manage_roles:
+                                continue
+
+                            try:
+                                async with msg.channel.typing():
+                                    mute_role = await self.bot.attrs.get_mute_role(msg.guild, upsert=True)
+                                    if not mute_role or mute_role.position >= msg.guild.me.top_role.position:
+                                        return
+                            except NotFound:
+                                return
+
+                        if "antispam_mutes" not in self.bot.tasks:
+                            self.bot.tasks["antispam_mutes"] = {}
+                        if guild_id not in self.bot.tasks["antispam_mutes"]:
+                            self.bot.tasks["antispam_mutes"][guild_id] = {}
+                        if user_id in self.bot.tasks["antispam_mutes"][guild_id]:
+                            task = self.bot.tasks["antispam_mutes"][guild_id][user_id]
+                            if task.done():
+                                if task.result():
+                                    self.bot.log.critical(f"An antispam task errored.\n{task.result()}")
+                                else:
+                                    self.bot.log.critical(f"An antispam task errored with no result")
+                            else:
+                                return
+
+                        self.bot.tasks["antispam_mutes"][guild_id][user_id] = self.bot.loop.create_task(
+                            self.process_mute(
+                                user_id=user.id,
+                                guild_id=guild_id,
+                                msg=msg,
+                                reason=reason
+                            )
+                        )
 
     @commands.Cog.listener()
     async def on_ready(self):
