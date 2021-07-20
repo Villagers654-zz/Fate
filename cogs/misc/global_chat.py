@@ -206,7 +206,7 @@ class GlobalChat(commands.Cog):
                 return await ctx.send("You can't ban global chat moderators")
         if target.id in self.config["blocked"]:
             return await ctx.send(f"{target} is already blocked")
-        self.config["Blocked"].append(target.id)
+        self.config["blocked"].append(target.id)
         await ctx.send(f"Blocked {target}")
         await self.save_blacklist()
 
