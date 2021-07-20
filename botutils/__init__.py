@@ -23,6 +23,7 @@ from .prefixes import *
 from .resources import *
 from .stack import Stack
 from .tools import *
+from .views import *
 
 
 class Utils(commands.Cog):

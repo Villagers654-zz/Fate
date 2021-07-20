@@ -4,11 +4,12 @@ import asyncio
 from contextlib import suppress
 from unicodedata import normalize
 from string import printable
+import os
 
 from discord.ext import commands
 import discord
 
-from botutils import colors, split
+from botutils import colors, split, CancelButton
 from cogs.moderation.logger import Log
 
 
@@ -305,6 +306,49 @@ class ChatFilter(commands.Cog):
         toggle = "Enabled" if self.config[guild_id]["webhooks"] else "Disabled"
         await ctx.send(f"{toggle} webhooks. Note this only works with `.chatfilter toggle-regex` enabled")
         await self.config.flush()
+
+    @_chatfilter.command(name="sanitize")
+    @commands.is_owner()
+    async def sanitize(self, ctx):
+        """Clean up existing chat history """
+        view = CancelButton("manage_messages")
+        message = await ctx.send("🖨️ **Sanitizing chat history**", view=view)
+        scanned = 0
+        deleted = []
+        last_update = time()
+        last_user = None
+        async for msg in message.channel.history(limit=30000):
+            if view.is_cancelled:
+                return
+            scanned += 1
+            for word in self.config[message.guild.id]["blacklist"]:
+                await asyncio.sleep(0)
+                if word in msg.content.lower():
+                    with suppress(discord.errors.NotFound, discord.errors.Forbidden):
+                        await msg.delete()
+                        date = msg.created_at.strftime("%m/%d/%Y %I:%M:%S%p")
+                        newline = "" if last_user == msg.author.id else "\n"
+                        deleted.append(f"{newline}{date} - {msg.author} - {msg.content}")
+                        last_user = msg.author.id
+                        break
+            if time() - 5 > last_update:
+                await message.edit(
+                    content=f"🖨️ **Sanitizing chat history**\n"
+                            f"{scanned} messages scanned\n"
+                            f"{len(deleted)} messages deleted"
+                )
+                last_update = time()
+        view.stop()
+        await message.edit(view=None)
+        async with self.bot.utils.open("./static/messages.txt", "w") as f:
+            await f.write("\n".join(deleted))
+        await ctx.send(
+            "Operation finished",
+            reference=message,
+            file=discord.File("./static/messages.txt")
+        )
+        with suppress(Exception):
+            os.remove("./static/messages.txt")
 
     async def get_webhook(self, channel):
         if channel.id not in self.webhooks:
