@@ -280,7 +280,7 @@ class Fun(commands.Cog):
             tier = random.choice(choices)
             last_tier_used[attacker] = tier
 
-            if random.randint(1, 100) <= 2:
+            if random.randint(1, 100) == 16:
                 tier = "infinite"
 
             # Ensure we don't get an attack that was already used
