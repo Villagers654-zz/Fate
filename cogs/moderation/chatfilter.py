@@ -5,9 +5,11 @@ from contextlib import suppress
 from unicodedata import normalize
 from string import printable
 import os
+from typing import *
 
 from discord.ext import commands
 import discord
+from discord.errors import NotFound, Forbidden
 
 from botutils import colors, split, CancelButton
 from cogs.moderation.logger import Log
@@ -18,9 +20,12 @@ aliases = {
     "i": ['1', 'l', r'\|', "!", "/", "j", r"\*", ";"],
     "o": ["0", "@"]
 }
+esc = "\\"
 
 
 class ChatFilter(commands.Cog):
+    webhooks: Dict[str, discord.Webhook] = {}
+
     def __init__(self, bot):
         if not hasattr(bot, "filtered_messages"):
             bot.filtered_messages = {}
@@ -28,16 +33,36 @@ class ChatFilter(commands.Cog):
         self.config = bot.utils.cache("chatfilter")
         self.bot.loop.create_task(self.config.flush())
         self.chatfilter_usage = self._chatfilter
-        self.webhooks = {}
 
     def is_enabled(self, guild_id):
         return guild_id in self.config
 
-    async def filter(self, content: str, filtered_words: list):
+    def clean(self, content: str, flag: str) -> str:
+        """ Sanitizes content to be resent with the flag filtered out """
+        filtered_word = f"{flag[0]}{f'{esc}*' * (len(flag) - 1)}"
+        return content.replace(flag.rstrip(" "), filtered_word)
+
+    async def run_default_filter(self, guild_id: int, content: str) -> Tuple[Optional[str], Optional[list]]:
+        if guild_id not in self.config:
+            return None, None
+        for phrase in self.config[guild_id]:
+            await asyncio.sleep(0)
+            if "\\" in phrase:
+                content = content.replace("\\", "")
+            for chunk in content.split():
+                await asyncio.sleep(0)
+                if phrase.lower() == chunk.lower():
+                    return self.clean(content, phrase), [phrase]
+        return None, None
+
+    async def run_regex_filter(self, guild_id: int, content: str) -> Tuple[Optional[str], Optional[list]]:
+        if guild_id not in self.config:
+            return None, None
+
         def run_regex():
             regexes = {}
             flags = []
-            for word in filtered_words:
+            for word in self.config[guild_id]["blacklist"]:
                 word = word.lower()
                 if not all(c.lower() != c.upper() or c != "." for c in word):
                     if word in content:
@@ -111,8 +136,7 @@ class ChatFilter(commands.Cog):
             return None, flags
 
         for flag in flags:
-            filtered_word = f"{flag[0]}{f'{illegal[0]}*' * (len(flag) - 1)}"
-            content = content.replace(flag.rstrip(" "), filtered_word)
+            content = self.clean(content, flag)
 
         return content, flags
 
@@ -310,27 +334,38 @@ class ChatFilter(commands.Cog):
     @_chatfilter.command(name="sanitize")
     @commands.is_owner()
     async def sanitize(self, ctx):
-        """Clean up existing chat history """
+        """ Clean up existing chat history """
         view = CancelButton("manage_messages")
         message = await ctx.send("🖨️ **Sanitizing chat history**", view=view)
+
+        method = self.run_default_filter
+        if self.config[ctx.guild.id]["regex"]:
+            method = self.run_regex_filter
+
+        # Status variables
         scanned = 0
         deleted = []
         last_update = time()
         last_user = None
+
         async for msg in message.channel.history(limit=30000):
+            await asyncio.sleep(0)
             if view.is_cancelled:
                 return
             scanned += 1
-            for word in self.config[message.guild.id]["blacklist"]:
-                await asyncio.sleep(0)
-                if word in msg.content.lower():
-                    with suppress(discord.errors.NotFound, discord.errors.Forbidden):
-                        await msg.delete()
-                        date = msg.created_at.strftime("%m/%d/%Y %I:%M:%S%p")
-                        newline = "" if last_user == msg.author.id else "\n"
-                        deleted.append(f"{newline}{date} - {msg.author} - {msg.content}")
-                        last_user = msg.author.id
-                        break
+
+            # Check for flags
+            _content, flags = await method(ctx.guild.id, msg.content)
+            if flags:
+                with suppress(NotFound, Forbidden):
+                    await msg.delete()
+                    date = msg.created_at.strftime("%m/%d/%Y %I:%M:%S%p")
+                    newline = "" if last_user == msg.author.id else "\n"
+                    deleted.append(f"{newline}{date} - {msg.author} - {msg.content}")
+                    last_user = msg.author.id
+                    break
+
+            # Update the message every 5 seconds
             if time() - 5 > last_update:
                 await message.edit(
                     content=f"🖨️ **Sanitizing chat history**\n"
@@ -338,14 +373,22 @@ class ChatFilter(commands.Cog):
                             f"{len(deleted)} messages deleted"
                 )
                 last_update = time()
+
+        # Stop listening for button presses after scanning channel history
         view.stop()
-        await message.edit(view=None)
+        await message.edit(
+            content=message.content.replace("Sanitizing", "Sanitized"),
+            view=None
+        )
+
+        # Send the deleted messages as a txt
         async with self.bot.utils.open("./static/messages.txt", "w") as f:
             await f.write("\n".join(deleted))
         await ctx.send(
-            "Operation finished",
+            "Operation finished, this attachment will be deleted in a minute",
             reference=message,
-            file=discord.File("./static/messages.txt")
+            file=discord.File("./static/messages.txt"),
+            delete_after=60
         )
         with suppress(Exception):
             os.remove("./static/messages.txt")
@@ -396,72 +439,67 @@ class ChatFilter(commands.Cog):
                 return
             if self.bot.attrs.is_moderator(m.author) and not m.author.bot:
                 return
-            if not m.author.bot or "bots" in self.config[guild_id]:
-                if m.channel.id in self.config[guild_id]["ignored"]:
-                    return
-                if self.config[guild_id]["regex"]:
-                    result, flags = await self.filter(m.content, self.config[guild_id]["blacklist"])
-                    if not result:
-                        return
-                    with suppress(Exception):
-                        await m.delete()
-                        if m.guild.id not in self.bot.filtered_messages:
-                            self.bot.filtered_messages[m.guild.id] = {}
-                        self.bot.filtered_messages[m.guild.id][m.id] = time()
-
-                        if self.config[guild_id]["webhooks"]:
-                            if m.channel.permissions_for(m.guild.me).manage_webhooks:
-                                w = await self.get_webhook(m.channel)
-                                await w.send(
-                                    content=result,
-                                    avatar_url=m.author.avatar.url,
-                                    username=m.author.display_name
-                                )
-
-                    self.log_action(m, flags)
-                    return
-                for phrase in self.config[guild_id]["blacklist"]:
-                    if "\\" in phrase:
-                        m.content = m.content.replace("\\", "")
-                    for chunk in m.content.split():
-                        await asyncio.sleep(0)
-                        if phrase in chunk.lower():
-                            await asyncio.sleep(0.5)
-                            with suppress(discord.errors.NotFound):
-                                await m.delete()
-                                if m.guild.id not in self.bot.filtered_messages:
-                                    self.bot.filtered_messages[m.guild.id] = {}
-                                self.bot.filtered_messages[m.guild.id][m.id] = time()
-                                self.log_action(m, [phrase])
-                            return
+            if m.author.bot and "bots" not in self.config[guild_id]:
                 return
+            if m.channel.id in self.config[guild_id]["ignored"]:
+                return
+            if self.config[guild_id]["regex"]:
+                result, flags = await self.run_regex_filter(guild_id, m.content)
+            else:
+                result, flags = await self.run_default_filter(guild_id, m.content)
+            if not result:
+                return
+            with suppress(Exception):
+                await m.delete()
+                if m.guild.id not in self.bot.filtered_messages:
+                    self.bot.filtered_messages[m.guild.id] = {}
+                self.bot.filtered_messages[m.guild.id][m.id] = time()
+
+                if self.config[guild_id]["webhooks"]:
+                    if m.channel.permissions_for(m.guild.me).manage_webhooks:
+                        w = await self.get_webhook(m.channel)
+                        await w.send(
+                            content=result,
+                            avatar_url=m.author.avatar.url,
+                            username=m.author.display_name
+                        )
+
+                return self.log_action(m, flags)
 
     @commands.Cog.listener()
-    async def on_message_edit(self, before, after):
+    async def on_message_edit(self, _before, after):
         if hasattr(after.guild, "id") and after.guild.id in self.config:
             if not self.config[after.guild.id]["toggle"]:
                 return
             guild_id = after.guild.id
-            if not after.author.bot or "bots" in self.config[guild_id]:
-                if after.channel.id in self.config[guild_id]["ignored"]:
-                    return
-                guild_id = before.guild.id
-                if guild_id in self.config and self.config[guild_id]["blacklist"]:
-                    for phrase in self.config[guild_id]["blacklist"]:
-                        await asyncio.sleep(0)
-                        if "\\" not in phrase:
-                            after.content = after.content.replace("\\", "")
-                        if after.author.bot or not self.bot.attrs.is_moderator(after.author):
-                            for chunk in after.content.split():
-                                await asyncio.sleep(0)
-                                if phrase in chunk.lower():
-                                    await asyncio.sleep(0.5)
-                                    with suppress(discord.errors.NotFound):
-                                        await after.delete()
-                                    if after.guild.id not in self.bot.filtered_messages:
-                                        self.bot.filtered_messages[after.guild.id] = {}
-                                    self.bot.filtered_messages[after.guild.id][after.id] = time()
-                                    return
+            if self.bot.attrs.is_moderator(after.author) and not after.author.bot:
+                return
+            if after.author.bot and "bots" not in self.config[guild_id]:
+                return
+            if after.channel.id in self.config[guild_id]["ignored"]:
+                return
+            if self.config[guild_id]["regex"]:
+                result, flags = await self.run_regex_filter(guild_id, after.content)
+            else:
+                result, flags = await self.run_default_filter(guild_id, after.content)
+            if not result:
+                return
+            with suppress(Exception):
+                await after.delete()
+                if guild_id not in self.bot.filtered_messages:
+                    self.bot.filtered_messages[guild_id] = {}
+                self.bot.filtered_messages[guild_id][after.id] = time()
+
+                if self.config[guild_id]["webhooks"]:
+                    if after.channel.permissions_for(after.guild.me).manage_webhooks:
+                        w = await self.get_webhook(after.channel)
+                        await w.send(
+                            content=result,
+                            avatar_url=after.author.avatar.url,
+                            username=after.author.display_name
+                        )
+
+                return self.log_action(after, flags)
 
 
 def setup(bot):
