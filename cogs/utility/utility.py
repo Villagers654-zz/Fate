@@ -946,7 +946,8 @@ class Utility(commands.Cog):
         e = discord.Embed(color=color)
         e.description = f"id: {ctx.guild.id}\nOwner: {ctx.guild.owner}"
         e.set_author(name=f"{ctx.guild.name}:", icon_url=ctx.guild.owner.avatar.url)
-        e.set_thumbnail(url=ctx.guild.icon.url)
+        if ctx.guild.icon:
+            e.set_thumbnail(url=ctx.guild.icon.url)
         main = (
             f"• AFK Timeout [`{ctx.guild.afk_timeout}`]\n"
             f"• Region [`{ctx.guild.region}`]\n"
