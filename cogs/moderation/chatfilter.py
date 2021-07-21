@@ -18,7 +18,12 @@ from cogs.moderation.logger import Log
 aliases = {
     "a": ["@"],
     "i": ['1', 'l', r'\|', "!", "/", "j", r"\*", ";"],
-    "o": ["0", "@"]
+    "o": ["0", "@"],
+    "x": ["х"]
+}
+lang_aliases = {
+    "x": ["х"],
+    "y": ["у"]
 }
 esc = "\\"
 
@@ -45,13 +50,19 @@ class ChatFilter(commands.Cog):
     async def run_default_filter(self, guild_id: int, content: str) -> Tuple[Optional[str], Optional[list]]:
         if guild_id not in self.config:
             return None, None
-        for phrase in self.config[guild_id]:
+        content = "".join(c for c in content if c in printable)
+        content = normalize('NFKD', content).encode('ascii', 'ignore').decode()
+        for letter, alts in lang_aliases.items():
             await asyncio.sleep(0)
-            if "\\" in phrase:
+            for alias in alts:
+                content = content.replace(alias, letter)
+        for phrase in self.config[guild_id]["blacklist"]:
+            await asyncio.sleep(0)
+            if esc in content:
                 content = content.replace("\\", "")
             for chunk in content.split():
                 await asyncio.sleep(0)
-                if phrase.lower() == chunk.lower():
+                if phrase.lower() in chunk.lower():
                     return self.clean(content, phrase), [phrase]
         return None, None
 
