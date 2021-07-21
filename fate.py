@@ -498,7 +498,7 @@ async def on_guild_join(guild):
     if not bot.is_ready() or not guild:
         return
     channel = bot.get_channel(bot.config["log_channel"])
-    e = discord.Embed(color=colors.pink)
+    e = discord.Embed(color=colors.green)
     e.set_author(name="Bot Added to Guild", icon_url=bot.user.avatar.url)
     if guild.icon:
         e.set_thumbnail(url=guild.icon.url)
@@ -521,7 +521,7 @@ async def on_guild_remove(guild: discord.Guild):
     if not bot.is_ready():
         return
     channel = bot.get_channel(bot.config["log_channel"])
-    e = discord.Embed(color=colors.pink)
+    e = discord.Embed(color=colors.red)
     e.set_author(name="Bot Left or Was Removed", icon_url=bot.user.avatar.url)
     if guild.icon:
         e.set_thumbnail(url=guild.icon.url)
