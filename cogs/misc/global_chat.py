@@ -154,6 +154,7 @@ class GlobalChat(commands.Cog):
                 self.cache[guild_id] = channel
 
     @commands.group(name="gc", aliases=["global-chat", "globalchat", "global_chat"])
+    @commands.guild_only()
     async def _gc(self, ctx):
         if not ctx.invoked_subcommand:
             e = discord.Embed(color=self.bot.config["theme_color"])
