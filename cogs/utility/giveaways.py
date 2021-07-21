@@ -189,7 +189,7 @@ class Giveaways(commands.Cog):
 
         # Save giveaway info
         dat = {
-            "end_time": str(datetime.now(tz=timezone.utc) + timedelta(seconds=timer)),
+            "end_time": str(datetime.now() + timedelta(seconds=timer)),
             "user": ctx.author.id,
             "giveaway": giveaway,
             "winners": winners,
