@@ -90,9 +90,10 @@ class Influx(commands.Cog):
     @commands.Cog.listener("on_guild_join")
     @commands.Cog.listener("on_guild_remove")
     async def on_guild_count_change(self, _guild):
-        pointer = Point("activity").field("guilds", len(self.bot.guilds))
-        await self.start_thread(pointer)
-        self.last["guilds"] = len(self.bot.guilds)
+        if self.bot.is_ready():
+            pointer = Point("activity").field("guilds", len(self.bot.guilds))
+            await self.start_thread(pointer)
+            self.last["guilds"] = len(self.bot.guilds)
 
     @commands.Cog.listener()
     async def on_message(self, _message):
