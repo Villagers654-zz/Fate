@@ -23,6 +23,9 @@ class Limiter(commands.Cog):
         self.bot = bot
         self.config = bot.utils.cache("limiter")
 
+    def is_enabled(self, guild_id: int) -> bool:
+        return guild_id in self.config
+
     @commands.group(name="limit", aliases=["limiter"])
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.guild_only()
@@ -58,6 +61,8 @@ class Limiter(commands.Cog):
         if channel_id not in self.config[guild_id]:
             return await ctx.send(f"{channel.mention} doesn't have a limiter enabled")
         await self.config.remove_sub(guild_id, channel_id)
+        if not self.config[guild_id]:
+            await self.config.remove(guild_id)
         await ctx.send(f"Removed the limiter in {channel.mention}")
 
     @limit.command(name="images")
