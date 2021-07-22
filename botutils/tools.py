@@ -35,12 +35,23 @@ Misc variables:
 """
 
 import re
-from typing import Union
+from typing import *
 import asyncio
 from datetime import datetime, timedelta
 from time import time
 import discord
 from .emojis import arrow
+
+
+class _EmptyEmbed:
+    def __bool__(self) -> bool:
+        return False
+
+    def __repr__(self) -> str:
+        return 'Embed.Empty'
+
+    def __len__(self) -> int:
+        return 0
 
 
 class TempConvo:
@@ -150,6 +161,11 @@ class Formatting:
             return msg
 
 
+def url_from(obj: Optional[discord.Asset]) -> Union[_EmptyEmbed, str]:
+    """ Transforms an object with a possible .url attribute into something usable in embeds """
+    return obj.url if hasattr(obj, "url") else _EmptyEmbed()
+
+
 def split(text, amount=2000) -> list:
     return [text[i : i + amount] for i in range(0, len(text), amount)]
 
@@ -175,17 +191,19 @@ def cleanup_msg(msg, content=None):
     return content
 
 
-def format_date_difference(dt: datetime.date) -> str:
+def format_date_difference(dt: datetime) -> str:
     """ Formats the time since the provided datetime object """
     def space():
         """ Add a space to the start only if fmt has existing content """
         return " " if fmt else ""
 
     fmt = ""
-    if datetime.now() > dt:
-        dt = datetime.now() - dt
+    now = datetime.now(tz=dt.tzinfo)
+
+    if now > dt:
+        dt = now - dt
     else:
-        dt = dt - datetime.now()
+        dt = dt - now
     remainder = dt.total_seconds()
 
     if days := dt.days:
