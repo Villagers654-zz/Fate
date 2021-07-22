@@ -149,7 +149,7 @@ class Formatting:
             return msg
 
 
-def url_from(obj: Optional[discord.Asset]) -> Union[_EmptyEmbed, str]:
+def url_from(obj: Optional[discord.Asset]) -> Union[discord.Embed.Empty, str]:
     """ Transforms an object with a possible .url attribute into something usable in embeds """
     return obj.url if hasattr(obj, "url") else discord.Embed.Empty
 
