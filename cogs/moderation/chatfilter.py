@@ -344,11 +344,21 @@ class ChatFilter(commands.Cog):
         await self.config.flush()
 
     @_chatfilter.command(name="sanitize")
+    @commands.cooldown(1, 120, commands.BucketType.user)
+    @commands.has_permissions(administrator=True)
+    @commands.cooldown(1, 60, commands.BucketType.guild)
     @commands.is_owner()
     async def sanitize(self, ctx):
         """ Clean up existing chat history """
         view = CancelButton("manage_messages")
         message = await ctx.send("🖨️ **Sanitizing chat history**", view=view)
+
+        # Create a listener to let the code know if the original message was deleted
+        task: asyncio.Task = self.bot.loop.create_task(self.bot.wait_for(
+            "message_delete",
+            check=lambda m: m.id == message.id,
+            timeout=900
+        ))
 
         method = self.run_default_filter
         if self.config[ctx.guild.id]["regex"]:
@@ -362,7 +372,7 @@ class ChatFilter(commands.Cog):
 
         async for msg in message.channel.history(limit=30000):
             await asyncio.sleep(0)
-            if view.is_cancelled:
+            if view.is_cancelled or not message or task.done():
                 return
             scanned += 1
 
@@ -386,24 +396,28 @@ class ChatFilter(commands.Cog):
                 )
                 last_update = time()
 
-        # Stop listening for button presses after scanning channel history
-        view.stop()
-        await message.edit(
-            content=message.content.replace("Sanitizing", "Sanitized"),
-            view=None
-        )
+        try:
+            # Stop listening for button presses after scanning channel history
+            view.stop()
+            task.cancel()
+            await message.edit(
+                content=message.content.replace("Sanitizing", "Sanitized"),
+                view=None
+            )
 
-        # Send the deleted messages as a txt
-        async with self.bot.utils.open("./static/messages.txt", "w") as f:
-            await f.write("\n".join(deleted))
-        await ctx.send(
-            "Operation finished, this attachment will be deleted in a minute",
-            reference=message,
-            file=discord.File("./static/messages.txt"),
-            delete_after=60
-        )
-        with suppress(Exception):
-            os.remove("./static/messages.txt")
+            # Send the deleted messages as a txt
+            async with self.bot.utils.open("./static/messages.txt", "w") as f:
+                await f.write("\n".join(deleted))
+            await ctx.send(
+                "Operation finished, this attachment will be deleted in a minute",
+                reference=message,
+                file=discord.File("./static/messages.txt"),
+                delete_after=60
+            )
+            with suppress(Exception):
+                os.remove("./static/messages.txt")
+        except (discord.errors.HTTPException, NotFound):
+            await ctx.send("The message I was using got deleted, so I can't proceed")
 
     async def get_webhook(self, channel):
         if channel.id not in self.webhooks:
