@@ -493,49 +493,6 @@ async def on_error(_event_method, *_args, **_kwargs):
     raise error
 
 
-@bot.event
-async def on_guild_join(guild):
-    if not bot.is_ready() or not guild:
-        return
-    channel = bot.get_channel(bot.config["log_channel"])
-    e = discord.Embed(color=colors.green)
-    e.set_author(name="Bot Added to Guild", icon_url=bot.user.avatar.url)
-    if guild.icon:
-        e.set_thumbnail(url=guild.icon.url)
-    inviter = "Unknown"
-    if guild.me.guild_permissions.view_audit_log:
-        async for entry in guild.audit_logs(action=discord.AuditLogAction.bot_add, limit=1):
-            inviter = str(entry.user)
-    e.description = (
-        f"**Name:** {guild.name}"
-        f"\n**ID:** {guild.id}"
-        f"\n**Owner:** {guild.owner}"
-        f"\n**Members:** [`{len(guild.members)}`]"
-        f"\n**Inviter:** [`{inviter}`]"
-    )
-    await channel.send(embed=e)
-
-
-@bot.event
-async def on_guild_remove(guild: discord.Guild):
-    if not bot.is_ready():
-        return
-    channel = bot.get_channel(bot.config["log_channel"])
-    e = discord.Embed(color=colors.red)
-    e.set_author(name="Bot Left or Was Removed", icon_url=bot.user.avatar.url)
-    if guild.icon:
-        e.set_thumbnail(url=guild.icon.url)
-    e.description = (
-        f"**Name:** {guild.name}\n"
-        f"**ID:** {guild.id}\n"
-        f"**Owner:** {guild.owner}\n"
-        f"**Members:** [`{len(guild.members)}`]"
-    )
-    await channel.send(embed=e)
-    with suppress(FileNotFoundError):
-        os.remove("members.txt")
-
-
 if __name__ == "__main__":
     bot.log.info("Starting Bot", color="yellow")
     bot.start_time = datetime.now(tz=timezone.utc)
