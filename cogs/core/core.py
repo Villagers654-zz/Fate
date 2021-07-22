@@ -51,11 +51,13 @@ class Core(commands.Cog):
 
     @commands.Cog.listener()
     async def on_dbl_test(self, data):
-        self.bot.log.info(f"Received a test upvote from {self.bot.get_user(int(data['user']))}")
-        async with self.bot.utils.cursor() as cur:
-            await cur.execute(
-                f"insert into votes values ({int(data['user'])}, {time()});"
-            )
+        channel = self.bot.get_channel(self.bot.config["log_channel"])
+        user = self.bot.get_user(int(data["user"]))
+        if not user:
+            user = await self.bot.fetch_user(int(data["user"]))
+        e = discord.Embed(color=colors.pink)
+        e.set_author(name=f"{user} Upvoted The Bot", icon_url=user.avatar.url)
+        await channel.send(embed=e)
 
     @commands.Cog.listener()
     async def on_dbl_vote(self, data):
@@ -64,7 +66,7 @@ class Core(commands.Cog):
         if not user:
             user = await self.bot.fetch_user(int(data["user"]))
         e = discord.Embed(color=colors.pink)
-        e.set_author(name=f"Upvote From {user}", icon_url=user.avatar.url)
+        e.set_author(name=f"{user} Upvoted The Bot", icon_url=user.avatar.url)
         await channel.send(embed=e)
         async with self.bot.utils.cursor() as cur:
             await cur.execute(
