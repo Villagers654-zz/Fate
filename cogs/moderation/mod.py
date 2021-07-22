@@ -1200,6 +1200,8 @@ class Moderation(commands.Cog):
                 if member.top_role.position < ctx.guild.me.top_role.position:
                     if member.nick if not nick else member.display_name != nick:
                         members.append(member)
+        if not members:
+            return await ctx.send("There aren't any possible members I can nick")
         view = CancelButton("manage_roles")
         if len(members) > 3600:
             msg = await ctx.send(
@@ -1228,12 +1230,12 @@ class Moderation(commands.Cog):
                 except discord.errors.Forbidden:
                     if not ctx.guild.me.guild_permissions.manage_nicknames:
                         view.stop()
-                        await msg.edit(content="Message Inactive: Missing Permissions")
+                        await msg.edit(content="Message Inactive: Missing Permissions", view=None)
                         return await ctx.send(
                             "I'm missing permissions to manage nicknames. Canceling the operation :["
                         )
             view.stop()
-            await msg.edit(content="Operation Complete", embed=gen_embed(i))
+            await msg.edit(content="Operation Complete", embed=gen_embed(len(members) - 1), view=None)
 
     @commands.command(name="mass-role", aliases=["massrole"])  # Have +/- support
     @commands.cooldown(2, 5, commands.BucketType.user)
@@ -1283,6 +1285,8 @@ class Moderation(commands.Cog):
                 if member.top_role.position < ctx.guild.me.top_role.position:
                     if role not in member.roles if action == "Adding" else role in member.roles:
                         members.append(member)
+        if not members:
+            return await ctx.send("There aren't any possible members I can give give, or remove that role from")
         view = CancelButton("manage_roles")
         if len(members) > 3600:
             msg = await ctx.send(
@@ -1294,7 +1298,6 @@ class Moderation(commands.Cog):
             ctx.guild.id, ctx.author.id, "massrole", role.mention, msg.jump_url, ctx.author.id
         )
         async with ctx.typing():
-            i = 0
             last_updated = now()
             for i, member in enumerate(members[:3600]):
                 await asyncio.sleep(1.21)
