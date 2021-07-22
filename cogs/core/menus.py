@@ -127,6 +127,7 @@ class ConfigureModules:
                 "Vc-Log": self.bot.cogs["VcLog"],
                 "Chat Bridges": self.bot.cogs["ChatBridges"],
                 "Suggestions": self.bot.cogs["Suggestions"],
+                "ServerStatistics": self.bot.cogs["ServerStatistics"],
                 "Misc": [
                     self.bot.cogs["SafePolls"],
                     self.bot.cogs["Audit"],
