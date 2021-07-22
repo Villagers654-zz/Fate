@@ -20,8 +20,8 @@ import discord
 from discord import Webhook
 import dbl
 
-from botutils import colors, get_prefixes_async, cleanup_msg, emojis, Conversation, url_from, format_date_difference
-reload(__import__("botutils"))  # Refresh any changed utils, this is only done in core.py
+from botutils import colors, get_prefixes_async, cleanup_msg, emojis, Conversation, \
+    url_from, format_date_difference, sanitize
 
 
 class Core(commands.Cog):
@@ -205,7 +205,7 @@ class Core(commands.Cog):
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(attach_files=True)
-    async def say(self, ctx, *, content: commands.clean_content):
+    async def say(self, ctx, *, content):
         has_perms = ctx.channel.permissions_for(ctx.guild.me).manage_messages
         if len(str(content).split("\n")) > 4:
             await ctx.send(f"{ctx.author.mention} too many lines")
@@ -214,7 +214,7 @@ class Core(commands.Cog):
             return
         if len(str(content)) > 100:
             return await ctx.send("That's too long")
-        content = cleanup_msg(ctx.message, content)
+        content = await sanitize(content)
         await ctx.send(content, allowed_mentions=discord.AllowedMentions.none())
         if has_perms and ctx.message:
             await ctx.message.delete()

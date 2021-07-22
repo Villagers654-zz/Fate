@@ -20,7 +20,8 @@ from colormap import rgb2hex
 import psutil
 from discord.ext import commands, tasks
 
-from botutils import colors, split, cleanup_msg, bytes2human, get_time, emojis, get_prefixes_async, format_date_difference
+from botutils import colors, split, cleanup_msg, bytes2human, get_time, emojis, \
+get_prefixes_async, format_date_difference, sanitize
 
 
 default = {
@@ -1115,7 +1116,7 @@ class Utility(commands.Cog):
         e = discord.Embed(color=0x80B0FF)
         e.set_image(url=str(user.avatar.url))
         await ctx.send(
-            f"◈ {cleanup_msg(ctx.message, user.display_name)}'s avatar ◈", embed=e
+            f"◈ {await sanitize(user.display_name)}'s avatar ◈", embed=e
         )
 
     @commands.command(name="owner")
