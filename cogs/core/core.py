@@ -20,7 +20,7 @@ import discord
 from discord import Webhook
 import dbl
 
-from botutils import colors, get_prefixes_async, cleanup_msg, emojis, Conversation, \
+from botutils import colors, get_prefixes_async, emojis, Conversation, \
     url_from, format_date_difference, sanitize
 
 

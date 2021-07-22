@@ -395,7 +395,7 @@ class Fun(commands.Cog):
                 decode = base64.b64decode(message.encode())
             else:
                 return await ctx.send(f"Invalid decoder:\n{usage}")
-            await ctx.send(self.bot.utils.cleanup_msg(str(decode.decode())))
+            await ctx.send(await sanitize(str(decode.decode())))
         except:
             await ctx.send(f"That's not properly encoded in {decoder}")
 

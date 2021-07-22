@@ -20,7 +20,7 @@ from colormap import rgb2hex
 import psutil
 from discord.ext import commands, tasks
 
-from botutils import colors, split, cleanup_msg, bytes2human, get_time, emojis, \
+from botutils import colors, split, bytes2human, get_time, emojis, \
 get_prefixes_async, format_date_difference, sanitize
 
 
@@ -1581,7 +1581,7 @@ class Utility(commands.Cog):
             return await ctx.send("Your afk message can't be greater than 64 characters")
         e.set_author(name="You are now afk", icon_url=ctx.author.avatar.url)
         await ctx.send(embed=e, delete_after=5)
-        reason = cleanup_msg(ctx.message, reason)
+        reason = await sanitize(reason)
         self.afk[ctx.author.id] = reason
         await asyncio.sleep(5)
         await ctx.message.delete()

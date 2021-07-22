@@ -12,7 +12,6 @@ Classes:
 
 Functions:
     split
-    cleanup_msg
     format_date_difference
     bytes2human
     extract_time
@@ -156,27 +155,6 @@ def url_from(obj: Optional[discord.Asset]) -> Union[discord.Embed.Empty, str]:
 
 def split(text, amount=2000) -> list:
     return [text[i : i + amount] for i in range(0, len(text), amount)]
-
-
-def cleanup_msg(msg, content=None):
-    if not content:
-        content = msg
-    if isinstance(msg, discord.Message):
-        content = content if content else msg.content
-        for mention in msg.role_mentions:
-            content = content.replace(str(mention), mention.name)
-    content = str(content).replace("@", "@ ")
-    extensions = ["." + x for x in [c for c in list(content) if c != " "]]
-    if len(content.split(" ")) > 1:
-        content = content.split(" ")
-    else:
-        content = [content]
-    if isinstance(content, list):
-        targets = [c for c in content if any(x in c for x in extensions)]
-        for target in targets:
-            content[content.index(target)] = "**forbidden-link**"
-    content = " ".join(content) if len(content) > 1 else content[0]
-    return content
 
 
 def format_date_difference(dt: datetime) -> str:
