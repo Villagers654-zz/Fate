@@ -21,7 +21,7 @@ from discord import Member, Role, TextChannel
 from discord.ext.commands import Greedy
 from discord.errors import NotFound, Forbidden, HTTPException
 
-from botutils import colors, get_prefix, get_time, split
+from botutils import colors, get_prefix, get_time, split, CancelButton
 from fate import Fate
 
 
@@ -1193,66 +1193,46 @@ class Moderation(commands.Cog):
 
         if len(nick) > 32:
             return await ctx.send("Nicknames cannot exceed 32 characters in length")
-        members = [
-            m
-            for m in ctx.guild.members
-            if m.top_role.position < ctx.author.top_role.position
-            and m.top_role.position < ctx.guild.me.top_role.position
-            and (m.nick if not nick else m.display_name != nick)
-        ]
+        members = []
+        for member in list(ctx.guild.members):
+            await asyncio.sleep(0)
+            if member.top_role.position < ctx.author.top_role.position:
+                if member.top_role.position < ctx.guild.me.top_role.position:
+                    if member.nick if not nick else member.display_name != nick:
+                        members.append(member)
+        view = CancelButton("manage_roles")
         if len(members) > 3600:
-            async with ctx.typing():
-                await asyncio.sleep(1)
             msg = await ctx.send(
-                "Bruh.. you get ONE hour, but that's it.", embed=gen_embed(0)
+                "Bruh.. you get ONE hour, but that's it.", embed=gen_embed(0), view=view
             )
         else:
-            msg = await ctx.send(embed=gen_embed(0))
+            msg = await ctx.send(embed=gen_embed(0), view=view)
         await self.cases.add_case(
             ctx.guild.id, ctx.author.id, "massnick", nick, msg.jump_url, ctx.author.id
         )
         async with ctx.typing():
-            react = await msg.add_reaction("❌")
-            i = 0
+            last_updated = now()
             for i, member in enumerate(members[:3600]):
-                for reaction in [r for r in msg.reactions if react is r]:
-                    if reaction.count == 1:
-                        continue
-                    async for user in reaction.users():
-                        if user.guild_permissions.manage_nicknames:
-                            await msg.remove_reaction(reaction.emoji, user)
-                            continue
-                        return await msg.edit(
-                            content="Message Inactive: Operation Cancelled"
-                        )
-                if (
-                    i + 1
-                ) % 5 == 0:  # try checking the bots internal message cache instead
-                    try:
-                        msg = await ctx.channel.fetch_message(msg.id)
-                    except NotFound:
-                        return
+                await asyncio.sleep(1.21)
+                if view.is_cancelled:
+                    return await msg.edit(
+                        content="Message Inactive: Operation Cancelled"
+                    )
+                if now() - 5 > last_updated:  # try checking the bots internal message cache instead
                     await msg.edit(embed=gen_embed(i))
+                    last_updated = now()
                 try:
                     await member.edit(nick=nick)
                 except discord.errors.NotFound:
                     pass
                 except discord.errors.Forbidden:
                     if not ctx.guild.me.guild_permissions.manage_nicknames:
+                        view.stop()
                         await msg.edit(content="Message Inactive: Missing Permissions")
                         return await ctx.send(
                             "I'm missing permissions to manage nicknames. Canceling the operation :["
                         )
-                await asyncio.sleep(1.21)
-                for reaction in msg.reactions:
-                    if str(reaction.emoji) == "❌" and reaction.count > 1:
-                        async for user in reaction.users():
-                            if not user.guild_permissions.manage_nicknames:
-                                await msg.remove_reaction(reaction.emoji, user)
-                                continue
-                            return await msg.edit(
-                                content="Message Inactive: Operation Cancelled"
-                            )
+            view.stop()
             await msg.edit(content="Operation Complete", embed=gen_embed(i))
 
     @commands.command(name="mass-role", aliases=["massrole"])  # Have +/- support
@@ -1296,43 +1276,36 @@ class Moderation(commands.Cog):
             return
         if role.position >= ctx.guild.me.top_role.position:
             return await ctx.send("That role's higher than I can manage")
-        members = [
-            member
-            for member in ctx.guild.members
-            if member.top_role.position < ctx.author.top_role.position
-            and member.top_role.position < ctx.guild.me.top_role.position
-            and (
-                role not in member.roles if action == "Adding" else role in member.roles
-            )
-        ]
+        members = []
+        for member in list(ctx.guild.members):
+            await asyncio.sleep(0)
+            if member.top_role.position < ctx.author.top_role.position:
+                if member.top_role.position < ctx.guild.me.top_role.position:
+                    if role not in member.roles if action == "Adding" else role in member.roles:
+                        members.append(member)
+        view = CancelButton("manage_roles")
         if len(members) > 3600:
-            async with ctx.typing():
-                await asyncio.sleep(1)
             msg = await ctx.send(
-                "Bruh.. you get ONE hour, but that's it.", embed=gen_embed(0)
+                "Bruh.. you get ONE hour, but that's it.", embed=gen_embed(0), view=view
             )
         else:
-            msg = await ctx.send(embed=gen_embed(0))
+            msg = await ctx.send(embed=gen_embed(0), view=view)
         await self.cases.add_case(
             ctx.guild.id, ctx.author.id, "massrole", role.mention, msg.jump_url, ctx.author.id
         )
         async with ctx.typing():
-            react = await msg.add_reaction("❌")
             i = 0
+            last_updated = now()
             for i, member in enumerate(members[:3600]):
-                for reaction in [r for r in msg.reactions if react is r]:
-                    if reaction.count == 1:
-                        continue
-                    async for user in reaction.users():
-                        if user.guild_permissions.manage_roles:
-                            await msg.remove_reaction(reaction.emoji, user)
-                            continue
-                        return await msg.edit(
-                            content="Message Inactive: Operation Cancelled"
-                        )
-                if (i + 1) % 5 == 0:
-                    msg = await ctx.channel.fetch_message(msg.id)
+                await asyncio.sleep(1.21)
+                if view.is_cancelled:
+                    return await msg.edit(
+                        content="Message Inactive: Operation Cancelled",
+                        view=None
+                    )
+                if now() - 5 > last_updated:
                     await msg.edit(embed=gen_embed(i))
+                    last_updated = now()
                 try:
                     if action == "Adding":
                         await member.add_roles(role)
@@ -1342,23 +1315,13 @@ class Moderation(commands.Cog):
                     pass
                 except discord.errors.Forbidden:
                     if not ctx.guild.me.guild_permissions.manage_roles:
-                        await msg.edit(content="Message Inactive: Missing Permissions")
+                        view.stop()
+                        await msg.edit(content="Message Inactive: Missing Permissions", view=None)
                         return await ctx.send(
                             "I'm missing permissions to manage roles. Canceling the operation :["
                         )
-                await asyncio.sleep(1.21)
-                for reaction in msg.reactions:
-                    if str(reaction.emoji) == "❌" and reaction.count > 1:
-                        async for user in reaction.users():
-                            if not user.guild_permissions.manage_nicknames:
-                                await msg.remove_reaction(reaction.emoji, user)
-                                continue
-                            return await msg.edit(
-                                content="Message Inactive: Operation Cancelled"
-                            )
-            await msg.edit(content="Operation Complete", embed=gen_embed(i))
-            if ctx.channel.permissions_for(ctx.guild.me).manage_messages:
-                await msg.clear_reactions()
+            view.stop()
+            await msg.edit(content="Operation Complete", embed=gen_embed(i), view=None)
 
     @commands.command(name="nick")
     @commands.cooldown(1, 5, commands.BucketType.user)
