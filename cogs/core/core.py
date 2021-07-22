@@ -83,7 +83,7 @@ class Core(commands.Cog):
             e.set_thumbnail(url=guild.splash.url)
         if guild.banner:
             e.set_image(url=guild.banner.url)
-        e.description = f"👥 {len(guild.members)}"
+        e.description = f"👥 Members: {len(guild.members)}"
         if guild.me.guild_permissions.view_audit_log:
             async for entry in guild.audit_logs(action=discord.AuditLogAction.bot_add, limit=1):
                 e.set_footer(text=str(entry.user), icon_url=entry.user.avatar.url)
@@ -102,8 +102,8 @@ class Core(commands.Cog):
             e.set_image(url=guild.banner.url)
         join_duration = format_date_difference(self.join_dates[guild.id])
         del self.join_dates[guild.id]
-        e.description = f"⏰ {join_duration}\n" \
-                        f"👥 {len(guild.members)}"
+        e.description = f"⏰ Membership: {join_duration}\n" \
+                        f"👥 Members: {len(guild.members)}"
         await channel.send(embed=e)  # type: ignore
 
     @commands.command(name="votes")
