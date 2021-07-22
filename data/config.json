@@ -124,6 +124,7 @@
       "polls",
       "restore_roles",
       "selfroles",
+      "server_stats",
       "suggestions",
       "utility",
       "vc_log",
