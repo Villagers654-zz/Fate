@@ -8,7 +8,6 @@ A customizable xp ranking cog
 :license: Proprietary and Confidential, see LICENSE for details
 """
 
-from os import path
 import json
 from time import time, monotonic
 from random import *

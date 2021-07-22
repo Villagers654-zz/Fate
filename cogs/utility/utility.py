@@ -14,7 +14,7 @@ from contextlib import suppress
 
 import discord
 from discord import User, Role, TextChannel, Member, ui, ButtonStyle
-from discord.errors import NotFound, HTTPException, Forbidden
+from discord.errors import NotFound, HTTPException
 from PIL import Image
 from colormap import rgb2hex
 import psutil
