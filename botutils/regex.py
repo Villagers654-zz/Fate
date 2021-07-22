@@ -2,7 +2,7 @@
 botutils.regex
 ~~~~~~~~~~~~~~~
 
-Async friendly regular expression functions
+Async friendly regular expression coroutine functions
 
 :copyright: (C) 2021-present Michael Stollings
 :license: Proprietary and Confidential, see LICENSE for details
