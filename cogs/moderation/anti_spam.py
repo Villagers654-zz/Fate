@@ -935,6 +935,8 @@ class AntiSpam(commands.Cog):
                 if triggered and guild_id in self.config:
                     # Mute the relevant users
                     for iteration, user in enumerate(list(set(users))):
+                        if not isinstance(user, discord.Member):
+                            continue
                         with self.bot.utils.operation_lock(key=user.id):
                             guild_id = msg.guild.id
                             user_id = user.id
