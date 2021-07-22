@@ -42,17 +42,6 @@ import discord
 from .emojis import arrow
 
 
-class _EmptyEmbed:
-    def __bool__(self) -> bool:
-        return False
-
-    def __repr__(self) -> str:
-        return 'Embed.Empty'
-
-    def __len__(self) -> int:
-        return 0
-
-
 class TempConvo:
     def __init__(self, context):
         self.ctx = context
@@ -162,7 +151,7 @@ class Formatting:
 
 def url_from(obj: Optional[discord.Asset]) -> Union[_EmptyEmbed, str]:
     """ Transforms an object with a possible .url attribute into something usable in embeds """
-    return obj.url if hasattr(obj, "url") else _EmptyEmbed()
+    return obj.url if hasattr(obj, "url") else discord.Embed.Empty
 
 
 def split(text, amount=2000) -> list:
