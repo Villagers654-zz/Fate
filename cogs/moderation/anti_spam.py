@@ -842,7 +842,7 @@ class AntiSpam(commands.Cog):
                 # duplicate messages
                 if "duplicates" in self.config[guild_id] and not triggered:
                     await asyncio.sleep(0)
-                    if msg.channel.permissions_for(msg.guild.me).read_message_history and msg.content:
+                    if msg.guild.me and msg.channel.permissions_for(msg.guild.me).read_message_history and msg.content:
                         with self.bot.utils.operation_lock(key=msg.id):
                             channel_id = str(msg.channel.id)
                             if channel_id not in self.dupes:
@@ -941,6 +941,8 @@ class AntiSpam(commands.Cog):
                             guild_id = msg.guild.id
                             user_id = user.id
                             bot_user = msg.guild.me
+                            if not bot_user:
+                                return
                             perms = msg.channel.permissions_for(bot_user)
                             if not perms.manage_messages:
                                 return
