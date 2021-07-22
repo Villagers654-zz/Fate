@@ -14,14 +14,23 @@ import re
 import asyncio
 
 
-def _loop() -> asyncio.AbstractEventLoop:
-    return asyncio.get_running_loop()
+async def _run_in_executor(func: Callable):
+    """ Runs a function in the bots thread pool to avoid blocking the loop """
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, func)
 
 
-async def findall(regex: str, string: str) -> List[str]:
+async def search(pattern: str, string: str) -> Optional[str]:
+    """ Returns a single match for a pattern """
+    _search = lambda: re.search(pattern, string)
+    result = await _run_in_executor(_search)
+    return result.group() if result else None
+
+
+async def findall(pattern: str, string: str) -> List[str]:
     """ Returns a iterable results object """
-    search = lambda: re.finditer(regex, string, re.S)
-    results = await _loop().run_in_executor(None, search)
+    _search = lambda: re.finditer(pattern, string, re.S)
+    results = await _run_in_executor(_search)
     return [r.group() for r in results]
 
 
