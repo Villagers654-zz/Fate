@@ -48,6 +48,8 @@ class Influx(commands.Cog):
 
     @tasks.loop(seconds=60)
     async def update_user_count(self):
+        if not self.bot.is_ready():
+            return
         with suppress(Exception):
             async def user_count():
                 count = 0
