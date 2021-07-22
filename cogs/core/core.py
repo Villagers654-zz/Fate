@@ -11,15 +11,17 @@ Core bot commands such as prefix, invite, and ping
 import aiohttp
 from time import time, monotonic
 import asyncio
-from datetime import datetime, timezone, timezone
+from datetime import datetime, timezone
 from contextlib import suppress
+from importlib import reload
 
 from discord.ext import commands
 import discord
 from discord import Webhook
 import dbl
 
-from botutils import colors, get_prefixes_async, cleanup_msg, emojis, Conversation
+from botutils import colors, get_prefixes_async, cleanup_msg, emojis, Conversation, url_from, format_date_difference
+reload(__import__("botutils"))  # Refresh any changed utils, this is only done in core.py
 
 
 class Core(commands.Cog):
@@ -38,6 +40,9 @@ class Core(commands.Cog):
         )
         self.path = "./data/userdata/disabled_commands.json"
         self.config = bot.utils.cache("disabled")
+        self.join_dates = {
+            guild.id: guild.me.joined_at for guild in bot.guilds
+        }
 
         self.setup_usage = "Helps you set the bot up via conversation"
 
@@ -59,6 +64,47 @@ class Core(commands.Cog):
             await cur.execute(
                 f"insert into votes values ({int(data['user'])}, {time()});"
             )
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        self.join_dates = {
+            guild.id: guild.me.joined_at for guild in self.bot.guilds
+        }
+
+    @commands.Cog.listener()
+    async def on_guild_join(self, guild):
+        if not self.bot.is_ready() or not guild:
+            return
+        self.join_dates[guild.id] = guild.me.joined_at
+        channel = self.bot.get_channel(self.bot.config["log_channel"])
+        e = discord.Embed(color=colors.green)
+        e.set_author(name=guild.name, icon_url=url_from(guild.icon))
+        if guild.splash:
+            e.set_thumbnail(url=guild.splash.url)
+        if guild.banner:
+            e.set_image(url=guild.banner.url)
+        e.description = f"👥 {len(guild.members)}"
+        if guild.me.guild_permissions.view_audit_log:
+            async for entry in guild.audit_logs(action=discord.AuditLogAction.bot_add, limit=1):
+                e.set_footer(text=str(entry.user), icon_url=entry.user.avatar.url)
+        await channel.send(embed=e)  # type: ignore
+
+    @commands.Cog.listener()
+    async def on_guild_remove(self, guild: discord.Guild):
+        if not self.bot.is_ready():
+            return
+        channel = self.bot.get_channel(self.bot.config["log_channel"])
+        e = discord.Embed(color=colors.red)
+        e.set_author(name=guild.name, icon_url=url_from(guild.icon))
+        if guild.splash:
+            e.set_thumbnail(url=guild.splash.url)
+        if guild.banner:
+            e.set_image(url=guild.banner.url)
+        join_duration = format_date_difference(self.join_dates[guild.id])
+        del self.join_dates[guild.id]
+        e.description = f"⏰ {join_duration}\n" \
+                        f"👥 {len(guild.members)}"
+        await channel.send(embed=e)  # type: ignore
 
     @commands.command(name="votes")
     @commands.is_owner()
