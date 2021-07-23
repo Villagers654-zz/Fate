@@ -18,7 +18,7 @@ from cogs.moderation.logger import Log
 
 aliases = {
     "a": ["@"],
-    "i": ['1', 'l', r'\|', "!", "/", "j", r"\*", ";"],
+    "i": ['1', 'l', r'\|', "!", "/", r"\*", ";"],
     "o": ["0", "@", "ø"],
     "x": ["х"],
     "y": ["у"]
@@ -150,6 +150,10 @@ class ChatFilter(commands.Cog):
         content = str(content).lower()
         for char in illegal:
             content = content.replace(char, "")
+        for char, _aliases in aliases.items():
+            for alias in _aliases:
+                await asyncio.sleep(0)
+                content = content.replace(alias, char)
         content = normalize('NFKD', content).encode('ascii', 'ignore').decode()
         content = "".join(c for c in content if c in printable)
 
@@ -353,7 +357,7 @@ class ChatFilter(commands.Cog):
             return await ctx.send("Chatfilter isn't enabled")
         self.config[guild_id]["webhooks"] = not self.config[guild_id]["webhooks"]
         toggle = "Enabled" if self.config[guild_id]["webhooks"] else "Disabled"
-        await ctx.send(f"{toggle} webhooks. Note this only works with `.chatfilter toggle-regex` enabled")
+        await ctx.send(f"{toggle} webhooks")
         await self.config.flush()
 
     @_chatfilter.command(name="sanitize")
