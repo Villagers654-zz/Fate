@@ -52,15 +52,15 @@ class ButtonRoles(commands.Cog):
             e.set_author(name="Role Menus", icon_url=self.bot.user.avatar.url)
             if ctx.guild.icon:
                 e.set_thumbnail(url=ctx.guild.icon.url)
-            e.description = "Create menus for users to self assign roles via buttons"
+            e.description = "Create menus for users to self assign roles via buttons\n**NOTE:** this feature is in beta"
             p: str = ctx.prefix
             e.add_field(
                 name="◈ Usage",
                 value=f"{p}role-menu create\n"
-                      f"{p}role-menu set-message `msg_id` `new message`\n"
-                      f"{p}role-menu add-role `msg_id` `@role`\n"
-                      f"{p}role-menu remove-role `msg_id` `@role`\n"
-                      f"{p}role-menu set-style `msg_id` `button/dropdown`"
+                      f"{p}~~role-menu set-message `msg_id` `new message`~~\n"
+                      f"{p}~~role-menu add-role `msg_id` `@role`~~\n"
+                      f"{p}~~role-menu remove-role `msg_id` `@role`~~\n"
+                      f"{p}~~role-menu set-style `msg_id` `button/dropdown`~~"
             )
             count = 0
             if ctx.guild.id in self.menus:
@@ -70,9 +70,9 @@ class ButtonRoles(commands.Cog):
                 e.footer.text += "s"
             await ctx.send(embed=e)
 
-    @commands.command(name="test")
-    @commands.is_owner()
-    async def test(self, ctx):
+    @commands.command(name="create")
+    @commands.has_permissions(administrator=True)
+    async def create_menu(self, ctx):
         convo = Conversation(ctx, delete_after=True)
         data = []
         await convo.send("reply with `done` when you're done adding roles")
