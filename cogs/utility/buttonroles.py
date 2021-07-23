@@ -103,7 +103,7 @@ class ButtonRoles(commands.Cog):
     async def on_raw_message_delete(self, payload):
         if payload.guild_id in self.menus:
             if str(payload.message_id) in self.menus[payload.guild_id]:
-                await self.menus.remove_sub(payload.guild_id, payload.message_id)
+                await self.menus.remove_sub(payload.guild_id, str(payload.message_id))
 
 
 class ButtonMenu(ui.View):
