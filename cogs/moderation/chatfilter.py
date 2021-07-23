@@ -279,14 +279,16 @@ class ChatFilter(commands.Cog):
     @_chatfilter.command(name="add")
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True)
-    async def _add(self, ctx, *, phrase):
+    async def _add(self, ctx, *, phrases):
         guild_id = ctx.guild.id
         if guild_id not in self.config:
             return await ctx.send("Chatfilter isn't enabled")
-        if phrase in self.config[guild_id]["blacklist"]:
-            return await ctx.send("That word/phrase is already blacklisted")
-        self.config[guild_id]["blacklist"].append(phrase)
-        await ctx.send(f"Added `{phrase}`")
+        for phrase in phrases.split(", "):
+            if phrase in self.config[guild_id]["blacklist"]:
+                await ctx.send(f"`{phrase}` is already blacklisted")
+            self.config[guild_id]["blacklist"].append(phrase)
+            await ctx.send(f"Added `{phrase}`")
+            await asyncio.sleep(1)
         await self.config.flush()
 
     @_chatfilter.command(name="remove")
