@@ -9,6 +9,7 @@ A selfroles module using buttons instead of reactions
 """
 
 from contextlib import suppress
+from typing import Optional
 
 from discord.ext import commands
 from discord import ui, Interaction
@@ -133,14 +134,17 @@ class ButtonMenu(ui.View):
             self.buttons[button.custom_id] = button
             self.add_item(button)
 
-    async def surface_callback(self, interaction):
+    async def on_error(self, _error, _item, _interaction) -> None:
+        pass
+
+    async def surface_callback(self, interaction) -> None:
         """ Suppress exceptions in the actual callback function """
         with suppress(discord.errors.NotFound):
             await self.callback(interaction)
 
-    async def callback(self, interaction: Interaction):
+    async def callback(self, interaction: Interaction) -> Optional[discord.Message]:
         """ The callback function for when a buttons pressed """
-        async def remove_button(reason):
+        async def remove_button(reason) -> discord.Message:
             """ Remove a button that can no longer be used """
             self.remove_item(self.buttons[custom_id])
             with suppress(KeyError):
