@@ -117,17 +117,18 @@ class SelfRoles(commands.Cog):
             "Let members pick their own role via reactions. If you're "
             "having trouble editing a menu, use the update-menu cmd"
         )
+        p = ctx.prefix
         e.add_field(
             name="◈ Commands",
-            value=f"• **create-menu** - `sets up a new role menu`"
-            f"\n• **set-color** - `sets the embeds color`"
-            f"\n• **set-name** - `set the menu name`"
-            f"\n• **set-indent** - `sets the spacing between roles`"
-            f"\n• **add-role** - `adds a role to a menu`"
-            f"\n• **remove-role** - `removes a role from a menu`"
-            f"\n• **set-limit** - `sets users reaction limit`"
-            f"\n• **toggle-mentions** - `use role mentions`"
-            f"\n• **update-menu** - `refreshes a menu`",
+            value=f"**{p}create-menu** - `sets up a new role menu`"
+                  f"\n**{p}set-color** - `sets the embeds color`"
+                  f"\n**{p}set-name** - `set the menu name`"
+                  f"\n**{p}set-indent** - `sets the spacing between roles`"
+                  f"\n**{p}add-role** - `adds a role to a menu`"
+                  f"\n**{p}remove-role** - `removes a role from a menu`"
+                  f"\n**{p}set-limit** - `sets users reaction limit`"
+                  f"\n**{p}toggle-mentions** - `use role mentions`"
+                  f"\n**{p}update-menu** - `refreshes a menu`",
             inline=False,
         )
         await ctx.send(embed=e)
