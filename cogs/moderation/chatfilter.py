@@ -615,17 +615,14 @@ class Menu(ui.View):
             else:
                 self.cls.config[self.ctx.guild.id][custom_id] = True
                 await self.cls.config.flush()
-            if custom_id == "bots" and button.style == discord.ButtonStyle.green:
-                m = "Enabled filter for bot messages"
-            elif Custom_id == "bots" and button.style == discord.ButtonStyle.red:
-                m = "Disabled filter for bot messages"
-            if custom_id == "webhooks" and button.style == discord.ButtonStyle.green:
-                m = "Enabled the resending of filtered content in censored format."
-            elif custom_id == "webhooks" and button.style == discord.ButtonStyle.red:
-                m = "Disabled the resending of filtered content in censored format."
-            else:
-                m = "Toggled whether or not to use regex. This improves sensitivity"
             self.update_items()
+            toggle = "Enabled" if self.extra["custom_id"].style is style.green else "Disabled"
+            if custom_id == "bots":
+                m = f"{toggle} filtering bot messages"
+            elif custom_id == "webhooks":
+                m = f"{toggle} resending deleted messages with the content filtered"
+            else:
+                m = f"{toggle} the use of regex. This improves sensitivity, but can falsely flag"
             await interaction.response.edit_message(view=self)
             await interaction.followup.send(m, ephemeral=True)
 
