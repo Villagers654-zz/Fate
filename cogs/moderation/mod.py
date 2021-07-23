@@ -1488,10 +1488,11 @@ class Moderation(commands.Cog):
                 mute_role = await guild.create_role(
                     name="Muted", color=discord.Color(colors.black)
                 )
-                for chnl in guild.text_channels:
-                    await chnl.set_permissions(mute_role, send_messages=False)
-                for chnl in guild.voice_channels:
-                    await chnl.set_permissions(mute_role, speak=False)
+                with suppress(Exception):
+                    for chnl in guild.text_channels:
+                        await chnl.set_permissions(mute_role, send_messages=False)
+                    for chnl in guild.voice_channels:
+                        await chnl.set_permissions(mute_role, speak=False)
             if mute_role in user.roles:
                 return await channel.send(f"{user.display_name} is already muted")
             user_roles = []
