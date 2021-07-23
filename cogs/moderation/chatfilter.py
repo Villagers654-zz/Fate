@@ -6,7 +6,6 @@ from unicodedata import normalize
 from string import printable
 import os
 from typing import *
-import json
 
 from discord.ext import commands
 import discord
@@ -112,13 +111,13 @@ class ChatFilter(commands.Cog):
                     if letter in matched:
                         continue
                     if letter not in aliases:
-                        rgx = letter + "+.{0,5}"
+                        rgx = letter + "+.{0,2}"
                         fmt = fmt.replace(letter, rgx)
                         matched.append(letter)
 
                 # Add regexes for alias characters
                 for letter, _aliases in aliases.items():
-                    regex = f"({letter + '|' + '|'.join(_aliases)})+" + ".{0,5}"
+                    regex = f"({letter + '|' + '|'.join(_aliases)})+" + ".{0,2}"
                     fmt = fmt.replace(letter, regex)
                 for _ in range(5):
                     if fmt.count("++"):
