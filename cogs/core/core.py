@@ -62,11 +62,12 @@ class Core(commands.Cog):
     @commands.Cog.listener()
     async def on_dbl_vote(self, data):
         channel = self.bot.get_channel(self.bot.config["log_channel"])
-        user = self.bot.get_user(int(data["user"]))
+        user: discord.User = self.bot.get_user(int(data["user"]))
         if not user:
             user = await self.bot.fetch_user(int(data["user"]))
         e = discord.Embed(color=colors.pink)
         e.set_author(name=f"{user} Upvoted The Bot", icon_url=user.avatar.url)
+        e.description = f"📬 | {len(user.mutual_guilds)} mutual servers"
         await channel.send(embed=e)
         async with self.bot.utils.cursor() as cur:
             await cur.execute(
@@ -91,7 +92,7 @@ class Core(commands.Cog):
             e.set_thumbnail(url=guild.splash.url)
         if guild.banner:
             e.set_image(url=guild.banner.url)
-        e.description = f"👥 {len(guild.members)} Members"
+        e.description = f"👥 | {len(guild.members)} Members"
         if guild.me.guild_permissions.view_audit_log:
             async for entry in guild.audit_logs(action=discord.AuditLogAction.bot_add, limit=1):
                 e.set_footer(text=str(entry.user), icon_url=entry.user.avatar.url)
@@ -110,7 +111,8 @@ class Core(commands.Cog):
             e.set_image(url=guild.banner.url)
         join_duration = format_date_difference(self.join_dates[guild.id])
         del self.join_dates[guild.id]
-        e.description = f"👥 {len(guild.members)} | ⏰ {join_duration}\n"
+        e.description = f"👥 | {len(guild.members)} Members\n" \
+                        f"⏰ | {join_duration}\n"
         await channel.send(embed=e)  # type: ignore
 
     @commands.command(name="votes")
