@@ -41,7 +41,8 @@ class ChatFilter(commands.Cog):
         self.bot.loop.create_task(self.config.flush())
         self.chatfilter_usage = self._chatfilter
 
-    def is_enabled(self, guild_id):
+    def is_enabled(self, guild_id: int) -> bool:
+        """ Denotes whether or not the modules enabled in a specific guild """
         return guild_id in self.config
 
     async def clean_content(self, content: str, flag: str) -> str:
@@ -59,6 +60,7 @@ class ChatFilter(commands.Cog):
         return content
 
     async def run_default_filter(self, guild_id: int, content: str) -> Tuple[Optional[str], Optional[list]]:
+        """ Filters the content of a message without using regex to prevent false flags """
         if guild_id not in self.config:
             return None, None
         content = "".join(c for c in content if c in printable)
@@ -78,10 +80,11 @@ class ChatFilter(commands.Cog):
         return None, None
 
     async def run_regex_filter(self, guild_id: int, content: str) -> Tuple[Optional[str], Optional[list]]:
+        """ A more thorough filter to better flag bypasses """
         if guild_id not in self.config:
             return None, None
 
-        def run_regex():
+        def run_regex() -> list:
             regexes = {}
             flags = []
             for word in self.config[guild_id]["blacklist"]:
@@ -548,19 +551,19 @@ style = ButtonStyle
 
 
 class Menu(ui.View):
-    def __init__(self, cls: ChatFilter, ctx: commands.Context):
+    def __init__(self, cls: ChatFilter, ctx: commands.Context) -> None:
         self.cls = cls
         self.ctx = ctx
-        self.extra = {}
+        self.extra: Dict[str, discord.Button] = {}
         super().__init__(timeout=60)
 
         if ctx.guild.id in cls.config:
-            if cls.config[ctx.guild.id]["toggle"] == True:
+            if cls.config[ctx.guild.id]["toggle"]:
                 self.toggle.label = "Disable"
                 self.toggle.style = discord.ButtonStyle.red
                 self.update_items()
 
-    async def on_error(self, error: Exception, _item, interaction) -> None:
+    async def on_error(self, error: Exception, _item, _interaction) -> None:
         """ Suppress NotFound errors as they're spammy """
         if not isinstance(error, NotFound):
             raise error
@@ -601,7 +604,7 @@ class Menu(ui.View):
                 self.add_item(button)
                 self.extra["regex"] = button
 
-    async def handle_callback(self, interaction: discord.Interaction):
+    async def handle_callback(self, interaction: discord.Interaction) -> object:
         user = interaction.guild.get_member(interaction.user.id)
         with suppress(Exception):
             if not user.guild_permissions.manage_messages:
@@ -648,11 +651,11 @@ class Menu(ui.View):
                     f"You need manage_message permissions to toggle this", ephemeral=True
                 )
             if button.label == "Enable":
-                await self.cls._enable(self.ctx)
+                await self.cls._enable(self.ctx)  # type: ignore
                 button.label = "Disable"
                 button.style = discord.ButtonStyle.red
             else:
-                await self.cls._disable(self.ctx)
+                await self.cls._disable(self.ctx)  # type: ignore
                 button.label = "Enable"
                 button.style = discord.ButtonStyle.green
             self.update_items()
