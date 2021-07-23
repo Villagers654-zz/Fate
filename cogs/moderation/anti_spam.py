@@ -69,7 +69,7 @@ class AntiSpam(commands.Cog):
     mutes: Dict[int, Dict[int, List[float]]] = {}              # Keep track of mutes to increment the timer per-mute
     typing: Dict[int, datetime.now] = {}                       # Keep track of typing to prevent large copy-pastes
     urls: Dict[int, List[List[Union[str, int]]]] = {}          # Cache sent urls to prevent repeats
-    imgs: Dict[int, List[List[Union[str, int]]]] = {}          # Cache sent images to prevent repeats
+    imgs: Dict[int, List[int]] = {}                            # Cache sent images to prevent repeats
 
     def __init__(self, bot: Fate):
         self.bot = bot
@@ -598,13 +598,13 @@ class AntiSpam(commands.Cog):
         if not self.urls[channel.id]:
             del self.urls[channel.id]
 
-    async def cache_image(self, channel, data: List[Union[str, int]]) -> None:
+    async def cache_image(self, channel, size: int) -> None:
         """ Cache image properties for x seconds to prevent it being resent """
-        self.imgs[channel.id].append(data)
+        self.imgs[channel.id].append(size)
         duration = self.config[channel.guild.id]["duplicates"]["same_image"]
         await asyncio.sleep(duration)
         with suppress(ValueError):
-            self.imgs[channel.id].remove(data)
+            self.imgs[channel.id].remove(size)
         if not self.imgs[channel.id]:
             del self.imgs[channel.id]
 
@@ -910,12 +910,11 @@ class AntiSpam(commands.Cog):
                             await asyncio.sleep(0)
                             if msg.channel.id not in self.imgs:
                                 self.imgs[msg.channel.id] = []
-                            dat = [attachment.filename, attachment.size]
-                            if dat in self.imgs[msg.channel.id]:
-                                print(f"Flagged")
+                            size = attachment.size
+                            if size in self.imgs[msg.channel.id]:
                                 reason = "Duplicates: Repeated image"
                                 triggered = True
-                            self.bot.loop.create_task(self.cache_image(msg.channel, dat))
+                            self.bot.loop.create_task(self.cache_image(msg.channel, size))
 
                 if (triggered is None or "ascii" in reason) and not msg.author.guild_permissions.administrator:
                     if msg.guild.id not in self.bot.filtered_messages:
