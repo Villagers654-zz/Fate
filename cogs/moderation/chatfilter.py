@@ -174,7 +174,8 @@ class ChatFilter(commands.Cog):
             e.set_author(name="| Chat Filter", icon_url=ctx.author.avatar.url)
             if ctx.guild.icon:
                 e.set_thumbnail(url=ctx.guild.icon.url)
-            e.description = "Deletes messages containing blocked words/phrases"
+            e.description = "Deletes messages containing blocked words/phrases. " \
+                            "When adding you can separate multiple via `, ` like `word1, word2`"
             e.add_field(
                 name="◈ Usage",
                 value=".chatfilter enable\n"
