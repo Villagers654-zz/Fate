@@ -633,10 +633,10 @@ class Menu(ui.View):
     async def filtered_words(self, _button, interaction):
         filtered = ""
         if self.ctx.guild.id in self.cls.config:
-            filtered = ", ".join(self.cls.config[self.ctx.guild.id]["blacklist"])
+            filtered = "**,** ".join(self.cls.config[self.ctx.guild.id]["blacklist"])
         with suppress(Exception):
             await interaction.response.send_message(
-                f"Filtered words: {filtered}", ephemeral=True
+                f"**Filtered words:** {filtered}", ephemeral=True
             )
 
     @ui.button(label="Enable", style=style.green)
