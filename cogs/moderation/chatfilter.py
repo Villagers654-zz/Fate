@@ -560,10 +560,13 @@ class Menu(ui.View):
                 self.toggle.style = discord.ButtonStyle.red
                 self.update_items()
 
-    async def on_error(self, error: Exception, item, interaction) -> None:
-        pass
+    async def on_error(self, error: Exception, _item, interaction) -> None:
+        """ Suppress NotFound errors as they're spammy """
+        if not isinstance(error, NotFound):
+            raise error
 
-    def update_items(self):
+    def update_items(self) -> None:
+        """ Updates the color of extra config options to reflect being enabled or disabled """
         guild_id = self.ctx.guild.id
         if guild_id not in self.cls.config or not self.cls.config[guild_id]["toggle"]:
             for custom_id, button in self.extra.items():
