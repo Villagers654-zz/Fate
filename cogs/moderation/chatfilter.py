@@ -6,6 +6,7 @@ from unicodedata import normalize
 from string import printable
 import os
 from typing import *
+import json
 
 from discord.ext import commands
 import discord
@@ -18,7 +19,7 @@ from cogs.moderation.logger import Log
 aliases = {
     "a": ["@"],
     "i": ['1', 'l', r'\|', "!", "/", "j", r"\*", ";"],
-    "o": ["0", "@"],
+    "o": ["0", "@", "ø"],
     "x": ["х"],
     "y": ["у"]
 }
@@ -43,10 +44,19 @@ class ChatFilter(commands.Cog):
     def is_enabled(self, guild_id):
         return guild_id in self.config
 
-    def clean(self, content: str, flag: str) -> str:
+    async def clean_content(self, content: str, flag: str) -> str:
         """ Sanitizes content to be resent with the flag filtered out """
         filtered_word = f"{flag[0]}{f'{esc}*' * (len(flag) - 1)}"
-        return content.replace(flag.rstrip(" "), filtered_word)
+        content = content.replace(flag.rstrip(" "), filtered_word)
+        for line in content.split("\n"):
+            await asyncio.sleep(0)
+            while True:
+                await asyncio.sleep(0)
+                if content.count(line) > 1:
+                    content = content.replace(line + line, line)
+                else:
+                    break
+        return content
 
     async def run_default_filter(self, guild_id: int, content: str) -> Tuple[Optional[str], Optional[list]]:
         if guild_id not in self.config:
@@ -64,7 +74,7 @@ class ChatFilter(commands.Cog):
             for chunk in content.split():
                 await asyncio.sleep(0)
                 if phrase.lower() in chunk.lower():
-                    return self.clean(content, phrase), [phrase]
+                    return await self.clean_content(content, phrase), [phrase]
         return None, None
 
     async def run_regex_filter(self, guild_id: int, content: str) -> Tuple[Optional[str], Optional[list]]:
@@ -96,22 +106,24 @@ class ChatFilter(commands.Cog):
                 regexes[word] = []
                 fmt = word.lower()
 
-                # Add a max range of 2K chars for repeated letters like "fuuuuuck"
                 matched = []
                 for i, letter in enumerate(fmt):
                     if letter in matched:
                         continue
                     if letter not in aliases:
-                        rgx = letter + "+[\s]*"
+                        rgx = letter + "+.{0,5}"
                         fmt = fmt.replace(letter, rgx)
                         matched.append(letter)
 
                 # Add regexes for alias characters
                 for letter, _aliases in aliases.items():
-                    _aliases = [f"{alias}[\s]*" for alias in _aliases]
-                    regex = f"({letter + '|' + '|'.join(_aliases)})+"
+                    regex = f"({letter + '|' + '|'.join(_aliases)})+" + ".{0,5}"
                     fmt = fmt.replace(letter, regex)
-                fmt = fmt.replace("++", "+")  # Remove repeated ranges
+                for _ in range(5):
+                    if fmt.count("++"):
+                        fmt = fmt.replace("++", "+")  # Remove repeated ranges
+                    else:
+                        break
                 regexes[word].append(fmt)
 
                 # Account for a singular changed character if it's a long word
@@ -129,14 +141,12 @@ class ChatFilter(commands.Cog):
                     result = re.search(query, content)
                     if result:
                         trigger = result.group()
-                        if any(trigger in w and trigger != w for w in content.split()):
-                            continue
                         flags.append(trigger)
                 except re.error:
                     pass
             return flags
 
-        illegal = ("\\", "*", "`", "_", "||")
+        illegal = ("\\", "*", "`", "_", "||", "~~")
         content = str(content).lower()
         for char in illegal:
             content = content.replace(char, "")
@@ -148,7 +158,7 @@ class ChatFilter(commands.Cog):
             return None, flags
 
         for flag in flags:
-            content = self.clean(content, flag)
+            content = await self.clean_content(content, flag)
 
         return content, flags
 
@@ -462,6 +472,8 @@ class ChatFilter(commands.Cog):
         if hasattr(m.guild, "id") and m.guild.id in self.config:
             guild_id = m.guild.id
             if not self.config[guild_id]["toggle"]:
+                return
+            if str(m.author).endswith("#0000"):
                 return
             if self.bot.attrs.is_moderator(m.author) and not m.author.bot:
                 return
