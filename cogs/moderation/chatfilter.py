@@ -11,6 +11,7 @@ import json
 from discord.ext import commands
 import discord
 from discord.errors import NotFound, Forbidden
+from discord import ui, ButtonStyle
 
 from botutils import colors, split, CancelButton
 from cogs.moderation.logger import Log
@@ -179,29 +180,15 @@ class ChatFilter(commands.Cog):
             if ctx.guild.icon:
                 e.set_thumbnail(url=ctx.guild.icon.url)
             e.description = "Deletes messages containing blocked words/phrases. " \
-                            "When adding you can separate multiple via `, ` like `word1, word2`"
+                            "You can add multiple via something like `word1, word2`"
             e.add_field(
                 name="◈ Usage",
-                value=".chatfilter enable\n"
-                    ".chatfilter disable\n"
-                    ".chatfilter ignore #channel\n"
-                    ".chatfilter unignore #channel\n"
-                    ".chatfilter add {word/phrase}\n"
-                    ".chatfilter remove {word/phrase}\n"
-                    ".chatfilter toggle-bots\n"
-                    "`whether to filter bot messages`\n"
-                    ".chatfilter toggle-regex\n"
-                    "`whether to use regex`\n"
-                    ".chatfilter toggle-webhooks\n"
-                    "`whether to resend but filter a msg`",
+                value="**.chatfilter ignore #channel**\n"
+                      "**.chatfilter unignore #channel**\n"
+                      "**.chatfilter add {word/phrase}**\n"
+                      "**.chatfilter remove {word/phrase}**\n",
                 inline=False,
             )
-            if guild_id in self.config and self.config[guild_id]["blacklist"]:
-                text = str(self.config[guild_id]["blacklist"])
-                for text_group in [
-                    text[i : i + 1000] for i in range(0, len(text), 1000)
-                ]:
-                    e.add_field(name="◈ Blacklisted Words/Phrases", value=text_group, inline=False)
             if guild_id in self.config and self.config[guild_id]["ignored"]:
                 channels = []
                 for channel_id in list(self.config[guild_id]["ignored"]):
@@ -214,7 +201,10 @@ class ChatFilter(commands.Cog):
                 if channels:
                     e.add_field(name="◈ Ignored Channels", value="\n".join(channels))
             e.set_footer(text=f"Current Status: {toggle}")
-            await ctx.send(embed=e)
+            view = Menu(self, ctx)
+            msg = await ctx.send(embed=e, view=view)
+            await view.wait()
+            await msg.edit(view=None)
 
     @_chatfilter.command(name="enable")
     @commands.has_permissions(manage_messages=True)
@@ -343,8 +333,12 @@ class ChatFilter(commands.Cog):
         guild_id = ctx.guild.id
         if guild_id not in self.config:
             return await ctx.send("Chatfilter isn't enabled")
-        self.config[guild_id]["regex"] = not self.config[guild_id]["regex"]
-        toggle = "Enabled" if self.config[guild_id]["regex"] else "Disabled"
+        if "regex" not in self.config[guild_id]:
+            self.config[guild_id]["regex"] = True
+            await self.config.flush()
+        else:
+            await self.config.remove_sub(guild_id, "regex")
+        toggle = "Enabled" if "regex" in self.config[guild_id] else "Disabled"
         await ctx.send(f"{toggle} regex")
         await self.config.flush()
 
@@ -355,8 +349,12 @@ class ChatFilter(commands.Cog):
         guild_id = ctx.guild.id
         if guild_id not in self.config:
             return await ctx.send("Chatfilter isn't enabled")
-        self.config[guild_id]["webhooks"] = not self.config[guild_id]["webhooks"]
-        toggle = "Enabled" if self.config[guild_id]["webhooks"] else "Disabled"
+        if "webhooks" not in self.config[guild_id]:
+            self.config[guild_id]["webhooks"] = True
+            await self.config.flush()
+        else:
+            await self.config.remove_sub(guild_id, "webhooks")
+        toggle = "Enabled" if "webhooks" in self.config[guild_id] else "Disabled"
         await ctx.send(f"{toggle} webhooks")
         await self.config.flush()
 
@@ -488,7 +486,7 @@ class ChatFilter(commands.Cog):
                 return
             if m.channel.id in self.config[guild_id]["ignored"]:
                 return
-            if self.config[guild_id]["regex"]:
+            if "regex" in self.config[guild_id]:
                 result, flags = await self.run_regex_filter(guild_id, m.content)
             else:
                 result, flags = await self.run_default_filter(guild_id, m.content)
@@ -523,7 +521,7 @@ class ChatFilter(commands.Cog):
                 return
             if after.channel.id in self.config[guild_id]["ignored"]:
                 return
-            if self.config[guild_id]["regex"]:
+            if "regex" in self.config[guild_id]:
                 result, flags = await self.run_regex_filter(guild_id, after.content)
             else:
                 result, flags = await self.run_default_filter(guild_id, after.content)
@@ -545,6 +543,118 @@ class ChatFilter(commands.Cog):
                         )
 
                 return self.log_action(after, flags)
+
+
+style = ButtonStyle
+
+
+class Menu(ui.View):
+    def __init__(self, cls: ChatFilter, ctx: commands.Context):
+        self.cls = cls
+        self.ctx = ctx
+        self.extra = {}
+        super().__init__(timeout=60)
+
+        if ctx.guild.id in cls.config:
+            if cls.config[ctx.guild.id]["toggle"] == True:
+                self.toggle.label = "Disable"
+                self.toggle.style = discord.ButtonStyle.red
+                self.update_items()
+
+    async def on_error(self, error: Exception, item, interaction) -> None:
+        pass
+
+    def update_items(self):
+        guild_id = self.ctx.guild.id
+        if guild_id not in self.cls.config or not self.cls.config[guild_id]["toggle"]:
+            for custom_id, button in self.extra.items():
+                button.style = style.blurple
+        else:
+            conf = self.cls.config[guild_id]
+
+            color = style.green if "bots" in conf else style.red
+            if "bots" in self.extra:
+                self.extra["bots"].style = color
+            else:
+                button = ui.Button(emoji="🤖", style=color, custom_id="bots")
+                button.callback = self.handle_callback
+                self.add_item(button)
+                self.extra["bots"] = button
+
+            color = style.green if "webhooks" in conf else style.red
+            if "webhooks" in self.extra:
+                self.extra["webhooks"].style = color
+            else:
+                button = ui.Button(label="Webhooks", style=color, custom_id="webhooks")
+                button.callback = self.handle_callback
+                self.add_item(button)
+                self.extra["webhooks"] = button
+
+            color = style.green if "regex" in conf else style.red
+            if "regex" in self.extra:
+                self.extra["regex"].style = color
+            else:
+                button = ui.Button(label="Regex", style=color, custom_id="regex")
+                button.callback = self.handle_callback
+                self.add_item(button)
+                self.extra["regex"] = button
+
+    async def handle_callback(self, interaction: discord.Interaction):
+        user = interaction.guild.get_member(interaction.user.id)
+        with suppress(Exception):
+            if not user.guild_permissions.manage_messages:
+                return await interaction.response.send_message(
+                    f"You need manage_message permissions to toggle this", ephemeral=True
+                )
+            custom_id = interaction.data["custom_id"]
+            if self.extra[custom_id].style is style.blurple:
+                return await interaction.response.send_message(
+                    f"Enable chatfilter to toggle this", ephemeral=True
+                )
+            if custom_id in self.cls.config[self.ctx.guild.id]:
+                await self.cls.config.remove_sub(self.ctx.guild.id, custom_id)
+            else:
+                self.cls.config[self.ctx.guild.id][custom_id] = True
+                await self.cls.config.flush()
+            if custom_id == "bots":
+                m = "Toggled whether or not to filter bot messages"
+            elif custom_id == "webhooks":
+                m = "Toggled whether or not to resend deleted messages with the content filtered"
+            else:
+                m = "Toggled whether or not to use regex. This improves sensitivity"
+            self.update_items()
+            await interaction.response.edit_message(view=self)
+            await interaction.followup.send(m, ephemeral=True)
+
+    @ui.button(label="Filtered Words", style=style.blurple)
+    async def filtered_words(self, _button, interaction):
+        filtered = ""
+        if self.ctx.guild.id in self.cls.config:
+            filtered = ", ".join(self.cls.config[self.ctx.guild.id]["blacklist"])
+        with suppress(Exception):
+            await interaction.response.send_message(
+                f"Filtered words: {filtered}", ephemeral=True
+            )
+
+    @ui.button(label="Enable", style=style.green)
+    async def toggle(self, button, interaction: discord.Interaction):
+        user = interaction.guild.get_member(interaction.user.id)
+        with suppress(Exception):
+            if not user.guild_permissions.manage_messages:
+                return await interaction.response.send_message(
+                    f"You need manage_message permissions to toggle this", ephemeral=True
+                )
+            if button.label == "Enable":
+                await self.cls._enable(self.ctx)
+                button.label = "Disable"
+                button.style = discord.ButtonStyle.red
+            else:
+                await self.cls._disable(self.ctx)
+                button.label = "Enable"
+                button.style = discord.ButtonStyle.green
+            self.update_items()
+            await interaction.response.defer()
+            await interaction.edit_original_message(view=self)
 
 
 def setup(bot):
