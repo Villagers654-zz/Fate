@@ -616,7 +616,7 @@ class Menu(ui.View):
                 self.cls.config[self.ctx.guild.id][custom_id] = True
                 await self.cls.config.flush()
             self.update_items()
-            toggle = "Enabled" if self.extra["custom_id"].style is style.green else "Disabled"
+            toggle = "Enabled" if self.extra[custom_id].style is style.green else "Disabled"
             if custom_id == "bots":
                 m = f"{toggle} filtering bot messages"
             elif custom_id == "webhooks":
