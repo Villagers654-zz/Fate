@@ -111,7 +111,7 @@
     "utility": [
       "audit",
       "autorole",
-      "buttonroles",
+      "button_roles",
       "chatbridges",
       "clean_rythm",
       "embeds",
