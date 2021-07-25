@@ -559,7 +559,7 @@ class Menu(ui.View):
         self.ctx = ctx
         self.extra: Dict[str, discord.Button] = {}
         self.cd1 = cls.bot.utils.cooldown_manager(3, 25)
-        self.cd2 = cls.bot.utils.cooldown_manager(1, 6)
+        self.cd2 = cls.bot.utils.cooldown_manager(1, 5)
         super().__init__(timeout=60)
 
         if ctx.guild.id in cls.config:
@@ -614,6 +614,12 @@ class Menu(ui.View):
     async def handle_callback(self, interaction: discord.Interaction) -> object:
         user = interaction.guild.get_member(interaction.user.id)
         with suppress(Exception):
+            check1 = self.cd1.check(interaction.user.id)
+            check2 = self.cd2.check(interaction.user.id)
+            if check1 or check2:
+                return await interaction.response.send_message(
+                    "You're on cooldown, try again in a moment", ephemeral=True
+                )
             if not user.guild_permissions.manage_messages:
                 return await interaction.response.send_message(
                     f"You need manage_message permissions to toggle this", ephemeral=True
