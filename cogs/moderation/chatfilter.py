@@ -51,7 +51,7 @@ class ChatFilter(commands.Cog):
         content = content.replace(flag.rstrip(" "), filtered_word)
         for line in content.split("\n"):
             await asyncio.sleep(0)
-            while True:
+            for _ in range(50):
                 await asyncio.sleep(0)
                 if content.count(line) > 1:
                     content = content.replace(line + line, line)
