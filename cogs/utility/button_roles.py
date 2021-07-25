@@ -39,7 +39,7 @@ class ButtonRoles(commands.Cog):
             for guild_id, menus in self.menus.items():
                 for msg_id, data in menus.items():
                     if data["style"] == "buttons":
-                        self.bot.add_view(ButtonMenu(self, guild_id, msg_id))
+                        self.bot.add_view(RoleView(self, guild_id, msg_id))
                 self.bot.menus_loaded = True
 
     @commands.group(name="role-menu", aliases=["rolemenu"])
@@ -171,7 +171,7 @@ class ButtonRoles(commands.Cog):
             "style": style,
             "limit": 1
         }
-        view = ButtonMenu(cls=self, guild_id=ctx.guild.id, message_id=msg.id)
+        view = RoleView(cls=self, guild_id=ctx.guild.id, message_id=msg.id)
         await msg.edit(view=view)
         await self.menus.flush()
 
@@ -182,18 +182,24 @@ class ButtonRoles(commands.Cog):
                 await self.menus.remove_sub(payload.guild_id, str(payload.message_id))
 
 
-class ButtonMenu(ui.View):
+class RoleView(ui.View):
     def __init__(self, cls: ButtonRoles, guild_id: int, message_id: int):
         self.bot = cls.bot
         self.menus = cls.menus
         self.guild_id = guild_id
         self.message_id = message_id
 
-        self.buttons = {}
-        self.style = self.menus[guild_id][str(message_id)]["style"]
+        conf: Dict[str, Optional[Any]] = cls.menus[guild_id][str(message_id)]
+        self.style: str = cls.menus[guild_id][str(message_id)]["style"]
+        self.limit: int = conf["limit"]
 
+        self.buttons = {}
+
+        # Setup cooldowns for interactions
         self.global_cooldown = cls.global_cooldown
-        cd = [5, 25] if self.style == "buttons" else [5, 60]
+        cd = [5, 25]
+        if self.style == "buttons":
+            cd = [5, 60]
         self.cooldown = cls.bot.utils.cooldown_manager(*cd)
 
         super().__init__(timeout=None)
@@ -233,8 +239,14 @@ class ButtonMenu(ui.View):
         pass
 
     async def surface_callback(self, interaction) -> None:
-        """ Suppress exceptions in the actual callback function """
+        """ Handle cooldowns and suppress exceptions in the actual callback function """
         with suppress(discord.errors.NotFound):
+            check1 = self.global_cooldown.check(interaction.user.id)
+            check2 = self.cooldown.check(interaction.user.id)
+            if check1 or check2:
+                return await interaction.response.send_message(
+                    "You're on cooldown, try again in a moment", ephemeral=True
+                )
             if self.style == "buttons":
                 await self.button_callback(interaction)
             else:
@@ -251,14 +263,6 @@ class ButtonMenu(ui.View):
             await self.menus.flush()
             await interaction.message.edit(view=self)
             return await interaction.response.send_message(reason, ephemeral=True)
-
-        # Ensure the user isn't spamming buttons
-        check1 = self.global_cooldown.check(interaction.user.id)
-        check2 = self.cooldown.check(interaction.user.id)
-        if check1 or check2:
-            return await interaction.response.send_message(
-                "You're on cooldown, try again in a moment", ephemeral=True
-            )
 
         # Parse the key and get its relative data
         custom_id = interaction.data["custom_id"]
@@ -299,14 +303,6 @@ class ButtonMenu(ui.View):
             await interaction.message.edit(view=self)
             return await interaction.response.send_message(reason, ephemeral=True)
 
-        # Ensure the user isn't spamming buttons
-        check1 = self.global_cooldown.check(interaction.user.id)
-        check2 = self.cooldown.check(interaction.user.id)
-        if check1 or check2:
-            return await interaction.response.send_message(
-                "You're on cooldown, try again in a moment", ephemeral=True
-            )
-
         # Fetch required variables
         guild = self.bot.get_guild(self.guild_id)
         member = guild.get_member(interaction.user.id)
@@ -328,9 +324,9 @@ class ButtonMenu(ui.View):
 
         # Take away unselected roles
         for role in self.index:
-             if str(role.id) not in interaction.data["values"]:
-                 if role in member.roles:
-                     await member.remove_roles(role)
+            if str(role.id) not in interaction.data["values"]:
+                if role in member.roles:
+                    await member.remove_roles(role)
 
         await interaction.response.send_message(
             "Successfully set your roles",
@@ -339,7 +335,7 @@ class ButtonMenu(ui.View):
 
 
 class Select(discord.ui.Select):
-    def __init__(self, cls: ButtonMenu, msg_id: int, roles: dict):
+    def __init__(self, cls: RoleView, msg_id: int, roles: dict):
         self.cls = cls
         options = []
         for role, meta in roles.items():
@@ -354,7 +350,7 @@ class Select(discord.ui.Select):
             custom_id=f"select_{msg_id}",
             placeholder="Select a Role",
             min_values=1,
-            max_values=2,
+            max_values=self.cls.limit,
             options=options
         )
 
