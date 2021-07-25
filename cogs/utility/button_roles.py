@@ -337,6 +337,8 @@ class RoleView(ui.View):
 class Select(discord.ui.Select):
     def __init__(self, cls: RoleView, msg_id: int, roles: dict):
         self.cls = cls
+
+        # Prepare the components for the dropdown menu
         options = []
         for role, meta in roles.items():
             label = meta.pop("label")
@@ -346,6 +348,7 @@ class Select(discord.ui.Select):
                 **meta
             )
             options.append(option)
+
         super().__init__(
             custom_id=f"select_{msg_id}",
             placeholder="Select a Role",
@@ -355,6 +358,7 @@ class Select(discord.ui.Select):
         )
 
     async def callback(self, interaction: discord.Interaction):
+        """ Let the main View class handle the interaction """
         await self.cls.surface_callback(interaction)
 
 
