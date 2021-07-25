@@ -143,8 +143,7 @@ class ChatFilter(commands.Cog):
                 try:
                     result = re.search(query, content)
                     if result:
-                        trigger = result.group()
-                        flags.append(trigger)
+                        flags.append(word)
                 except re.error:
                     pass
             return flags
