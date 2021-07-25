@@ -205,7 +205,9 @@ class ChatFilter(commands.Cog):
             view = Menu(self, ctx)
             msg = await ctx.send(embed=e, view=view)
             await view.wait()
-            await msg.edit(view=None)
+            for button in view.children:
+                button.disabled = True
+            await msg.edit(view=view)
 
     @_chatfilter.command(name="enable")
     @commands.has_permissions(manage_messages=True)
@@ -223,7 +225,8 @@ class ChatFilter(commands.Cog):
                 "webhooks": False,
                 "regex": False
             }
-        await ctx.send("Enabled chatfilter")
+        if ctx.command.name.lower() == "enable":
+            await ctx.send("Enabled chatfilter")
         await self.config.flush()
 
     @_chatfilter.command(name="disable")
@@ -233,7 +236,8 @@ class ChatFilter(commands.Cog):
         if ctx.guild.id not in self.config:
             return await ctx.send("Chatfilter is not enabled")
         self.config[ctx.guild.id]["toggle"] = False
-        await ctx.send("Disabled chatfilter")
+        if ctx.command.name.lower() == "disable":
+            await ctx.send("Disabled chatfilter")
         await self.config.flush()
 
     @_chatfilter.command(name="ignore")
@@ -554,6 +558,8 @@ class Menu(ui.View):
         self.cls = cls
         self.ctx = ctx
         self.extra: Dict[str, discord.Button] = {}
+        self.cd1 = cls.bot.utils.cooldown_manager(3, 25)
+        self.cd2 = cls.bot.utils.cooldown_manager(1, 6)
         super().__init__(timeout=60)
 
         if ctx.guild.id in cls.config:
@@ -647,6 +653,12 @@ class Menu(ui.View):
     async def toggle(self, button: discord.Button, interaction: discord.Interaction):
         user = interaction.guild.get_member(interaction.user.id)
         with suppress(Exception):
+            check1 = self.cd1.check(interaction.user.id)
+            check2 = self.cd2.check(interaction.user.id)
+            if check1 or check2:
+                return await interaction.response.send_message(
+                    "You're on cooldown, try again in a moment", ephemeral=True
+                )
             if not user.guild_permissions.manage_messages:
                 return await interaction.response.send_message(
                     f"You need manage_message permissions to toggle this", ephemeral=True
