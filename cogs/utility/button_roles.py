@@ -45,7 +45,7 @@ class ButtonRoles(commands.Cog):
 
     @commands.group(name="role-menu", aliases=["rolemenu"])
     @commands.cooldown(1, 5, commands.BucketType.user)
-    @commands.guild_only()
+    @commands.is_owner()
     @commands.bot_has_permissions(embed_links=True)
     async def role_menu(self, ctx: commands.Context):
         if not ctx.invoked_subcommand:
@@ -53,7 +53,8 @@ class ButtonRoles(commands.Cog):
             e.set_author(name="Role Menus", icon_url=self.bot.user.avatar.url)
             if ctx.guild.icon:
                 e.set_thumbnail(url=ctx.guild.icon.url)
-            e.description = "Create menus for users to self assign roles via buttons\n**NOTE:** this feature is in beta"
+            e.description = "Create menus for users to self assign roles via buttons or " \
+                            "select menus\n**NOTE:** this feature is in beta"
             p: str = ctx.prefix
             e.add_field(
                 name="◈ Usage",
@@ -61,7 +62,7 @@ class ButtonRoles(commands.Cog):
                       f"{p}~~role-menu set-message `msg_id` `new message`~~\n"
                       f"{p}~~role-menu add-role `msg_id` `@role`~~\n"
                       f"{p}~~role-menu remove-role `msg_id` `@role`~~\n"
-                      f"{p}~~role-menu set-style `msg_id` `button/dropdown`~~"
+                      f"{p}~~role-menu set-style `msg_id` `button/select`~~"
             )
             count = 0
             if ctx.guild.id in self.menus:
