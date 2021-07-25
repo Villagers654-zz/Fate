@@ -57,15 +57,12 @@
       "🍄 | !user drugged !target with Mushroom juice",
       "🍌 | !user launched bananas at !target",
       "🍨 | !target licked and swallowed his ice cream way too roughly",
-      "🐄 | !user's instructions were unclear leaving !target without food and shelter",
       "🌮 | !user fed !target with an expired taco",
       "🎲 | !user gambled his next move like an intellectual",
       "🚀 | !target's rocket sent them flying into Uranus ||*did it hurt?*||",
       "🤺 | !user used their fencing skills to whack !target in the face",
       "🦇 | !target thought they could become the next Batman",
       "💊 | !target took the wrong kind of pills like the dumbass they are",
-      "🖕 | !user cursed at joe mama",
-      "😠 | !target coped way too hard",
       "<a:pepefuckyou:866192194787737630> | !user rekt !target in a staring competition",
       "<a:vibe:817484146145493032> | !user violated !target in a rap battle",
       "💢 | !user pinged the discord mods on !target",
@@ -76,7 +73,10 @@
     ],
     "light": [
       "💅 | !user ignored !target",
-      "⚰️ | !target decided to change their pronouns to was/were"
+      "😠 | !target coped way too hard",
+      "⚰️ | !target decided to change their pronouns to was/were",
+      "🖕 | !user cursed at joe mama",
+      "🐄 | !user's instructions were unclear leaving !target without food and shelter"
     ]
   },
   "dodges": [
