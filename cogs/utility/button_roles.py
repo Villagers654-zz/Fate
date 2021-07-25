@@ -67,9 +67,7 @@ class ButtonRoles(commands.Cog):
             count = 0
             if ctx.guild.id in self.menus:
                 count = len(self.menus[ctx.guild.id])
-            e.set_footer(text=f"{count} Active Menus")
-            if count == 0 or count > 1:
-                e.footer.text += "s"
+            e.set_footer(text=f"{count} Active Menu{'s' if count == 0 or count > 1 else ''}")
             await ctx.send(embed=e)
 
     @role_menu.command(name="create")
