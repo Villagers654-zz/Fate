@@ -572,9 +572,11 @@ class Menu(ui.View):
         guild_id = self.ctx.guild.id
         if guild_id not in self.cls.config or not self.cls.config[guild_id]["toggle"]:
             for custom_id, button in self.extra.items():
-                button.style = style.blurple
+                button.disabled = True
         else:
             conf = self.cls.config[guild_id]
+            for button in self.extra.values():
+                button.disabled = False
 
             color = style.green if "bots" in conf else style.red
             if "bots" in self.extra:
@@ -642,7 +644,7 @@ class Menu(ui.View):
             )
 
     @ui.button(label="Enable", style=style.green)
-    async def toggle(self, button, interaction: discord.Interaction):
+    async def toggle(self, button: discord.Button, interaction: discord.Interaction):
         user = interaction.guild.get_member(interaction.user.id)
         with suppress(Exception):
             if not user.guild_permissions.manage_messages:
