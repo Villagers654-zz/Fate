@@ -1108,6 +1108,10 @@ class ConfigureModules:
 
     async def next(self) -> None:
         """Wait for the next reaction"""
+        if self.guild_id not in self.bot.cogs["AntiSpam"].config:
+            await self.msg.edit(content="AntiSpam was disabled, so this menu is now inactive")
+            raise self.bot.ignored_exit
+
         reaction, user = await self.bot.utils.get_reaction(self.check)
         if reaction:
             self.bot.loop.create_task(self.msg.remove_reaction(reaction, user))
