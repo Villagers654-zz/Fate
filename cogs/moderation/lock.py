@@ -1,7 +1,5 @@
-import time
 from datetime import datetime, timezone, timedelta
 import asyncio
-import re
 from contextlib import suppress
 
 from discord.ext import commands
@@ -9,6 +7,7 @@ from discord.errors import HTTPException, NotFound, Forbidden
 import discord
 
 from botutils import extract_time
+from fate import Fate
 
 
 locks = {
@@ -22,7 +21,7 @@ unique = ["kick", "ban"]
 
 
 class Lock(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot: Fate):
         self.bot = bot
         self.lock = bot.utils.cache("locks")
         self.cd = {}
@@ -63,7 +62,15 @@ class Lock(commands.Cog):
 
         # Mute on_join lock
         if lock == "mute":
-            return await ctx.send("The mute lock isn't done being developed")
+            await ctx.send("How long should I mute new users? Reply with `0` to permanently mute")
+            reply = await self.bot.utils.get_message(ctx)
+            if reply.content == "0":
+                duration = None
+            else:
+                duration = extract_time(reply.content)
+            self.lock[guild_id]["mute"] = {
+                "duration": duration
+            }
 
         # Kick new accounts lock
         if lock == "new":
@@ -163,6 +170,15 @@ class Lock(commands.Cog):
                         self.lock.remove(guild_id)
                     except NotFound:
                         return
+            elif "mute" in self.lock[guild_id]:
+                mute_role = await self.bot.attrs.get_mute_role(m.guild)
+                if not mute_role:
+                    self.lock.remove(guild_id)
+                with suppress(Forbidden, HTTPException):
+                    await m.add_roles(mute_role)
+                if duration := self.lock[guild_id]["mute"]["duration"]:
+                    await asyncio.sleep(duration)
+                    await m.remove_roles(mute_role)
 
     @commands.Cog.listener()
     async def on_guild_remove(self, guild):
