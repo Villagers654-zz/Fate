@@ -15,7 +15,6 @@ from discord.ext import commands
 from discord import ui, Interaction
 import discord
 
-from botutils import Conversation
 from fate import Fate
 
 
@@ -54,15 +53,18 @@ class ButtonRoles(commands.Cog):
             if ctx.guild.icon:
                 e.set_thumbnail(url=ctx.guild.icon.url)
             e.description = "Create menus for users to self assign roles via buttons or " \
-                            "select menus\n**NOTE:** this feature is in beta"
+                            "select menus\n**NOTE:** The bot will have you choose which menu to apply a" \
+                            "setting to **after** running commands that edit an existing menu"
             p: str = ctx.prefix
             e.add_field(
                 name="◈ Usage",
-                value=f"{p}role-menu create\n"
-                      f"{p}~~role-menu set-message `msg_id` `new message`~~\n"
-                      f"{p}~~role-menu add-role `msg_id` `@role`~~\n"
-                      f"{p}~~role-menu remove-role `msg_id` `@role`~~\n"
-                      f"{p}~~role-menu set-style `msg_id` `button/select`~~"
+                value=f"{p}role-menu create\n\n"
+                      f"\n"
+                      f"{p}role-menu add-role `@role`\n"
+                      f"{p}role-menu remove-role `@role`\n"
+                      f"{p}role-menu edit-message `new message`\n"
+                      f"{p}role-menu change-emoji `new_emoji`\n"
+                      f"{p}role-menu set-description `new description`"
             )
             count = 0
             if ctx.guild.id in self.menus:
@@ -75,12 +77,14 @@ class ButtonRoles(commands.Cog):
     async def create_menu(self, ctx):
         e = discord.Embed(color=self.bot.config["theme_color"])
         e.set_author(name="Instructions", icon_url=ctx.author.avatar.url)
-        e.description = "> Send the name of the role you want me to add"
+        e.description = "> **Send the name of the role you want me to add**\nOr here's an example message " \
+                        "with advanced formatting:\n```💚 green [role_id, role name, or ping]\n" \
+                        "sets your name as the color green```"
         e.set_footer(text="Reply with 'done' when complete")
 
         # Get the roles
         msg = await ctx.send(embed=e)
-        data = []
+        data = {}
         while True:
             reply = await self.bot.utils.get_message(ctx)
             if "cancel" in reply.content.lower():
@@ -89,17 +93,49 @@ class ButtonRoles(commands.Cog):
                 await msg.delete()
                 await reply.delete()
                 break
-            role = await self.bot.utils.get_role(ctx, reply.content)
+
+            name = None
+            emoji = None
+            label = None
+            description = None
+
+            args = list(reply.content.split("\n")[0].split())
+            if len(args) > 1:
+                # Set the emoji
+                if len(args[0]) < 3 or "<" in args[0]:
+                    emoji = args[0]
+                    args.pop(0)
+
+                # Set the label
+                if len(args) > 1:
+                    label = args[0]
+                    args.pop(0)
+
+                # Get the role with the remaining args instead of msg content
+                if emoji or label:
+                    name = " ".join(args)
+
+                # Set the description
+                if "\n" in reply.content:
+                    description = reply.content.split("\n")[1]
+
+            role = await self.bot.utils.get_role(ctx, name or reply.content)
             if not role:
                 await ctx.send("Role not found", delete_after=5)
                 await reply.delete()
                 continue
-            data.append(role)
+
+            data[role] = {
+                "emoji": emoji,
+                "label": label,
+                "description": description
+            }
+
             if e.fields:
                 e.remove_field(0)
             e.add_field(
                 name="◈ Selected Roles",
-                value="\n".join([f"• {role.mention}" for role in data])
+                value="\n".join([f"• {role.mention}" for role in data.keys()])
             )
             await msg.edit(embed=e)
             await reply.delete()
@@ -128,9 +164,12 @@ class ButtonRoles(commands.Cog):
         if ctx.guild.id not in self.menus:
             self.menus[ctx.guild.id] = {}
         self.menus[ctx.guild.id][str(msg.id)] = {
-            "roles": [r.id for r in data],
+            "roles": {
+                str(role.id): metadata for role, metadata in data.items()
+            },
             "text": "Select your role",
             "style": style,
+            "limit": 1
         }
         view = ButtonMenu(cls=self, guild_id=ctx.guild.id, message_id=msg.id)
         await msg.edit(view=view)
@@ -151,7 +190,6 @@ class ButtonMenu(ui.View):
         self.message_id = message_id
 
         self.buttons = {}
-        self._index = {}
         self.style = self.menus[guild_id][str(message_id)]["style"]
 
         self.global_cooldown = cls.global_cooldown
@@ -182,18 +220,14 @@ class ButtonMenu(ui.View):
             self.add_item(self.menu)
 
     @property
-    def index(self) -> List[discord.Role]:
-        data = self.menus[self.guild_id][str(self.message_id)]
+    def index(self) -> dict:
+        index = {}
         guild = self.bot.get_guild(self.guild_id)
-        self._index = {}
-        for role_id in data["roles"]:
-            role = guild.get_role(role_id)
-            if not role:
-                self.menus[self.guild_id]["roles"].remove(role_id)
-                self.bot.loop.create_task(self.menus.flush())
-                continue
-            self._index[role.name] = role
-        return list(self._index.values())
+        for role_id, meta in self.menus[self.guild_id][str(self.message_id)]["roles"].items():
+            role = guild.get_role(int(role_id))
+            if role:
+                index[role] = meta
+        return index
 
     async def on_error(self, _error, _item, _interaction) -> None:
         pass
@@ -305,11 +339,17 @@ class ButtonMenu(ui.View):
 
 
 class Select(discord.ui.Select):
-    def __init__(self, cls: ButtonMenu, msg_id: int, roles: List[discord.Role]):
+    def __init__(self, cls: ButtonMenu, msg_id: int, roles: dict):
         self.cls = cls
         options = []
-        for role in roles:
-            options.append(discord.SelectOption(label=role.name[:25], value=str(role.id)))
+        for role, meta in roles.items():
+            label = meta.pop("label")
+            option = discord.SelectOption(
+                label=label or role.name[:25],
+                value=str(role.id),
+                **meta
+            )
+            options.append(option)
         super().__init__(
             custom_id=f"select_{msg_id}",
             placeholder="Select a Role",
