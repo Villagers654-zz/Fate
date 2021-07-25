@@ -109,10 +109,11 @@ class Core(commands.Cog):
             e.set_thumbnail(url=guild.splash.url)
         if guild.banner:
             e.set_image(url=guild.banner.url)
-        join_duration = format_date_difference(self.join_dates[guild.id])
-        del self.join_dates[guild.id]
-        e.description = f"👥 | {len(guild.members)} Members\n" \
-                        f"⏰ | {join_duration}\n"
+        e.description = f"👥 | {len(guild.members)} Members"
+        if guild.id in self.join_dates:
+            join_duration = format_date_difference(self.join_dates[guild.id])
+            del self.join_dates[guild.id]
+            e.description += f"\n⏰ | {join_duration}"
         await channel.send(embed=e)  # type: ignore
 
     @commands.command(name="votes")
