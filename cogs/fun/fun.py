@@ -613,17 +613,9 @@ class Fun(commands.Cog):
         e = discord.Embed(color=user.color)
         e.set_author(name=str(user), icon_url=user.avatar.url)
         percentage = random.randint(0, 100)
-        if ctx.invoked_with == "hitler" and user.id != 261451679239634944:
+        if ctx.invoked_with == "hitler":
             if random.randint(1, 4) == 1:
                 ctx.invoked_with = f"worse than {ctx.invoked_with}"
-        if ctx.invoked_with in ["fat", "ugly", "dumb", "stupid", "shit", "hitler", "karen", "fake", "ego", "slave", "crazy"] and user.id == 261451679239634944:
-            percentage = 0
-        if ctx.invoked_with in ["chad", "epic", "swag", "buff", "kind", "exotic", "high", "based", "unlucky", "bruh"] and user.id == 261451679239634944:
-            oop = [69, 99, 420, 999, 999999999]
-            percentage = random.choice(oop)
-        if ctx.invoked_with in ["fat", "gay", "stupid", "dumb", "shit", "hitler", "karen", "fake", "ego", "slave", "crazy"] and user.id in [457210410819649536, 691433369384255518, 264838866480005122, 588070631992590336, 807414650403815454, 481341919901777950, 629286402777022464, 867268477148200982, 866634891777277962, 506735111543193601]:
-            troll = [69, 99, 100, 1000000]
-            percentage = random.choice(troll)
         e.description = f"{percentage}% {ctx.invoked_with}"
         await ctx.send(embed=e)
 
@@ -631,9 +623,9 @@ class Fun(commands.Cog):
     @commands.cooldown(1, 60, commands.BucketType.user)
     async def sue(self, ctx, user: discord.Member):
         r = random.randint(1, 1000)
-        if user.id in [264838866480005122, 261451679239634944]:
+        if user.id in self.bot.owner_ids:
             r = 0
-        if ctx.author.id in [264838866480005122, 261451679239634944]:
+        if ctx.author.id in self.bot.owner_ids:
             r = random.randint(1000000, 1000000000)
         e = discord.Embed(color=0xAAF200)
         e.set_author(
