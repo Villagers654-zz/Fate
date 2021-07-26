@@ -519,7 +519,8 @@ class Fun(commands.Cog):
             "Well duh",
             "hell yeah",
             "hell no",
-            "silence fatty"
+            "silence fatty",
+            "no, so cope"
         ]
         await ctx.send(random.choice(choices))
 
@@ -597,7 +598,9 @@ class Fun(commands.Cog):
             "ego",
             "buff",
             "kind",
-            "exotic"
+            "exotic",
+            "crazy",
+            "slave"
         ],
     )
     @commands.cooldown(3, 5, commands.BucketType.user)
@@ -612,12 +615,12 @@ class Fun(commands.Cog):
         if ctx.invoked_with == "hitler" and user.id != 261451679239634944:
             if random.randint(1, 4) == 1:
                 ctx.invoked_with = f"worse than {ctx.invoked_with}"
-        if ctx.invoked_with in ["fat", "ugly", "dumb", "stupid", "shit", "hitler", "karen", "fake", "ego"] and user.id == 261451679239634944:
+        if ctx.invoked_with in ["fat", "ugly", "dumb", "stupid", "shit", "hitler", "karen", "fake", "ego", "slave", "crazy"] and user.id == 261451679239634944:
             percentage = 0
-        if ctx.invoked_with in ["chad", "epic", "swag", "buff", "kind", "exotic"] and user.id == 261451679239634944:
-            oop = [69, 99, 420, 999]
+        if ctx.invoked_with in ["chad", "epic", "swag", "buff", "kind", "exotic", "high", "based", "unlucky", "bruh"] and user.id == 261451679239634944:
+            oop = [69, 99, 420, 999, 999999999]
             percentage = random.choice(oop)
-        if ctx.invoked_with in ["fat", "gay", "stupid", "dumb", "shit", "hitler", "karen", "fake", "ego"] and user.id in [457210410819649536, 691433369384255518, 264838866480005122, 588070631992590336, 807414650403815454, 481341919901777950, 629286402777022464]:
+        if ctx.invoked_with in ["fat", "gay", "stupid", "dumb", "shit", "hitler", "karen", "fake", "ego", "slave", "crazy"] and user.id in [457210410819649536, 691433369384255518, 264838866480005122, 588070631992590336, 807414650403815454, 481341919901777950, 629286402777022464, 867268477148200982, 866634891777277962]:
             troll = [69, 99, 100, 1000000]
             percentage = random.choice(troll)
         e.description = f"{percentage}% {ctx.invoked_with}"
