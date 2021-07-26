@@ -134,7 +134,8 @@ class ChatFilter(commands.Cog):
             if ctx.guild.icon:
                 e.set_thumbnail(url=ctx.guild.icon.url)
             e.description = "Deletes messages containing blocked words/phrases. " \
-                            "You can add multiple via something like `word1, word2`"
+                            "You can add multiple via something like `word1, word2`. If " \
+                            "you use regex, note that you can't use high ranges like * + or {1,1000}"
             e.add_field(
                 name="◈ Usage",
                 value="**.chatfilter ignore #channel**\n"
