@@ -520,7 +520,8 @@ class Fun(commands.Cog):
             "hell yeah",
             "hell no",
             "silence fatty",
-            "no, so cope"
+            "no, so cope",
+            "imagine <:you:841098144536068106>"
         ]
         await ctx.send(random.choice(choices))
 
@@ -620,7 +621,7 @@ class Fun(commands.Cog):
         if ctx.invoked_with in ["chad", "epic", "swag", "buff", "kind", "exotic", "high", "based", "unlucky", "bruh"] and user.id == 261451679239634944:
             oop = [69, 99, 420, 999, 999999999]
             percentage = random.choice(oop)
-        if ctx.invoked_with in ["fat", "gay", "stupid", "dumb", "shit", "hitler", "karen", "fake", "ego", "slave", "crazy"] and user.id in [457210410819649536, 691433369384255518, 264838866480005122, 588070631992590336, 807414650403815454, 481341919901777950, 629286402777022464, 867268477148200982, 866634891777277962]:
+        if ctx.invoked_with in ["fat", "gay", "stupid", "dumb", "shit", "hitler", "karen", "fake", "ego", "slave", "crazy"] and user.id in [457210410819649536, 691433369384255518, 264838866480005122, 588070631992590336, 807414650403815454, 481341919901777950, 629286402777022464, 867268477148200982, 866634891777277962, 506735111543193601]:
             troll = [69, 99, 100, 1000000]
             percentage = random.choice(troll)
         e.description = f"{percentage}% {ctx.invoked_with}"
