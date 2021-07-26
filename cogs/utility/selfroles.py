@@ -52,7 +52,7 @@ class SelfRoles(commands.Cog):
         name = data["name"]
         e.set_author(
             name=name if name else "Self-Role Menu",
-            icon_url=guild.icon.url,
+            icon_url=guild.icon.url if guild.icon else discord.Embed.Empty,
         )
         e.set_thumbnail(
             url="https://cdn.discordapp.com/attachments/514213558549217330/514345278669848597/8yx98C.gif"
