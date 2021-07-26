@@ -15,6 +15,7 @@ from discord.ext import commands
 from discord import ui, Interaction
 import discord
 
+from botutils import GetChoice
 from fate import Fate
 
 
@@ -24,9 +25,7 @@ allowed_mentions = discord.AllowedMentions(everyone=False, roles=True, users=Fal
 class ButtonRoles(commands.Cog):
     def __init__(self, bot: Fate):
         self.bot = bot
-        self.menus = bot.utils.cache("button_roles")
-        for key in list(self.menus.keys()):
-            self.menus.remove(key)
+        self.config = bot.utils.cache("button_roles")
         self.global_cooldown = bot.utils.cooldown_manager(1, 5)
         if bot.is_ready():
             bot.loop.create_task(self.load_menus_on_start())
@@ -36,11 +35,24 @@ class ButtonRoles(commands.Cog):
         if not hasattr(self.bot, "menus_loaded"):
             self.bot.menus_loaded = False
         if not self.bot.menus_loaded:
-            for guild_id, menus in self.menus.items():
+            for guild_id, menus in self.config.items():
                 for msg_id, data in menus.items():
                     if data["style"] == "buttons":
                         self.bot.add_view(RoleView(self, guild_id, msg_id))
                 self.bot.menus_loaded = True
+
+    async def get_menus(self, guild_id: int) -> dict:
+        return {
+            meta["text"].split("\n")[0]: message_id for message_id, meta in self.config[guild_id].items()
+        }
+
+    async def refresh_menu(self, guild_id: int, message_id: str):
+        """ Re-initiates the View and updates the message content """
+        meta: dict = self.config[guild_id][message_id]
+        channel = self.bot.get_channel(meta["channel_id"])
+        message = await channel.fetch_message(int(message_id))  # type: ignore
+        new_view = RoleView(self, guild_id, int(message_id))
+        await message.edit(content=meta["text"], view=new_view)
 
     @commands.group(name="role-menu", aliases=["rolemenu"])
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -67,10 +79,26 @@ class ButtonRoles(commands.Cog):
                       f"{p}role-menu set-description `new description`"
             )
             count = 0
-            if ctx.guild.id in self.menus:
-                count = len(self.menus[ctx.guild.id])
+            if ctx.guild.id in self.config:
+                count = len(self.config[ctx.guild.id])
             e.set_footer(text=f"{count} Active Menu{'s' if count == 0 or count > 1 else ''}")
             await ctx.send(embed=e)
+
+    @role_menu.command(name="edit-message")
+    @commands.has_permissions(administrator=True)
+    async def edit_message(self, ctx, *, new_message):
+        guild_id = ctx.guild.id
+        if guild_id not in self.config:
+            return await ctx.send("There arent any active role menus in this server")
+
+        menus: dict = await self.get_menus(guild_id)
+        choice: str = await GetChoice(ctx, menus.keys())
+
+        message_id: str = menus[choice]
+        self.config[guild_id][message_id]["text"] = new_message
+
+        await self.refresh_menu(guild_id, message_id)
+        await ctx.send(f"Successfully edited the content 👍")
 
     @role_menu.command(name="create")
     @commands.has_permissions(administrator=True)
@@ -161,36 +189,45 @@ class ButtonRoles(commands.Cog):
         await reply.delete()
 
         msg = await channel.send("Choose your role")
-        if ctx.guild.id not in self.menus:
-            self.menus[ctx.guild.id] = {}
-        self.menus[ctx.guild.id][str(msg.id)] = {
+        if ctx.guild.id not in self.config:
+            self.config[ctx.guild.id] = {}
+        self.config[ctx.guild.id][str(msg.id)] = {
+            "channel_id": channel.id,
+            "label": "Select your role",
             "roles": {
                 str(role.id): metadata for role, metadata in data.items()
             },
-            "text": "Select your role",
+            "text": "Choose your role",
             "style": style,
             "limit": 1
         }
         view = RoleView(cls=self, guild_id=ctx.guild.id, message_id=msg.id)
         await msg.edit(view=view)
-        await self.menus.flush()
+        await self.config.flush()
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, payload):
-        if payload.guild_id in self.menus:
-            if str(payload.message_id) in self.menus[payload.guild_id]:
-                await self.menus.remove_sub(payload.guild_id, str(payload.message_id))
+        if payload.guild_id in self.config:
+            if str(payload.message_id) in self.config[payload.guild_id]:
+                await self.config.remove_sub(payload.guild_id, str(payload.message_id))
 
 
 class RoleView(ui.View):
     def __init__(self, cls: ButtonRoles, guild_id: int, message_id: int):
         self.bot = cls.bot
-        self.menus = cls.menus
+        self.config = cls.config
         self.guild_id = guild_id
         self.message_id = message_id
 
-        conf: Dict[str, Optional[Any]] = cls.menus[guild_id][str(message_id)]
-        self.style: str = cls.menus[guild_id][str(message_id)]["style"]
+        # Replacing existing instances to refresh information
+        if guild_id not in self.bot.views:
+            self.bot.views[guild_id] = {}
+        if message_id in self.bot.views[guild_id]:
+            self.bot.views[guild_id][message_id].stop()
+        self.bot.views[guild_id][message_id] = self
+
+        conf: Dict[str, Optional[Any]] = cls.config[guild_id][str(message_id)]
+        self.style: str = cls.config[guild_id][str(message_id)]["style"]
         self.limit: int = conf["limit"]
 
         self.buttons = {}
@@ -205,7 +242,7 @@ class RoleView(ui.View):
         super().__init__(timeout=None)
 
         if self.style == "buttons":
-            data = self.menus[guild_id][str(message_id)]
+            data = self.config[guild_id][str(message_id)]
             guild = self.bot.get_guild(guild_id)
             for role_id in data["roles"]:
                 role = guild.get_role(role_id)
@@ -229,7 +266,7 @@ class RoleView(ui.View):
     def index(self) -> dict:
         index = {}
         guild = self.bot.get_guild(self.guild_id)
-        for role_id, meta in self.menus[self.guild_id][str(self.message_id)]["roles"].items():
+        for role_id, meta in self.config[self.guild_id][str(self.message_id)]["roles"].items():
             role = guild.get_role(int(role_id))
             if role:
                 index[role] = meta
@@ -259,8 +296,8 @@ class RoleView(ui.View):
             """ Remove a button that can no longer be used """
             self.remove_item(self.buttons[custom_id])
             with suppress(KeyError):
-                self.menus[self.guild_id][key]["roles"].remove(role_id)
-            await self.menus.flush()
+                self.config[self.guild_id][key]["roles"].remove(role_id)
+            await self.config.flush()
             await interaction.message.edit(view=self)
             return await interaction.response.send_message(reason, ephemeral=True)
 
@@ -316,7 +353,7 @@ class RoleView(ui.View):
                 return await adjust_options(f"{role_id} doesn't seem to exist anymore")
 
             if role.position >= guild.me.top_role.position:
-                self.menus[self.guild_id]["roles"].remove(role.id)
+                self.config[self.guild_id]["roles"].remove(role.id)
                 return await adjust_options(f"{role_id} is too high for me to manage")
 
             if role not in member.roles:
@@ -341,6 +378,7 @@ class Select(discord.ui.Select):
         # Prepare the components for the dropdown menu
         options = []
         for role, meta in roles.items():
+            meta = dict(meta)
             label = meta.pop("label")
             option = discord.SelectOption(
                 label=label or role.name[:25],
