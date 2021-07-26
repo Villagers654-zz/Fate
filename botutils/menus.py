@@ -75,7 +75,7 @@ class _Select(discord.ui.Select):
 
 class GetChoice(discord.ui.View):
     choice: Any = None
-    def __init__(self, ctx, choices: List[Any], limit: int = 1, placeholder: str = "Options"):
+    def __init__(self, ctx, choices: Union[list, KeysView], limit: int = 1, placeholder: str = "Options"):
         self.ctx = ctx
         super().__init__(timeout=45)
         self.add_item(_Select(choices, limit, placeholder))
