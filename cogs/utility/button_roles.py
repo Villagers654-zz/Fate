@@ -70,13 +70,12 @@ class ButtonRoles(commands.Cog):
             p: str = ctx.prefix
             e.add_field(
                 name="◈ Usage",
-                value=f"{p}role-menu create\n\n"
-                      f"\n"
+                value=f"**{p}role-menu create**\n"
                       f"{p}role-menu add-role `@role`\n"
                       f"{p}role-menu remove-role `@role`\n"
-                      f"{p}role-menu edit-message `new message`\n"
-                      f"{p}role-menu change-emoji `new_emoji`\n"
-                      f"{p}role-menu set-description `new description`"
+                      f"{p}edit-message `new message`\n"
+                      f"{p}change-emoji `new_emoji`\n"
+                      f"{p}set-description `new description`"
             )
             count = 0
             if ctx.guild.id in self.config:
@@ -84,7 +83,7 @@ class ButtonRoles(commands.Cog):
             e.set_footer(text=f"{count} Active Menu{'s' if count == 0 or count > 1 else ''}")
             await ctx.send(embed=e)
 
-    @role_menu.command(name="edit-message")
+    @commands.command(name="edit-message")
     @commands.has_permissions(administrator=True)
     async def edit_message(self, ctx, *, new_message):
         guild_id = ctx.guild.id
