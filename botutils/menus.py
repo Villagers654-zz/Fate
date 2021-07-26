@@ -80,13 +80,17 @@ class GetChoice(discord.ui.View):
         super().__init__(timeout=45)
         self.add_item(_Select(choices, limit, placeholder))
 
-    def __await__(self):
+    def __await__(self) -> Generator:
         return self._await().__await__()
 
-    async def _await(self):
+    async def _await(self) -> Any:
         await self.ctx.send("Select your choice", view=self)
         await self.wait()
         return self.choice
+
+    async def on_error(self, error, _item, _interaction) -> None:
+        if not isinstance(error, NotFound):
+            raise
 
 
 class Menus:
