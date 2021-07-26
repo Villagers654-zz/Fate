@@ -13,7 +13,7 @@ import random
 from time import time
 import os
 from contextlib import suppress
-from typing import Optional, Union, Dict, Callable
+from typing import *
 
 import discord
 from discord import TextChannel, Attachment
@@ -47,6 +47,46 @@ class ChoiceButtons(ui.View):
         await interaction.message.edit(view=None)
         self.asyncio_event.set()
         self.stop()
+
+
+class _Select(discord.ui.Select):
+    def __init__(self, choices: List[Any], limit: int = 1, placeholder: str = "Select your choice"):
+        self.limit = limit
+        options = []
+        for option in choices:
+            options.append(discord.SelectOption(label=str(option)))
+        super().__init__(
+            custom_id=f"select_choice_{time()}",
+            placeholder=placeholder,
+            min_values=1,
+            max_values=limit,
+            options=options
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+        if self.limit == 1:
+            self.view.choice = interaction.data["values"][0]
+        else:
+            self.view.choice = interaction.data["values"]
+        await interaction.response.defer()
+        await interaction.message.delete()
+        self.view.stop()
+
+
+class GetChoice(discord.ui.View):
+    choice: Any = None
+    def __init__(self, ctx, choices: List[Any], limit: int = 1, placeholder: str = "Options"):
+        self.ctx = ctx
+        super().__init__(timeout=45)
+        self.add_item(_Select(choices, limit, placeholder))
+
+    def __await__(self):
+        return self._await().__await__()
+
+    async def _await(self):
+        await self.ctx.send("Select your choice", view=self)
+        await self.wait()
+        return self.choice
 
 
 class Menus:
