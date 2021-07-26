@@ -12,7 +12,7 @@ import discord
 from discord.errors import NotFound, Forbidden
 from discord import ui, ButtonStyle
 
-from botutils import colors, split, CancelButton
+from botutils import colors, split, CancelButton, findall
 from cogs.moderation.logger import Log
 
 
@@ -84,82 +84,35 @@ class ChatFilter(commands.Cog):
         if guild_id not in self.config:
             return None, None
 
-        def run_regex() -> list:
-            regexes = {}
-            flags = []
-            for word in self.config[guild_id]["blacklist"]:
-                word = word.lower()
-                if not all(c.lower() != c.upper() or c != "." for c in word):
-                    if word in content:
-                        flags.append(word)
-                    continue
-                for section in content.split():
-                    if word in section:
-                        if len(section) - len(word) > 2 and len(word) > 3:
-                            flags.append(word)
-                            continue
-                    if word == section[1:] or word == section[:-1]:
-                        flags.append(word)
-                        continue
-                    if not all(c.lower() != c.upper() or c != "." for c in section):
-                        if word in section:
-                            flags.append(word)
-                        continue
+        def run_regex() -> Optional[str]:
+            result = re.search(query, content)
+            if result:
+                return result.group()
+            return None
 
-                regexes[word] = []
-                fmt = word.lower()
-
-                matched = []
-                for i, letter in enumerate(fmt):
-                    if letter in matched:
-                        continue
-                    if letter not in aliases:
-                        rgx = letter + "+.{0,2}"
-                        fmt = fmt.replace(letter, rgx)
-                        matched.append(letter)
-
-                # Add regexes for alias characters
-                for letter, _aliases in aliases.items():
-                    regex = f"({letter + '|' + '|'.join(_aliases)})+" + ".{0,2}"
-                    fmt = fmt.replace(letter, regex)
-                for _ in range(5):
-                    if fmt.count("++"):
-                        fmt = fmt.replace("++", "+")  # Remove repeated ranges
-                    else:
-                        break
-                regexes[word].append(fmt)
-
-                # Account for a singular changed character if it's a long word
-                if len(word) > 4 and len(content) > 4:
-                    for i in range(len(word)):
-                        if i == 0:
-                            continue
-                        _word = list(word)
-                        _word[i] = "."
-                        regexes[word].append("".join(_word))
-
-            for word, queries in regexes.items():
-                query = "|".join(f"(?:{q})" for q in queries if len(q) > 1)
-                try:
-                    result = re.search(query, content)
-                    if result:
-                        flags.append(word)
-                except re.error:
-                    pass
-            return flags
-
-        illegal = ("\\", "*", "`", "_", "||", "~~")
+        illegal = ("\\", "`", "__", "||", "~~")
         content = str(content).lower()
         for char in illegal:
             content = content.replace(char, "")
-        for char, _aliases in aliases.items():
-            for alias in _aliases:
-                await asyncio.sleep(0)
-                content = content.replace(alias, char)
         content = normalize('NFKD', content).encode('ascii', 'ignore').decode()
         content = "".join(c for c in content if c in printable)
 
-        flags = await self.bot.loop.run_in_executor(None, run_regex)
+        flags = []
+        for word in self.config[guild_id]["blacklist"]:
+            await asyncio.sleep(0)
+
+            # Sanitize the query
+            query = word.replace("*", "").replace("+", "")
+            ranges = await findall("{[0-9]+, ?[0-9]+}", query)
+            for match in ranges:
+                await asyncio.sleep(0)
+                num = match.strip("{}").split(f",{' ' if ' ' in match else ''}")
+                if int(num[1]) > 10:
+                    query = query.replace(match, "")
+
+            if result := await self.bot.loop.run_in_executor(None, run_regex):
+                flags.append(result)
+
         if not flags:
             return None, flags
 
