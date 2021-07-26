@@ -18,7 +18,7 @@ from . import colors, emojis, pillow
 from .attributes import Attributes
 from .get_user import GetUser
 from .listeners import Listener, Conversation
-from .menus import Menus
+from .menus import *
 from .prefixes import *
 from .resources import *
 from .stack import Stack
