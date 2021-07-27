@@ -243,8 +243,8 @@ class RoleView(ui.View):
         if self.style == "buttons":
             data = self.config[guild_id][str(message_id)]
             guild = self.bot.get_guild(guild_id)
-            for role_id in data["roles"]:
-                role = guild.get_role(role_id)
+            for role_id in data["roles"].keys():
+                role = guild.get_role(int(role_id))
                 if not role:
                     continue
 
