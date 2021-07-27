@@ -105,7 +105,7 @@ class ButtonRoles(commands.Cog):
         e = discord.Embed(color=self.bot.config["theme_color"])
         e.set_author(name="Instructions", icon_url=ctx.author.avatar.url)
         e.description = "> **Send the name of the role you want me to add**\nOr here's an example message " \
-                        "with advanced formatting:\n```💚 green [role_id, role name, or ping]\n" \
+                        "with advanced formatting:\n```💚 | green | [role_id, role name, or ping]\n" \
                         "sets your name as the color green```"
         e.set_footer(text="Reply with 'done' when complete")
 
@@ -126,10 +126,10 @@ class ButtonRoles(commands.Cog):
             label = None
             description = None
 
-            args = list(reply.content.split("\n")[0].split())
+            args = list(reply.content.split("\n")[0].split(" | "))
             if len(args) > 1:
                 # Set the emoji
-                if len(args[0]) < 3 or "<" in args[0]:
+                if all(c.lower() == c.upper() for c in args[0]) or "<" in args[0]:
                     emoji = args[0]
                     args.pop(0)
 
