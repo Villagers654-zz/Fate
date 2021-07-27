@@ -127,7 +127,7 @@ class ServerStatistics(commands.Cog):
     @commands.Cog.listener()
     async def on_guild_update(self, before, after):
         if before and after and before.id in self.config:
-            await self.update_channels(after.guild)
+            await self.update_channels(after)
 
 
 def setup(bot):
