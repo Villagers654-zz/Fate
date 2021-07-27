@@ -884,7 +884,10 @@ class Ranking(commands.Cog):
 
             card.save(fp)
 
-        await self.bot.loop.run_in_executor(None, create_card)
+        try:
+            await self.bot.loop.run_in_executor(None, create_card)
+        except UnidentifiedImageError:
+            return await ctx.send("Failed to fetch one of the top users avatars. Rerunning the command might fix")
         if not hasattr(ctx, "channel"):
             return fp
 
