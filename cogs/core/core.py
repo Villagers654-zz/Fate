@@ -8,16 +8,12 @@ Core bot commands such as prefix, invite, and ping
 :license: Proprietary and Confidential, see LICENSE for details
 """
 
-import aiohttp
 from time import time, monotonic
 import asyncio
 from datetime import datetime, timezone
-from contextlib import suppress
-from importlib import reload
 
 from discord.ext import commands
 import discord
-from discord import Webhook
 import dbl
 
 from botutils import colors, get_prefixes_async, emojis, Conversation, \
@@ -496,53 +492,6 @@ class Core(commands.Cog):
         second_ping = (monotonic() - before) * 1000
         e.description = f"**Message Trip 1:** `{int(ping)}ms`\n**Message Trip 2:** `{int(second_ping)}ms`\n**Msg Edit Trip 1:** `{int(edit_ping)}ms`\n**Msg Edit Trip 2:** `{int(second_edit_ping)}ms`\n**Websocket Heartbeat:** `{api}ms`"
         await message.edit(embed=e)
-
-    @commands.Cog.listener()
-    async def on_message(self, msg: discord.Message):
-        if isinstance(msg.channel, discord.DMChannel):
-            user_id = msg.author.id
-            now = int(time() / 5)
-            if user_id not in self.spam_cd:
-                self.spam_cd[user_id] = [now, 0]
-            if self.spam_cd[user_id][0] == now:
-                self.spam_cd[user_id][1] += 1
-            else:
-                self.spam_cd[user_id] = [now, 0]
-            if self.spam_cd[user_id][1] < 2 or msg.author.bot:
-                m = discord.AllowedMentions.none()
-                with suppress(Exception):
-                    async with aiohttp.ClientSession() as session:
-                        webhook = Webhook.from_url(
-                            "https://discordapp.com/api/webhooks/673290242819883060/GDXiMBwbzw7dbom57ZupHsiEQ76w8TfV_mEwi7_pGw8CvVFL0LNgwRwk55yRPxNdPA4b",
-                            session=session,
-                        )
-                        files = []
-                        for attachment in msg.attachments:
-                            if attachment.size > 4000000:
-                                return
-                            files.append(await attachment.to_file())
-                        if msg.author.id == self.bot.user.id:
-                            e = discord.Embed(color=colors.fate)
-                            e.set_author(
-                                name=msg.channel.recipient,
-                                icon_url=msg.channel.recipient.avatar.url,
-                            )
-                            return await webhook.send(
-                                username=msg.author.name,
-                                avatar_url=msg.author.avatar.url,
-                                content=msg.content,
-                                files=files,
-                                embed=e,
-                                allowed_mentions=m
-                            )
-                        await webhook.send(
-                            username=msg.author.name,
-                            avatar_url=msg.author.avatar.url,
-                            content=msg.content,
-                            embeds=msg.embeds,
-                            files=files,
-                            allowed_mentions=m
-                        )
 
 
 def setup(bot):
