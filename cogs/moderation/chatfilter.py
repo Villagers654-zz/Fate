@@ -47,10 +47,12 @@ class ChatFilter(commands.Cog):
 
     async def clean_content(self, content: str, flag: str) -> str:
         """ Sanitizes content to be resent with the flag filtered out """
-        filtered_word = f"{flag[0]}{f'{esc}*' * (len(flag) - 1)}"
-        content = content.replace(flag.rstrip(" "), filtered_word)
+        flag = flag.rstrip(" ")
+        for chunk in content.split():
+            if flag.lower() in chunk.lower():
+                filtered_word = f"{flag[0]}{f'{esc}*' * (len(chunk) - 1)}"
+                content = content.replace(chunk.lower(), filtered_word.lower())
         for line in content.split("\n"):
-            await asyncio.sleep(0)
             for _ in range(50):
                 await asyncio.sleep(0)
                 if content.count(line) > 1:
@@ -102,16 +104,25 @@ class ChatFilter(commands.Cog):
             await asyncio.sleep(0)
 
             # Sanitize the query
-            query = word.replace("*", "").replace("+", "")
+            query = word.replace("*", "{0,16}").replace("+", "{1,16}")
             ranges = await findall("{[0-9]+, ?[0-9]+}", query)
             for match in ranges:
                 await asyncio.sleep(0)
                 num = match.strip("{}").split(f",{' ' if ' ' in match else ''}")
-                if int(num[1]) > 10:
-                    query = query.replace(match, "")
+                if int(num[1]) > 16:
+                    query = query.replace(match, "{" + num[0] + ",16}")
 
-            if result := await self.bot.loop.run_in_executor(None, run_regex):
-                flags.append(result)
+            try:
+                before = time()
+                if result := await self.bot.loop.run_in_executor(None, run_regex):
+                    flags.append(result)
+                if time() - before > 1:
+                    self.bot.log.critical(f"Removing bad regex: {word}")
+                    with suppress(ValueError):
+                        self.config[guild_id]["blacklist"].remove(word)
+            except re.error:
+                with suppress(ValueError):
+                    self.config[guild_id]["blacklist"].remove(word)
 
         if not flags:
             return None, flags
@@ -135,7 +146,8 @@ class ChatFilter(commands.Cog):
                 e.set_thumbnail(url=ctx.guild.icon.url)
             e.description = "Deletes messages containing blocked words/phrases. " \
                             "You can add multiple via something like `word1, word2`. If " \
-                            "you use regex, note that you can't use high ranges like * + or {1,1000}"
+                            "you use regex, note that high ranges like * + or {1,1000} are " \
+                            "replaced with either {0,16} or {1,16}"
             e.add_field(
                 name="◈ Usage",
                 value="**.chatfilter ignore #channel**\n"
