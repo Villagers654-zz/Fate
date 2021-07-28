@@ -955,22 +955,9 @@ class Ranking(commands.Cog):
 
         async def create_embed(name: str, rankings: list, lmt, top_user=None):
             """ Gen a list of embed leaderboards """
-            # icon_url = None
             thumbnail_url = "https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png"
-            # if top_user:
-            # 	user = self.bot.get_user(int(top_user))
-            # 	if isinstance(user, discord.User):
-            # 		icon_url = user.avatar.url
-            # 	else:
-            # 		guild = self.bot.get_guild(int(top_user))
-            # 		if isinstance(guild, discord.Guild):
-            # 			icon_url = guild.icon.url
             embeds = []
             e = discord.Embed(color=0x4A0E50)
-            # if icon_url:
-            # 	e.set_author(name=name, icon_url=icon_url)
-            # else:
-            # 	e.set_author(name=name, icon_url=self.bot.user.avatar.url)
             e.set_author(name=name, icon_url=ctx.author.avatar.url)
             e.set_thumbnail(url=thumbnail_url)
             e.description = ""
