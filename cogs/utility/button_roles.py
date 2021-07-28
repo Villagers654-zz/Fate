@@ -99,6 +99,54 @@ class ButtonRoles(commands.Cog):
         await self.refresh_menu(guild_id, message_id)
         await ctx.send(f"Successfully edited the content 👍")
 
+    @commands.command(name="change-emoji")
+    @commands.has_permissions(administrator=True)
+    async def change_emoji(self, ctx, *, new_emoji):
+        guild_id = ctx.guild.id
+        if guild_id not in self.config:
+            return await ctx.send("There arent any active role menus in this server")
+
+        menus: dict = await self.get_menus(guild_id)
+        choice: str = await GetChoice(ctx, menus.keys())
+        message_id: str = menus[choice]
+
+        roles = {}
+        for role_id, meta in self.config[guild_id][message_id]["roles"].items():
+            role = ctx.guild.get_role(int(role_id))
+            if not role:
+                continue
+            roles[meta["label"] or role.name] = role_id
+
+        choice: str = await GetChoice(ctx, roles.keys())
+        self.config[guild_id][message_id]["roles"][roles[choice]]["emoji"] = new_emoji
+
+        await self.refresh_menu(guild_id, message_id)
+        await ctx.send(f"Successfully set the emoji 👍")
+
+    @commands.command(name="set-description")
+    @commands.has_permissions(administrator=True)
+    async def set_description(self, ctx, *, new_description):
+        guild_id = ctx.guild.id
+        if guild_id not in self.config:
+            return await ctx.send("There arent any active role menus in this server")
+
+        menus: dict = await self.get_menus(guild_id)
+        choice: str = await GetChoice(ctx, menus.keys())
+        message_id: str = menus[choice]
+
+        roles = {}
+        for role_id, meta in self.config[guild_id][message_id]["roles"].items():
+            role = ctx.guild.get_role(int(role_id))
+            if not role:
+                continue
+            roles[meta["label"] or role.name] = role_id
+
+        choice: str = await GetChoice(ctx, roles.keys())
+        self.config[guild_id][message_id]["roles"][roles[choice]]["description"] = new_description
+
+        await self.refresh_menu(guild_id, message_id)
+        await ctx.send(f"Successfully set the description 👍")
+
     @role_menu.command(name="create")
     @commands.has_permissions(administrator=True)
     async def create_menu(self, ctx):
