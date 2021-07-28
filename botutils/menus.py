@@ -56,11 +56,11 @@ class _Select(discord.ui.Select):
 
         options = []
         for option in choices:
-            options.append(discord.SelectOption(label=str(option)))
+            options.append(discord.SelectOption(label=str(option)[:25]))
 
         super().__init__(
             custom_id=f"select_choice_{time()}",
-            placeholder=placeholder,
+            placeholder=placeholder[:25],
             min_values=1,
             max_values=limit,
             options=options
