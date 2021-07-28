@@ -117,7 +117,10 @@ class ButtonRoles(commands.Cog):
                 continue
             roles[meta["label"] or role.name] = role_id
 
-        choice: str = await GetChoice(ctx, roles.keys())
+        if len(roles) == 1:
+            choice: str = list(roles.values())[0]
+        else:
+            choice: str = await GetChoice(ctx, roles.keys())
         self.config[guild_id][message_id]["roles"][roles[choice]]["emoji"] = new_emoji
 
         await self.refresh_menu(guild_id, message_id)
@@ -141,7 +144,10 @@ class ButtonRoles(commands.Cog):
                 continue
             roles[meta["label"] or role.name] = role_id
 
-        choice: str = await GetChoice(ctx, roles.keys())
+        if len(roles) == 1:
+            choice: str = list(roles.values())[0]
+        else:
+            choice: str = await GetChoice(ctx, roles.keys())
         self.config[guild_id][message_id]["roles"][roles[choice]]["description"] = new_description
 
         await self.refresh_menu(guild_id, message_id)
