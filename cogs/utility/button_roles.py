@@ -147,21 +147,24 @@ class ButtonRoles(commands.Cog):
                 e.remove_field(0)
             e.add_field(
                 name="◈ Selected Roles",
-                value="\n".join([f"• {role.mention}" for role in data.keys()])
+                value="\n".join([f"• {role.mention}" for role in selected_roles.keys()])
             )
             await msg.edit(embed=e)
             await reply.delete()
 
         # Set the style of the menu
-        m = await ctx.send("Should I use a select menu or buttons. Reply with 'select' or 'buttons'")
-        reply = await self.bot.utils.get_message(ctx)
-        if "button" in reply.content.lower():
+        if len(selected_roles) == 1:
             style = "buttons"
         else:
-            style = "select"
-        await ctx.send(f"Alright, I'll use a {style} menu", delete_after=5)
-        await m.delete()
-        await reply.delete()
+            m = await ctx.send("Should I use a select menu or buttons. Reply with 'select' or 'buttons'")
+            reply = await self.bot.utils.get_message(ctx)
+            if "button" in reply.content.lower():
+                style = "buttons"
+            else:
+                style = "select"
+            await ctx.send(f"Alright, I'll use a {style} menu", delete_after=5)
+            await m.delete()
+            await reply.delete()
 
         # Set the channel
         m = await ctx.send("#Mention the channel you want me to use")
