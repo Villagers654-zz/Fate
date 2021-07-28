@@ -106,7 +106,7 @@ class ButtonRoles(commands.Cog):
                 await reply.delete()
                 break
 
-            name: Optional[str] = None
+            name: Optional[str] = reply.content
             emoji: Optional[str] = None
             label: Optional[str] = None
             description: Optional[str] = None
@@ -127,9 +127,9 @@ class ButtonRoles(commands.Cog):
                 if emoji or label:
                     name = " ".join(args)
 
-                # Set the description
-                if "\n" in reply.content:
-                    description = reply.content.split("\n")[1]
+            # Set the description
+            if "\n" in reply.content:
+                description = reply.content.split("\n")[1]
 
             role = await self.bot.utils.get_role(ctx, name or reply.content)
             if not role:
@@ -192,6 +192,62 @@ class ButtonRoles(commands.Cog):
         await msg.edit(view=view)
         await self.config.flush()
 
+    @role_menu.command(name="add-role")
+    @commands.has_permissions(administrator=True)
+    async def add_role(self, ctx, *, role):
+        guild_id = ctx.guild.id
+        if guild_id not in self.config:
+            return await ctx.send("There arent any active role menus in this server")
+
+        menus: dict = await self.get_menus(guild_id)
+        if len(menus) == 1:
+            choice: str = list(menus.keys())[0]
+        else:
+            choice: str = await GetChoice(ctx, menus.keys())
+        message_id: str = menus[choice]
+
+        name: Optional[str] = role
+        emoji: Optional[str] = None
+        label: Optional[str] = None
+        description: Optional[str] = None
+
+        args = list(role.split("\n")[0].split(" | "))
+        if len(args) > 1:
+            # Set the emoji
+            if all(c.lower() == c.upper() for c in args[0]) or "<" in args[0]:
+                emoji = args[0]
+                args.pop(0)
+
+            # Set the label
+            if len(args) > 1:
+                label = args[0]
+                args.pop(0)
+
+            # Get the role with the remaining args instead of msg content
+            if emoji or label:
+                name = " ".join(args)
+
+        # Set the description
+        if "\n" in role:
+            description = role.split("\n")[1]
+
+        print(name)
+        role = await self.bot.utils.get_role(ctx, name)
+        if not role:
+            return await ctx.send("Role not found")
+        if str(role.id) in self.config[guild_id][message_id]:
+            return await ctx.send("That role's already added")
+
+        self.config[guild_id][message_id]["roles"][str(role.id)] = {
+            "emoji": emoji,
+            "label": label,
+            "description": description
+        }
+
+        await self.refresh_menu(guild_id, message_id)
+        await ctx.send(f"Added {role.mention}", allowed_mentions=discord.AllowedMentions.none())
+        await self.config.flush()
+
     @commands.command(name="edit-message")
     @commands.has_permissions(administrator=True)
     async def edit_message(self, ctx, *, new_message):
@@ -200,13 +256,17 @@ class ButtonRoles(commands.Cog):
             return await ctx.send("There arent any active role menus in this server")
 
         menus: dict = await self.get_menus(guild_id)
-        choice: str = await GetChoice(ctx, menus.keys())
+        if len(menus) == 1:
+            choice: str = list(menus.keys())[0]
+        else:
+            choice: str = await GetChoice(ctx, menus.keys())
 
         message_id: str = menus[choice]
         self.config[guild_id][message_id]["text"] = new_message
 
         await self.refresh_menu(guild_id, message_id)
         await ctx.send(f"Successfully edited the content 👍")
+        await self.config.flush()
 
     @commands.command(name="change-emoji")
     @commands.has_permissions(administrator=True)
@@ -216,7 +276,10 @@ class ButtonRoles(commands.Cog):
             return await ctx.send("There arent any active role menus in this server")
 
         menus: dict = await self.get_menus(guild_id)
-        choice: str = await GetChoice(ctx, menus.keys())
+        if len(menus) == 1:
+            choice: str = list(menus.keys())[0]
+        else:
+            choice: str = await GetChoice(ctx, menus.keys())
         message_id: str = menus[choice]
 
         roles = {}
@@ -234,6 +297,7 @@ class ButtonRoles(commands.Cog):
 
         await self.refresh_menu(guild_id, message_id)
         await ctx.send(f"Successfully set the emoji 👍")
+        await self.config.flush()
 
     @commands.command(name="set-description")
     @commands.has_permissions(administrator=True)
@@ -243,7 +307,10 @@ class ButtonRoles(commands.Cog):
             return await ctx.send("There arent any active role menus in this server")
 
         menus: dict = await self.get_menus(guild_id)
-        choice: str = await GetChoice(ctx, menus.keys())
+        if len(menus) == 1:
+            choice: str = list(menus.keys())[0]
+        else:
+            choice: str = await GetChoice(ctx, menus.keys())
         message_id: str = menus[choice]
 
         roles = {}
@@ -261,6 +328,7 @@ class ButtonRoles(commands.Cog):
 
         await self.refresh_menu(guild_id, message_id)
         await ctx.send(f"Successfully set the description 👍")
+        await self.config.flush()
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, payload):
