@@ -366,7 +366,7 @@ def get_time(seconds):
     return result
 
 
-async def get_role(ctx, name):
+async def get_role(ctx, name) -> Optional[discord.Role]:
     if name.startswith("<@"):
         for char in list(name):
             if not char.isdigit():
