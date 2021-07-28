@@ -257,6 +257,8 @@ class ButtonRoles(commands.Cog):
         if payload.guild_id in self.config:
             if str(payload.message_id) in self.config[payload.guild_id]:
                 await self.config.remove_sub(payload.guild_id, str(payload.message_id))
+                if not self.config[payload.guild_id]:
+                    await self.config.remove(payload.guild_id)
 
 
 class RoleView(ui.View):
