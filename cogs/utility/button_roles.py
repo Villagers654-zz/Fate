@@ -83,6 +83,112 @@ class ButtonRoles(commands.Cog):
             e.set_footer(text=f"{count} Active Menu{'s' if count == 0 or count > 1 else ''}")
             await ctx.send(embed=e)
 
+    @role_menu.command(name="create")
+    @commands.has_permissions(administrator=True)
+    async def create_menu(self, ctx):
+        """ The command for interactively setting up a new menu """
+        e = discord.Embed(color=self.bot.config["theme_color"])
+        e.set_author(name="Instructions", icon_url=ctx.author.avatar.url)
+        e.description = "> **Send the name of the role you want me to add**\nOr here's an example message " \
+                        "with advanced formatting:\n```💚 | SomeDisplayLabel | [role_id, role name, or ping]\n" \
+                        "some description on what it does```"
+        e.set_footer(text="Reply with 'done' when complete")
+
+        # Get the roles
+        msg = await ctx.send(embed=e)
+        selected_roles = {}
+        while True:
+            reply = await self.bot.utils.get_message(ctx)
+            if "cancel" in reply.content.lower():
+                return await msg.delete()
+            if reply.content.lower() == "done":
+                await msg.delete()
+                await reply.delete()
+                break
+
+            name: Optional[str] = None
+            emoji: Optional[str] = None
+            label: Optional[str] = None
+            description: Optional[str] = None
+
+            args = list(reply.content.split("\n")[0].split(" | "))
+            if len(args) > 1:
+                # Set the emoji
+                if all(c.lower() == c.upper() for c in args[0]) or "<" in args[0]:
+                    emoji = args[0]
+                    args.pop(0)
+
+                # Set the label
+                if len(args) > 1:
+                    label = args[0]
+                    args.pop(0)
+
+                # Get the role with the remaining args instead of msg content
+                if emoji or label:
+                    name = " ".join(args)
+
+                # Set the description
+                if "\n" in reply.content:
+                    description = reply.content.split("\n")[1]
+
+            role = await self.bot.utils.get_role(ctx, name or reply.content)
+            if not role:
+                await ctx.send("Role not found", delete_after=5)
+                await reply.delete()
+                continue
+
+            selected_roles[role] = {
+                "emoji": emoji,
+                "label": label,
+                "description": description
+            }
+
+            if e.fields:
+                e.remove_field(0)
+            e.add_field(
+                name="◈ Selected Roles",
+                value="\n".join([f"• {role.mention}" for role in data.keys()])
+            )
+            await msg.edit(embed=e)
+            await reply.delete()
+
+        # Set the style of the menu
+        m = await ctx.send("Should I use a select menu or buttons. Reply with 'select' or 'buttons'")
+        reply = await self.bot.utils.get_message(ctx)
+        if "button" in reply.content.lower():
+            style = "buttons"
+        else:
+            style = "select"
+        await ctx.send(f"Alright, I'll use a {style} menu", delete_after=5)
+        await m.delete()
+        await reply.delete()
+
+        # Set the channel
+        m = await ctx.send("#Mention the channel you want me to use")
+        reply = await self.bot.utils.get_message(ctx)
+        if not reply.channel_mentions:
+            return await ctx.send("You didn't #mention a channel, rerun the command")
+        channel = reply.channel_mentions[0]
+        await m.delete()
+        await reply.delete()
+
+        msg = await channel.send("Choose your role")
+        if ctx.guild.id not in self.config:
+            self.config[ctx.guild.id] = {}
+        self.config[ctx.guild.id][str(msg.id)] = {
+            "channel_id": channel.id,
+            "label": "Select your role",
+            "roles": {
+                str(role.id): metadata for role, metadata in selected_roles.items()
+            },
+            "text": "Choose your role",
+            "style": style,
+            "limit": 1
+        }
+        view = RoleView(cls=self, guild_id=ctx.guild.id, message_id=msg.id)
+        await msg.edit(view=view)
+        await self.config.flush()
+
     @commands.command(name="edit-message")
     @commands.has_permissions(administrator=True)
     async def edit_message(self, ctx, *, new_message):
@@ -152,111 +258,6 @@ class ButtonRoles(commands.Cog):
 
         await self.refresh_menu(guild_id, message_id)
         await ctx.send(f"Successfully set the description 👍")
-
-    @role_menu.command(name="create")
-    @commands.has_permissions(administrator=True)
-    async def create_menu(self, ctx):
-        e = discord.Embed(color=self.bot.config["theme_color"])
-        e.set_author(name="Instructions", icon_url=ctx.author.avatar.url)
-        e.description = "> **Send the name of the role you want me to add**\nOr here's an example message " \
-                        "with advanced formatting:\n```💚 | SomeDisplayLabel | [role_id, role name, or ping]\n" \
-                        "some description on what it does```"
-        e.set_footer(text="Reply with 'done' when complete")
-
-        # Get the roles
-        msg = await ctx.send(embed=e)
-        data = {}
-        while True:
-            reply = await self.bot.utils.get_message(ctx)
-            if "cancel" in reply.content.lower():
-                return await msg.delete()
-            if reply.content.lower() == "done":
-                await msg.delete()
-                await reply.delete()
-                break
-
-            name = None
-            emoji = None
-            label = None
-            description = None
-
-            args = list(reply.content.split("\n")[0].split(" | "))
-            if len(args) > 1:
-                # Set the emoji
-                if all(c.lower() == c.upper() for c in args[0]) or "<" in args[0]:
-                    emoji = args[0]
-                    args.pop(0)
-
-                # Set the label
-                if len(args) > 1:
-                    label = args[0]
-                    args.pop(0)
-
-                # Get the role with the remaining args instead of msg content
-                if emoji or label:
-                    name = " ".join(args)
-
-                # Set the description
-                if "\n" in reply.content:
-                    description = reply.content.split("\n")[1]
-
-            role = await self.bot.utils.get_role(ctx, name or reply.content)
-            if not role:
-                await ctx.send("Role not found", delete_after=5)
-                await reply.delete()
-                continue
-
-            data[role] = {
-                "emoji": emoji,
-                "label": label,
-                "description": description
-            }
-
-            if e.fields:
-                e.remove_field(0)
-            e.add_field(
-                name="◈ Selected Roles",
-                value="\n".join([f"• {role.mention}" for role in data.keys()])
-            )
-            await msg.edit(embed=e)
-            await reply.delete()
-
-        # Set the style of the menu
-        m = await ctx.send("Should I use a select menu or buttons. Reply with 'select' or 'buttons'")
-        reply = await self.bot.utils.get_message(ctx)
-        if "button" in reply.content.lower():
-            style = "buttons"
-        else:
-            style = "select"
-        await ctx.send(f"Alright, I'll use a {style} menu", delete_after=5)
-        await m.delete()
-        await reply.delete()
-
-        # Set the channel
-        m = await ctx.send("#Mention the channel you want me to use")
-        reply = await self.bot.utils.get_message(ctx)
-        if not reply.channel_mentions:
-            return await ctx.send("You didn't #mention a channel, rerun the command")
-        channel = reply.channel_mentions[0]
-        await m.delete()
-        await reply.delete()
-
-        msg = await channel.send("Choose your role")
-        if ctx.guild.id not in self.config:
-            self.config[ctx.guild.id] = {}
-        self.config[ctx.guild.id][str(msg.id)] = {
-            "channel_id": channel.id,
-            "label": "Select your role",
-            "roles": {
-                str(role.id): metadata for role, metadata in data.items()
-            },
-            "text": "Choose your role",
-            "style": style,
-            "limit": 1
-        }
-        view = RoleView(cls=self, guild_id=ctx.guild.id, message_id=msg.id)
-        await msg.edit(view=view)
-        await self.config.flush()
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, payload):
