@@ -41,11 +41,6 @@ class ButtonRoles(commands.Cog):
                         self.bot.add_view(RoleView(self, guild_id, msg_id))
                 self.bot.menus_loaded = True
 
-    async def get_menus(self, guild_id: int) -> dict:
-        return {
-            meta["text"].split("\n")[0]: message_id for message_id, meta in self.config[guild_id].items()
-        }
-
     async def refresh_menu(self, guild_id: int, message_id: str):
         """ Re-initiates the View and updates the message content """
         meta: dict = self.config[guild_id][message_id]
@@ -192,19 +187,25 @@ class ButtonRoles(commands.Cog):
         await msg.edit(view=view)
         await self.config.flush()
 
+    async def get_menu_id(self, ctx) -> str:
+        """ Gets the message_id of the wanted menu """
+        menus = {
+            meta["text"].split("\n")[0]: message_id
+            for message_id, meta in self.config[ctx.guild.id].items()
+        }
+        if len(menus) == 1:
+            choice: str = list(menus.keys())[0]
+        else:
+            choice: str = await GetChoice(ctx, menus.keys())
+        return menus[choice]
+
     @role_menu.command(name="add-role")
     @commands.has_permissions(administrator=True)
     async def add_role(self, ctx, *, role):
         guild_id = ctx.guild.id
         if guild_id not in self.config:
             return await ctx.send("There arent any active role menus in this server")
-
-        menus: dict = await self.get_menus(guild_id)
-        if len(menus) == 1:
-            choice: str = list(menus.keys())[0]
-        else:
-            choice: str = await GetChoice(ctx, menus.keys())
-        message_id: str = menus[choice]
+        message_id = await self.get_menu_id(ctx)
 
         name: Optional[str] = role
         emoji: Optional[str] = None
@@ -254,13 +255,7 @@ class ButtonRoles(commands.Cog):
         guild_id = ctx.guild.id
         if guild_id not in self.config:
             return await ctx.send("There arent any active role menus in this server")
-
-        menus: dict = await self.get_menus(guild_id)
-        if len(menus) == 1:
-            choice: str = list(menus.keys())[0]
-        else:
-            choice: str = await GetChoice(ctx, menus.keys())
-        message_id: str = menus[choice]
+        message_id = await self.get_menu_id(ctx)
 
         role = await self.bot.utils.get_role(ctx, role)
         if not role:
@@ -284,13 +279,7 @@ class ButtonRoles(commands.Cog):
         if guild_id not in self.config:
             return await ctx.send("There arent any active role menus in this server")
 
-        menus: dict = await self.get_menus(guild_id)
-        if len(menus) == 1:
-            choice: str = list(menus.keys())[0]
-        else:
-            choice: str = await GetChoice(ctx, menus.keys())
-
-        message_id: str = menus[choice]
+        message_id = await self.get_menu_id(ctx)
         self.config[guild_id][message_id]["text"] = new_message
 
         await self.refresh_menu(guild_id, message_id)
@@ -303,13 +292,7 @@ class ButtonRoles(commands.Cog):
         guild_id = ctx.guild.id
         if guild_id not in self.config:
             return await ctx.send("There arent any active role menus in this server")
-
-        menus: dict = await self.get_menus(guild_id)
-        if len(menus) == 1:
-            choice: str = list(menus.keys())[0]
-        else:
-            choice: str = await GetChoice(ctx, menus.keys())
-        message_id: str = menus[choice]
+        message_id = await self.get_menu_id(ctx)
 
         roles = {}
         for role_id, meta in self.config[guild_id][message_id]["roles"].items():
@@ -334,13 +317,7 @@ class ButtonRoles(commands.Cog):
         guild_id = ctx.guild.id
         if guild_id not in self.config:
             return await ctx.send("There arent any active role menus in this server")
-
-        menus: dict = await self.get_menus(guild_id)
-        if len(menus) == 1:
-            choice: str = list(menus.keys())[0]
-        else:
-            choice: str = await GetChoice(ctx, menus.keys())
-        message_id: str = menus[choice]
+        message_id = await self.get_menu_id(ctx)
 
         roles = {}
         for role_id, meta in self.config[guild_id][message_id]["roles"].items():
