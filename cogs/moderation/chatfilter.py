@@ -116,7 +116,7 @@ class ChatFilter(commands.Cog):
                 before = time()
                 if result := await self.bot.loop.run_in_executor(None, run_regex):
                     flags.append(result)
-                if time() - before > 1:
+                if time() - before > 3:
                     self.bot.log.critical(f"Removing bad regex: {word}")
                     with suppress(ValueError):
                         self.config[guild_id]["blacklist"].remove(word)
