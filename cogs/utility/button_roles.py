@@ -37,8 +37,7 @@ class ButtonRoles(commands.Cog):
         if not self.bot.menus_loaded:
             for guild_id, menus in self.config.items():
                 for msg_id, data in menus.items():
-                    if data["style"] == "buttons":
-                        self.bot.add_view(RoleView(self, guild_id, msg_id))
+                    self.bot.add_view(RoleView(self, guild_id, msg_id))
                 self.bot.menus_loaded = True
 
     async def refresh_menu(self, guild_id: int, message_id: str):
