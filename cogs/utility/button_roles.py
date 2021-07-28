@@ -105,8 +105,8 @@ class ButtonRoles(commands.Cog):
         e = discord.Embed(color=self.bot.config["theme_color"])
         e.set_author(name="Instructions", icon_url=ctx.author.avatar.url)
         e.description = "> **Send the name of the role you want me to add**\nOr here's an example message " \
-                        "with advanced formatting:\n```💚 | green | [role_id, role name, or ping]\n" \
-                        "sets your name as the color green```"
+                        "with advanced formatting:\n```💚 | SomeDisplayLabel | [role_id, role name, or ping]\n" \
+                        "some description on what it does```"
         e.set_footer(text="Reply with 'done' when complete")
 
         # Get the roles
