@@ -24,7 +24,7 @@ import discord
 from discord.errors import NotFound, Forbidden
 from PIL import Image, ImageFont, ImageDraw, ImageSequence, UnidentifiedImageError
 
-from botutils import colors, get_prefix
+from botutils import colors, get_prefix, url_from
 from botutils.pillow import add_corners
 
 
@@ -370,7 +370,7 @@ class Ranking(commands.Cog):
         if not args or len(args) == 1:
             e = discord.Embed(color=self.bot.config["theme_color"])
             e.set_author(name="Level Roles", icon_url=self.bot.user.avatar.url)
-            e.set_thumbnail(url=ctx.guild.icon.url)
+            e.set_thumbnail(url=url_from(ctx.guild.icon))
             e.description = "Grant roles as a reward to users whence they reach a specified level"
             p = get_prefix(ctx)  # type: str
             e.add_field(
