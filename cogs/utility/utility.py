@@ -1590,7 +1590,8 @@ class Utility(commands.Cog):
     async def remove_afk(self, msg):
         if msg.author.id in self.afk:
             del self.afk[msg.author.id]
-            await msg.channel.send("Removed your afk")
+            if msg.channel.permissions_for(msg.guild.me).send_messages:
+                await msg.channel.send("Removed your afk")
 
 
 def setup(bot):
