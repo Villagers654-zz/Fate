@@ -40,17 +40,17 @@ class ButtonRoles(commands.Cog):
                     self.bot.add_view(RoleView(self, guild_id, msg_id))
                 self.bot.menus_loaded = True
 
-    async def refresh_menu(self, guild_id: int, message_id: str):
+    async def refresh_menu(self, guild_id: int, message_id: str) -> discord.Message:
         """ Re-initiates the View and updates the message content """
         meta: dict = self.config[guild_id][message_id]
         channel = self.bot.get_channel(meta["channel_id"])
         message = await channel.fetch_message(int(message_id))  # type: ignore
         new_view = RoleView(self, guild_id, int(message_id))
         await message.edit(content=meta["text"], view=new_view)
+        return message
 
     @commands.group(name="role-menu", aliases=["rolemenu"])
     @commands.cooldown(1, 5, commands.BucketType.user)
-    @commands.is_owner()
     @commands.bot_has_permissions(embed_links=True)
     async def role_menu(self, ctx: commands.Context):
         if not ctx.invoked_subcommand:
@@ -65,6 +65,7 @@ class ButtonRoles(commands.Cog):
             e.add_field(
                 name="◈ Usage",
                 value=f"**{p}role-menu create**\n"
+                      f"{p}role-menu convert [msg_id]\n"
                       f"{p}role-menu add-role `@role`\n"
                       f"{p}role-menu remove-role `@role`\n"
                       f"{p}edit-message `new message`\n"
@@ -76,6 +77,38 @@ class ButtonRoles(commands.Cog):
                 count = len(self.config[ctx.guild.id])
             e.set_footer(text=f"{count} Active Menu{'s' if count == 0 or count > 1 else ''}")
             await ctx.send(embed=e)
+
+    @role_menu.command(name="convert")
+    @commands.has_permissions(administrator=True)
+    async def convert(self, ctx, msg_id: str):
+        cog = self.bot.cogs["SelfRoles"]
+        if str(ctx.guild.id) not in cog.menus:
+            return await ctx.send("This server has no existing selfrole menus")
+        if msg_id not in cog.menus[str(ctx.guild.id)]:
+            return await ctx.send("That isn't an existing selfrole menu")
+        data: dict = cog.menus[str(ctx.guild.id)][msg_id]
+        new = {
+            "channel_id": data["channel"],
+            "label": "Select a role",
+            "roles": {
+                role_id: {
+                    "emoji": dat,
+                    "label": None,
+                    "description": None
+                } for role_id, dat in data["items"].items()
+            },
+            "text": data["name"][:25] or "Choose a role",
+            "style": "select",
+            "limit": data["limit"]
+        }
+        if ctx.guild.id not in self.config:
+            self.config[ctx.guild.id] = {}
+        self.config[ctx.guild.id][msg_id] = new
+        msg = await self.refresh_menu(ctx.guild.id, msg_id)
+        await msg.edit(embed=None)
+        await msg.clear_reactions()
+        await self.config.flush()
+        await ctx.send("Success 👍")
 
     @role_menu.command(name="create")
     @commands.has_permissions(administrator=True)
@@ -359,12 +392,15 @@ class RoleView(ui.View):
         if guild_id not in self.bot.views:
             self.bot.views[guild_id] = {}
         if message_id in self.bot.views[guild_id]:
-            self.bot.views[guild_id][message_id].stop()
+            with suppress(Exception):
+                self.bot.views[guild_id][message_id].stop()
         self.bot.views[guild_id][message_id] = self
 
         conf: Dict[str, Optional[Any]] = cls.config[guild_id][str(message_id)]
         self.style: str = cls.config[guild_id][str(message_id)]["style"]
         self.limit: int = conf["limit"]
+        if not self.limit or self.limit > len(conf["roles"]):
+            self.limit = len(conf["roles"])
 
         self.buttons = {}
 
