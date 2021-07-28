@@ -147,6 +147,9 @@ class ButtonRoles(commands.Cog):
             await msg.edit(embed=e)
             await reply.delete()
 
+            if len(selected_roles) == 25:
+                break
+
         # Set the style of the menu
         if len(selected_roles) == 1:
             style = "buttons"
@@ -206,6 +209,8 @@ class ButtonRoles(commands.Cog):
         if guild_id not in self.config:
             return await ctx.send("There arent any active role menus in this server")
         message_id = await self.get_menu_id(ctx)
+        if len(self.config[guild_id][message_id]["roles"]) == 25:
+            return await ctx.send("You can't have more than 25 roles in a menu")
 
         name: Optional[str] = role
         emoji: Optional[str] = None
@@ -232,11 +237,10 @@ class ButtonRoles(commands.Cog):
         if "\n" in role:
             description = role.split("\n")[1]
 
-        print(name)
         role = await self.bot.utils.get_role(ctx, name)
         if not role:
             return await ctx.send("Role not found")
-        if str(role.id) in self.config[guild_id][message_id]:
+        if str(role.id) in self.config[guild_id][message_id]["roles"]:
             return await ctx.send("That role's already added")
 
         self.config[guild_id][message_id]["roles"][str(role.id)] = {
