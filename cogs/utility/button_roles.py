@@ -248,6 +248,35 @@ class ButtonRoles(commands.Cog):
         await ctx.send(f"Added {role.mention}", allowed_mentions=discord.AllowedMentions.none())
         await self.config.flush()
 
+    @role_menu.command(name="remove-role")
+    @commands.has_permissions(administrator=True)
+    async def remove_role(self, ctx, *, role):
+        guild_id = ctx.guild.id
+        if guild_id not in self.config:
+            return await ctx.send("There arent any active role menus in this server")
+
+        menus: dict = await self.get_menus(guild_id)
+        if len(menus) == 1:
+            choice: str = list(menus.keys())[0]
+        else:
+            choice: str = await GetChoice(ctx, menus.keys())
+        message_id: str = menus[choice]
+
+        role = await self.bot.utils.get_role(ctx, role)
+        if not role:
+            return await ctx.send("Role not found")
+        if str(role.id) not in self.config[guild_id][message_id]["roles"]:
+            return await ctx.send(
+                f"{role.mention} role isn't in that menu",
+                allowed_mentions=discord.AllowedMentions.none()
+            )
+
+        del self.config[guild_id][message_id]["roles"][str(role.id)]
+        await self.refresh_menu(guild_id, message_id)
+
+        await ctx.send(f"Removed {role.mention}", allowed_mentions=discord.AllowedMentions.none())
+        await self.config.flush()
+
     @commands.command(name="edit-message")
     @commands.has_permissions(administrator=True)
     async def edit_message(self, ctx, *, new_message):
