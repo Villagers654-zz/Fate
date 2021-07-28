@@ -50,11 +50,14 @@ class ChoiceButtons(ui.View):
 
 
 class _Select(discord.ui.Select):
-    def __init__(self, choices: List[Any], limit: int = 1, placeholder: str = "Select your choice"):
+    def __init__(self, user_id: int, choices: List[Any], limit: int = 1, placeholder: str = "Select your choice"):
+        self.user_id = user_id
         self.limit = limit
+
         options = []
         for option in choices:
             options.append(discord.SelectOption(label=str(option)))
+
         super().__init__(
             custom_id=f"select_choice_{time()}",
             placeholder=placeholder,
@@ -64,6 +67,11 @@ class _Select(discord.ui.Select):
         )
 
     async def callback(self, interaction: discord.Interaction):
+        if interaction.user.id != self.user_id:
+            return await interaction.response.send_message(
+                "Only the user who initiated this command can interact",
+                ephemeral=True
+            )
         if self.limit == 1:
             self.view.choice = interaction.data["values"][0]
         else:
@@ -78,7 +86,7 @@ class GetChoice(discord.ui.View):
     def __init__(self, ctx, choices: Union[list, KeysView], limit: int = 1, placeholder: str = "Options"):
         self.ctx = ctx
         super().__init__(timeout=45)
-        self.add_item(_Select(choices, limit, placeholder))
+        self.add_item(_Select(ctx.author.id, choices, limit, placeholder))
 
     def __await__(self) -> Generator:
         return self._await().__await__()
