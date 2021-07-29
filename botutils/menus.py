@@ -91,9 +91,13 @@ class GetChoice(discord.ui.View):
     def __await__(self) -> Generator:
         return self._await().__await__()
 
-    async def _await(self) -> Any:
-        await self.ctx.send("Select your choice", view=self)
+    async def _await(self) -> str:
+        message = await self.ctx.send("Select your choice", view=self)
         await self.wait()
+        if not self.choice:
+            with suppress(Exception):
+                await message.delete()
+            raise self.ctx.bot.ignored_exit
         return self.choice
 
     async def on_error(self, error, _item, _interaction) -> None:
