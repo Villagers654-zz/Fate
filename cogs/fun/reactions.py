@@ -25,6 +25,10 @@ class Reactions(commands.Cog):
         self.webhook = {}
         self.sent = {}
 
+    async def cog_before_invoke(self, ctx):
+        if isinstance(ctx.channel, discord.Thread):
+            raise commands.CheckFailure("You can't use this module in threads")
+
     async def queue(self, ctx, reaction, path):
         await asyncio.sleep(60 * 5)
         if path in self.sent[reaction][ctx.guild.id]:
