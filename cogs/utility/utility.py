@@ -21,7 +21,7 @@ import psutil
 from discord.ext import commands, tasks
 
 from botutils import colors, split, bytes2human, get_time, emojis, \
-get_prefixes_async, format_date_difference, sanitize
+get_prefixes_async, format_date_difference, sanitize, GetChoice
 
 
 default = {
@@ -1299,6 +1299,26 @@ class Utility(commands.Cog):
                 inline=False,
             )
         await ctx.send(embed=e)
+
+    @commands.command(name="delete-timer", aliases=["remove-timer", "clear-timers"])
+    async def delete_timers(self, ctx):
+        user_id = str(ctx.author.id)
+        if user_id not in self.timers or not self.timers[user_id]:
+            return await ctx.send("You have no timers")
+        if len(self.timers[user_id]) == 1:
+            for key, dat in list(self.timers[user_id].items()):
+                with suppress(KeyError):
+                    self.bot.tasks["timers"][f"timer-{dat['timer']}"].cancel()
+                    del self.bot.tasks["timers"][f"timer-{dat['timer']}"]
+                del self.timers[user_id]
+            return await ctx.send("Removed your only timer")
+        choice = await GetChoice(ctx, self.timers[user_id].keys())
+        dat = self.timers[user_id][choice]
+        with suppress(KeyError):
+            self.bot.tasks["timers"][f"timer-{dat['timer']}"].cancel()
+            del self.bot.tasks["timers"][f"timer-{dat['timer']}"]
+        del self.timers[user_id][choice]
+        await ctx.send(f"Deleted 👍")
 
     @commands.Cog.listener("on_ready")
     async def resume_timers(self):
