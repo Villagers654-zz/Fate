@@ -85,6 +85,7 @@ class GetChoice(discord.ui.View):
     choice: Any = None
     def __init__(self, ctx, choices: Union[list, KeysView], limit: int = 1, placeholder: str = "Options"):
         self.ctx = ctx
+        self.choices = choices
         super().__init__(timeout=45)
         self.add_item(_Select(ctx.author.id, choices, limit, placeholder))
 
@@ -98,7 +99,9 @@ class GetChoice(discord.ui.View):
             with suppress(Exception):
                 await message.delete()
             raise self.ctx.bot.ignored_exit
-        return self.choice
+        return [
+            choice for choice in self.choices if self.choice in choice
+        ][0]
 
     async def on_error(self, error, _item, _interaction) -> None:
         if not isinstance(error, NotFound):
