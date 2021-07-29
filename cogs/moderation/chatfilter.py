@@ -38,7 +38,6 @@ class ChatFilter(commands.Cog):
             bot.filtered_messages = {}
         self.bot = bot
         self.config = bot.utils.cache("chatfilter")
-        self.bot.loop.create_task(self.config.flush())
         self.chatfilter_usage = self._chatfilter
 
     def is_enabled(self, guild_id: int) -> bool:
@@ -249,7 +248,11 @@ class ChatFilter(commands.Cog):
         guild_id = ctx.guild.id
         if guild_id not in self.config:
             return await ctx.send("Chatfilter isn't enabled")
-        for phrase in phrases.split(", "):
+        if len(phrases) > 256:
+            return await ctx.send("That's too large to add")
+        for phrase in phrases.split(", ")[:16]:
+            if len(phrase) > 64:
+                return await ctx.send("That's too large to add")
             if phrase in self.config[guild_id]["blacklist"]:
                 await ctx.send(f"`{phrase}` is already blacklisted")
             self.config[guild_id]["blacklist"].append(phrase)
