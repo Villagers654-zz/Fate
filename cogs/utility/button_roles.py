@@ -32,13 +32,13 @@ class ButtonRoles(commands.Cog):
 
     @commands.Cog.listener("on_ready")
     async def load_menus_on_start(self):
-        if not hasattr(self.bot, "menus_loaded"):
-            self.bot.menus_loaded = False
-        if not self.bot.menus_loaded:
-            for guild_id, menus in self.config.items():
-                for msg_id, data in menus.items():
+        for guild_id, menus in self.config.items():
+            for msg_id, data in menus.items():
+                if data["style"] == "category":
+                    self.bot.add_view(CategoryView(self, guild_id, msg_id))
+                else:
                     self.bot.add_view(RoleView(self, guild_id, msg_id))
-                self.bot.menus_loaded = True
+            self.bot.menus_loaded = True
 
     async def refresh_menu(self, guild_id: int, message_id: str) -> discord.Message:
         """ Re-initiates the View and updates the message content """
@@ -222,6 +222,30 @@ class ButtonRoles(commands.Cog):
         await msg.edit(view=view)
         await self.config.flush()
 
+    @role_menu.command(name="combine")
+    @commands.is_owner()
+    async def combine(self, ctx, *message_ids):
+        new = {
+            "label": "Select a category",
+            "categories": {},
+            "text": "Choose a role",
+            "style": "category"
+        }
+        for message_id in message_ids:
+            conf = self.config[ctx.guild.id][message_id]
+            print(conf)
+            new["channel_id"] = conf["channel_id"]
+            new["categories"][conf["text"]] = conf["roles"]
+            del self.config[ctx.guild.id][message_id]
+            with suppress(Exception):
+                self.bot.views[ctx.guild.id][message_id].stop()
+                del self.bot.views[ctx.guild.id][message_id]
+        self.config[ctx.guild.id][message_ids[0]] = new
+        view = CategoryView(self, ctx.guild.id, message_ids[0])
+        msg = await self.bot.get_channel(new["channel_id"]).fetch_message(message_ids[0])
+        await msg.edit(content="Categories", view=view)
+        await self.config.flush()
+
     async def get_menu_id(self, ctx) -> str:
         """ Gets the message_id of the wanted menu """
         menus = {
@@ -381,6 +405,121 @@ class ButtonRoles(commands.Cog):
                     await self.config.remove(payload.guild_id)
 
 
+
+class Categories(ui.Select):
+    def __init__(self, cls, message_id: int, categories: list):
+        self.cls = cls
+        self.bot = cls.bot
+        self.config = cls.config
+        self.guild_id = cls.guild_id
+        self.limit = 1
+        self.message_id = message_id
+
+        # Prepare the components for the dropdown menu
+        options = []
+        print(categories)
+        for category in categories:
+            option = discord.SelectOption(
+                label=category[:25],
+                value=category
+            )
+            options.append(option)
+
+        super().__init__(
+            custom_id=f"select_{message_id}",
+            placeholder="Select a Role",
+            min_values=1,
+            max_values=1,
+            options=options
+        )
+
+    async def sub_menu_callback(self, interaction):
+        # Fetch required variables
+        guild = self.bot.get_guild(self.guild_id)
+        member = guild.get_member(interaction.user.id)
+        if not guild or not member:
+            return  # Cache isn't properly established
+
+        # Give selected roles
+        role_id = None
+        for role_id in interaction.data["values"]:
+            role = guild.get_role(int(role_id))
+            if not role:
+                return await interaction.response.send_message(
+                    f"{role_id} doesn't seem to exist anymore",
+                    ephemeral=True
+                )
+
+            if role.position >= guild.me.top_role.position:
+                self.config[self.guild_id]["roles"].remove(role.id)
+                return await interaction.response.send_message(
+                    f"{role_id} is too high for me to manage",
+                    ephemeral=True
+                )
+
+            if role not in member.roles:
+                await member.add_roles(role)
+
+        # Take away unselected roles
+        data = self.config[self.guild_id][str(self.message_id)]["categories"]
+        for category, roles in data.items():
+            if role_id in roles:
+                for role_id in roles.keys():
+                    if role_id not in interaction.data["values"]:
+                        role = guild.get_role(int(role_id))
+                        if role and role in member.roles:
+                            await member.remove_roles(role)
+
+        await interaction.response.edit_message(
+            content="Successfully set your roles",
+            view=None
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+        """ Let the main View class handle the interaction """
+        category = interaction.data["values"][0]
+        view = ui.View(timeout=45)
+
+        index = {}
+        guild = self.bot.get_guild(self.guild_id)
+        data = self.config[self.guild_id][str(self.message_id)]["categories"][category]
+        for role_id, meta in data.items():
+            role = guild.get_role(int(role_id))
+            if role:
+                index[role] = meta
+
+        select = Select(
+            self,
+            self.message_id,
+            index,
+            self.sub_menu_callback
+        )
+        view.add_item(select)
+        await interaction.response.send_message("Choose which role", view=view, ephemeral=True)
+
+
+class CategoryView(ui.View):
+    def __init__(self, cls: ButtonRoles, guild_id: int, message_id: int):
+        self.bot = cls.bot
+        self.config = cls.config
+        self.guild_id = guild_id
+        self.message_id = message_id
+
+        # Replacing existing instances to refresh information
+        if guild_id not in self.bot.views:
+            self.bot.views[guild_id] = {}
+        if str(message_id) in self.bot.views[guild_id]:
+            with suppress(Exception):
+                self.bot.views[guild_id][str(message_id)].stop()
+        self.bot.views[guild_id][str(message_id)] = self
+
+        super().__init__(timeout=None)
+
+        conf = self.config[guild_id][str(message_id)]
+        self.add_item(Categories(self, message_id, conf["categories"].keys()))
+
+
+
 class RoleView(ui.View):
     def __init__(self, cls: ButtonRoles, guild_id: int, message_id: int):
         self.bot = cls.bot
@@ -391,10 +530,10 @@ class RoleView(ui.View):
         # Replacing existing instances to refresh information
         if guild_id not in self.bot.views:
             self.bot.views[guild_id] = {}
-        if message_id in self.bot.views[guild_id]:
+        if str(message_id) in self.bot.views[guild_id]:
             with suppress(Exception):
-                self.bot.views[guild_id][message_id].stop()
-        self.bot.views[guild_id][message_id] = self
+                self.bot.views[guild_id][str(message_id)].stop()
+        self.bot.views[guild_id][str(message_id)] = self
 
         conf: Dict[str, Optional[Any]] = cls.config[guild_id][str(message_id)]
         self.style: str = cls.config[guild_id][str(message_id)]["style"]
@@ -544,8 +683,9 @@ class RoleView(ui.View):
 
 
 class Select(discord.ui.Select):
-    def __init__(self, cls: RoleView, msg_id: int, roles: dict):
+    def __init__(self, cls: Union[RoleView, Any], message_id: int, roles: dict, callback=None):
         self.cls = cls
+        self.custom_callback = callback
 
         # Prepare the components for the dropdown menu
         options = []
@@ -560,7 +700,7 @@ class Select(discord.ui.Select):
             options.append(option)
 
         super().__init__(
-            custom_id=f"select_{msg_id}",
+            custom_id=f"select_{message_id}",
             placeholder="Select a Role",
             min_values=1,
             max_values=self.cls.limit,
@@ -569,7 +709,10 @@ class Select(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         """ Let the main View class handle the interaction """
-        await self.cls.surface_callback(interaction)
+        if self.custom_callback:
+            await self.custom_callback(interaction)
+        else:
+            await self.cls.surface_callback(interaction)
 
 
 def setup(bot: Fate):
