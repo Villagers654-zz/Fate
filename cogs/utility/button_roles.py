@@ -59,7 +59,7 @@ class ButtonRoles(commands.Cog):
             if ctx.guild.icon:
                 e.set_thumbnail(url=ctx.guild.icon.url)
             e.description = "Create menus for users to self assign roles via buttons or " \
-                            "select menus\n**NOTE:** The bot will have you choose which menu to apply a" \
+                            "select menus\n**NOTE:** The bot will have you choose which menu to apply a " \
                             "setting to **after** running commands that edit an existing menu"
             p: str = ctx.prefix
             e.add_field(
