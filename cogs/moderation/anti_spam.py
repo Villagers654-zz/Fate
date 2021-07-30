@@ -165,7 +165,8 @@ class AntiSpam(commands.Cog):
                       '**Mass-Pings:** `mass mentioning users`\n' \
                       '**Anti-Macro:** `using macros for bots`\n' \
                       '**Duplicates:** `copying and pasting`\n' \
-                      '**Inhuman:** `abnormal, ascii, tall, etc`'
+                      '**Inhuman:** `abnormal, ascii, tall, etc`\n' \
+                      '**Threads:** `limit the num of open threads`'
             e.add_field(name="◈ Modules", value=modules, inline=False)
             guild_id = ctx.guild.id
             if guild_id in self.config:
@@ -283,6 +284,18 @@ class AntiSpam(commands.Cog):
         await self.config.flush()
         await ctx.send('Enabled duplicates module')
 
+    @_enable.command(name='threads')
+    @commands.has_permissions(manage_messages=True)
+    async def _enable_threads(self, ctx):
+        guild_id = ctx.guild.id
+        if guild_id not in self.config:
+            self.config[guild_id] = {}
+        self.config[guild_id]["threads"] = {
+            "limit": 1
+        }
+        await self.config.flush()
+        await ctx.send('Enabled threads module')
+
     @anti_spam.group(name='disable')
     @commands.has_permissions(manage_messages=True)
     async def _disable(self, ctx):
@@ -347,6 +360,17 @@ class AntiSpam(commands.Cog):
             return await ctx.send("Inhuman isn't enabled")
         self.config.remove_sub(guild_id, "inhuman")
         await ctx.send('Disabled inhuman module')
+
+    @_disable.command(name='threads')
+    @commands.has_permissions(manage_messages=True)
+    async def _disable_threads(self, ctx):
+        guild_id = ctx.guild.id
+        if guild_id not in self.config:
+            return await ctx.send("Anti spam isn't enabled")
+        if "threads" not in self.config[guild_id]:
+            return await ctx.send("Anti thread spam isn't enabled")
+        self.config.remove_sub(guild_id, "threads")
+        await ctx.send('Disabled threads module')
 
     @anti_spam.command(name='ignore')
     @commands.has_permissions(manage_messages=True)
@@ -998,6 +1022,22 @@ class AntiSpam(commands.Cog):
                                 reason=reason
                             )
                         )
+
+    @commands.Cog.listener()
+    async def on_thread_join(self, thread: discord.Thread):
+        if thread.guild.id in self.config and "threads" in self.config[thread.guild.id]:
+            if limit := self.config[thread.guild.id]["threads"]["limit"]:
+                total_open_threads = [
+                    c for c in thread.parent.threads
+                    if c.owner_id == thread.owner_id
+                       and not c.archived
+                ]
+                if len(total_open_threads) > limit:
+                    await thread.delete()
+                    s = "s" if limit > 1 else ""
+                    await thread.parent.send(
+                        f"{thread.owner.mention} you can only have {limit} open thread{s}"
+                    )
 
     @commands.Cog.listener()
     async def on_ready(self):
