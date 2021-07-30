@@ -81,7 +81,7 @@ class SafePolls(commands.Cog):
             "votes": json.loads(decode64(votes.encode()).decode()),
         }
 
-    async def update_poll(self, msg_id: int) -> None:
+    async def update_poll(self, msg_id: int) -> discord.Message:
         if msg_id not in self.cache:
             await self.cache_poll(msg_id)
         payload = self.cache[msg_id]
@@ -102,6 +102,7 @@ class SafePolls(commands.Cog):
             e.set_footer(text=fmt)
         e.description = question
         await msg.edit(embed=e)
+        return msg
 
     async def wait_for_termination(self, channel_id, msg_id, end_time: str) -> None:
         """Sleep until the timer ends and close the poll"""
@@ -125,13 +126,13 @@ class SafePolls(commands.Cog):
             return await delete(msg_id)
 
         end_time = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S.%f%z")
-        if datetime.now(tz=timezone.utc) > end_time:
+        if datetime.now() > end_time:
             with suppress(Forbidden, NotFound):
                 await msg.edit(content="Poll Ended")
                 await msg.clear_reactions()
             return await delete(msg_id)
 
-        seconds = round((datetime.now(tz=timezone.utc) - end_time).seconds)
+        seconds = round((datetime.now() - end_time).seconds)
         await asyncio.sleep(seconds)
         with suppress(Forbidden, NotFound):
             await msg.edit(content="Poll Ended")
@@ -272,7 +273,7 @@ class SafePolls(commands.Cog):
 
         question = encode64(data.encode()).decode()
         vote_index = encode64(json.dumps({e: [] for e in emojis}).encode()).decode()
-        end_time = str(datetime.now(tz=timezone.utc) + timedelta(seconds=timer))
+        end_time = str(datetime.now() + timedelta(seconds=timer))
 
         async with self.bot.utils.cursor() as cur:
             await cur.execute(
@@ -368,7 +369,7 @@ class SafePolls(commands.Cog):
 
         question = encode64(question.encode()).decode()
         vote_index = encode64(json.dumps({e: [] for e in emojis}).encode()).decode()
-        end_time = str(datetime.now(tz=timezone.utc) + timedelta(seconds=timer))
+        end_time = str(datetime.now() + timedelta(seconds=timer))
 
         async with self.bot.utils.cursor() as cur:
             await cur.execute(
@@ -418,13 +419,9 @@ class SafePolls(commands.Cog):
                     self.cache[msg_id]["votes"][key].remove(payload.user_id)
             self.cache[msg_id]["votes"][str(payload.emoji)].append(payload.user_id)
 
-            await self.update_poll(payload.message_id)
-            channel = self.bot.get_channel(payload.channel_id)
-            try:
-                msg = await channel.fetch_message(payload.message_id)
-            except NotFound:
-                return
-            await msg.remove_reaction(payload.emoji, user)
+            msg = await self.update_poll(payload.message_id)
+            with suppress(NotFound):
+                await msg.remove_reaction(payload.emoji, user)
 
             # Dump changes to sql
             vote_index = encode64(
