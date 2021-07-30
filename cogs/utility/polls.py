@@ -81,7 +81,7 @@ class SafePolls(commands.Cog):
             "votes": json.loads(decode64(votes.encode()).decode()),
         }
 
-    async def update_poll(self, msg_id: int) -> discord.Message:
+    async def update_poll(self, msg_id: int) -> None:
         if msg_id not in self.cache:
             await self.cache_poll(msg_id)
         payload = self.cache[msg_id]
@@ -102,7 +102,6 @@ class SafePolls(commands.Cog):
             e.set_footer(text=fmt)
         e.description = question
         await msg.edit(embed=e)
-        return msg
 
     async def wait_for_termination(self, channel_id, msg_id, end_time: str) -> None:
         """Sleep until the timer ends and close the poll"""
@@ -419,9 +418,7 @@ class SafePolls(commands.Cog):
                     self.cache[msg_id]["votes"][key].remove(payload.user_id)
             self.cache[msg_id]["votes"][str(payload.emoji)].append(payload.user_id)
 
-            msg = await self.update_poll(payload.message_id)
-            with suppress(NotFound):
-                await msg.remove_reaction(payload.emoji, user)
+            await self.update_poll(payload.message_id)
 
             # Dump changes to sql
             vote_index = encode64(
