@@ -86,7 +86,7 @@ class ChatFilter(commands.Cog):
             return None, None
 
         def run_regex() -> Optional[str]:
-            result = re.search(query, content)
+            result = re.search(query, content.replace(" ", ""))
             if result:
                 return result.group()
             return None
