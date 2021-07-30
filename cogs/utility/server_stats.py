@@ -56,7 +56,7 @@ class ServerStatistics(commands.Cog):
                 f"Name the voice channel if you do, otherwise say `skip`"
             )
             reply = await self.bot.utils.get_message(ctx)
-            if "skip" in reply.content:
+            if "skip" in reply.content.lower():
                 continue
             if not any(reply.content == c.name for c in ctx.guild.voice_channels):
                 return await ctx.send("That voice channel doesn't exist")
