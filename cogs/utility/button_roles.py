@@ -68,6 +68,7 @@ class ButtonRoles(commands.Cog):
                       f"{p}role-menu convert [msg_id]\n"
                       f"{p}role-menu add-role `@role`\n"
                       f"{p}role-menu remove-role `@role`\n"
+                      f"{p}role-menu set-limit [limit]\n"
                       f"{p}edit-message `new message`\n"
                       f"{p}change-emoji `new_emoji`\n"
                       f"{p}set-description `new description`"
