@@ -18,6 +18,7 @@ from fate import Fate
 
 
 utc = pytz.UTC
+mentions = discord.AllowedMentions(users=True, roles=False, everyone=False)
 defaults = {
     "rate_limit": [
         {
@@ -1026,18 +1027,23 @@ class AntiSpam(commands.Cog):
     @commands.Cog.listener()
     async def on_thread_join(self, thread: discord.Thread):
         if thread.guild.id in self.config and "threads" in self.config[thread.guild.id]:
-            if limit := self.config[thread.guild.id]["threads"]["limit"]:
-                total_open_threads = [
-                    c for c in thread.parent.threads
-                    if c.owner_id == thread.owner_id
-                       and not c.archived
-                ]
-                if len(total_open_threads) > limit:
-                    await thread.delete()
-                    s = "s" if limit > 1 else ""
-                    await thread.parent.send(
-                        f"{thread.owner.mention} you can only have {limit} open thread{s}"
-                    )
+            if not thread.owner.guild_permissions.manage_threads:
+                if limit := self.config[thread.guild.id]["threads"]["limit"]:
+                    total_open_threads = [
+                        c for c in thread.parent.threads
+                        if c.owner_id == thread.owner_id
+                           and not c.archived
+                    ]
+                    if len(total_open_threads) > limit:
+                        await thread.delete()
+                        s = "s" if limit > 1 else ""
+                        e = discord.Embed(color=self.bot.config["theme_color"])
+                        e.description = f"{thread.owner.mention} you can only have {limit} open thread{s}"
+                        await thread.parent.send(
+                            embed=e,
+                            delete_after=5,
+                            allowed_mentions=mentions
+                        )
 
     @commands.Cog.listener()
     async def on_ready(self):
