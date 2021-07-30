@@ -336,7 +336,6 @@ class ChatFilter(commands.Cog):
     @commands.cooldown(1, 120, commands.BucketType.user)
     @commands.has_permissions(administrator=True)
     @commands.cooldown(1, 60, commands.BucketType.guild)
-    @commands.is_owner()
     async def sanitize(self, ctx):
         """ Clean up existing chat history """
         view = CancelButton("manage_messages")
@@ -359,7 +358,7 @@ class ChatFilter(commands.Cog):
         last_update = time()
         last_user = None
 
-        async for msg in message.channel.history(limit=30000):
+        async for msg in message.channel.history(limit=25000):
             await asyncio.sleep(0)
             if view.is_cancelled or not message or task.done():
                 return
