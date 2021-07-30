@@ -332,6 +332,22 @@ class ButtonRoles(commands.Cog):
         await ctx.send(f"Removed {role.mention}", allowed_mentions=discord.AllowedMentions.none())
         await self.config.flush()
 
+    @role_menu.command(name="set-limit")
+    @commands.has_permissions(administrator=True)
+    async def set_limit(self, ctx, new_limit: int):
+        if new_limit > 25 or new_limit < 0:
+            return await ctx.send("That's not a valid number")
+        guild_id = ctx.guild.id
+        if guild_id not in self.config:
+            return await ctx.send("There arent any active role menus in this server")
+        message_id = await self.get_menu_id(ctx)
+        if new_limit == 0:
+            new_limit = None
+        self.config[guild_id][message_id]["limit"] = new_limit
+        await self.refresh_menu(guild_id, message_id)
+        await ctx.send("Set the new limit 👍")
+        await self.config.flush()
+
     @commands.command(name="edit-message")
     @commands.has_permissions(administrator=True)
     async def edit_message(self, ctx, *, new_message):
