@@ -42,6 +42,7 @@ class SafePolls(commands.Cog):
             self.bot.tasks["polls"] = {}
         self.emojis = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣"]
         self.cache = {}
+        self.cd = bot.utils.cooldown_manager(1, 3)
 
         self.poll_usage = "> Usage: `.poll should we do X or Y?`\n" \
                           "Creates a poll that's safe from reactions being manipulated. " \
@@ -402,7 +403,7 @@ class SafePolls(commands.Cog):
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
         msg_id = payload.message_id
-        if payload.message_id in self.polls:
+        if payload.message_id in self.polls and not self.cd.check(payload.user_id):
             user = self.bot.get_user(payload.user_id)
             if user.bot:
                 return
