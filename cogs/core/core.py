@@ -185,9 +185,9 @@ class Core(commands.Cog):
         embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/501871950260469790/513636736492896271/mail-open-solid.png")
         embed.description = (
             f"[Invite]({self.bot.invite_url}) 📥\n"
-            f"[Support](https://discord.gg/wtjuznh) 📧\n"
-            f"[Discord](https://discord.gg/wtjuznh) <:discord:513634338487795732>\n"
-            f"[Vote](https://top.gg/bot/506735111543193601) ⬆"
+            f"[Support](https://discord.gg/wtjuznh/) 📧\n"
+            f"[Discord](https://discord.gg/wtjuznh/) <:discord:513634338487795732>\n"
+            f"[Vote](https://vote.fatebot.xyz/) ⬆"
         )
         await ctx.send(embed=embed)
 
@@ -199,7 +199,7 @@ class Core(commands.Cog):
     @commands.command(name="vote", usage="Sends the link to vote for the bot on top.gg")
     @commands.cooldown(1, 5, commands.BucketType.channel)
     async def vote(self, ctx):
-        await ctx.send("https://top.gg/bot/506735111543193601/vote")
+        await ctx.send("https://vote.fatebot.xyz/")
 
     @commands.command(name="say")
     @commands.cooldown(1, 5, commands.BucketType.user)
