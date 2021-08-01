@@ -11,6 +11,7 @@ Core bot commands such as prefix, invite, and ping
 from time import time, monotonic
 import asyncio
 from datetime import datetime, timezone
+from importlib import reload
 
 from discord.ext import commands
 import discord
@@ -18,6 +19,8 @@ import dbl
 
 from botutils import colors, get_prefixes_async, emojis, Conversation, \
     url_from, format_date_difference, sanitize
+import botutils
+reload(botutils)
 
 
 class Core(commands.Cog):
