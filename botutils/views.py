@@ -12,7 +12,7 @@ Classes:
 :license: Proprietary and Confidential, see LICENSE for details
 """
 
-from discord import ui, ButtonStyle, Button, Interaction
+from discord import *
 from discord.errors import NotFound
 
 
@@ -39,6 +39,10 @@ class CancelButton(ui.View):
     def __init__(self, permission: str):
         self.permission = permission
         super().__init__(timeout=3600)
+
+    async def on_error(self, error: Exception, item: ui.Item, interaction: Interaction) -> None:
+        if not isinstance(error, NotFound):
+            raise
 
     @ui.button(label="Cancel", style=ButtonStyle.red)
     async def cancel_button(self, _button: Button, interaction: Interaction):
