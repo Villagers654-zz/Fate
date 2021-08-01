@@ -173,7 +173,12 @@ def format_date_difference(dt: datetime) -> str:
     remainder = dt.total_seconds()
 
     if days := dt.days:
-        fmt += f"{days}d"
+        if years := int(dt.days / 356):
+            fmt += f"{years}y"
+            days -= years
+            remainder -= 60 * 60 * 24 * 356 * years
+
+        fmt += f"{space()}{days}d"
         remainder -= 60 * 60 * 24 * days
 
     if hours := int(remainder / 60 / 60):
