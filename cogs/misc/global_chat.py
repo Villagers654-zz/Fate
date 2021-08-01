@@ -19,7 +19,7 @@ from discord.ext import commands, tasks
 from discord.errors import NotFound, Forbidden
 import discord
 
-from botutils import get_prefixes_async, colors
+from botutils import get_prefixes_async, colors, format_date_difference
 from fate import Fate
 
 
@@ -306,22 +306,22 @@ class GlobalChat(commands.Cog):
     @_gc.command(name="verify")
     @commands.cooldown(1, 60, commands.BucketType.user)
     @commands.cooldown(6, 60, commands.BucketType.guild)
+    @commands.guild_only()
     async def verify(self, ctx):
         async with self.bot.utils.cursor() as cur:
             await cur.execute(f"select status from global_users where user_id = {ctx.author.id};")
             if cur.rowcount:
                 return await ctx.send("You're already registered")
         channel = self.bot.get_channel(self.bot.config["gc_verify_channel"])
-        async for msg in channel.history(limit=15):
+        async for msg in channel.history(limit=15):  # type: ignore
             for embed in msg.embeds:
                 if str(ctx.author.id) == embed.description:
                     return await ctx.send("You already have an application waiting")
 
         await ctx.send(
             "Are you aware that the global-chat channel is independent of, and has nothing "
-            "to do with the server you're using it in? Reply with `yes` to confirm you understand "
-            "its purpose, and won't misuse such purpose. You can reply with `cancel`, or anything else "
-            "to stop the verification process"
+            "to do with the server you're using it in? Reply with `yes` to confirm you understand. "
+            "You can reply with `cancel`, or anything else to stop the verification process"
         )
         reply = await self.bot.utils.get_message(ctx)
         if "yes" not in reply.content.lower():
@@ -349,12 +349,17 @@ class GlobalChat(commands.Cog):
         if str(reaction.emoji) != "👍":
             return await ctx.send("Ok")
 
-        e = discord.Embed(color=self.bot.config["theme_color"])
+        e = discord.Embed(color=ctx.author.color)
         e.set_author(name=str(ctx.author), icon_url=ctx.author.avatar.url)
-        e.description = str(ctx.author.id)
+        age = format_date_difference(ctx.author.created_at).split()[0]
+        joined = format_date_difference(ctx.author.joined_at).split()[0]
+        e.description = f"🆔 | {ctx.author.id}\n" \
+                        f"📬 | {len(ctx.author.mutual_guilds)} Mutual Servers\n" \
+                        f"⏰ | Created {age} ago\n" \
+                        f"⏱ | Joined {joined} ago"
         e.add_field(name="Reason", value=reason.content)
         e.set_footer(text=ctx.guild.name, icon_url=ctx.guild.icon.url)
-        msg = await channel.send(embed=e)
+        msg = await channel.send(embed=e)  # type: ignore
         await msg.add_reaction("👍")
         await msg.add_reaction("👎")
         await ctx.send("Sent your application")
@@ -543,12 +548,14 @@ class GlobalChat(commands.Cog):
                 async with self.bot.utils.cursor() as cur:
                     await cur.execute(f"insert into global_users values ({user_id}, 'verified');")
                 e.set_author(name=f"{user} was verified", icon_url=user.avatar.url)
-                self._queue.append([e, False, msg])
+                self._queue.append([e, False, None])
                 self.last_id = None
+                await msg.edit(content="Application accepted")
             else:
                 with suppress(NotFound, Forbidden):
                     await user.send("Your verification into global-chat was denied.")
-                await msg.delete()
+                await msg.edit(content="Application denied")
+            await msg.clear_reactions()
 
 
 def setup(bot):
