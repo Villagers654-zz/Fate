@@ -527,7 +527,7 @@ class GlobalChat(commands.Cog):
                     for channel_id, msg_id in chunk.items():
                         channel = self.bot.get_channel(channel_id)
                         with suppress(NotFound, Forbidden):
-                            m = await channel.fetch_message(msg_id)
+                            m = await channel.fetch_message(msg_id)  # type: ignore
                             await m.delete()
                     return
 
@@ -537,10 +537,10 @@ class GlobalChat(commands.Cog):
             if payload.user_id == self.bot.user.id:
                 return
             channel = self.bot.get_channel(payload.channel_id)
-            msg = await channel.fetch_message(payload.message_id)
-            if not msg.embeds[0].description.isdigit():
+            msg = await channel.fetch_message(payload.message_id)  # type: ignore
+            if not msg.embeds or "🆔" not in msg.embeds[0].description:
                 return
-            user_id = int(msg.embeds[0].description)
+            user_id = int(msg.embeds[0].description.split("\n")[0].split(" | ")[1])
 
             user = await self.bot.fetch_user(user_id)
             e = discord.Embed(color=colors.green)
