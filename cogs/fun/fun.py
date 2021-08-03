@@ -274,7 +274,7 @@ class Fun(commands.Cog):
                 return await ctx.send(f"⚔ **{user1.name}** won against **{user2.name}**")
 
             # Set an attack tier
-            choices = [None, "light", "low", "medium", "high"]
+            choices = [None, "light", "low", "low", "medium", "medium", "high"]
             choices.remove(last_tier_used[attacker])
 
             tier = random.choice(choices)
