@@ -17,12 +17,153 @@ from unicodedata import normalize
 
 from discord.ext import commands
 import discord
-from discord import Member, Role, TextChannel
+from discord import Member, Role, TextChannel, User, ButtonStyle, ui, Interaction, SelectOption
 from discord.ext.commands import Greedy
 from discord.errors import NotFound, Forbidden, HTTPException
 
-from botutils import colors, get_prefix, get_time, split, CancelButton
+from botutils import colors, get_prefix, get_time, split, CancelButton, format_date_difference
+# from classes.interactions.moderation import MuteView
 from fate import Fate
+
+
+class MuteView(ui.View):
+    def __init__(self, ctx, user: Union[User, Member], case: int, reason: Optional[str], timer: Optional[int]):
+        self.ctx = ctx
+        self.user = user
+        self.case = case
+        self.reason = reason
+        self.timer = timer
+        super().__init__(timeout=45)
+
+        if not reason:
+            button = ui.Button(label="Set Reason", style=ButtonStyle.blurple)
+            button.callback = self.set_reason
+            self.add_item(button)
+
+        # if not timer:
+        #     button = ui.Button(label="Set Timer", style=ButtonStyle.blurple)
+        #     button.callback = self.set_timer
+        #     self.add_item(button)
+
+    async def is_author(self, interaction):
+        """ Ensure the interaction is from the user who initiated the view """
+        if interaction.user.id != self.ctx.author.id:
+            with suppress(Exception):
+                await interaction.response.send_message(
+                    "Only the user who initiated this command can interact", ephemeral=True
+                )
+            return False
+        return True
+
+    async def set_timer(self, interaction: Interaction):
+        if not await self.is_author(interaction):
+            return
+        view = TimerView(self.ctx, self.case, self)
+        await interaction.response.edit_message(view=view)
+
+    async def set_reason(self, interaction: Interaction):
+        if not await self.is_author(interaction):
+            return
+        view = ReasonView(self.ctx, self.case, self)
+        await interaction.response.edit_message(view=view)
+
+
+class TimerView(ui.View):
+    class SelectOptions(ui.Select):
+        timers: List[Tuple[Union[str, int]]] = [
+            ("Cancel", 0),
+            ("5 Minutes", 60 * 5),
+            ("15 Minutes", 60 * 15),
+            ("30 Minutes", 60 * 30),
+            ("45 Minutes", 60 * 45),
+            ("1 Hour", 60 * 60),
+            ("2 Hours", 60 * 60 * 2),
+            ("6 Hours", 60 * 60 * 6),
+            ("12 Hours", 60 * 60 * 12),
+            ("1 Day", 60 * 60 * 24),
+            ("2 Days", 60 * 60 * 24 * 2),
+            ("1 Week", 60 * 60 * 24 * 7)
+        ]
+
+        def __init__(self, ctx: commands.Context, case: int, home_view: MuteView):
+            self.ctx = ctx
+            self.case = case
+            self.home_view = home_view
+
+            options = [
+                SelectOption(label=label, emoji="⏰", value=str(timer))
+                for label, timer in self.timers
+            ]
+            super().__init__(
+                placeholder="Select from presets",
+                options=options,
+                min_values=1,
+                max_values=1
+            )
+
+        async def callback(self, interaction: Interaction):
+            if not await self.home_view.is_author(interaction):
+                return
+            duration = int(interaction.data["values"][0])
+            if duration == 0:
+                return await interaction.response.edit_message(view=self.home_view)
+
+            expanded_form = format_date_difference(datetime.now() - timedelta(seconds=duration))
+            await interaction.response.send_message(f"Updated the mute to {expanded_form}", ephemeral=True)
+            await interaction.message.edit(view=self.home_view)
+
+    def __init__(self, ctx: commands.Context, case: int, home_view: MuteView):
+        super().__init__(timeout=45)
+        self.add_item(self.SelectOptions(ctx, case, home_view))
+
+
+class ReasonView(ui.View):
+    class SelectOptions(ui.Select):
+        preset: List[Tuple[Union[str, str]]] = [
+            ("❎", "Cancel"),
+            ("🔊", "Spamming"),
+            ("⚔", "Raiding"),
+            ("👊", "Harassment"),
+            ("👮‍♂️", "Discord TOS")
+        ]
+
+        def __init__(self, ctx: commands.Context, case: int, home_view: MuteView):
+            self.ctx = ctx
+            self.case = case
+            self.home_view = home_view
+
+            options = [
+                SelectOption(label=reason, emoji=emoji, value=reason)
+                for emoji, reason in self.preset
+            ]
+            super().__init__(
+                placeholder="Select from presets",
+                options=options,
+                min_values=1,
+                max_values=1
+            )
+
+        async def callback(self, interaction: Interaction):
+            if not await self.home_view.is_author(interaction):
+                return
+            reason = interaction.data["values"][0]
+            if reason == "Cancel":
+                return await interaction.response.edit_message(view=self.home_view)
+
+            async with self.ctx.bot.utils.cursor() as cur:
+                await cur.execute(
+                    f"update cases set "
+                    f"reason = '{self.ctx.bot.encode(reason)}' "
+                    f"where guild_id = {self.ctx.guild.id} "
+                    f"and case_number = {self.case};"
+                )
+
+            await interaction.response.send_message(f"Updated the reason to {reason}", ephemeral=True)
+            await interaction.message.edit(view=self.home_view)
+
+    def __init__(self, ctx: commands.Context, case: int, home_view: MuteView):
+        super().__init__(timeout=45)
+        self.add_item(self.SelectOptions(ctx, case, home_view))
 
 
 cache = {}  # Keep track of what commands are still being ran
@@ -760,7 +901,10 @@ class Moderation(commands.Cog):
                 except:
                     additional += " (Unable to notify user via DM)"
                 await user.add_roles(mute_role)
-                await ctx.send(f"Muted {user.display_name} for {reason} [Case #{case}]" + additional)
+                await ctx.send(
+                    f"Muted {user.display_name} for {reason} [Case #{case}]" + additional,
+                    view=MuteView(ctx, user, case, reason.replace("Unspecified", ""), None)
+                )
                 await ensure_muted()
                 return None
 
@@ -790,7 +934,8 @@ class Moderation(commands.Cog):
             else:
                 await ctx.send(
                     f"Muted **{user.name}** for {expanded_timer} "
-                    f"for {reason} [Case #{case}]" + additional
+                    f"for {reason} [Case #{case}]" + additional,
+                    view=MuteView(ctx, user, case, reason.replace("Unspecified", ""), None)
                 )
 
             user_id = str(user.id)
