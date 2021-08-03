@@ -34,8 +34,8 @@ class Giveaways(commands.Cog):
         e.set_author(name=f"Giveaway by {user}", icon_url=user.avatar.url)
         e.description = dat["giveaway"]
         _end_time = datetime.strptime(dat["end_time"], "%Y-%m-%d %H:%M:%S.%f")
-        end_time = get_time((_end_time - datetime.now(tz=timezone.utc)).seconds)
-        if datetime.now(tz=timezone.utc) >= _end_time:
+        end_time = get_time((_end_time - datetime.now()).seconds)
+        if datetime.now() >= _end_time:
             e.set_footer(text=f"Giveaway Ended")
         else:
             end_time = re.sub("\.[0-9]*", "", end_time)
@@ -50,10 +50,10 @@ class Giveaways(commands.Cog):
         except (NotFound, Forbidden):
             del self.data[guild_id][giveaway_id]
             return await self.save_data()
-        end_time = datetime.strptime(dat["end_time"], "%Y-%m-%d %H:%M:%S.%f%z")
+        end_time = datetime.strptime(dat["end_time"], "%Y-%m-%d %H:%M:%S.%f")
 
         # Wait for the giveaway timer to end
-        while datetime.now(tz=timezone.utc) < end_time:
+        while datetime.now() < end_time:
             await asyncio.sleep(30)
             try:
                 await message.edit(embed=await self.make_embed(dat))
