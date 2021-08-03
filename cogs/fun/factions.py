@@ -26,6 +26,7 @@ from PIL import Image, ImageDraw, ImageFont
 from botutils.colors import purple, pink
 from botutils.stack import Stack
 from botutils import get_prefix, get_time
+from .fun import tier_damage
 
 
 def is_faction_owner():
@@ -94,7 +95,7 @@ class Factions(commands.Cog):
                 if dat["icon"] and "http" not in dat["icon"]:
                     self.factions[guild_id][faction]["icon"] = ""
         with open("./data/moves.json", "r") as f:
-            dat = json.load(f)
+            dat = json.load(f)  # type: dict
         self.attacks = dat["attacks"]
         self.dodges = dat["dodges"]
 
@@ -1117,10 +1118,14 @@ class Factions(commands.Cog):
 
         e.description = ""
         attacks = dict(self.attacks)
-        dodges = list(self.dodges)
+        attacks[None] = list(self.dodges)
         health1 = 200
         health2 = 200
         attacker = 1
+
+        last_tier_used = {1: None, 2: None}
+        attacks_used = {k: [] for k in self.attacks}
+        attacks_used[None] = []
 
         attacks_used = []
         while True:
@@ -1139,29 +1144,50 @@ class Factions(commands.Cog):
                 self.factions[guild_id][fac1]["balance"] += amount
                 return await ctx.send(f"⚔ **{ctx.author.name}** has won **${amount}** from **{user.name}**")
 
+            # Set an attack tier
+            choices = [None, "light", "low", "low", "medium", "medium", "high"]
+            choices.remove(last_tier_used[attacker])
+
+            tier = random.choice(choices)
+            last_tier_used[attacker] = tier
+
+            if random.randint(1, 100) == 16:
+                tier = "infinite"
+
             # Ensure we don't get an attack that was already used
             while True:
-                if len(attacks_used) == len(attacks):
-                    attacks_used = []
-                attack = random.choice(list(attacks.keys()))
-                if attack in attacks_used:
+                await asyncio.sleep(0)
+                if len(attacks_used[tier]) == len(attacks[tier]):
+                    attacks_used[tier] = []
+                attack = random.choice(attacks[tier])
+                if attack in attacks_used[tier]:
                     continue
-                attacks_used.append(attack)
+                attacks_used[tier].append(attack)
                 break
 
             # Subtract the damage from the targets health and format the attack with their names
-            dmg = attacks[attack]
-            if random.randint(1, 10) == 1:
-                attack = random.choice(dodges)
-                dmg = 0
+            dmg = tier_damage[tier]
+            if isinstance(dmg, list):
+                dmg = random.randint(*dmg)
             if attacker == 1:
                 formatted = attack.replace('!user', ctx.author.name).replace('!target', user.name)
                 health2 -= dmg
             else:
                 formatted = attack.replace('!user', user.name).replace('!target', ctx.author.name)
                 health1 -= dmg
-            if dmg and "∞" not in attack:
+
+            # Reformatting
+            if dmg and tier != "infinite":
                 formatted += f" `-{dmg}HP`"
+            if health1 < 0:
+                health1 = 0
+            if health2 < 0:
+                health2 = 0
+            if tier == "infinite":
+                if attacker == 1:
+                    health2 = -dmg
+                else:
+                    health1 = -dmg
 
             e.description += f"\n{formatted}"
             e.description = e.description[-4000:]
