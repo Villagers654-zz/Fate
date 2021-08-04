@@ -35,17 +35,25 @@ class MuteView(ui.View):
         self.timer = timer
         super().__init__(timeout=45)
 
+        if timer and reason:
+            self.stop()
+            return
+
         if not reason:
             button = ui.Button(label="Set Reason", style=ButtonStyle.blurple)
             button.callback = self.set_reason
             self.add_item(button)
 
-        # if not timer:
-        #     button = ui.Button(label="Set Timer", style=ButtonStyle.blurple)
-        #     button.callback = self.set_timer
-        #     self.add_item(button)
+        if not timer:
+            button = ui.Button(label="Set Timer", style=ButtonStyle.blurple)
+            button.callback = self.set_timer
+            self.add_item(button)
 
-    async def is_author(self, interaction):
+    async def on_error(self, error, item, interaction):
+        if not isinstance(error, NotFound):
+            raise
+
+    async def interaction_check(self, interaction):
         """ Ensure the interaction is from the user who initiated the view """
         if interaction.user.id != self.ctx.author.id:
             with suppress(Exception):
@@ -56,14 +64,10 @@ class MuteView(ui.View):
         return True
 
     async def set_timer(self, interaction: Interaction):
-        if not await self.is_author(interaction):
-            return
         view = TimerView(self.ctx, self.case, self)
         await interaction.response.edit_message(view=view)
 
     async def set_reason(self, interaction: Interaction):
-        if not await self.is_author(interaction):
-            return
         view = ReasonView(self.ctx, self.case, self)
         await interaction.response.edit_message(view=view)
 
@@ -87,6 +91,7 @@ class TimerView(ui.View):
 
         def __init__(self, ctx: commands.Context, case: int, home_view: MuteView):
             self.ctx = ctx
+            self.bot = ctx.bot
             self.case = case
             self.home_view = home_view
 
@@ -102,19 +107,46 @@ class TimerView(ui.View):
             )
 
         async def callback(self, interaction: Interaction):
-            if not await self.home_view.is_author(interaction):
+            if not await self.home_view.interaction_check(interaction):
                 return
             duration = int(interaction.data["values"][0])
             if duration == 0:
                 return await interaction.response.edit_message(view=self.home_view)
 
+            mod: Moderation = self.bot.cogs["Moderation"]
+            guild_id = str(self.ctx.guild.id)
+
+            user = self.home_view.user
+            mute_role = await self.bot.attrs.get_mute_role(self.ctx.guild, upsert=True)
+            await user.add_roles(mute_role)
+
+            timer_info = {
+                "channel": self.ctx.channel.id,
+                "user": user.id,
+                "end_time": now() + duration,
+                "mute_role": mute_role.id,
+                "removed_roles": [],
+            }
+            mod.config[guild_id]["mute_timers"][str(user.id)] = timer_info
+            await mod.save_data()
+            task = self.bot.loop.create_task(
+                mod.handle_mute_timer(guild_id, str(user.id), timer_info)
+            )
+            if guild_id not in mod.tasks:
+                mod.tasks[guild_id] = {}
+            mod.tasks[guild_id][str(user.id)] = task
+
             expanded_form = format_date_difference(datetime.now() - timedelta(seconds=duration))
-            await interaction.response.send_message(f"Updated the mute to {expanded_form}", ephemeral=True)
+            await interaction.response.send_message(f"Updated the mute for {user.mention} to {expanded_form}")
             await interaction.message.edit(view=self.home_view)
 
     def __init__(self, ctx: commands.Context, case: int, home_view: MuteView):
         super().__init__(timeout=45)
         self.add_item(self.SelectOptions(ctx, case, home_view))
+
+    async def on_error(self, error, item, interaction):
+        if not isinstance(error, NotFound):
+            raise
 
 
 class ReasonView(ui.View):
@@ -144,7 +176,7 @@ class ReasonView(ui.View):
             )
 
         async def callback(self, interaction: Interaction):
-            if not await self.home_view.is_author(interaction):
+            if not await self.home_view.interaction_check(interaction):
                 return
             reason = interaction.data["values"][0]
             if reason == "Cancel":
@@ -164,6 +196,10 @@ class ReasonView(ui.View):
     def __init__(self, ctx: commands.Context, case: int, home_view: MuteView):
         super().__init__(timeout=45)
         self.add_item(self.SelectOptions(ctx, case, home_view))
+
+    async def on_error(self, error, item, interaction):
+        if not isinstance(error, NotFound):
+            raise
 
 
 cache = {}  # Keep track of what commands are still being ran
