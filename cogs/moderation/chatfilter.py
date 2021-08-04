@@ -643,6 +643,7 @@ class Menu(ui.View):
                 self.extra["import"] = button
 
     async def handle_callback(self, interaction: discord.Interaction) -> object:
+        """ Handles the interactions from sub module toggles """
         user = interaction.guild.get_member(interaction.user.id)
         check1 = self.cd1.check(interaction.user.id)
         check2 = self.cd2.check(interaction.user.id)
@@ -677,6 +678,7 @@ class Menu(ui.View):
 
     @ui.button(label="Filtered Words", style=style.blurple)
     async def filtered_words(self, _button, interaction):
+        """ Sends the current list of filtered words """
         filtered = ""
         if self.ctx.guild.id in self.cls.config:
             filtered = "**,** ".join(self.cls.config[self.ctx.guild.id]["blacklist"])
@@ -687,6 +689,7 @@ class Menu(ui.View):
 
     @ui.button(label="Configure", style=style.blurple)
     async def configure(self, button, interaction):
+        """ Adds the config related buttons to the view """
         user = interaction.guild.get_member(interaction.user.id)
         if not user.guild_permissions.manage_messages:
             return await interaction.response.send_message(
@@ -698,13 +701,14 @@ class Menu(ui.View):
         await interaction.response.edit_message(view=self)
 
     async def toggle(self, interaction: discord.Interaction):
+        """ Toggle the chatfilter module as a whole """
         user = interaction.guild.get_member(interaction.user.id)
-        # check1 = self.cd1.check(interaction.user.id)
-        # check2 = self.cd2.check(interaction.user.id)
-        # if check1 or check2:
-        #     return await interaction.response.send_message(
-        #         "You're on cooldown, try again in a moment", ephemeral=True
-        #     )
+        check1 = self.cd1.check(interaction.user.id)
+        check2 = self.cd2.check(interaction.user.id)
+        if check1 or check2:
+            return await interaction.response.send_message(
+                "You're on cooldown, try again in a moment", ephemeral=True
+            )
         if not user.guild_permissions.manage_messages:
             return await interaction.response.send_message(
                 f"You need manage_message permissions to toggle this", ephemeral=True
