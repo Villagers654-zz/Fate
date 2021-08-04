@@ -72,36 +72,41 @@ class _Select(discord.ui.Select):
                 "Only the user who initiated this command can interact",
                 ephemeral=True
             )
-        if self.limit == 1:
-            self.view.choice = interaction.data["values"][0]
-        else:
-            self.view.choice = interaction.data["values"]
+        self.view.choice = interaction.data["values"]
         await interaction.response.defer()
         await interaction.message.delete()
         self.view.stop()
 
 
 class GetChoice(discord.ui.View):
-    choice: Any = None
+    selected: List[str] = None
     def __init__(self, ctx, choices: Union[list, KeysView], limit: int = 1, placeholder: str = "Options"):
         self.ctx = ctx
-        self.choices = choices
+        self.limit = limit
+        self.original_choices = choices
         super().__init__(timeout=45)
         self.add_item(_Select(ctx.author.id, choices, limit, placeholder))
 
     def __await__(self) -> Generator:
         return self._await().__await__()
 
-    async def _await(self) -> str:
+    async def _await(self) -> Union[str, List[str]]:
         message = await self.ctx.send("Select your choice", view=self)
         await self.wait()
-        if not self.choice:
+        if not self.selected:
             with suppress(Exception):
                 await message.delete()
             raise self.ctx.bot.ignored_exit
-        return [
-            choice for choice in self.choices if self.choice in choice
-        ][0]
+
+        # Replace with the full length version of the choices
+        choices = []
+        for partial_choice in self.selected:
+            for choice in self.original_choices:
+                if partial_choice in choice:
+                    choices.append(choice)
+                    break
+
+        return choices[0] if self.limit == 1 else choices
 
     async def on_error(self, error, _item, _interaction) -> None:
         if not isinstance(error, NotFound):
