@@ -217,13 +217,14 @@ class ModMail(commands.Cog):
             result = sorted_results[formatted_results.index(choice)]
         guild_id, case, reason, link, created_at = result
 
-        if ctx.guild.id not in self.config:
+        guild = self.bot.get_guild(guild_id)
+        if not guild or guild.id not in self.config:
             await ctx.send("Modmail isn't enabled in that server")
             return None
-        if ctx.author.id in self.config[ctx.guild.id]["blocked"]:
+        if ctx.author.id in self.config[guild.id]["blocked"]:
             return await ctx.send("You're blocked from using modmail in that server")
 
-        channel: discord.TextChannel = self.bot.get_channel(self.config[ctx.guild.id]["channel_id"])  # type: ignore
+        channel: discord.TextChannel = self.bot.get_channel(self.config[guild.id]["channel_id"])  # type: ignore
         if not channel:
             await ctx.send("Couldn't get the modmail channel in that guild, sorry")
             return None
@@ -252,10 +253,10 @@ class ModMail(commands.Cog):
             if f"Case {case} " in thread.name:
                 if thread.name.endswith("(Closed)"):
                     return await ctx.send("That thread's currently closed")
-                if str(case) in self.config[ctx.guild.id]["references"]:
+                if str(case) in self.config[guild.id]["references"]:
                     try:
                         msg = await channel.fetch_message(
-                            self.config[ctx.guild.id]["references"][str(case)]
+                            self.config[guild.id]["references"][str(case)]
                         )
                     except (NotFound, Forbidden):
                         msg = None
@@ -267,7 +268,7 @@ class ModMail(commands.Cog):
             try:
                 msg = await channel.send(f"Thread created by {ctx.author} for case #{case}")
                 thread = await channel.start_thread(name=f"Case {case} - {ctx.author}", message=msg)
-                self.config[ctx.guild.id]["references"][str(case)] = msg.id
+                self.config[guild.id]["references"][str(case)] = msg.id
                 await self.config.flush()
             except Forbidden:
                 await ctx.send("Failed to create a thread due to my lacking manage_channel perms in that server")
