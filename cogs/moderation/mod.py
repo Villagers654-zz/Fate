@@ -40,14 +40,14 @@ class MuteView(ui.View):
             return
 
         if not reason:
-            button = ui.Button(label="Set Reason", style=ButtonStyle.blurple)
-            button.callback = self.set_reason
-            self.add_item(button)
+            self.reason_button = ui.Button(label="Set Reason", style=ButtonStyle.blurple)
+            self.reason_button.callback = self.set_reason
+            self.add_item(self.reason_button)
 
         if not timer:
-            button = ui.Button(label="Set Timer", style=ButtonStyle.blurple)
-            button.callback = self.set_timer
-            self.add_item(button)
+            self.timer_button = ui.Button(label="Set Timer", style=ButtonStyle.blurple)
+            self.timer_button.callback = self.set_timer
+            self.add_item(self.timer_button)
 
     async def on_error(self, error, item, interaction):
         if not isinstance(error, NotFound):
@@ -65,10 +65,12 @@ class MuteView(ui.View):
 
     async def set_timer(self, interaction: Interaction):
         view = TimerView(self.ctx, self.case, self)
+        self.remove_item(self.timer_button)
         await interaction.response.edit_message(view=view)
 
     async def set_reason(self, interaction: Interaction):
         view = ReasonView(self.ctx, self.case, self)
+        self.remove_item(self.reason_button)
         await interaction.response.edit_message(view=view)
 
 
