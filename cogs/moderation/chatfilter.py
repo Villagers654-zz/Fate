@@ -754,7 +754,7 @@ class ImportView(ui.View):
         added = [
             f"`{phrase}`" for phrase in added
         ]
-        await interaction.followup.send(f"**Imported:** {', '.join(added)}")
+        await interaction.followup.send(f"**Imported:** {', '.join(added)}", ephemeral=True)
         self.stop()
 
     @ui.button(label="From Another Server", style=style.blurple)
@@ -781,7 +781,7 @@ class ImportView(ui.View):
             f"`{discord.utils.escape_markdown(phrase)}`"
             for phrase in added
         ]
-        await interaction.followup.send(f"**Imported:** {', '.join(added)}")
+        await interaction.followup.send(f"**Imported:** {', '.join(added)}", ephemeral=True)
         self.stop()
 
 
