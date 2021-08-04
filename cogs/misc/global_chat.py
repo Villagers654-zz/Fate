@@ -93,7 +93,7 @@ class GlobalChat(commands.Cog):
             return
 
         for entry in sending:
-            if len([e for e in sending if e[2].author.id == entry[2].id]) > 1:
+            if len([e for e in sending if e[2] and e[2].author.id == entry[2].id]) > 1:
                 for e in sending:
                     if e != entry:
                         entry[0].description += f"\nMerged with: {e[0].description}"
