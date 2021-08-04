@@ -282,7 +282,7 @@ class ChatFilter(commands.Cog):
         guild_id = ctx.guild.id
         if guild_id not in self.config:
             return await ctx.send("Chatfilter isn't enabled")
-        if phrase not in self.config[guild_id]["blacklist"] and not phrase.endswith("*"):
+        if phrase not in self.config[guild_id]["blacklist"] and not phrase.endswith("*") and not phrase.startswith("*"):
             return await ctx.send("Phrase/word not found")
         removed = []
         if phrase.endswith("*"):
@@ -290,6 +290,19 @@ class ChatFilter(commands.Cog):
             for word in list(self.config[guild_id]["blacklist"]):
                 _word = normalize('NFKD', word).encode('ascii', 'ignore').decode().lower()
                 if _word.startswith(phrase):
+                    self.config[guild_id]["blacklist"].remove(word)
+                    removed.append(word)
+            if not removed:
+                return await ctx.send("No phrase/words found matching that")
+            await ctx.send(f"Removed {', '.join(f'`{w}`' for w in removed)}")
+            return await self.config.flush()
+        if phrase.startswith("*"):
+            print("Bruh")
+            phrase = phrase.lstrip("*")
+            for word in list(self.config[guild_id]["blacklist"]):
+                print(word)
+                _word = normalize('NFKD', word).encode('ascii', 'ignore').decode().lower()
+                if _word.endswith(phrase):
                     self.config[guild_id]["blacklist"].remove(word)
                     removed.append(word)
             if not removed:
@@ -543,17 +556,12 @@ class Menu(ui.View):
         self.extra: Dict[str, discord.Button] = {}
         self.cd1 = cls.bot.utils.cooldown_manager(3, 25)
         self.cd2 = cls.bot.utils.cooldown_manager(1, 5)
+        self.configuring = False
         super().__init__(timeout=60)
 
         if ctx.guild.id in cls.config:
             if cls.config[ctx.guild.id]["toggle"]:
-                self.toggle.label = "Disable"
-                self.toggle.style = discord.ButtonStyle.red
                 self.update_items()
-
-        button = ui.Button(label="Import Words", style=style.blurple)
-        button.callback = self.import_callback
-        self.add_item(button)
 
     async def on_error(self, error: Exception, _item, _interaction) -> None:
         """ Suppress NotFound errors as they're spammy """
@@ -579,10 +587,24 @@ class Menu(ui.View):
     def update_items(self) -> None:
         """ Updates the color of extra config options to reflect being enabled or disabled """
         guild_id = self.ctx.guild.id
-        if guild_id not in self.cls.config or not self.cls.config[guild_id]["toggle"]:
+        if not self.configuring:
             for custom_id, button in self.extra.items():
                 button.disabled = True
         else:
+            toggle = guild_id in self.cls.config and self.cls.config[guild_id]["toggle"]
+            color = style.red if toggle else style.green
+            if "toggle" not in self.extra:
+                button = ui.Button(label="Disable" if toggle else "Enable", style=color)
+                button.callback = self.toggle
+                self.add_item(button)
+                self.extra["toggle"] = button
+
+            if not toggle:
+                for name, button in self.extra.items():
+                    if name != "toggle":
+                        button.disabled = True
+                return
+
             conf = self.cls.config[guild_id]
             for button in self.extra.values():
                 button.disabled = False
@@ -613,6 +635,12 @@ class Menu(ui.View):
                 button.callback = self.handle_callback
                 self.add_item(button)
                 self.extra["regex"] = button
+
+            if "import" not in self.extra:
+                button = ui.Button(label="Import Words", style=style.blurple)
+                button.callback = self.import_callback
+                self.add_item(button)
+                self.extra["import"] = button
 
     async def handle_callback(self, interaction: discord.Interaction) -> object:
         user = interaction.guild.get_member(interaction.user.id)
@@ -657,31 +685,42 @@ class Menu(ui.View):
                 f"**Filtered words:** {filtered}", ephemeral=True
             )
 
-    @ui.button(label="Enable", style=style.green)
-    async def toggle(self, button: discord.Button, interaction: discord.Interaction):
+    @ui.button(label="Configure", style=style.blurple)
+    async def configure(self, button, interaction):
         user = interaction.guild.get_member(interaction.user.id)
-        with suppress(Exception):
-            check1 = self.cd1.check(interaction.user.id)
-            check2 = self.cd2.check(interaction.user.id)
-            if check1 or check2:
-                return await interaction.response.send_message(
-                    "You're on cooldown, try again in a moment", ephemeral=True
-                )
-            if not user.guild_permissions.manage_messages:
-                return await interaction.response.send_message(
-                    f"You need manage_message permissions to toggle this", ephemeral=True
-                )
-            if button.label == "Enable":
-                await self.cls._enable(self.ctx)  # type: ignore
-                button.label = "Disable"
-                button.style = discord.ButtonStyle.red
-            else:
-                await self.cls._disable(self.ctx)  # type: ignore
-                button.label = "Enable"
-                button.style = discord.ButtonStyle.green
-            self.update_items()
-            await interaction.response.defer()
-            await interaction.edit_original_message(view=self)
+        if not user.guild_permissions.manage_messages:
+            return await interaction.response.send_message(
+                f"You need manage_message permissions to toggle this", ephemeral=True
+            )
+        self.remove_item(button)
+        self.configuring = True
+        self.update_items()
+        await interaction.response.edit_message(view=self)
+
+    async def toggle(self, interaction: discord.Interaction):
+        user = interaction.guild.get_member(interaction.user.id)
+        # check1 = self.cd1.check(interaction.user.id)
+        # check2 = self.cd2.check(interaction.user.id)
+        # if check1 or check2:
+        #     return await interaction.response.send_message(
+        #         "You're on cooldown, try again in a moment", ephemeral=True
+        #     )
+        if not user.guild_permissions.manage_messages:
+            return await interaction.response.send_message(
+                f"You need manage_message permissions to toggle this", ephemeral=True
+            )
+        button = self.extra["toggle"]
+        if button.label == "Enable":
+            await self.cls._enable(self.ctx)  # type: ignore
+            button.style = style.red
+            button.label = "Disable"
+        else:
+            await self.cls._disable(self.ctx)  # type: ignore
+            button.style = style.green
+            button.label = "Enable"
+        self.update_items()
+        await interaction.response.defer()
+        await interaction.message.edit(view=self)
 
 
 class ImportView(ui.View):
