@@ -20,6 +20,7 @@ import subprocess
 
 import discord
 from discord.ext import commands, tasks
+import psutil
 
 from botutils import split, CooldownManager
 
@@ -33,7 +34,8 @@ class Tasks(commands.Cog):
             self.log_queue,
             self.debug_log,
             self.auto_backup,
-            self.cleanup_pool
+            self.cleanup_pool,
+            self.warn_if_storage_full
         ]
         for task in self.enabled_tasks:
             task.start()
@@ -51,6 +53,11 @@ class Tasks(commands.Cog):
             if not task.is_running():
                 task.start()
                 self.bot.log(f"Started task {task.coro.__name__}", color="cyan")
+
+    @tasks.loop(seconds=60)
+    async def warn_if_storage_full(self):
+        if psutil.disk_usage("/").percent >= 95:
+            self.bot.log.critical("storage usage has passed 95%")
 
     @tasks.loop(minutes=1)
     async def cog_cleanup(self):
