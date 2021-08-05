@@ -13,6 +13,7 @@ from datetime import datetime
 import traceback
 
 from discord.ext import tasks
+from discord import AllowedMentions
 from termcolor import cprint
 
 
@@ -61,7 +62,7 @@ class Logging:
                 msg = msg.replace("``````", "\n")
                 self.queue.remove(old)
             if channel:
-                await channel.send(msg)
+                await channel.send(msg, allowed_mentions=AllowedMentions.all())
         except:
             self.info(
                 f"There was an error in the log queue\n{traceback.format_exc()}\n{msg}"
