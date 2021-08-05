@@ -122,6 +122,13 @@ class TimerView(ui.View):
             mute_role = await self.bot.attrs.get_mute_role(self.ctx.guild, upsert=True)
             await user.add_roles(mute_role)
 
+            # Update the mute if one is already running
+            if mute_role in user.roles:
+                user_id = str(user.id)
+                if guild_id in mod.tasks and user_id in mod.tasks[guild_id]:
+                    mod.tasks[guild_id][user_id].cancel()
+                    del mod.tasks[guild_id][user_id]
+
             timer_info = {
                 "channel": self.ctx.channel.id,
                 "user": user.id,
