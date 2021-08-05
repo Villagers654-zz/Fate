@@ -690,7 +690,7 @@ class RoleView(ui.View):
                 return await adjust_options(f"{role_id} doesn't seem to exist anymore")
 
             if role.position >= guild.me.top_role.position:
-                self.config[self.guild_id]["roles"].remove(role.id)
+                self.config[self.guild_id][str(self.message_id)]["roles"].remove(role.id)
                 return await adjust_options(f"{role_id} is too high for me to manage")
 
             if role not in member.roles:
