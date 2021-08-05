@@ -145,10 +145,14 @@ class Tasks(commands.Cog):
                         activity=discord.Game(name=f"{stages[i]} | use .help"),
                     )
                     await asyncio.sleep(15)
+                    users = 0
+                    for guild in list(self.bot.guilds):
+                        await asyncio.sleep(0)
+                        users += guild.member_count
                     await self.bot.change_presence(
                         status=discord.Status.idle,
                         activity=discord.Game(
-                            name=f"SVR: {len(self.bot.guilds)} USR: {len(self.bot.users)}"
+                            name=f"SVR: {len(self.bot.guilds)} USR: {users}"
                         ),
                     )
                     await asyncio.sleep(15)

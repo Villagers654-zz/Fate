@@ -519,8 +519,6 @@ class Utility(commands.Cog):
                 icon_url="https://cdn.discordapp.com/attachments/514213558549217330/514345278669848597/8yx98C.gif",
             )
             msg = await ctx.send(embed=e)
-            guilds = len(list(self.bot.guilds))
-            users = len(list(self.bot.users))
             bot_pid = psutil.Process(os.getpid())
             e = discord.Embed(color=colors.fate)
             e.set_author(
@@ -545,6 +543,12 @@ class Utility(commands.Cog):
                             f"\nLines of Code: {lines}"
             if core := self.bot.get_cog("Core"):
                 e.description += f"\nVotes This Month: {len(await core.dblpy.get_bot_upvotes())}"
+
+            guilds = len(list(self.bot.guilds))
+            users = 0
+            for guild in list(self.bot.guilds):
+                await asyncio.sleep(0)
+                users += guild.member_count
 
             e.set_thumbnail(url=self.bot.user.avatar.url)
             e.add_field(
