@@ -596,17 +596,18 @@ class RoleView(ui.View):
                 self.buttons[button.custom_id] = button
                 self.add_item(button)
         else:
-            self.menu = Select(self, message_id, self.index)
+            self.menu = Select(self, message_id, self.index())
             self.add_item(self.menu)
 
-    @property
     def index(self) -> dict:
         index = {}
         guild = self.bot.get_guild(self.guild_id)
-        for role_id, meta in self.config[self.guild_id][str(self.message_id)]["roles"].items():
+        for role_id, meta in list(self.config[self.guild_id][str(self.message_id)]["roles"].items()):
             role = guild.get_role(int(role_id))
             if role:
                 index[role] = meta
+            else:
+                del self.config[self.guild_id][str(self.message_id)]["roles"][role_id]
         return index
 
     async def on_error(self, _error, _item, _interaction) -> None:
@@ -672,8 +673,10 @@ class RoleView(ui.View):
 
         async def adjust_options(reason) -> discord.Message:
             """ Remove a button that can no longer be used """
+            print("H")
             self.clear_items()
-            self.menu = Select(self, self.message_id, self.index)
+            self.menu = Select(self, self.message_id, self.index())
+            self.add_item(self.menu)
             await interaction.message.edit(view=self)
             return await interaction.response.send_message(reason, ephemeral=True)
 
@@ -690,14 +693,13 @@ class RoleView(ui.View):
                 return await adjust_options(f"{role_id} doesn't seem to exist anymore")
 
             if role.position >= guild.me.top_role.position:
-                self.config[self.guild_id][str(self.message_id)]["roles"].remove(role.id)
                 return await adjust_options(f"{role_id} is too high for me to manage")
 
             if role not in member.roles:
                 await member.add_roles(role)
 
         # Take away unselected roles
-        for role in self.index:
+        for role in self.index().keys():
             if str(role.id) not in interaction.data["values"]:
                 if role in member.roles:
                     await member.remove_roles(role)
@@ -724,7 +726,8 @@ class Select(discord.ui.Select):
                 **meta
             )
             options.append(option)
-
+        if self.cls.limit > len(options):
+            self.cls.limit = len(options)
         super().__init__(
             custom_id=f"select_{message_id}",
             placeholder="Select a Role",
