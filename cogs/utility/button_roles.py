@@ -144,6 +144,15 @@ class ButtonRoles(commands.Cog):
                 # Set the emoji
                 if all(c.lower() == c.upper() for c in args[0]) or "<" in args[0]:
                     emoji = args[0]
+                    try:
+                        await msg.add_reaction(emoji)
+                        await msg.clear_reactions()
+                    except:
+                        await ctx.send(
+                            "Couldn't set that as the emoji, you can add it via `.change-emoji` later",
+                            delete_after=10
+                        )
+                        emoji = None
                     args.pop(0)
 
                 # Set the label
