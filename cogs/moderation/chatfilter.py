@@ -555,7 +555,7 @@ class Menu(ui.View):
         self.ctx = ctx
         self.extra: Dict[str, discord.Button] = {}
         self.cd1 = cls.bot.utils.cooldown_manager(3, 25)
-        self.cd2 = cls.bot.utils.cooldown_manager(1, 5)
+        self.cd2 = cls.bot.utils.cooldown_manager(2, 5)
         self.configuring = False
         super().__init__(timeout=60)
 
