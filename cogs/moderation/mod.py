@@ -941,7 +941,7 @@ class Moderation(commands.Cog):
                 await user.add_roles(mute_role)
                 await ctx.send(
                     f"Muted {user.display_name} for {reason} [Case #{case}]" + additional,
-                    view=MuteView(ctx, user, case, reason.replace("Unspecified", ""), None)
+                    view=MuteView(ctx, user, case, reason.replace("Unspecified", ""), timer)
                 )
                 await ensure_muted()
                 return None
