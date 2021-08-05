@@ -313,9 +313,13 @@ class ModMail(commands.Cog):
 
     @commands.command(name="close-thread", aliases=["close"])
     async def close_thread(self, ctx):
+        if not isinstance(ctx.channel, discord.Thread):
+            return await ctx.send("You can only run this in modmail threads")
         if not ctx.channel.name.startswith("Case "):
             return await ctx.send("Unable to parse the channel name")
         if ctx.channel.name.endswith("(Closed)"):
+            if not ctx.channel.archived:
+                return await ctx.channel.edit(archived=True)
             return await ctx.send("This thread's already closed")
         case = ctx.channel.name.split()[1]
         if not case.isdigit():
@@ -338,8 +342,7 @@ class ModMail(commands.Cog):
                 await self.bot.get_user(r[0]).send(
                     f"The thread for case #{case_number} in {ctx.guild} was closed"
                 )
-        await ctx.channel.edit(name=f"{ctx.channel.name} (Closed)")
-        await ctx.send("Closed the thread")
+        await ctx.channel.edit(name=f"{ctx.channel.name} (Closed)", archived=True)
 
 
 def setup(bot):
