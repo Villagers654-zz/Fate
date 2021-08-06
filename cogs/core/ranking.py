@@ -882,23 +882,16 @@ class Ranking(commands.Cog):
 
                 card.paste(im, (5, 100 * i), im)
 
-            card.save(fp)
+            card.save(file, format="png")
+            file.seek(0)
 
+        file = BytesIO()
         try:
             await self.bot.loop.run_in_executor(None, create_card)
         except UnidentifiedImageError:
             return await ctx.send("Failed to fetch one of the top users avatars. Rerunning the command might fix")
-        if not hasattr(ctx, "channel"):
-            return fp
 
-        e = discord.Embed(color=colors.fate)
-        icon_url = self.bot.user.avatar.url
-        if ctx.guild.icon:
-            icon_url = ctx.guild.icon.url
-        e.set_author(name=ctx.guild.name, icon_url=icon_url)
-        e.set_image(url=f"attachment://{fp}")
-        await ctx.send(embed=e, file=discord.File(fp, filename=fp))
-        os.remove(fp)
+        await ctx.send(file=discord.File(file, filename="top.png"))
 
     @commands.command(
         name="leaderboard",
