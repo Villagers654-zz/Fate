@@ -1025,6 +1025,32 @@ class AntiSpam(commands.Cog):
                         )
 
     @commands.Cog.listener()
+    async def on_message_delete(self, msg):
+        if msg.guild and msg.guild.id == 850956124168519700 and msg.raw_mentions:
+            if not msg.guild.me.guild_permissions.view_audit_log:
+                return
+            lmt = datetime.now(tz=timezone.utc) - timedelta(seconds=5)
+            if msg.created_at > lmt:
+                async for entry in msg.guild.audit_logs(limit=1, action=discord.AuditLogAction.message_delete):
+                    if entry.created_at > lmt:
+                        return
+                await asyncio.sleep(3)
+                if msg.guild.id in self.bot.filtered_messages:
+                    if msg.id in self.bot.filtered_messages:
+                        return
+                await msg.channel.send(f"{msg.author.mention} bitch")
+                if msg.guild.id not in self.bot.tasks["antispam_mutes"]:
+                    self.bot.tasks["antispam_mutes"][msg.guild.id] = {}
+                self.bot.tasks["antispam_mutes"][msg.guild.id][msg.author.id] = self.bot.loop.create_task(
+                    self.process_mute(
+                        user_id=msg.author.id,
+                        guild_id=msg.guild.id,
+                        msg=msg,
+                        reason="Ghost ping"
+                    )
+                )
+
+    @commands.Cog.listener()
     async def on_thread_join(self, thread: discord.Thread):
         if thread.guild.id in self.config and "threads" in self.config[thread.guild.id]:
             if not thread.owner.guild_permissions.manage_threads:
