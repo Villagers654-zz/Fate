@@ -898,11 +898,7 @@ class Logger(commands.Cog):
                             files = []
                             for attachment in msg.attachments:
                                 fp = os.path.join("static", attachment.filename)
-                                async with aiohttp.ClientSession() as session:
-                                    async with session.get(
-                                        attachment.proxy_url
-                                    ) as resp:
-                                        file = await resp.read()
+                                file = await attachment.read()
                                 async with aiofiles.open(fp, "wb") as f:
                                     await f.write(file)
                                 files.append(fp)
@@ -951,7 +947,7 @@ class Logger(commands.Cog):
                             continue
                         fp = os.path.join("static", attachment.filename)
                         with suppress(Exception):
-                            file = await self.bot.get_resource(attachment.proxy_url)
+                            file = await attachment.read(use_cached=True)
                             async with aiofiles.open(fp, "wb") as f:
                                 await f.write(file)
                             files.append(fp)
