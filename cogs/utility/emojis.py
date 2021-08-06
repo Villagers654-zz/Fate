@@ -220,7 +220,7 @@ class Emojis(commands.Cog):
             )
 
         # initialization
-        if not custom and not ids and not args and not ctx.message.attachments:
+        if not custom and not ids and not args and not ctx.message.attachments and not ctx.message.stickers:
             return await ctx.send(
                 "You need to include an emoji to steal, an image/gif, or an image/gif URL"
             )
@@ -237,6 +237,20 @@ class Emojis(commands.Cog):
             if emoji := self.bot.get_emoji(emoji.id):
                 if emoji.guild.id in [497860460117360660, 397415086295089155]:
                     return await ctx.send(f"Nice try fatty! <:you:841098144536068106>")
+
+        if ctx.author.id == 264838866480005122:
+            for sticker in ctx.message.stickers:
+                img = await download(sticker.url)
+                print(img)
+                file = discord.File(BytesIO(img), filename="sticker.png")
+                await ctx.guild.create_sticker(
+                    name=sticker.name,
+                    file=file,
+                    emoji=":man_detective:",
+                    description="yeet",
+                    reason="dunno"
+                )
+                await update_msg(ctx.msg, f"Added `{sticker.name}`")
 
         # PartialEmoji objects
         for emoji in custom:
