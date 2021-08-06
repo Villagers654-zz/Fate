@@ -941,6 +941,16 @@ class AntiSpam(commands.Cog):
                                 triggered = True
                             self.bot.loop.create_task(self.cache_image(msg.channel, size))
 
+                    if msg.guild.id == 850956124168519700:
+                        stickers_sent = []
+                        for m in self.msgs[user_id][-5:]:
+                            for sticker in m.stickers:
+                                if sticker.id in stickers_sent:
+                                    triggered = True
+                                    reason = "Duplicate sticker"
+                                    break
+                                stickers_sent.append(sticker.id)
+
                 if (triggered is None or "ascii" in reason) and not msg.author.guild_permissions.administrator:
                     if msg.guild.id not in self.bot.filtered_messages:
                         self.bot.filtered_messages[msg.guild.id] = {}
