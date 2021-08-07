@@ -65,3 +65,29 @@ class Utils(commands.Cog):
 
     def cursor(self, *args, **kwargs):
         return Cursor(self.bot, *args, **kwargs)
+
+    async def is_filtered(self, message, ctx = None) -> Union[bool, str]:
+        """|coro|
+        Checks if:
+        - a message was deleted by chatfilter or antispam,
+        - has mentions that it shouldn't
+        - contains chat filtered words
+
+        Parameters
+        -----------
+        message : Message
+        ctx : commands.Context
+        """
+        if isinstance(message, Message):
+            if message.guild.id in self.bot.filtered_messages:
+                if message.id in self.bot.filtered_messages[message.guild.id]:
+                    return True
+            message = message.content
+        if ctx:
+            coro = sanitize(message, ctx)
+        else:
+            coro = sanitize(message)
+        new_content, _flags = await coro
+        if new_content:
+            return new_content
+        return False
