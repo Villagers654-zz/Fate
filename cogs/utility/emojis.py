@@ -238,19 +238,19 @@ class Emojis(commands.Cog):
                 if emoji.guild.id in [497860460117360660, 397415086295089155]:
                     return await ctx.send(f"Nice try fatty! <:you:841098144536068106>")
 
-        if ctx.author.id == 264838866480005122:
-            for sticker in ctx.message.stickers:
-                img = await download(sticker.url)
-                print(img)
-                file = discord.File(BytesIO(img), filename="sticker.png")
-                await ctx.guild.create_sticker(
-                    name=sticker.name,
-                    file=file,
-                    emoji=":man_detective:",
-                    description="yeet",
-                    reason="dunno"
-                )
-                await update_msg(ctx.msg, f"Added `{sticker.name}`")
+        for sticker in ctx.message.stickers:
+            if sticker.guild.id in [497860460117360660, 397415086295089155]:
+                return await ctx.send(f"Nice try fatty! <:you:841098144536068106>")
+            img = await download(sticker.url)
+            file = discord.File(BytesIO(img), filename="sticker.png")
+            await ctx.guild.create_sticker(
+                name=sticker.name,
+                file=file,
+                emoji=":man_detective:",
+                description=f"Uploaded by {ctx.author}",
+                reason=f"Uploaded by {ctx.author}"
+            )
+            await update_msg(ctx.msg, f"Added `{sticker.name}`")
 
         # PartialEmoji objects
         for emoji in custom:
