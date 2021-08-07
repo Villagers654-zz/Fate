@@ -396,10 +396,24 @@ class Emojis(commands.Cog):
         await emoji.edit(name=name, reason=ctx.author.name)
         await ctx.send(f"Renamed emote `{old_name}` to `{clean_name}`")
 
-    @commands.command(name="add-sticker", aliases=["addsticker", "stealsticker", "steal-sticker"], enabled=False)
+    @commands.command(name="add-sticker", aliases=["addsticker", "stealsticker", "steal-sticker"])
     @commands.cooldown(1, 5, commands.BucketType.guild)
     @commands.has_permissions(manage_emojis=True)
     async def add_sticker(self, ctx, *args):
+        async def upload_files():
+            for name, file in files:
+                try:
+                    await ctx.guild.create_sticker(
+                        name=name,
+                        file=file,
+                        emoji=":man_detective:",
+                        description=f"Uploaded by {ctx.author}",
+                        reason=f"Uploaded by {ctx.author}"
+                    )
+                    await ctx.send(f"Added {name}")
+                except HTTPException as e:
+                    return await ctx.send(e)
+
         for sticker in ctx.message.stickers:
             if sticker.guild.id in [497860460117360660, 397415086295089155]:
                 return await ctx.send(f"Nice try fatty! <:you:841098144536068106>")
@@ -422,22 +436,19 @@ class Emojis(commands.Cog):
         for attachment in ctx.message.attachments:
             files.append([attachment.filename, await attachment.to_file()])
 
-        map = {}
-        for i, arg in enumerate(args):
-            if i % 2 != 0 and "http" in arg:
-                break
-            if i % 2 != 0:
-                map[args[i - 1]] = arg
-            else:
-                map[arg] = "new_sticker"
-        else:
-            for arg in args:
+        # Args are all links
+        for arg in args:
+            try:
                 raw_file = await download(arg)
-                files.append(BytesIO(raw_file))
-            # Upload files
-            return
-        for link, name in map.items():
-            pass
+            except:
+                await ctx.send(f"Failed to fetch {arg}")
+                continue
+            paths = arg.split("/")
+            filename = paths[len(paths) - 1]
+            disc_file = discord.File(BytesIO(raw_file), filename=filename)
+            files.append([filename.split(".")[0], disc_file])
+
+        await upload_files()
 
 
 def setup(bot):
