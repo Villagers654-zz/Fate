@@ -46,6 +46,7 @@ defaults = {
         "per_message": 10,
         "same_link": 25,
         "same_image": 25,
+        "same_sticker": 60,
         "thresholds": [{
             "timespan": 25,
             "threshold": 4
@@ -75,6 +76,7 @@ class AntiSpam(commands.Cog):
     def __init__(self, bot: Fate):
         self.bot = bot
         self.config = bot.utils.cache("AntiSpam")
+        self.bot.loop.create_task(self.config.flush())
         self.cleanup_task.start()
 
     def cog_unload(self):
@@ -260,6 +262,7 @@ class AntiSpam(commands.Cog):
             "per_message": 10,
             "same_link": 25,
             "same_image": 25,
+            "same_sticker": 60,
             "thresholds": [{
                 "timespan": 25,
                 "threshold": 4
@@ -941,15 +944,18 @@ class AntiSpam(commands.Cog):
                                 triggered = True
                             self.bot.loop.create_task(self.cache_image(msg.channel, size))
 
-                    if msg.guild.id == 850956124168519700:
+                    if self.config[guild_id]["duplicates"]["same_sticker"] and msg.stickers:
                         stickers_sent = []
-                        for m in self.msgs[user_id][-5:]:
-                            for sticker in m.stickers:
-                                if sticker.id in stickers_sent:
-                                    triggered = True
-                                    reason = "Duplicate sticker"
-                                    break
-                                stickers_sent.append(sticker.id)
+                        lmt: int = self.config[guild_id]["duplicates"]["same_sticker"]
+                        lmt_dt = datetime.now(tz=timezone.utc) - timedelta(seconds=lmt)
+                        for m in self.msgs[user_id]:
+                            if m.created_at > lmt_dt:
+                                for sticker in m.stickers:
+                                    if sticker.id in stickers_sent:
+                                        triggered = True
+                                        reason = f"Duplicate sticker within {lmt} seconds"
+                                        break
+                                    stickers_sent.append(sticker.id)
 
                 if (triggered is None or "ascii" in reason) and not msg.author.guild_permissions.administrator:
                     if msg.guild.id not in self.bot.filtered_messages:
