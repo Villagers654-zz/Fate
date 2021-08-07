@@ -457,6 +457,10 @@ class Fun(commands.Cog):
 
     @commands.command(pass_context=True)
     async def mock(self, ctx, *, message):
+        # Prevent Chatfilter Bypass Method
+	if ctx.guild.id in self.bot.filtered_messages:
+            if msg.id in self.bot.filtered_messages[ctx.guild.id]:
+                return await ctx.send("You can't send mock messages that include filtered words")
         msgbuf = ""
         uppercount = 0
         lowercount = 0
