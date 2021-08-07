@@ -824,6 +824,9 @@ class AntiSpam(commands.Cog):
                     pings = [msg.raw_mentions, msg.raw_role_mentions]
                     total_pings = sum(len(group) for group in pings)  # type: ignore
                     if total_pings > self.config[guild_id]["mass_pings"]["per_message"]:
+                        if msg.guild.id not in self.bot.filtered_messages:
+                            self.bot.filtered_messages[msg.guild.id] = {}
+                        self.bot.filtered_messages[msg.guild.id][msg.id] = time()
                         reason = "mass pinging"
                         triggered = True
 
@@ -842,6 +845,9 @@ class AntiSpam(commands.Cog):
                         if user_id not in self.msgs:
                             self.msgs[user_id] = []
                         if len(pongs(threshold["timespan"])) > threshold["threshold"]:
+                            if msg.guild.id not in self.bot.filtered_messages:
+                                self.bot.filtered_messages[msg.guild.id] = {}
+                            self.bot.filtered_messages[msg.guild.id][msg.id] = time()
                             reason = "mass pinging"
                             triggered = True
 
