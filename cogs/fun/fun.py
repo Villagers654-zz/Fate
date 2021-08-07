@@ -455,12 +455,12 @@ class Fun(commands.Cog):
     async def spain(self, ctx):
         await ctx.send("Pain but with an s")
 
-    @commands.command(pass_context=True)
+    @commands.command(name="mock")
+    @commands.cooldown(1, 10, commands.BucketType.user)
+    @commands.cooldown(1, 3, commands.BucketType.channel)
     async def mock(self, ctx, *, message):
         # Prevent Chatfilter Bypass Method
-	if ctx.guild.id in self.bot.filtered_messages:
-            if msg.id in self.bot.filtered_messages[ctx.guild.id]:
-                return await ctx.send("You can't send mock messages that include filtered words")
+        message = await sanitize(message, ctx)
         msgbuf = ""
         uppercount = 0
         lowercount = 0
