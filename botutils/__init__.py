@@ -63,10 +63,10 @@ class Utils(commands.Cog):
         self.add_field = formatting.add_field
         self.dump_json = formatting.dump_json
 
-    def cursor(self, *args, **kwargs):
+    def cursor(self, *args, **kwargs) -> Cursor:
         return Cursor(self.bot, *args, **kwargs)
 
-    async def is_filtered(self, message, ctx = None) -> Union[bool, str]:
+    async def is_filtered(self, message, ctx = None) -> bool:
         """|coro|
         Checks if:
         - a message was deleted by chatfilter or antispam,
@@ -89,5 +89,5 @@ class Utils(commands.Cog):
             coro = sanitize(message)
         new_content, _flags = await coro
         if new_content:
-            return new_content
+            return True
         return False
