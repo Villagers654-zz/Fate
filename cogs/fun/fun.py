@@ -102,19 +102,17 @@ class Fun(commands.Cog):
             msg, time = self.dat[channel_id]["last"]
             del self.dat[channel_id]
 
+        is_admin = ctx.author.guild_permissions.administrator
         if msg.embeds:
             return await ctx.send(f"{msg.author}s message was | deleted {format_date_difference(time)} ago", embed=msg.embeds[0])
-        if len(msg.content) > 256 and not ctx.author.guild_permissions.administrator:
+        if len(msg.content) > 256 and not is_admin:
             return await ctx.send("And **wHy** would I snipe a message *that*  big")
-
-        # Prevent sniping messages deleted by the ChatFilter module
-        if ctx.guild.id in self.bot.filtered_messages:
-            if msg.id in self.bot.filtered_messages[ctx.guild.id]:
-                return await ctx.send("You can't snipe messages deleted by chatfilter")
 
         e = discord.Embed(color=msg.author.color)
         e.set_author(name=msg.author, icon_url=msg.author.avatar.url)
-        e.description = await sanitize(msg.content[:4096])
+        if not is_admin:
+            msg.content = await sanitize(msg.content[:4096], ctx)
+        e.description = msg.content
         e.set_footer(text=f"🗑 {format_date_difference(time).replace('.0', '')} ago")
         await ctx.send(embed=e)
 
