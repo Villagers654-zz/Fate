@@ -34,7 +34,7 @@ async def findall(pattern: str, string: str) -> List[str]:
     return [r.group() for r in results]
 
 
-async def sanitize(string: str) -> str:
+async def sanitize(string: str, ctx = None) -> str:
     """ Sanitizes a string of pings, and urls """
     regexes = [
         "(https?://)?(www\.)?[^. ]+\.[a-zA-Z]{2,3}[^ ]*",
@@ -46,4 +46,8 @@ async def sanitize(string: str) -> str:
         results = await future
         for result in results:
             string = string.replace(result, "🚫")
+    if cog := ctx.bot.get_cog("ChatFilter") if ctx else None:
+        clean_content, _flags = await cog.run_default_filter(ctx.guild.id, string)
+        if clean_content:
+            string = clean_content
     return string
