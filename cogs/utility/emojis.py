@@ -238,20 +238,6 @@ class Emojis(commands.Cog):
                 if emoji.guild.id in [497860460117360660, 397415086295089155]:
                     return await ctx.send(f"Nice try fatty! <:you:841098144536068106>")
 
-        for sticker in ctx.message.stickers:
-            if sticker.guild.id in [497860460117360660, 397415086295089155]:
-                return await ctx.send(f"Nice try fatty! <:you:841098144536068106>")
-            img = await download(sticker.url)
-            file = discord.File(BytesIO(img), filename="sticker.png")
-            await ctx.guild.create_sticker(
-                name=sticker.name,
-                file=file,
-                emoji=":man_detective:",
-                description=f"Uploaded by {ctx.author}",
-                reason=f"Uploaded by {ctx.author}"
-            )
-            await update_msg(ctx.msg, f"Added `{sticker.name}`")
-
         # PartialEmoji objects
         for emoji in custom:
             if not at_emoji_limit():
@@ -409,6 +395,49 @@ class Emojis(commands.Cog):
                 clean_name += i
         await emoji.edit(name=name, reason=ctx.author.name)
         await ctx.send(f"Renamed emote `{old_name}` to `{clean_name}`")
+
+    @commands.command(name="add-sticker", aliases=["addsticker", "stealsticker", "steal-sticker"], enabled=False)
+    @commands.cooldown(1, 5, commands.BucketType.guild)
+    @commands.has_permissions(manage_emojis=True)
+    async def add_sticker(self, ctx, *args):
+        for sticker in ctx.message.stickers:
+            if sticker.guild.id in [497860460117360660, 397415086295089155]:
+                return await ctx.send(f"Nice try fatty! <:you:841098144536068106>")
+            img = await download(sticker.url)
+            file = discord.File(BytesIO(img), filename="sticker.png")
+            try:
+                await ctx.guild.create_sticker(
+                    name=sticker.name,
+                    file=file,
+                    emoji=":man_detective:",
+                    description=f"Uploaded by {ctx.author}",
+                    reason=f"Uploaded by {ctx.author}"
+                )
+                return await ctx.send(f"Added {sticker.name}")
+            except HTTPException as e:
+                return await ctx.send(e)
+
+        files = []
+
+        for attachment in ctx.message.attachments:
+            files.append([attachment.filename, await attachment.to_file()])
+
+        map = {}
+        for i, arg in enumerate(args):
+            if i % 2 != 0 and "http" in arg:
+                break
+            if i % 2 != 0:
+                map[args[i - 1]] = arg
+            else:
+                map[arg] = "new_sticker"
+        else:
+            for arg in args:
+                raw_file = await download(arg)
+                files.append(BytesIO(raw_file))
+            # Upload files
+            return
+        for link, name in map.items():
+            pass
 
 
 def setup(bot):
