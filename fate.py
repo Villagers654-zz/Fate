@@ -36,7 +36,7 @@ from cleverbot import async_ as cleverbot
 
 from classes import checks
 from classes.exceptions import EmptyException
-from botutils import colors, get_prefixes_async, Utils, FileCache
+from botutils import get_prefixes_async, Utils, FileCache
 from botutils.custom_logging import Logging
 from cogs.core.tasks import Tasks
 
@@ -483,6 +483,7 @@ async def on_error(_event_method, *_args, **_kwargs):
         return
     error = sys.exc_info()[1]
     ignored = (
+        EmptyException,
         bot.ignored_exit,
         aiohttp.ClientOSError,
         asyncio.exceptions.TimeoutError,
