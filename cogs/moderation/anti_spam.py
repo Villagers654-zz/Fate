@@ -13,7 +13,7 @@ from discord.errors import Forbidden, NotFound, HTTPException
 from discord.ext import commands
 from discord.ext import tasks
 
-from botutils import colors, get_time, emojis
+from botutils import colors, get_time, emojis, get_prefixes_async
 from fate import Fate
 
 
@@ -1050,6 +1050,9 @@ class AntiSpam(commands.Cog):
     async def on_message_delete(self, msg):
         if msg.guild and msg.guild.id == 850956124168519700 and msg.raw_mentions:
             if not msg.guild.me.guild_permissions.view_audit_log:
+                return
+            prefixes = await get_prefixes_async(self.bot, msg)
+            if any(msg.startswith(p) for p in prefixes):
                 return
             lmt = datetime.now(tz=timezone.utc) - timedelta(seconds=5)
             if msg.created_at > lmt:
