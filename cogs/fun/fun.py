@@ -80,6 +80,18 @@ class Fun(commands.Cog):
     def cog_unload(self):
         self.clear_old_messages_task.stop()
 
+    @commands.command(name="legit")
+    @commands.cooldown(1, 5, commands.BucketType.channel)
+    @commands.bot_has_permissions(embed_links=True)
+    async def snipe(self, ctx):
+	await ctx.send("https://legit.vision")
+
+    @commands.command(name="woomy")
+    @commands.cooldown(1, 5, commands.BucketType.channel)
+    @commands.guild_only()
+    async def snipe(self, ctx):
+	await ctx.send(file=discord.File("/data/images/custom/woomy.png"))
+
     @commands.command(name="snipe")
     @commands.cooldown(1, 10, commands.BucketType.channel)
     @commands.guild_only()
