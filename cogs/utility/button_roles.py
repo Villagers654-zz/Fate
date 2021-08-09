@@ -184,8 +184,8 @@ class ButtonRoles(commands.Cog):
 
             selected_roles[role] = {
                 "emoji": emoji,
-                "label": label,
-                "description": description
+                "label": label[:100],
+                "description": description[:100]
             }
 
             if e.fields:
@@ -320,7 +320,7 @@ class ButtonRoles(commands.Cog):
 
         self.config[guild_id][message_id]["roles"][str(role.id)] = {
             "emoji": emoji,
-            "label": label,
+            "label": label[:100],
             "description": description
         }
 
@@ -425,7 +425,7 @@ class ButtonRoles(commands.Cog):
             choice: str = list(roles.values())[0]
         else:
             choice: str = await GetChoice(ctx, roles.keys())
-        self.config[guild_id][message_id]["roles"][roles[choice]]["description"] = new_description
+        self.config[guild_id][message_id]["roles"][roles[choice]]["description"] = new_description[:100]
 
         await self.refresh_menu(guild_id, message_id)
         await ctx.send(f"Successfully set the description 👍")
@@ -735,7 +735,7 @@ class Select(discord.ui.Select):
             meta = dict(meta)
             label = meta.pop("label")
             option = discord.SelectOption(
-                label=label or role.name[:128],
+                label=label or role.name[:100],
                 value=str(role.id),
                 **meta
             )
