@@ -426,7 +426,7 @@ class Fun(commands.Cog):
         if ctx.channel.permissions_for(ctx.guild.me).manage_messages:
             await ctx.message.delete()
 
-    @commands.command(name="notice")
+    @commands.command(name="notice", aliases=["sad"])
     @commands.cooldown(1, 10, commands.BucketType.channel)
     async def notice(self, ctx):
         choices = [
