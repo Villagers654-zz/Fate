@@ -60,7 +60,7 @@ class _Select(discord.ui.Select):
 
         super().__init__(
             custom_id=f"select_choice_{time()}",
-            placeholder=placeholder[:25],
+            placeholder=placeholder,
             min_values=1,
             max_values=limit,
             options=options
@@ -72,7 +72,7 @@ class _Select(discord.ui.Select):
                 "Only the user who initiated this command can interact",
                 ephemeral=True
             )
-        self.view.choice = interaction.data["values"]
+        self.view.selected = interaction.data["values"]
         await interaction.response.defer()
         await interaction.message.delete()
         self.view.stop()
@@ -98,15 +98,9 @@ class GetChoice(discord.ui.View):
                 await message.delete()
             raise self.ctx.bot.ignored_exit
 
-        # Replace with the full length version of the choices
-        choices = []
-        for partial_choice in self.selected:
-            for choice in self.original_choices:
-                if partial_choice in choice:
-                    choices.append(choice)
-                    break
-
-        return choices[0] if self.limit == 1 else choices
+        if self.limit == 1:
+            return self.selected[0]
+        return self.selected
 
     async def on_error(self, error, _item, _interaction) -> None:
         if not isinstance(error, NotFound):
