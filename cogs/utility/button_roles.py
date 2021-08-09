@@ -573,7 +573,7 @@ class RoleView(ui.View):
         self.global_cooldown = cls.global_cooldown
         cd = [5, 25]
         if self.style == "buttons":
-            cd = [5, 60]
+            cd = [1, 5]
         self.cooldown = cls.bot.utils.cooldown_manager(*cd)
 
         super().__init__(timeout=None)
