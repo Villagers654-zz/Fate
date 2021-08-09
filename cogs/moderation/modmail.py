@@ -135,7 +135,6 @@ class ModMail(commands.Cog):
 
         # If a new thread, save the parent message id for future updates
         if not reference:
-            print("Updating reference")
             self.config[ctx.guild.id]["references"][str(case)] = msg.id
             await self.config.flush()
 
