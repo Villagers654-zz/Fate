@@ -9,20 +9,18 @@ A cog for logging event related actions to a text channel(s)
 """
 
 import asyncio
+from io import BytesIO
 from os import path
 import json
-import os
 from datetime import datetime, timezone, timedelta
 from time import time
 from aiohttp.client_exceptions import ClientOSError
-import aiohttp
-import aiofiles
 from contextlib import suppress
 import traceback
 
 from discord.ext import commands
 import discord
-from discord import AuditLogAction as audit
+from discord import AuditLogAction as audit, File
 from discord.errors import NotFound, Forbidden
 from PIL import Image
 
@@ -40,12 +38,21 @@ def is_guild_owner():
     return commands.check(predicate)
 
 
-class Log:
-    def __init__(self, log_type, embed=None, files=None):
-        self.type = log_type
-        self.created_at = time()
+class Log(object):
+    """ A dataclass-like object for sorting information """
+    def __init__(self, ltype, embed, files=(), created_at=None):
+        """
+        :param str ltype: The category the log goes into
+        :param discord.Embed embed: The embed to send to the log channel
+        :param List[File] files: Optional list of files to send alongside the embed
+        :param float created_at: When the log event occured
+        """
+        self.type = ltype
         self.embed = embed
-        self.files = files if files else []
+        self.files = files
+        self.created_at = created_at
+        if not self.created_at:
+            self.created_at = time()
 
 
 class Logger(commands.Cog):
@@ -188,7 +195,9 @@ class Logger(commands.Cog):
         await self.save_data()
 
     async def wait_for_permissions(self, guild, permission, channel=None, host=False):
-        perms = lambda: channel.permissions_for(guild.me) if channel else guild.me.guild_permissions
+        def perms():
+            return channel.permissions_for(guild.me) if channel else guild.me.guild_permissions
+
         if not guild or not guild.me:
             raise self.bot.ignored_exit
         if getattr(perms(), permission):
@@ -235,57 +244,40 @@ class Logger(commands.Cog):
         else:
             return await self.destruct(guild_id)
 
-        while True: # Listen for new logs
+        while True:  # Listen for new logs
             if guild_id not in self.queue:
                 return
             log = await self.queue[guild_id].get()  # type: Log
-            log_type = log.type                     # type: str            # Event name
-            created_at = log.created_at             # type: float          # Timestamp
-            embed = log.embed                       # type: discord.Embed  # Log embed
-            files = [                               # type: list           # Optional filepaths
-                discord.File(fp)
-                for fp in log.files
-                if path.isfile(fp)
-            ]
-
-            if log_type in self.config[guild_id]["disabled"]:
-                for file in log.files:
-                    await asyncio.sleep(0)
-                    if os.path.isfile(file):
-                        os.remove(file)
+            if log.type in self.config[guild_id]["disabled"]:
                 self.queue[guild_id].task_done()
                 continue
 
-            if isinstance(embed, discord.Embed):
-                for i, field in enumerate(embed.fields):
+            if isinstance(log.embed, discord.Embed):
+                log.embed.timestamp = datetime.fromtimestamp(log.created_at)
+                for i, field in enumerate(log.embed.fields):
                     await asyncio.sleep(0)
                     if not field.value or field.value is discord.Embed.Empty:
                         self.bot.log(
-                            f"A log of type {log_type} had no value", "CRITICAL"
+                            f"A log of type {log.type} had no value", "CRITICAL"
                         )
-                        for chunk in split(str(embed.to_dict()), 1900):
+                        for chunk in split(str(log.embed.to_dict()), 1900):
                             self.bot.log(chunk, "CRITICAL")
-                        embed.fields[i].value = "None"
+                        log.embed.fields[i].value = "None"
                     if len(field.value) > 1024:
-                        embed.remove_field(i)
-                        for it, chunk in enumerate(
-                            split(field.value, 1024)
-                        ):
-                            embed.insert_field_at(
+                        log.embed.remove_field(i)
+                        for it, chunk in enumerate(split(field.value, 1024)):
+                            log.embed.insert_field_at(
                                 index=i + it,
                                 name=field.name,
                                 value=chunk,
                                 inline=field.inline,
                             )
                         self.bot.log(
-                            f"A log of type {log_type} had had a huge value",
+                            f"A log of type {log.type} had had a huge value",
                             "CRITICAL",
                         )
-                        for chunk in split(str(embed.to_dict()), 1900):
+                        for chunk in split(str(log.embed.to_dict()), 1900):
                             self.bot.log(chunk, "CRITICAL")
-
-            if isinstance(embed, discord.Embed):
-                embed.timestamp = datetime.fromtimestamp(created_at)
 
             # Permission checks to ensure the secure features can function
             if self.config[guild_id]["secure"]:
@@ -296,8 +288,8 @@ class Logger(commands.Cog):
             # Get the channel this log will be sent to
             await self.ensure_channels(guild)
             channel = self.bot.get_channel(self.config[guild_id]["channel"])
-            if log_type in self.config[guild_id]["channels"]:
-                channel = self.bot.get_channel(self.config[guild_id]["channels"][log_type])
+            if log.type in self.config[guild_id]["channels"]:
+                channel = self.bot.get_channel(self.config[guild_id]["channels"][log.type])
 
             # Ensure basic send-embed level permissions
             result = await self.wait_for_permissions(
@@ -324,28 +316,26 @@ class Logger(commands.Cog):
             )
 
             try:
-                await channel.send(embed=embed, files=files)
+                await channel.send(embed=log.embed, files=log.files)
             except ignored_exceptions:
                 e = discord.Embed(title="Failed to send embed")
                 e.set_author(name=guild if guild else "Unknown Guild")
                 e.description = traceback.format_exc()
-                embed_data = str(json.dumps(embed.to_dict(), indent=2))
+
+                embed_data = str(json.dumps(log.embed.to_dict(), indent=2))
                 for text_group in split(embed_data, 1024):
                     e.add_field(name="Embed Data", value=text_group, inline=False)
+
                 e.set_footer(text=str(guild.id) if guild else "Unknown Guild")
+
                 debug = self.bot.get_channel(self.bot.config["debug_channel"])
                 try:
                     await debug.send(embed=e)
                 except ignored_exceptions:
-                    pass
+                    self.queue[guild_id].task_done()
                 continue
 
-            for file in log.files:
-                await asyncio.sleep(0)
-                if os.path.isfile(file):
-                    os.remove(file)
-
-            self.recent_logs[guild_id].append([embed, created_at])
+            self.recent_logs[guild_id].append([log.embed, log.created_at])
             for log in list(self.recent_logs[guild_id]):
                 await asyncio.sleep(0)
                 if time() - log[1] > 60 * 60 * 24:
@@ -828,12 +818,8 @@ class Logger(commands.Cog):
                         f"[Jump to MSG]({before.jump_url})": None,
                     })
                     em = before.embeds[0].to_dict()
-                    fp = f"./static/embed-{before.id}.json"
-                    async with self.bot.utils.open(fp, "w+") as f:
-                        f.write(json.dumps(
-                            em, sort_keys=True, indent=4, separators=(",", ": ")
-                        ))
-                    log = Log("embed_hidden", embed=e, files=[fp])
+                    f = BytesIO(json.dumps(em, sort_keys=True, indent=4).encode())
+                    log = Log("embed_hidden", embed=e, files=[File(f, filename="embed.json")])
                     self.put_nowait(guild_id, log)
 
                 if before.pinned != after.pinned:
@@ -897,11 +883,7 @@ class Logger(commands.Cog):
                         if msg.attachments:
                             files = []
                             for attachment in msg.attachments:
-                                fp = os.path.join("static", attachment.filename)
-                                file = await attachment.read()
-                                async with aiofiles.open(fp, "wb") as f:
-                                    await f.write(file)
-                                files.append(fp)
+                                files.append(await attachment.to_file())
                             log = Log("message_delete", embed=msg.embeds[0] if msg.embeds else None, files=files)
                             self.put_nowait(guild_id, log)
                         return
@@ -945,12 +927,7 @@ class Logger(commands.Cog):
                     for attachment in msg.attachments:
                         if attachment.size > 8000000:
                             continue
-                        fp = os.path.join("static", attachment.filename)
-                        with suppress(Exception):
-                            file = await attachment.read(use_cached=True)
-                            async with aiofiles.open(fp, "wb") as f:
-                                await f.write(file)
-                            files.append(fp)
+                        files.append(await attachment.to_file())
                     if files and "attachment_delete" in self.config[guild_id]["channels"]:
                         log_type = "attachment_delete"
                 log = Log(log_type, embed=e, files=files)
@@ -1011,10 +988,7 @@ class Logger(commands.Cog):
 
             if payload.cached_messages and not purged_messages:  # only logs were purged
                 return
-
-            fp = f"./static/purged-messages-{randint(0, 9999)}.txt"
-            async with self.bot.utils.open(fp, "w") as f:
-                await f.write(purged_messages)
+            buffer = File(BytesIO(purged_messages.encode()), filename="messages.txt")
 
             e = discord.Embed(color=lime_green)
             dat = await self.search_audit(guild, audit.message_bulk_delete)
@@ -1035,7 +1009,7 @@ class Logger(commands.Cog):
                 "Channel": channel.mention,
                 "Purged by": dat["user"],
             })
-            log = Log("message_purge", embed=e, files=[fp])
+            log = Log("message_purge", embed=e, files=[buffer])
             self.put_nowait(guild_id, log)
 
     @commands.Cog.listener()
@@ -1284,17 +1258,15 @@ class Logger(commands.Cog):
                 self.put_nowait(guild_id, log)
                 return
 
-            fp = f"./static/members-{randint(1, 9999)}.txt"
             members = f"{channel.name} - Member List"
             for member in channel.members:
                 await asyncio.sleep(0)
                 members += (
                     f"\n{member.id}, {member.mention}, {member}, {member.display_name}"
                 )
-            async with self.bot.utils.open(fp, "w") as f:
-                await f.write(members)
+            buffer = File(BytesIO(members.encode()), filename="members.txt")
 
-            log = Log("channel_delete", embed=e, files=[fp])
+            log = Log("channel_delete", embed=e, files=[buffer])
             self.put_nowait(guild_id, log)
 
     @commands.Cog.listener()
@@ -1478,38 +1450,28 @@ class Logger(commands.Cog):
             e = discord.Embed(color=dark_green)
             e.set_author(name="~==🍸Role Deleted🍸==~", icon_url=dat["icon_url"])
             e.set_thumbnail(url=dat["thumbnail_url"])
-            e.description = self.bot.utils.format_dict(
-                {
-                    "Name": role.name,
-                    "ID": role.id,
-                    "Members": len(role.members) if role.members else "None",
-                    "Deleted by": dat["user"],
-                }
-            )
-            card = Image.new("RGBA", (25, 25), color=role.color.to_rgb())
-            fp = os.getcwd() + f"/static/color-{randint(1111, 9999)}.png"
-            card.save(fp, format="PNG")
-            e.set_footer(
-                text=f"Hex {role.color} | RGB {role.color.to_rgb()}",
-                icon_url="attachment://" + os.path.basename(fp),
-            )
-            fp1 = f"./static/role-members-{randint(1, 9999)}.txt"
+            e.description = self.bot.utils.format_dict({
+                "Name": role.name,
+                "ID": role.id,
+                "Members": len(role.members) if role.members else "None",
+                "Deleted by": dat["user"],
+            })
+            e.set_footer(text=f"Hex {role.color} | RGB {role.color.to_rgb()}")
             members = f"{role.name} - Member List"
             for member in role.members:
                 await asyncio.sleep(0)
                 members += (
                     f"\n{member.id}, {member.mention}, {member}, {member.display_name}"
                 )
-            async with self.bot.utils.open(fp1, "w") as f:
-                await f.write(members)
-            log = Log("role_delete", embed=e, files=[fp1, fp])
+            buffer = File(BytesIO(members.encode()), filename="members.txt")
+            log = Log("role_delete", embed=e, files=[buffer])
             self.put_nowait(guild_id, log)
 
     @commands.Cog.listener()
     async def on_guild_role_update(self, before, after):
         guild_id = str(after.guild.id)
         if guild_id in self.config:
-            fp = None
+            buffer = None
             dat = await self.search_audit(after.guild, audit.role_update)
             e = discord.Embed(color=green)
             e.set_author(name="~==🍸Role Updated🍸==~", icon_url=dat["thumbnail_url"])
@@ -1533,12 +1495,13 @@ class Logger(commands.Cog):
                     box = Image.new("RGBA", (100, 30), color=before.color.to_rgb())
 
                     card.paste(box)
-                    fp1 = os.getcwd() + f"/static/color-{randint(1, 1000)}.png"
-                    card.save(fp1)
-                    return fp1
+                    _buffer = BytesIO()
+                    card.save(_buffer, format="png")
+                    _buffer.seek(0)
 
-                fp1 = await self.bot.loop.run_in_executor(None, generate_image)
-                e.set_image(url="attachment://" + fp1)
+                    return File(_buffer, filename="colors.png")
+
+                buffer = await self.bot.loop.run_in_executor(None, generate_image)
                 e.set_thumbnail(url=dat["thumbnail_url"])
                 e.add_field(
                     name="◈ Color Changed",
@@ -1600,7 +1563,7 @@ class Logger(commands.Cog):
                         changes += f"\n• {perm} {'unallowed' if value else 'allowed'}"
                 e.add_field(name="◈ Permissions Changed", value=changes, inline=False)
             if e.fields:
-                log = Log("role_update", embed=e, files=[fp] if fp else [])
+                log = Log("role_update", embed=e, files=[buffer] if buffer else [])
                 self.put_nowait(guild_id, log)
 
     @commands.Cog.listener()
@@ -1882,7 +1845,6 @@ class Logger(commands.Cog):
                     })
                     log = Log("emoji_create", embed=e)
                     self.put_nowait(guild_id, log)
-
 
 
 def setup(bot):
