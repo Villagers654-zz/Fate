@@ -1020,7 +1020,9 @@ class Moderation(commands.Cog):
     @commands.guild_only()
     @has_required_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
-    async def unmute(self, ctx, users: Greedy[discord.Member] = None, *, reason = "Unspecified"):
+    async def unmute(self, ctx, users: Greedy[discord.Member]):
+        if not users:
+            return await ctx.send("You need to specify who to unmute")
         for user in users:
             if not user:
                 return await ctx.send("**Unmute Usage:**\n.unmute {@user}")
