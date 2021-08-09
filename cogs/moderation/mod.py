@@ -1020,44 +1020,45 @@ class Moderation(commands.Cog):
     @commands.guild_only()
     @has_required_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
-    async def unmute(self, ctx, user: discord.Member = None, *, reason = "Unspecified"):
-        if not user:
-            return await ctx.send("**Unmute Usage:**\n.unmute {@user}")
-        if (
-            user.top_role.position >= ctx.author.top_role.position
-            and ctx.author.id != ctx.guild.owner.id
-        ):
-            return await ctx.send("That user is above your paygrade, take a seat")
-        guild_id = str(ctx.guild.id)
-        user_id = str(user.id)
-        mute_role = None
-        if self.config[guild_id]["mute_role"]:
-            mute_role = ctx.guild.get_role(self.config[guild_id]["mute_role"])
+    async def unmute(self, ctx, users: Greedy[discord.Member] = None, *, reason = "Unspecified"):
+        for user in users:
+            if not user:
+                return await ctx.send("**Unmute Usage:**\n.unmute {@user}")
+            if (
+                user.top_role.position >= ctx.author.top_role.position
+                and ctx.author.id != ctx.guild.owner.id
+            ):
+                return await ctx.send("That user is above your paygrade, take a seat")
+            guild_id = str(ctx.guild.id)
+            user_id = str(user.id)
+            mute_role = None
+            if self.config[guild_id]["mute_role"]:
+                mute_role = ctx.guild.get_role(self.config[guild_id]["mute_role"])
+                if not mute_role:
+                    await ctx.send(
+                        "The configured mute role was deleted, so I'll try to find another"
+                    )
             if not mute_role:
-                await ctx.send(
-                    "The configured mute role was deleted, so I'll try to find another"
+                mute_role = await self.bot.utils.get_role(ctx, "muted")
+            if not mute_role:
+                p = get_prefix(ctx)
+                return await ctx.send(
+                    f"No mute role found? If it doesn't have `muted` in the name use `{p}mute-role @role` "
+                    f"which doesn't need to be a role @mention, and you can just the roles name."
                 )
-        if not mute_role:
-            mute_role = await self.bot.utils.get_role(ctx, "muted")
-        if not mute_role:
-            p = get_prefix(ctx)
-            return await ctx.send(
-                f"No mute role found? If it doesn't have `muted` in the name use `{p}mute-role @role` "
-                f"which doesn't need to be a role @mention, and you can just the roles name."
-            )
-        if mute_role not in user.roles:
-            return await ctx.send(f"{user.display_name} is not muted")
-        await user.remove_roles(mute_role)
-        if user_id in self.config[guild_id]["mute_timers"]:
-            del self.config[guild_id]["mute_timers"][user_id]
-            await self.save_data()
-        if guild_id in self.tasks and user_id in self.tasks[guild_id]:
-            if not self.tasks[guild_id][user_id].done():
-                self.tasks[guild_id][user_id].cancel()
-            del self.tasks[guild_id][user_id]
-            if not self.tasks[guild_id]:
-                del self.tasks[guild_id]
-        await ctx.send(f"Unmuted {user.name}")
+            if mute_role not in user.roles:
+                return await ctx.send(f"{user.display_name} is not muted")
+            await user.remove_roles(mute_role)
+            if user_id in self.config[guild_id]["mute_timers"]:
+                del self.config[guild_id]["mute_timers"][user_id]
+                await self.save_data()
+            if guild_id in self.tasks and user_id in self.tasks[guild_id]:
+                if not self.tasks[guild_id][user_id].done():
+                    self.tasks[guild_id][user_id].cancel()
+                del self.tasks[guild_id][user_id]
+                if not self.tasks[guild_id]:
+                    del self.tasks[guild_id]
+            await ctx.send(f"Unmuted {user.name}")
 
     @commands.command(name="kick")
     @commands.cooldown(2, 5, commands.BucketType.user)
