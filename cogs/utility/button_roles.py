@@ -79,6 +79,14 @@ class ButtonRoles(commands.Cog):
             e.set_footer(text=f"{count} Active Menu{'s' if count == 0 or count > 1 else ''}")
             await ctx.send(embed=e)
 
+    @commands.command(name="refresh")
+    async def refresh(self, ctx):
+        if ctx.guild.id not in self.config:
+            return await ctx.send("This server has no role-menu's to refresh")
+        message_id = await self.get_menu_id(ctx)
+        await self.refresh_menu(ctx.guild.id, message_id)
+        await ctx.send("Success 👍")
+
     @role_menu.command(name="convert")
     @commands.has_permissions(administrator=True)
     async def convert(self, ctx, msg_id: str):
@@ -98,7 +106,7 @@ class ButtonRoles(commands.Cog):
                     "description": None
                 } for role_id, dat in data["items"].items()
             },
-            "text": data["name"][:25] or "Choose a role",
+            "text": data["name"][:128] or "Choose a role",
             "style": "select",
             "limit": data["limit"]
         }
@@ -189,7 +197,7 @@ class ButtonRoles(commands.Cog):
             await msg.edit(embed=e)
             await reply.delete()
 
-            if len(selected_roles) == 25:
+            if len(selected_roles) == 24:
                 break
 
         # Set the style of the menu
@@ -266,7 +274,8 @@ class ButtonRoles(commands.Cog):
             choice: str = list(menus.keys())[0]
         else:
             choice: str = await GetChoice(ctx, menus.keys())
-        return menus[choice]
+        key = [k for k in menus.keys() if choice in k][0]
+        return menus[key]
 
     @role_menu.command(name="add-role")
     @commands.has_permissions(administrator=True)
@@ -673,7 +682,6 @@ class RoleView(ui.View):
 
         async def adjust_options(reason) -> discord.Message:
             """ Remove a button that can no longer be used """
-            print("H")
             self.clear_items()
             self.menu = Select(self, self.message_id, self.index())
             self.add_item(self.menu)
@@ -687,16 +695,17 @@ class RoleView(ui.View):
             return  # Cache isn't properly established
 
         # Give selected roles
-        for role_id in interaction.data["values"]:
-            role = guild.get_role(int(role_id))
-            if not role:
-                return await adjust_options(f"{role_id} doesn't seem to exist anymore")
+        if "remove_all" not in interaction.data["values"]:
+            for role_id in interaction.data["values"]:
+                role = guild.get_role(int(role_id))
+                if not role:
+                    return await adjust_options(f"{role_id} doesn't seem to exist anymore")
 
-            if role.position >= guild.me.top_role.position:
-                return await adjust_options(f"{role_id} is too high for me to manage")
+                if role.position >= guild.me.top_role.position:
+                    return await adjust_options(f"{role_id} is too high for me to manage")
 
-            if role not in member.roles:
-                await member.add_roles(role)
+                if role not in member.roles:
+                    await member.add_roles(role)
 
         # Take away unselected roles
         for role in self.index().keys():
@@ -716,12 +725,17 @@ class Select(discord.ui.Select):
         self.custom_callback = callback
 
         # Prepare the components for the dropdown menu
-        options = []
+        options = [discord.SelectOption(
+            label="Remove All",
+            value="remove_all",
+            emoji="🚫",
+            description="Removes all your roles from this menu"
+        )]
         for role, meta in roles.items():
             meta = dict(meta)
             label = meta.pop("label")
             option = discord.SelectOption(
-                label=label or role.name[:25],
+                label=label or role.name[:128],
                 value=str(role.id),
                 **meta
             )
