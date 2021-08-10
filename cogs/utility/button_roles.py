@@ -121,6 +121,7 @@ class ButtonRoles(commands.Cog):
 
     @role_menu.command(name="create")
     @commands.has_permissions(administrator=True)
+    @commands.bot_has_permissions(add_reactions=True)
     async def create_menu(self, ctx):
         """ The command for interactively setting up a new menu """
         e = discord.Embed(color=self.bot.config["theme_color"])
@@ -383,10 +384,16 @@ class ButtonRoles(commands.Cog):
 
     @commands.command(name="change-emoji")
     @commands.has_permissions(administrator=True)
+    @commands.bot_has_permissions(add_reactions=True)
     async def change_emoji(self, ctx, *, new_emoji):
         guild_id = ctx.guild.id
         if guild_id not in self.config:
             return await ctx.send("There arent any active role menus in this server")
+        try:
+            await ctx.message.add_reaction(new_emoji)
+        except discord.errors.HTTPException:
+            return await ctx.send("Invalid emoji")
+        await ctx.message.clear_reactions()
         message_id = await self.get_menu_id(ctx)
 
         roles = {}
