@@ -1811,8 +1811,8 @@ class Logger(commands.Cog):
                         e.set_thumbnail(url=guild.icon.url)
                     e.description = self.bot.utils.format_dict({
                         "Emoji": str(emoji),
-                        "Before": emoji.name,
-                        "After": index[emoji.id].name
+                        "Before": index[emoji.id].name,
+                        "After": emoji.name
                     })
                     log = Log("emoji_rename", embed=e)
                     self.put_nowait(guild_id, log)
