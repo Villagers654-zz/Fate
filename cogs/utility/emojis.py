@@ -13,6 +13,7 @@ import traceback
 from typing import Union
 from io import BytesIO
 import sys
+from contextlib import suppress
 
 import aiohttp
 import discord
@@ -415,8 +416,10 @@ class Emojis(commands.Cog):
                     return await ctx.send(e)
 
         for sticker in ctx.message.stickers:
-            if sticker.guild.id in [497860460117360660, 397415086295089155]:
-                return await ctx.send(f"Nice try fatty! <:you:841098144536068106>")
+            with suppress(Exception):
+                _sticker = await sticker.fetch()
+                if _sticker.guild.id in [497860460117360660, 397415086295089155]:
+                    return await ctx.send(f"Nice try fatty! <:you:841098144536068106>")
             img = await download(sticker.url)
             file = discord.File(BytesIO(img), filename="sticker.png")
             try:
