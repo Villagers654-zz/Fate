@@ -65,7 +65,7 @@ class ChatFilter(commands.Cog):
         for chunk in content.split():
             if flag.lower() in chunk.lower():
                 filtered_word = f"{flag[0]}{f'{esc}*' * (len(chunk) - 1)}"
-                content = content.replace(chunk.lower(), filtered_word.lower())
+                content = content.lower().replace(chunk.lower(), filtered_word.lower())
         for line in content.split("\n"):
             for _ in range(50):
                 await asyncio.sleep(0)
