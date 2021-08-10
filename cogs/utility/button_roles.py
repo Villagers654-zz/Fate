@@ -321,7 +321,7 @@ class ButtonRoles(commands.Cog):
         self.config[guild_id][message_id]["roles"][str(role.id)] = {
             "emoji": emoji,
             "label": label[:100],
-            "description": description
+            "description": description[:100]
         }
 
         await self.refresh_menu(guild_id, message_id)
@@ -455,7 +455,7 @@ class Categories(ui.Select):
         print(categories)
         for category in categories:
             option = discord.SelectOption(
-                label=category[:25],
+                label=category[:100],
                 value=category
             )
             options.append(option)
