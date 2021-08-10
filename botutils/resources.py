@@ -55,12 +55,14 @@ class Cache:
             if key not in self._cache:
                 continue
             if key not in self._db_state:
+                await asyncio.sleep(0.21)
                 with suppress(pymongo.errors.DuplicateKeyError):
                     await collection.insert_one({
                         "_id": key, **self._cache[key]
                     })
                 self._db_state[key] = deepcopy(value)
             elif value != self._db_state[key]:
+                await asyncio.sleep(0.21)
                 await collection.replace_one(
                     filter={"_id": key},
                     replacement=self._cache[key],
