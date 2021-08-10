@@ -356,12 +356,23 @@ class Ranking(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command(self, ctx):
+        await asyncio.sleep(0.5)
         if ctx.command.name == "sexuality":
             ctx.command.name = "gay"
-        if ctx.command.name not in self.cmds:
-            self.cmds[ctx.command.name] = {"uses": [], "total": 0}
-        self.cmds[ctx.command.name]["uses"].append(datetime.now())
-        self.cmds[ctx.command.name]["total"] += 1
+        cmd = ctx.command.name
+        set_time = int(datetime.timestamp(
+            datetime.now(tz=timezone.utc).replace(microsecond=0, second=0, minute=0, hour=0)
+        ))
+        async with self.bot.utils.cursor() as cur:
+            await cur.execute(f"select * from commands where command = '{cmd}' and ran_at = {(set_time)};")
+            if cur.rowcount:
+                await cur.execute(
+                    f"update commands "
+                    f"set total = total + 1 "
+                    f"where command = '{cmd}' and ran_at = {set_time};"
+                )
+            else:
+                await cur.execute(f"insert into commands values ('{cmd}', 1, {set_time});")
 
     @commands.command(name="role-rewards", aliases=["level-rewards", "level-roles", "lr"])
     @commands.cooldown(2, 5, commands.BucketType.user)
