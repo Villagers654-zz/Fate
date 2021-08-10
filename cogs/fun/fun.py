@@ -80,12 +80,6 @@ class Fun(commands.Cog):
     def cog_unload(self):
         self.clear_old_messages_task.stop()
 
-    @commands.command(name="woomy")
-    @commands.cooldown(1, 25, commands.BucketType.channel)
-    @commands.guild_only()
-    async def woomy(self, ctx):
-        await ctx.send("https://cdn.discordapp.com/attachments/870698115848601671/874050308744032276/image0.png")
-
     @commands.command(name="snipe")
     @commands.cooldown(1, 10, commands.BucketType.channel)
     @commands.guild_only()
