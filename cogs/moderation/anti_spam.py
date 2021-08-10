@@ -1052,7 +1052,7 @@ class AntiSpam(commands.Cog):
             if not msg.guild.me.guild_permissions.view_audit_log:
                 return
             prefixes = await get_prefixes_async(self.bot, msg)
-            if any(msg.startswith(p) for p in prefixes):
+            if any(msg.content.startswith(p) for p in prefixes):
                 return
             lmt = datetime.now(tz=timezone.utc) - timedelta(seconds=5)
             if msg.created_at > lmt:
