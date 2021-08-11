@@ -415,6 +415,7 @@ class GlobalChat(commands.Cog):
             return
         active = [m.id for m in list(self.cache.values()) if m]
         if not msg.author.bot and msg.channel.id in active:
+            await asyncio.sleep(0.21)
             # Duplicate messages
             if msg.content and any(msg.content == m.content for m in self.msg_cache):
                 return

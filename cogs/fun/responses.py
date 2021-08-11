@@ -50,6 +50,7 @@ class Responses(commands.Cog):
                 return
             if not m.channel.permissions_for(m.guild.me).send_messages:
                 return
+            await asyncio.sleep(0.21)
             if self.bot.user.mentioned_in(m):
                 content = str(m.content).replace("@!", "@")
                 mention = f"<@{self.bot.user.id}> "

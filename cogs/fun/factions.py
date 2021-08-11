@@ -1757,6 +1757,7 @@ class Factions(commands.Cog):
         if isinstance(msg.guild, discord.Guild):
             guild_id = str(msg.guild.id)
             if guild_id in self.factions and "annex" not in msg.content.lower():
+                await asyncio.sleep(0.21)
                 claims = await self.collect_claims(guild_id)  # type: dict
                 with suppress(KeyError):
                     if msg.channel.id in claims:

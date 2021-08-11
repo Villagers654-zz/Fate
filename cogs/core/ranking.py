@@ -216,6 +216,7 @@ class Ranking(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, msg):
         if msg.guild and not msg.author.bot and self.bot.pool:
+            await asyncio.sleep(0.21)
             guild_id = str(msg.guild.id)
             user_id = msg.author.id
 

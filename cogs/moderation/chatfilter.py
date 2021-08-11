@@ -476,6 +476,7 @@ class ChatFilter(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, m: discord.Message):
         if hasattr(m.guild, "id") and m.guild.id in self.config:
+            await asyncio.sleep(0.21)
             guild_id = m.guild.id
             if not self.config[guild_id]["toggle"]:
                 return

@@ -688,6 +688,7 @@ class AntiSpam(commands.Cog):
             perms = msg.channel.permissions_for(msg.guild.me)
             if not perms.manage_messages or not perms.manage_roles:
                 return
+            await asyncio.sleep(0.21)
 
             users = [msg.author]
             reason = "Unknown"

@@ -99,6 +99,7 @@ class Limiter(commands.Cog):
             if not m.author.guild_permissions.administrator:
                 guild_id = m.guild.id
                 if guild_id in self.config:
+                    await asyncio.sleep(0.21)
                     channel_id = str(m.channel.id)
                     if channel_id in self.config[guild_id]:
                         try:
