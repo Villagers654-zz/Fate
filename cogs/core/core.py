@@ -422,12 +422,15 @@ class Core(commands.Cog):
     @commands.bot_has_permissions(embed_links=True)
     async def ping(self, ctx):
         read_time = (datetime.now(tz=timezone.utc) - ctx.message.created_at).total_seconds() * 1000
-        read_ping = f"\n👀 **Receive Delay:** `{round(read_time)}ms`"
+        read_ping = f"<:download:874915012769120266> **Receive:** `{round(read_time)}ms`"
+
         e = discord.Embed(color=colors.fate)
         e.set_author(name="Measuring ping:")
+
         before = monotonic()
         msg = await ctx.send(embed=e)
-        api_ping = f"{emojis.discord} **Discord API:** `{round((monotonic() - before) * 1000)}ms`"
+        send_ping = f"\n⌚ **Send:** `{round((monotonic() - before) * 1000)}ms`"
+
         response_time = (datetime.now(tz=timezone.utc) - ctx.message.created_at).total_seconds() * 1000
         response_ping = f"\n{emojis.verified} **Total Trip:** `{round(response_time)}ms`"
         imgs = [
@@ -444,12 +447,14 @@ class Core(commands.Cog):
                 break
         else:
             img = imgs[5]
+
         shard_ping = ""
         for shard, latency in self.bot.latencies:
             shard_ping += f"\n{emojis.boost} **Shard {shard}:** `{round(latency * 1000)}ms`"
+
         e.set_author(name=f"Bots Latency", icon_url=self.bot.user.avatar.url)
         e.set_thumbnail(url=img)
-        e.description = api_ping + read_ping + response_ping + shard_ping
+        e.description = read_ping + send_ping + response_ping + shard_ping
         await msg.edit(embed=e)
 
     @commands.command(name="devping")
