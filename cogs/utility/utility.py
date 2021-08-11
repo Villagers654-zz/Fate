@@ -525,12 +525,14 @@ class Utility(commands.Cog):
                 name="Fate Bot: Core Info",
                 icon_url=self.bot.get_user(self.bot.config["bot_owner_id"]).avatar.url,
             )
+
+            async with self.bot.utils.cursor() as cur:
+                await cur.execute("select sum(total) from commands;")
+                commands = await cur.fetchone()
+
             lines = 0
-            cog = self.bot.cogs["Ranking"]
-            commands = sum(cmd[1]["total"] for cmd in list(cog.cmds.items()))
             async with self.bot.utils.open("fate.py", "r") as f:
                 lines += len(await f.readlines())
-
             locations = ["botutils", "cogs"]
             for location in locations:
                 for root, dirs, files in os.walk(location):
@@ -539,7 +541,7 @@ class Utility(commands.Cog):
                             async with self.bot.utils.open(f"{root}/{file}", "r") as f:
                                 lines += len(await f.readlines())
 
-            e.description = f"Commands Used This Month: {commands}" \
+            e.description = f"Commands Used This Month: {commands[0]}" \
                             f"\nLines of Code: {lines}"
             if core := self.bot.get_cog("Core"):
                 e.description += f"\nVotes This Month: {len(await core.dblpy.get_bot_upvotes())}"
