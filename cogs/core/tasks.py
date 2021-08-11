@@ -30,9 +30,7 @@ class Tasks(commands.Cog):
         self.bot = bot
         self.enabled_tasks = [
             self.cog_cleanup,
-            self.status_task,
             self.log_queue,
-            self.debug_log,
             self.auto_backup,
             self.cleanup_pool,
             self.warn_if_storage_full

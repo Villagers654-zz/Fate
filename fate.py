@@ -102,7 +102,7 @@ class Fate(commands.AutoShardedBot):
         super().__init__(
             command_prefix=get_prefixes_async,
             intents=discord.Intents.all(),
-            activity=discord.Game(name=self.config["startup_status"]),
+            activity=discord.Game(name="Seeking For The Clock"),
             max_messages=self.config["max_cached_messages"],
             **options,
         )
