@@ -145,6 +145,7 @@ class Ranking(commands.Cog):
         before = monotonic()
         total = 0
         for user_id, timestamp in list(self.global_cd.items()):
+            await asyncio.sleep(0)
             if timestamp < time():
                 del self.global_cd[user_id]
                 total += 1
@@ -161,15 +162,13 @@ class Ranking(commands.Cog):
             await self.bot.wait_until_ready()
         while self.bot.pool is None:
             await asyncio.sleep(5)
-        async with self.bot.pool.acquire() as conn:
-            async with conn.cursor() as cur:
-                limit = time() - 60 * 60 * 24 * 30  # One month
-                await cur.execute(f"delete from monthly_msg where msg_time < {limit};")
-                await cur.execute(
-                    f"delete from global_monthly where msg_time < {limit};"
-                )
-                await conn.commit()
-                self.bot.log.debug("Removed expired messages from monthly leaderboards")
+        async with self.bot.utils.cursor() as cur:
+            limit = time() - 60 * 60 * 24 * 30  # One month
+            await cur.execute(f"delete from monthly_msg where msg_time < {limit};")
+            await cur.execute(
+                f"delete from global_monthly where msg_time < {limit};"
+            )
+            self.bot.log.debug("Removed expired messages from monthly leaderboards")
 
     async def calc_lvl_info(self, xp, config):
         async def get_multiplier_for(level):
