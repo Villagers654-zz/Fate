@@ -415,7 +415,11 @@ class Emojis(commands.Cog):
                 except HTTPException as e:
                     return await ctx.send(e)
 
-        for sticker in ctx.message.stickers:
+        msg = ctx.message
+        if msg.reference and msg.reference.cached_message:
+            msg = msg.reference.cached_message
+
+        for sticker in msg.stickers:
             with suppress(Exception):
                 _sticker = await sticker.fetch()
                 if _sticker.guild.id in [497860460117360660, 397415086295089155]:
