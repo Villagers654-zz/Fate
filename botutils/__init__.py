@@ -25,6 +25,7 @@ from .stack import Stack
 from .tools import *
 from .views import *
 from .regex import *
+from .interactions import *
 
 
 class Utils(commands.Cog):
