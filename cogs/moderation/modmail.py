@@ -263,7 +263,7 @@ class ModMail(commands.Cog):
             return await ctx.send("You're blocked from using modmail in that server")
 
         channel: TextChannel = self.bot.get_channel(self.config[guild.id]["channel_id"])  # type: ignore
-        if not channel:
+        if not channel or not guild:
             await ctx.send("Couldn't get the modmail channel in that guild, sorry")
             return None
         if not channel.guild.me.guild_permissions.view_audit_log:
@@ -296,7 +296,7 @@ class ModMail(commands.Cog):
         else:
             try:
                 msg = await channel.send(f"Thread Created by **{ctx.author}** for **Case #{case}**")
-                self.config[ctx.guild.id]["references"][str(case)] = msg.id
+                self.config[guild.id]["references"][str(case)] = msg.id
                 thread = await channel.start_thread(name=f"Case {case} - {ctx.author}", message=msg)
                 await self.config.flush()
             except Forbidden:
