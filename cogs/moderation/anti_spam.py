@@ -15,82 +15,9 @@ from discord.errors import Forbidden, NotFound, HTTPException
 from discord.ext import commands
 from discord.ext import tasks
 
-from botutils import colors, get_time, emojis, get_prefixes_async
+from botutils import colors, get_time, emojis, get_prefixes_async, GetChoice
 from botutils.interactions import AuthorView
 from fate import Fate
-
-
-class _Select(discord.ui.Select):
-    def __init__(self, user_id: int, choices: List[Any], limit: int = 1, placeholder: str = "Select your choice"):
-        self.user_id = user_id
-        self.limit = limit
-
-        options = []
-        for option in choices:
-            options.append(discord.SelectOption(label=str(option)[:100]))
-
-        super().__init__(
-            custom_id=f"select_choice_{time()}",
-            placeholder=placeholder,
-            min_values=1,
-            max_values=limit,
-            options=options
-        )
-
-    async def callback(self, interaction: discord.Interaction):
-        if interaction.user.id != self.user_id:
-            return await interaction.response.send_message(
-                "Only the user who initiated this command can interact",
-                ephemeral=True
-            )
-        self.view.selected = interaction.data["values"]
-        await interaction.response.defer()
-        if not self.view.message:
-            await interaction.message.delete()
-        self.view.stop()
-
-
-class GetChoice(discord.ui.View):
-    selected: List[str] = None
-    message: Optional[discord.Message] = None
-    def __init__(self, ctx, choices: Union[list, KeysView], limit: int = 1, placeholder: str = "Options", message=None):
-        self.ctx = ctx
-        self.choices = choices
-        self.limit = limit
-        if limit > len(choices):
-            self.limit = len(choices)
-        self.original_choices = choices
-        self.message = message
-        super().__init__(timeout=45)
-        self.add_item(_Select(ctx.author.id, choices, self.limit, placeholder))
-
-    def __await__(self) -> Generator:
-        return self._await().__await__()
-
-    async def _await(self) -> Union[str, List[str]]:
-        if self.message:
-            await self.message.edit(view=self)
-            message = self.message
-        else:
-            message = await self.ctx.send("Select your choice", view=self)
-            self.message = message
-        await self.wait()
-        if not self.selected and not self.message:
-            with suppress(Exception):
-                await message.delete()
-            raise self.ctx.bot.ignored_exit
-
-        if self.limit == 1:
-            for choice in self.choices:
-                if self.selected[0] in choice:
-                    return choice
-            return self.selected[0]
-        return self.selected
-
-    async def on_error(self, error, _item, _interaction) -> None:
-        if not isinstance(error, (NotFound, self.ctx.bot.ignored_exit)):
-            raise
-
 
 
 utc = pytz.UTC
