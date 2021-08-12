@@ -156,7 +156,7 @@ class CustomCommands(commands.Cog):
                     if msg.channel.permissions_for(msg.guild.me).add_reactions:
                         await msg.add_reaction("⏳")
                     return
-                self.cache[msg.guild.id][1] = time()
+                self.cache[msg.guild.id][command][1] = time()
                 if msg.channel.permissions_for(msg.guild.me).send_messages:
                     return await msg.channel.send(response)
 
