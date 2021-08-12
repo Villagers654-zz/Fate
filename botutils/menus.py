@@ -83,9 +83,11 @@ class GetChoice(discord.ui.View):
     def __init__(self, ctx, choices: Union[list, KeysView], limit: int = 1, placeholder: str = "Options"):
         self.ctx = ctx
         self.limit = limit
+        if limit > len(choices):
+            self.limit = len(choices)
         self.original_choices = choices
         super().__init__(timeout=45)
-        self.add_item(_Select(ctx.author.id, choices, limit, placeholder))
+        self.add_item(_Select(ctx.author.id, choices, self.limit, placeholder))
 
     def __await__(self) -> Generator:
         return self._await().__await__()
