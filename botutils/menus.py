@@ -56,7 +56,7 @@ class _Select(discord.ui.Select):
 
         options = []
         for option in choices:
-            options.append(discord.SelectOption(label=str(option)[:25]))
+            options.append(discord.SelectOption(label=str(option)[:100]))
 
         super().__init__(
             custom_id=f"select_choice_{time()}",
@@ -104,7 +104,7 @@ class GetChoice(discord.ui.View):
             message = await self.ctx.send("Select your choice", view=self)
             self.message = message
         await self.wait()
-        if not self.selected:
+        if not self.selected and not self.message:
             with suppress(Exception):
                 await message.delete()
             raise self.ctx.bot.ignored_exit
