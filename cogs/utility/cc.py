@@ -171,11 +171,11 @@ class CustomCommands(commands.Cog):
                 r: tuple = await cur.fetchone()
                 response: str = r[0]
                 self.cd.check(msg.author.id)
-                self.cache[msg.guild.id][command] = response, time()
+                self.cache[msg.guild.id][command] = [response, time()]
                 if msg.channel.permissions_for(msg.guild.me).send_messages:
                     await msg.channel.send(response)
             else:
-                self.cache[msg.guild.id][command] = None, time()
+                self.cache[msg.guild.id][command] = [None, time()]
 
 
 def setup(bot: Fate):
