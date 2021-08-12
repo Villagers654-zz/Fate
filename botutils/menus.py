@@ -74,18 +74,22 @@ class _Select(discord.ui.Select):
             )
         self.view.selected = interaction.data["values"]
         await interaction.response.defer()
-        await interaction.message.delete()
+        if not self.view.message:
+            await interaction.message.delete()
         self.view.stop()
 
 
 class GetChoice(discord.ui.View):
     selected: List[str] = None
-    def __init__(self, ctx, choices: Union[list, KeysView], limit: int = 1, placeholder: str = "Options"):
+    message: Optional[discord.Message] = None
+    def __init__(self, ctx, choices: Union[list, KeysView], limit: int = 1, placeholder: str = "Options", message=None):
         self.ctx = ctx
+        self.choices = choices
         self.limit = limit
         if limit > len(choices):
             self.limit = len(choices)
         self.original_choices = choices
+        self.message = message
         super().__init__(timeout=45)
         self.add_item(_Select(ctx.author.id, choices, self.limit, placeholder))
 
@@ -93,7 +97,12 @@ class GetChoice(discord.ui.View):
         return self._await().__await__()
 
     async def _await(self) -> Union[str, List[str]]:
-        message = await self.ctx.send("Select your choice", view=self)
+        if self.message:
+            await self.message.edit(view=self)
+            message = self.message
+        else:
+            message = await self.ctx.send("Select your choice", view=self)
+            self.message = message
         await self.wait()
         if not self.selected:
             with suppress(Exception):
@@ -101,11 +110,14 @@ class GetChoice(discord.ui.View):
             raise self.ctx.bot.ignored_exit
 
         if self.limit == 1:
+            for choice in self.choices:
+                if self.selected[0] in choice:
+                    return choice
             return self.selected[0]
         return self.selected
 
     async def on_error(self, error, _item, _interaction) -> None:
-        if not isinstance(error, NotFound):
+        if not isinstance(error, (NotFound, self.ctx.bot.ignored_exit)):
             raise
 
 
