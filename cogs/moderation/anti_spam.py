@@ -15,9 +15,82 @@ from discord.errors import Forbidden, NotFound, HTTPException
 from discord.ext import commands
 from discord.ext import tasks
 
-from botutils import colors, get_time, emojis, get_prefixes_async, GetChoice
+from botutils import colors, get_time, emojis, get_prefixes_async
 from botutils.interactions import AuthorView
 from fate import Fate
+
+
+class _Select(discord.ui.Select):
+    def __init__(self, user_id: int, choices: List[Any], limit: int = 1, placeholder: str = "Select your choice"):
+        self.user_id = user_id
+        self.limit = limit
+
+        options = []
+        for option in choices:
+            options.append(discord.SelectOption(label=str(option)[:100]))
+
+        super().__init__(
+            custom_id=f"select_choice_{time()}",
+            placeholder=placeholder,
+            min_values=1,
+            max_values=limit,
+            options=options
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+        if interaction.user.id != self.user_id:
+            return await interaction.response.send_message(
+                "Only the user who initiated this command can interact",
+                ephemeral=True
+            )
+        self.view.selected = interaction.data["values"]
+        await interaction.response.defer()
+        if not self.view.message:
+            await interaction.message.delete()
+        self.view.stop()
+
+
+class GetChoice(discord.ui.View):
+    selected: List[str] = None
+    message: Optional[discord.Message] = None
+    def __init__(self, ctx, choices: Union[list, KeysView], limit: int = 1, placeholder: str = "Options", message=None):
+        self.ctx = ctx
+        self.choices = choices
+        self.limit = limit
+        if limit > len(choices):
+            self.limit = len(choices)
+        self.original_choices = choices
+        self.message = message
+        super().__init__(timeout=45)
+        self.add_item(_Select(ctx.author.id, choices, self.limit, placeholder))
+
+    def __await__(self) -> Generator:
+        return self._await().__await__()
+
+    async def _await(self) -> Union[str, List[str]]:
+        if self.message:
+            await self.message.edit(view=self)
+            message = self.message
+        else:
+            message = await self.ctx.send("Select your choice", view=self)
+            self.message = message
+        await self.wait()
+        if not self.selected and not self.message:
+            with suppress(Exception):
+                await message.delete()
+            raise self.ctx.bot.ignored_exit
+
+        if self.limit == 1:
+            for choice in self.choices:
+                if self.selected[0] in choice:
+                    return choice
+            return self.selected[0]
+        return self.selected
+
+    async def on_error(self, error, _item, _interaction) -> None:
+        if not isinstance(error, (NotFound, self.ctx.bot.ignored_exit)):
+            raise
+
 
 
 utc = pytz.UTC
@@ -99,19 +172,24 @@ class ConfigureMenu(AuthorView):
                             emoji="🔗",
                             value=key
                         ))
+                    elif isinstance(value, bool):
+                        toggle = "Disable" if value else "Enable"
+                        options.append(SelectOption(
+                            label=f"{toggle} flagging {key.replace('_', ' ')}",
+                            emoji="🛑" if value else "🛡",
+                            value=key
+                        ))
                     elif isinstance(value, int):
                         options.append(SelectOption(
                             label=f"Set the {key.replace('_', ' ')} cooldown",
                             emoji="⏳",
                             value=key
                         ))
-                    elif isinstance(value, bool):
-                        toggle = "Disable" if value else "Enable"
-                        options.append(SelectOption(
-                            label=f"{toggle} flagging {key.replace('_', ' ')}",
-                            emoji="🛡",
-                            value=key
-                        ))
+            options.append(discord.SelectOption(
+                label=f"Cancel Editing {module.title().replace('_', ' ')}",
+                emoji="🚫",
+                value="cancel"
+            ))
             super().__init__(
                 placeholder="Select which setting",
                 min_values=1,
@@ -123,53 +201,60 @@ class ConfigureMenu(AuthorView):
             guild_id = self.ctx.guild.id
             conf = self.cog.config[guild_id][self.module]
             key = interaction.data["values"][0]
-            if key == "add_threshold":
-                await interaction.response.edit_message(
-                    content="Choose the threshold. After that we'll set the timeframe for that threshold"
-                )
-                choices = [f"Limit to {num} msgs within X seconds" for num in thresholds]
-                choice = await GetChoice(self.ctx, choices, message=interaction.message)
-                threshold = thresholds[choices.index(choice)]
+            if key != "cancel":
+                if key == "add_threshold":
+                    await interaction.response.edit_message(
+                        content="Choose the threshold. After that we'll set the timeframe for that threshold"
+                    )
+                    choices = [f"Limit to {num} msgs within X seconds" for num in thresholds]
+                    choice = await GetChoice(self.ctx, choices, message=interaction.message)
+                    threshold = thresholds[choices.index(choice)]
 
-                await interaction.message.edit(
-                    content="Choose a timeframe for that threshold"
-                )
-                choices = [f"Only allow X msgs within {num} seconds" for num in timespans]
-                choice = await GetChoice(self.ctx, choices, message=interaction.message)
-                timeframe = timespans[choices.index(choice)]
+                    await interaction.message.edit(
+                        content="Choose a timeframe for that threshold"
+                    )
+                    choices = [f"Only allow X msgs within {num} seconds" for num in timespans]
+                    choice = await GetChoice(self.ctx, choices, message=interaction.message)
+                    timeframe = timespans[choices.index(choice)]
 
-                new = {
-                    "timespan": timeframe,
-                    "threshold": threshold
-                }
-                items = self.cog.config[guild_id][self.module][key]
-                if items is not list:
-                    items = items["thresholds"]
-                if new in items:
-                    await interaction.followup.send("That threshold already exits", ephemeral=True)
-                else:
-                    if isinstance(conf[key], list):
-                        self.cog.config[guild_id][self.module][key].append(new)
+                    new = {
+                        "timespan": timeframe,
+                        "threshold": threshold
+                    }
+                    items = self.cog.config[guild_id][self.module]
+                    if isinstance(items, dict):
+                        items = items["thresholds"]
+                    if new in items:
+                        await interaction.followup.send("That threshold already exits", ephemeral=True)
                     else:
-                        self.cog.config[guild_id][self.module][key]["thresholds"].append(new)
-            elif key == "remove_threshold":
-                pass
-            elif conf[key] is bool:
-                self.cog.config[guild_id][self.module][key] = not conf[key]
-            elif conf[key] is int:
-                await interaction.response.edit_message(
-                    content="Choose the threshold"
-                )
-                choices = [f"Limit to {num} msgs within X seconds" for num in thresholds]
-                choice = await GetChoice(self.ctx, choices, message=interaction.message)
-                threshold = thresholds[choices.index(choice)]
-                self.cog.config[guild_id][self.module][key] = threshold
+                        if isinstance(conf, list):
+                            self.cog.config[guild_id][self.module].append(new)
+                        else:
+                            self.cog.config[guild_id][self.module]["thresholds"].append(new)
+                elif key == "remove_threshold":
+                    pass
+                elif isinstance(conf[key], bool):
+                    self.cog.config[guild_id][self.module][key] = not conf[key]
+                elif isinstance(conf[key], int):
+                    await interaction.response.edit_message(
+                        content="Choose the threshold"
+                    )
+                    choices = [f"Limit to {num} msgs within X seconds" for num in thresholds]
+                    choice = await GetChoice(self.ctx, choices, message=interaction.message)
+                    threshold = thresholds[choices.index(choice)]
+                    self.cog.config[guild_id][self.module][key] = threshold
 
-            await self.cog.config.flush()
-            module = await GetChoice(self.ctx, self.cog.config[guild_id].keys(), message=interaction.message)
+                await self.cog.config.flush()
+
+            if not interaction.response.is_done():
+                await interaction.response.defer()
+            if interaction.message.content != "Select your choice":
+                await interaction.message.edit(content="Select your choice")
+
+            choices = list(self.cog.config[guild_id].keys())
+            choices.remove("ignored")
+            module = await GetChoice(self.ctx, choices, message=interaction.message)
             await interaction.message.edit(view=ConfigureMenu(self.ctx, module))
-            self.main_view.stop()
-            del self.main_view
 
     def __init__(self, ctx: Context, module: str):
         self.ctx = ctx
@@ -177,6 +262,9 @@ class ConfigureMenu(AuthorView):
         super().__init__(timeout=45)
         self.add_item(self.ConfigureSelect(ctx, module, self))
 
+    async def on_error(self, error: Exception, item, interaction: Interaction) -> None:
+        if not isinstance(error, (NotFound, self.ctx.bot.ignored_exit)):
+            raise
 
 
 class AntiSpam(commands.Cog):
@@ -266,9 +354,23 @@ class AntiSpam(commands.Cog):
     @commands.command(name="test-config")
     @commands.is_owner()
     async def test_config(self, ctx):
-        view = GetChoice(ctx, self.config[ctx.guild.id].keys())
-        choice = await view
-        await view.message.edit(view=ConfigureMenu(ctx, choice))
+        # Parse the choices
+        choices = list(self.config[ctx.guild.id].keys())
+        choices.remove("ignored")
+
+        # Fetch the choice
+        choice_view = GetChoice(ctx, choices)
+        choice = await choice_view
+
+        # Run the configure view
+        config_view = ConfigureMenu(ctx, choice)
+        await choice_view.message.edit(view=config_view)
+
+        # Remove the view from the original message when done
+        await config_view.wait()
+        e = discord.Embed(color=colors.red)
+        e.set_author(name="Expired Menu", icon_url=ctx.author.avatar.url)
+        await choice_view.message.edit(content=None, view=None, embed=e)
 
     @commands.group(name="anti-spam", aliases=["antispam"])
     @commands.cooldown(1, 2, commands.BucketType.user)
