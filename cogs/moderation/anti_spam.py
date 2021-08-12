@@ -7,13 +7,16 @@ import traceback
 import pytz
 import re
 from typing import *
+from discord import ui, Interaction, SelectOption
+from discord.ext.commands import Context
 
 import discord
 from discord.errors import Forbidden, NotFound, HTTPException
 from discord.ext import commands
 from discord.ext import tasks
 
-from botutils import colors, get_time, emojis, get_prefixes_async
+from botutils import colors, get_time, emojis, get_prefixes_async, GetChoice
+from botutils.interactions import AuthorView
 from fate import Fate
 
 
@@ -61,6 +64,119 @@ defaults = {
         "copy_paste": True
     }
 }
+
+thresholds = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+timespans = [3, 4, 5, 6, 7, 8, 9, 15, 20, 25, 30, 45, 60]
+
+
+
+class ConfigureMenu(AuthorView):
+    class ConfigureSelect(ui.Select):
+        def __init__(self, ctx: Context, module: str, main_view: AuthorView):
+            self.ctx = ctx
+            self.module = module
+            self.main_view = main_view
+            self.cog: AntiSpam = ctx.bot.cogs["AntiSpam"]
+            conf = self.cog.config[ctx.guild.id][module]
+
+            options = []
+            if isinstance(conf, list):
+                options.append(SelectOption(
+                    label="Add a threshold",
+                    emoji="✏",
+                    value="add_threshold"
+                ))
+                options.append(SelectOption(
+                    label="Remove a threshold",
+                    emoji="❌",
+                    value="remove_threshold"
+                ))
+            else:
+                for key, value in conf.items():
+                    if key == "per_message":
+                        options.append(SelectOption(
+                            label="Set the per-message threshold",
+                            emoji="🔗",
+                            value=key
+                        ))
+                    elif isinstance(value, int):
+                        options.append(SelectOption(
+                            label=f"Set the {key.replace('_', ' ')} cooldown",
+                            emoji="⏳",
+                            value=key
+                        ))
+                    elif isinstance(value, bool):
+                        toggle = "Disable" if value else "Enable"
+                        options.append(SelectOption(
+                            label=f"{toggle} flagging {key.replace('_', ' ')}",
+                            emoji="🛡",
+                            value=key
+                        ))
+            super().__init__(
+                placeholder="Select which setting",
+                min_values=1,
+                max_values=1,
+                options=options
+            )
+
+        async def callback(self, interaction: Interaction):
+            guild_id = self.ctx.guild.id
+            conf = self.cog.config[guild_id][self.module]
+            key = interaction.data["values"][0]
+            if key == "add_threshold":
+                await interaction.response.edit_message(
+                    content="Choose the threshold. After that we'll set the timeframe for that threshold"
+                )
+                choices = [f"Limit to {num} msgs within X seconds" for num in thresholds]
+                choice = await GetChoice(self.ctx, choices, message=interaction.message)
+                threshold = thresholds[choices.index(choice)]
+
+                await interaction.message.edit(
+                    content="Choose a timeframe for that threshold"
+                )
+                choices = [f"Only allow X msgs within {num} seconds" for num in timespans]
+                choice = await GetChoice(self.ctx, choices, message=interaction.message)
+                timeframe = timespans[choices.index(choice)]
+
+                new = {
+                    "timespan": timeframe,
+                    "threshold": threshold
+                }
+                items = self.cog.config[guild_id][self.module][key]
+                if items is not list:
+                    items = items["thresholds"]
+                if new in items:
+                    await interaction.followup.send("That threshold already exits", ephemeral=True)
+                else:
+                    if isinstance(conf[key], list):
+                        self.cog.config[guild_id][self.module][key].append(new)
+                    else:
+                        self.cog.config[guild_id][self.module][key]["thresholds"].append(new)
+            elif key == "remove_threshold":
+                pass
+            elif conf[key] is bool:
+                self.cog.config[guild_id][self.module][key] = not conf[key]
+            elif conf[key] is int:
+                await interaction.response.edit_message(
+                    content="Choose the threshold"
+                )
+                choices = [f"Limit to {num} msgs within X seconds" for num in thresholds]
+                choice = await GetChoice(self.ctx, choices, message=interaction.message)
+                threshold = thresholds[choices.index(choice)]
+                self.cog.config[guild_id][self.module][key] = threshold
+
+            await self.cog.config.flush()
+            module = await GetChoice(self.ctx, self.cog.config[guild_id].keys(), message=interaction.message)
+            await interaction.message.edit(view=ConfigureMenu(self.ctx, module))
+            self.main_view.stop()
+            del self.main_view
+
+    def __init__(self, ctx: Context, module: str):
+        self.ctx = ctx
+        self.cd = ctx.bot.utils.cooldown_manager(2, 5)
+        super().__init__(timeout=45)
+        self.add_item(self.ConfigureSelect(ctx, module, self))
+
 
 
 class AntiSpam(commands.Cog):
@@ -146,6 +262,13 @@ class AntiSpam(commands.Cog):
             if not any((datetime.now(tz=timezone.utc) - date).seconds < 60 for date in self.typing[user_id]):
                 if user_id in self.typing:
                     del self.typing[user_id]
+
+    @commands.command(name="test-config")
+    @commands.is_owner()
+    async def test_config(self, ctx):
+        view = GetChoice(ctx, self.config[ctx.guild.id].keys())
+        choice = await view
+        await view.message.edit(view=ConfigureMenu(ctx, choice))
 
     @commands.group(name="anti-spam", aliases=["antispam"])
     @commands.cooldown(1, 2, commands.BucketType.user)
