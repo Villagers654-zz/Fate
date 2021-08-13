@@ -1244,7 +1244,7 @@ class AntiSpam(commands.Cog):
                         return
                 await asyncio.sleep(3)
                 if msg.guild.id in self.bot.filtered_messages:
-                    if msg.id in self.bot.filtered_messages:
+                    if msg.id in self.bot.filtered_messages[msg.guild.id]:
                         return
                 await msg.channel.send(f"{msg.author.mention} bitch")
                 if msg.guild.id not in self.bot.tasks["antispam_mutes"]:
