@@ -50,6 +50,7 @@ defaults = {
         "same_link": 25,
         "same_image": 25,
         "same_sticker": 60,
+        "max_open_threads": 1,
         "thresholds": [{
             "timespan": 25,
             "threshold": 4
@@ -65,14 +66,14 @@ defaults = {
     }
 }
 
-thresholds = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-timespans = [3, 4, 5, 6, 7, 8, 9, 15, 20, 25, 30, 45, 60]
+thresholds = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 20, 25]
+timespans = [3, 4, 5, 6, 7, 8, 9, 15, 20, 25, 30, 45, 60, 120, 240, 360]
 
 
 
 class ConfigureMenu(AuthorView):
     class ConfigureSelect(ui.Select):
-        def __init__(self, ctx: Context, module: str, main_view: AuthorView):
+        def __init__(self, ctx: Context, module: str, main_view):
             self.ctx = ctx
             self.module = module
             self.main_view = main_view
@@ -80,10 +81,10 @@ class ConfigureMenu(AuthorView):
             conf = self.cog.config[ctx.guild.id][module]
 
             options = []
-            if isinstance(conf, list):
+            if isinstance(conf, list) or "thresholds" in conf:
                 options.append(SelectOption(
                     label="Add a threshold",
-                    emoji="✏",
+                    emoji="🖋",
                     value="add_threshold"
                 ))
                 options.append(SelectOption(
@@ -91,11 +92,13 @@ class ConfigureMenu(AuthorView):
                     emoji="❌",
                     value="remove_threshold"
                 ))
-            else:
+            if not isinstance(conf, list):
                 for key, value in conf.items():
+                    if key == "thresholds":
+                        continue
                     if key == "per_message":
                         options.append(SelectOption(
-                            label="Set the per-message threshold",
+                            label=f"Set the per-message threshold ({value})",
                             emoji="🔗",
                             value=key
                         ))
@@ -107,8 +110,12 @@ class ConfigureMenu(AuthorView):
                             value=key
                         ))
                     elif isinstance(value, int):
+                        label = f"Set the {key.replace('_', ' ')} cooldown"
+                        if "max" in key:  # Account for the max threads option
+                            label = label.rstrip(" cooldown")
+                        label += f" ({value}s)"
                         options.append(SelectOption(
-                            label=f"Set the {key.replace('_', ' ')} cooldown",
+                            label=label,
                             emoji="⏳",
                             value=key
                         ))
@@ -158,17 +165,37 @@ class ConfigureMenu(AuthorView):
                             self.cog.config[guild_id][self.module].append(new)
                         else:
                             self.cog.config[guild_id][self.module]["thresholds"].append(new)
+
                 elif key == "remove_threshold":
-                    pass
+                    if not conf and not (conf["thresholds"] if isinstance(conf, dict) else False):
+                        await interaction.response.send_message("That module has no thresholds", ephemeral=True)
+                    else:
+                        await interaction.response.edit_message(content="Choose which threshold to remove")
+                        _thresholds = conf if isinstance(conf, list) else conf["thresholds"]
+                        choices = [f"{c['threshold']} within {c['timespan']} seconds" for c in _thresholds if c]
+                        choice = await GetChoice(self.ctx, choices, message=interaction.message)
+                        threshold = _thresholds[choices.index(choice)]
+                        if isinstance(conf, list):
+                            self.cog.config[guild_id][self.module].remove(threshold)
+                        else:
+                            self.cog.config[guild_id][self.module]["thresholds"].remove(threshold)
+
                 elif isinstance(conf[key], bool):
+                    # Toggle the value between True/False
                     self.cog.config[guild_id][self.module][key] = not conf[key]
+
                 elif isinstance(conf[key], int):
                     await interaction.response.edit_message(
                         content="Choose the threshold"
                     )
-                    choices = [f"Limit to {num} msgs within X seconds" for num in thresholds]
+                    if "max" in key:  # Process the thread limit option differently
+                        choices = [f"Set the limit to {num} open threads per user" for num in timespans]
+                    elif key == "per_message":
+                        choices = [f"Limit to {num} per message" for num in timespans]
+                    else:
+                        choices = [f"Limit to once every {num} seconds" for num in timespans]
                     choice = await GetChoice(self.ctx, choices, message=interaction.message)
-                    threshold = thresholds[choices.index(choice)]
+                    threshold = timespans[choices.index(choice)]
                     self.cog.config[guild_id][self.module][key] = threshold
 
                 await self.cog.config.flush()
@@ -179,9 +206,11 @@ class ConfigureMenu(AuthorView):
                 await interaction.message.edit(content="Select your choice")
 
             choices = list(self.cog.config[guild_id].keys())
-            choices.remove("ignored")
+            if "ignored" in choices:
+                choices.remove("ignored")
             module = await GetChoice(self.ctx, choices, message=interaction.message)
-            await interaction.message.edit(view=ConfigureMenu(self.ctx, module))
+            self.main_view.__init__(self.ctx, module)
+            await interaction.message.edit(view=self.main_view)
 
     def __init__(self, ctx: Context, module: str):
         self.ctx = ctx
@@ -283,7 +312,8 @@ class AntiSpam(commands.Cog):
     async def test_config(self, ctx):
         # Parse the choices
         choices = list(self.config[ctx.guild.id].keys())
-        choices.remove("ignored")
+        if "ignored" in choices:
+            choices.remove("ignored")
 
         # Fetch the choice
         choice_view = GetChoice(ctx, choices)
