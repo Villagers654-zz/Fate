@@ -108,6 +108,11 @@ class GetChoice(discord.ui.View):
             with suppress(Exception):
                 await message.delete()
             raise self.ctx.bot.ignored_exit
+        if not self.selected and self.message:
+            e = discord.Embed(color=colors.red)
+            e.set_author(name="Expired Menu", icon_url=self.ctx.author.avatar.url)
+            await message.edit(content=None, view=None, embed=e)
+            raise self.ctx.bot.ignored_exit
 
         if self.limit == 1:
             for choice in self.choices:
