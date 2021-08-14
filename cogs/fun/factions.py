@@ -25,7 +25,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 from botutils.colors import purple, pink
 from botutils.stack import Stack
-from botutils import get_prefix, get_time
+from botutils import get_prefix, get_time, GetChoice
 from .fun import tier_damage
 
 
@@ -236,10 +236,7 @@ class Factions(commands.Cog):
                 if str(name).lower() in str(f).lower()
             ]
         if len(factions) > 1:
-            choice = await self.bot.utils.get_choice(ctx, factions, user=ctx.author)
-            if not choice:
-                raise commands.CheckFailure("Timed out waiting for reply")
-            return choice
+            return await GetChoice(ctx, factions)
         elif factions:
             return factions[0]
         raise commands.CheckFailure("I couldn't find that faction :[")
