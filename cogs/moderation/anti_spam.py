@@ -116,6 +116,8 @@ class ConfigureMenu(AuthorView):
                             label = label.rstrip(" cooldown")
                         if value is None:
                             label += " (Disabled)"
+                        elif "threads" in key:
+                            label += f" ({value})"
                         else:
                             label += f" ({value}s)"
                         options.append(SelectOption(
