@@ -6,7 +6,7 @@ from discord.ext import commands
 from discord.errors import HTTPException, NotFound, Forbidden
 import discord
 
-from botutils import extract_time
+from botutils import extract_time, GetChoice
 from fate import Fate
 
 
@@ -38,9 +38,7 @@ class Lock(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def lock(self, ctx):
         choices = [": ".join(item) for item in locks.items()]
-        choice = await self.bot.utils.get_choice(ctx, choices, user=ctx.author)
-        if not choice:
-            return
+        choice = await GetChoice(ctx, choices)
         lock = list(locks.keys())[choices.index(choice)]
         guild_id = ctx.guild.id
         if guild_id in self.lock:
