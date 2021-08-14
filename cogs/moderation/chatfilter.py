@@ -364,10 +364,12 @@ class ChatFilter(commands.Cog):
     @commands.cooldown(1, 120, commands.BucketType.user)
     @commands.has_permissions(administrator=True)
     @commands.cooldown(1, 60, commands.BucketType.guild)
-    async def sanitize(self, ctx):
+    async def sanitize(self, ctx, amount: int):
         """ Clean up existing chat history """
         view = CancelButton("manage_messages")
         message = await ctx.send("🖨️ **Sanitizing chat history**", view=view)
+        if amount > 1000 and ctx.author.id not in self.bot.owner_ids:
+            amount = 1000
 
         # Create a listener to let the code know if the original message was deleted
         task: asyncio.Task = self.bot.loop.create_task(self.bot.wait_for(
@@ -386,7 +388,7 @@ class ChatFilter(commands.Cog):
         last_update = time()
         last_user = None
 
-        async for msg in message.channel.history(limit=25000):
+        async for msg in message.channel.history(limit=amount):
             await asyncio.sleep(0)
             if view.is_cancelled or not message or task.done():
                 return
