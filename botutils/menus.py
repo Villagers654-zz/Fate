@@ -19,6 +19,7 @@ import discord
 from discord import TextChannel, Attachment
 from discord.errors import NotFound, Forbidden
 from discord import ui
+from discord.ext.commands import Context
 from PIL import Image, ImageFont, ImageDraw
 
 from . import colors
@@ -50,7 +51,7 @@ class ChoiceButtons(ui.View):
 
 
 class _Select(discord.ui.Select):
-    def __init__(self, user_id: int, choices: List[Any], limit: int = 1, placeholder: str = "Select your choice"):
+    def __init__(self, user_id: int, choices: Sequence[Any], limit: int = 1, placeholder: str = "Select your choice"):
         self.user_id = user_id
         self.limit = limit
 
@@ -82,14 +83,28 @@ class _Select(discord.ui.Select):
 class GetChoice(discord.ui.View):
     selected: List[str] = None
     message: Optional[discord.Message] = None
-    def __init__(self, ctx, choices: Union[list, KeysView], limit: int = 1, placeholder: str = "Options", message=None):
+    message_passed = False
+    def __init__(self, ctx, choices, limit=1, placeholder="Options", message=None, delete_after=True):
+        """
+        :param Context ctx:
+        :param Sequence choices:
+        :param int limit:
+        :param str placeholder:
+        :param discord.Message message:
+        :param bool delete_after:
+        """
         self.ctx = ctx
         self.choices = choices
         self.limit = limit
+        self.message = message
+        self.delete_after = delete_after
+
+        self.original_choices = list(choices)
         if limit > len(choices):
             self.limit = len(choices)
-        self.original_choices = choices
-        self.message = message
+        if message:
+            self.message_passed = True
+
         super().__init__(timeout=45)
         self.add_item(_Select(ctx.author.id, choices, self.limit, placeholder))
 
@@ -97,22 +112,29 @@ class GetChoice(discord.ui.View):
         return self._await().__await__()
 
     async def _await(self) -> Union[str, List[str]]:
-        if self.message:
+        if self.message_passed:
             await self.message.edit(view=self)
             message = self.message
         else:
             message = await self.ctx.send("Select your choice", view=self)
             self.message = message
+
         await self.wait()
-        if not self.selected and not self.message:
+
+        if not self.selected and self.delete_after:
             with suppress(Exception):
                 await message.delete()
             raise self.ctx.bot.ignored_exit
-        if not self.selected and self.message:
+
+        elif not self.selected:
             e = discord.Embed(color=colors.red)
             e.set_author(name="Expired Menu", icon_url=self.ctx.author.avatar.url)
             await message.edit(content=None, view=None, embed=e)
             raise self.ctx.bot.ignored_exit
+
+        if self.delete_after:
+            with suppress(Exception):
+                await message.delete()
 
         if self.limit == 1:
             for choice in self.choices:
