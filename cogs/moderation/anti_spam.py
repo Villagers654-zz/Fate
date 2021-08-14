@@ -147,14 +147,14 @@ class ConfigureMenu(AuthorView):
                         content="Choose the threshold. After that we'll set the timeframe for that threshold"
                     )
                     choices = [f"Limit to {num} msgs within X seconds" for num in thresholds]
-                    choice = await GetChoice(self.ctx, choices, message=interaction.message)
+                    choice = await GetChoice(self.ctx, choices, message=interaction.message, delete_after=False)
                     threshold = thresholds[choices.index(choice)]
 
                     await interaction.message.edit(
                         content="Choose a timeframe for that threshold"
                     )
                     choices = [f"Only allow X msgs within {num} seconds" for num in timespans]
-                    choice = await GetChoice(self.ctx, choices, message=interaction.message)
+                    choice = await GetChoice(self.ctx, choices, message=interaction.message, delete_after=False)
                     timeframe = timespans[choices.index(choice)]
 
                     new = {
@@ -181,7 +181,7 @@ class ConfigureMenu(AuthorView):
                         choices = ["Return to modules", *[
                             f"{c['threshold']} within {c['timespan']} seconds" for c in _thresholds if c
                         ]]
-                        choice = await GetChoice(self.ctx, choices, message=interaction.message)
+                        choice = await GetChoice(self.ctx, choices, message=interaction.message, delete_after=False)
                         if choices.index(choice) != 0:
                             threshold = _thresholds[choices.index(choice) - 1]
                             if isinstance(conf, list):
@@ -215,7 +215,7 @@ class ConfigureMenu(AuthorView):
                             if isinstance(num, int) else num
                             for num in per_timespans
                         ]
-                    choice = await GetChoice(self.ctx, choices, message=interaction.message)
+                    choice = await GetChoice(self.ctx, choices, message=interaction.message, delete_after=False)
                     if "None" in choice:
                         self.cog.config[guild_id][self.module][key] = None
                     else:
@@ -232,7 +232,7 @@ class ConfigureMenu(AuthorView):
             choices = list(self.cog.config[guild_id].keys())
             if "ignored" in choices:
                 choices.remove("ignored")
-            module = await GetChoice(self.ctx, choices, message=interaction.message)
+            module = await GetChoice(self.ctx, choices, message=interaction.message, delete_after=False)
             self.main_view.__init__(self.ctx, module)
             await interaction.message.edit(view=self.main_view)
 
@@ -382,7 +382,7 @@ class AntiSpam(commands.Cog):
             choices.remove("ignored")
 
         # Fetch the choice
-        choice_view = GetChoice(ctx, choices)
+        choice_view = GetChoice(ctx, choices, delete_after=False)
         choice = await choice_view
 
         # Run the configure view
