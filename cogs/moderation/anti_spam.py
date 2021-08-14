@@ -1,5 +1,4 @@
 import asyncio
-import json
 from time import time
 from datetime import datetime, timedelta, timezone
 from contextlib import suppress
