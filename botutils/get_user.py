@@ -8,10 +8,11 @@ Helper class for fetching a user via most possible means
 :license: Proprietary and Confidential, see LICENSE for details
 """
 
+import asyncio
 from discord.ext import commands
 import discord
 from discord.errors import NotFound, Forbidden, HTTPException
-import asyncio
+from botutils import GetChoice
 
 
 class GetUser:
@@ -118,8 +119,12 @@ class GetUser:
                 elif not self.channel:
                     users.append(options[0])
                 else:
-                    choices = [m.mention for m in options]
-                    choice = await self.bot.utils.get_choice(self.ctx, choices, name="Which user")
+                    if self.ctx:
+                        choices = [str(m) for m in options]
+                        choice = await GetChoice(self.ctx, choices)
+                    else:
+                        choices = [m.mention for m in options]
+                        choice = await self.bot.utils.get_choice(self.ctx, choices, name="Which user")
                     if not choice:
                         raise self.bot.ignored_exit
                     users.append(options[choices.index(choice)])
@@ -153,13 +158,14 @@ class GetUser:
             return users
 
         if len(users) > 1:
-            choices = [u.mention for u in users]
-            choice = await self.bot.utils.get_choice(self.ctx, choices, name="Which user")
+            if self.ctx:
+                choices = [str(u) for u in users]
+                choice = await GetChoice(self.ctx, choices)
+            else:
+                choices = [u.mention for u in users]
+                choice = await self.bot.utils.get_choice(self.ctx, choices, name="Which user")
             if not choice:
-                if self.channel:
-                    await self.channel.send("Timed out waiting for response")
-                    raise self.bot.ignored_exit
-                return None
+                raise self.bot.ignored_exit
             return users[choices.index(choice)]
 
         return users[0]
