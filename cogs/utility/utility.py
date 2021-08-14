@@ -503,7 +503,7 @@ class Utility(commands.Cog):
 
         else:
             options = ["Bot Info", "User Info", "Server Info", "Channel Info"]
-            choice = await self.bot.utils.get_choice(ctx, *options, user=ctx.author)
+            choice = await GetChoice(ctx, options)
             if not choice:
                 return
             if choice == "User Info":
