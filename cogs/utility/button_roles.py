@@ -166,7 +166,7 @@ class ButtonRoles(commands.Cog):
 
                 # Set the label
                 if len(args) > 1:
-                    label = args[0]
+                    label = args[0][:100]
                     args.pop(0)
 
                 # Get the role with the remaining args instead of msg content
@@ -175,7 +175,7 @@ class ButtonRoles(commands.Cog):
 
             # Set the description
             if "\n" in reply.content:
-                description = reply.content.split("\n")[1]
+                description = reply.content.split("\n")[1][:100]
 
             role = await self.bot.utils.get_role(ctx, name or reply.content)
             if not role:
@@ -185,8 +185,8 @@ class ButtonRoles(commands.Cog):
 
             selected_roles[role] = {
                 "emoji": emoji,
-                "label": label[:100] if label else None,
-                "description": description[:100] if description else None
+                "label": label,
+                "description": description
             }
 
             if e.fields:
@@ -274,7 +274,7 @@ class ButtonRoles(commands.Cog):
         if len(menus) == 1:
             choice: str = list(menus.keys())[0]
         else:
-            choice: str = await GetChoice(ctx, menus.keys())
+            choice: str = await GetChoice(ctx, list(menus.keys()))
         key = [k for k in menus.keys() if choice in k][0]
         return menus[key]
 
@@ -302,7 +302,7 @@ class ButtonRoles(commands.Cog):
 
             # Set the label
             if len(args) > 1:
-                label = args[0]
+                label = args[0][:100]
                 args.pop(0)
 
             # Get the role with the remaining args instead of msg content
@@ -311,7 +311,7 @@ class ButtonRoles(commands.Cog):
 
         # Set the description
         if "\n" in role:
-            description = role.split("\n")[1]
+            description = role.split("\n")[1][:100]
 
         role = await self.bot.utils.get_role(ctx, name)
         if not role:
@@ -321,8 +321,8 @@ class ButtonRoles(commands.Cog):
 
         self.config[guild_id][message_id]["roles"][str(role.id)] = {
             "emoji": emoji,
-            "label": label[:100],
-            "description": description[:100]
+            "label": label,
+            "description": description
         }
 
         await self.refresh_menu(guild_id, message_id)
@@ -406,7 +406,9 @@ class ButtonRoles(commands.Cog):
         if len(roles) == 1:
             choice: str = list(roles.values())[0]
         else:
-            choice: str = await GetChoice(ctx, roles.keys())
+            choice: str = await GetChoice(ctx, list(roles.keys()))
+        if roles[choice] not in self.config[guild_id][message_id]["roles"]:
+            return await ctx.send(f"{choice} doesn't seem to be in the config anymore")
         self.config[guild_id][message_id]["roles"][roles[choice]]["emoji"] = new_emoji
 
         await self.refresh_menu(guild_id, message_id)
@@ -431,7 +433,7 @@ class ButtonRoles(commands.Cog):
         if len(roles) == 1:
             choice: str = list(roles.values())[0]
         else:
-            choice: str = await GetChoice(ctx, roles.keys())
+            choice: str = await GetChoice(ctx, list(roles.keys()))
         self.config[guild_id][message_id]["roles"][roles[choice]]["description"] = new_description[:100]
 
         await self.refresh_menu(guild_id, message_id)
