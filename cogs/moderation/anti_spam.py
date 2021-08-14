@@ -67,9 +67,9 @@ defaults = {
 }
 
 thresholds = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 20, 25]
-timespans = [3, 4, 5, 6, 7, 8, 9, 15, 20, 25, 30, 45, 60, 120, 240, 360]
+timespans = [3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 20, 25, 30, 45, 60, 120, 240]
 
-per_timespans = ["None (Disable)", 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 25, 35, 45, 60, 120]
+per_timespans = ["None (Disable)", 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 25, 35, 45, 60, 120]
 
 
 class ConfigureMenu(AuthorView):
