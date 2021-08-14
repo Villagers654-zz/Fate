@@ -49,6 +49,7 @@ defaults = {
         "per_message": 10,
         "same_link": 25,
         "same_image": 25,
+        "sticker": 10,
         "same_sticker": 60,
         "max_open_threads": 1,
         "thresholds": [{
@@ -69,6 +70,7 @@ defaults = {
 thresholds = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 20, 25]
 timespans = [3, 4, 5, 6, 7, 8, 9, 15, 20, 25, 30, 45, 60, 120, 240, 360]
 
+per_timespans = ["None (Disable)", 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 25, 35, 45, 60, 120]
 
 
 class ConfigureMenu(AuthorView):
@@ -84,12 +86,12 @@ class ConfigureMenu(AuthorView):
             if isinstance(conf, list) or "thresholds" in conf:
                 options.append(SelectOption(
                     label="Add a threshold",
-                    emoji="🖋",
+                    emoji="📌",
                     value="add_threshold"
                 ))
                 options.append(SelectOption(
-                    label="Remove a threshold",
-                    emoji="❌",
+                    label="View/Manage thresholds",
+                    emoji="🔍",
                     value="remove_threshold"
                 ))
             if not isinstance(conf, list):
@@ -109,11 +111,14 @@ class ConfigureMenu(AuthorView):
                             emoji="🛑" if value else "🛡",
                             value=key
                         ))
-                    elif isinstance(value, int):
+                    elif isinstance(value, int) or value is None:
                         label = f"Set the {key.replace('_', ' ')} cooldown"
                         if "max" in key:  # Account for the max threads option
                             label = label.rstrip(" cooldown")
-                        label += f" ({value}s)"
+                        if value is None:
+                            label += " (Disabled)"
+                        else:
+                            label += f" ({value}s)"
                         options.append(SelectOption(
                             label=label,
                             emoji="⏳",
@@ -170,33 +175,51 @@ class ConfigureMenu(AuthorView):
                     if not conf and not (conf["thresholds"] if isinstance(conf, dict) else False):
                         await interaction.response.send_message("That module has no thresholds", ephemeral=True)
                     else:
-                        await interaction.response.edit_message(content="Choose which threshold to remove")
+                        await interaction.response.edit_message(content="Selecting a threshold removes it")
                         _thresholds = conf if isinstance(conf, list) else conf["thresholds"]
-                        choices = [f"{c['threshold']} within {c['timespan']} seconds" for c in _thresholds if c]
+                        choices = ["Return to modules", *[
+                            f"{c['threshold']} within {c['timespan']} seconds" for c in _thresholds if c
+                        ]]
                         choice = await GetChoice(self.ctx, choices, message=interaction.message)
-                        threshold = _thresholds[choices.index(choice)]
-                        if isinstance(conf, list):
-                            self.cog.config[guild_id][self.module].remove(threshold)
-                        else:
-                            self.cog.config[guild_id][self.module]["thresholds"].remove(threshold)
+                        if choices.index(choice) != 0:
+                            threshold = _thresholds[choices.index(choice) - 1]
+                            if isinstance(conf, list):
+                                self.cog.config[guild_id][self.module].remove(threshold)
+                            else:
+                                self.cog.config[guild_id][self.module]["thresholds"].remove(threshold)
 
                 elif isinstance(conf[key], bool):
                     # Toggle the value between True/False
                     self.cog.config[guild_id][self.module][key] = not conf[key]
 
-                elif isinstance(conf[key], int):
+                elif isinstance(conf[key], int) or conf[key] is None:
                     await interaction.response.edit_message(
                         content="Choose the threshold"
                     )
                     if "max" in key:  # Process the thread limit option differently
-                        choices = [f"Set the limit to {num} open threads per user" for num in timespans]
+                        choices = [
+                            f"Set the limit to {num} open threads per user"
+                            if isinstance(num, int) else num
+                            for num in per_timespans
+                        ]
                     elif key == "per_message":
-                        choices = [f"Limit to {num} per message" for num in timespans]
+                        choices = [
+                            f"Limit to {num} per message"
+                            if isinstance(num, int) else num
+                            for num in per_timespans
+                        ]
                     else:
-                        choices = [f"Limit to once every {num} seconds" for num in timespans]
+                        choices = [
+                            f"Limit to once every {num} seconds"
+                            if isinstance(num, int) else num
+                            for num in per_timespans
+                        ]
                     choice = await GetChoice(self.ctx, choices, message=interaction.message)
-                    threshold = timespans[choices.index(choice)]
-                    self.cog.config[guild_id][self.module][key] = threshold
+                    if "None" in choice:
+                        self.cog.config[guild_id][self.module][key] = None
+                    else:
+                        threshold = per_timespans[choices.index(choice)]
+                        self.cog.config[guild_id][self.module][key] = threshold
 
                 await self.cog.config.flush()
 
@@ -236,7 +259,6 @@ class AntiSpam(commands.Cog):
     def __init__(self, bot: Fate):
         self.bot = bot
         self.config = bot.utils.cache("AntiSpam")
-        self.bot.loop.create_task(self.config.flush())
         self.cleanup_task.start()
 
     def cog_unload(self):
@@ -307,28 +329,6 @@ class AntiSpam(commands.Cog):
                 if user_id in self.typing:
                     del self.typing[user_id]
 
-    @commands.command(name="test-config")
-    @commands.is_owner()
-    async def test_config(self, ctx):
-        # Parse the choices
-        choices = list(self.config[ctx.guild.id].keys())
-        if "ignored" in choices:
-            choices.remove("ignored")
-
-        # Fetch the choice
-        choice_view = GetChoice(ctx, choices)
-        choice = await choice_view
-
-        # Run the configure view
-        config_view = ConfigureMenu(ctx, choice)
-        await choice_view.message.edit(view=config_view)
-
-        # Remove the view from the original message when done
-        await config_view.wait()
-        e = discord.Embed(color=colors.red)
-        e.set_author(name="Expired Menu", icon_url=ctx.author.avatar.url)
-        await choice_view.message.edit(content=None, view=None, embed=e)
-
     @commands.group(name="anti-spam", aliases=["antispam"])
     @commands.cooldown(1, 2, commands.BucketType.user)
     @commands.guild_only()
@@ -375,13 +375,24 @@ class AntiSpam(commands.Cog):
     @commands.has_permissions(administrator=True)
     @commands.bot_has_permissions(embed_links=True, add_reactions=True, manage_messages=True)
     async def _configure(self, ctx):
-        guild_id = ctx.guild.id
-        if guild_id not in self.config:
-            return await ctx.send("Anti spam isn't enabled")
-        menu = ConfigureModules(ctx)
-        await menu.setup()
-        while True:
-            await menu.next()
+        # Parse the choices
+        choices = list(self.config[ctx.guild.id].keys())
+        if "ignored" in choices:
+            choices.remove("ignored")
+
+        # Fetch the choice
+        choice_view = GetChoice(ctx, choices)
+        choice = await choice_view
+
+        # Run the configure view
+        config_view = ConfigureMenu(ctx, choice)
+        await choice_view.message.edit(view=config_view)
+
+        # Remove the view from the original message when done
+        await config_view.wait()
+        e = discord.Embed(color=colors.red)
+        e.set_author(name="Expired Menu", icon_url=ctx.author.avatar.url)
+        await choice_view.message.edit(content=None, view=None, embed=e)
 
     @anti_spam.group(name='enable')
     @commands.has_permissions(manage_messages=True)
@@ -444,7 +455,9 @@ class AntiSpam(commands.Cog):
             "per_message": 10,
             "same_link": 25,
             "same_image": 25,
+            "sticker": 10,
             "same_sticker": 60,
+            "max_open_threads": 2,
             "thresholds": [{
                 "timespan": 25,
                 "threshold": 4
@@ -469,18 +482,6 @@ class AntiSpam(commands.Cog):
         }
         await self.config.flush()
         await ctx.send('Enabled duplicates module')
-
-    @_enable.command(name='threads')
-    @commands.has_permissions(manage_messages=True)
-    async def _enable_threads(self, ctx):
-        guild_id = ctx.guild.id
-        if guild_id not in self.config:
-            self.config[guild_id] = {}
-        self.config[guild_id]["threads"] = {
-            "limit": 1
-        }
-        await self.config.flush()
-        await ctx.send('Enabled threads module')
 
     @anti_spam.group(name='disable')
     @commands.has_permissions(manage_messages=True)
@@ -546,17 +547,6 @@ class AntiSpam(commands.Cog):
             return await ctx.send("Inhuman isn't enabled")
         self.config.remove_sub(guild_id, "inhuman")
         await ctx.send('Disabled inhuman module')
-
-    @_disable.command(name='threads')
-    @commands.has_permissions(manage_messages=True)
-    async def _disable_threads(self, ctx):
-        guild_id = ctx.guild.id
-        if guild_id not in self.config:
-            return await ctx.send("Anti spam isn't enabled")
-        if "threads" not in self.config[guild_id]:
-            return await ctx.send("Anti thread spam isn't enabled")
-        self.config.remove_sub(guild_id, "threads")
-        await ctx.send('Disabled threads module')
 
     @anti_spam.command(name='ignore')
     @commands.has_permissions(manage_messages=True)
@@ -1133,7 +1123,7 @@ class AntiSpam(commands.Cog):
                                 triggered = True
                             self.bot.loop.create_task(self.cache_image(msg.channel, size))
 
-                    if self.config[guild_id]["duplicates"]["same_sticker"] and msg.stickers:
+                    if msg.stickers and self.config[guild_id]["duplicates"]["same_sticker"]:
                         stickers_sent = []
                         lmt: int = self.config[guild_id]["duplicates"]["same_sticker"]
                         lmt_dt = datetime.now(tz=timezone.utc) - timedelta(seconds=lmt)
@@ -1145,6 +1135,17 @@ class AntiSpam(commands.Cog):
                                         reason = f"Duplicate sticker within {lmt} seconds"
                                         break
                                     stickers_sent.append(sticker.id)
+
+                    if msg.stickers and self.config[guild_id]["duplicates"]["sticker"]:
+                        lmt: int = self.config[guild_id]["duplicates"]["same_sticker"]
+                        lmt_dt = datetime.now(tz=timezone.utc) - timedelta(seconds=lmt)
+                        for m in self.msgs[user_id]:
+                            if m.id == msg.id:
+                                continue
+                            if m.stickers and m.created_at > lmt_dt:
+                                triggered = True
+                                reason = f"Sending more than 1 sticker within {lmt} seconds"
+                                break
 
                 if (triggered is None or "ascii" in reason) and not msg.author.guild_permissions.administrator:
                     if msg.guild.id not in self.bot.filtered_messages:
@@ -1237,7 +1238,7 @@ class AntiSpam(commands.Cog):
             prefixes = await get_prefixes_async(self.bot, msg)
             if any(msg.content.startswith(p) for p in prefixes):
                 return
-            lmt = datetime.now(tz=timezone.utc) - timedelta(seconds=5)
+            lmt = datetime.now(tz=timezone.utc) - timedelta(seconds=15)
             if msg.created_at > lmt:
                 async for entry in msg.guild.audit_logs(limit=1, action=discord.AuditLogAction.message_delete):
                     if entry.created_at > lmt:
@@ -1245,24 +1246,30 @@ class AntiSpam(commands.Cog):
                 await asyncio.sleep(3)
                 if msg.guild.id in self.bot.filtered_messages:
                     if msg.id in self.bot.filtered_messages[msg.guild.id]:
+                        if msg.guild.id not in self.bot.tasks["antispam_mutes"]:
+                            self.bot.tasks["antispam_mutes"][msg.guild.id] = {}
+                        self.bot.tasks["antispam_mutes"][msg.guild.id][msg.author.id] = self.bot.loop.create_task(
+                            self.process_mute(
+                                user_id=msg.author.id,
+                                guild_id=msg.guild.id,
+                                msg=msg,
+                                reason="Ghost ping"
+                            )
+                        )
                         return
-                await msg.channel.send(f"{msg.author.mention} bitch")
-                if msg.guild.id not in self.bot.tasks["antispam_mutes"]:
-                    self.bot.tasks["antispam_mutes"][msg.guild.id] = {}
-                self.bot.tasks["antispam_mutes"][msg.guild.id][msg.author.id] = self.bot.loop.create_task(
-                    self.process_mute(
-                        user_id=msg.author.id,
-                        guild_id=msg.guild.id,
-                        msg=msg,
-                        reason="Ghost ping"
-                    )
+                e = discord.Embed(color=self.bot.config["theme_color"])
+                e.description = f"{msg.author.mention} no ghost pinging"
+                await msg.channel.send(
+                    embed=e,
+                    allowed_mentions=discord.AllowedMentions.all()
                 )
 
     @commands.Cog.listener()
     async def on_thread_join(self, thread: discord.Thread):
-        if thread.guild.id in self.config and "threads" in self.config[thread.guild.id]:
-            if not thread.owner.guild_permissions.manage_threads:
-                if limit := self.config[thread.guild.id]["threads"]["limit"]:
+        guild_id = thread.guild.id
+        if thread.guild.id in self.config and "duplicates" in self.config[guild_id]:
+            if limit := self.config[guild_id]["duplicates"]["max_open_threads"]:
+                if not thread.owner.guild_permissions.manage_threads:
                     total_open_threads = [
                         c for c in thread.parent.threads
                         if c.owner_id == thread.owner_id
@@ -1326,287 +1333,6 @@ class AntiSpam(commands.Cog):
             if guild_id in self.bot.tasks["antispam_mutes"]:
                 if not self.bot.tasks["antispam_mutes"][guild_id]:
                     del self.bot.tasks["antispam_mutes"][guild_id]
-
-
-class ConfigureModules:
-    def __init__(self, ctx: commands.Context):
-        self.super: AntiSpam = ctx.bot.cogs["AntiSpam"]
-        self.ctx = ctx
-        self.bot: Fate = ctx.bot
-        self.guild_id = ctx.guild.id
-
-        self.cursor: dict = self.modules
-        self.row = 0
-        self.config = {}
-        self.key = self.update = None
-
-        self.emotes: List[str] = [emojis.home, emojis.up, emojis.down, emojis.yes]
-
-        self.msg = self.reaction = self.user = None
-        self.check = lambda r, u: r.message.id == self.msg.id and u.id == ctx.author.id
-
-    async def setup(self) -> None:
-        """Initialize the reaction menu"""
-        e = self.create_embed(description=self.get_description())
-        self.msg = await self.ctx.send(embed=e)
-        self.bot.loop.create_task(self.add_reactions())
-
-    def reset(self) -> None:
-        """Go back to the list of enabled modules"""
-        self.cursor: dict = self.modules
-        self.row = 0
-        self.config = None
-
-    @property
-    def modules(self) -> dict:
-        """Get their current AntiSpam config"""
-        items = self.bot.cogs["AntiSpam"].config[self.guild_id].items()
-        ignored = ('ignored', 'anti_macro')
-        return {
-            module: data
-            for module, data in items
-            if module not in ignored
-        }
-
-    def create_embed(self, **kwargs) -> discord.Embed:
-        """Get default embed style"""
-        return discord.Embed(
-            title="Enabled Modules", color=self.bot.config["theme_color"], **kwargs
-        )
-
-    def get_description(self) -> str:
-        # Format the current options
-        description = ""
-        for i, key in enumerate(self.cursor.keys()):
-            if i != 0:
-                description += "\n"
-            if i == self.row:
-                description += f"{emojis.online} {key}"
-            else:
-                description += f"{emojis.offline} {key}"
-        return description
-
-    async def next(self) -> None:
-        """Wait for the next reaction"""
-        if self.guild_id not in self.bot.cogs["AntiSpam"].config:
-            await self.msg.edit(content="AntiSpam was disabled, so this menu is now inactive")
-            raise self.bot.ignored_exit
-
-        reaction, user = await self.bot.utils.get_reaction(self.check)
-        if reaction:
-            self.bot.loop.create_task(self.msg.remove_reaction(reaction, user))
-        e = self.create_embed()
-
-        # Home button
-        if reaction.emoji == emojis.home:
-            self.reset()
-        # Up button
-        elif reaction.emoji == emojis.up:
-            self.row -= 1
-        # Down button
-        elif reaction.emoji == emojis.down:
-            self.row += 1
-        # Enter button
-        elif str(reaction.emoji) == emojis.yes:
-            key = list(self.cursor.keys())[self.row]
-            if not self.cursor[key] and not isinstance(self.cursor[key], list):
-                e.description = self.cursor[key]
-                if key in self.config and self.config[key]:
-                    await self.init_config(key)
-                else:
-                    await self.configure(key)
-            else:
-                e.title = key
-                await self.init_config(key)
-
-        # Adjust row position
-        if self.row < 0:
-            self.row = len(self.cursor.keys()) - 1
-        elif self.row > len(self.cursor.keys()) - 1:
-            self.row = 0
-
-        # Parse the message
-        if not e.description:
-            e.description = self.get_description()
-        if self.config:
-            e.title = self.key
-            if isinstance(self.config, list):
-                conf = []
-                for item in self.config:
-                    dat = {}
-                    for k, v in sorted(item.items(), key=lambda kv: kv[0]):
-                        dat[k] = v
-                    conf.append(dat)
-            else:
-                conf = {}
-                for k, v in sorted(self.config.items(), key=lambda kv: kv[0]):
-                    conf[k] = v
-            e.add_field(
-                name="◈ Config",
-                value=f"```json\n{json.dumps(conf, indent=2)}```"
-            )
-        await self.msg.edit(embed=e)
-
-    async def add_reactions(self) -> None:
-        """Add the reactions in the background"""
-        for i, emote in enumerate(self.emotes):
-            await self.msg.add_reaction(emote)
-            if i != len(self.emotes) - 1:
-                await asyncio.sleep(0.21)
-
-    async def get_reply(self, message: str) -> str:
-        """Get new values for a config"""
-        m = await self.ctx.send(message)
-        reply = await self.bot.utils.get_message(self.ctx)
-        await m.delete()
-        content = reply.content
-        await reply.delete()
-        return content
-
-    async def update_data(self):
-        """Update the cache and database"""
-        self.super.config[self.guild_id][self.key] = self.config
-        await self.bot.aio_mongo["AntiSpam"].update_one(
-            filter={"_id": self.guild_id},
-            update={"$set": {
-                self.key: self.config
-            }}
-        )
-
-    async def init_config(self, key):
-        """Change where we're working at"""
-        self.config = self.cursor[key]
-        self.key = key
-        self.row = 0
-        self.cursor = {}
-
-        # Add in options
-        if isinstance(self.config, dict):
-            for k, v in list(self.config.items()):
-                if not v or isinstance(v, int):
-                    self.cursor[k.replace("_", " ") + " cooldown"] = None
-
-        # Add options to configure individual thresholds
-        is_dict_threshold = isinstance(self.config, dict) and "thresholds" in self.config
-        if isinstance(self.config, list) or is_dict_threshold:
-            self.cursor["Add a custom threshold"] = None
-            self.cursor["Remove a custom threshold"] = None
-
-        self.cursor["Reset to default"] = None
-
-    async def configure(self, key):
-        """Alter a configs data"""
-        if key == "Reset to default":
-            self.config = defaults[self.key]
-            await self.update_data()
-            self.reset()
-
-        elif "cooldown" in key:
-            self.option = key.rstrip(" cooldown").replace(" ", "_")
-            self.cursor = {
-                "Update": None,
-                "Disable": None
-            }
-
-        elif key == "Update":
-            # Change the per-message threshold
-            question = "What's the new number I should set"
-            reply = await self.get_reply(question)
-            if not reply.isdigit():
-                await self.ctx.send("Invalid format. Your reply must be a number", delete_after=5)
-            else:
-                if int(reply) > 60:
-                    await self.ctx.send("At the moment you can't go above 60")
-                    return self.reset()
-                self.config[self.option] = int(reply)
-                await self.update_data()
-            self.reset()
-
-        elif key == "Disable":
-            # Remove the per-message threshold
-            if isinstance(self.config, dict):  # To satisfy pycharms warning
-                self.config[self.option] = None
-            await self.update_data()
-            self.reset()
-
-        elif key == "Enable a mod":
-            # Set a toggle to True
-            question = "Which mod should I enable"
-            reply = await self.get_reply(question)
-            if reply.lower() not in self.config:
-                await self.ctx.send("That's not a toggleable mod", delete_after=5)
-            else:
-                self.config[reply.lower()] = True
-                await self.update_data()
-            self.reset()
-
-        elif key == "Disable a mod":
-            # Set a toggle to False
-            question = "Which mod should I disable"
-            reply = await self.get_reply(question)
-            if reply.lower() not in self.config:
-                await self.ctx.send("That's not a toggleable mod", delete_after=5)
-            else:
-                self.config[reply.lower()] = False
-                await self.update_data()
-            self.reset()
-
-        elif key == "Add a custom threshold":
-            # Something something something
-            if len(self.config) == 3 if isinstance(self.config, list) else len(self.config["thresholds"]) == 3:
-                await self.ctx.send("You can't have more than 3 thresholds", delete_after=5)
-                return self.reset()
-            question = "Send the threshold and timespan to use. Format like " \
-                       "`6, 10` to only allow 6 msgs within 10 seconds"
-            reply = await self.get_reply(question)
-            args = reply.split(", ")
-            if not all(arg.isdigit() for arg in args) or len(args) != 2:
-                await self.ctx.send("Invalid format", delete_after=5)
-            else:
-                if int(args[0]) > 60:
-                    await self.ctx.send("You can't go above 60s for the timespan")
-                    return self.reset()
-                if int(args[1]) > 30:
-                    await self.ctx.send("You can't go above 30 for the threshold")
-                    return self.reset()
-                new_threshold = {"timespan": int(args[1]), "threshold": int(args[0])}
-                list_check = new_threshold in self.config if isinstance(self.config, list) else False
-                dict_check = new_threshold in self.config["thresholds"] if isinstance(self.config, dict) else False
-                if list_check or dict_check:
-                    await self.ctx.send("That threshold already exists", delete_after=5)
-                    return self.reset()
-                if isinstance(self.config, list):
-                    self.config.append(new_threshold)
-                else:
-                    self.config["thresholds"].append(new_threshold)
-                await self.update_data()
-            self.reset()
-
-        elif key == "Remove a custom threshold":
-            # Something something something
-            question = "Send the threshold and timespan to remove. Format like " \
-                       "`6, 10` to remove one with a threshold of 6 and timespan of 10"
-            reply = await self.get_reply(question)
-            args = reply.split(", ")
-            if not all(arg.isdigit() for arg in args) or len(args) != 2:
-                await self.ctx.send("Invalid format", delete_after=5)
-            else:
-                threshold = {"timespan": int(args[1]), "threshold": int(args[0])}
-                list_check = threshold in self.config if isinstance(self.config, list) else False
-                dict_check = threshold in self.config["thresholds"] if isinstance(self.config, dict) else False
-                if not list_check and not dict_check:
-                    await self.ctx.send("That threshold doesn't exist", delete_after=5)
-                    return self.reset()
-                if isinstance(self.config, list):
-                    self.config.remove(threshold)
-                else:
-                    self.config["thresholds"].remove(threshold)
-                await self.update_data()
-            self.reset()
-
-        else:
-            # Something isn't fucking finished
-            self.cursor = {"Unknown Option": None}
 
 
 def setup(bot):
