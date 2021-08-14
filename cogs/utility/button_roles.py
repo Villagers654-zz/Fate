@@ -185,8 +185,8 @@ class ButtonRoles(commands.Cog):
 
             selected_roles[role] = {
                 "emoji": emoji,
-                "label": label[:100],
-                "description": description[:100]
+                "label": label[:100] if label else None,
+                "description": description[:100] if description else None
             }
 
             if e.fields:
