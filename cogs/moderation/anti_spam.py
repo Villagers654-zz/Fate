@@ -299,6 +299,12 @@ class AntiSpam(commands.Cog):
 
     @tasks.loop(seconds=10)
     async def cleanup_task(self):
+        # Timer cache
+        for guild_id, timers in list(self.bot.tasks["antispam_mutes"].items()):
+            await asyncio.sleep(0)
+            if not timers and guild_id in self.bot.tasks["antispam_mutes"]:
+                del self.bot.tasks["antispam_mutes"][guild_id]
+
         # Message Index
         for user_id, messages in list(self.msgs.items()):
             await asyncio.sleep(0)
@@ -307,7 +313,7 @@ class AntiSpam(commands.Cog):
                     if not msg:
                         self.msgs[user_id].remove(msg)
                         continue
-                    elif msg.created_at < datetime.now(tz=timezone.utc) - timedelta(seconds=15):
+                    elif msg.created_at < datetime.now(tz=timezone.utc) - timedelta(seconds=240):
                         self.msgs[user_id].remove(msg)
             with suppress(KeyError):
                 if not self.msgs[user_id]:
@@ -667,7 +673,7 @@ class AntiSpam(commands.Cog):
                 with suppress(NotFound, Forbidden):
                     await m.delete()
 
-    async def process_mute(self, guild_id, user_id, msg, reason="", resume=False, timer=0):
+    async def process_mute(self, guild_id: int, user_id: int, msg, reason="", resume=False, timer=0):
         """Handle the entire muting process separately"""
         guild = self.bot.get_guild(int(guild_id))
         if not guild:
@@ -1269,7 +1275,7 @@ class AntiSpam(commands.Cog):
                 e.description = f"{msg.author.mention} no ghost pinging"
                 await msg.channel.send(
                     embed=e,
-                    allowed_mentions=discord.AllowedMentions.all()
+                    allowed_mentions=mentions
                 )
 
     @commands.Cog.listener()
@@ -1326,8 +1332,9 @@ class AntiSpam(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
-        guild_id = str(before.guild.id)
-        user_id = str(before.id)
+        """ Remove timers if a users manually unmuted by a Moderator"""
+        guild_id = before.guild.id
+        user_id = before.id
         if "antispam_mutes" not in self.bot.tasks:
             self.bot.tasks["antispam_mutes"] = {}
         if guild_id in self.bot.tasks["antispam_mutes"]:
@@ -1338,6 +1345,7 @@ class AntiSpam(commands.Cog):
                     return
                 if mute_role not in after.roles:
                     await self.destroy_task(guild_id, user_id)
+            # Clean up the index
             if guild_id in self.bot.tasks["antispam_mutes"]:
                 if not self.bot.tasks["antispam_mutes"][guild_id]:
                     del self.bot.tasks["antispam_mutes"][guild_id]
