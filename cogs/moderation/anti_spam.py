@@ -34,6 +34,7 @@ defaults = {
     ],
     "mass_pings": {
         "per_message": 4,
+        "ghost_pings": True,
         "thresholds": [{
             "timespan": 10,
             "threshold": 3
@@ -1233,7 +1234,11 @@ class AntiSpam(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_delete(self, msg):
-        if msg.guild and msg.guild.id == 850956124168519700 and msg.raw_mentions:
+        if msg.guild and msg.raw_mentions and msg.guild.id in self.config:
+            if "mass_pings" not in self.config[msg.guild.id]:
+                return
+            if not self.config[msg.guild.id]["mass_pings"]["ghost_pings"]:
+                return
             if not msg.guild.me.guild_permissions.view_audit_log:
                 return
             prefixes = await get_prefixes_async(self.bot, msg)
