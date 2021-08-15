@@ -198,29 +198,31 @@ class ConfigureMenu(AuthorView):
                     await interaction.response.edit_message(
                         content="Choose the threshold"
                     )
+                    nums = list(per_timespans)
                     if "max" in key:  # Process the thread limit option differently
+                        nums = [1, *nums]
                         choices = [
                             f"Set the limit to {num} open threads per user"
                             if isinstance(num, int) else num
-                            for num in per_timespans
+                            for num in nums
                         ]
                     elif key == "per_message":
                         choices = [
                             f"Limit to {num} per message"
                             if isinstance(num, int) else num
-                            for num in per_timespans
+                            for num in nums
                         ]
                     else:
                         choices = [
                             f"Limit to once every {num} seconds"
                             if isinstance(num, int) else num
-                            for num in per_timespans
+                            for num in nums
                         ]
                     choice = await GetChoice(self.ctx, choices, message=interaction.message, delete_after=False)
                     if "None" in choice:
                         self.cog.config[guild_id][self.module][key] = None
                     else:
-                        threshold = per_timespans[choices.index(choice)]
+                        threshold = nums[choices.index(choice)]
                         self.cog.config[guild_id][self.module][key] = threshold
 
                 await self.cog.config.flush()
