@@ -108,7 +108,7 @@ class ConfigureMenu(AuthorView):
                         toggle = "Disable" if value else "Enable"
                         options.append(SelectOption(
                             label=f"{toggle} flagging {key.replace('_', ' ')}",
-                            emoji="🛑" if value else "🛡",
+                            emoji="🛑" if value else "🚦",
                             value=key
                         ))
                     elif isinstance(value, int) or value is None:
@@ -200,9 +200,9 @@ class ConfigureMenu(AuthorView):
                     )
                     nums = list(per_timespans)
                     if "max" in key:  # Process the thread limit option differently
-                        nums = [1, *nums]
+                        nums = [nums[0], 1, *nums[1:]]
                         choices = [
-                            f"Set the limit to {num} open threads per user"
+                            f"Set the limit to {num} open thread{'s' if num != 1 else ''} per user"
                             if isinstance(num, int) else num
                             for num in nums
                         ]
