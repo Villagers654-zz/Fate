@@ -12,7 +12,7 @@ import asyncio
 from discord.ext import commands
 import discord
 from discord.errors import NotFound, Forbidden, HTTPException
-from botutils import GetChoice
+import botutils
 
 
 class GetUser:
@@ -121,7 +121,7 @@ class GetUser:
                 else:
                     if self.ctx:
                         choices = [str(m) for m in options]
-                        choice = await GetChoice(self.ctx, choices)
+                        choice = await botutils.GetChoice(self.ctx, choices)
                     else:
                         choices = [m.mention for m in options]
                         choice = await self.bot.utils.get_choice(self.ctx, choices, name="Which user")
@@ -160,7 +160,7 @@ class GetUser:
         if len(users) > 1:
             if self.ctx:
                 choices = [str(u) for u in users]
-                choice = await GetChoice(self.ctx, choices)
+                choice = await botutils.GetChoice(self.ctx, choices)
             else:
                 choices = [u.mention for u in users]
                 choice = await self.bot.utils.get_choice(self.ctx, choices, name="Which user")
