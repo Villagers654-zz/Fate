@@ -951,7 +951,7 @@ class Moderation(commands.Cog):
                     view=MuteView(ctx, user, case, reason.replace("Unspecified", ""), timer)
                 )
                 await ensure_muted()
-                return None
+                continue
 
             if timer > 15552000:  # 6 months
                 return await ctx.send(
