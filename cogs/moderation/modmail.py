@@ -120,7 +120,7 @@ class ModMail(commands.Cog):
 
         # If a thread exists, reference its parent message
         reference = None
-        if message_id := self.config[ctx.guild.id]["references"].get(str(case)):
+        if message_id := self.config[guild_id]["references"].get(str(case)):
             with suppress(NotFound, Forbidden):
                 msg = await channel.fetch_message(message_id)
                 reference = msg
