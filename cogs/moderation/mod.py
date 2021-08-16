@@ -980,7 +980,7 @@ class Moderation(commands.Cog):
                 await ctx.send(
                     f"Muted **{user.name}** for {expanded_timer} "
                     f"for {reason} [Case #{case}]" + additional,
-                    view=MuteView(ctx, user, case, reason.replace("Unspecified", ""), None)
+                    view=MuteView(ctx, user, case, reason.replace("Unspecified", ""), timer)
                 )
 
             user_id = str(user.id)
