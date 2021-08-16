@@ -80,10 +80,10 @@ class CustomCommands(commands.Cog):
         if add_or_remove == "add":
             if self.bot.get_command(command):
                 return await ctx.send(f"Command `{command}` already exists")
-            if command != await sanitize(command):
-                return await ctx.send("Something in that command's filtered")
-            if response != await sanitize(response):
-                return await ctx.send("Something in that response's filtered")
+            # if command != await sanitize(command):
+            #     return await ctx.send("Something in that command's filtered")
+            # if response != await sanitize(response):
+            #     return await ctx.send("Something in that response's filtered")
             async with self.bot.utils.cursor() as cur:
                 await cur.execute(
                     f"select * from cc "
@@ -154,7 +154,7 @@ class CustomCommands(commands.Cog):
         if command in self.cache[msg.guild.id]:
             response = self.cache[msg.guild.id][command][0]
             if response:
-                if self.cd.check(msg.author.id):
+                if self.cd.check(msg.guild.id):
                     if msg.channel.permissions_for(msg.guild.me).add_reactions:
                         await msg.add_reaction("⏳")
                     return
