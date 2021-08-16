@@ -3,6 +3,7 @@
 from time import time
 import asyncio
 import aiomysql
+from contextlib import suppress
 
 from discord.ext import commands
 import discord
@@ -178,7 +179,9 @@ class CaseManager(commands.Cog):
             await asyncio.sleep(0.5)
             reaction, emoji = await wait_for_reaction()
             if not reaction:
-                return await msg.clear_reactions()
+                with suppress(Exception):
+                    await msg.clear_reactions()
+                return
 
             if emoji == emojis[0]:  # home
                 index = 0
