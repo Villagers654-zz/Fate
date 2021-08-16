@@ -75,6 +75,8 @@ class CustomCommands(commands.Cog):
             # Re-invoke the command without args
             return await self.cc(ctx)
 
+        command = command.lower()
+
         if add_or_remove == "add":
             if self.bot.get_command(command):
                 return await ctx.send(f"Command `{command}` already exists")
