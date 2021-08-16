@@ -76,6 +76,8 @@ class CustomCommands(commands.Cog):
             return await self.cc(ctx)
 
         command = command.lower()
+        if len(command) > 16:
+            return await ctx.send("Command names can't be longer than 16 characters")
 
         if add_or_remove == "add":
             if self.bot.get_command(command):
