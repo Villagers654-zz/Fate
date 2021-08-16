@@ -118,7 +118,7 @@ class GlobalChat(commands.Cog):
                     with suppress(AttributeError):
                         if author_msg.channel.id == channel.id and author_msg.attachments:
                             continue
-                    with suppress(NotFound, Forbidden):
+                    with suppress(NotFound, Forbidden, AttributeError):
                         if channel.permissions_for(channel.guild.me).manage_messages:
                             msg = await channel.send(embed=embed)
                             self.msg_cache.append(msg)
