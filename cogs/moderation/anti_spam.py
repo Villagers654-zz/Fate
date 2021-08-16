@@ -259,6 +259,7 @@ class AntiSpam(commands.Cog):
     typing: Dict[int, datetime.now] = {}                       # Keep track of typing to prevent large copy-pastes
     urls: Dict[int, List[List[Union[str, int]]]] = {}          # Cache sent urls to prevent repeats
     imgs: Dict[int, List[int]] = {}                            # Cache sent images to prevent repeats
+    r_cache = {}
 
     def __init__(self, bot: Fate):
         self.bot = bot
@@ -1299,6 +1300,22 @@ class AntiSpam(commands.Cog):
                             delete_after=5,
                             allowed_mentions=mentions
                         )
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload):
+        if payload.guild_id != 850956124168519700:
+            return
+        channel = self.bot.get_channel(payload.channel_id)
+        msg = await channel.fetch_message(payload.message_id)  # type: ignore
+        if len(msg.reactions) < 8:
+            return
+        single = []
+        for r in msg.reactions:
+            if r.count == 1:
+                single.append(r)
+        if len(single) > 2:
+            for r in single:
+                await msg.clear_reaction(r.emoji)
 
     @commands.Cog.listener()
     async def on_ready(self):
