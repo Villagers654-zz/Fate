@@ -159,6 +159,21 @@ class Emojis(commands.Cog):
             await ctx.send(embed=e)
             await asyncio.sleep(1)
 
+    @commands.command(name="sticker")
+    @commands.cooldown(1, 15, commands.BucketType.user)
+    @commands.bot_has_permissions(embed_links=True, attach_files=True)
+    async def sticker(self, ctx):
+        msg = ctx.message
+        if msg.reference and msg.reference.cached_message:
+            msg = msg.reference.cached_message
+        if not msg.stickers:
+            return await ctx.send("No sticker was provided")
+        sticker = msg.stickers[0]
+        e = discord.Embed(color=colors.fate)
+        e.description = str(sticker.id)
+        e.set_image(url=sticker.url)
+        await ctx.send(embed=e)
+
     @commands.command(name="emojis")
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.guild_only()
