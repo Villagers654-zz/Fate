@@ -262,6 +262,8 @@ class AntiSpam(commands.Cog):
     r_cache = {}
 
     def __init__(self, bot: Fate):
+        if "antispam_mutes" not in bot.tasks:
+            bot.tasks["antispam_mutes"] = {}
         self.bot = bot
         self.config = bot.utils.cache("AntiSpam")
         self.cleanup_task.start()
