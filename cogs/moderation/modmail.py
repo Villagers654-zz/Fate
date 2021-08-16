@@ -113,9 +113,9 @@ class ModMail(commands.Cog):
         await ctx.send(f"Unblocked {user} from using modmail")
         await self.config.flush()
 
-    async def reference(self, ctx: Context, case: int, color: int, message: str) -> Message:
+    async def reference(self, guild_id: int, case: int, color: int, message: str) -> Message:
         """ Format a message into the thread channel to notify of an update """
-        channel_id: int = self.config[ctx.guild.id]["channel_id"]
+        channel_id: int = self.config[guild_id]["channel_id"]
         channel: TextChannel = self.bot.get_channel(channel_id)  # type: ignore
 
         # If a thread exists, reference its parent message
@@ -135,7 +135,7 @@ class ModMail(commands.Cog):
 
         # If a new thread, save the parent message id for future updates
         if not reference:
-            self.config[ctx.guild.id]["references"][str(case)] = msg.id
+            self.config[guild_id]["references"][str(case)] = msg.id
             await self.config.flush()
 
         return msg
@@ -291,7 +291,7 @@ class ModMail(commands.Cog):
             if f"Case {case} " in thread.name:
                 if thread.name.endswith("(Closed)"):
                     return await ctx.send("That thread's currently closed")
-                await self.reference(ctx, case, pink, f"New Reply on **Case #{case}**")
+                await self.reference(guild_id, case, pink, f"New Reply on **Case #{case}**")
                 break
         else:
             try:
@@ -372,7 +372,7 @@ class ModMail(commands.Cog):
                     f"The thread for case #{case_number} in {ctx.guild} was closed"
                 )
         await ctx.channel.edit(name=f"{ctx.channel.name} (Closed)", archived=True)
-        await self.reference(ctx, case, red, f"**Case #{case}** was closed by **{ctx.author.mention}**")
+        await self.reference(ctx.guild.id, case, red, f"**Case #{case}** was closed by **{ctx.author.mention}**")
 
 
 def setup(bot: Fate) -> None:
