@@ -1150,7 +1150,7 @@ class AntiSpam(commands.Cog):
                                     stickers_sent.append(sticker.id)
 
                     if msg.stickers and self.config[guild_id]["duplicates"]["sticker"]:
-                        lmt: int = self.config[guild_id]["duplicates"]["same_sticker"]
+                        lmt: int = self.config[guild_id]["duplicates"]["sticker"]
                         lmt_dt = datetime.now(tz=timezone.utc) - timedelta(seconds=lmt)
                         for m in self.msgs[user_id]:
                             if m.id == msg.id:
