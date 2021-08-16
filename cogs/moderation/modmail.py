@@ -183,7 +183,8 @@ class ModMail(commands.Cog):
             else:
                 e.set_footer(text=f"Use .reply to respond again")
                 await ctx.send(embed=e)
-                await ctx.message.delete()
+                if not ctx.message.attachments:
+                    await ctx.message.delete()
 
     @commands.command(name="reply", aliases=["appeal"])
     @commands.cooldown(1, 15, commands.BucketType.user)
