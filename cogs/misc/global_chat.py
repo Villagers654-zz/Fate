@@ -484,12 +484,11 @@ class GlobalChat(commands.Cog):
             converter = commands.clean_content(use_nicknames=True)
             msg.content = await converter.convert(ctx, msg.content)
 
-            # The fact that I have to do this is sad
-            if "balls" in msg.content.lower() or "ba11s" in msg.content.lower() or "bals" in msg.content.lower():
-                msg.content = msg.content.lower()\
-                    .replace("balls", "<:milk:814928895316852756>")\
-                    .replace("ba11s", "<:milk:814928895316852756>")\
-                    .replace("bals", "<:milk:814928895316852756>")
+            # Filter from special blacklist
+	    word_filter = ["balls", "ba11s", "baiis", "ba!!s"]
+
+	    if any(word.lower() in msg.content.lower() for word in word_filter):
+   	        msg.content = " ".join(filter(lambda x: x not in word_filter, msg.content.split()))
 
             # Edit & combine their last msg
             if msg.author.id == self.last_id and self.msg_cache:
