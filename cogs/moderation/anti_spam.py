@@ -1119,11 +1119,11 @@ class AntiSpam(commands.Cog):
                             if r := await self.bot.loop.run_in_executor(None, search):
                                 if msg.channel.id not in self.urls:
                                     self.urls[msg.channel.id]: List[str] = []
-                                match: str = r.group()
-                                if match in self.urls[msg.channel.id]:
+                                re_match: str = r.group()
+                                if re_match in self.urls[msg.channel.id]:
                                     reason = "Duplicates: Repeated link"
                                     triggered = True
-                                self.bot.loop.create_task(self.cache_link(msg.channel, match))
+                                self.bot.loop.create_task(self.cache_link(msg.channel, re_match))
 
                     if self.config[guild_id]["duplicates"]["same_image"] and msg.attachments:
                         for attachment in msg.attachments:
