@@ -71,7 +71,8 @@ class ButtonRoles(commands.Cog):
                       f"{p}role-menu set-limit [limit]\n"
                       f"{p}edit-message `new message`\n"
                       f"{p}change-emoji `new_emoji`\n"
-                      f"{p}set-description `new description`"
+                      f"{p}set-description `new description`\n"
+                      f"{p}toggle-percentage"
             )
             count = 0
             if ctx.guild.id in self.config:
@@ -80,11 +81,20 @@ class ButtonRoles(commands.Cog):
             await ctx.send(embed=e)
 
     @commands.command(name="refresh")
+    @commands.cooldown(1, 25, commands.BucketType.guild)
     async def refresh(self, ctx):
         if ctx.guild.id not in self.config:
             return await ctx.send("This server has no role-menu's to refresh")
-        message_id = await self.get_menu_id(ctx)
-        await self.refresh_menu(ctx.guild.id, message_id)
+        await ctx.send("Refreshing all role menus")
+        for message_id in list(self.config[ctx.guild.id].keys())[:15]:
+            try:
+                await self.refresh_menu(ctx.guild.id, message_id)
+            except discord.errors.NotFound:
+                await self.config.remove_sub(ctx.guild.id, message_id)
+                await ctx.send(f"Removed no longer existing menu '{message_id}'")
+            except discord.errors.HTTPException:
+                await ctx.send(f"Removing {self.config[ctx.guild.id][message_id]['text']}")
+                await self.config.remove_sub(ctx.guild.id, message_id)
         await ctx.send("Success 👍")
 
     @role_menu.command(name="convert")
@@ -352,6 +362,20 @@ class ButtonRoles(commands.Cog):
         await ctx.send(f"Removed {role.mention}", allowed_mentions=discord.AllowedMentions.none())
         await self.config.flush()
 
+    @commands.command(name="toggle-percentage")
+    @commands.has_permissions(administrator=True)
+    async def toggle_percentage(self, ctx):
+        guild_id = ctx.guild.id
+        if guild_id not in self.config:
+            return await ctx.send("There arent any active role menus in this server")
+        message_id = await self.get_menu_id(ctx)
+        old_setting = self.config[guild_id][message_id]["show_percentage"]
+        self.config[guild_id][message_id]["show_percentage"] = not old_setting
+        await self.refresh_menu(guild_id, message_id)
+        toggle = "Enabled" if not old_setting else "Disabled"
+        await ctx.send(f"{toggle} showing the percentage")
+        await self.config.flush()
+
     @role_menu.command(name="set-limit")
     @commands.has_permissions(administrator=True)
     async def set_limit(self, ctx, new_limit: int):
@@ -449,7 +473,6 @@ class ButtonRoles(commands.Cog):
                     await self.config.remove(payload.guild_id)
 
 
-
 class Categories(ui.Select):
     def __init__(self, cls, message_id: int, categories: list):
         self.cls = cls
@@ -534,6 +557,7 @@ class Categories(ui.Select):
 
         select = Select(
             self,
+            self.guild_id,
             self.message_id,
             index,
             self.sub_menu_callback
@@ -561,7 +585,6 @@ class CategoryView(ui.View):
 
         conf = self.config[guild_id][str(message_id)]
         self.add_item(Categories(self, message_id, conf["categories"].keys()))
-
 
 
 class RoleView(ui.View):
@@ -599,7 +622,7 @@ class RoleView(ui.View):
         if self.style == "buttons":
             data = self.config[guild_id][str(message_id)]
             guild = self.bot.get_guild(guild_id)
-            for role_id in data["roles"].keys():
+            for role_id, data in data["roles"].items():
                 role = guild.get_role(int(role_id))
                 if not role:
                     continue
@@ -607,6 +630,7 @@ class RoleView(ui.View):
                 # Add a new button to the class
                 button = ui.Button(
                     label=role.name,
+                    emoji=data["emoji"],
                     style=discord.ButtonStyle.blurple,
                     custom_id=f"{role_id}@{message_id}"
                 )
@@ -614,7 +638,7 @@ class RoleView(ui.View):
                 self.buttons[button.custom_id] = button
                 self.add_item(button)
         else:
-            self.menu = Select(self, message_id, self.index())
+            self.menu = Select(self, guild_id, message_id, self.index())
             self.add_item(self.menu)
 
     def index(self) -> dict:
@@ -689,13 +713,15 @@ class RoleView(ui.View):
     async def select_callback(self, interaction: Interaction) -> Optional[discord.Message]:
         """ The callback function for when a buttons pressed """
 
-        async def adjust_options(reason) -> discord.Message:
+        async def adjust_options(reason=None) -> None:
             """ Remove a button that can no longer be used """
             self.clear_items()
-            self.menu = Select(self, self.message_id, self.index())
+            self.menu = Select(self, self.guild_id, self.message_id, self.index())
             self.add_item(self.menu)
             await interaction.message.edit(view=self)
-            return await interaction.response.send_message(reason, ephemeral=True)
+            if reason:
+                await interaction.response.send_message(reason, ephemeral=True)
+            return
 
         # Fetch required variables
         guild = self.bot.get_guild(self.guild_id)
@@ -726,10 +752,11 @@ class RoleView(ui.View):
             "Successfully set your roles",
             ephemeral=True
         )
+        await adjust_options()
 
 
 class Select(discord.ui.Select):
-    def __init__(self, cls: Union[RoleView, Any], message_id: int, roles: dict, callback=None):
+    def __init__(self, cls: Union[RoleView, Any], guild_id: int, message_id: int, roles: dict, callback=None):
         self.cls = cls
         self.custom_callback = callback
 
@@ -742,9 +769,12 @@ class Select(discord.ui.Select):
         )]
         for role, meta in roles.items():
             meta = dict(meta)
-            label = meta.pop("label")
+            label = meta.pop("label") or role.name[:100]
+            if cls.config[guild_id][str(message_id)]["show_percentage"]:
+                percentage = round(len(role.members)/role.guild.member_count * 100)
+                label = f"({percentage}%) {label[:90]}"
             option = discord.SelectOption(
-                label=label or role.name[:100],
+                label=label,
                 value=str(role.id),
                 **meta
             )
