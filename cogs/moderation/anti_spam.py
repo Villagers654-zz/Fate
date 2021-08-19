@@ -6,9 +6,9 @@ import traceback
 import pytz
 import re
 from typing import *
+
 from discord import ui, Interaction, SelectOption
 from discord.ext.commands import Context
-
 import discord
 from discord.errors import Forbidden, NotFound, HTTPException
 from discord.ext import commands
@@ -21,6 +21,7 @@ from fate import Fate
 
 utc = pytz.UTC
 mentions = discord.AllowedMentions(users=True, roles=False, everyone=False)
+abcs = "abcdefghijklmnopqrstuvwxyzجحخهعغفقثصضشسيبلاتتمكطدظزوةىرؤءذئأإآ"
 defaults = {
     "rate_limit": [
         {
@@ -857,6 +858,18 @@ class AntiSpam(commands.Cog):
                     self.typing[user_id] = []
                 self.typing[user_id].append(when)
 
+    def has_abnormal(self, content):
+        for word in content.split():
+            if len(word) < 6 or word.isdigit() or "@" in word or "<:" in word or "<a:" in word:
+                continue
+            total_abc = len([c for c in word if c.lower() in abcs])
+            non_abc = len(word) - total_abc
+            if not non_abc:
+                continue
+            if not total_abc or non_abc / total_abc * 100 > 60:
+                return True
+        return False
+
     @commands.Cog.listener()
     async def on_message(self, msg: discord.Message):
         if not isinstance(msg.guild, discord.Guild) or msg.author.bot:
@@ -887,7 +900,6 @@ class AntiSpam(commands.Cog):
             # Inhuman checks
             if "inhuman" in self.config[guild_id] and msg.content:
                 conf = self.config[guild_id]["inhuman"]  # type: dict
-                abcs = "abcdefghijklmnopqrstuvwxyzجحخهعغفقثصضشسيبلاتتمكطدظزوةىرؤءذئأإآ"
 
                 content = str(msg.content).lower()
                 lines = content.split("\n")
@@ -963,6 +975,16 @@ class AntiSpam(commands.Cog):
                                 triggered = None
                     if user_id in self.typing:
                         del self.typing[user_id]
+
+                if msg.guild.id == 850956124168519700 and len(msg.content) > 15:
+                    lmt_dt = datetime.now(tz=timezone.utc) - timedelta(seconds=15)
+                    if self.has_abnormal(msg.content):
+                        print(f"Abnormal: {msg.content}")
+                        for m in self.msgs[user_id]:
+                            await asyncio.sleep(0)
+                            if m.id != msg.id and self.has_abnormal(m.content) and m.created_at > lmt_dt:
+                                reason = "Abnormal duplicate"
+                                triggered = True
 
             with suppress(KeyError):
 
@@ -1160,6 +1182,17 @@ class AntiSpam(commands.Cog):
                                 reason = f"Sending more than 1 sticker within {lmt} seconds"
                                 break
 
+                    if msg.guild.id == 850956124168519700:
+                        lmt: int = self.config[guild_id]["duplicates"]["sticker"]
+                        lmt_dt = datetime.now(tz=timezone.utc) - timedelta(seconds=lmt)
+                        for m in self.msgs[user_id]:
+                            if m.id == msg.id:
+                                continue
+                            if m.stickers and m.created_at > lmt_dt:
+                                triggered = True
+                                reason = f"Sending more than 1 sticker within {lmt} seconds"
+                                break
+
                 if (triggered is None or "ascii" in reason) and not msg.author.guild_permissions.administrator:
                     if msg.guild.id not in self.bot.filtered_messages:
                         self.bot.filtered_messages[msg.guild.id] = {}
@@ -1252,10 +1285,12 @@ class AntiSpam(commands.Cog):
                 return
             if not msg.guild.me.guild_permissions.view_audit_log:
                 return
+            if msg.mentions and all(m.bot for m in msg.mentions):
+                return
             prefixes = await get_prefixes_async(self.bot, msg)
             if any(msg.content.startswith(p) for p in prefixes):
                 return
-            lmt = datetime.now(tz=timezone.utc) - timedelta(seconds=15)
+            lmt = datetime.now(tz=timezone.utc) - timedelta(seconds=120)
             if msg.created_at > lmt:
                 async for entry in msg.guild.audit_logs(limit=1, action=discord.AuditLogAction.message_delete):
                     if entry.created_at > lmt:
@@ -1270,12 +1305,14 @@ class AntiSpam(commands.Cog):
                                 user_id=msg.author.id,
                                 guild_id=msg.guild.id,
                                 msg=msg,
-                                reason="Ghost ping"
+                                reason=f"Ghost ping\n"
+                                       f"**Target:** {self.bot.get_user(msg.raw_mentions[0])}"
                             )
                         )
                         return
                 e = discord.Embed(color=self.bot.config["theme_color"])
-                e.description = f"{msg.author.mention} no ghost pinging"
+                e.description = f"{msg.author.mention} no ghost pinging\n" \
+                                f"**Target:** {self.bot.get_user(msg.raw_mentions[0])}"
                 await msg.channel.send(
                     embed=e,
                     allowed_mentions=mentions
