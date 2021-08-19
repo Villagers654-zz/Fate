@@ -219,7 +219,7 @@ class Core(commands.Cog):
             return await ctx.send("That's too long")
         content = await sanitize(content)
         await ctx.send(content, allowed_mentions=discord.AllowedMentions.none())
-        if has_perms and ctx.message:
+        if not ctx.message.mentions and not ctx.message.role_mentions and has_perms and ctx.message:
             await ctx.message.delete()
 
     @commands.command(name="prefix")
