@@ -332,7 +332,8 @@ class ButtonRoles(commands.Cog):
         self.config[guild_id][message_id]["roles"][str(role.id)] = {
             "emoji": emoji,
             "label": label,
-            "description": description
+            "description": description,
+            "show_percentage": False
         }
 
         await self.refresh_menu(guild_id, message_id)
@@ -589,6 +590,7 @@ class CategoryView(ui.View):
 
 class RoleView(ui.View):
     def __init__(self, cls: ButtonRoles, guild_id: int, message_id: int):
+        self.cls = cls
         self.bot = cls.bot
         self.config = cls.config
         self.guild_id = guild_id
@@ -627,9 +629,14 @@ class RoleView(ui.View):
                 if not role:
                     continue
 
+                label = data.get("label") or role.name
+                if conf["show_percentage"]:
+                    percentage = round(len(role.members) / role.guild.member_count * 100)
+                    label = f"({percentage}%) {label[:90]}"
+
                 # Add a new button to the class
                 button = ui.Button(
-                    label=role.name,
+                    label=label,
                     emoji=data["emoji"],
                     style=discord.ButtonStyle.blurple,
                     custom_id=f"{role_id}@{message_id}"
@@ -709,6 +716,10 @@ class RoleView(ui.View):
             f"{action} {role.mention}",
             ephemeral=True
         )
+
+        if self.config[self.guild_id][self.message_id]["show_percentage"]:
+            self.__init__(self.cls, self.guild_id, self.message_id)
+            await interaction.message.edit(view=self)
 
     async def select_callback(self, interaction: Interaction) -> Optional[discord.Message]:
         """ The callback function for when a buttons pressed """
