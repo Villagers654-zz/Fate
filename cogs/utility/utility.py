@@ -7,13 +7,14 @@ import json
 import os
 import requests
 import re
-from typing import Optional, Union
+from typing import *
 from time import time
 import platform
 from contextlib import suppress
 
 import discord
-from discord import User, Role, TextChannel, Member, ui, ButtonStyle
+from discord import User, Role, TextChannel, Member, ui, ButtonStyle, SelectOption, Message
+from discord.ext.commands import Context
 from discord.errors import NotFound, HTTPException
 from PIL import Image
 from colormap import rgb2hex
@@ -78,6 +79,41 @@ class ProfileType(ui.View):
         await interaction.message.edit(embed=new_embed, view=self)
 
 
+class InfoView(ui.View):
+    class InfoSelect(ui.Select):
+        options: List[SelectOption] = [
+            SelectOption(label="Bot Info", emoji="🤖"),
+            SelectOption(label="User Info", emoji="👨‍💻"),
+            SelectOption(label="Server Info", emoji="🖥"),
+            SelectOption(label="Channel Info", emoji="📺")
+        ]
+        def __init__(self, ctx: Context, message: Message) -> None:
+            self.ctx = ctx
+            self.message = message
+            super().__init__(
+                custom_id=f"select_{time()}",
+                placeholder="Select a Target",
+                min_values=1,
+                max_values=1,
+                options=self.options
+            )
+
+        async def callback(self, interaction: discord.Interaction) -> None:
+            choice: str = interaction.data["values"][0]
+            if choice == "User Info":
+
+                return await self.ctx.command.__call__(self.ctx, target=self.ctx.author)
+            elif choice == "Server Info":
+                return await self.ctx.bot.get_command("sinfo").__call__(self.ctx)
+            elif choice == "Channel Info":
+                return await self.ctx.command.__call__(self.ctx, target=self.ctx.channel)
+            await self.ctx.command.__call__(self.ctx)
+
+    def __init__(self, ctx: Context, message: Message) -> None:
+        super().__init__(timeout=45)
+        self.add_item(self.InfoSelect(ctx, message))
+
+
 class SatisfiableChannel(commands.Converter):
     async def convert(self, ctx, argument):
         converter = commands.TextChannelConverter()
@@ -116,6 +152,8 @@ class Utility(commands.Cog):
 
     def cog_unload(self):
         self.database_cleanup_task.cancel()
+
+    # async def fetch_embeds(self, ctx):
 
     @tasks.loop(hours=6)
     async def database_cleanup_task(self):
@@ -502,16 +540,17 @@ class Utility(commands.Cog):
                 await msg.edit(embed=e)
 
         else:
-            options = ["Bot Info", "User Info", "Server Info", "Channel Info"]
-            choice = await GetChoice(ctx, options)
-            if not choice:
-                return
-            if choice == "User Info":
-                return await ctx.command.__call__(ctx, target=ctx.author)
-            elif choice == "Server Info":
-                return await self.bot.get_command("sinfo").__call__(ctx)
-            elif choice == "Channel Info":
-                return await ctx.command.__call__(ctx, target=ctx.channel)
+            if not hasattr(ctx, "invoked_by_view"):
+                options = ["Bot Info", "User Info", "Server Info", "Channel Info"]
+                choice = await GetChoice(ctx, options)
+                if not choice:
+                    return
+                if choice == "User Info":
+                    return await ctx.command.__call__(ctx, target=ctx.author)
+                elif choice == "Server Info":
+                    return await self.bot.get_command("sinfo").__call__(ctx)
+                elif choice == "Channel Info":
+                    return await ctx.command.__call__(ctx, target=ctx.channel)
 
             e = discord.Embed()
             e.set_author(
