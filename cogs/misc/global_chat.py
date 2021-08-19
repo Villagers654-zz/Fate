@@ -485,10 +485,8 @@ class GlobalChat(commands.Cog):
             msg.content = await converter.convert(ctx, msg.content)
 
             # Filter from special blacklist
-	    word_filter = ["balls", "ba11s", "baiis", "ba!!s"]
-
-	    if any(word.lower() in msg.content.lower() for word in word_filter):
-   	        msg.content = " ".join(filter(lambda x: x not in word_filter, msg.content.split()))
+            word_filter = ["balls", "ba11s", "baiis", "ba!!s", "cum", "loli", "slut", "rape"]
+            msg.content = " ".join(filter(lambda x: x.lower() not in word_filter, msg.content.split()))
 
             # Edit & combine their last msg
             if msg.author.id == self.last_id and self.msg_cache:
