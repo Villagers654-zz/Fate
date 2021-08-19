@@ -36,7 +36,7 @@ class CustomCommands(commands.Cog):
     @tasks.loop(minutes=1)
     async def cleanup_task(self):
         for guild_id, commands in list(self.cache.items()):
-            for command, (_resp, cached_at) in commands.items():
+            for command, (_resp, cached_at) in list(commands.items()):
                 await asyncio.sleep(0)
                 if time() - cached_at > 60 * 10:
                     del self.cache[guild_id][command]
