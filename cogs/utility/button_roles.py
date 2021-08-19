@@ -245,7 +245,8 @@ class ButtonRoles(commands.Cog):
             },
             "text": "Choose your role",
             "style": style,
-            "limit": 1
+            "limit": 1,
+            "show_percentage": False
         }
         view = RoleView(cls=self, guild_id=ctx.guild.id, message_id=msg.id)
         await msg.edit(view=view)
