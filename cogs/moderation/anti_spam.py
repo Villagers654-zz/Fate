@@ -389,6 +389,11 @@ class AntiSpam(commands.Cog):
     @commands.has_permissions(administrator=True)
     @commands.bot_has_permissions(embed_links=True, add_reactions=True, manage_messages=True)
     async def _configure(self, ctx):
+        if ctx.guild.id not in self.config:
+            return await ctx.send(
+                f"AntiSpam isn't enabled. You can enable it via {ctx.prefix}antispam enable"
+            )
+
         # Parse the choices
         choices = list(self.config[ctx.guild.id].keys())
         if "ignored" in choices:
