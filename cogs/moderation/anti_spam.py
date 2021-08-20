@@ -364,8 +364,7 @@ class AntiSpam(commands.Cog):
                       '**Mass-Pings:** `mass mentioning users`\n' \
                       '**Anti-Macro:** `using macros for bots`\n' \
                       '**Duplicates:** `copying and pasting`\n' \
-                      '**Inhuman:** `abnormal, ascii, tall, etc`\n' \
-                      '**Threads:** `limit the num of open threads`'
+                      '**Inhuman:** `abnormal, ascii, tall, etc`'
             e.add_field(name="◈ Modules", value=modules, inline=False)
             guild_id = ctx.guild.id
             if guild_id in self.config:
@@ -377,8 +376,10 @@ class AntiSpam(commands.Cog):
                     channels = []
                     for channel_id in self.config[guild_id]["ignored"]:
                         channel = self.bot.get_channel(channel_id)
-                        if channel:
+                        if channel and channel.guild.id == ctx.guild.id:
                             channels.append(channel)
+                        else:
+                            self.config[guild_id]["ignored"].remove(channel_id)
                     if channels:
                         conf += "**Ignored:** " + ", ".join(c.mention for c in channels)
                 if conf:
