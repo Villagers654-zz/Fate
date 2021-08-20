@@ -30,6 +30,7 @@ class ModView(ui.View):
             )
             return False
         if self.cd.check(member.id):
+            await interaction.response.send_message("You're on cooldown. Try again in a few seconds")
             return False
         return True
 
