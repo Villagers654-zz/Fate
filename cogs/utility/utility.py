@@ -13,7 +13,7 @@ import platform
 from contextlib import suppress
 
 import discord
-from discord import User, Role, TextChannel, Member, ui, ButtonStyle, SelectOption, Message, Embed, Interaction
+from discord import User, Role, TextChannel, Member, ui, ButtonStyle, SelectOption, Message, Embed, Interaction, Guild
 from discord.ext.commands import Context
 from discord.errors import NotFound, HTTPException
 from PIL import Image
@@ -396,44 +396,9 @@ class Utility(commands.Cog):
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
     async def server_info(self, ctx):
-        color = colors.fate
-        if ctx.guild.icon:
-            try:
-                _color = self.avg_color(ctx.guild.icon.url)
-                color = _color
-            except ZeroDivisionError:
-                pass
-        e = discord.Embed(color=color)
-        e.description = f"id: {ctx.guild.id}\nOwner: {ctx.guild.owner}"
-        e.set_author(name=f"{ctx.guild.name}:", icon_url=ctx.guild.owner.avatar.url)
-        if ctx.guild.icon:
-            e.set_thumbnail(url=ctx.guild.icon.url)
-        main = (
-            f"• AFK Timeout [`{ctx.guild.afk_timeout}`]\n"
-            f"• Region [`{ctx.guild.region}`]\n"
-            f"• Members [`{ctx.guild.member_count}`]"
-        )
-        e.add_field(name="◈ Main ◈", value=main, inline=False)
-        security = (
-            f"• Explicit Content Filter: [`{ctx.guild.explicit_content_filter}`]\n"
-            f"• Verification Level: [`{ctx.guild.verification_level}`]\n"
-            f"• 2FA Level: [`{ctx.guild.mfa_level}`]"
-        )
-        e.add_field(name="◈ Security ◈", value=security, inline=False)
-        if ctx.guild.premium_tier:
-            perks = (
-                f"• Boost Level [`{ctx.guild.premium_tier}`]\n"
-                f"• Total Boosts [`{ctx.guild.premium_subscription_count}`]\n"
-                f"• Max Emoji's [`{ctx.guild.emoji_limit}`]\n"
-                f'• Max Bitrate [`{bytes2human(ctx.guild.bitrate_limit).replace(".0", "")}`]\n'
-                f'• Max Filesize [`{bytes2human(ctx.guild.filesize_limit).replace(".0", "")}`]'
-            )
-            e.add_field(name="◈ Perks ◈", value=perks, inline=False)
-        created = datetime.date(ctx.guild.created_at)
-        e.add_field(
-            name="◈ Created ◈", value=created.strftime("%m/%d/%Y"), inline=False
-        )
-        await ctx.send(embed=e)
+        view = await InfoView(ctx, ctx.guild)
+        await view.wait()
+        await view.message.edit(view=None)
 
     @commands.command(name="servericon", aliases=["icon"])
     @commands.cooldown(1, 3, commands.BucketType.user)
@@ -1081,7 +1046,8 @@ pages: Dict[Type, str] = {
     User: "user_info",
     Member: "user_info",
     TextChannel: "channel_info",
-    Role: "role_info"
+    Role: "role_info",
+    Guild: "server_info"
 }
 
 
@@ -1497,6 +1463,40 @@ class InfoView(AuthorView):
             )
         yield e
 
+    async def server_info(self):
+        ctx = self.ctx
+        e = discord.Embed(color=colors.fate)
+        e.description = f"id: {ctx.guild.id}\nOwner: {ctx.guild.owner}"
+        e.set_author(name=f"{ctx.guild.name}:", icon_url=ctx.guild.owner.avatar.url)
+        if ctx.guild.icon:
+            e.set_thumbnail(url=ctx.guild.icon.url)
+        main = (
+            f"• AFK Timeout [`{ctx.guild.afk_timeout}`]\n"
+            f"• Region [`{ctx.guild.region}`]\n"
+            f"• Members [`{ctx.guild.member_count}`]"
+        )
+        e.add_field(name="◈ Main ◈", value=main, inline=False)
+        security = (
+            f"• Explicit Content Filter: [`{ctx.guild.explicit_content_filter}`]\n"
+            f"• Verification Level: [`{ctx.guild.verification_level}`]\n"
+            f"• 2FA Level: [`{ctx.guild.mfa_level}`]"
+        )
+        e.add_field(name="◈ Security ◈", value=security, inline=False)
+        if ctx.guild.premium_tier:
+            perks = (
+                f"• Boost Level [`{ctx.guild.premium_tier}`]\n"
+                f"• Total Boosts [`{ctx.guild.premium_subscription_count}`]\n"
+                f"• Max Emoji's [`{ctx.guild.emoji_limit}`]\n"
+                f'• Max Bitrate [`{bytes2human(ctx.guild.bitrate_limit).replace(".0", "")}`]\n'
+                f'• Max Filesize [`{bytes2human(ctx.guild.filesize_limit).replace(".0", "")}`]'
+            )
+            e.add_field(name="◈ Perks ◈", value=perks, inline=False)
+        created = datetime.date(ctx.guild.created_at)
+        e.add_field(
+            name="◈ Created ◈", value=created.strftime("%m/%d/%Y"), inline=False
+        )
+        yield e
+
 
 class SelectMenu(ui.Select):
     """ Select options for the parent view """
@@ -1505,6 +1505,7 @@ class SelectMenu(ui.Select):
         options = [
             SelectOption(label="User Info"),
             SelectOption(label="Bot Info"),
+            SelectOption(label="Server Info"),
             SelectOption(label="Channel Info")
         ]
         if isinstance(self.parent.target, str):
