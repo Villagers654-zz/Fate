@@ -55,6 +55,8 @@ class _Select(discord.ui.Select):
         self.user_id = user_id
         self.limit = limit
 
+        if not choices:
+            raise TypeError("No options were provided")
         options = []
         for option in choices:
             options.append(discord.SelectOption(label=str(option)[:100]))
