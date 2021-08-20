@@ -330,7 +330,7 @@ class Utility(commands.Cog):
         if msg.author.bot:
             return
         for user in msg.mentions:
-            if user.id in self.afk:
+            if user.id in self.afk and msg.author.id != user.id:
                 replies = ["shh", "shush", "shush child", "nO"]
                 choice = random.choice(replies)
                 await msg.channel.send(f"{choice} he's {self.afk[user.id]}")
