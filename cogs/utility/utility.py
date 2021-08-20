@@ -1062,7 +1062,8 @@ class Utility(commands.Cog):
                 return await ctx.send("That role has too many members :[")
             e = discord.Embed(color=role.color)
             e.set_author(name=role.name, icon_url=ctx.author.avatar.url)
-            e.set_thumbnail(url=ctx.guild.icon.url)
+            if ctx.guild.icon:
+                e.set_thumbnail(url=ctx.guild.icon.url)
             e.description = ""
             dat = [(m, m.top_role.position) for m in role.members][:10]
             for member, position in sorted(dat, key=lambda kv: kv[1], reverse=True):
