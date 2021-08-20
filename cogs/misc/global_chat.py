@@ -143,8 +143,9 @@ class GlobalChat(commands.Cog):
             await cur.execute(f"select guild_id, channel_id from global_chat;")
             ids = await cur.fetchall()
         for guild_id, channel_id in ids:
-            channel = self.bot.get_channel(channel_id)
-            if not channel:
+            try:
+                channel = await self.bot.fetch_channel(channel_id)
+            except NotFound:
                 async with self.bot.utils.cursor() as cur:
                     await cur.execute(
                         f"delete from global_chat "
