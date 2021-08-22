@@ -95,6 +95,9 @@ class GetChoice(discord.ui.View):
         :param discord.Message message:
         :param bool delete_after:
         """
+        if len(choices) > 25:
+            choices = choices[:25]
+
         self.ctx = ctx
         self.choices = choices
         self.limit = limit
@@ -140,6 +143,7 @@ class GetChoice(discord.ui.View):
 
         if self.limit == 1:
             for choice in self.choices:
+                await asyncio.sleep(0)
                 if self.selected[0] in choice:
                     return choice
             return self.selected[0]
