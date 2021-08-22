@@ -985,7 +985,6 @@ class AntiSpam(commands.Cog):
                 if msg.guild.id == 850956124168519700 and len(msg.content) > 15:
                     lmt_dt = datetime.now(tz=timezone.utc) - timedelta(seconds=15)
                     if self.has_abnormal(msg.content):
-                        print(f"Abnormal: {msg.content}")
                         for m in self.msgs[user_id]:
                             await asyncio.sleep(0)
                             if m.id != msg.id and self.has_abnormal(m.content) and m.created_at > lmt_dt:
@@ -1169,6 +1168,8 @@ class AntiSpam(commands.Cog):
                         lmt: int = self.config[guild_id]["duplicates"]["same_sticker"]
                         lmt_dt = datetime.now(tz=timezone.utc) - timedelta(seconds=lmt)
                         for m in self.msgs[user_id]:
+                            if m.id == msg.id:
+                                continue
                             if m.created_at > lmt_dt:
                                 for sticker in m.stickers:
                                     if sticker.id in stickers_sent:
@@ -1178,17 +1179,6 @@ class AntiSpam(commands.Cog):
                                     stickers_sent.append(sticker.id)
 
                     if msg.stickers and self.config[guild_id]["duplicates"]["sticker"]:
-                        lmt: int = self.config[guild_id]["duplicates"]["sticker"]
-                        lmt_dt = datetime.now(tz=timezone.utc) - timedelta(seconds=lmt)
-                        for m in self.msgs[user_id]:
-                            if m.id == msg.id:
-                                continue
-                            if m.stickers and m.created_at > lmt_dt:
-                                triggered = True
-                                reason = f"Sending more than 1 sticker within {lmt} seconds"
-                                break
-
-                    if msg.guild.id == 850956124168519700:
                         lmt: int = self.config[guild_id]["duplicates"]["sticker"]
                         lmt_dt = datetime.now(tz=timezone.utc) - timedelta(seconds=lmt)
                         for m in self.msgs[user_id]:
@@ -1284,7 +1274,7 @@ class AntiSpam(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_delete(self, msg):
-        if msg.guild and msg.raw_mentions and msg.guild.id in self.config:
+        if not msg.author.bot and msg.guild and msg.raw_mentions and msg.guild.id in self.config:
             if "mass_pings" not in self.config[msg.guild.id]:
                 return
             if not self.config[msg.guild.id]["mass_pings"]["ghost_pings"]:
@@ -1299,6 +1289,9 @@ class AntiSpam(commands.Cog):
             lmt = datetime.now(tz=timezone.utc) - timedelta(seconds=120)
             if msg.created_at > lmt:
                 async for entry in msg.guild.audit_logs(limit=1, action=discord.AuditLogAction.message_delete):
+                    if entry.created_at > lmt:
+                        return
+                async for entry in msg.guild.audit_logs(limit=1, action=discord.AuditLogAction.message_bulk_delete):
                     if entry.created_at > lmt:
                         return
                 await asyncio.sleep(3)
