@@ -33,6 +33,8 @@ class ButtonRoles(commands.Cog):
     @commands.Cog.listener("on_ready")
     async def load_menus_on_start(self):
         for guild_id, menus in self.config.items():
+            if not self.bot.get_guild(guild_id):
+                continue
             for msg_id, data in menus.items():
                 if data["style"] == "category":
                     self.bot.add_view(CategoryView(self, guild_id, msg_id))
