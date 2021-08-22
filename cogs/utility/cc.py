@@ -57,7 +57,7 @@ class CustomCommands(commands.Cog):
     @commands.cooldown(2, 5, commands.BucketType.channel)
     async def cc(self, ctx, add_or_remove=None, command=None, *, response=None):
         p = ctx.prefix
-        if not add_or_remove or (add_or_remove == "add" and (not command or not response)):
+        if not add_or_remove or (add_or_remove == "add" and not command):
             e = Embed(color=self.bot.config["theme_color"])
             e.set_author(name="Custom Commands", icon_url=self.bot.user.avatar.url)
             e.description = "Create commands with custom responses"
@@ -75,9 +75,10 @@ class CustomCommands(commands.Cog):
             # Re-invoke the command without args
             return await self.cc(ctx)
 
-        command = command.lower()
-        if len(command) > 16:
-            return await ctx.send("Command names can't be longer than 16 characters")
+        if command:
+            command = command.lower()
+            if len(command) > 16:
+                return await ctx.send("Command names can't be longer than 16 characters")
 
         if add_or_remove == "add":
             if self.bot.get_command(command):
