@@ -65,6 +65,7 @@ class ConfigureModules:
         self.ctx = ctx
         self.bot = ctx.bot
         self.guild_id = ctx.guild.id
+        self.cmd_cd = ctx.bot.utils.cooldown_manager(1, 10)
 
         self.cursor = {}
         self.row = 0
@@ -347,6 +348,10 @@ class ConfigureModules:
 
     async def configure(self, key):
         """Alter a configs data"""
+
+        if key in ("Enable", "Disable"):
+            if self.cmd_cd.check(1):
+                return
 
         # Enable the command
         if key == "Enable":
