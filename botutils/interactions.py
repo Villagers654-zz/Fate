@@ -42,9 +42,12 @@ class AuthorView(ui.View):
     async def interaction_check(self, interaction: Interaction):
         if interaction.user.id != self.ctx.author.id:
             await interaction.response.send_message(
-                "Only moderators can interact", ephemeral=True
+                "Only the user who initiated this menu can interact", ephemeral=True
             )
             return False
         if self.cd.check(interaction.user.id):
+            await interaction.response.send_message(
+                "You're on cooldown; try again in a few seconds", ephemeral=True
+            )
             return False
         return True
