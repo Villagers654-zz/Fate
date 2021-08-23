@@ -1,6 +1,6 @@
 """
-cogs.dev.help
-~~~~~~~~~~~~~~
+cogs.core.menus
+~~~~~~~~~~~~~~~~
 
 A beta help menu that uses views instead of reactions
 
