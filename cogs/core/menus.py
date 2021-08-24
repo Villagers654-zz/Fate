@@ -211,7 +211,7 @@ class HelpSelect(ui.Select):
         elif isinstance(main.state, list):
             for command in main.state:
                 checks = str(command.checks)
-                if "luck" in checks or "owner" in checks:
+                if "luck" in checks or "is_owner" in checks:
                     continue
                 description = None
                 if isinstance(command.usage, str):
