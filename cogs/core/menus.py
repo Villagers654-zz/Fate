@@ -218,7 +218,7 @@ class HelpSelect(ui.Select):
                     description = command.usage[:100]
                 if command.description:
                     description = command.description
-                self._options.append(SelectOption(emoji="🌐", label=command.name, description=description))
+                self._options.append(SelectOption(emoji="🌐", label=str(command), description=description))
 
         # Copy the _options var
         options = list(self._options)
