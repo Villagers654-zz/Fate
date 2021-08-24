@@ -394,12 +394,13 @@ class Factions(commands.Cog):
         e = discord.Embed(color=purple)
         e.set_author(name="Usage", icon_url=ctx.author.avatar.url)
         e.set_thumbnail(url=ctx.guild.icon.url)
-        p = get_prefix(ctx)  # type: str
+        p: str = ctx.prefix
         e.add_field(
             name="◈ Core ◈",
             value=f"  {p}f create [name]"
                   f"\n{p}f rename [name]"
                   f"\n{p}f disband"
+                  f"\n{p}f transfer @user"
                   f"\n{p}f join [faction]"
                   f"\n{p}f invite @user"
                   f"\n{p}f promote @user"
@@ -498,6 +499,29 @@ class Factions(commands.Cog):
                     self.factions[guild_id][fac]["allies"].remove(faction)
             del self.factions[guild_id][faction]
             await ctx.send("Ok.. deleted your faction")
+            await self.save_data()
+        else:
+            await ctx.send("Ok, I won't delet")
+
+    @factions.command(name="transfer", description="Gives your faction to someone else")
+    @commands.cooldown(1, 10, commands.BucketType.user)
+    @is_faction_owner()
+    async def transfer(self, ctx, *, user: discord.Member):
+        """ Deletes the owned faction """
+        guild_id = str(ctx.guild.id)
+        faction = await self.get_owned_faction(ctx)
+        if ctx.author.id != self.factions[guild_id][faction]["owner"]:
+            return await ctx.send("Only the faction owner can run this")
+        if user.id not in self.factions[guild_id][faction]["members"]:
+            if await self.get_users_faction(ctx, user):
+                return await ctx.send("That user's already in a faction")
+        await ctx.send(
+            "Are you sure you want to transfer your faction?\nReply with 'yes' or 'no'"
+        )
+        msg = await self.bot.utils.get_message(ctx)
+        if "yes" in msg.content.lower():
+            self.factions[guild_id][faction]["owner"] = user.id
+            await ctx.send(f"Alright, transferred your faction to **{user}**")
             await self.save_data()
         else:
             await ctx.send("Ok, I won't delet")
