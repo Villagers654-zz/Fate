@@ -35,7 +35,7 @@ command_attrs = (commands.core.Command, commands.core.Group)
 # Use strings or lists to denote what module goes on what page
 structure = {
     "Core": [
-        "Core", "Statistics"
+        "Core", "Statistics", "CustomCommands"
     ],
     "Moderation": {
         "Mod Cmds": [
@@ -209,6 +209,7 @@ class HelpSelect(ui.Select):
 
         # Shows a list of commands
         elif isinstance(main.state, list):
+            p: str = main.ctx.prefix
             for command in main.state:
                 checks = str(command.checks)
                 if "luck" in checks or "is_owner" in checks:
@@ -218,7 +219,7 @@ class HelpSelect(ui.Select):
                     description = command.usage[:100]
                 if command.description:
                     description = command.description
-                self._options.append(SelectOption(emoji="🌐", label=str(command), description=description))
+                self._options.append(SelectOption(emoji="🌐", label=p + str(command), description=description))
 
         # Copy the _options var
         options = list(self._options)
@@ -264,7 +265,7 @@ class HelpSelect(ui.Select):
         # Send a commands help
         else:
             if isinstance(self.main.state, list):
-                command = self.main.bot.get_command(key)
+                command = self.main.bot.get_command(key.lstrip("."))
                 if not command.usage:
                     return await interaction.response.send_message(
                         "No help information is currently available for that command", ephemeral=True
