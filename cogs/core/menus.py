@@ -227,11 +227,11 @@ class HelpSelect(ui.Select):
         if len(options) > 25:
             remainder = len(options) - 24
             options = options[:24]
-            self.view_rest = SelectOption(
+            self.view_rest_button = SelectOption(
                 emoji="🔍", label=f"Show Remaining {remainder} Commands"
             )
-            self._options.append(self.view_rest)
-            options.append(self.view_rest)
+            self._options.append(self.view_rest_button)
+            options.append(self.view_rest_button)
 
         super().__init__(
             placeholder="Select an option",
@@ -252,7 +252,7 @@ class HelpSelect(ui.Select):
         # Show first page of options
         elif "First" in key:
             self.options = self._options[:24]
-            self.options.append(self.view_rest)
+            self.options.append(self.view_rest_button)
 
         # Show second page of options
         elif "Remaining" in key:
