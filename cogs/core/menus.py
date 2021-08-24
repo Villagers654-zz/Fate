@@ -216,6 +216,8 @@ class HelpSelect(ui.Select):
                 description = None
                 if isinstance(command.usage, str):
                     description = command.usage[:100]
+                if command.description:
+                    description = command.description
                 self._options.append(SelectOption(emoji="🌐", label=command.name, description=description))
 
         # Copy the _options var
@@ -254,7 +256,7 @@ class HelpSelect(ui.Select):
 
         # Show second page of options
         elif "Remaining" in key:
-            cut = int("".join(c for c in key if c.isdigit()))
+            cut = int("".join(c for c in key if c.isdigit())) + 1
             self.options = [self.cancel_option] + self._options[-cut:]  # type: ignore
             self.options = self.options[:len(self.options) - 1]
             self.options.append(SelectOption(emoji="🔍", label="Show First Section of Commands"))
