@@ -364,7 +364,7 @@ class Factions(commands.Cog):
         else:
             return msg
 
-    @commands.group(name="factions", aliases=["f"])
+    @commands.group(name="factions", aliases=["f"], description="Shows the description of this module")
     @commands.cooldown(4, 6, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
@@ -385,7 +385,7 @@ class Factions(commands.Cog):
             e.set_footer(text=f"For help use {p}f help")
             await ctx.send(embed=e)
 
-    @factions.command(name="help", aliases=["commands"])
+    @factions.command(name="help", aliases=["commands"], description="Shows the list of faction commands")
     @commands.cooldown(1, 60, commands.BucketType.user)
     @commands.cooldown(1, 30, commands.BucketType.channel)
     @commands.cooldown(2, 120, commands.BucketType.channel)
@@ -441,7 +441,7 @@ class Factions(commands.Cog):
         )
         await ctx.send(embed=e)
 
-    @factions.command(name="create")
+    @factions.command(name="create", description="Creates a new faction with you as the owner")
     async def create(self, ctx, *, name):
         """ Creates a faction """
         guild_id = str(ctx.guild.id)
@@ -481,7 +481,7 @@ class Factions(commands.Cog):
         await ctx.send("Created your faction")
         await self.save_data()
 
-    @factions.command(name="disband")
+    @factions.command(name="disband", description="Deletes the faction you own")
     @commands.cooldown(1, 10, commands.BucketType.user)
     @is_faction_owner()
     async def disband(self, ctx):
@@ -502,7 +502,7 @@ class Factions(commands.Cog):
         else:
             await ctx.send("Ok, I won't delet")
 
-    @factions.command(name="join")
+    @factions.command(name="join", description="Join an existing faction")
     async def join(self, ctx, *, faction):
         """ Joins a public faction via name """
         if await self.get_users_faction(ctx):
@@ -525,7 +525,7 @@ class Factions(commands.Cog):
         await ctx.send(embed=e)
         await self.save_data()
 
-    @factions.command(name="invite")
+    @factions.command(name="invite", description="Invite someone to your faction")
     @has_faction_permissions()
     async def invite(self, ctx, user: discord.Member):
         """ Invites a user to a private faction """
@@ -572,7 +572,7 @@ class Factions(commands.Cog):
                 await ctx.send("Alrighty then :[")
         self.pending.remove(user.id)
 
-    @factions.command(name="leave")
+    @factions.command(name="leave", description="Leaves the current faction you're in")
     async def leave(self, ctx):
         """ Leaves a faction """
         faction = await self.get_authors_faction(ctx)
@@ -588,7 +588,7 @@ class Factions(commands.Cog):
         await ctx.send("👍")
         await self.save_data()
 
-    @factions.command(name="kick")
+    @factions.command(name="kick", description="Kicks someone from your faction")
     async def kick(self, ctx, *, user: discord.User):
         """ Kicks a user from the faction """
         faction = await self.get_authors_faction(ctx)
@@ -610,7 +610,7 @@ class Factions(commands.Cog):
         await ctx.send(f"Kicked {user.mention} from {faction}")
         await self.save_data()
 
-    @factions.command(name="promote")
+    @factions.command(name="promote", description="Gives a member perms to run owner commands")
     @is_faction_owner()
     async def promote(self, ctx, *, user):
         """ Promotes a faction member to Co-Owner"""
@@ -631,7 +631,7 @@ class Factions(commands.Cog):
         await ctx.send(f"Promoted {user.mention} to co-owner")
         await self.save_data()
 
-    @factions.command(name="demote")
+    @factions.command(name="demote", description="Removes a members perms to run owner commands")
     @is_faction_owner()
     async def demote(self, ctx, *, user):
         """ Demotes a faction member from Co-Owner """
@@ -649,7 +649,7 @@ class Factions(commands.Cog):
         self.factions[guild_id][faction]["co-owners"].remove(user.id)
         await ctx.send(f"Demoted {user.mention} from co-owner")
 
-    @factions.command(name="privacy")
+    @factions.command(name="privacy", description="Toggles whether or not people need an invite to join your faction")
     @has_faction_permissions()
     async def privacy(self, ctx):
         faction = await self.get_authors_faction(ctx)
@@ -659,7 +659,7 @@ class Factions(commands.Cog):
         await ctx.send(f"Made {faction} {'public' if (not toggle) else 'private'}")
         await self.save_data()
 
-    @factions.command(name="set-bio", aliases=["set_bio", "setbio"])
+    @factions.command(name="set-bio", aliases=["set_bio", "setbio"], description="Sets the factions bio")
     @has_faction_permissions()
     async def set_bio(self, ctx, *, bio):
         faction = await self.get_authors_faction(ctx)
@@ -669,7 +669,7 @@ class Factions(commands.Cog):
         await ctx.send("Set your factions bio")
         await self.save_data()
 
-    @factions.command(name="set-icon", aliases=["seticon", "set_icon"])
+    @factions.command(name="set-icon", aliases=["seticon", "set_icon"], description="Sets the factions icon image")
     @has_faction_permissions()
     async def set_icon(self, ctx, url = None):
         faction = await self.get_authors_faction(ctx)
@@ -707,7 +707,7 @@ class Factions(commands.Cog):
         await ctx.send("Set your factions icon")
         await self.save_data()
 
-    @factions.command(name="set-banner", aliases=["setbanner", "set_banner"])
+    @factions.command(name="set-banner", aliases=["setbanner", "set_banner"], description="Sets the factions banner image")
     @has_faction_permissions()
     async def set_banner(self, ctx, url=None):
         faction = await self.get_authors_faction(ctx)
@@ -745,7 +745,7 @@ class Factions(commands.Cog):
         await ctx.send("Set your factions banner")
         await self.save_data()
 
-    @factions.command(name="annex")
+    @factions.command(name="annex", description="Consumes another faction into your own if they agree")
     @is_faction_owner()
     async def annex(self, ctx, *, faction):
         """ Merges a faction with another """
@@ -785,7 +785,7 @@ class Factions(commands.Cog):
 
         await ctx.send(f"Successfully annexed {other_faction}")
 
-    @factions.command(name="rename")
+    @factions.command(name="rename", description="Changes the name of your faction")
     @is_faction_owner()
     async def rename(self, ctx, *, name):
         """ Renames their faction """
@@ -816,7 +816,7 @@ class Factions(commands.Cog):
         await ctx.send(f"Changed your factions name from {faction} to {name}")
         await self.save_data()
 
-    @factions.command(name="info")
+    @factions.command(name="info", description="Provides centralized info on your faction")
     async def info(self, ctx, *, faction=None):
         """ Bulk information on a faction """
         if faction:
@@ -866,7 +866,7 @@ class Factions(commands.Cog):
         e.set_footer(text=f"Leaderboard Rank: #{rank}")
         await ctx.send(embed=e)
 
-    @factions.command(name="income")
+    @factions.command(name="income", description="Shows where all a factions income comes from")
     async def income(self, ctx):
         faction = await self.get_authors_faction(ctx)
         guild_id = str(ctx.guild.id)
@@ -886,7 +886,7 @@ class Factions(commands.Cog):
         e.description = info
         await ctx.send(embed=e)
 
-    @factions.command(name="members")
+    @factions.command(name="members", description="Shows the list of members in a faction")
     async def members(self, ctx, *, faction=None):
         """ lists a factions members """
         if faction:
@@ -930,7 +930,7 @@ class Factions(commands.Cog):
             e.description += f"**M:** `{user.name}` - ${income}\n"
         await ctx.send(embed=e)
 
-    @factions.command(name="boosts")
+    @factions.command(name="boosts", description="Shows a factions active buffs")
     async def boosts(self, ctx, *, faction=None):
         if faction:
             faction = await self.get_faction_named(ctx, faction)
@@ -958,7 +958,7 @@ class Factions(commands.Cog):
         e.description = boosts
         await ctx.send(embed=e)
 
-    @factions.command(name="claim")
+    @factions.command(name="claim", description="Claims a channel for your faction to get income from. Claiming costs $500-$750")
     @has_faction_permissions()
     async def claim(self, ctx, channel: discord.TextChannel = None):
         """Claim a channel"""
@@ -995,7 +995,7 @@ class Factions(commands.Cog):
         await ctx.send(f"Claimed {channel.mention} for {faction}")
         await self.save_data()
 
-    @factions.command(name="unclaim")
+    @factions.command(name="unclaim", description="Unclaims a channel from your faction and returns $250")
     @has_faction_permissions()
     async def unclaim(self, ctx, channel: discord.TextChannel = None):
         if not channel:
@@ -1012,7 +1012,7 @@ class Factions(commands.Cog):
         self.factions[guild_id][faction]["balance"] += 250
         await ctx.send(f"Unclaimed {channel.mention} and returned $250")
 
-    @factions.command(name="claims")
+    @factions.command(name="claims", description="Shows all of a factions claims")
     async def claims(self, ctx, *, faction = None):
         """ Returns a factions sorted claims """
         if faction:
@@ -1032,7 +1032,7 @@ class Factions(commands.Cog):
             e.description += f"• {channel.mention}\n"
         await ctx.send(embed=e)
 
-    @factions.command(name="battle")
+    @factions.command(name="battle", description="Bets money on a random win battle with another user")
     async def _battle(self, ctx, user: discord.User, amount=50):
         """ Battle other faction members """
         if amount > 1000:
@@ -1193,7 +1193,7 @@ class Factions(commands.Cog):
             await msg.edit(embed=e)
             await asyncio.sleep(3)
 
-    @factions.command(name="raid")
+    @factions.command(name="raid", description="Attempt to raid another faction, and either gain or lose money")
     @has_faction_permissions()
     @commands.cooldown(1, 120, commands.BucketType.user)
     @commands.cooldown(2, 480, commands.BucketType.user)
@@ -1259,7 +1259,7 @@ class Factions(commands.Cog):
         await ctx.send(embed=e)
         await self.save_data()
 
-    @factions.command(name="work")
+    @factions.command(name="work", description="Get a random amount of money for your faction")
     async def work(self, ctx):
         """ Get money for your faction """
         guild_id = str(ctx.guild.id)
@@ -1334,7 +1334,7 @@ class Factions(commands.Cog):
                 allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=True)
             )
 
-    @factions.command(name="toggle-notifs")
+    @factions.command(name="toggle-notifs", description="Pings you when your work cooldown ends")
     async def _toggle_notifs(self, ctx):
         if ctx.author.id in self.notifs:
             self.notifs.remove(ctx.author.id)
@@ -1344,7 +1344,7 @@ class Factions(commands.Cog):
             await ctx.send("Enabled work notifications")
         await self.save_data()
 
-    @factions.command(name="scrabble")
+    @factions.command(name="scrabble", description="Unscramble a word for money")
     @commands.cooldown(1, 30, commands.BucketType.user)
     async def _scrabble(self, ctx):
         faction = await self.get_authors_faction(ctx)
@@ -1427,7 +1427,7 @@ class Factions(commands.Cog):
         await ctx.send(embed=e)
         await self.save_data()
 
-    @factions.command(name="coinflip", aliases=["flip"])
+    @factions.command(name="coinflip", aliases=["flip"], description="Flip a coin to either win or lose money")
     @commands.cooldown(1, 15, commands.BucketType.user)
     async def coin_flip(self, ctx, amount: int):
         faction = await self.get_authors_faction(ctx)
@@ -1450,7 +1450,7 @@ class Factions(commands.Cog):
         self.factions[str(ctx.guild.id)][faction]["balance"] += gain
         await self.save_data()
 
-    @factions.command(name="vote")
+    @factions.command(name="vote", description="Get $250 from voting")
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def _vote(self, ctx):
         faction = await self.get_authors_faction(ctx)
@@ -1483,7 +1483,7 @@ class Factions(commands.Cog):
         await ctx.send(f"Redeemed $250 for your faction" + additional)
         await self.save_data()
 
-    @factions.command(name="forage")
+    @factions.command(name="forage", description="Get a random small amount of money")
     @commands.cooldown(1, 30, commands.BucketType.user)
     async def _forage(self, ctx):
         faction = await self.get_authors_faction(ctx)
@@ -1518,7 +1518,7 @@ class Factions(commands.Cog):
         await ctx.send(embed=e)
         await self.save_data()
 
-    @factions.command(name="balance", aliases=["bal"])
+    @factions.command(name="balance", aliases=["bal"], description="Shows your factions money")
     async def balance(self, ctx, *, faction=None):
         """ Sends a factions balance """
         if faction:
@@ -1531,7 +1531,7 @@ class Factions(commands.Cog):
         e.description = f"${self.factions[guild_id][faction]['balance']}"
         await ctx.send(embed=e)
 
-    @factions.command(name="pay")
+    @factions.command(name="pay", description="Gives another faction money from yours")
     @commands.cooldown(2, 240, commands.BucketType.user)
     @is_faction_owner()
     async def pay(self, ctx, faction, amount: int):
@@ -1550,7 +1550,7 @@ class Factions(commands.Cog):
         self.factions[guild_id][authors_fac]["balance"] -= amount
         return await ctx.send(f"Paid {target_fac} ${amount}")
 
-    @factions.command(name="top", aliases=["leaderboard", "lb"])
+    @factions.command(name="top", aliases=["leaderboard", "lb"], description="Shows the top factions")
     @commands.bot_has_permissions(manage_messages=True, add_reactions=True)
     async def top(self, ctx):
         def predicate(r, u) -> bool:
@@ -1630,7 +1630,7 @@ class Factions(commands.Cog):
                 normal_lb = False if normal_lb else True
             await msg.remove_reaction(reaction, user)
 
-    @factions.command(name="ally")
+    @factions.command(name="ally", description="Allies with another faction which gives each faction extra money from claimed channels")
     @is_faction_owner()
     async def ally(self, ctx, *, target_faction):
         ally_name = await self.get_faction_named(ctx, target_faction)
@@ -1664,7 +1664,7 @@ class Factions(commands.Cog):
                 )
                 return await self.save_data()
 
-    @factions.command(name="shop")
+    @factions.command(name="shop", description="Shows buffs that can increase income, stats, or protect against raids")
     async def shop(self, ctx):
         e = discord.Embed(color=purple)
         e.set_author(name="Factions Shop", icon_url=self.bot.user.avatar.url)
@@ -1690,7 +1690,7 @@ class Factions(commands.Cog):
         e.set_footer(text=f"Usage | {p}f buy item_name")
         await ctx.send(embed=e)
 
-    @factions.command(name="buy")
+    @factions.command(name="buy", description="Buys something from the factions shop")
     @has_faction_permissions()
     async def buy(self, ctx, item_name: lambda arg: arg.lower()):
         def has_money(amount: int):
