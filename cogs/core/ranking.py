@@ -374,7 +374,11 @@ class Ranking(commands.Cog):
             else:
                 await cur.execute(f"insert into commands values ('{cmd}', 1, {set_time});")
 
-    @commands.command(name="role-rewards", aliases=["level-rewards", "level-roles", "lr"])
+    @commands.command(
+        name="role-rewards",
+        aliases=["level-rewards", "level-roles", "lr"],
+        description="Grant roles as a reward to users whence they reach a specified level"
+    )
     @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.bot_has_permissions(embed_links=True, manage_roles=True)
     async def role_rewards(self, ctx, *args):
@@ -382,7 +386,7 @@ class Ranking(commands.Cog):
             e = discord.Embed(color=self.bot.config["theme_color"])
             e.set_author(name="Level Roles", icon_url=self.bot.user.avatar.url)
             e.set_thumbnail(url=url_from(ctx.guild.icon))
-            e.description = "Grant roles as a reward to users whence they reach a specified level"
+            e.description = self.role_rewards.description
             p = get_prefix(ctx)  # type: str
             e.add_field(
                 name="◈ Usage",
@@ -458,7 +462,7 @@ class Ranking(commands.Cog):
         )
         await ctx.send(f"Setup complete")
 
-    @commands.command(name="xp-config")
+    @commands.command(name="xp-config", description="Shows the current xp configuration")
     @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.bot_has_permissions(embed_links=True)
     async def xp_config(self, ctx):
@@ -478,7 +482,7 @@ class Ranking(commands.Cog):
         e.set_footer(text=f"Use {p}set to adjust these settings")
         await ctx.send(embed=e)
 
-    @commands.group(name="set")
+    @commands.group(name="set", description="Shows usage on how to use the set command")
     @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.guild_only()
     async def set(self, ctx):
@@ -486,7 +490,7 @@ class Ranking(commands.Cog):
             e = discord.Embed(color=colors.fate)
             e.set_author(name="Set Usage", icon_url=ctx.author.avatar.url)
             e.set_thumbnail(url=self.bot.user.avatar.url)
-            p = get_prefix(ctx)  # type: str
+            p: str = ctx.prefix
             e.description = "`[]` = your arguments / setting"
             e.add_field(
                 name="◈ Profile Stuff",
@@ -513,7 +517,7 @@ class Ranking(commands.Cog):
             e.set_footer(text=f"Use {p}xp-config to see xp settings")
             await ctx.send(embed=e)
 
-    @set.command(name="title")
+    @set.command(name="title", description="Sets the title in your profile card")
     async def _set_title(self, ctx, *, title):
         if len(title) > 32:
             return await ctx.send("Titles can't be greater than 22 characters")
@@ -524,7 +528,7 @@ class Ranking(commands.Cog):
         await ctx.send("Set your title")
         await self.profile.flush()
 
-    @set.command(name="background")
+    @set.command(name="background", description="Sets the background in your profile card")
     async def _set_background(self, ctx, url=None):
         user_id = ctx.author.id  # type: dict
         if user_id not in self.profile:
@@ -541,7 +545,7 @@ class Ranking(commands.Cog):
         await ctx.send("Set your background image")
         await self.profile.flush()
 
-    @set.command(name="min-xp-per-msg")
+    @set.command(name="min-xp-per-msg", description="Sets the minimum xp users get from a message")
     @commands.has_permissions(administrator=True)
     async def _min_xp_per_msg(self, ctx, amount: int):
         """ sets the minimum gained xp per msg """
@@ -556,7 +560,7 @@ class Ranking(commands.Cog):
         await ctx.send(msg)
         await self.config.flush()
 
-    @set.command(name="max-xp-per-msg")
+    @set.command(name="max-xp-per-msg", description="Sets the maximum xp users get from a message")
     @commands.has_permissions(administrator=True)
     async def _max_xp_per_msg(self, ctx, amount: int):
         """ sets the minimum gained xp per msg """
@@ -571,7 +575,7 @@ class Ranking(commands.Cog):
         await ctx.send(msg)
         await self.config.flush()
 
-    @set.command(name="timeframe")
+    @set.command(name="timeframe", description="Sets the timeframe to allow x messages")
     @commands.has_permissions(administrator=True)
     async def _timeframe(self, ctx, amount: int):
         """ sets the timeframe to allow x messages """
@@ -580,7 +584,7 @@ class Ranking(commands.Cog):
         await ctx.send(f"Set the timeframe that allows x messages to {amount}")
         await self.config.flush()
 
-    @set.command(name="msgs-within-timeframe")
+    @set.command(name="msgs-within-timeframe", description="the limit of msgs within the timeframe")
     @commands.has_permissions(administrator=True)
     async def _msgs_within_timeframe(self, ctx, amount: int):
         """ sets the limit of msgs within the timeframe """
@@ -589,7 +593,7 @@ class Ranking(commands.Cog):
         await ctx.send(f"Set msgs within timeframe limit to {amount}")
         await self.config.flush()
 
-    @set.command(name="first-lvl-xp-req")
+    @set.command(name="first-lvl-xp-req", description="Sets the required xp to level up your first time")
     @commands.has_permissions(administrator=True)
     async def _first_level_xp_req(self, ctx, amount: int):
         """ sets the required xp to level up your first time """
@@ -602,7 +606,12 @@ class Ranking(commands.Cog):
         await ctx.send(f"Set the required xp to level up your first time to {amount}")
         await self.config.flush()
 
-    @commands.command(name="profile", aliases=["rank"], usage=profile_help())
+    @commands.command(
+        name="profile",
+        aliases=["rank"],
+        description="Shows your profile or rank card",
+        usage=profile_help()
+    )
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(attach_files=True)
@@ -810,7 +819,7 @@ class Ranking(commands.Cog):
         ty = "Profile" if "profile" in ctx.message.content.lower() else "Rank"
         await ctx.send(f"> **{ty} card for {user}**", file=discord.File(file, filename=f"card.{ext.lower()}"))
 
-    @commands.command(name="top")
+    @commands.command(name="top", description="Shows the top 9 ranking users in the server")
     @commands.cooldown(1, 25, commands.BucketType.user)
     @commands.cooldown(1, 25, commands.BucketType.guild)
     @commands.guild_only()
@@ -831,7 +840,6 @@ class Ranking(commands.Cog):
         def font(size):
             return ImageFont.truetype("./botutils/fonts/Roboto-Bold.ttf", size=size)
 
-        fp = os.path.basename(f"static/card-{time()}.png")
         r = await self.bot.fetch(
             f"select user_id, xp from msg where guild_id = {ctx.guild.id} order by xp desc limit 20;"
         )
@@ -918,10 +926,9 @@ class Ranking(commands.Cog):
             "mleaderboard",
             "vcleaderboard",
             "gleaderboard",
-            "gvcleaderboard",
             "ggleaderboard",
-            "ggvcleaderboard",
         ],
+        description="Ranks everyone in the server"
     )
     @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.cooldown(1, 2, commands.BucketType.channel)
@@ -1162,7 +1169,7 @@ class Ranking(commands.Cog):
             await msg.edit(embed=embeds[index][sub_index])
             self.bot.loop.create_task(msg.remove_reaction(reaction, ctx.author))
 
-    @commands.command(name="clb")
+    @commands.command(name="clb", description="Shows the command leaderboard")
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def clb(self, ctx):
         # Remove old uses from the db

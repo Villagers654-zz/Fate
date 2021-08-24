@@ -43,8 +43,6 @@ class Core(commands.Cog):
             guild.id: guild.me.joined_at for guild in bot.guilds
         }
 
-        self.setup_usage = "Helps you set the bot up via conversation"
-
     async def on_guild_post(self):
         self.bot.log.debug("Server count posted successfully")
 
@@ -121,7 +119,7 @@ class Core(commands.Cog):
         votes = await self.dblpy.get_bot_upvotes()
         await ctx.send(", ".join(dat["username"] for dat in votes))
 
-    @commands.command(name="setup")
+    @commands.command(name="setup", enabled=False, description="Helps you set the bot up via conversation")
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
@@ -159,7 +157,7 @@ class Core(commands.Cog):
 
         await convo.send("Setup complete")
 
-    @commands.command(name="topguilds")
+    @commands.command(name="topguilds", description="Displays the top 8 servers based on highest member count")
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.bot_has_permissions(embed_links=True)
     async def topguilds(self, ctx):
@@ -173,11 +171,11 @@ class Core(commands.Cog):
             rank += 1
         await ctx.send(embed=e)
 
-    @staticmethod
-    def topguilds_usage():
-        return "Displays the top 8 servers based on highest member count"
-
-    @commands.command(name="invite", aliases=["links", "support"])
+    @commands.command(
+        name="invite",
+        aliases=["links", "support"],
+        description="Gives the link to invite the bot to another server"
+    )
     @commands.cooldown(1, 5, commands.BucketType.channel)
     async def invite(self, ctx):
         embed = discord.Embed(color=0x80B0FF)
@@ -194,17 +192,12 @@ class Core(commands.Cog):
         )
         await ctx.send(embed=embed)
 
-    @staticmethod
-    def invite_usage():
-        return "Gives the link to invite the bot to another server. " \
-               "Alongside the invite to the support server. Just click the blue hyperlink text"
-
-    @commands.command(name="vote", usage="Sends the link to vote for the bot on top.gg")
+    @commands.command(name="vote", description="Sends the link to vote for the bot on top.gg")
     @commands.cooldown(1, 5, commands.BucketType.channel)
     async def vote(self, ctx):
         await ctx.send("https://vote.fatebot.xyz/")
 
-    @commands.command(name="say")
+    @commands.command(name="say", description="Sends a message as the bot")
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(attach_files=True)
@@ -222,7 +215,7 @@ class Core(commands.Cog):
         if not ctx.message.mentions and not ctx.message.role_mentions and has_perms and ctx.message:
             await ctx.message.delete()
 
-    @commands.command(name="prefix")
+    @commands.command(name="prefix", description="Changes the servers prefix")
     @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.guild_only()
     async def prefix(self, ctx, *, prefix = None):
@@ -268,7 +261,7 @@ class Core(commands.Cog):
         }
         await ctx.send(f"Changed the servers prefix to `{prefix}`")
 
-    @commands.command(name="personal-prefix", aliases=["pp"])
+    @commands.command(name="personal-prefix", aliases=["pp"], description="Sets a different prefix for only you")
     @commands.cooldown(2, 5, commands.BucketType.user)
     async def personal_prefix(self, ctx, *, prefix=""):
         if prefix.startswith('"') and prefix.endswith('"') and len(prefix) > 2:
@@ -293,7 +286,7 @@ class Core(commands.Cog):
             f"Note you can still use my mention as a sub-prefix"
         )
 
-    @commands.command(name="enable-command", aliases=["enablecommand"])
+    @commands.command(name="enable-command", aliases=["enablecommand"], description="Enables a disabled command")
     @commands.has_permissions(administrator=True)
     @commands.bot_has_permissions(embed_links=True)
     async def enable_command(self, ctx, *, command):
@@ -350,7 +343,11 @@ class Core(commands.Cog):
         else:
             await self.config.flush()
 
-    @commands.command(name="disable-command", aliases=["disablecommand"])
+    @commands.command(
+        name="disable-command",
+        aliases=["disablecommand"],
+        description="Prevents people from using a specific command"
+    )
     @commands.has_permissions(administrator=True)
     @commands.bot_has_permissions(embed_links=True)
     async def disable_command(self, ctx, *, command):
@@ -400,7 +397,11 @@ class Core(commands.Cog):
             await ctx.send(f"Disabled `{command}` in this channel")
         await self.config.flush()
 
-    @commands.command(name="disabled", aliases=["disabled-commands", "disabledcommands"])
+    @commands.command(
+        name="disabled",
+        aliases=["disabled-commands", "disabledcommands"],
+        description="Shows the list of disabled commands"
+    )
     @commands.cooldown(1, 5, commands.BucketType.channel)
     @commands.has_permissions(administrator=True)
     async def disabled(self, ctx):
@@ -417,7 +418,7 @@ class Core(commands.Cog):
             e.add_field(name=channel.name, value=", ".join([f"`{c}`" for c in commands]))
         await ctx.send(embed=e)
 
-    @commands.command(name="ping")
+    @commands.command(name="ping", description="Measures how long it takes for the bot to interact")
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.bot_has_permissions(embed_links=True)
     async def ping(self, ctx):
@@ -456,52 +457,6 @@ class Core(commands.Cog):
         e.set_thumbnail(url=img)
         e.description = read_ping + send_ping + response_ping + shard_ping
         await msg.edit(embed=e)
-
-    @commands.command(name="devping")
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    @commands.bot_has_permissions(embed_links=True)
-    async def devping(self, ctx):
-        e = discord.Embed(color=colors.fate)
-        e.set_author(name="Measuring ping:")
-        before = monotonic()
-        message = await ctx.send(embed=e)
-        ping = (monotonic() - before) * 1000
-
-        if ping < 175:
-            img = "https://cdn.discordapp.com/emojis/562592256939393035.png?v=1"
-        elif ping < 250:
-            img = "https://cdn.discordapp.com/emojis/562592178204049408.png?v=1"
-        elif ping < 400:
-            img = "https://cdn.discordapp.com/emojis/562592177692213248.png?v=1"
-        elif ping < 550:
-            img = "https://cdn.discordapp.com/emojis/562592176463151105.png?v=1"
-        elif ping < 700:
-            img = "https://cdn.discordapp.com/emojis/562592175880405003.png?v=1"
-        else:
-            img = "https://cdn.discordapp.com/emojis/562592175192539146.png?v=1"
-
-        api = str(self.bot.latency * 1000)
-        api = api[: api.find(".")]
-        e.set_author(name=f"Bots Latency", icon_url=self.bot.user.avatar.url)
-        e.set_thumbnail(url=img)
-        e.description = (
-            f"**Message Trip 1:** `{int(ping)}ms`\n**Websocket Heartbeat:** `{api}ms`"
-        )
-
-        before = monotonic()
-        await message.edit(embed=e)
-        edit_ping = (monotonic() - before) * 1000
-        e.description = f"**Message Trip 1:** `{int(ping)}ms`\n**Msg Edit Trip:** `{int(edit_ping)}ms`\n**Websocket Heartbeat:** `{api}ms`"
-
-        before = monotonic()
-        await message.edit(embed=e)
-        second_edit_ping = (monotonic() - before) * 1000
-
-        before = monotonic()
-        await ctx.send("Measuring Ping", delete_after=0.5)
-        second_ping = (monotonic() - before) * 1000
-        e.description = f"**Message Trip 1:** `{int(ping)}ms`\n**Message Trip 2:** `{int(second_ping)}ms`\n**Msg Edit Trip 1:** `{int(edit_ping)}ms`\n**Msg Edit Trip 2:** `{int(second_edit_ping)}ms`\n**Websocket Heartbeat:** `{api}ms`"
-        await message.edit(embed=e)
 
 
 def setup(bot):

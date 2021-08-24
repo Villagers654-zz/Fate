@@ -343,7 +343,7 @@ class AntiSpam(commands.Cog):
                 if user_id in self.typing:
                     del self.typing[user_id]
 
-    @commands.group(name="anti-spam", aliases=["antispam"])
+    @commands.group(name="anti-spam", aliases=["antispam"], description="Shows info on how to use each command")
     @commands.cooldown(1, 2, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
@@ -386,7 +386,7 @@ class AntiSpam(commands.Cog):
                     e.add_field(name="◈ Config", value=conf, inline=False)
             await ctx.send(embed=e)
 
-    @anti_spam.command(name="configure", aliases=["config"])
+    @anti_spam.command(name="configure", aliases=["config"], description="Interactively configure antispam")
     @commands.has_permissions(administrator=True)
     @commands.bot_has_permissions(embed_links=True, add_reactions=True, manage_messages=True)
     async def _configure(self, ctx):
@@ -414,7 +414,7 @@ class AntiSpam(commands.Cog):
         e.set_author(name="Expired Menu", icon_url=ctx.author.avatar.url)
         await choice_view.message.edit(content=None, view=None, embed=e)
 
-    @anti_spam.group(name='enable')
+    @anti_spam.group(name="enable", description="Enables the default configuration")
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True, manage_roles=True, manage_channels=True)
     async def _enable(self, ctx):
@@ -426,7 +426,7 @@ class AntiSpam(commands.Cog):
             await self.config.flush()
             await ctx.send('Enabled the default anti-spam config')
 
-    @_enable.command(name='rate-limit')
+    @_enable.command(name="rate-limit", description="Limits users to x messages within x seconds")
     @commands.has_permissions(manage_messages=True)
     async def _enable_rate_limit(self, ctx):
         guild_id = ctx.guild.id
@@ -437,7 +437,7 @@ class AntiSpam(commands.Cog):
         await self.config.flush()
         await ctx.send('Enabled rate-limit module')
 
-    @_enable.command(name='mass-pings', aliases=['mass-ping'])
+    @_enable.command(name="mass-pings", aliases=["mass-ping"], description="Flags when a user pings too much")
     @commands.has_permissions(manage_messages=True)
     async def _enable_mass_pings(self, ctx):
         guild_id = ctx.guild.id
@@ -453,7 +453,7 @@ class AntiSpam(commands.Cog):
         await self.config.flush()
         await ctx.send('Enabled rate-limit module')
 
-    @_enable.command(name='anti-macro')
+    @_enable.command(name='anti-macro', description="Flags using autoclickers or macros to spam or exploit bots")
     @commands.has_permissions(manage_messages=True)
     async def _enable_anti_macro(self, ctx):
         guild_id = ctx.guild.id
@@ -465,7 +465,7 @@ class AntiSpam(commands.Cog):
         await self.config.flush()
         await ctx.send('Enabled anti-macro module')
 
-    @_enable.command(name='duplicates')
+    @_enable.command(name="duplicates", description="Flag duplicate content like links, images, and stickers")
     @commands.has_permissions(manage_messages=True)
     async def _enable_duplicates(self, ctx):
         guild_id = ctx.guild.id
@@ -486,7 +486,7 @@ class AntiSpam(commands.Cog):
         await self.config.flush()
         await ctx.send('Enabled duplicates module')
 
-    @_enable.command(name='inhuman')
+    @_enable.command(name="inhuman", description="Flags abnormal text like tall messages, ascii, and copy pasting bulky messages")
     @commands.has_permissions(manage_messages=True)
     async def _enable_inhuman(self, ctx):
         guild_id = ctx.guild.id
@@ -503,7 +503,7 @@ class AntiSpam(commands.Cog):
         await self.config.flush()
         await ctx.send('Enabled duplicates module')
 
-    @anti_spam.group(name='disable')
+    @anti_spam.group(name="disable", description="Disables antispam all-together")
     @commands.has_permissions(manage_messages=True)
     async def _disable(self, ctx):
         if not ctx.invoked_subcommand:
@@ -513,7 +513,7 @@ class AntiSpam(commands.Cog):
             self.config.remove(guild_id)
             await ctx.send('Disabled anti-spam')
 
-    @_disable.command(name='rate-limit', aliases=['Rate-Limit', 'ratelimit', 'RateLimit'])
+    @_disable.command(name="rate-limit", aliases=["ratelimit"], description="Disables the rate-limit module")
     @commands.has_permissions(manage_messages=True)
     async def _disable_rate_limit(self, ctx):
         guild_id = ctx.guild.id
@@ -524,7 +524,7 @@ class AntiSpam(commands.Cog):
         self.config.remove_sub(guild_id, "rate_limit")
         await ctx.send('Disabled rate-limit module')
 
-    @_disable.command(name='anti-macro', aliases=['Anti-Macro', 'antimacro', 'AntiMacro'])
+    @_disable.command(name="anti-macro", aliases=["antimacro"], description="Disables the anti-macro module")
     @commands.has_permissions(manage_messages=True)
     async def _disable_anti_macro(self, ctx):
         guild_id = ctx.guild.id
@@ -535,7 +535,7 @@ class AntiSpam(commands.Cog):
         self.config.remove_sub(guild_id, "anti_macro")
         await ctx.send('Disabled anti-macro module')
 
-    @_disable.command(name='mass-pings', aliases=['Mass-Pings', 'masspings', 'MassPings'])
+    @_disable.command(name="mass-pings", aliases=["masspings"], description="Disables the mass-pings module")
     @commands.has_permissions(manage_messages=True)
     async def _disable_mass_pings(self, ctx):
         guild_id = ctx.guild.id
@@ -546,7 +546,7 @@ class AntiSpam(commands.Cog):
         self.config.remove_sub(guild_id, "mass_pings")
         await ctx.send('Disabled mass-pings module')
 
-    @_disable.command(name='duplicates', aliases=['Duplicates', 'duplicate', 'Duplicate'])
+    @_disable.command(name="duplicates", aliases=["duplicate"], description="Disables the duplicates module")
     @commands.has_permissions(manage_messages=True)
     async def _disable_duplicates(self, ctx):
         guild_id = ctx.guild.id
@@ -557,7 +557,7 @@ class AntiSpam(commands.Cog):
         self.config.remove_sub(guild_id, "rate_limit")
         await ctx.send('Disabled duplicates module')
 
-    @_disable.command(name='inhuman')
+    @_disable.command(name="inhuman", description="Disables the inhuman module")
     @commands.has_permissions(manage_messages=True)
     async def _disable_inhuman(self, ctx):
         guild_id = ctx.guild.id
@@ -568,7 +568,7 @@ class AntiSpam(commands.Cog):
         self.config.remove_sub(guild_id, "inhuman")
         await ctx.send('Disabled inhuman module')
 
-    @anti_spam.command(name='ignore')
+    @anti_spam.command(name="ignore", description="Has antispam ignore a specific channel")
     @commands.has_permissions(manage_messages=True)
     async def _ignore(self, ctx, *channel_mentions: discord.TextChannel):
         guild_id = ctx.guild.id
@@ -587,7 +587,7 @@ class AntiSpam(commands.Cog):
             await ctx.send(f"I'll now ignore {channel.mention}")
         await self.config.flush()
 
-    @anti_spam.command(name='unignore')
+    @anti_spam.command(name="unignore", description="Disable ignoring a specific channel")
     @commands.has_permissions(manage_messages=True)
     async def _unignore(self, ctx, *channel_mentions: discord.TextChannel):
         guild_id = ctx.guild.id

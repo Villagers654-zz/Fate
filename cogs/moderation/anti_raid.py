@@ -52,7 +52,7 @@ class AntiRaid(commands.Cog):
                 return False
         return True
 
-    @commands.group(name="antiraid", aliases=["anti_raid"])
+    @commands.group(name="antiraid", aliases=["anti_raid"], description="Prevents mass-join and mass-kick/ban raids")
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.has_permissions(embed_links=True)
     async def _anti_raid(self, ctx):
@@ -64,7 +64,7 @@ class AntiRaid(commands.Cog):
             e.set_author(name="Anti Raid", icon_url=ctx.author.avatar.url)
             if ctx.guild.icon:
                 e.set_thumbnail(url=ctx.guild.icon.url)
-            e.description = "Prevents mass-join and mass-kick/ban raids"
+            e.description = self._anti_raid.description
             e.add_field(
                 name="Usage",
                 value=".antiraid enable\n" ".antiraid disable",
@@ -73,7 +73,7 @@ class AntiRaid(commands.Cog):
             e.set_footer(text=f"Current Status: {toggle}")
             await ctx.send(embed=e)
 
-    @_anti_raid.command(name="enable")
+    @_anti_raid.command(name="enable", description="Enables AntiRaid")
     @commands.has_permissions(administrator=True)
     @commands.bot_has_permissions(ban_members=True, manage_roles=True)
     async def _enable(self, ctx):
@@ -84,7 +84,7 @@ class AntiRaid(commands.Cog):
         await ctx.send("Enabled anti raid")
         await self.save_data()
 
-    @_anti_raid.command(name="disable")
+    @_anti_raid.command(name="disable", description="Disables AntiRaid")
     @commands.has_permissions(administrator=True)
     async def _disable(self, ctx):
         # if ctx.author.id != ctx.guild.owner.id:

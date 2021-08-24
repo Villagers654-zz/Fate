@@ -53,7 +53,7 @@ class CustomCommands(commands.Cog):
         if changed:
             await self.save_config()
 
-    @commands.command(name="cc")
+    @commands.command(name="cc", description="Configure custom commands")
     @commands.cooldown(2, 5, commands.BucketType.channel)
     async def cc(self, ctx, add_or_remove=None, command=None, *, response=None):
         p = ctx.prefix

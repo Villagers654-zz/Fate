@@ -28,7 +28,7 @@ class Statistics(commands.Cog):
             "Leave": "toggle",
         }
 
-    @commands.command(name="statistics", aliases=["stats"])
+    @commands.command(name="statistics", aliases=["stats"], description="Shows the number of servers using each module")
     async def statistics(self, ctx):
         e = discord.Embed(color=colors.fate)
         owner = await self.bot.fetch_user(self.bot.config["bot_owner_id"])
