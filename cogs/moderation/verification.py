@@ -45,7 +45,7 @@ class Verification(commands.Cog):
             "auto_start": bool,
         }
 
-    @commands.group(name="verification")
+    @commands.group(name="verification", description="Shows how to use the module")
     @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.guild_only()
     async def verification(self, ctx):
@@ -116,7 +116,7 @@ class Verification(commands.Cog):
                 )
             await ctx.send(embed=e)
 
-    @verification.group(name="enable")
+    @verification.group(name="enable", description="Starts an interactive setup process")
     @commands.has_permissions(administrator=True)
     @commands.bot_has_permissions(manage_messages=True)
     async def _enable(self, ctx):
@@ -234,7 +234,7 @@ class Verification(commands.Cog):
         await self.config.flush()
         await convo.end()
 
-    @verification.group(name="disable")
+    @verification.group(name="disable", description="Disables the module")
     @commands.has_permissions(administrator=True)
     async def _disable(self, ctx):
         guild_id = ctx.guild.id
@@ -243,7 +243,7 @@ class Verification(commands.Cog):
         await self.config.remove(guild_id)
         await ctx.send("Disabled verification")
 
-    @verification.group(name="setchannel", aliases=["set-channel"])
+    @verification.group(name="setchannel", aliases=["set-channel"], description="Changes the verification channel")
     @commands.has_permissions(administrator=True)
     async def _set_channel(self, ctx, channel: discord.TextChannel):
         guild_id = ctx.guild.id
@@ -263,7 +263,7 @@ class Verification(commands.Cog):
         await ctx.send("Set the verification channel")
         await self.config.flush()
 
-    @verification.command(name="set-limit")
+    @verification.command(name="set-limit", description="Sets the timeframe a user has to verify")
     @commands.has_permissions(administrator=True)
     async def set_limit(self, ctx, limit: int):
         guild_id = ctx.guild.id
@@ -273,7 +273,7 @@ class Verification(commands.Cog):
         await ctx.send(f"Updated the time limit to {limit} seconds")
         await self.config.flush()
 
-    @verification.group(name="set-verified-role")
+    @verification.group(name="set-verified-role", description="Sets the role to give on verify")
     @commands.has_permissions(administrator=True)
     async def _set_verified_role(self, ctx, *, role):
         guild_id = ctx.guild.id
@@ -288,7 +288,7 @@ class Verification(commands.Cog):
         await ctx.send("Set the verified role")
         await self.config.flush()
 
-    @verification.group(name="set-temp-role")
+    @verification.group(name="set-temp-role", description="Sets the role to give on join")
     @commands.has_permissions(administrator=True)
     async def _set_temp_role(self, ctx, *, role=None):
         guild_id = ctx.guild.id
@@ -305,7 +305,7 @@ class Verification(commands.Cog):
         await ctx.send("Set the temp role")
         await self.config.flush()
 
-    @verification.command(name="delete-after")
+    @verification.command(name="delete-after", description="Toggles deleting the verification message after")
     @commands.has_permissions(administrator=True)
     async def _delete_after(self, ctx, toggle: bool = None):
         guild_id = ctx.guild.id
@@ -318,7 +318,7 @@ class Verification(commands.Cog):
         await ctx.send(f"{'Enabled' if new_toggle else 'Disabled'} delete-after")
         await self.config.flush()
 
-    @verification.command(name="kick")
+    @verification.command(name="kick", description="Toggles kicking if they fail verification")
     @commands.has_permissions(administrator=True)
     async def _kick(self, ctx, toggle: Optional[bool]):
         guild_id = ctx.guild.id
@@ -332,7 +332,11 @@ class Verification(commands.Cog):
         await ctx.send(f"{'Enabled' if new_toggle else 'Disabled'} kicking on fail")
         await self.config.flush()
 
-    @verification.command(name="auto-start", aliases=["autostart", "auto"])
+    @verification.command(
+        name="auto-start",
+        aliases=["autostart", "auto"],
+        description="Toggles starting verifying on join"
+    )
     @commands.has_permissions(administrator=True)
     async def auto_start(self, ctx, toggle: Optional[bool]):
         guild_id = ctx.guild.id
@@ -348,7 +352,7 @@ class Verification(commands.Cog):
         )
         await self.config.flush()
 
-    @verification.command(name="log-channel", aliases=["logchannel"])
+    @verification.command(name="log-channel", aliases=["logchannel"], description="Sets a channel to log verifies to")
     @commands.has_permissions(administrator=True)
     async def _log_channel(self, ctx, channel: Optional[discord.TextChannel]):
         guild_id = ctx.guild.id
@@ -358,7 +362,7 @@ class Verification(commands.Cog):
         await ctx.send(f"{'Set' if channel else 'Removed'} the log channel")
         await self.config.flush()
 
-    @commands.command(name="verify")
+    @commands.command(name="verify", description="Starts the verification process")
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.guild_only()
     async def verify(self, ctx):

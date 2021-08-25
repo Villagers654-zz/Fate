@@ -54,7 +54,11 @@ class CaseManager(commands.Cog):
                 return None
         return case_number
 
-    @commands.command(name="mod-logs", aliases=["mod_logs", "modlogs", "infractions"])
+    @commands.command(
+        name="mod-logs",
+        aliases=["mod_logs", "modlogs", "infractions"],
+        description="Shows the recent cases"
+    )
     @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
@@ -205,7 +209,11 @@ class CaseManager(commands.Cog):
             await msg.edit(embed=embeds[index])
             self.bot.loop.create_task(msg.remove_reaction(reaction, ctx.author))
 
-    @commands.command(name="del-log", aliases=["del_log", "dellog", "del-modlog"])
+    @commands.command(
+        name="del-log",
+        aliases=["del_log", "dellog", "del-modlog"],
+        description="Deletes a case number"
+    )
     @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.guild_only()
     @commands.has_permissions(administrator=True)

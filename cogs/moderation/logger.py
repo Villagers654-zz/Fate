@@ -410,7 +410,7 @@ class Logger(commands.Cog):
                             break
         return dat
 
-    @commands.group(name="logger", aliases=["log", "logging"])
+    @commands.group(name="logger", aliases=["log", "logging"], description="Shows how to use the module")
     @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
@@ -447,7 +447,7 @@ class Logger(commands.Cog):
             )
             await ctx.send(embed=e)
 
-    @logger.group(name="enable")
+    @logger.group(name="enable", description="Enables the module and creates a log channel")
     @commands.has_permissions(administrator=True)
     async def _enable(self, ctx, event=None):
         """ Creates a multi-log """
@@ -500,7 +500,7 @@ class Logger(commands.Cog):
         await ctx.send("Enabled Logger")
         await self.save_data()
 
-    @logger.command(name="disable")
+    @logger.command(name="disable", description="Disables the module")
     @commands.has_permissions(administrator=True)
     async def _disable(self, ctx, event=None):
         """Disables the log"""
@@ -528,7 +528,7 @@ class Logger(commands.Cog):
         await ctx.send("Disabled Logger")
         await self.save_data()
 
-    @logger.group(name="setchannel", aliases=["set-channel"])
+    @logger.group(name="setchannel", aliases=["set-channel"], description="Enables the module in a specific channel")
     @commands.has_permissions(administrator=True)
     async def _set_channel(self, ctx, channel: discord.TextChannel = None):
         """ Creates a multi-log """
@@ -566,7 +566,7 @@ class Logger(commands.Cog):
         await ctx.send(f"Enabled Logger in {channel.mention}")
         await self.save_data()
 
-    @logger.command(name="move")
+    @logger.command(name="move", description="Sets a log type to send to a diff channel")
     @commands.has_permissions(administrator=True)
     @commands.bot_has_permissions(administrator=True)
     async def _move(self, ctx, log_type=None, channel: discord.TextChannel = None):
@@ -592,14 +592,14 @@ class Logger(commands.Cog):
         await ctx.send(f"Moved the {log_type} log to {channel.mention}")
         await self.save_data()
 
-    @logger.command(name="events")
+    @logger.command(name="events", description="Lists all the names of logs")
     @commands.cooldown(1, 25, commands.BucketType.channel)
     async def events(self, ctx):
         await ctx.send(
             f"Log types: {', '.join(f'`{ltype}`' for ltype in self.log_types)}"
         )
 
-    @logger.command(name="security")
+    @logger.command(name="security", description="Toggles resending deleted logs")
     @is_guild_owner()
     @commands.bot_has_permissions(administrator=True)
     async def _toggle_security(self, ctx):
@@ -615,7 +615,7 @@ class Logger(commands.Cog):
             await ctx.send("Enabled secure features")
         await self.save_data()
 
-    @logger.command(name="ignore")
+    @logger.command(name="ignore", description="Ignores chat events from a channel")
     @commands.has_permissions(administrator=True)
     async def _ignore(self, ctx):
         """ ignore channels and/or bots """
@@ -646,7 +646,7 @@ class Logger(commands.Cog):
                 )
         await self.save_data()
 
-    @logger.command(name="unignore")
+    @logger.command(name="unignore", description="Unignores chat events from a channel")
     @commands.has_permissions(administrator=True)
     async def _unignore(self, ctx):
         """ unignore channels and/or bots """
@@ -674,7 +674,7 @@ class Logger(commands.Cog):
                 )
         await self.save_data()
 
-    @logger.command(name="config")
+    @logger.command(name="config", description="Shows the current module config")
     async def _config(self, ctx):
         """ sends an overview of the servers current config """
         guild_id = str(ctx.guild.id)

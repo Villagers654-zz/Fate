@@ -298,6 +298,7 @@ class Moderation(commands.Cog):
     config: Dict[str, Dict[str, Any]]
     tasks: Dict[str, Dict[str, Any]]
     subs: Dict[str, List[str]]
+
     def __init__(self, bot: Fate):
         self.bot = bot
         self.fp: str = "./static/mod-cache.json"
@@ -352,32 +353,6 @@ class Moderation(commands.Cog):
         async with self.bot.utils.open(self.path, "w+") as f:
             await f.write(await self.bot.dump(self.config))
 
-    @commands.command(name="convert-mod")
-    @commands.is_owner()
-    async def convert_moderation_dat(self, ctx):
-        cog = self.bot.get_cog("Mod")
-        for guild_id, warns in cog.warns.items():
-            self.config[guild_id] = self.template
-            self.config[guild_id]["warns"] = warns
-        await ctx.send("Converted warns")
-        for guild_id, timers in cog.timers["mute"].items():
-            if guild_id not in self.config:
-                self.config[guild_id] = self.template
-            self.config[guild_id]["mute_timers"] = timers
-        await ctx.send("Converted mute timers")
-        for guild_id, timers in cog.timers.items():
-            if not guild_id.isdigit():
-                continue
-            if guild_id not in self.config:
-                self.config[guild_id] = self.template
-            self.config[guild_id]["timers"] = timers
-        await ctx.send("Converted warn timers")
-        for guild_id, mods in cog.mods.items():
-            if guild_id not in self.config:
-                self.config[guild_id] = self.template
-            self.config[guild_id]["usermod"] = mods
-        await ctx.send("Converted usermods")
-
     async def cog_before_invoke(self, ctx):
         """ Index commands that are running """
         if not ctx.guild:
@@ -415,6 +390,7 @@ class Moderation(commands.Cog):
     @commands.command(
         name="mute-role",
         aliases=["muterole", "set-mute-role", "setmuterole", "set-mute", "setmute"],
+        description="Sets the mute role to a specific role"
     )
     @commands.guild_only()
     @commands.cooldown(1, 3, commands.BucketType.user)
@@ -432,71 +408,7 @@ class Moderation(commands.Cog):
         await ctx.send(f"Set the mute role to {role.name}")
         await self.save_data()
 
-    @commands.command(name="restrict")
-    @commands.guild_only()
-    @commands.cooldown(1, 3, commands.BucketType.user)
-    @commands.has_permissions(administrator=True)
-    async def restrict(self, ctx, args=None):
-        if not args:
-            e = discord.Embed(color=colors.fate)
-            e.set_author(name="Channel Restricting")
-            e.description = "Prevents everyone except mods from using commands"
-            e.add_field(
-                name="Usage",
-                value=".restrict #channel_mention\n"
-                ".unrestrict #channel_mention\n.restricted",
-            )
-            return await ctx.send(embed=e)
-        guild_id = ctx.guild.id
-        if guild_id not in self.bot.restricted:
-            self.bot.restricted[guild_id] = {"channels": [], "users": []}
-        restricted = "**Restricted:**"
-        dat = self.bot.restricted[guild_id]
-        for channel in ctx.message.channel_mentions:
-            if channel.id in dat["channels"]:
-                continue
-            self.bot.restricted[guild_id]["channels"].append(channel.id)
-            restricted += f"\n{channel.mention}"
-        for member in ctx.message.mentions:
-            if member.id in dat["users"]:
-                continue
-            self.bot.restricted[guild_id]["users"].append(member.id)
-            restricted += f"\n{member.mention}"
-        e = discord.Embed(color=colors.fate, description=restricted)
-        await ctx.send("Do you want this to effect moderators too? Reply with `yes` or `no`")
-        reply = await self.bot.utils.get_message(ctx)
-        if "yes" in reply.content.lower():
-            self.bot.restricted[guild_id]["effect_mods"] = True
-            await ctx.send("Alright, I'll restrict moderators too")
-        else:
-            if "effect_mods" in self.bot.restricted[guild_id]:
-                self.bot.restricted.remove_sub(guild_id, "effect_mods")
-        await self.bot.restricted.flush()
-        await ctx.send(embed=e)
-
-    @commands.command(name="unrestrict")
-    @commands.guild_only()
-    @commands.cooldown(1, 3, commands.BucketType.user)
-    @commands.has_permissions(administrator=True)
-    async def unrestrict(self, ctx):
-        guild_id = ctx.guild.id
-        unrestricted = "**Unrestricted:**"
-        if guild_id not in self.bot.restricted:
-            return await ctx.send("Nothing's currently restricted")
-        dat = self.bot.restricted[guild_id]
-        for channel in ctx.message.channel_mentions:
-            if channel.id in dat["channels"]:
-                self.bot.restricted[guild_id]["channels"].remove(channel.id)
-                unrestricted += f"\n{channel.mention}"
-        for member in ctx.message.mentions:
-            if member.id in dat["users"]:
-                self.bot.restricted[guild_id]["users"].remove(member.id)
-                unrestricted += f"\n{member.mention}"
-        await self.bot.restricted.flush()
-        e = discord.Embed(color=colors.fate, description=unrestricted)
-        await ctx.send(embed=e)
-
-    @commands.command(name="addmod")
+    @commands.command(name="addmod", description="Gives a user or role access to mod commands")
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
@@ -523,7 +435,11 @@ class Moderation(commands.Cog):
         await ctx.send(embed=e)
         await self.save_data()
 
-    @commands.command(name="delmod", aliases=["removemod", "del-mod", "remove-mod"])
+    @commands.command(
+        name="delmod",
+        aliases=["removemod", "del-mod", "remove-mod"],
+        description="Removes a user or roles special mod command access"
+    )
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
@@ -550,7 +466,11 @@ class Moderation(commands.Cog):
         await ctx.send(embed=e)
         await self.save_data()
 
-    @commands.command(name="mods", aliases=["usermods", "rolemods"])
+    @commands.command(
+        name="mods",
+        aliases=["usermods", "rolemods"],
+        description="Lists everything that has user/role mod"
+    )
     @commands.guild_only()
     @commands.cooldown(1, 3, commands.BucketType.channel)
     @commands.bot_has_permissions(embed_links=True)
@@ -577,43 +497,7 @@ class Moderation(commands.Cog):
             )
         await ctx.send(embed=e)
 
-    @commands.command(name="restricted")
-    @commands.guild_only()
-    @commands.cooldown(1, 3, commands.BucketType.user)
-    @commands.has_permissions(administrator=True)
-    async def restricted(self, ctx):
-        guild_id = ctx.guild.id
-        if guild_id not in self.bot.restricted:
-            return await ctx.send("This server doesn't have anything restricted")
-        dat = self.bot.restricted[guild_id]
-        e = discord.Embed(color=colors.fate)
-        e.set_author(name="Restricted:", icon_url=ctx.author.avatar.url)
-        e.description = ""
-        if dat["channels"]:
-            changelog = ""
-            for channel_id in dat["channels"]:
-                channel = self.bot.get_channel(channel_id)
-                if not isinstance(channel, discord.TextChannel):
-                    self.bot.restricted[guild_id]["channels"].remove(channel_id)
-                    await self.bot.restricted.flush()
-                else:
-                    changelog += "\n" + channel.mention
-            if changelog:
-                e.description += changelog
-        if dat["users"]:
-            changelog = ""
-            for user_id in dat["users"]:
-                user = self.bot.get_user(user_id)
-                if not isinstance(user, discord.User):
-                    self.bot.restricted[guild_id]["users"].remove(user_id)
-                    await self.bot.restricted.flush()
-                else:
-                    changelog += "\n" + user.mention
-            if changelog:
-                e.description += changelog
-        await ctx.send(embed=e)
-
-    @commands.command(name="purge", aliases=["prune", "nuke"])
+    @commands.command(name="purge", aliases=["prune", "nuke"], description="Bulk deletes messages")
     @commands.cooldown(2, 5, commands.BucketType.user)
     @check_if_running()
     @has_required_permissions(manage_messages=True)
@@ -785,7 +669,11 @@ class Moderation(commands.Cog):
         if guild_id in self.tasks and not self.tasks[guild_id]:
             del self.tasks[guild_id]
 
-    @commands.command(name="mute", aliases=["shutup", "fuckoff", "shush", "shh", "shut", "oppress"])
+    @commands.command(
+        name="mute",
+        aliases=["shutup", "fuckoff", "shush", "shh", "shut", "oppress"],
+        description="Prevents a user from being able to chat"
+    )
     @commands.cooldown(2, 5, commands.BucketType.user)
     @check_if_running()
     @has_required_permissions(manage_roles=True)
@@ -1013,8 +901,9 @@ class Moderation(commands.Cog):
                     self.tasks[guild_id][user_id] = task
 
     @commands.command(
-        name="unmute", description="Unblocks users from sending messages",
-        aliases=["unshutup", "unfuckoff", "unshh", "unshush", "unshut"]
+        name="unmute",
+        aliases=["unshutup", "unfuckoff", "unshh", "unshush", "unshut", "unoppress"],
+        description="Removes the mute role from a user"
     )
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
@@ -1062,7 +951,7 @@ class Moderation(commands.Cog):
                     del self.tasks[guild_id]
             await ctx.send(f"Unmuted {user.name}")
 
-    @commands.command(name="kick")
+    @commands.command(name="kick", description="Kicks a user from the server")
     @commands.cooldown(2, 5, commands.BucketType.user)
     @check_if_running()
     @has_required_permissions(kick_members=True)
@@ -1102,7 +991,7 @@ class Moderation(commands.Cog):
                 await msg.edit(embed=e)
         await msg.edit(embed=e)
 
-    @commands.command(name="ban", aliases=["yeet"])
+    @commands.command(name="ban", aliases=["yeet"], description="Bans a user from the server")
     @commands.cooldown(2, 10, commands.BucketType.guild)
     @check_if_running()
     @commands.guild_only()
@@ -1220,7 +1109,11 @@ class Moderation(commands.Cog):
             e.set_author(name="Couldn't ban any of the specified user(s)")
         await msg.edit(embed=e)
 
-    @commands.command(name="get-ban", aliases=["getban", "searchban", "search-ban", "searchbans", "search-bans"])
+    @commands.command(
+        name="get-ban",
+        aliases=["getban", "searchban", "search-ban", "searchbans", "search-bans"],
+        description="Gives extra information on a ban"
+    )
     @commands.cooldown(1, 10, commands.BucketType.user)
     @check_if_running()
     @has_required_permissions(ban_members=True)
@@ -1254,7 +1147,11 @@ class Moderation(commands.Cog):
         e.set_footer(text=f"At {when}")
         await ctx.send(embed=e)
 
-    @commands.command(name="import-bans", aliases=["importbans", "transfer-bans", "transferbans"])
+    @commands.command(
+        name="import-bans",
+        aliases=["importbans", "transfer-bans", "transferbans"],
+        description="Copies the ban-list from another server"
+    )
     @commands.cooldown(1, 10, commands.BucketType.user)
     @check_if_running()
     @has_required_permissions(ban_members=True)
@@ -1294,7 +1191,7 @@ class Moderation(commands.Cog):
             await msg.edit(content=f"Importing bans ({len(users_to_ban)}/{len(users_to_ban)})")
             await ctx.send("Finished importing bans")
 
-    @commands.command(name="unban")
+    @commands.command(name="unban", description="Removes the ban for a user")
     @commands.cooldown(2, 5, commands.BucketType.user)
     @check_if_running()
     @has_required_permissions(ban_members=True)
@@ -1348,7 +1245,7 @@ class Moderation(commands.Cog):
                     index += 1
             await msg.edit(embed=e)
 
-    @commands.command(name="roles")
+    @commands.command(name="roles", description="Shows how many people have each role")
     @commands.cooldown(2, 5, commands.BucketType.user)
     @check_if_running()
     @commands.has_permissions(manage_roles=True)
@@ -1368,7 +1265,7 @@ class Moderation(commands.Cog):
             chunk = chunk.lstrip("\n")
             await ctx.send(f"```\n{chunk}```")
 
-    @commands.command(name="mass-nick", aliases=["massnick"])
+    @commands.command(name="mass-nick", aliases=["massnick"], description="Sets the nick of everyone in the server")
     @commands.cooldown(2, 5, commands.BucketType.user)
     @check_if_running()
     @has_required_permissions(manage_nicknames=True)
@@ -1430,7 +1327,7 @@ class Moderation(commands.Cog):
             view.stop()
             await msg.edit(content="Operation Complete", embed=gen_embed(len(members) - 1), view=None)
 
-    @commands.command(name="mass-role", aliases=["massrole"])  # Have +/- support
+    @commands.command(name="mass-role", aliases=["massrole"], description="Give a role to everyone in the server")
     @commands.cooldown(2, 5, commands.BucketType.user)
     @check_if_running()
     @has_required_permissions(manage_roles=True)
@@ -1519,7 +1416,7 @@ class Moderation(commands.Cog):
             view.stop()
             await msg.edit(content="Operation Complete", embed=gen_embed(i), view=None)
 
-    @commands.command(name="nick")
+    @commands.command(name="nick", description="Shortcut command for setting a users nickname")
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.guild_only()
     @commands.has_permissions(manage_nicknames=True)
@@ -1540,7 +1437,7 @@ class Moderation(commands.Cog):
         await user.edit(nick=nick)
         await ctx.message.add_reaction("👍")
 
-    @commands.command(name="role")
+    @commands.command(name="role", description="Shortcut command for giving a user a role")
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
     @commands.has_permissions(manage_roles=True)
@@ -1575,7 +1472,7 @@ class Moderation(commands.Cog):
             msg = f"Gave **{role.name}** to **@{user.name}**"
         await ctx.send(msg)
 
-    @commands.command(name="rename")
+    @commands.command(name="rename", description="Renames a user, role, or channel")
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
@@ -1739,7 +1636,7 @@ class Moderation(commands.Cog):
             except:
                 await channel.send("Failed to ban this user")
 
-    @commands.command(name="warn")
+    @commands.command(name="warn", description="Dms and logs a warn on the user")
     @commands.cooldown(2, 5, commands.BucketType.user)
     @check_if_running()
     @has_warn_permission()
@@ -1758,7 +1655,7 @@ class Moderation(commands.Cog):
                     continue
             self.bot.loop.create_task(self.warn_user(ctx.channel, user, reason, ctx))
 
-    @commands.command(name="delwarn", aliases=["del-warn"])
+    @commands.command(name="delwarn", aliases=["del-warn"], description="Removes a users warn")
     @commands.cooldown(2, 5, commands.BucketType.user)
     @check_if_running()
     @has_warn_permission()
@@ -1806,7 +1703,7 @@ class Moderation(commands.Cog):
                                 await msg.delete()
                         break
 
-    @commands.command(name="clearwarns", aliases=["clear-warns"])
+    @commands.command(name="clearwarns", aliases=["clear-warns"], description="Erases all of a users warns")
     @commands.cooldown(2, 5, commands.BucketType.user)
     @check_if_running()
     @has_warn_permission()
@@ -1826,7 +1723,7 @@ class Moderation(commands.Cog):
             await ctx.send(f"Cleared {user}'s warns")
             await self.save_data()
 
-    @commands.command(name="warns")
+    @commands.command(name="warns", description="Shows all a users warns")
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)

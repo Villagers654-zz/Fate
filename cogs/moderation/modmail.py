@@ -28,7 +28,7 @@ class ModMail(commands.Cog):
     def is_enabled(self, guild_id: int) -> bool:
         return guild_id in self.config
 
-    @commands.group(name="modmail", aliases=["mod-mail", "mod_mail"])
+    @commands.group(name="modmail", aliases=["mod-mail", "mod_mail"], description="Shows how to use the module")
     @commands.cooldown(2, 5, commands.BucketType.user)
     async def modmail(self, ctx: Context):
         if not ctx.invoked_subcommand:
@@ -54,7 +54,7 @@ class ModMail(commands.Cog):
             e.set_thumbnail(url="https://opal.place/public/captures/716209.png")
             await ctx.send(embed=e)
 
-    @modmail.command(name="enable")
+    @modmail.command(name="enable", description="Sets a channel to use for modmail")
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
     @commands.bot_has_permissions(view_audit_log=True)
@@ -72,7 +72,7 @@ class ModMail(commands.Cog):
         await ctx.send(f"Set the modmail channel to {channel.mention}")
         await self.config.flush()
 
-    @modmail.command(name="disable")
+    @modmail.command(name="disable", description="Disables modmail")
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
     async def disable(self, ctx: Context):
@@ -81,11 +81,7 @@ class ModMail(commands.Cog):
         await self.config.remove(ctx.guild.id)
         await ctx.send("Disabled modmail")
 
-    @commands.command(name="block", aliases=["unblock"])
-    async def aliases(self, ctx: Context):
-        await getattr(self, ctx.invoked_with.lower()).invoke(ctx)
-
-    @modmail.command(name="block")
+    @modmail.command(name="block", description="Blocks a user from using modmail")
     @commands.guild_only()
     async def block(self, ctx: Context, user: User):
         if not self.bot.attrs.is_moderator(ctx.author):
@@ -100,7 +96,7 @@ class ModMail(commands.Cog):
         await ctx.send(f"Blocked {user} from using modmail")
         await self.config.flush()
 
-    @modmail.command(name="unblock")
+    @modmail.command(name="unblock", description="Unblocks a user from modmail")
     @commands.guild_only()
     async def unblock(self, ctx: Context, user: User):
         if not self.bot.attrs.is_moderator(ctx.author):
@@ -186,7 +182,7 @@ class ModMail(commands.Cog):
                 if not ctx.message.attachments:
                     await ctx.message.delete()
 
-    @commands.command(name="reply", aliases=["appeal"])
+    @commands.command(name="reply", aliases=["appeal"], description="Appeals, or replies to a case number")
     @commands.cooldown(1, 15, commands.BucketType.user)
     async def reply(self, ctx: Context, *, case_number=None):
         if isinstance(ctx.guild, Guild) and "Case " in ctx.channel.name:
@@ -341,7 +337,11 @@ class ModMail(commands.Cog):
             return None
         await ctx.send("Replied to your thread 👍")
 
-    @commands.command(name="close-thread", aliases=["close"])
+    @commands.command(
+        name="close-thread",
+        aliases=["close"],
+        description="Closes and prevents the user from reopening a thread"
+    )
     async def close_thread(self, ctx: Context):
         if not isinstance(ctx.channel, Thread):
             return await ctx.send("You can only run this in modmail threads")

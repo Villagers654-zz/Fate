@@ -146,7 +146,7 @@ class ChatFilter(commands.Cog):
 
         return content, flags
 
-    @commands.group(name="chatfilter")
+    @commands.group(name="chatfilter", description="Shows how to configure the module")
     @commands.bot_has_permissions(embed_links=True)
     async def _chatfilter(self, ctx):
         if not ctx.invoked_subcommand:
@@ -189,7 +189,7 @@ class ChatFilter(commands.Cog):
                 button.disabled = True
             await msg.edit(view=view)
 
-    @_chatfilter.command(name="enable")
+    @_chatfilter.command(name="enable", description="Enables the module")
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True)
     async def _enable(self, ctx):
@@ -209,7 +209,7 @@ class ChatFilter(commands.Cog):
             await ctx.send("Enabled chatfilter")
         await self.config.flush()
 
-    @_chatfilter.command(name="disable")
+    @_chatfilter.command(name="disable", description="Disables the module")
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True)
     async def _disable(self, ctx):
@@ -220,7 +220,7 @@ class ChatFilter(commands.Cog):
             await ctx.send("Disabled chatfilter")
         await self.config.flush()
 
-    @_chatfilter.command(name="ignore")
+    @_chatfilter.command(name="ignore", description="Has chatfilter ignore a channel")
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True)
     async def _ignore(self, ctx, *channels: discord.TextChannel):
@@ -238,7 +238,7 @@ class ChatFilter(commands.Cog):
             await ctx.send(f"I'll now ignore {', '.join(passed)}")
             await self.config.flush()
 
-    @_chatfilter.command(name="unignore")
+    @_chatfilter.command(name="unignore", description="Disables ignoring a channel")
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True)
     async def _unignore(self, ctx, *channels: discord.TextChannel):
@@ -256,7 +256,7 @@ class ChatFilter(commands.Cog):
             await ctx.send(f"I'll no longer ignore {', '.join(passed)}")
             await self.config.flush()
 
-    @_chatfilter.command(name="add")
+    @_chatfilter.command(name="add", description="Adds a word, or phrase to the filter")
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True)
     async def _add(self, ctx, *, phrases):
@@ -275,7 +275,7 @@ class ChatFilter(commands.Cog):
             await asyncio.sleep(1)
         await self.config.flush()
 
-    @_chatfilter.command(name="remove")
+    @_chatfilter.command(name="remove", description="Removes a word, or phrase from the filter")
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True)
     async def _remove(self, ctx, *, phrase):
@@ -313,7 +313,7 @@ class ChatFilter(commands.Cog):
         await ctx.send(f"Removed `{phrase}`")
         await self.config.flush()
 
-    @_chatfilter.command(name="toggle-bots")
+    @_chatfilter.command(name="toggle-bots", description="Toggles filtering bot messages")
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True)
     async def toggle_bots(self, ctx):
@@ -328,7 +328,7 @@ class ChatFilter(commands.Cog):
         toggle = "Enabled" if "bots" in self.config[guild_id] else "Disabled"
         await ctx.send(f"{toggle} filtering bot messages")
 
-    @_chatfilter.command(name="toggle-regex")
+    @_chatfilter.command(name="toggle-regex", description="Toggles use of regular expression")
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True)
     async def toggle_regex(self, ctx):
@@ -344,7 +344,7 @@ class ChatFilter(commands.Cog):
         await ctx.send(f"{toggle} regex")
         await self.config.flush()
 
-    @_chatfilter.command(name="toggle-webhooks")
+    @_chatfilter.command(name="toggle-webhooks", description="Toggles resending msgs as webhooks")
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True, manage_webhooks=True)
     async def toggle_webhooks(self, ctx):
@@ -360,7 +360,7 @@ class ChatFilter(commands.Cog):
         await ctx.send(f"{toggle} webhooks")
         await self.config.flush()
 
-    @_chatfilter.command(name="sanitize")
+    @_chatfilter.command(name="sanitize", description="Filters old/existing messages")
     @commands.cooldown(1, 120, commands.BucketType.user)
     @commands.has_permissions(administrator=True)
     @commands.cooldown(1, 60, commands.BucketType.guild)

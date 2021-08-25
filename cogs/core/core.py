@@ -418,6 +418,106 @@ class Core(commands.Cog):
             e.add_field(name=channel.name, value=", ".join([f"`{c}`" for c in commands]))
         await ctx.send(embed=e)
 
+    @commands.command(name="restrict", description="Prevents non mods from running commands in a channel")
+    @commands.guild_only()
+    @commands.cooldown(1, 3, commands.BucketType.user)
+    @commands.has_permissions(administrator=True)
+    async def restrict(self, ctx, args=None):
+        if not args:
+            e = discord.Embed(color=colors.fate)
+            e.set_author(name="Channel Restricting")
+            e.description = "Prevents everyone except mods from using commands"
+            e.add_field(
+                name="Usage",
+                value=".restrict #channel_mention\n"
+                ".unrestrict #channel_mention\n.restricted",
+            )
+            return await ctx.send(embed=e)
+        guild_id = ctx.guild.id
+        if guild_id not in self.bot.restricted:
+            self.bot.restricted[guild_id] = {"channels": [], "users": []}
+        restricted = "**Restricted:**"
+        dat = self.bot.restricted[guild_id]
+        for channel in ctx.message.channel_mentions:
+            if channel.id in dat["channels"]:
+                continue
+            self.bot.restricted[guild_id]["channels"].append(channel.id)
+            restricted += f"\n{channel.mention}"
+        for member in ctx.message.mentions:
+            if member.id in dat["users"]:
+                continue
+            self.bot.restricted[guild_id]["users"].append(member.id)
+            restricted += f"\n{member.mention}"
+        e = discord.Embed(color=colors.fate, description=restricted)
+        await ctx.send("Do you want this to effect moderators too? Reply with `yes` or `no`")
+        reply = await self.bot.utils.get_message(ctx)
+        if "yes" in reply.content.lower():
+            self.bot.restricted[guild_id]["effect_mods"] = True
+            await ctx.send("Alright, I'll restrict moderators too")
+        else:
+            if "effect_mods" in self.bot.restricted[guild_id]:
+                self.bot.restricted.remove_sub(guild_id, "effect_mods")
+        await self.bot.restricted.flush()
+        await ctx.send(embed=e)
+
+    @commands.command(name="unrestrict", description="Allows everyone to use commands in a channel")
+    @commands.guild_only()
+    @commands.cooldown(1, 3, commands.BucketType.user)
+    @commands.has_permissions(administrator=True)
+    async def unrestrict(self, ctx):
+        guild_id = ctx.guild.id
+        unrestricted = "**Unrestricted:**"
+        if guild_id not in self.bot.restricted:
+            return await ctx.send("Nothing's currently restricted")
+        dat = self.bot.restricted[guild_id]
+        for channel in ctx.message.channel_mentions:
+            if channel.id in dat["channels"]:
+                self.bot.restricted[guild_id]["channels"].remove(channel.id)
+                unrestricted += f"\n{channel.mention}"
+        for member in ctx.message.mentions:
+            if member.id in dat["users"]:
+                self.bot.restricted[guild_id]["users"].remove(member.id)
+                unrestricted += f"\n{member.mention}"
+        await self.bot.restricted.flush()
+        e = discord.Embed(color=colors.fate, description=unrestricted)
+        await ctx.send(embed=e)
+
+    @commands.command(name="restricted", description="Shows the channels only mods can use commands in")
+    @commands.guild_only()
+    @commands.cooldown(1, 3, commands.BucketType.user)
+    @commands.has_permissions(administrator=True)
+    async def restricted(self, ctx):
+        guild_id = ctx.guild.id
+        if guild_id not in self.bot.restricted:
+            return await ctx.send("This server doesn't have anything restricted")
+        dat = self.bot.restricted[guild_id]
+        e = discord.Embed(color=colors.fate)
+        e.set_author(name="Restricted:", icon_url=ctx.author.avatar.url)
+        e.description = ""
+        if dat["channels"]:
+            changelog = ""
+            for channel_id in dat["channels"]:
+                channel = self.bot.get_channel(channel_id)
+                if not isinstance(channel, discord.TextChannel):
+                    self.bot.restricted[guild_id]["channels"].remove(channel_id)
+                    await self.bot.restricted.flush()
+                else:
+                    changelog += "\n" + channel.mention
+            if changelog:
+                e.description += changelog
+        if dat["users"]:
+            changelog = ""
+            for user_id in dat["users"]:
+                user = self.bot.get_user(user_id)
+                if not isinstance(user, discord.User):
+                    self.bot.restricted[guild_id]["users"].remove(user_id)
+                    await self.bot.restricted.flush()
+                else:
+                    changelog += "\n" + user.mention
+            if changelog:
+                e.description += changelog
+        await ctx.send(embed=e)
+
     @commands.command(name="ping", description="Measures how long it takes for the bot to interact")
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.bot_has_permissions(embed_links=True)

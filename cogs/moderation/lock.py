@@ -34,7 +34,7 @@ class Lock(commands.Cog):
             if ctx.guild.id not in self.lock:
                 self.lock[ctx.guild.id] = {}
 
-    @commands.command(name="lock")
+    @commands.command(name="lock", description="Kicks/bans/mutes users that join the server")
     @commands.has_permissions(administrator=True)
     async def lock(self, ctx):
         choices = [": ".join(item) for item in locks.items()]
@@ -109,7 +109,7 @@ class Lock(commands.Cog):
                             await member.kick(reason=f"Didn't pass minimum age requirement set by {ctx.author}")
                     await ctx.send(f"Successfully kicked {len(violations)} accounts")
 
-    @commands.command(name="unlock")
+    @commands.command(name="unlock", description="Removes any active locks")
     @commands.has_permissions(administrator=True)
     async def unlock(self, ctx):
         guild_id = ctx.guild.id
