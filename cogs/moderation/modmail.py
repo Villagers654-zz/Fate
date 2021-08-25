@@ -284,7 +284,7 @@ class ModMail(commands.Cog):
         threads = []
         async for thread in channel.archived_threads():
             threads.append(thread)
-        for thread in [*threads, *await channel.active_threads()]:
+        for thread in [*threads, *await guild.active_threads()]:
             if f"Case {case} " in thread.name:
                 if thread.name.endswith("(Closed)"):
                     return await ctx.send("That thread's currently closed")
@@ -294,7 +294,7 @@ class ModMail(commands.Cog):
             try:
                 msg = await channel.send(f"Thread Created by **{ctx.author}** for **Case #{case}**")
                 self.config[guild.id]["references"][str(case)] = msg.id
-                thread = await channel.start_thread(name=f"Case {case} - {ctx.author}", message=msg)
+                thread = await channel.create_thread(name=f"Case {case} - {ctx.author}", message=msg)
                 await self.config.flush()
             except Forbidden:
                 await ctx.send("Failed to create a thread due to my lacking manage_channel perms in that server")
