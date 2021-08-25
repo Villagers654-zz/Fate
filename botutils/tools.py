@@ -175,11 +175,12 @@ def format_date_difference(dt: datetime) -> str:
     if days := dt.days:
         if years := int(dt.days / 356):
             fmt += f"{years}y"
-            days -= years
+            days -= years * 356
             remainder -= 60 * 60 * 24 * 356 * years
 
-        fmt += f"{space()}{days}d"
-        remainder -= 60 * 60 * 24 * days
+        if days:
+            fmt += f"{space()}{days}d"
+            remainder -= 60 * 60 * 24 * days
 
     if hours := int(remainder / 60 / 60):
         fmt += f"{space()}{int(hours)}h"
