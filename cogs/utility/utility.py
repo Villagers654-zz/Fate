@@ -544,6 +544,20 @@ class Utility(commands.Cog):
             f"◈ {await sanitize(user.display_name)}'s avatar ◈", embed=e
         )
 
+    @commands.command(name="banner")
+    @commands.cooldown(2, 45, commands.BucketType.user)
+    @commands.guild_only()
+    @commands.bot_has_permissions(embed_links=True)
+    async def banner(self, ctx, *, user: discord.User = None):
+        if not user:
+            user = ctx.author
+        user = await self.bot.fetch_user(user.id)
+        e = discord.Embed(color=0x80B0FF)
+        e.set_image(url=str(user.banner.url))
+        await ctx.send(
+            f"◈ {await sanitize(user.display_name)}'s Banner ◈", embed=e
+        )
+
     @commands.command(name="owner")
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
