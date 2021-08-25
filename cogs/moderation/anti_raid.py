@@ -61,7 +61,7 @@ class AntiRaid(commands.Cog):
             if str(ctx.guild.id) in self.toggle:
                 toggle = "enabled"
             e = discord.Embed(color=colors.red)
-            e.set_author(name="Anti Raid", icon_url=ctx.author.avatar.url)
+            e.set_author(name="Anti Raid", icon_url=ctx.author.display_avatar.url)
             if ctx.guild.icon:
                 e.set_thumbnail(url=ctx.guild.icon.url)
             e.description = self._anti_raid.description

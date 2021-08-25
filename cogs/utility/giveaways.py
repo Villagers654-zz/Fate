@@ -31,7 +31,7 @@ class Giveaways(commands.Cog):
     async def make_embed(self, dat):
         e = discord.Embed(color=colors.fate)
         user = await self.bot.fetch_user(dat["user"])
-        e.set_author(name=f"Giveaway by {user}", icon_url=user.avatar.url)
+        e.set_author(name=f"Giveaway by {user}", icon_url=user.display_avatar.url)
         e.description = dat["giveaway"]
         _end_time = datetime.strptime(dat["end_time"], "%Y-%m-%d %H:%M:%S.%f")
         end_time = get_time((_end_time - datetime.now()).seconds)

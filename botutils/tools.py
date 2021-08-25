@@ -428,8 +428,4 @@ async def get_role(ctx, name) -> Optional[discord.Role]:
 async def update_msg(msg, new) -> discord.Message:
     if len(msg.content) + len(new) + 2 >= 2000:
         msg = await msg.channel.send("Uploading emoji(s)")
-    await msg.edit(content=f"{msg.content}\n{new}")
-    return msg
-
-
-
+    return await msg.edit(content=f"{msg.content}\n{new}")

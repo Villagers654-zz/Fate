@@ -62,7 +62,7 @@ class Suggestions(commands.Cog):
                     )
 
         e = discord.Embed(color=self.bot.config["theme_color"])
-        e.set_author(name=str(ctx.author), icon_url=ctx.author.avatar.url)
+        e.set_author(name=str(ctx.author), icon_url=ctx.author.display_avatar.url)
         e.description = suggestion
         e.set_footer(text="New Suggestion")
         msg = await channel.send(embed=e)
@@ -76,7 +76,7 @@ class Suggestions(commands.Cog):
     async def suggestions(self, ctx):
         if not ctx.invoked_subcommand:
             e = discord.Embed(color=self.bot.config["theme_color"])
-            e.set_author(name="Member Suggestions", icon_url=self.bot.user.avatar.url)
+            e.set_author(name="Member Suggestions", icon_url=self.bot.user.display_avatar.url)
             if ctx.guild:
                 e.set_thumbnail(url=ctx.guild.icon.url)
             e.description = "> Set a channel in which to receive suggestions from your server members " \

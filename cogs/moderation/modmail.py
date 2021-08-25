@@ -33,7 +33,7 @@ class ModMail(commands.Cog):
     async def modmail(self, ctx: Context):
         if not ctx.invoked_subcommand:
             e = Embed(color=self.bot.config["theme_color"])
-            e.set_author(name="Modmail", icon_url=self.bot.user.avatar.url)
+            e.set_author(name="Modmail", icon_url=self.bot.user.display_avatar.url)
             p = ctx.prefix
             e.add_field(
                 name="◈ Usage",
@@ -300,7 +300,7 @@ class ModMail(commands.Cog):
                 await ctx.send("Failed to create a thread due to my lacking manage_channel perms in that server")
                 return None
             e = Embed(color=self.bot.config["theme_color"])
-            e.set_author(name=str(ctx.author), icon_url=ctx.author.avatar.url)
+            e.set_author(name=str(ctx.author), icon_url=ctx.author.display_avatar.url)
             e.set_footer(text="Use .reply to respond")
             e.description = f"**Case #{case}:**\n**UserID:** {ctx.author.id}\n"
             reason = self.bot.decode(reason) if reason else None
@@ -325,7 +325,7 @@ class ModMail(commands.Cog):
             return await ctx.send("Created your thread 👍")
 
         e = Embed(color=self.bot.config["theme_color"])
-        e.set_author(name="New Reply", icon_url=ctx.author.avatar.url)
+        e.set_author(name="New Reply", icon_url=ctx.author.display_avatar.url)
         if message:
             e.description = message
         if attachment:

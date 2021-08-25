@@ -55,7 +55,7 @@ class Notepad(commands.Cog):
                     )
                 )
                 e = discord.Embed(color=0xFFC923)
-                e.set_author(name="Noted..", icon_url=ctx.author.avatar.url)
+                e.set_author(name="Noted..", icon_url=ctx.author.display_avatar.url)
                 e.set_image(url="attachment://" + os.path.basename(path))
                 await ctx.send(
                     file=discord.File(path, filename=os.path.basename(path)),
@@ -70,7 +70,7 @@ class Notepad(commands.Cog):
                 async with ctx.typing():
                     e = discord.Embed(color=0xFFC923)
                     e.title = "~~===🥂🍸🍷Note🍷🍸🥂===~~"
-                    e.set_thumbnail(url=ctx.author.avatar.url)
+                    e.set_thumbnail(url=ctx.author.display_avatar.url)
                     e.description = self.notes[author_id][-1]
                     e.set_footer(text=self.timestamp[author_id][-1])
                     await ctx.send(embed=e)
@@ -107,7 +107,7 @@ class Notepad(commands.Cog):
         if author_id in self.notes:
             e = discord.Embed(color=0xFFC923)
             e.title = "~~===🥂🍸🍷Notes🍷🍸🥂===~~"
-            e.set_thumbnail(url=ctx.author.avatar.url)
+            e.set_thumbnail(url=ctx.author.display_avatar.url)
             e.description = f"**Your last {len(self.notes[author_id])} note(s):**"
             note = len(self.notes[author_id]) - 1
             position = 1

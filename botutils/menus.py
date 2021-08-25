@@ -133,7 +133,7 @@ class GetChoice(discord.ui.View):
 
         elif not self.selected:
             e = discord.Embed(color=colors.red)
-            e.set_author(name="Expired Menu", icon_url=self.ctx.author.avatar.url)
+            e.set_author(name="Expired Menu", icon_url=self.ctx.author.display_avatar.url)
             await message.edit(content=None, view=None, embed=e)
             raise self.ctx.bot.ignored_exit
 
@@ -211,7 +211,7 @@ class Menus:
         await self.bot.loop.run_in_executor(None, create_card)
 
         e = discord.Embed(color=colors.fate)
-        e.set_author(name=str(user), icon_url=user.avatar.url)
+        e.set_author(name=str(user), icon_url=user.display_avatar.url)
         e.set_image(url="attachment://" + fp)
         e.set_footer(text=f"You have {get_time(timeout)}")
         message = await channel.send(
@@ -274,7 +274,7 @@ class Menus:
             user = ctx.author
 
         e = discord.Embed(color=colors.fate)
-        e.set_author(name=name, icon_url=ctx.author.avatar.url)
+        e.set_author(name=name, icon_url=ctx.author.display_avatar.url)
         e.description = "\n".join(
             f"{emojis[i]} {option}" for i, option in enumerate(options)
         )

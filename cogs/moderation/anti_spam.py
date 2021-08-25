@@ -350,7 +350,7 @@ class AntiSpam(commands.Cog):
     async def anti_spam(self, ctx):
         if not ctx.invoked_subcommand and 'help' not in ctx.message.content:
             e = discord.Embed(color=colors.fate)
-            e.set_author(name='AntiSpam Usage', icon_url=ctx.author.avatar.url)
+            e.set_author(name='AntiSpam Usage', icon_url=ctx.author.display_avatar.url)
             if ctx.guild.icon:
                 e.set_thumbnail(url=ctx.guild.icon.url)
             e.description = '**.anti-spam enable**\n`• enables all anti-spam modules`\n' \
@@ -411,7 +411,7 @@ class AntiSpam(commands.Cog):
         # Remove the view from the original message when done
         await config_view.wait()
         e = discord.Embed(color=colors.red)
-        e.set_author(name="Expired Menu", icon_url=ctx.author.avatar.url)
+        e.set_author(name="Expired Menu", icon_url=ctx.author.display_avatar.url)
         await choice_view.message.edit(content=None, view=None, embed=e)
 
     @anti_spam.group(name="enable", description="Enables the default configuration")
@@ -624,7 +624,7 @@ class AntiSpam(commands.Cog):
                 else:
                     running += 1
         e = discord.Embed(color=self.bot.config["theme_color"])
-        e.set_author(name="AntiSpam Stats", icon_url=self.bot.user.avatar.url)
+        e.set_author(name="AntiSpam Stats", icon_url=self.bot.user.display_avatar.url)
         emotes = emojis
         errored = []
         try:

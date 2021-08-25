@@ -117,7 +117,7 @@ class Reactions(commands.Cog):
             await webhook.send(
                 args,
                 username=ctx.author.name,
-                avatar_url=ctx.author.avatar.url,
+                avatar_url=ctx.author.display_avatar.url,
                 file=discord.File(
                     path, filename=reaction + path[-(len(path) - path.find(".")) :]
                 ),

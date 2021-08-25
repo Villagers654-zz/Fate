@@ -384,7 +384,7 @@ class Ranking(commands.Cog):
     async def role_rewards(self, ctx, *args):
         if not args or len(args) == 1:
             e = discord.Embed(color=self.bot.config["theme_color"])
-            e.set_author(name="Level Roles", icon_url=self.bot.user.avatar.url)
+            e.set_author(name="Level Roles", icon_url=self.bot.user.display_avatar.url)
             e.set_thumbnail(url=url_from(ctx.guild.icon))
             e.description = self.role_rewards.description
             p = get_prefix(ctx)  # type: str
@@ -468,8 +468,8 @@ class Ranking(commands.Cog):
     async def xp_config(self, ctx):
         """ Sends an overview for the current config """
         e = discord.Embed(color=0x4A0E50)
-        e.set_author(name="XP Configuration", icon_url=ctx.guild.owner.avatar.url)
-        e.set_thumbnail(url=self.bot.user.avatar.url)
+        e.set_author(name="XP Configuration", icon_url=ctx.guild.owner.display_avatar.url)
+        e.set_thumbnail(url=self.bot.user.display_avatar.url)
         conf = self.config[ctx.guild.id]
         e.description = (
             f"• Min XP Per Msg: {conf['min_xp_per_msg']}"
@@ -488,8 +488,8 @@ class Ranking(commands.Cog):
     async def set(self, ctx):
         if not ctx.invoked_subcommand:
             e = discord.Embed(color=colors.fate)
-            e.set_author(name="Set Usage", icon_url=ctx.author.avatar.url)
-            e.set_thumbnail(url=self.bot.user.avatar.url)
+            e.set_author(name="Set Usage", icon_url=ctx.author.display_avatar.url)
+            e.set_thumbnail(url=self.bot.user.display_avatar.url)
             p: str = ctx.prefix
             e.description = "`[]` = your arguments / setting"
             e.add_field(
@@ -693,7 +693,7 @@ class Ranking(commands.Cog):
         # Prepare the profile card
         url = "https://cdn.discordapp.com/attachments/632084935506788385/666158201867075585/rank-card.png"
         raw_card = await self.bot.get_resource(url)
-        raw_avatar = await self.bot.get_resource(str(user.avatar.url))
+        raw_avatar = await self.bot.get_resource(str(user.display_avatar.url))
         raw_status = await self.bot.get_resource(status)
         try:
             raw_background = await self.bot.get_resource(background_url)
@@ -858,7 +858,7 @@ class Ranking(commands.Cog):
             [
                 m, xp,
                 await self.calc_lvl_info(xp, conf),
-                self.bot.loop.create_task(get_av_task(m.avatar.url))
+                self.bot.loop.create_task(get_av_task(m.display_avatar.url))
             ] for m, xp in members[:9]
         ]
         for i in range(50):
@@ -969,7 +969,7 @@ class Ranking(commands.Cog):
             thumbnail_url = "https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png"
             embeds = []
             e = discord.Embed(color=0x4A0E50)
-            e.set_author(name=name, icon_url=ctx.author.avatar.url)
+            e.set_author(name=name, icon_url=ctx.author.display_avatar.url)
             e.set_thumbnail(url=thumbnail_url)
             e.description = ""
             rank = 1
@@ -979,7 +979,7 @@ class Ranking(commands.Cog):
                 if index == lmt:
                     embeds.append(e)
                     e = discord.Embed(color=0x4A0E50)
-                    e.set_author(name=name, icon_url=ctx.author.avatar.url)
+                    e.set_author(name=name, icon_url=ctx.author.display_avatar.url)
                     e.set_thumbnail(url=thumbnail_url)
                     e.description = ""
                     index = 0
@@ -1174,7 +1174,7 @@ class Ranking(commands.Cog):
     async def clb(self, ctx):
         # Remove old uses from the db
         e = discord.Embed(color=colors.fate)
-        e.set_author(name="Command Leaderboard", icon_url=self.bot.user.avatar.url)
+        e.set_author(name="Command Leaderboard", icon_url=self.bot.user.display_avatar.url)
         e.description = ""
         rank = 1
         for cmd, uses in sorted(self.cmds.items(), key=lambda kv: kv[1]["total"], reverse=True)[:10]:

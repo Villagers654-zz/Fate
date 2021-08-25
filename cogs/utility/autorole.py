@@ -33,8 +33,8 @@ class AutoRole(commands.Cog):
         guild_id = str(ctx.guild.id)
         e = discord.Embed(color=colors.fate)
         if item is None:
-            e.set_author(name="Auto-Role Help", icon_url=self.bot.user.avatar.url)
-            e.set_thumbnail(url=ctx.author.avatar.url)
+            e.set_author(name="Auto-Role Help", icon_url=self.bot.user.display_avatar.url)
+            e.set_thumbnail(url=ctx.author.display_avatar.url)
             e.add_field(
                 name="◈ Usage ◈",
                 value=".autorole {role}\n" ".autorole list\n" ".autorole clear",
@@ -50,7 +50,7 @@ class AutoRole(commands.Cog):
         if item.lower() == "list":
             if guild_id not in self.roles:
                 return await ctx.send("Auto role is not active")
-            e.set_author(name="Auto Roles", icon_url=self.bot.user.avatar.url)
+            e.set_author(name="Auto Roles", icon_url=self.bot.user.display_avatar.url)
             e.description = ""
             for role_id in self.roles[guild_id]:
                 role = ctx.guild.get_role(role_id)

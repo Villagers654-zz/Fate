@@ -57,7 +57,7 @@ class ButtonRoles(commands.Cog):
     async def role_menu(self, ctx: commands.Context):
         if not ctx.invoked_subcommand:
             e = discord.Embed(color=self.bot.config["theme_color"])
-            e.set_author(name="Role Menus", icon_url=self.bot.user.avatar.url)
+            e.set_author(name="Role Menus", icon_url=self.bot.user.display_avatar.url)
             if ctx.guild.icon:
                 e.set_thumbnail(url=ctx.guild.icon.url)
             e.description = "Create menus for users to self assign roles via buttons or " \
@@ -137,7 +137,7 @@ class ButtonRoles(commands.Cog):
     async def create_menu(self, ctx):
         """ The command for interactively setting up a new menu """
         e = discord.Embed(color=self.bot.config["theme_color"])
-        e.set_author(name="Instructions", icon_url=ctx.author.avatar.url)
+        e.set_author(name="Instructions", icon_url=ctx.author.display_avatar.url)
         e.description = "> **Send the name of the role you want me to add**\nOr here's an example message " \
                         "with advanced formatting:\n```💚 | SomeDisplayLabel | [role_id, role name, or ping]\n" \
                         "some description on what it does```"

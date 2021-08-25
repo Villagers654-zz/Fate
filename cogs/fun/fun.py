@@ -109,7 +109,7 @@ class Fun(commands.Cog):
             return await ctx.send("And **wHy** would I snipe a message *that*  big")
 
         e = discord.Embed(color=msg.author.color)
-        e.set_author(name=msg.author, icon_url=msg.author.avatar.url)
+        e.set_author(name=msg.author, icon_url=msg.author.display_avatar.url)
         if not is_admin:
             msg.content = await sanitize(msg.content[:4096], ctx)
         e.description = msg.content
@@ -206,8 +206,8 @@ class Fun(commands.Cog):
 
         background = await self.bot.get_resource(background_url)
         frame = await self.bot.get_resource(frame_url)
-        av1 = await self.bot.get_resource(str(user1.avatar.url))
-        av2 = await self.bot.get_resource(str(user2.avatar.url))
+        av1 = await self.bot.get_resource(str(user1.display_avatar.url))
+        av2 = await self.bot.get_resource(str(user2.display_avatar.url))
 
         def generate_card(frame, av1, av2):
             card = Image.new("RGBA", (W, H), (0, 0, 0, 100))
@@ -357,7 +357,7 @@ class Fun(commands.Cog):
             await webhook.send(
                 output,
                 username=ctx.author.display_name,
-                avatar_url=ctx.author.avatar.url,
+                avatar_url=ctx.author.display_avatar.url,
                 allowed_mentions=self.bot.allowed_mentions
             )
             await webhook.delete()
@@ -403,7 +403,7 @@ class Fun(commands.Cog):
         if member is None:
             member = ctx.author
         e = discord.Embed(color=0x0000FF)
-        e.set_author(name=f"{member.display_name}'s msg analysis", icon_url=member.avatar.url)
+        e.set_author(name=f"{member.display_name}'s msg analysis", icon_url=member.display_avatar.url)
         percentage = random.randint(50, 100)
         choices = ["truth", "the truth", "a lie", "lie"]
         e.description = f"{percentage}% {random.choice(choices)}"
@@ -417,7 +417,7 @@ class Fun(commands.Cog):
         if member is None:
             member = ctx.author
         e = discord.Embed(color=colors.random())
-        e.set_author(name=f"{member.display_name}'s Personality", icon_url=member.avatar.url)
+        e.set_author(name=f"{member.display_name}'s Personality", icon_url=member.display_avatar.url)
         e.add_field(name="Type", value=f'{random.choice(Personalities.types)}', inline=False)
         e.add_field(name="Social Status", value=f'{random.choice(Personalities.statuses)}', inline=False)
         e.add_field(name="Hobby", value=f'{random.choice(Personalities.hobbies)}', inline=False)
@@ -490,7 +490,7 @@ class Fun(commands.Cog):
             member = ctx.author
         r = random.randint(0, 1000)
         e = discord.Embed(color=0xFFFF00)
-        e.set_author(name=f"{member.name}'s Soul Analysis", icon_url=member.avatar.url)
+        e.set_author(name=f"{member.name}'s Soul Analysis", icon_url=member.display_avatar.url)
         e.description = f"{r} grams of soul"
         await ctx.send(embed=e)
 
@@ -568,7 +568,7 @@ class Fun(commands.Cog):
                 )
             await self.gay.flush()
         e = discord.Embed(color=user.color)
-        e.set_author(name=str(user), icon_url=user.avatar.url)
+        e.set_author(name=str(user), icon_url=user.display_avatar.url)
         percentage = random.randint(0, 100)
         if user_id in self.gay[invoked_with]:
             percentage = self.gay[invoked_with][user_id]
@@ -612,7 +612,7 @@ class Fun(commands.Cog):
         if ctx.message.mentions:
             user = ctx.message.mentions[0]
         e = discord.Embed(color=user.color)
-        e.set_author(name=str(user), icon_url=user.avatar.url)
+        e.set_author(name=str(user), icon_url=user.display_avatar.url)
         percentage = random.randint(0, 100)
         if ctx.invoked_with == "hitler":
             if random.randint(1, 4) == 1:
@@ -631,7 +631,7 @@ class Fun(commands.Cog):
         e = discord.Embed(color=0xAAF200)
         e.set_author(
             name=f"{ctx.author.name} has sued {user.name}",
-            icon_url=ctx.author.avatar.url,
+            icon_url=ctx.author.display_avatar.url,
         )
         e.set_thumbnail(
             url="https://cdn.discordapp.com/attachments/501871950260469790/511997534181392424/money-png-12.png"

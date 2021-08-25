@@ -960,7 +960,7 @@ class Moderation(commands.Cog):
         if not members:
             return await ctx.send("You need to properly specify who to kick")
         e = discord.Embed(color=colors.fate)
-        e.set_author(name=f"Kicking members", icon_url=ctx.author.avatar.url)
+        e.set_author(name=f"Kicking members", icon_url=ctx.author.display_avatar.url)
         msg = await ctx.send(embed=e)
         e.description = ""
         for i, member in enumerate(members):
@@ -1007,7 +1007,7 @@ class Moderation(commands.Cog):
         elif users_to_ban > 1:
             e.set_author(
                 name=f"Banning {users_to_ban} user{'' if users_to_ban > 1 else ''}",
-                icon_url=ctx.author.avatar.url,
+                icon_url=ctx.author.display_avatar.url,
             )
         if users_to_ban > 10:
             return await ctx.send("That's too many")
@@ -1137,7 +1137,7 @@ class Moderation(commands.Cog):
             return await ctx.send("Couldn't find any results in the audit log. It's probably too old")
 
         e = discord.Embed(color=self.bot.config["theme_color"])
-        e.set_author(name=f"Ban Entry for {user}", icon_url=user.avatar.url)
+        e.set_author(name=f"Ban Entry for {user}", icon_url=user.display_avatar.url)
         e.description = f"> {ban.reason if ban.reason else 'No reason specified'}"
         e.add_field(
             name="◈ Banned by",
@@ -1216,12 +1216,12 @@ class Moderation(commands.Cog):
                 ctx.guild.id, user.id, "unban", str(ctx.author), ctx.message.jump_url, ctx.author.id
             )
             e = discord.Embed(color=colors.red)
-            e.set_author(name=f"{user} unbanned [Case #{case}]", icon_url=user.avatar.url)
+            e.set_author(name=f"{user} unbanned [Case #{case}]", icon_url=user.display_avatar.url)
             await ctx.send(embed=e)
         else:
             e = discord.Embed(color=colors.green)
             e.set_author(
-                name=f"Unbanning {len(users)} users", icon_url=ctx.author.avatar.url
+                name=f"Unbanning {len(users)} users", icon_url=ctx.author.display_avatar.url
             )
             e.description = ""
             msg = await ctx.send(embed=e)
@@ -1273,7 +1273,7 @@ class Moderation(commands.Cog):
     async def mass_nick(self, ctx, *, nick=""):
         def gen_embed(iteration):
             e = discord.Embed(color=colors.fate)
-            e.set_author(name="Mass Updating Nicknames", icon_url=ctx.author.avatar.url)
+            e.set_author(name="Mass Updating Nicknames", icon_url=ctx.author.display_avatar.url)
             e.description = (
                 f"{iteration + 1}/{len(members)} complete"
                 f"\n1 nick per 1.21 seconds"
@@ -1335,7 +1335,7 @@ class Moderation(commands.Cog):
     async def mass_role(self, ctx, *, role=None):
         def gen_embed(iteration):
             e = discord.Embed(color=colors.fate)
-            e.set_author(name=f"Mass {action} Roles", icon_url=ctx.author.avatar.url)
+            e.set_author(name=f"Mass {action} Roles", icon_url=ctx.author.display_avatar.url)
             e.description = (
                 f"{iteration + 1}/{len(members)} complete"
                 f"\n1 role per 1.21 seconds"
@@ -1346,7 +1346,7 @@ class Moderation(commands.Cog):
 
         if not role:
             e = discord.Embed(color=colors.fate)
-            e.set_author(name="MassRole Usages", icon_url=ctx.author.avatar.url)
+            e.set_author(name="MassRole Usages", icon_url=ctx.author.display_avatar.url)
             e.description = f"Add, or remove roles from members in mass"
             p = get_prefix(ctx)
             e.add_field(name=f"{p}massrole @Role", value="Mass adds roles")
@@ -1538,9 +1538,9 @@ class Moderation(commands.Cog):
             next_punishment = punishments[total_warns]
 
         e = discord.Embed(color=colors.fate)
-        url = self.bot.user.avatar.url
-        if user.avatar.url:
-            url = user.avatar.url
+        url = self.bot.user.display_avatar.url
+        if user.display_avatar.url:
+            url = user.display_avatar.url
         e.set_author(name=f"{user.name} has been warned", icon_url=url)
         e.description = f"**Warns:** [`{total_warns}`] "
         if punishment != "None":
@@ -1755,9 +1755,9 @@ class Moderation(commands.Cog):
             warns += 1
             reasons += f"\n• `{reason}`"
         e = discord.Embed(color=colors.fate)
-        url = self.bot.user.avatar.url
-        if user.avatar.url:
-            url = user.avatar.url
+        url = self.bot.user.display_avatar.url
+        if user.display_avatar.url:
+            url = user.display_avatar.url
         e.set_author(name=f"{user.name}'s Warns", icon_url=url)
         e.description = f"**Total Warns:** [`{warns}`]" + reasons
         await ctx.send(embed=e)

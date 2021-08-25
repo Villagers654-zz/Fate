@@ -21,11 +21,11 @@ class VcLog(commands.Cog):
     async def _vclog(self, ctx):
         if not ctx.invoked_subcommand:
             e = discord.Embed(color=colors.fate)
-            e.set_author(name="Vc Logger", icon_url=ctx.author.avatar.url)
+            e.set_author(name="Vc Logger", icon_url=ctx.author.display_avatar.url)
             if ctx.guild.icon.url:
                 e.set_thumbnail(url=ctx.guild.icon.url)
             else:
-                e.set_thumbnail(url=self.bot.user.avatar.url)
+                e.set_thumbnail(url=self.bot.user.display_avatar.url)
             e.description = "Logs actions in vc to a dedicated channel"
             e.add_field(
                 name="◈ Usage ◈", value=".vclog enable\n.vclog disable", inline=False

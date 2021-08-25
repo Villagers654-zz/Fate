@@ -161,7 +161,7 @@ class HelpMenu(AuthorView):
         # Set up the embed to use
         self.embed = Embed(color=colors.fate)
         self.embed.set_author(name="~==🥂🍸🍷Help🍷🍸🥂==~")
-        self.embed.set_thumbnail(url=ctx.bot.user.avatar.url)
+        self.embed.set_thumbnail(url=ctx.bot.user.display_avatar.url)
         self.embed.description = (
             f"[Support Server]({self.bot.config['support_server']}) | "
             f"[Bot Invite]({self.bot.invite_url})\n"

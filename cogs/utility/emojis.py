@@ -23,10 +23,11 @@ from discord.errors import HTTPException, Forbidden, InvalidArgument
 from PIL import Image
 
 from botutils import colors, download, update_msg
+from fate import Fate
 
 
 class Emojis(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot: Fate):
         self.bot = bot
 
     def cleanup_text(self, text: str):
@@ -136,7 +137,7 @@ class Emojis(commands.Cog):
             e = discord.Embed(color=colors.fate)
             e.description = str(emoji.id)
             author_name = emoji.name
-            author_url = ctx.author.avatar.url
+            author_url = ctx.author.display_avatar.url
             if isinstance(emoji, discord.Emoji) and is_member:
                 perms = ctx.author.guild_permissions
                 bot_perms = emoji.guild.me.guild_permissions
@@ -148,7 +149,7 @@ class Emojis(commands.Cog):
                     emoji = await emoji.guild.fetch_emoji(emoji.id)
                     author_name += f" by {emoji.user}"
                     e.description = f"ID: {emoji.id}"
-                    author_url = emoji.user.avatar.url
+                    author_url = emoji.user.display_avatar.url
                 icon_url = emoji.guild.icon.url if emoji.guild.icon else None
                 if icon_url:
                     e.set_footer(text=emoji.guild.name, icon_url=icon_url)
@@ -477,5 +478,5 @@ class Emojis(commands.Cog):
         await upload_files()
 
 
-def setup(bot):
+def setup(bot: Fate):
     bot.add_cog(Emojis(bot), override=True)

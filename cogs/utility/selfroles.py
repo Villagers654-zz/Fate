@@ -111,8 +111,8 @@ class SelfRoles(commands.Cog):
     async def selfroles(self, ctx):
         """ Sends info & usage help on self roles """
         e = discord.Embed(color=colors.fate)
-        e.set_author(name="Self-Role Menus", icon_url=ctx.author.avatar.url)
-        e.set_thumbnail(url=self.bot.user.avatar.url)
+        e.set_author(name="Self-Role Menus", icon_url=ctx.author.display_avatar.url)
+        e.set_thumbnail(url=self.bot.user.display_avatar.url)
         e.description = (
             "Let members pick their own role via reactions. If you're "
             "having trouble editing a menu, use the update-menu cmd"

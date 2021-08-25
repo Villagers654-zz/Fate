@@ -51,7 +51,7 @@ class Cookies(commands.Cog):
             dat = self.dat[user_id]  # type: dict
             e.set_author(
                 name=f"| 📤 {dat['sent']} | 📥 {dat['received']} | 🍪 {dat['cookies']}",
-                icon_url=ctx.author.avatar.url,
+                icon_url=ctx.author.display_avatar.url,
             )
             e.description = f"**{ctx.author.display_name}** has given **{user.display_name}** a cookie"
             await ctx.send(embed=e)
@@ -65,7 +65,7 @@ class Cookies(commands.Cog):
         dat = self.dat[author_id]  # type: dict
         e.set_author(
             name=f"| 📤 {dat['sent']} | 📥 {dat['received']} | 🍪 {dat['cookies']}",
-            icon_url=ctx.author.avatar.url,
+            icon_url=ctx.author.display_avatar.url,
         )
         actions = [
             "chews on one of his/her cookies",
@@ -95,7 +95,7 @@ class Cookies(commands.Cog):
         dat = self.dat[user_id]  # type: dict
         e.set_author(
             name=f"| 📤 {dat['sent']} | 📥 {dat['received']} | 🍪 {dat['cookies']}",
-            icon_url=ctx.author.avatar.url,
+            icon_url=ctx.author.display_avatar.url,
         )
         e.set_footer(text="Powered by Cookie Mix")
         await ctx.send(embed=e)

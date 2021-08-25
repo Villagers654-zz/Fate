@@ -152,7 +152,7 @@ class Reddit(commands.Cog):
                     await post.subreddit.load()
 
                     e = discord.Embed(color=colors.red())
-                    icon_img = self.bot.user.avatar.url
+                    icon_img = self.bot.user.display_avatar.url
                     if hasattr(post.author, "icon_img"):
                         icon_img = post.author.icon_img
                     e.set_author(name=f"u/{post.author.name}", icon_url=icon_img, url=post.url)
@@ -217,7 +217,7 @@ class Reddit(commands.Cog):
                 await post.author.load()
 
                 e = discord.Embed(color=colors.red())
-                icon_img = self.bot.user.avatar.url
+                icon_img = self.bot.user.display_avatar.url
                 if hasattr(post.author, "icon_img"):
                     icon_img = post.author.icon_img
                 e.set_author(name=f"u/{post.author.name}", icon_url=icon_img, url=post.url)
@@ -263,7 +263,7 @@ class Reddit(commands.Cog):
                 return await ctx.send(embed=e)
 
             e = discord.Embed(color=colors.red())
-            e.set_author(name="Reddit", icon_url=ctx.author.avatar.url)
+            e.set_author(name="Reddit", icon_url=ctx.author.display_avatar.url)
             e.set_thumbnail(
                 url="https://cdn3.iconfinder.com/data/icons/2018-social-media-logotypes/1000/2018_social_media_popular_app_logo_reddit-512.png"
             )

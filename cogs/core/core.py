@@ -53,7 +53,7 @@ class Core(commands.Cog):
         if not user:
             user = await self.bot.fetch_user(int(data["user"]))
         e = discord.Embed(color=colors.pink)
-        e.set_author(name=f"{user} Upvoted The Bot", icon_url=user.avatar.url)
+        e.set_author(name=f"{user} Upvoted The Bot", icon_url=user.display_avatar.url)
         await channel.send(embed=e)
 
     @commands.Cog.listener()
@@ -63,7 +63,7 @@ class Core(commands.Cog):
         if not user:
             user = await self.bot.fetch_user(int(data["user"]))
         e = discord.Embed(color=colors.pink)
-        e.set_author(name=f"{user} Upvoted The Bot", icon_url=user.avatar.url)
+        e.set_author(name=f"{user} Upvoted The Bot", icon_url=user.display_avatar.url)
         e.description = f"📬 | {len(user.mutual_guilds)} mutual servers"
         await channel.send(embed=e)
         async with self.bot.utils.cursor() as cur:
@@ -92,7 +92,7 @@ class Core(commands.Cog):
         e.description = f"👥 | {len(guild.members)} Members"
         if guild.me.guild_permissions.view_audit_log:
             async for entry in guild.audit_logs(action=discord.AuditLogAction.bot_add, limit=1):
-                e.set_footer(text=str(entry.user), icon_url=entry.user.avatar.url)
+                e.set_footer(text=str(entry.user), icon_url=entry.user.display_avatar.url)
         await channel.send(embed=e)  # type: ignore
 
     @commands.Cog.listener()
@@ -223,7 +223,7 @@ class Core(commands.Cog):
             prefixes = await get_prefixes_async(self.bot, ctx.message)
             formatted = "\n".join(prefixes[1::])
             e = discord.Embed(color=colors.fate)
-            e.set_author(name="Prefixes", icon_url=ctx.author.avatar.url)
+            e.set_author(name="Prefixes", icon_url=ctx.author.display_avatar.url)
             e.description = formatted
             return await ctx.send(embed=e)
         if not ctx.author.guild_permissions.manage_guild:
@@ -492,7 +492,7 @@ class Core(commands.Cog):
             return await ctx.send("This server doesn't have anything restricted")
         dat = self.bot.restricted[guild_id]
         e = discord.Embed(color=colors.fate)
-        e.set_author(name="Restricted:", icon_url=ctx.author.avatar.url)
+        e.set_author(name="Restricted:", icon_url=ctx.author.display_avatar.url)
         e.description = ""
         if dat["channels"]:
             changelog = ""
@@ -553,7 +553,7 @@ class Core(commands.Cog):
         for shard, latency in self.bot.latencies:
             shard_ping += f"\n{emojis.boost} **Shard {shard}:** `{round(latency * 1000)}ms`"
 
-        e.set_author(name=f"Bots Latency", icon_url=self.bot.user.avatar.url)
+        e.set_author(name=f"Bots Latency", icon_url=self.bot.user.display_avatar.url)
         e.set_thumbnail(url=img)
         e.description = read_ping + send_ping + response_ping + shard_ping
         await msg.edit(embed=e)

@@ -140,7 +140,7 @@ class ChatBridges(commands.Cog):
                                 embeds=msg.embeds if msg.embeds else None,
                                 file=file,
                                 username=msg.author.display_name,
-                                avatar_url=msg.author.avatar.url,
+                                avatar_url=msg.author.display_avatar.url,
                                 allowed_mentions=mentions
                             )
                     except (NotFound, Forbidden):
@@ -553,7 +553,7 @@ class ChatBridges(commands.Cog):
     @commands.command(name="bridges", aliases=["chatbridges"])
     async def chatbridges(self, ctx):
         e = discord.Embed(color=self.bot.config["theme_color"])
-        e.set_author(name="ChatBridges", icon_url=self.bot.user.avatar.url)
+        e.set_author(name="ChatBridges", icon_url=self.bot.user.display_avatar.url)
         e.set_thumbnail(url=ctx.guild.icon.url)
 
         bridges = ""

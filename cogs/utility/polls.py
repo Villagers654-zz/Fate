@@ -95,7 +95,7 @@ class SafePolls(commands.Cog):
         emojis = votes.keys()
 
         e = discord.Embed(color=colors.fate)
-        e.set_author(name=f"Poll by {user}", icon_url=user.avatar.url if user else None)
+        e.set_author(name=f"Poll by {user}", icon_url=user.display_avatar.url if user else None)
         fmt = " | ".join(f"{emoji} {len(votes[emoji])}" for emoji in emojis)
         if any(key not in self.emojis and len(key) > 3 for key in votes.keys()):
             question += f"\n\n{fmt}"

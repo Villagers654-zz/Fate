@@ -33,7 +33,7 @@ class Limiter(commands.Cog):
     async def limit(self, ctx):
         if not ctx.invoked_subcommand:
             e = discord.Embed(color=colors.fate)
-            e.set_author(name="Channel Limiter", icon_url=self.bot.user.avatar.url)
+            e.set_author(name="Channel Limiter", icon_url=self.bot.user.display_avatar.url)
             if ctx.guild.icon:
                 e.set_thumbnail(url=ctx.guild.icon.url)
             e.description = "Limits channels to specific things. To unlimit use `.unlimit`"

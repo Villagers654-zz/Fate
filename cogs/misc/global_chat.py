@@ -159,7 +159,7 @@ class GlobalChat(commands.Cog):
     async def _gc(self, ctx):
         if not ctx.invoked_subcommand:
             e = discord.Embed(color=self.bot.config["theme_color"])
-            e.set_author(name="Global Chat", icon_url=self.bot.user.avatar.url)
+            e.set_author(name="Global Chat", icon_url=self.bot.user.display_avatar.url)
             e.description = "Link a channel into my global channel. " \
                             "Msgs sent into it will be forwarded to other " \
                             "configured channels alongside the same in reverse"
@@ -351,7 +351,7 @@ class GlobalChat(commands.Cog):
             return await ctx.send("Ok")
 
         e = discord.Embed(color=ctx.author.color)
-        e.set_author(name=str(ctx.author), icon_url=ctx.author.avatar.url)
+        e.set_author(name=str(ctx.author), icon_url=ctx.author.display_avatar.url)
         age = format_date_difference(ctx.author.created_at).split()[0]
         joined = format_date_difference(ctx.author.joined_at).split()[0]
         e.description = f"🆔 | {ctx.author.id}\n" \
@@ -371,7 +371,7 @@ class GlobalChat(commands.Cog):
         if ctx.channel.id not in active:
             return await ctx.send("Global chat isn't active")
         e = discord.Embed()
-        e.set_author(name=f"Poll by {ctx.author} 📊", icon_url=ctx.author.avatar.url)
+        e.set_author(name=f"Poll by {ctx.author} 📊", icon_url=ctx.author.display_avatar.url)
         e.description = poll
         e.set_footer(text="👍 0 | 👎 0")
         self.polls[ctx.author.id] = {
@@ -478,7 +478,7 @@ class GlobalChat(commands.Cog):
             author = str(msg.author)
             if mod:
                 author += " 👮‍♂️"
-            e.set_author(name=author, icon_url=msg.author.avatar.url)
+            e.set_author(name=author, icon_url=msg.author.display_avatar.url)
 
             # Convert mentions to nicknames so everyone can read them
             ctx = await self.bot.get_context(msg)
@@ -546,7 +546,7 @@ class GlobalChat(commands.Cog):
             if str(payload.emoji) == "👍":
                 async with self.bot.utils.cursor() as cur:
                     await cur.execute(f"insert into global_users values ({user_id}, 'verified');")
-                e.set_author(name=f"{user} was verified", icon_url=user.avatar.url)
+                e.set_author(name=f"{user} was verified", icon_url=user.display_avatar.url)
                 self._queue.append([e, False, None])
                 self.last_id = None
                 await msg.edit(content="Application accepted")

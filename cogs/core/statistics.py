@@ -32,7 +32,7 @@ class Statistics(commands.Cog):
     async def statistics(self, ctx):
         e = discord.Embed(color=colors.fate)
         owner = await self.bot.fetch_user(self.bot.config["bot_owner_id"])
-        e.set_author(name="Module Statistics", icon_url=owner.avatar.url)
+        e.set_author(name="Module Statistics", icon_url=owner.display_avatar.url)
         e.description = self.bot.utils.format_dict({
             key: f"{len(getattr(self.bot.cogs[key], value))} active"
             for key, value in self.cogs.items()

@@ -168,7 +168,7 @@ class Factions(commands.Cog):
         owner = self.bot.get_user(owner_id)
         if owner:
             return str(owner.display_avatar)
-        return self.bot.user.avatar.url
+        return self.bot.user.display_avatar.url
 
     async def get_users_faction(self, ctx, user=None):
         """fetch a users faction by context or partial name"""
@@ -392,7 +392,7 @@ class Factions(commands.Cog):
     async def _help(self, ctx):
         """ Command usage and descriptions """
         e = discord.Embed(color=purple)
-        e.set_author(name="Usage", icon_url=ctx.author.avatar.url)
+        e.set_author(name="Usage", icon_url=ctx.author.display_avatar.url)
         e.set_thumbnail(url=ctx.guild.icon.url)
         p: str = ctx.prefix
         e.add_field(
@@ -540,7 +540,7 @@ class Factions(commands.Cog):
             return await ctx.send(f"Your faction is currently full. Buy more slots for $250 with {p}f buy slots")
         self.factions[guild_id][faction]["members"].append(ctx.author.id)
         e = discord.Embed(color=purple)
-        e.set_author(name=faction, icon_url=ctx.author.avatar.url)
+        e.set_author(name=faction, icon_url=ctx.author.display_avatar.url)
         e.set_thumbnail(url=self.get_factions_icon(ctx, faction))
         e.description = (
             f"{ctx.author.display_name} joined\nMember Count: "
@@ -861,7 +861,7 @@ class Factions(commands.Cog):
             rank += 1
 
         e = discord.Embed(color=purple)
-        e.set_author(name=faction, icon_url=owner.avatar.url if owner else icon_url)
+        e.set_author(name=faction, icon_url=owner.display_avatar.url if owner else icon_url)
         e.set_thumbnail(url=icon_url if icon_url else None)
         e.description = (
             f"**Owner:** **`@{owner}`**"
@@ -945,7 +945,7 @@ class Factions(commands.Cog):
                 users.append([user, income])
 
         e = discord.Embed(color=purple)
-        e.set_author(name=f"{faction}'s members", icon_url=owner.avatar.url)
+        e.set_author(name=f"{faction}'s members", icon_url=owner.display_avatar.url)
         e.set_thumbnail(url=self.get_factions_icon(ctx, faction))
         e.description = f"**O:** `{owner.name}` - ${owner_income}\n"
         for user, income in sorted(co_owners, key=lambda kv: kv[1], reverse=True):
@@ -1097,8 +1097,8 @@ class Factions(commands.Cog):
 
         background = await self.bot.get_resource(background_url)
         frame = await self.bot.get_resource(frame_url)
-        av1 = await self.bot.get_resource(str(ctx.author.avatar.url))
-        av2 = await self.bot.get_resource(str(user.avatar.url))
+        av1 = await self.bot.get_resource(str(ctx.author.display_avatar.url))
+        av2 = await self.bot.get_resource(str(user.display_avatar.url))
 
         def generate_card(frame, av1, av2):
             card = Image.new("RGBA", (W, H), (0, 0, 0, 100))
@@ -1419,7 +1419,7 @@ class Factions(commands.Cog):
 
         e = discord.Embed(color=purple)
         e.description = f"Scrambled word: `{first}{''.join(scrambled_word)}{last}`"
-        e.set_footer(text="You have 25 seconds..", icon_url=ctx.bot.user.avatar.url)
+        e.set_footer(text="You have 25 seconds..", icon_url=ctx.bot.user.display_avatar.url)
         await ctx.send(embed=e)
 
         try:
@@ -1691,7 +1691,7 @@ class Factions(commands.Cog):
     @factions.command(name="shop", description="Shows buffs that can increase income, stats, or protect against raids")
     async def shop(self, ctx):
         e = discord.Embed(color=purple)
-        e.set_author(name="Factions Shop", icon_url=self.bot.user.avatar.url)
+        e.set_author(name="Factions Shop", icon_url=self.bot.user.display_avatar.url)
         e.add_field(
             name="◈ Attributes",
             value="》 +5 member slots\n"
