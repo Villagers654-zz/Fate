@@ -167,7 +167,7 @@ class Factions(commands.Cog):
         owner_id = self.factions[guild_id][faction]["owner"]
         owner = self.bot.get_user(owner_id)
         if owner:
-            return owner.avatar.url
+            return str(owner.display_avatar)
         return self.bot.user.avatar.url
 
     async def get_users_faction(self, ctx, user=None):

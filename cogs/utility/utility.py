@@ -552,10 +552,12 @@ class Utility(commands.Cog):
         if not user:
             user = ctx.author
         user = await self.bot.fetch_user(user.id)
+        if not user.banner:
+            return await ctx.send("That user doesn't have a banner")
         e = discord.Embed(color=0x80B0FF)
         e.set_image(url=str(user.banner.url))
         await ctx.send(
-            f"◈ {await sanitize(user.display_name)}'s Banner ◈", embed=e
+            f"◈ {await sanitize(user.display_name)}'s banner ◈", embed=e
         )
 
     @commands.command(name="owner")
@@ -1211,13 +1213,14 @@ class InfoView(AuthorView):
 
         e = discord.Embed(color=colors.fate)
         e.set_author(
-            name="Here's what I got on them..", icon_url= self.bot.user.avatar.url
+            name="Here's what I got on them..", icon_url=self.bot.user.avatar.url
         )
-        e.set_thumbnail(url=user.avatar.url)
+        e.set_thumbnail(url=str(user.display_avatar))
         e.description = ""
         has_public_profile = False
 
-        if cog := self.bot.get_cog("Utility"):
+        cog: Utility
+        if cog := self.bot.get_cog("Utility"):  # type: ignore
             if user.id in cog.settings:
                 if cog.settings[user.id]["public"]:
                     has_public_profile = True
