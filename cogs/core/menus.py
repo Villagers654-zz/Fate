@@ -164,13 +164,10 @@ class HelpMenu(AuthorView):
         self.embed.set_thumbnail(url=ctx.bot.user.avatar.url)
         self.embed.description = (
             f"[Support Server]({self.bot.config['support_server']}) | "
-            f"[Bot Invite]({self.bot.invite_url})"
+            f"[Bot Invite]({self.bot.invite_url})\n"
+            f"• using a cmd with no args will usually send its help menu\n"
+            f"• try using `.module enable` instead of `.enable module`"
         )
-        usage = (
-            "• using a cmd with no args will usually send its help menu\n"
-            "• try using `.module enable` instead of `.enable module`"
-        )
-        self.embed.add_field(name="◈ Basic Bot Usage", value=usage, inline=False)
 
         self.state = dict(structure)
         super().__init__(timeout=45)
