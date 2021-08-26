@@ -115,7 +115,7 @@ class Emojis(commands.Cog):
 
     async def upload_emoji(self, ctx, *args, **kwargs):
         result = await self._upload_emoji(ctx, *args, **kwargs)
-        await update_msg(ctx.msg, result)
+        ctx.msg = await update_msg(ctx.msg, result)
 
     @commands.command(name="emoji", aliases=["emote", "jumbo"])
     @commands.cooldown(1, 3, commands.BucketType.user)
