@@ -336,8 +336,7 @@ class ButtonRoles(commands.Cog):
         self.config[guild_id][message_id]["roles"][str(role.id)] = {
             "emoji": emoji,
             "label": label,
-            "description": description,
-            "show_percentage": False
+            "description": description
         }
 
         await self.refresh_menu(guild_id, message_id)
