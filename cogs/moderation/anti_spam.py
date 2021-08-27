@@ -424,7 +424,7 @@ class AntiSpam(commands.Cog):
                 return await ctx.send("Anti spam is already enabled")
             self.config[guild_id] = defaults
             await self.config.flush()
-            await ctx.send('Enabled the default anti-spam config')
+            await ctx.send("Enabled the default anti-spam config")
 
     @_enable.command(name="rate-limit", description="Limits users to x messages within x seconds")
     @commands.has_permissions(manage_messages=True)
@@ -435,7 +435,7 @@ class AntiSpam(commands.Cog):
         conf = [{"timespan": 5, "threshold": 4}]
         self.config[guild_id]["rate_limit"] = conf
         await self.config.flush()
-        await ctx.send('Enabled rate-limit module')
+        await ctx.send("Enabled the rate-limit module")
 
     @_enable.command(name="mass-pings", aliases=["mass-ping"], description="Flags when a user pings too much")
     @commands.has_permissions(manage_messages=True)
@@ -451,7 +451,7 @@ class AntiSpam(commands.Cog):
             }]
         }
         await self.config.flush()
-        await ctx.send('Enabled rate-limit module')
+        await ctx.send("Enabled the rate-limit module")
 
     @_enable.command(name='anti-macro', description="Flags using autoclickers or macros to spam or exploit bots")
     @commands.has_permissions(manage_messages=True)
@@ -463,7 +463,7 @@ class AntiSpam(commands.Cog):
             return await ctx.send("Anti macro is already enabled")
         self.config[guild_id]["anti_macro"] = {}
         await self.config.flush()
-        await ctx.send('Enabled anti-macro module')
+        await ctx.send("Enabled the anti-macro module")
 
     @_enable.command(name="duplicates", description="Flag duplicate content like links, images, and stickers")
     @commands.has_permissions(manage_messages=True)
@@ -484,7 +484,7 @@ class AntiSpam(commands.Cog):
             }]
         }
         await self.config.flush()
-        await ctx.send('Enabled duplicates module')
+        await ctx.send("Enabled the duplicates module")
 
     @_enable.command(name="inhuman", description="Flags abnormal text like tall messages, ascii, and copy pasting bulky messages")
     @commands.has_permissions(manage_messages=True)
@@ -501,7 +501,7 @@ class AntiSpam(commands.Cog):
             "copy_paste": True
         }
         await self.config.flush()
-        await ctx.send('Enabled duplicates module')
+        await ctx.send("Enabled the inhuman module")
 
     @anti_spam.group(name="disable", description="Disables antispam all-together")
     @commands.has_permissions(manage_messages=True)
@@ -511,7 +511,7 @@ class AntiSpam(commands.Cog):
             if guild_id not in self.config:
                 return await ctx.send("Anti-Spam isn't enabled")
             self.config.remove(guild_id)
-            await ctx.send('Disabled anti-spam')
+            await ctx.send("Disabled anti-spam")
 
     @_disable.command(name="rate-limit", aliases=["ratelimit"], description="Disables the rate-limit module")
     @commands.has_permissions(manage_messages=True)
@@ -522,7 +522,7 @@ class AntiSpam(commands.Cog):
         if "rate_limit" not in self.config[guild_id]:
             return await ctx.send("Rate limit isn't enabled")
         self.config.remove_sub(guild_id, "rate_limit")
-        await ctx.send('Disabled rate-limit module')
+        await ctx.send("Disabled the rate-limit module")
 
     @_disable.command(name="anti-macro", aliases=["antimacro"], description="Disables the anti-macro module")
     @commands.has_permissions(manage_messages=True)
@@ -533,7 +533,7 @@ class AntiSpam(commands.Cog):
         if "anti_macro" not in self.config[guild_id]:
             return await ctx.send("Anti Macro isn't enabled")
         self.config.remove_sub(guild_id, "anti_macro")
-        await ctx.send('Disabled anti-macro module')
+        await ctx.send("Disabled the anti-macro module")
 
     @_disable.command(name="mass-pings", aliases=["masspings"], description="Disables the mass-pings module")
     @commands.has_permissions(manage_messages=True)
@@ -544,7 +544,7 @@ class AntiSpam(commands.Cog):
         if "mass_pings" not in self.config[guild_id]:
             return await ctx.send("Mass pings isn't enabled")
         self.config.remove_sub(guild_id, "mass_pings")
-        await ctx.send('Disabled mass-pings module')
+        await ctx.send("Disabled the mass-pings module")
 
     @_disable.command(name="duplicates", aliases=["duplicate"], description="Disables the duplicates module")
     @commands.has_permissions(manage_messages=True)
@@ -555,7 +555,7 @@ class AntiSpam(commands.Cog):
         if "duplicates" not in self.config[guild_id]:
             return await ctx.send("Duplicates isn't enabled")
         self.config.remove_sub(guild_id, "rate_limit")
-        await ctx.send('Disabled duplicates module')
+        await ctx.send("Disabled the duplicates module")
 
     @_disable.command(name="inhuman", description="Disables the inhuman module")
     @commands.has_permissions(manage_messages=True)
@@ -566,7 +566,7 @@ class AntiSpam(commands.Cog):
         if "inhuman" not in self.config[guild_id]:
             return await ctx.send("Inhuman isn't enabled")
         self.config.remove_sub(guild_id, "inhuman")
-        await ctx.send('Disabled inhuman module')
+        await ctx.send("Disabled the inhuman module")
 
     @anti_spam.command(name="ignore", description="Has antispam ignore a specific channel")
     @commands.has_permissions(manage_messages=True)
