@@ -17,6 +17,7 @@ import discord
 
 from botutils import GetChoice
 from fate import Fate
+from .selfroles import SelfRoles
 
 
 allowed_mentions = discord.AllowedMentions(everyone=False, roles=True, users=False)
@@ -51,7 +52,7 @@ class ButtonRoles(commands.Cog):
         await message.edit(content=meta["text"], view=new_view)
         return message
 
-    @commands.group(name="role-menu", aliases=["rolemenu"])
+    @commands.group(name="role-menu", aliases=["rolemenu"], description="Shows how to use the module")
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.bot_has_permissions(embed_links=True)
     async def role_menu(self, ctx: commands.Context):
@@ -82,7 +83,7 @@ class ButtonRoles(commands.Cog):
             e.set_footer(text=f"{count} Active Menu{'s' if count == 0 or count > 1 else ''}")
             await ctx.send(embed=e)
 
-    @commands.command(name="refresh")
+    @commands.command(name="refresh", description="Regenerates a menu to update changes")
     @commands.cooldown(1, 25, commands.BucketType.guild)
     async def refresh(self, ctx):
         if ctx.guild.id not in self.config:
@@ -99,10 +100,10 @@ class ButtonRoles(commands.Cog):
                 await self.config.remove_sub(ctx.guild.id, message_id)
         await ctx.send("Success 👍")
 
-    @role_menu.command(name="convert")
+    @role_menu.command(name="convert", description="Converts an old reaction menu to a button menu")
     @commands.has_permissions(administrator=True)
     async def convert(self, ctx, msg_id: str):
-        cog = self.bot.cogs["SelfRoles"]
+        cog: SelfRoles = self.bot.cogs["SelfRoles"]  # type: ignore
         if str(ctx.guild.id) not in cog.menus:
             return await ctx.send("This server has no existing selfrole menus")
         if msg_id not in cog.menus[str(ctx.guild.id)]:
@@ -131,7 +132,7 @@ class ButtonRoles(commands.Cog):
         await self.config.flush()
         await ctx.send("Success 👍")
 
-    @role_menu.command(name="create")
+    @role_menu.command(name="create", description="Starts the menu setup process")
     @commands.has_permissions(administrator=True)
     @commands.bot_has_permissions(add_reactions=True)
     async def create_menu(self, ctx):
@@ -291,7 +292,7 @@ class ButtonRoles(commands.Cog):
         key = [k for k in menus.keys() if choice in k][0]
         return menus[key]
 
-    @role_menu.command(name="add-role")
+    @role_menu.command(name="add-role", description="Adds a role to an existing menu")
     @commands.has_permissions(administrator=True)
     async def add_role(self, ctx, *, role):
         guild_id = ctx.guild.id
@@ -343,7 +344,7 @@ class ButtonRoles(commands.Cog):
         await ctx.send(f"Added {role.mention}", allowed_mentions=discord.AllowedMentions.none())
         await self.config.flush()
 
-    @role_menu.command(name="remove-role")
+    @role_menu.command(name="remove-role", description="Removes a role from an existing menu")
     @commands.has_permissions(administrator=True)
     async def remove_role(self, ctx, *, role):
         guild_id = ctx.guild.id
@@ -366,7 +367,7 @@ class ButtonRoles(commands.Cog):
         await ctx.send(f"Removed {role.mention}", allowed_mentions=discord.AllowedMentions.none())
         await self.config.flush()
 
-    @commands.command(name="toggle-percentage")
+    @commands.command(name="toggle-percentage", description="Toggles showing the % of how many have each role")
     @commands.has_permissions(administrator=True)
     async def toggle_percentage(self, ctx):
         guild_id = ctx.guild.id
@@ -380,7 +381,7 @@ class ButtonRoles(commands.Cog):
         await ctx.send(f"{toggle} showing the percentage")
         await self.config.flush()
 
-    @role_menu.command(name="set-limit")
+    @role_menu.command(name="set-limit", description="Sets the max number of roles a user can choose")
     @commands.has_permissions(administrator=True)
     async def set_limit(self, ctx, new_limit: int):
         if new_limit > 25 or new_limit < 0:
@@ -396,7 +397,7 @@ class ButtonRoles(commands.Cog):
         await ctx.send("Set the new limit 👍")
         await self.config.flush()
 
-    @commands.command(name="edit-message")
+    @commands.command(name="edit-message", description="Sets the msg content of a menu")
     @commands.has_permissions(administrator=True)
     async def edit_message(self, ctx, *, new_message):
         guild_id = ctx.guild.id
@@ -410,7 +411,7 @@ class ButtonRoles(commands.Cog):
         await ctx.send(f"Successfully edited the content 👍")
         await self.config.flush()
 
-    @commands.command(name="change-emoji")
+    @commands.command(name="change-emoji", description="Sets a roles emoji in an existing menu")
     @commands.has_permissions(administrator=True)
     @commands.bot_has_permissions(add_reactions=True)
     async def change_emoji(self, ctx, *, new_emoji):
@@ -443,7 +444,7 @@ class ButtonRoles(commands.Cog):
         await ctx.send(f"Successfully set the emoji 👍")
         await self.config.flush()
 
-    @commands.command(name="set-description")
+    @commands.command(name="set-description", description="Sets a roles description in an existing menu")
     @commands.has_permissions(administrator=True)
     async def set_description(self, ctx, *, new_description):
         guild_id = ctx.guild.id

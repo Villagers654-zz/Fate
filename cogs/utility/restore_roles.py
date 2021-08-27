@@ -37,7 +37,11 @@ class RestoreRoles(commands.Cog):
             self.allow_perms.pop(self.allow_perms.index(guild_id))
         await self.save_data()
 
-    @commands.group(name="restore-roles", aliases=["restore_roles", "restoreroles"])
+    @commands.group(
+        name="restore-roles",
+        aliases=["restore_roles", "restoreroles"],
+        description="Shows how to use the module"
+    )
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.bot_has_permissions(embed_links=True)
     async def restore_roles(self, ctx):
@@ -54,7 +58,7 @@ class RestoreRoles(commands.Cog):
             e.add_field(name="◈ Usage ◈", value=usage)
             await ctx.send(embed=e)
 
-    @restore_roles.command(name="enable")
+    @restore_roles.command(name="enable", description="Enables restoring roles on rejoin")
     @commands.has_permissions(administrator=True)
     @commands.bot_has_permissions(manage_roles=True)
     async def _enable(self, ctx):
@@ -65,7 +69,7 @@ class RestoreRoles(commands.Cog):
         await ctx.send("Enabled Restore-Roles")
         await self.save_data()
 
-    @restore_roles.command(name="disable")
+    @restore_roles.command(name="disable", description="Disables restoring roles on rejoin")
     @commands.has_permissions(administrator=True)
     @commands.bot_has_permissions(manage_roles=True)
     async def _disable(self, ctx):
@@ -75,7 +79,7 @@ class RestoreRoles(commands.Cog):
         await self.disable_module(guild_id)
         await ctx.send("Disabled Restore-Roles")
 
-    @restore_roles.command(name="allow-perms")
+    @restore_roles.command(name="allow-perms", description="Toggles restoring mod/admin roles")
     @commands.bot_has_permissions(manage_roles=True)
     async def _allow_perms(self, ctx):
         if ctx.author.id != ctx.guild.owner.id:

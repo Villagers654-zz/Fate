@@ -44,7 +44,7 @@ class SafePolls(commands.Cog):
         self.cache = {}
         self.cd = bot.utils.cooldown_manager(1, 3)
 
-        self.poll_usage = "> Usage: `.poll should we do X or Y?`\n" \
+        self.poll_help = "> Usage: `.poll should we do X or Y?`\n" \
                           "Creates a poll that's safe from reactions being manipulated. " \
                           "Note that when you add a reaction you can only change what you react to, and can't remove it."
 
@@ -156,8 +156,8 @@ class SafePolls(commands.Cog):
             raise self.bot.ignored_exit
         return False
 
-    @staticmethod
-    def instant_poll_usage() -> str:
+    @property
+    def instant_poll_help(self) -> str:
         return "Creates a poll in one message. This does require precise formatting.\n"\
                "> Examples:\n"\
                "```.instant-poll #polls 1h\n"\
@@ -170,13 +170,13 @@ class SafePolls(commands.Cog):
                "👎 don't do something\n"\
                "✌ do something else|🏆⏳🔨```You can also set the override emojis as a range of numbers like 1-3"
 
-    @commands.command(name="instant-poll")
+    @commands.command(name="instant-poll", description="Sets up a poll in one message")
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.cooldown(2, 10, commands.BucketType.channel)
     @commands.has_permissions(manage_messages=True)
     async def instant_poll(self, ctx, channel: TextChannel = None, timer: Timer = None, *, data = None):
         if not channel or not timer or not data:
-            return await ctx.send(self.instant_poll_usage())
+            return await ctx.send(self.instant_poll_help)
         await self.ensure_permissions(ctx, channel)
 
         converter = commands.EmojiConverter()
@@ -299,7 +299,9 @@ class SafePolls(commands.Cog):
             await ctx.message.delete()
 
     @commands.command(
-        name="poll", aliases=["safepoll", "safe_poll", "createpoll", "create-poll"]
+        name="poll",
+        aliases=["safepoll", "safe_poll", "createpoll", "create-poll"],
+        description="Starts the setup process for a poll"
     )
     @commands.cooldown(2, 5, commands.BucketType.user)
     async def safe_poll(self, ctx, *, question):

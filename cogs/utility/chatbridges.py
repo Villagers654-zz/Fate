@@ -338,7 +338,7 @@ class ChatBridges(commands.Cog):
         except KeyError:
             pass
 
-    @commands.group(name="link", aliases=["chatbridge", "bridge"])
+    @commands.group(name="link", aliases=["chatbridge", "bridge"], description="Starts the channel linking process")
     @commands.cooldown(4, 10, commands.BucketType.user)
     @commands.bot_has_permissions(manage_webhooks=True)
     async def link(self, ctx):
@@ -430,7 +430,7 @@ class ChatBridges(commands.Cog):
             if channel in self.waiters:
                 del self.waiters[channel]
 
-    @commands.command(name="unlink")
+    @commands.command(name="unlink", description="Unlinks a channel from the bridge")
     @commands.cooldown(2, 10, commands.BucketType.user)
     @commands.has_permissions(administrator=True)
     async def unlink(self, ctx):
@@ -474,7 +474,7 @@ class ChatBridges(commands.Cog):
 
         await ctx.send(f"Unlinked from {guild}")
 
-    @link.command(name="toggle-warnings")
+    @link.command(name="toggle-warnings", description="Toggles whether or not to send warning msgs")
     @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.has_permissions(administrator=True)
     async def toggle_warnings(self, ctx):
@@ -514,7 +514,7 @@ class ChatBridges(commands.Cog):
         await ctx.send(f"Removed {channel.guild}'s extra channel slots")
         await self.config.flush()
 
-    @link.command(name="block")
+    @link.command(name="block", description="Blocks a user from using the bridge")
     @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.has_permissions(administrator=True)
     async def _block(self, ctx, *users):
@@ -536,7 +536,7 @@ class ChatBridges(commands.Cog):
         await self.config.flush()
         await ctx.send(blocked)
 
-    @link.command(name="unblock")
+    @link.command(name="unblock", description="Unblocks a user from using the bridge")
     @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.has_permissions(administrator=True)
     async def _unblock(self, ctx, *, user):
@@ -550,7 +550,7 @@ class ChatBridges(commands.Cog):
         await self.config.flush()
         await ctx.send(f"Unblocked {user}")
 
-    @commands.command(name="bridges", aliases=["chatbridges"])
+    @commands.command(name="bridges", aliases=["chatbridges"], description="Lists all the bridges the server uses")
     async def chatbridges(self, ctx):
         e = discord.Embed(color=self.bot.config["theme_color"])
         e.set_author(name="ChatBridges", icon_url=self.bot.user.display_avatar.url)

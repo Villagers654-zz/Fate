@@ -26,7 +26,7 @@ class Notepad(commands.Cog):
         data = {"notes": self.notes, "timestamp": self.timestamp}
         await self.bot.utils.save_json("./data/userdata/notes.json", data)
 
-    @commands.command(name="note")
+    @commands.command(name="note", description="Saves a note for later")
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def _note(self, ctx, *, arg: commands.clean_content = ""):
         author_id = str(ctx.author.id)
@@ -77,7 +77,7 @@ class Notepad(commands.Cog):
             else:
                 await ctx.send("no data")
 
-    @commands.command(name="quicknote")
+    @commands.command(name="quicknote", description="Saves a note without sending an embed")
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def _quicknote(self, ctx, *, note):
         author_id = str(ctx.author.id)
@@ -100,7 +100,7 @@ class Notepad(commands.Cog):
         await asyncio.sleep(1)
         await ctx.message.delete()
 
-    @commands.command(name="notes")
+    @commands.command(name="notes", description="Shows your last 5 notes")
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def _notes(self, ctx):
         author_id = str(ctx.author.id)

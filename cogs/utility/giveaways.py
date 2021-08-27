@@ -126,7 +126,7 @@ class Giveaways(commands.Cog):
                     )
                     self.bot.tasks["giveaways"][task_id] = task
 
-    @commands.command(name="giveaway", aliases=["giveaways"])
+    @commands.command(name="giveaway", aliases=["giveaways"], description="Starts a new giveaway")
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.guild_only()
     @commands.has_permissions(administrator=True)

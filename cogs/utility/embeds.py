@@ -6,7 +6,7 @@ class Embeds(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command()
+    @commands.command(name="embed", description="Embeds a message")
     async def embed(self, ctx, *, arg):
         try:
             e = discord.Embed()

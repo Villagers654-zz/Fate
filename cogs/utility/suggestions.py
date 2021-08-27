@@ -28,7 +28,7 @@ class Suggestions(commands.Cog):
     def is_enabled(self, guild_id):
         return guild_id in self.config
 
-    @commands.command(name="suggest")
+    @commands.command(name="suggest", description="Makes a suggestion to the server")
     @commands.guild_only()
     async def suggest(self, ctx, *, suggestion):
         guild_id = ctx.guild.id
@@ -71,7 +71,7 @@ class Suggestions(commands.Cog):
         await ctx.message.delete()
 
 
-    @commands.group(name="suggestions")
+    @commands.group(name="suggestions", description="Shows how touse the module")
     @commands.bot_has_permissions(embed_links=True)
     async def suggestions(self, ctx):
         if not ctx.invoked_subcommand:
@@ -89,7 +89,7 @@ class Suggestions(commands.Cog):
             )
             await ctx.send(embed=e)
 
-    @suggestions.command(name="enable")
+    @suggestions.command(name="enable", description="Enables the suggestions channel")
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
     async def _enable(self, ctx):
@@ -161,7 +161,7 @@ class Suggestions(commands.Cog):
         await self.config.flush()
         await ctx.send(f"Successfully setup the suggestions channel in {channel.mention}")
 
-    @suggestions.command(name="disable")
+    @suggestions.command(name="disable", description="Disables the module")
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
     async def _disable(self, ctx):

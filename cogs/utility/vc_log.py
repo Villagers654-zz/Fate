@@ -15,7 +15,7 @@ class VcLog(commands.Cog):
         self.leave_cd = {}
         self.move_cd = {}
 
-    @commands.group(name="vc-log", aliases=["vclog"])
+    @commands.group(name="vc-log", aliases=["vclog"], description="Shows how to use the module")
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
     async def _vclog(self, ctx):
@@ -34,7 +34,7 @@ class VcLog(commands.Cog):
             e.set_footer(text=f"Current Status: {toggle}")
             await ctx.send(embed=e)
 
-    @_vclog.command(name="enable")
+    @_vclog.command(name="enable", description="Enables logging vc events to a channel")
     @commands.has_permissions(manage_channels=True)
     async def _enable(self, ctx):
         await ctx.send("Mention the channel I should use")
@@ -59,7 +59,7 @@ class VcLog(commands.Cog):
         await self.config.flush()
         await ctx.send("Enabled VcLog")
 
-    @_vclog.command(name="disable")
+    @_vclog.command(name="disable", description="Disables the module")
     @commands.has_permissions(manage_channels=True)
     async def _disable(self, ctx):
         guild_id = ctx.guild.id

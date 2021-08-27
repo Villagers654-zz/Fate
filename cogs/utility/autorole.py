@@ -24,7 +24,7 @@ class AutoRole(commands.Cog):
         return str(guild_id) in self.roles
 
     @commands.command(
-        name="autorole", description="Adds x roles to a user when they join"
+        name="autorole", description="Adds a role to users when they join"
     )
     @commands.has_permissions(manage_roles=True)
     @commands.bot_has_permissions(embed_links=True, manage_roles=True)

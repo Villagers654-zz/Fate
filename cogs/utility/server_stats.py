@@ -14,7 +14,11 @@ class ServerStatistics(commands.Cog):
         }
         self.config = bot.utils.cache("server_stats")
 
-    @commands.group(name="server-stats", aliases=["serverstats", "server_stats", "ss"])
+    @commands.group(
+        name="server-stats",
+        aliases=["serverstats", "server_stats", "ss"],
+        description="Shows how to use the module"
+    )
     @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
@@ -44,7 +48,7 @@ class ServerStatistics(commands.Cog):
             )
             await ctx.send(embed=e)
 
-    @server_statistics.command(name="enable")
+    @server_statistics.command(name="enable", description="Starts the setup process")
     async def _enable(self, ctx):
         converter = commands.VoiceChannelConverter()
         types = ["members", "bots", "boosts"]
@@ -77,7 +81,7 @@ class ServerStatistics(commands.Cog):
         await ctx.send("Enabled server stats")
         await self.config.flush()
 
-    @server_statistics.command(name="disable")
+    @server_statistics.command(name="disable", description="Disables the module")
     async def _disable(self, ctx):
         if ctx.guild.id not in self.config:
             return await ctx.send("Server stats aren't enabled")

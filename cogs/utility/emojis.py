@@ -117,7 +117,7 @@ class Emojis(commands.Cog):
         result = await self._upload_emoji(ctx, *args, **kwargs)
         ctx.msg = await update_msg(ctx.msg, result)
 
-    @commands.command(name="emoji", aliases=["emote", "jumbo"])
+    @commands.command(name="emoji", aliases=["emote", "jumbo"], description="Shows an emotes image")
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.bot_has_permissions(embed_links=True, attach_files=True)
     async def _emoji(self, ctx, *emojis: Union[discord.Emoji, discord.PartialEmoji]):
@@ -160,7 +160,7 @@ class Emojis(commands.Cog):
             await ctx.send(embed=e)
             await asyncio.sleep(1)
 
-    @commands.command(name="sticker")
+    @commands.command(name="sticker", description="Shows a stickers image")
     @commands.cooldown(1, 15, commands.BucketType.user)
     @commands.bot_has_permissions(embed_links=True, attach_files=True)
     async def sticker(self, ctx):
@@ -179,7 +179,7 @@ class Emojis(commands.Cog):
         e.set_image(url=sticker.url)
         await ctx.send(embed=e)
 
-    @commands.command(name="emojis")
+    @commands.command(name="emojis", description="Shows the emoji, and animated emoji count")
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.guild_only()
     @commands.has_permissions(manage_emojis=True)
@@ -211,6 +211,7 @@ class Emojis(commands.Cog):
     @commands.command(
         name="add-emoji",
         aliases=["add-emote", "addemoji", "addemote", "stealemoji", "stealemote"],
+        description="Creates an emoji via an img, url, or existing emote"
     )
     @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.guild_only()
@@ -394,7 +395,7 @@ class Emojis(commands.Cog):
                 ctx.msg, "No proper formats I can work with were provided"
             )
 
-    @commands.command(name="delemoji", aliases=["delemote"])
+    @commands.command(name="delemoji", aliases=["delemote"], description="Deletes an emote")
     @commands.cooldown(1, 5, commands.BucketType.guild)
     @commands.has_permissions(manage_emojis=True)
     async def _delemoji(self, ctx, *emoji: discord.Emoji):
@@ -405,7 +406,7 @@ class Emojis(commands.Cog):
             await emoji.delete(reason=ctx.author.name)
             await ctx.send(f"Deleted emote `{emoji.name}`")
 
-    @commands.command(name="rename-emoji")
+    @commands.command(name="rename-emoji", description="Renames a emote")
     @commands.cooldown(1, 5, commands.BucketType.guild)
     @commands.has_permissions(manage_emojis=True)
     async def _rename_emoji(self, ctx, emoji: discord.Emoji, name):
@@ -417,7 +418,11 @@ class Emojis(commands.Cog):
         await emoji.edit(name=name, reason=ctx.author.name)
         await ctx.send(f"Renamed emote `{old_name}` to `{clean_name}`")
 
-    @commands.command(name="add-sticker", aliases=["addsticker", "stealsticker", "steal-sticker"])
+    @commands.command(
+        name="add-sticker",
+        aliases=["addsticker", "stealsticker", "steal-sticker"],
+        description="Creates a sticker via an img, url, or existing sticker"
+    )
     @commands.cooldown(1, 5, commands.BucketType.guild)
     @commands.has_permissions(manage_emojis=True)
     async def add_sticker(self, ctx, *args):
