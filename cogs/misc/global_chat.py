@@ -495,6 +495,8 @@ class GlobalChat(commands.Cog):
                 if str(msg.author) in em.author.name and not isinstance(e.image.url, str):
                     if msg.attachments:
                         em.set_image(url=msg.attachments[0].url)
+                    elif msg.stickers:
+                        em.set_image(url=msg.stickers[0].url)
                     if em.description:
                         em.description += f"\n{msg.content[:256]}"
                     elif msg.content:
@@ -509,6 +511,8 @@ class GlobalChat(commands.Cog):
                 if msg.author.id not in self.config["images_blocked"]:
                     if msg.guild.id not in self.config["images_blocked"]:
                         e.set_image(url=msg.attachments[0].url)
+            if msg.stickers:
+                e.set_image(url=msg.stickers[0].url)
             if msg.guild.icon and msg.guild.id not in self.config["icon_blocked"]:
                 e.set_thumbnail(url=msg.guild.icon.url)
             e.description = msg.content[:512]
