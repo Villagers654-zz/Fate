@@ -423,6 +423,20 @@ class Utility(commands.Cog):
                 await msg.add_reaction(":unapprove:506020690584010772")
                 return await ctx.message.delete()
 
+    @commands.command(name="create-template", aliases=["backup"], description="Creates a server template")
+    @commands.cooldown(1, 5, commands.BucketType.guild)
+    @commands.cooldown(1, 25, commands.BucketType.user)
+    @commands.has_permissions(administrator=True)
+    @commands.bot_has_permissions(manage_guild=True)
+    async def create_template(self, ctx, *, name):
+        description = f"Created by {ctx.author} : {ctx.author.id}"
+        if templates := await ctx.guild.templates():
+            await templates[0].edit(name=name, description=description)
+            template = await templates[0].sync()
+        else:
+            template = await ctx.guild.create_template(name=name[:28], description=description)
+        await ctx.send(template.url)
+
     @commands.command(name="members", aliases=["membercount"])
     @commands.cooldown(1, 5, commands.BucketType.channel)
     @commands.guild_only()
