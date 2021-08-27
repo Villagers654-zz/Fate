@@ -554,7 +554,8 @@ class ChatBridges(commands.Cog):
     async def chatbridges(self, ctx):
         e = discord.Embed(color=self.bot.config["theme_color"])
         e.set_author(name="ChatBridges", icon_url=self.bot.user.display_avatar.url)
-        e.set_thumbnail(url=ctx.guild.icon.url)
+        if ctx.guild.icon:
+            e.set_thumbnail(url=ctx.guild.icon.url)
 
         bridges = ""
         for channel in ctx.guild.text_channels:
