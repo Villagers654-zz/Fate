@@ -64,6 +64,7 @@
   "extensions": {
     "core": [
       "error_handler",
+      "cc",
       "config",
       "core",
       "menus",
@@ -111,7 +112,6 @@
       "audit",
       "autorole",
       "button_roles",
-      "cc",
       "chatbridges",
       "clean_rythm",
       "embeds",
