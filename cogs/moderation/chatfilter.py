@@ -6,7 +6,6 @@ from unicodedata import normalize
 from string import printable
 import os
 from typing import *
-from importlib import reload
 
 from discord.ext import commands
 import discord
