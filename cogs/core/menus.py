@@ -24,7 +24,7 @@ import asyncio
 import inspect
 from discord.ext import commands
 from discord.ext.commands import Command, Context
-from discord import ui, Interaction, Embed, Message, SelectOption
+from discord import ui, Interaction, Embed, Message, SelectOption, User, Member, TextChannel
 from fate import Fate
 from botutils import AuthorView, colors
 
@@ -208,6 +208,8 @@ class HelpSelect(ui.Select):
         elif isinstance(main.state, list):
             p: str = main.ctx.prefix
             for command in main.state:
+                if not command:
+                    continue
                 checks = str(command.checks)
                 if "luck" in checks or "is_owner" in checks:
                     continue
@@ -216,7 +218,19 @@ class HelpSelect(ui.Select):
                     description = command.usage[:100]
                 if command.description:
                     description = command.description
-                self._options.append(SelectOption(emoji="🌐", label=p + str(command), description=description))
+
+                label = f"{p}{command}"
+                if len(command.params) > 2:
+                    for param, ptype in list(command.params.items())[2:]:
+                        names = ["User", "Member", "Role"]
+                        if param == "user" or any(name in str(ptype) for name in names):
+                            label += f" @{param}"
+                        elif "TextChannel" in str(ptype) or param == "channel":
+                            label += f" #{param}"
+                        else:
+                            label += f" [{param}]"
+
+                self._options.append(SelectOption(emoji="🌐", label=label, description=description))
 
         # Copy the _options var
         options = list(self._options)
@@ -262,7 +276,7 @@ class HelpSelect(ui.Select):
         # Send a commands help
         else:
             if isinstance(self.main.state, list):
-                command = self.main.bot.get_command(key.lstrip("."))
+                command = self.main.bot.get_command(key.lstrip(".").split()[0])
                 if not command.usage:
                     return await interaction.response.send_message(
                         "No help information is currently available for that command", ephemeral=True
