@@ -89,10 +89,8 @@ class ChatFilter(commands.Cog):
             await asyncio.sleep(0)
             if esc in content:
                 content = content.replace("\\", "")
-            for chunk in content.split():
-                await asyncio.sleep(0)
-                if phrase.lower() in chunk.lower():
-                    return await self.clean_content(content, phrase), [phrase]
+            if phrase.lower() in content.lower():
+                return await self.clean_content(content, phrase), [phrase]
         return None, None
 
     async def run_regex_filter(self, guild_id: int, content: str) -> Tuple[Optional[str], Optional[list]]:
