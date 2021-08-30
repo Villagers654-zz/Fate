@@ -316,7 +316,7 @@ class GlobalChat(commands.Cog):
         channel = self.bot.get_channel(self.bot.config["gc_verify_channel"])
         async for msg in channel.history(limit=15):  # type: ignore
             for embed in msg.embeds:
-                if str(ctx.author.id) == embed.description:
+                if str(ctx.author.id) in str(embed.to_dict()):
                     return await ctx.send("You already have an application waiting")
 
         await ctx.send(
@@ -546,6 +546,7 @@ class GlobalChat(commands.Cog):
             user_id = int(msg.embeds[0].description.split("\n")[0].split(" | ")[1])
 
             user = await self.bot.fetch_user(user_id)
+            u = self.bot.get_user(payload.user_id)
             e = discord.Embed(color=colors.green)
             if str(payload.emoji) == "👍":
                 async with self.bot.utils.cursor() as cur:
@@ -553,11 +554,11 @@ class GlobalChat(commands.Cog):
                 e.set_author(name=f"{user} was verified", icon_url=user.display_avatar.url)
                 self._queue.append([e, False, None])
                 self.last_id = None
-                await msg.edit(content="Application accepted")
+                await msg.edit(content=f"Application accepted by {u}")
             else:
                 with suppress(NotFound, Forbidden):
                     await user.send("Your verification into global-chat was denied.")
-                await msg.edit(content="Application denied")
+                await msg.edit(content=f"Application denied by {u}")
             await msg.clear_reactions()
 
 
