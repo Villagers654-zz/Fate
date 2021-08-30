@@ -52,6 +52,8 @@ class ChatFilter(commands.Cog):
             bot.filtered_messages = {}
         self.bot = bot
         self.config = bot.utils.cache("chatfilter")
+        for guild_id in self.config.keys():
+            self.config[guild_id]["whitelist"] = []
         self.chatfilter_usage = self._chatfilter
 
     def is_enabled(self, guild_id: int) -> bool:
@@ -84,12 +86,20 @@ class ChatFilter(commands.Cog):
             await asyncio.sleep(0)
             for alias in alts:
                 content = content.replace(alias, letter)
+        if results := await findall(" +[a-zA-Z] +", content):
+            for result in results:
+                await asyncio.sleep(0)
+                content = content.replace(result, result.replace(result, result.strip()))
         for phrase in self.config[guild_id]["blacklist"]:
             await asyncio.sleep(0)
             if esc in content:
                 content = content.replace("\\", "")
-            if phrase.lower() in content.lower():
+            if " " in phrase and phrase.lower() in content.lower():
                 return await self.clean_content(content, phrase), [phrase]
+            for word in content.lower().split():
+                await asyncio.sleep(0)
+                if phrase in word and word not in self.config[guild_id]["whitelist"]:
+                    return await self.clean_content(content, phrase), [phrase]
         return None, None
 
     async def run_regex_filter(self, guild_id: int, content: str) -> Tuple[Optional[str], Optional[list]]:
@@ -126,7 +136,11 @@ class ChatFilter(commands.Cog):
             try:
                 before = time()
                 if result := await self.bot.loop.run_in_executor(None, run_regex):
-                    flags.append(result)
+                    for word in content.split():
+                        await asyncio.sleep(0)
+                        if result in word and word not in self.config[guild_id]["whitelist"]:
+                            flags.append(result)
+                            break
                 if time() - before > 3:
                     self.bot.log.critical(f"Removing bad regex: {word}")
                     with suppress(ValueError):
@@ -163,8 +177,10 @@ class ChatFilter(commands.Cog):
                 name="◈ Usage",
                 value="**.chatfilter ignore #channel**\n"
                       "**.chatfilter unignore #channel**\n"
-                      "**.chatfilter add {word/phrase}**\n"
-                      "**.chatfilter remove {word/phrase}**\n",
+                      "**.chatfilter add [word/phrase]**\n"
+                      "**.chatfilter remove [word/phrase]**\n"
+                      "**.chatfilter whitelist [word/phrase]**\n"
+                      "**.chatfilter blacklist [word/phrase]**",
                 inline=False,
             )
             if guild_id in self.config and self.config[guild_id]["ignored"]:
@@ -198,6 +214,7 @@ class ChatFilter(commands.Cog):
             self.config[ctx.guild.id] = {
                 "toggle": True,
                 "blacklist": [],
+                "whitelist": [],
                 "ignored": [],
                 "webhooks": False,
                 "regex": False
@@ -269,6 +286,44 @@ class ChatFilter(commands.Cog):
                 await ctx.send(f"`{phrase}` is already blacklisted")
             self.config[guild_id]["blacklist"].append(phrase)
             await ctx.send(f"Added `{phrase}`")
+            await asyncio.sleep(1)
+        await self.config.flush()
+
+    @_chatfilter.command(name="whitelist", description="Adds a word, or phrase to the whitelist")
+    @commands.has_permissions(manage_messages=True)
+    @commands.bot_has_permissions(manage_messages=True)
+    async def _whitelist(self, ctx, *, phrases):
+        guild_id = ctx.guild.id
+        if guild_id not in self.config:
+            return await ctx.send("Chatfilter isn't enabled")
+        if len(phrases) > 256:
+            return await ctx.send("That's too large to add")
+        for phrase in phrases.split(", ")[:16]:
+            if len(phrase) > 64:
+                return await ctx.send("That's too large to add")
+            if phrase in self.config[guild_id]["whitelist"]:
+                await ctx.send(f"`{phrase}` is already whitelisted")
+            self.config[guild_id]["whitelist"].append(phrase)
+            await ctx.send(f"Added `{phrase}`")
+            await asyncio.sleep(1)
+        await self.config.flush()
+
+    @_chatfilter.command(name="blacklist", description="Removes a word, or phrase from the whitelist")
+    @commands.has_permissions(manage_messages=True)
+    @commands.bot_has_permissions(manage_messages=True)
+    async def _blacklist(self, ctx, *, phrases):
+        guild_id = ctx.guild.id
+        if guild_id not in self.config:
+            return await ctx.send("Chatfilter isn't enabled")
+        if len(phrases) > 256:
+            return await ctx.send("That's too large to add")
+        for phrase in phrases.split(", ")[:16]:
+            if len(phrase) > 64:
+                return await ctx.send("That's too large to add")
+            if phrase not in self.config[guild_id]["whitelist"]:
+                await ctx.send(f"`{phrase}` isn't whitelisted")
+            self.config[guild_id]["whitelist"].remove(phrase)
+            await ctx.send(f"Removed `{phrase}`")
             await asyncio.sleep(1)
         await self.config.flush()
 
