@@ -997,10 +997,10 @@ class Moderation(commands.Cog):
     @commands.guild_only()
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(embed_links=True, ban_members=True)
-    async def ban(self, ctx, ids: Greedy[int], users: Greedy[DiscordMember], *, reason="Unspecified"):
+    async def ban(self, ctx, users: Greedy[User], *, reason="Unspecified"):
         """ Ban cmd that supports more than just members """
         reason = reason[:128]
-        users_to_ban = len(ids if ids else []) + len(users if users else [])
+        users_to_ban = len(users)
         e = discord.Embed(color=colors.fate)
         if users_to_ban == 0:
             return await ctx.send("You need to specify who to ban")
@@ -1015,59 +1015,6 @@ class Moderation(commands.Cog):
             url="https://cdn.discordapp.com/attachments/514213558549217330/514345278669848597/8yx98C.gif"
         )
         msg = await ctx.send(embed=e)
-        for _id in ids:
-            member = ctx.guild.get_member(_id)
-            if isinstance(member, discord.Member):
-                if member.top_role.position >= ctx.author.top_role.position:
-                    e.add_field(
-                        name=f"◈ Failed to ban {member}",
-                        value="This users is above your paygrade",
-                        inline=False,
-                    )
-                    await msg.edit(embed=e)
-                    continue
-                elif member.top_role.position >= ctx.guild.me.top_role.position:
-                    e.add_field(
-                        name=f"◈ Failed to ban {member}",
-                        value="I can't ban this user",
-                        inline=False,
-                    )
-                    await msg.edit(embed=e)
-                    continue
-            try:
-                user = await self.bot.fetch_user(_id)
-            except:
-                e.add_field(
-                    name=f"◈ Failed to ban {_id}",
-                    value="That user doesn't exist",
-                    inline=False,
-                )
-            else:
-                case = await self.cases.add_case(
-                    ctx.guild.id, user.id, "ban", reason, ctx.message.jump_url, ctx.author.id
-                )
-                if ctx.guild.get_member(user.id):
-                    content = f"You've been banned in {ctx.guild} by {ctx.author} for {reason}"
-                    rows = await self.bot.rowcount(f"select * from modmail where guild_id = {ctx.guild.id};")
-                    if rows:
-                        content += f". Use `.appeal {case}` if you feel there's a mistake"
-                    else:
-                        content += f" [Case #{case}]"
-                    with suppress(NotFound, Forbidden, HTTPException):
-                        await user.send(content)
-                try:
-                    await ctx.guild.ban(
-                        user, reason=f"{ctx.author}: {reason}"[:512], delete_message_days=0
-                    )
-                    e.add_field(
-                        name=f"◈ Banned {user} [Case #{case}]", value=f"Reason: {reason}", inline=False
-                    )
-                except HTTPException as error:
-                    e.add_field(name=f"◈ Failed to ban {user} [Case #{case}]", value=str(error), inline=False)
-            for i, field in enumerate(e.fields):
-                if len(field.name) > 256:
-                    e.fields[i] = field.name[:256]
-            await msg.edit(embed=e)
         for user in users:
             member = discord.utils.get(ctx.guild.members, id=user.id)
             if member:
@@ -1096,8 +1043,9 @@ class Moderation(commands.Cog):
                 content += f". Use `.appeal {case}` if you feel there's a mistake"
             else:
                 content += f" [Case #{case}]"
-            with suppress(NotFound, Forbidden, HTTPException):
-                await user.send(content)
+            if f"@{user.id}>" in ctx.message.content:
+                with suppress(NotFound, Forbidden, HTTPException):
+                    await user.send(content)
             await ctx.guild.ban(
                 user, reason=f"{ctx.author}: {reason}"[:512], delete_message_days=0
             )

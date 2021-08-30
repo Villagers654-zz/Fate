@@ -540,18 +540,9 @@ class Utility(commands.Cog):
     @commands.cooldown(2, 45, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
-    async def avatar(self, ctx, *, user=None):
+    async def avatar(self, ctx, *, user: discord.User = None):
         if not user:
-            user = ctx.author.mention
-        if user.isdigit():
-            try:
-                user = await self.bot.fetch_user(int(user))
-            except discord.errors.NotFound:
-                return await ctx.send("User not found")
-        else:
-            user = await self.bot.utils.get_user(ctx, user)
-            if not user:
-                return await ctx.send("User not found")
+            user = ctx.author
         e = discord.Embed(color=0x80B0FF)
         e.set_image(url=str(user.display_avatar.url))
         await ctx.send(
@@ -963,7 +954,7 @@ class Utility(commands.Cog):
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
     @commands.bot_has_permissions(manage_webhooks=True)
-    async def move(self, ctx, amount: int, channel: SatisfiableChannel()):
+    async def move(self, ctx, amount: int, channel: discord.TextChannel):
         """ Moves a conversation to another channel """
 
         if ctx.channel.id == channel.id:
