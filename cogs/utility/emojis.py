@@ -44,6 +44,7 @@ class Emojis(commands.Cog):
         return result if result else "new_emoji"
 
     async def compress(self, img):
+        """ Compresses an image to below 256kb in another thread """
         def do_compress():
             image = Image.open(BytesIO(img)).convert("RGBA")
             for _attempt in range(10):
@@ -114,51 +115,58 @@ class Emojis(commands.Cog):
         return f"Added {emoji} - {name}"
 
     async def upload_emoji(self, ctx, *args, **kwargs):
+        """ Shortcut for uploading an emoji and updating the message """
         result = await self._upload_emoji(ctx, *args, **kwargs)
         ctx.msg = await update_msg(ctx.msg, result)
 
-    @commands.command(name="emoji", aliases=["emote", "jumbo"], description="Shows an emotes image")
-    @commands.cooldown(1, 3, commands.BucketType.user)
+    @commands.command(
+        name="emoji",
+        aliases=["emote", "jumbo"],
+        description="Shows an emotes image",
+        usage="Usage: `.emoji [custom emoji]`"
+    )
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.cooldown(2, 5, commands.BucketType.channel)
     @commands.bot_has_permissions(embed_links=True, attach_files=True)
-    async def _emoji(self, ctx, *emojis: Union[discord.Emoji, discord.PartialEmoji]):
+    async def emoji(self, ctx, *emojis: Union[discord.Emoji, discord.PartialEmoji]):
         """Sends the emoji in image form"""
         if not emojis:
-            return await ctx.send("Usage: `.emoji [custom emoji]`")
+            return await ctx.send(self.emoji.usage)
         if len(emojis) > 1 and all(e == emojis[0] for e in emojis):
             return await ctx.send("No")
+
+        # Limit the number of emojis the bot will enlarge to 1 if the user doesn't have admin
         is_member = isinstance(ctx.author, discord.Member)
         if is_member and not ctx.author.guild_permissions.administrator:
             emojis = emojis[:1]
-        for emoji in emojis[:5]:
+
+        # Protect the supreme servers
+        for i, emoji in enumerate(emojis[:5]):
+            if i != 0:
+                await asyncio.sleep(1)
             if emote := self.bot.get_emoji(emoji.id):
                 if emote.guild.id in [497860460117360660, 397415086295089155]:
                     return await ctx.send(f"Nice try fatty! <:you:841098144536068106>")
 
             e = discord.Embed(color=colors.fate)
+            e.set_author(name=emoji.name, icon_url=ctx.author.display_avatar.url)
+            e.set_image(url=emoji.url)
             e.description = str(emoji.id)
-            author_name = emoji.name
-            author_url = ctx.author.display_avatar.url
-            if isinstance(emoji, discord.Emoji) and is_member:
+
+            # Emoji origin information
+            if is_member and isinstance(emoji, discord.Emoji) and emoji.guild.id == ctx.guild.id:
                 perms = ctx.author.guild_permissions
                 bot_perms = emoji.guild.me.guild_permissions
-                if (
-                    perms.manage_emojis
-                    and bot_perms.manage_emojis
-                    and emoji.guild.id == ctx.guild.id
-                ):
+                if perms.manage_emojis and bot_perms.manage_emojis:
                     emoji = await emoji.guild.fetch_emoji(emoji.id)
-                    author_name += f" by {emoji.user}"
+                    e.author.name += f" by {emoji.user}"
+                    e.author.icon_url = emoji.user.display_avatar.url
                     e.description = f"ID: {emoji.id}"
-                    author_url = emoji.user.display_avatar.url
-                icon_url = emoji.guild.icon.url if emoji.guild.icon else None
-                if icon_url:
-                    e.set_footer(text=emoji.guild.name, icon_url=icon_url)
-                else:
-                    e.set_footer(text=emoji.guild.name)
-            e.set_author(name=author_name, icon_url=author_url)
-            e.set_image(url=emoji.url)
-            await ctx.send(embed=e)
-            await asyncio.sleep(1)
+
+                icon_url = emoji.guild.icon.url if emoji.guild.icon else discord.Embed.Empty
+                e.set_footer(text=emoji.guild.name, icon_url=icon_url)
+
+            await ctx.send(embed=e, delete_after=15)
 
     @commands.command(name="sticker", description="Shows a stickers image")
     @commands.cooldown(1, 15, commands.BucketType.user)
