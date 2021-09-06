@@ -76,7 +76,6 @@
       "user"
     ],
     "dev": [
-      "custom",
       "dev",
       "reload",
       "secure_overwrites",
