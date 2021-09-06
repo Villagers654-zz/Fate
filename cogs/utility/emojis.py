@@ -353,7 +353,7 @@ class Emojis(commands.Cog):
         except aiohttp.InvalidURL as e:
             ctx.msg = await update_msg(ctx.msg, str(e))
 
-        # Attached Images/GIFsK
+        # Attached Images/GIFs
         allowed_extensions = ["png", "jpg", "jpeg", "gif"]
         for attachment in ctx.message.attachments:
             file_is_allowed = any(
