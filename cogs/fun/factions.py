@@ -587,9 +587,7 @@ class Factions(commands.Cog):
             await ctx.message.delete()
         else:
             if "yes" in msg.content.lower():
-                self.factions[guild_id][faction]["members"].append(
-                    ctx.author.id
-                )
+                self.factions[guild_id][faction]["members"].append(user.id)
                 await ctx.send(f"{user.display_name} joined {faction}")
                 await self.save_data()
             else:
