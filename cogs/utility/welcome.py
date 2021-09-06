@@ -218,6 +218,7 @@ class Welcome(commands.Cog):
         await ctx.send(embed=e)
 
     @_welcome.command(name="test")
+    @commands.has_permissions(manage_guild=True)
     async def _test(self, ctx, user: discord.User=None):
         guild_id = ctx.guild.id
         channel = ctx.channel

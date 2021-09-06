@@ -250,6 +250,7 @@ class Leave(commands.Cog):
         await ctx.send(embed=e)
 
     @leave.command(name="test")
+    @commands.has_permissions(manage_guild=True)
     async def _test(self, ctx):
         guild_id = str(ctx.guild.id)
         m = ctx.author
