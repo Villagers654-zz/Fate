@@ -14,6 +14,7 @@ __license__ = "Proprietary and Confidential"
 __copyright__ = "Copyright (C) 2021-present Michael Stollings"
 __version__ = "1.0.0"
 
+from discord.ext.commands import Cog
 from . import colors, emojis, pillow
 from .attributes import Attributes
 from .get_user import GetUser
@@ -28,7 +29,7 @@ from .regex import *
 from .interactions import *
 
 
-class Utils(commands.Cog):
+class Utils(Cog):
     """Represents the bot.utils attribute for utils requiring access to the running instance"""
     def __init__(self, bot):
         self.bot = bot
