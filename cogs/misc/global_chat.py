@@ -359,7 +359,7 @@ class GlobalChat(commands.Cog):
                         f"⏰ | Created {age} ago\n" \
                         f"⏱ | Joined {joined} ago"
         e.add_field(name="Reason", value=reason.content)
-        e.set_footer(text=ctx.guild.name, icon_url=ctx.guild.icon.url)
+        e.set_footer(text=ctx.guild.name, icon_url=ctx.guild.icon.url if ctx.guild.icon else discord.Embed.Empty)
         msg = await channel.send(embed=e)  # type: ignore
         await msg.add_reaction("👍")
         await msg.add_reaction("👎")

@@ -158,7 +158,7 @@ class ModMail(commands.Cog):
                 return None
 
             e = Embed(color=self.bot.config["theme_color"])
-            e.set_author(name=f"Case #{case_number}", icon_url=ctx.guild.icon.url)
+            e.set_author(name=f"Case #{case_number}", icon_url=ctx.guild.icon.url if ctx.guild.icon else Embed.Empty)
             e.description = f"Reply from {ctx.message.author} in {ctx.guild}"
             if ctx.message.content:
                 e.add_field(

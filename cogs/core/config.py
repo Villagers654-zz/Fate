@@ -39,7 +39,8 @@ class Config(commands.Cog):
             e.set_author(
                 name="| 💎 Server Config 💎", icon_url=ctx.guild.owner.avatar.url
             )
-            e.set_thumbnail(url=ctx.guild.icon.url)
+            if ctx.guild.icon:
+                e.set_thumbnail(url=ctx.guild.icon.url)
             p = await get_prefixes_async(self.bot, ctx.message)
             e.description = f"**Prefix:** [`{p[2]}`]\n"
 

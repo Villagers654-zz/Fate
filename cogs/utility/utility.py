@@ -479,7 +479,8 @@ class Utility(commands.Cog):
             online = len([m for m in ctx.guild.members if m.status in status_list])
             e = discord.Embed(color=colors.fate)
             e.set_author(name=f"Member Count", icon_url=ctx.guild.owner.display_avatar.url)
-            e.set_thumbnail(url=ctx.guild.icon.url)
+            if ctx.guild.icon:
+                e.set_thumbnail(url=ctx.guild.icon.url)
             e.description = (
                 f"**Total:** [`{ctx.guild.member_count}`]\n"
                 f"**Online:** [`{online}`]\n"
@@ -501,7 +502,8 @@ class Utility(commands.Cog):
             return await ctx.send("Unknown perm")
         e = discord.Embed(color=colors.fate)
         e.set_author(name=f"Things with {permission}", icon_url=ctx.author.display_avatar.url)
-        e.set_thumbnail(url=ctx.guild.icon.url)
+        if ctx.guild.icon:
+            e.set_thumbnail(url=ctx.guild.icon.url)
         members = ""
         for member in ctx.guild.members:
             if getattr(member.guild_permissions, permission):
@@ -783,7 +785,8 @@ class Utility(commands.Cog):
         if content is None:
             e = discord.Embed(color=colors.fate)
             e.set_author(name="Error ⚠", icon_url=ctx.author.display_avatar.url)
-            e.set_thumbnail(url=ctx.guild.icon.url)
+            if ctx.guild.icon:
+                e.set_thumbnail(url=ctx.guild.icon.url)
             e.description = (
                 "Content is a required argument\n"
                 "Usage: `.find {content}`\n"
@@ -803,7 +806,8 @@ class Utility(commands.Cog):
                         e.set_author(
                             name="Message Found 🔍", icon_url=ctx.author.display_avatar.url
                         )
-                        e.set_thumbnail(url=ctx.guild.icon.url)
+                        if ctx.guild.icon:
+                            e.set_thumbnail(url=ctx.guild.icon.url)
                         e.description = (
                             f"**Author:** `{msg.author}`\n"
                             f"[Jump to MSG]({msg.jump_url})"
@@ -909,7 +913,8 @@ class Utility(commands.Cog):
         webhook = await ctx.channel.create_webhook(name=name, avatar=avatar)
         e = discord.Embed(color=colors.fate)
         e.set_author(name=f"Webhook: {webhook.name}", icon_url=webhook.url)
-        e.set_thumbnail(url=ctx.guild.icon.url)
+        if ctx.guild.icon:
+            e.set_thumbnail(url=ctx.guild.icon.url)
         e.description = webhook.url
         try:
             await ctx.author.send(embed=e)
@@ -926,7 +931,8 @@ class Utility(commands.Cog):
         """ Return all the servers webhooks """
         e = discord.Embed(color=colors.fate)
         e.set_author(name="Webhooks", icon_url=ctx.author.display_avatar.url)
-        e.set_thumbnail(url=ctx.guild.icon.url)
+        if ctx.guild.icon:
+            e.set_thumbnail(url=ctx.guild.icon.url)
         if channel:
             if not channel.permissions_for(ctx.guild.me).manage_webhooks:
                 return await ctx.send(

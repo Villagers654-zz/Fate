@@ -3,6 +3,7 @@ from time import time
 from contextlib import suppress
 import aiohttp
 from datetime import datetime, timezone, timedelta
+import traceback
 
 from discord.ext import commands
 from discord import Guild, Webhook, AllowedMentions, Message
@@ -129,7 +130,7 @@ class ChatBridges(commands.Cog):
                                         break
 
                     try:
-                        if webhook_url not in webhook_cache:
+                        if webhook_url not in webhook_cache or not webhook_cache[webhook_url]:
                             webhook = Webhook.from_url(webhook_url, session=session)
                             webhook_cache[webhook_url] = webhook
                         if isinstance(msg, str):
@@ -175,6 +176,7 @@ class ChatBridges(commands.Cog):
                         with suppress(Exception):
                             await msg.channel.send("Couldn't send your message due to a connection reset")
                     except Exception as error:
+                        print(traceback.format_exc())
                         with suppress(Exception):
                             await msg.channel.send(f"Error: couldn't send your message to the other channels. {error}")
 

@@ -41,7 +41,8 @@ class ChatLock(commands.Cog):
                         channel += f", {self.bot.get_channel(_id).name}"
             e = discord.Embed(color=colors.fate)
             e.set_author(name="| Chatlock", icon_url=ctx.author.display_avatar.url)
-            e.set_thumbnail(url=ctx.guild.icon.url)
+            if ctx.guild.icon:
+                e.set_thumbnail(url=ctx.guild.icon.url)
             e.description = (
                 "Deletes messages by users without the manage_messages permission"
             )

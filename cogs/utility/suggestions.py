@@ -77,7 +77,7 @@ class Suggestions(commands.Cog):
         if not ctx.invoked_subcommand:
             e = discord.Embed(color=self.bot.config["theme_color"])
             e.set_author(name="Member Suggestions", icon_url=self.bot.user.display_avatar.url)
-            if ctx.guild:
+            if ctx.guild.icon:
                 e.set_thumbnail(url=ctx.guild.icon.url)
             e.description = "> Set a channel in which to receive suggestions from your server members " \
                             "via the `.suggest` command"

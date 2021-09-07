@@ -239,7 +239,8 @@ class Leave(commands.Cog):
             images = len(self.images[guild_id])
         e = discord.Embed(color=colors.tan)
         e.set_author(name="Leave Config", icon_url=self.bot.user.display_avatar.url)
-        e.set_thumbnail(url=ctx.guild.icon.url)
+        if ctx.guild.icon:
+            e.set_thumbnail(url=ctx.guild.icon.url)
         e.description = (
             f"**Toggle:** {toggle}\n"
             f"**Channel:** {channel}\n"
