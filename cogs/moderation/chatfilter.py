@@ -180,7 +180,7 @@ class ChatFilter(commands.Cog):
                       "**.chatfilter add [word/phrase]**\n"
                       "**.chatfilter remove [word/phrase]**\n"
                       "**.chatfilter whitelist [word/phrase]**\n"
-                      "**.chatfilter blacklist [word/phrase]**",
+                      "**.chatfilter unwhitelist [word/phrase]**",
                 inline=False,
             )
             if guild_id in self.config and self.config[guild_id]["ignored"]:
@@ -270,7 +270,7 @@ class ChatFilter(commands.Cog):
             await ctx.send(f"I'll no longer ignore {', '.join(passed)}")
             await self.config.flush()
 
-    @_chatfilter.command(name="add", description="Adds a word, or phrase to the filter")
+    @_chatfilter.command(name="add", aliases=["blacklist"], description="Adds a word, or phrase to the filter")
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True)
     async def _add(self, ctx, *, phrases):
@@ -308,10 +308,10 @@ class ChatFilter(commands.Cog):
             await asyncio.sleep(1)
         await self.config.flush()
 
-    @_chatfilter.command(name="blacklist", description="Removes a word, or phrase from the whitelist")
+    @_chatfilter.command(name="unwhitelist", description="Removes a word, or phrase from the whitelist")
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True)
-    async def _blacklist(self, ctx, *, phrases):
+    async def _unwhitelist(self, ctx, *, phrases):
         guild_id = ctx.guild.id
         if guild_id not in self.config:
             return await ctx.send("Chatfilter isn't enabled")
@@ -321,7 +321,7 @@ class ChatFilter(commands.Cog):
             if len(phrase) > 64:
                 return await ctx.send("That's too large to add")
             if phrase not in self.config[guild_id]["whitelist"]:
-                await ctx.send(f"`{phrase}` isn't whitelisted")
+                return await ctx.send(f"`{phrase}` isn't whitelisted")
             self.config[guild_id]["whitelist"].remove(phrase)
             await ctx.send(f"Removed `{phrase}`")
             await asyncio.sleep(1)
