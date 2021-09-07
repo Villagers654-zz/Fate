@@ -13,6 +13,7 @@ import os
 import random
 import asyncio
 from contextlib import suppress
+from typing import *
 
 from discord.ext import commands
 from discord import Webhook
@@ -36,44 +37,22 @@ class Reactions(commands.Cog):
         if not self.sent[reaction][ctx.guild.id]:
             del self.sent[reaction][ctx.guild.id]
 
-    async def send_webhook(self, ctx, reaction, args, action=None):
+    async def send_webhook(self, ctx, reaction: str, args: str, action: str = None):
         # Prevent roles from being mentioned
-        if args:
-            if "<@&" in args or "@everyone" in args or "@here" in args:
-                return await ctx.send("biTcH nO")
+        if args and ("<@&" in args or "@everyone" in args or "@here" in args):
+            return await ctx.send("biTcH nO")
 
-        user = None
+        # Format the message
         if action and ctx.message.mentions:
-            if len(args.split()) == 1:
-                if args.startswith("<@"):
-                    argsv = args.split()
-                    user = argsv[0]  # type: discord.Member.mention
+            argsv: List[str] = args.split()
+            if len(argsv) == 1:
                 args = f"*{action} {args}*"
             elif args.startswith("<@"):
-                args = args.split()
-                user = args[0]  # type: discord.Member.mention
-                args.pop(0)
-                args = f'*{action} {user}*  {" ".join(args)}'
+                user = argsv[0]  # The target users mention
+                text = " ".join(argsv[1:])  # The message to send
+                args = f'*{action} {user}* {text}'
 
         options = os.listdir(f"./data/images/reactions/{reaction}/")
-
-        # Check gae percentages
-        if user and any("gay" in str(fn).lower() for fn in options):
-            try:
-                usr = await commands.UserConverter().convert(ctx, user)
-            except:
-                pass
-            else:
-                cog = self.bot.get_cog("Fun")
-                if (
-                    str(ctx.author.id) in cog.gay["gay"]
-                    and str(usr.id) in cog.gay["gay"]
-                ):
-                    if (
-                        cog.gay["gay"][str(ctx.author.id)] > 50
-                        and cog.gay["gay"][str(usr.id)] > 50
-                    ):
-                        options = [fn for fn in options if "gay" in str(fn).lower()]
 
         if reaction not in self.sent:
             self.sent[reaction] = {}
@@ -114,15 +93,19 @@ class Reactions(commands.Cog):
             webhook = Webhook.from_url(
                 self.webhook[ctx.channel.id].url, session=session
             )
+            name = ctx.author.name
+            if "clyde" in name.lower():
+                name = name.lower().replace("clyde", "🚫")
             await webhook.send(
-                args,
-                username=ctx.author.name,
+                content=args,
+                username=name,
                 avatar_url=ctx.author.display_avatar.url,
                 file=discord.File(
                     path, filename=reaction + path[-(len(path) - path.find(".")) :]
                 ),
             )
-            await ctx.message.delete()
+            with suppress(Exception):
+                await ctx.message.delete()
             if created_webhook:
                 await asyncio.sleep(120)
                 if ctx.channel.id in self.webhook:
