@@ -94,6 +94,7 @@ class Factions(commands.Cog):
             for faction, dat in data.items():
                 if dat["icon"] and "http" not in dat["icon"]:
                     self.factions[guild_id][faction]["icon"] = ""
+        # Data for .fight
         with open("./data/moves.json", "r") as f:
             dat = json.load(f)  # type: dict
         self.attacks = dat["attacks"]
@@ -1146,7 +1147,6 @@ class Factions(commands.Cog):
         attacks_used = {k: [] for k in self.attacks}
         attacks_used[None] = []
 
-        attacks_used = []
         while True:
             if fac1 not in self.factions[guild_id]:
                 return await ctx.send(f"{fac1} no longer exists, ending the battle")
