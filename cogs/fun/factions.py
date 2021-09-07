@@ -394,7 +394,8 @@ class Factions(commands.Cog):
         """ Command usage and descriptions """
         e = discord.Embed(color=purple)
         e.set_author(name="Usage", icon_url=ctx.author.display_avatar.url)
-        e.set_thumbnail(url=ctx.guild.icon.url)
+        if ctx.guild.icon:
+            e.set_thumbnail(url=ctx.guild.icon.url)
         p: str = ctx.prefix
         e.add_field(
             name="◈ Core ◈",
