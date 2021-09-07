@@ -221,9 +221,11 @@ class Menus:
         os.remove(fp)
 
         def pred(m):
-            return m.author.id == user.id and str(
-                m.content
-            ).lower() == chars.lower().replace(" ", "")
+            """ Checks if the message contains the correct letters """
+            if m.author.id == user.id:
+                if m.content.lower().replace(" ", "") == chars.lower().replace(" ", ""):
+                    return True
+            return False
 
         try:
             m = await self.bot.wait_for("message", check=pred, timeout=timeout)
