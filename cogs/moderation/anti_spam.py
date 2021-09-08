@@ -1035,7 +1035,7 @@ class AntiSpam(commands.Cog):
                             triggered = True
 
                 # mass pings
-                if "mass_pings" in self.config[guild_id] and not triggered:
+                if "mass_pings" in self.config[guild_id]:
                     await asyncio.sleep(0)
                     pings = [msg.raw_mentions, msg.raw_role_mentions]
                     total_pings = sum(len(group) for group in pings)  # type: ignore
@@ -1068,7 +1068,7 @@ class AntiSpam(commands.Cog):
                             triggered = True
 
                 # anti macro
-                if "anti_macro" in self.config[guild_id] and not triggered:
+                if "anti_macro" in self.config[guild_id]:
                     await asyncio.sleep(0)
                     ts = datetime.timestamp
                     if user_id not in self.macro_cd:
@@ -1090,7 +1090,7 @@ class AntiSpam(commands.Cog):
                                 reason = "Using a bot/macro"
 
                 # duplicate messages
-                if "duplicates" in self.config[guild_id] and not triggered:
+                if "duplicates" in self.config[guild_id]:
                     await asyncio.sleep(0)
                     if msg.guild.me and msg.channel.permissions_for(msg.guild.me).read_message_history and msg.content:
                         with self.bot.utils.operation_lock(key=msg.id):
