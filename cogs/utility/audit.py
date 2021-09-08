@@ -1,3 +1,13 @@
+"""
+cogs.utility.audit
+~~~~~~~~~~~~~~~~~~~
+
+A cog for searching the audit log for information
+
+:copyright: (C) 2021-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
+
 import asyncio
 from discord.ext import commands
 import discord

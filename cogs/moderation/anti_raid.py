@@ -1,3 +1,13 @@
+"""
+cogs.utility.inv_manager
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A cog for preventing mass join and kick/ban raids
+
+:copyright: (C) 2020-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
+
 from datetime import datetime, timezone, timedelta
 from contextlib import suppress
 from discord.ext import commands

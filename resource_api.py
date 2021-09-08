@@ -1,3 +1,13 @@
+"""
+resource_api
+~~~~~~~~~~~~~
+
+An API for hosting the bots assets
+
+:copyright: (C) 2021-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
+
 import nest_asyncio
 nest_asyncio.apply()
 

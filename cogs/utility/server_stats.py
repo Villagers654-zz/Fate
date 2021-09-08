@@ -1,3 +1,13 @@
+"""
+cogs.utility.server_stats
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A cog for showing server stats in voice channel names
+
+:copyright: (C) 2021-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
+
 import asyncio
 from discord.ext import commands
 import discord

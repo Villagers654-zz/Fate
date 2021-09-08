@@ -1,3 +1,13 @@
+"""
+cogs.moderation.chatlock
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A cog for locking a channel from users sending messages
+
+:copyright: (C) 2020-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
+
 from discord.ext import commands
 from os.path import isfile
 from botutils import colors

@@ -1,3 +1,13 @@
+"""
+cogs.utility.clean_rythm
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A cog that cleans up messages from rythm to keep a channel clean
+
+:copyright: (C) 2021-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
+
 from discord.ext import commands
 from os.path import isfile
 import discord

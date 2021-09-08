@@ -1,4 +1,12 @@
-# AioMySQL invite indexer Cog for Discord.Py v1.3
+"""
+cogs.utility.better-invite-manager
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+AioMySQL invite paginator cog
+
+:copyright: (C) 2021-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
 
 import base64
 from typing import Optional

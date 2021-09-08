@@ -1,3 +1,13 @@
+"""
+cogs.utility.vc_log
+~~~~~~~~~~~~~~~~~~~~
+
+A cog to log vc events to a dedicated channel
+
+:copyright: (C) 2019-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
+
 from time import time
 import discord
 import asyncio

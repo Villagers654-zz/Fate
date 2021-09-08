@@ -1,7 +1,11 @@
-# quick moderation based commands
 """
-Notes
-- make sure commands work in unison with each other with muting
+cogs.moderation.mod
+~~~~~~~~~~~~~~~~~~~~
+
+A cog for general moderation commands
+
+:copyright: (C) 2019-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
 """
 
 from os import path

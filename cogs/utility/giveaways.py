@@ -1,4 +1,12 @@
-# Giveaway cog for random handouts
+"""
+cogs.utility.inv_manager
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A cog to setup giveaways to give out random things
+
+:copyright: (C) 2021-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
 
 from os import path
 import json

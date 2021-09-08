@@ -1,3 +1,13 @@
+"""
+cogs.utility.chatbridges
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A cog for bridging 2 or more channels together
+
+:copyright: (C) 2019-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
+
 import asyncio
 from time import time
 from contextlib import suppress

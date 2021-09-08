@@ -1,3 +1,13 @@
+"""
+cogs.utility.embeds
+~~~~~~~~~~~~~~~~~~~~
+
+A cog that simply embeds a message
+
+:copyright: (C) 2021-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
+
 from discord.ext import commands
 import discord
 

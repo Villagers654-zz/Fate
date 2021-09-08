@@ -1,4 +1,12 @@
-# Cog for managing case numbers in mod.py
+"""
+cogs.utility.inv_manager
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A cog for managing the moderation cases
+
+:copyright: (C) 2021-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
 
 from time import time
 import asyncio

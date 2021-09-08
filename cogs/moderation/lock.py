@@ -1,3 +1,13 @@
+"""
+cogs.moderation.lock
+~~~~~~~~~~~~~~~~~~~~~
+
+A cog for locking the server from people joining
+
+:copyright: (C) 2020-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
+
 from datetime import datetime, timezone, timedelta
 import asyncio
 from contextlib import suppress

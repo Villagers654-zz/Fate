@@ -1,13 +1,11 @@
 """
-Self Roles / Reaction Roles
-+ Create menus
-+ Edit existing menus
-- Use role mentions
-- Set the embed color
-- Set the indentation
-- Add/Remove roles
-- Set users reaction limit
-+ Re-Sort the roles
+cogs.utility.selfroles
+~~~~~~~~~~~~~~~~~~~~~~~
+
+A cog for users to react to menus to self assign roles
+
+:copyright: (C) 2020-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
 """
 
 import asyncio

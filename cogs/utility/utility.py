@@ -1,5 +1,14 @@
+"""
+cogs.utility.utility
+~~~~~~~~~~~~~~~~~~~~~
+
+A cog for general utility commands
+
+:copyright: (C) 2019-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
+
 from datetime import datetime, timezone, timedelta
-import aiohttp
 import asyncio
 import random
 from io import BytesIO

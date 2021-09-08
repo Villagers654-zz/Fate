@@ -1,3 +1,13 @@
+"""
+cogs.utility.autorole
+~~~~~~~~~~~~~~~~~~~~~~
+
+Less api spammy invite manager that relies on high uptime
+
+:copyright: (C) 2021-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
+
 from discord.ext import commands
 from os.path import isfile
 from contextlib import suppress

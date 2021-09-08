@@ -1,4 +1,12 @@
-# notepad module with image manipulation
+"""
+cogs.utility.notepad
+~~~~~~~~~~~~~~~~~~~~~
+
+A cog for jutting down notes for later
+
+:copyright: (C) 2021-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
 
 from os import path
 import json

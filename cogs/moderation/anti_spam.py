@@ -1,3 +1,13 @@
+"""
+cogs.utility.inv_manager
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A cog for automatically moderating multiple types of spam
+
+:copyright: (C) 2020-present Michael Stollings
+:license: Proprietary and Confidential, see LICENSE for details
+"""
+
 import asyncio
 from time import time
 from datetime import datetime, timedelta, timezone
