@@ -1454,8 +1454,10 @@ class Factions(commands.Cog):
     @commands.cooldown(1, 15, commands.BucketType.user)
     async def coin_flip(self, ctx, amount: int):
         faction = await self.get_authors_faction(ctx)
-        if amount > 1000:
-            return await ctx.send(f"You can't gamble more than $1,000")
+        if amount > self.factions[str(ctx.guild.id)][faction]["balance"]:
+            return await ctx.send("Your faction doesn't have enough to bet that much")
+        if amount > 1000 and not await self.get_owned_faction(ctx):
+            return await ctx.send("You need to be an owner of this faction to bet more than 1k")
         if amount <= 0:
             return await ctx.send("That's not enough monies")
         async with ctx.channel.typing():
