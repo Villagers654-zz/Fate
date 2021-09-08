@@ -866,8 +866,11 @@ class AntiSpam(commands.Cog):
 
     def has_abnormal(self, content):
         for word in content.split():
-            if len(word) < 6 or word.isdigit() or "@" in word or "<:" in word or "<a:" in word:
-                continue
+            if len(word) < 6 or word.isdigit():
+                if any(word.endswith(char) for char in [".", "!", "?"]):
+                    continue
+                if "@" in word or "<:" in word or "<a:" in word:
+                    continue
             total_abc = len([c for c in word if c.lower() in abcs])
             non_abc = len(word) - total_abc
             if not non_abc:
