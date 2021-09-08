@@ -204,7 +204,7 @@ class Utility(commands.Cog):
         # del self.user_logs[user_id]
         await ctx.send("Removed your data from .info")
 
-    @commands.command(name="info")
+    @commands.command(name="info", description="Shows info on users, roles, channels, etc")
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.guild_only()
     async def info(self, ctx, *, target: Union[Member, User, Role, TextChannel, str] = None):
@@ -380,7 +380,7 @@ class Utility(commands.Cog):
             f"where code = {self.to_num(invite.code)};"
         )
 
-    @commands.command(name="userinfo", aliases=["uinfo"])
+    @commands.command(name="userinfo", aliases=["uinfo"], description="Shows extra info on a user")
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
@@ -391,7 +391,7 @@ class Utility(commands.Cog):
         await view.wait()
         await view.message.edit(view=None)
 
-    @commands.command(name="serverinfo", aliases=["sinfo"])
+    @commands.command(name="serverinfo", aliases=["sinfo"], description="Shows extra info on the server")
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
@@ -400,7 +400,7 @@ class Utility(commands.Cog):
         await view.wait()
         await view.message.edit(view=None)
 
-    @commands.command(name="servericon", aliases=["icon"])
+    @commands.command(name="servericon", aliases=["icon"], description="Shows the server icon")
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
@@ -412,7 +412,7 @@ class Utility(commands.Cog):
         e.description = "Server Icon"
         await ctx.send(embed=e)
 
-    @commands.command(name="makepoll", aliases=["mp"])
+    @commands.command(name="makepoll", aliases=["mp"], description="Makes the above message a poll")
     @commands.cooldown(1, 5, commands.BucketType.channel)
     @commands.has_permissions(add_reactions=True)
     @commands.bot_has_permissions(add_reactions=True)
@@ -437,7 +437,7 @@ class Utility(commands.Cog):
             template = await ctx.guild.create_template(name=name[:28], description=description)
         await ctx.send(template.url)
 
-    @commands.command(name="members", aliases=["membercount"])
+    @commands.command(name="members", aliases=["membercount"], description="Shows the member counts")
     @commands.cooldown(1, 5, commands.BucketType.channel)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
@@ -489,7 +489,7 @@ class Utility(commands.Cog):
             )
             await ctx.send(embed=e)
 
-    @commands.command(name="permissions", aliases=["perms", "perm"])
+    @commands.command(name="permissions", aliases=["perms", "perm"], description="Checks what has a specific permission")
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(manage_roles=True)
@@ -518,27 +518,7 @@ class Utility(commands.Cog):
             e.add_field(name="Roles", value=roles[:1000])
         await ctx.send(embed=e)
 
-    @commands.command(name="tinyurl")
-    @commands.cooldown(1, 3, commands.BucketType.user)
-    @commands.guild_only()
-    @commands.bot_has_permissions(embed_links=True)
-    async def tinyurl(self, ctx, *, link: str):
-        await ctx.message.delete()
-        url = "http://tinyurl.com/api-create.php?url=" + link
-        async with aiohttp.ClientSession() as sess:
-            async with sess.get(url) as resp:
-                r = await resp.read()
-                r = str(r).replace("b'", "").replace("'", "")
-        emb = discord.Embed(color=0x80B0FF)
-        emb.add_field(name="Original Link", value=link, inline=False)
-        emb.add_field(name="Shortened Link", value=r, inline=False)
-        emb.set_footer(
-            text="Powered by tinyurl.com",
-            icon_url="http://cr-api.com/static/img/branding/cr-api-logo.png",
-        )
-        await ctx.send(embed=emb)
-
-    @commands.command(name="avatar", aliases=["av", "pfp"])
+    @commands.command(name="avatar", aliases=["av", "pfp"], description="Shows a users avatar")
     @commands.cooldown(2, 45, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
@@ -551,7 +531,7 @@ class Utility(commands.Cog):
             f"◈ {await sanitize(user.display_name)}'s avatar ◈", embed=e
         )
 
-    @commands.command(name="banner")
+    @commands.command(name="banner", description="Shows a users profile banner")
     @commands.cooldown(2, 45, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
@@ -567,8 +547,8 @@ class Utility(commands.Cog):
             f"◈ {await sanitize(user.display_name)}'s banner ◈", embed=e
         )
 
-    @commands.command(name="owner")
-    @commands.cooldown(1, 3, commands.BucketType.user)
+    @commands.command(name="owner", description="Shows who owns the server")
+    @commands.cooldown(1, 10, commands.BucketType.channel)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
     async def owner(self, ctx):
@@ -576,7 +556,7 @@ class Utility(commands.Cog):
         e.description = f"**Server Owner:** {ctx.guild.owner.mention}"
         await ctx.send(embed=e)
 
-    @commands.command(name="topic")
+    @commands.command(name="topic", description="Sends the channel topic")
     @commands.cooldown(1, 10, commands.BucketType.channel)
     @commands.guild_only()
     async def topic(self, ctx):
@@ -584,7 +564,7 @@ class Utility(commands.Cog):
             return await ctx.send("This channel has no topic")
         await ctx.send(ctx.channel.topic)
 
-    @commands.command(name="color", aliases=["setcolor", "changecolor"])
+    @commands.command(name="color", aliases=["setcolor", "changecolor"], description="Shows or generates a random color")
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
     async def color(self, ctx, *args):
@@ -645,7 +625,7 @@ class Utility(commands.Cog):
         with suppress(KeyError):
             del self.bot.tasks["timers"][f"timer-{dat['timer']}"]
 
-    @commands.command(name="reminder", aliases=["timer", "remindme", "remind"])
+    @commands.command(name="reminder", aliases=["timer", "remindme", "remind"], description="Creates a timer")
     @commands.cooldown(2, 15, commands.BucketType.user)
     async def timer(self, ctx, *args):
         p = await get_prefixes_async(self.bot, ctx.message)
@@ -719,7 +699,7 @@ class Utility(commands.Cog):
             self.bot.tasks["timers"][f"timer-{self.timers[user_id][msg]['timer']}"] = task
         await self.save_timers()
 
-    @commands.command(name="timers", aliases=["reminders"])
+    @commands.command(name="timers", aliases=["reminders"], description="Shows your timers")
     @commands.cooldown(2, 5, commands.BucketType.user)
     async def timers(self, ctx):
         user_id = str(ctx.author.id)
@@ -748,7 +728,7 @@ class Utility(commands.Cog):
             )
         await ctx.send(embed=e)
 
-    @commands.command(name="delete-timer", aliases=["remove-timer", "clear-timers"])
+    @commands.command(name="delete-timer", aliases=["remove-timer", "clear-timers"], description="Removes a timer")
     async def delete_timers(self, ctx):
         user_id = str(ctx.author.id)
         if user_id not in self.timers or not self.timers[user_id]:
@@ -779,7 +759,7 @@ class Utility(commands.Cog):
                 task = self.bot.loop.create_task(self.remind(user_id, timer, dat))
                 self.bot.tasks["timers"][f"timer-{dat['timer']}"] = task
 
-    @commands.command(name="findmsg")
+    @commands.command(name="findmsg", description="Finds a message in the channel history")
     @commands.cooldown(1, 5, commands.BucketType.channel)
     async def _findmsg(self, ctx, *, content=None):
         if content is None:
@@ -799,7 +779,7 @@ class Utility(commands.Cog):
             if channel_id in self.find:
                 return await ctx.send("I'm already searching")
             self.find[channel_id] = True
-            async for msg in ctx.channel.history(limit=25000):
+            async for msg in ctx.channel.history(limit=1000):
                 if ctx.message.id != msg.id:
                     if content.lower() in msg.content.lower():
                         e = discord.Embed(color=colors.fate)
@@ -823,7 +803,7 @@ class Utility(commands.Cog):
         await ctx.send("Nothing found")
         del self.find[channel_id]
 
-    @commands.command(name="last-entry")
+    @commands.command(name="last-entry", description="Shows the last audit log entry")
     @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.has_permissions(view_audit_log=True)
     @commands.bot_has_permissions(view_audit_log=True)
@@ -860,7 +840,7 @@ class Utility(commands.Cog):
         )
         await ctx.send(embed=e)
 
-    @commands.command(name="id")
+    @commands.command(name="id", description="Shows a users ID")
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
@@ -881,7 +861,7 @@ class Utility(commands.Cog):
         )
         await ctx.send(embed=e)
 
-    @commands.command(name="estimate-inactives")
+    @commands.command(name="estimate-inactives", description="Estimates how many would get kicked from pruning")
     @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(kick_members=True)
@@ -895,7 +875,7 @@ class Utility(commands.Cog):
         e.description = f"Inactive Users: {inactive_count}"
         await ctx.send(embed=e)
 
-    @commands.command(name="create-webhook", aliases=["createwebhook"])
+    @commands.command(name="create-webhook", aliases=["createwebhook"], description="Creates and sends a webhook url")
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.guild_only()
     @commands.has_permissions(manage_webhooks=True)
@@ -922,8 +902,8 @@ class Utility(commands.Cog):
         except:
             await ctx.send("Failed to dm you the webhook url", embed=e)
 
-    @commands.command(name="webhooks")
-    @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.command(name="webhooks", description="Lists the servers webhooks")
+    @commands.cooldown(1, 10, commands.BucketType.guild)
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
     @commands.bot_has_permissions(manage_webhooks=True)
@@ -955,7 +935,7 @@ class Utility(commands.Cog):
                         )
             await ctx.send(embed=e)
 
-    @commands.command(name="move", aliases=["mv"])
+    @commands.command(name="move", aliases=["mv"], description="Moves messages to a different channel")
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
@@ -1039,7 +1019,7 @@ class Utility(commands.Cog):
         await transfer_msg.edit(embed=e)
         await channel_msg.edit(embed=em)
 
-    @commands.command(name="afk")
+    @commands.command(name="afk", description="Tells users you're afk when they ping you")
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
