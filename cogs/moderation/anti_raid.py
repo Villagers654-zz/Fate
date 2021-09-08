@@ -1,6 +1,6 @@
 """
-cogs.utility.inv_manager
-~~~~~~~~~~~~~~~~~~~~~~~~~
+cogs.utility.anti_raid
+~~~~~~~~~~~~~~~~~~~~~~~
 
 A cog for preventing mass join and kick/ban raids
 

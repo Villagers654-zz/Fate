@@ -1,6 +1,6 @@
 """
-cogs.utility.inv_manager
-~~~~~~~~~~~~~~~~~~~~~~~~~
+cogs.utility.case_manager
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A cog for managing the moderation cases
 

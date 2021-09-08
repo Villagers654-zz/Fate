@@ -1,6 +1,6 @@
 """
-cogs.utility.inv_manager
-~~~~~~~~~~~~~~~~~~~~~~~~~
+cogs.utility.anti_spam
+~~~~~~~~~~~~~~~~~~~~~~~
 
 A cog for automatically moderating multiple types of spam
 
