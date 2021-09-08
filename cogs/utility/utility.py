@@ -421,17 +421,6 @@ class Utility(commands.Cog):
         e.description = "Server Icon"
         await ctx.send(embed=e)
 
-    @commands.command(name="makepoll", aliases=["mp"], description="Makes the above message a poll")
-    @commands.cooldown(1, 5, commands.BucketType.channel)
-    @commands.has_permissions(add_reactions=True)
-    @commands.bot_has_permissions(add_reactions=True)
-    async def makepoll(self, ctx):
-        async for msg in ctx.channel.history(limit=2):
-            if msg.id != ctx.message.id:
-                await msg.add_reaction(":approve:506020668241084416")
-                await msg.add_reaction(":unapprove:506020690584010772")
-                return await ctx.message.delete()
-
     @commands.command(name="create-template", aliases=["backup"], description="Creates a server template")
     @commands.cooldown(1, 5, commands.BucketType.guild)
     @commands.cooldown(1, 25, commands.BucketType.user)
