@@ -17,7 +17,7 @@ import pytz
 import re
 from typing import *
 
-from discord import ui, Interaction, SelectOption
+from discord import ui, Interaction, SelectOption, TextChannel, Message
 from discord.ext.commands import Context
 import discord
 from discord.errors import Forbidden, NotFound, HTTPException
@@ -30,7 +30,7 @@ from fate import Fate
 
 
 utc = pytz.UTC
-mentions = discord.AllowedMentions(users=True, roles=False, everyone=False)
+default_mentions = discord.AllowedMentions(users=True, roles=False, everyone=False)
 abcs = "abcdefghijklmnopqrstuvwxyzجحخهعغفقثصضشسيبلاتتمكطدظزوةىرؤءذئأإآ"
 defaults = {
     "rate_limit": [
@@ -80,185 +80,7 @@ defaults = {
 
 thresholds = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 20, 25]
 timespans = [3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 20, 25, 30, 45, 60, 120, 240]
-
-per_timespans = ["None (Disable)", 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 25, 35, 45, 60, 120]
-
-
-class ConfigureMenu(AuthorView):
-    class ConfigureSelect(ui.Select):
-        def __init__(self, ctx: Context, module: str, main_view):
-            self.ctx = ctx
-            self.module = module
-            self.main_view = main_view
-            self.cog: AntiSpam = ctx.bot.cogs["AntiSpam"]
-            conf = self.cog.config[ctx.guild.id][module]
-
-            options = []
-            if isinstance(conf, list) or "thresholds" in conf:
-                options.append(SelectOption(
-                    label="Add a threshold",
-                    emoji="📌",
-                    value="add_threshold"
-                ))
-                options.append(SelectOption(
-                    label="View/Manage thresholds",
-                    emoji="🔍",
-                    value="remove_threshold"
-                ))
-            if not isinstance(conf, list):
-                for key, value in conf.items():
-                    if key == "thresholds":
-                        continue
-                    if key == "per_message":
-                        options.append(SelectOption(
-                            label=f"Set the per-message threshold ({value})",
-                            emoji="🔗",
-                            value=key
-                        ))
-                    elif isinstance(value, bool):
-                        toggle = "Disable" if value else "Enable"
-                        options.append(SelectOption(
-                            label=f"{toggle} flagging {key.replace('_', ' ')}",
-                            emoji="🛑" if value else "🚦",
-                            value=key
-                        ))
-                    elif isinstance(value, int) or value is None:
-                        label = f"Set the {key.replace('_', ' ')} cooldown"
-                        if "max" in key:  # Account for the max threads option
-                            label = label.rstrip(" cooldown")
-                        if value is None:
-                            label += " (Disabled)"
-                        elif "threads" in key:
-                            label += f" ({value})"
-                        else:
-                            label += f" ({value}s)"
-                        options.append(SelectOption(
-                            label=label,
-                            emoji="⏳",
-                            value=key
-                        ))
-            options.append(discord.SelectOption(
-                label=f"Cancel Editing {module.title().replace('_', ' ')}",
-                emoji="🚫",
-                value="cancel"
-            ))
-            super().__init__(
-                placeholder="Select which setting",
-                min_values=1,
-                max_values=1,
-                options=options
-            )
-
-        async def callback(self, interaction: Interaction):
-            guild_id = self.ctx.guild.id
-            conf = self.cog.config[guild_id][self.module]
-            key = interaction.data["values"][0]
-            if key != "cancel":
-                if key == "add_threshold":
-                    await interaction.response.edit_message(
-                        content="Choose the threshold. After that we'll set the timeframe for that threshold"
-                    )
-                    choices = [f"Limit to {num} msgs within X seconds" for num in thresholds]
-                    choice = await GetChoice(self.ctx, choices, message=interaction.message, delete_after=False)
-                    threshold = thresholds[choices.index(choice)]
-
-                    await interaction.message.edit(
-                        content="Choose a timeframe for that threshold"
-                    )
-                    choices = [f"Only allow X msgs within {num} seconds" for num in timespans]
-                    choice = await GetChoice(self.ctx, choices, message=interaction.message, delete_after=False)
-                    timeframe = timespans[choices.index(choice)]
-
-                    new = {
-                        "timespan": timeframe,
-                        "threshold": threshold
-                    }
-                    items = self.cog.config[guild_id][self.module]
-                    if isinstance(items, dict):
-                        items = items["thresholds"]
-                    if new in items:
-                        await interaction.followup.send("That threshold already exits", ephemeral=True)
-                    else:
-                        if isinstance(conf, list):
-                            self.cog.config[guild_id][self.module].append(new)
-                        else:
-                            self.cog.config[guild_id][self.module]["thresholds"].append(new)
-
-                elif key == "remove_threshold":
-                    if not conf and not (conf["thresholds"] if isinstance(conf, dict) else False):
-                        await interaction.response.send_message("That module has no thresholds", ephemeral=True)
-                    else:
-                        await interaction.response.edit_message(content="Selecting a threshold removes it")
-                        _thresholds = conf if isinstance(conf, list) else conf["thresholds"]
-                        choices = ["Return to modules", *[
-                            f"{c['threshold']} within {c['timespan']} seconds" for c in _thresholds if c
-                        ]]
-                        choice = await GetChoice(self.ctx, choices, message=interaction.message, delete_after=False)
-                        if choices.index(choice) != 0:
-                            threshold = _thresholds[choices.index(choice) - 1]
-                            if isinstance(conf, list):
-                                self.cog.config[guild_id][self.module].remove(threshold)
-                            else:
-                                self.cog.config[guild_id][self.module]["thresholds"].remove(threshold)
-
-                elif isinstance(conf[key], bool):
-                    # Toggle the value between True/False
-                    self.cog.config[guild_id][self.module][key] = not conf[key]
-
-                elif isinstance(conf[key], int) or conf[key] is None:
-                    await interaction.response.edit_message(
-                        content="Choose the threshold"
-                    )
-                    nums = list(per_timespans)
-                    if "max" in key:  # Process the thread limit option differently
-                        nums = [nums[0], 1, *nums[1:]]
-                        choices = [
-                            f"Set the limit to {num} open thread{'s' if num != 1 else ''} per user"
-                            if isinstance(num, int) else num
-                            for num in nums
-                        ]
-                    elif key == "per_message":
-                        choices = [
-                            f"Limit to {num} per message"
-                            if isinstance(num, int) else num
-                            for num in nums
-                        ]
-                    else:
-                        choices = [
-                            f"Limit to once every {num} seconds"
-                            if isinstance(num, int) else num
-                            for num in nums
-                        ]
-                    choice = await GetChoice(self.ctx, choices, message=interaction.message, delete_after=False)
-                    if "None" in choice:
-                        self.cog.config[guild_id][self.module][key] = None
-                    else:
-                        threshold = nums[choices.index(choice)]
-                        self.cog.config[guild_id][self.module][key] = threshold
-
-                await self.cog.config.flush()
-
-            if not interaction.response.is_done():
-                await interaction.response.defer()
-            if interaction.message.content != "Select your choice":
-                await interaction.message.edit(content="Select your choice")
-
-            choices = list(self.cog.config[guild_id].keys())
-            if "ignored" in choices:
-                choices.remove("ignored")
-            module = await GetChoice(self.ctx, choices, message=interaction.message, delete_after=False)
-            self.main_view.__init__(self.ctx, module)
-            await interaction.message.edit(view=self.main_view)
-
-    def __init__(self, ctx: Context, module: str):
-        self.ctx = ctx
-        self.cd = ctx.bot.utils.cooldown_manager(2, 5)
-        super().__init__(timeout=45)
-        self.add_item(self.ConfigureSelect(ctx, module, self))
-
-    async def on_error(self, error: Exception, item, interaction: Interaction) -> None:
-        if not isinstance(error, (NotFound, self.ctx.bot.ignored_exit)):
-            raise
+per_each_timespans = ["None (Disable)", 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 25, 35, 45, 60, 120]
 
 
 class AntiSpam(commands.Cog):
@@ -268,24 +90,26 @@ class AntiSpam(commands.Cog):
     msgs: Dict[int, List[Optional[discord.Message]]] = {}      # Limited message cache
     mutes: Dict[int, Dict[int, List[float]]] = {}              # Keep track of mutes to increment the timer per-mute
     typing: Dict[int, datetime.now] = {}                       # Keep track of typing to prevent large copy-pastes
-    urls: Dict[int, List[List[Union[str, int]]]] = {}          # Cache sent urls to prevent repeats
+    urls: Dict[int, List[str]] = {}          # Cache sent urls to prevent repeats
     imgs: Dict[int, List[int]] = {}                            # Cache sent images to prevent repeats
     r_cache = {}
 
-    def __init__(self, bot: Fate):
+    def __init__(self, bot: Fate) -> None:
         if "antispam_mutes" not in bot.tasks:
             bot.tasks["antispam_mutes"] = {}
         self.bot = bot
         self.config = bot.utils.cache("AntiSpam")
-        self.cleanup_task.start()
+        self.cache_cleanup_task.start()
 
-    def cog_unload(self):
-        self.cleanup_task.stop()
+    def cog_unload(self) -> None:
+        self.cache_cleanup_task.stop()
 
-    def is_enabled(self, guild_id):
+    def is_enabled(self, guild_id) -> bool:
+        """ Denotes if a server has the module enabled """
         return guild_id in self.config
 
     async def get_mutes(self) -> dict:
+        """ Fetches the incomplete mutes from the db """
         mutes = {}
         async with self.bot.utils.cursor() as cur:
             await cur.execute(
@@ -303,16 +127,33 @@ class AntiSpam(commands.Cog):
                 }
         return mutes
 
-    async def delete_timer(self, guild_id: int, user_id: int):
-        async with self.bot.utils.cursor() as cur:
-            await cur.execute(
-                f"delete from anti_spam_mutes "
-                f"where guild_id = {guild_id} "
-                f"and user_id = {user_id};"
-            )
+    async def destroy_task(self, guild_id, user_id) -> None:
+        """ Clean up the cache before ending a mute task """
+        guild_id = int(guild_id)
+        user_id = int(user_id)
+        if guild_id in self.bot.tasks["antispam_mutes"]:
+            if user_id in self.bot.tasks["antispam_mutes"][guild_id]:
+                del self.bot.tasks["antispam_mutes"][guild_id][user_id]
+            if not self.bot.tasks["antispam_mutes"][guild_id]:
+                del self.bot.tasks["antispam_mutes"][guild_id]
+        with suppress(AttributeError):
+            async with self.bot.utils.cursor() as cur:
+                await cur.execute(
+                    f"delete from anti_spam_mutes "
+                    f"where guild_id = {guild_id} "
+                    f"and user_id = {user_id};"
+                )
+
+    @staticmethod
+    async def cleanup_from_message(msg) -> None:
+        """ Remove duplicate messages if duplicate message spam was detected """
+        async for m in msg.channel.history(limit=10):
+            if m.content == msg.content:
+                with suppress(NotFound, Forbidden):
+                    await m.delete()
 
     @tasks.loop(seconds=10)
-    async def cleanup_task(self):
+    async def cache_cleanup_task(self) -> None:
         # Timer cache
         for guild_id, timers in list(self.bot.tasks["antispam_mutes"].items()):
             await asyncio.sleep(0)
@@ -651,174 +492,7 @@ class AntiSpam(commands.Cog):
                         f"{emotes.offline} {muted} still muted"
         await ctx.send(embed=e)
 
-    async def handle_mute(self, channel, mute_role, guild_id, user_id: int, sleep_time: int):
-        if channel:
-            user = channel.guild.get_member(user_id)
-            with suppress(Forbidden, NotFound, HTTPException):
-                await asyncio.sleep(sleep_time)
-                if user and mute_role and mute_role in user.roles:
-                    await user.remove_roles(mute_role)
-                    mentions = discord.AllowedMentions(users=True)
-                    await channel.send(f"Unmuted **{user.mention}**", allowed_mentions=mentions)
-
-        # Clean up the tasks
-        if "antispam_mutes" not in self.bot.tasks:
-            self.bot.tasks["antispam_mutes"] = {}
-        if guild_id in self.bot.tasks["antispam_mutes"]:
-            user_id = str(user_id)
-            if user_id in self.bot.tasks["antispam_mutes"][guild_id]:
-                del self.bot.tasks["antispam_mutes"][guild_id][user_id]
-            if not self.bot.tasks["antispam_mutes"][guild_id]:
-                del self.bot.tasks["antispam_mutes"][guild_id]
-
-        with suppress(AttributeError):
-            await self.delete_timer(channel.guild.id, user_id)
-
-    async def destroy_task(self, guild_id, user_id):
-        """Clean up the cache before ending the task"""
-        guild_id = int(guild_id)
-        user_id = int(user_id)
-        if guild_id in self.bot.tasks["antispam_mutes"]:
-            if user_id in self.bot.tasks["antispam_mutes"][guild_id]:
-                del self.bot.tasks["antispam_mutes"][guild_id][user_id]
-            if not self.bot.tasks["antispam_mutes"][guild_id]:
-                del self.bot.tasks["antispam_mutes"][guild_id]
-        with suppress(AttributeError):
-            await self.delete_timer(guild_id, user_id)
-
-    async def cleanup_from_message(self, msg):
-        """Remove duplicate messages if duplicate msg spam was detected"""
-        async for m in msg.channel.history(limit=10):
-            if m.content == msg.content:
-                with suppress(NotFound, Forbidden):
-                    await m.delete()
-
-    async def process_mute(self, guild_id: int, user_id: int, msg, reason="", resume=False, timer=0):
-        """Handle the entire muting process separately"""
-        guild = self.bot.get_guild(int(guild_id))
-        if not guild:
-            return await self.destroy_task(guild_id, user_id)
-        user = guild.get_member(int(user_id))
-        if not user:
-            return await self.destroy_task(guild_id, user_id)
-
-        mute_role = await self.bot.attrs.get_mute_role(guild, upsert=True)
-        if not mute_role or mute_role.position >= guild.me.top_role.position:
-            return await self.destroy_task(guild_id, user_id)
-
-        with self.bot.utils.operation_lock(key=int(user_id)):
-            if not resume:
-                bot_user = msg.guild.me
-                perms = msg.channel.permissions_for(bot_user)
-                if not perms.manage_messages or not perms.manage_roles:
-                    return await self.destroy_task(guild_id, user_id)
-
-                # Don't mute users with Administrator
-                if user.top_role.position >= bot_user.top_role.position or user.guild_permissions.administrator:
-                    return await self.destroy_task(guild_id, user_id)
-
-                # Don't continue if lacking permission(s) to operate
-                if not msg.channel.permissions_for(bot_user).send_messages or not perms.manage_roles:
-                    return await self.destroy_task(guild_id, user_id)
-
-                if not msg.channel:
-                    return await self.destroy_task(guild_id, user_id)
-                async with msg.channel.typing():
-                    # Increase the mute timer if multiple offenses in the last hour
-                    multiplier = 1
-                    if guild_id not in self.mutes:
-                        self.mutes[guild_id] = {}
-                    if user_id not in self.mutes[guild_id]:
-                        self.mutes[guild_id][user_id] = []
-                    self.mutes[guild_id][user_id].append(time())
-                    for mute_time in self.mutes[guild_id][user_id]:
-                        if mute_time > time() - 3600:
-                            multiplier += 1
-                        else:
-                            self.mutes[guild_id][user_id].remove(mute_time)
-
-                    # Mute and purge any new messages
-                    if mute_role in user.roles:
-                        return await self.destroy_task(guild_id, user_id)
-
-                    timer = 150
-                    timer *= multiplier
-                    end_time = time() + timer
-                    timer_str = get_time(timer)
-
-                    try:
-                        await user.add_roles(mute_role)
-                    except (NotFound, HTTPException) as e:
-                        with suppress(Exception):
-                            await msg.channel.send(f"Failed to mute {msg.author}. {e}")
-                        return await self.destroy_task(guild_id, user_id)
-                    except Forbidden:
-                        with suppress(Exception):
-                            await msg.channel.send(f"Failed to mute {msg.author}. Missing permissions")
-                        return await self.destroy_task(guild_id, user_id)
-
-                    messages = []
-                    if user_id in self.msgs:
-                        messages = [m for m in self.msgs[user_id] if m]
-                    with suppress(Forbidden, NotFound, HTTPException):
-                        await msg.channel.delete_messages(messages)
-                    self.msgs[user_id] = []
-
-                    with suppress(NotFound, Forbidden, HTTPException):
-                        await user.send(f"You've been muted for spam in **{msg.guild.name}** for {timer_str}")
-                    mentions = discord.AllowedMentions(users=True)
-                    with suppress(NotFound, Forbidden, HTTPException):
-                        await msg.channel.send(
-                            f"Temporarily muted {user.mention} for spam. Reason: {reason}",
-                            allowed_mentions=mentions
-                        )
-
-                    if "duplicate" in reason:
-                        if msg.channel.permissions_for(msg.guild.me).manage_messages:
-                            if msg.channel.permissions_for(msg.guild.me).read_message_history:
-                                self.bot.loop.create_task(self.cleanup_from_message(msg))
-
-                    with suppress(Exception):
-                        async with self.bot.utils.cursor() as cur:
-                            await cur.execute(
-                                f"insert into anti_spam_mutes "
-                                f"values ("
-                                f"{msg.guild.id}, "
-                                f"{msg.channel.id}, "
-                                f"{msg.author.id}, "
-                                f"{mute_role.id}, "
-                                f"'{end_time}')"
-                                f"on duplicate key update "
-                                f"end_time = '{end_time}';"
-                            )
-
-            if timer > 3600:
-                self.bot.log.critical(f"An antispam task is sleeping for {timer} seconds")
-
-            await asyncio.sleep(timer)
-            if user and mute_role and mute_role in user.roles:
-                if not msg:
-                    with suppress(NotFound, Forbidden, HTTPException):
-                        await user.remove_roles(mute_role)
-                else:
-                    try:
-                        await user.remove_roles(mute_role)
-                    except Forbidden:
-                        await msg.channel.send(f"Missing permissions to unmute {user.mention}")
-                    except NotFound:
-                        await msg.channel.send(f"Couldn't find and unmute **{user}**")
-                    except HTTPException:
-                        await msg.channel.send(f"Unknown error while unmuting {user.mention}")
-                    else:
-                        with suppress(Exception):
-                            await msg.channel.send(
-                                f"Unmuted **{user.mention}**",
-                                allowed_mentions=discord.AllowedMentions(users=True)
-                            )
-
-            return await self.destroy_task(guild_id, user_id)
-
-    async def cache_link(self, channel, match) -> None:
+    async def cache_link(self, channel: TextChannel, match: str) -> None:
         """ Cache a url for x seconds to prevent it being resent """
         self.urls[channel.id].append(match)
         duration = self.config[channel.guild.id]["duplicates"]["same_link"]
@@ -828,7 +502,7 @@ class AntiSpam(commands.Cog):
         if not self.urls[channel.id]:
             del self.urls[channel.id]
 
-    async def cache_image(self, channel, size: int) -> None:
+    async def cache_image(self, channel: TextChannel, size: int) -> None:
         """ Cache image properties for x seconds to prevent it being resent """
         self.imgs[channel.id].append(size)
         duration = self.config[channel.guild.id]["duplicates"]["same_image"]
@@ -864,17 +538,8 @@ class AntiSpam(commands.Cog):
             else:
                 return False
 
-    @commands.Cog.listener("on_typing")
-    async def log_typing_timestamps(self, channel, user, when):
-        if hasattr(channel, "guild") and channel.guild and channel.guild.id in self.config:
-            guild_id = channel.guild.id
-            if "inhuman" in self.config[guild_id] and self.config[guild_id]["inhuman"]["copy_paste"]:
-                user_id = user.id
-                if user_id not in self.typing:
-                    self.typing[user_id] = []
-                self.typing[user_id].append(when)
-
-    def has_abnormal(self, content):
+    def has_abnormal(self, content: str) -> bool:
+        """ Checks if the message content has any mostly non abc words """
         for word in content.split():
             if len(word) < 6 or word.isdigit():
                 continue
@@ -889,6 +554,16 @@ class AntiSpam(commands.Cog):
             if not total_abc or non_abc / total_abc * 100 > 60:
                 return True
         return False
+
+    @commands.Cog.listener("on_typing")
+    async def log_typing_timestamps(self, channel, user, when):
+        if hasattr(channel, "guild") and channel.guild and channel.guild.id in self.config:
+            guild_id = channel.guild.id
+            if "inhuman" in self.config[guild_id] and self.config[guild_id]["inhuman"]["copy_paste"]:
+                user_id = user.id
+                if user_id not in self.typing:
+                    self.typing[user_id] = []
+                self.typing[user_id].append(when)
 
     @commands.Cog.listener()
     async def on_message(self, msg: discord.Message):
@@ -1328,7 +1003,7 @@ class AntiSpam(commands.Cog):
                                 f"**Target:** {self.bot.get_user(msg.raw_mentions[0])}"
                 await msg.channel.send(
                     embed=e,
-                    allowed_mentions=mentions
+                    allowed_mentions=default_mentions
                 )
 
     @commands.Cog.listener()
@@ -1350,11 +1025,12 @@ class AntiSpam(commands.Cog):
                         await thread.parent.send(
                             embed=e,
                             delete_after=5,
-                            allowed_mentions=mentions
+                            allowed_mentions=default_mentions
                         )
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
+        """ Prevent users from spamming reactions on a single message """
         if payload.guild_id != 850956124168519700:
             return
         channel = self.bot.get_channel(payload.channel_id)
@@ -1371,6 +1047,7 @@ class AntiSpam(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
+        """ Resume mute tasks when the bot is ready """
         if "antispam_mutes" not in self.bot.tasks:
             self.bot.tasks["antispam_mutes"] = {}
         mutes = await self.get_mutes()
@@ -1418,6 +1095,317 @@ class AntiSpam(commands.Cog):
             if guild_id in self.bot.tasks["antispam_mutes"]:
                 if not self.bot.tasks["antispam_mutes"][guild_id]:
                     del self.bot.tasks["antispam_mutes"][guild_id]
+
+    async def process_mute(self, guild_id, user_id, msg, reason="", resume=False, timer=0) -> Any:
+        """
+        Handle the entire muting process separately
+        :param int guild_id:
+        :param int user_id:
+        :param Message or None msg:
+        :param str reason:
+        :param bool resume:
+        :param int timer:
+        """
+        guild = self.bot.get_guild(int(guild_id))
+        if not guild:
+            return await self.destroy_task(guild_id, user_id)
+        user = guild.get_member(int(user_id))
+        if not user:
+            return await self.destroy_task(guild_id, user_id)
+
+        mute_role = await self.bot.attrs.get_mute_role(guild, upsert=True)
+        if not mute_role or mute_role.position >= guild.me.top_role.position:
+            return await self.destroy_task(guild_id, user_id)
+
+        with self.bot.utils.operation_lock(key=int(user_id)):
+            if not resume:
+                bot_user = msg.guild.me
+                perms = msg.channel.permissions_for(bot_user)
+                if not perms.manage_messages or not perms.manage_roles:
+                    return await self.destroy_task(guild_id, user_id)
+
+                # Don't mute users with Administrator
+                if user.top_role.position >= bot_user.top_role.position or user.guild_permissions.administrator:
+                    return await self.destroy_task(guild_id, user_id)
+
+                # Don't continue if lacking permission(s) to operate
+                if not msg.channel.permissions_for(bot_user).send_messages or not perms.manage_roles:
+                    return await self.destroy_task(guild_id, user_id)
+
+                if not msg.channel:
+                    return await self.destroy_task(guild_id, user_id)
+                async with msg.channel.typing():
+                    # Increase the mute timer if multiple offenses in the last hour
+                    multiplier = 1
+                    if guild_id not in self.mutes:
+                        self.mutes[guild_id] = {}
+                    if user_id not in self.mutes[guild_id]:
+                        self.mutes[guild_id][user_id] = []
+                    self.mutes[guild_id][user_id].append(time())
+                    for mute_time in self.mutes[guild_id][user_id]:
+                        if mute_time > time() - 3600:
+                            multiplier += 1
+                        else:
+                            self.mutes[guild_id][user_id].remove(mute_time)
+
+                    # Mute and purge any new messages
+                    if mute_role in user.roles:
+                        return await self.destroy_task(guild_id, user_id)
+
+                    timer = 150
+                    timer *= multiplier
+                    end_time = time() + timer
+                    timer_str = get_time(timer)
+
+                    try:
+                        await user.add_roles(mute_role)
+                    except (NotFound, HTTPException) as e:
+                        with suppress(Exception):
+                            await msg.channel.send(f"Failed to mute {msg.author}. {e}")
+                        return await self.destroy_task(guild_id, user_id)
+                    except Forbidden:
+                        with suppress(Exception):
+                            await msg.channel.send(f"Failed to mute {msg.author}. Missing permissions")
+                        return await self.destroy_task(guild_id, user_id)
+
+                    messages = []
+                    if user_id in self.msgs:
+                        messages = [m for m in self.msgs[user_id] if m]
+                    with suppress(Forbidden, NotFound, HTTPException):
+                        await msg.channel.delete_messages(messages)
+                    self.msgs[user_id] = []
+
+                    with suppress(NotFound, Forbidden, HTTPException):
+                        await user.send(f"You've been muted for spam in **{msg.guild.name}** for {timer_str}")
+                    mentions = discord.AllowedMentions(users=True)
+                    with suppress(NotFound, Forbidden, HTTPException):
+                        await msg.channel.send(
+                            f"Temporarily muted {user.mention} for spam. Reason: {reason}",
+                            allowed_mentions=default_mentions
+                        )
+
+                    if "duplicate" in reason:
+                        if msg.channel.permissions_for(msg.guild.me).manage_messages:
+                            if msg.channel.permissions_for(msg.guild.me).read_message_history:
+                                self.bot.loop.create_task(self.cleanup_from_message(msg))
+
+                    with suppress(Exception):
+                        async with self.bot.utils.cursor() as cur:
+                            await cur.execute(
+                                f"insert into anti_spam_mutes "
+                                f"values ("
+                                f"{msg.guild.id}, "
+                                f"{msg.channel.id}, "
+                                f"{msg.author.id}, "
+                                f"{mute_role.id}, "
+                                f"'{end_time}')"
+                                f"on duplicate key update "
+                                f"end_time = '{end_time}';"
+                            )
+
+            if timer > 3600:
+                self.bot.log.critical(f"An antispam task is sleeping for {timer} seconds")
+
+            await asyncio.sleep(timer)
+            if user and mute_role and mute_role in user.roles:
+                if not msg:
+                    with suppress(NotFound, Forbidden, HTTPException):
+                        await user.remove_roles(mute_role)
+                else:
+                    try:
+                        await user.remove_roles(mute_role)
+                    except Forbidden:
+                        await msg.channel.send(f"Missing permissions to unmute {user.mention}")
+                    except NotFound:
+                        await msg.channel.send(f"Couldn't find and unmute **{user}**")
+                    except HTTPException:
+                        await msg.channel.send(f"Unknown error while unmuting {user.mention}")
+                    else:
+                        with suppress(Exception):
+                            await msg.channel.send(
+                                f"Unmuted **{user.mention}**",
+                                allowed_mentions=discord.AllowedMentions(users=True)
+                            )
+
+            return await self.destroy_task(guild_id, user_id)
+
+
+class ConfigureMenu(AuthorView):
+    """ Select menu for the antispam configure command """
+    class ConfigureSelect(ui.Select):
+        def __init__(self, ctx: Context, module: str, main_view: "ConfigureMenu") -> None:
+            self.ctx = ctx
+            self.module = module
+            self.main_view = main_view
+            self.cog: AntiSpam = ctx.bot.cogs["AntiSpam"]
+            conf = self.cog.config[ctx.guild.id][module]
+
+            options = []
+            if isinstance(conf, list) or "thresholds" in conf:
+                options.append(SelectOption(
+                    label="Add a threshold",
+                    emoji="📌",
+                    value="add_threshold"
+                ))
+                options.append(SelectOption(
+                    label="View/Manage thresholds",
+                    emoji="🔍",
+                    value="remove_threshold"
+                ))
+            if not isinstance(conf, list):
+                for key, value in conf.items():
+                    if key == "thresholds":
+                        continue
+                    if key == "per_message":
+                        options.append(SelectOption(
+                            label=f"Set the per-message threshold ({value})",
+                            emoji="🔗",
+                            value=key
+                        ))
+                    elif isinstance(value, bool):
+                        toggle = "Disable" if value else "Enable"
+                        options.append(SelectOption(
+                            label=f"{toggle} flagging {key.replace('_', ' ')}",
+                            emoji="🛑" if value else "🚦",
+                            value=key
+                        ))
+                    elif isinstance(value, int) or value is None:
+                        label = f"Set the {key.replace('_', ' ')} cooldown"
+                        if "max" in key:  # Account for the max threads option
+                            label = label.rstrip(" cooldown")
+                        if value is None:
+                            label += " (Disabled)"
+                        elif "threads" in key:
+                            label += f" ({value})"
+                        else:
+                            label += f" ({value}s)"
+                        options.append(SelectOption(
+                            label=label,
+                            emoji="⏳",
+                            value=key
+                        ))
+            options.append(discord.SelectOption(
+                label=f"Cancel Editing {module.title().replace('_', ' ')}",
+                emoji="🚫",
+                value="cancel"
+            ))
+            super().__init__(
+                placeholder="Select which setting",
+                min_values=1,
+                max_values=1,
+                options=options
+            )
+
+        async def callback(self, interaction: Interaction) -> None:
+            guild_id = self.ctx.guild.id
+            conf = self.cog.config[guild_id][self.module]
+            key = interaction.data["values"][0]
+            if key != "cancel":
+                if key == "add_threshold":
+                    await interaction.response.edit_message(
+                        content="Choose the threshold. After that we'll set the timeframe for that threshold"
+                    )
+                    choices = [f"Limit to {num} msgs within X seconds" for num in thresholds]
+                    choice = await GetChoice(self.ctx, choices, message=interaction.message, delete_after=False)
+                    threshold = thresholds[choices.index(choice)]
+
+                    await interaction.message.edit(
+                        content="Choose a timeframe for that threshold"
+                    )
+                    choices = [f"Only allow X msgs within {num} seconds" for num in timespans]
+                    choice = await GetChoice(self.ctx, choices, message=interaction.message, delete_after=False)
+                    timeframe = timespans[choices.index(choice)]
+
+                    new = {
+                        "timespan": timeframe,
+                        "threshold": threshold
+                    }
+                    items = self.cog.config[guild_id][self.module]
+                    if isinstance(items, dict):
+                        items = items["thresholds"]
+                    if new in items:
+                        await interaction.followup.send("That threshold already exits", ephemeral=True)
+                    else:
+                        if isinstance(conf, list):
+                            self.cog.config[guild_id][self.module].append(new)
+                        else:
+                            self.cog.config[guild_id][self.module]["thresholds"].append(new)
+
+                elif key == "remove_threshold":
+                    if not conf and not (conf["thresholds"] if isinstance(conf, dict) else False):
+                        await interaction.response.send_message("That module has no thresholds", ephemeral=True)
+                    else:
+                        await interaction.response.edit_message(content="Selecting a threshold removes it")
+                        _thresholds = conf if isinstance(conf, list) else conf["thresholds"]
+                        choices = ["Return to modules", *[
+                            f"{c['threshold']} within {c['timespan']} seconds" for c in _thresholds if c
+                        ]]
+                        choice = await GetChoice(self.ctx, choices, message=interaction.message, delete_after=False)
+                        if choices.index(choice) != 0:
+                            threshold = _thresholds[choices.index(choice) - 1]
+                            if isinstance(conf, list):
+                                self.cog.config[guild_id][self.module].remove(threshold)
+                            else:
+                                self.cog.config[guild_id][self.module]["thresholds"].remove(threshold)
+
+                elif isinstance(conf[key], bool):
+                    # Toggle the value between True/False
+                    self.cog.config[guild_id][self.module][key] = not conf[key]
+
+                elif isinstance(conf[key], int) or conf[key] is None:
+                    await interaction.response.edit_message(
+                        content="Choose the threshold"
+                    )
+                    nums = list(per_each_timespans)
+                    if "max" in key:  # Process the thread limit option differently
+                        nums = [nums[0], 1, *nums[1:]]
+                        choices = [
+                            f"Set the limit to {num} open thread{'s' if num != 1 else ''} per user"
+                            if isinstance(num, int) else num
+                            for num in nums
+                        ]
+                    elif key == "per_message":
+                        choices = [
+                            f"Limit to {num} per message"
+                            if isinstance(num, int) else num
+                            for num in nums
+                        ]
+                    else:
+                        choices = [
+                            f"Limit to once every {num} seconds"
+                            if isinstance(num, int) else num
+                            for num in nums
+                        ]
+                    choice = await GetChoice(self.ctx, choices, message=interaction.message, delete_after=False)
+                    if "None" in choice:
+                        self.cog.config[guild_id][self.module][key] = None
+                    else:
+                        threshold = nums[choices.index(choice)]
+                        self.cog.config[guild_id][self.module][key] = threshold
+
+                await self.cog.config.flush()
+
+            if not interaction.response.is_done():
+                await interaction.response.defer()
+            if interaction.message.content != "Select your choice":
+                await interaction.message.edit(content="Select your choice")
+
+            choices = list(self.cog.config[guild_id].keys())
+            if "ignored" in choices:
+                choices.remove("ignored")
+            module = await GetChoice(self.ctx, choices, message=interaction.message, delete_after=False)
+            self.main_view.__init__(self.ctx, module)
+            await interaction.message.edit(view=self.main_view)
+
+    def __init__(self, ctx: Context, module: str) -> None:
+        self.ctx = ctx
+        self.cd = ctx.bot.utils.cooldown_manager(2, 5)
+        super().__init__(timeout=45)
+        self.add_item(self.ConfigureSelect(ctx, module, self))
+
+    async def on_error(self, error: Exception, item, interaction: Interaction) -> None:
+        if not isinstance(error, (NotFound, self.ctx.bot.ignored_exit)):
+            raise
 
 
 def setup(bot):
