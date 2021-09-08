@@ -1003,6 +1003,12 @@ class Moderation(commands.Cog):
     @commands.bot_has_permissions(embed_links=True, ban_members=True)
     async def ban(self, ctx, users: Greedy[User], *, reason="Unspecified"):
         """ Ban cmd that supports more than just members """
+        original_args = ctx.message.content.split()[1:]  # Remove prefix and command
+        for iteration, (user, arg) in enumerate(zip(users, original_args)):
+            if not arg.isdigit() and "#" not in arg and "@" not in arg:
+                users = users[:iteration]
+                reason = " ".join(original_args[-(len(original_args) - iteration):])
+
         reason = reason[:128]
         users_to_ban = len(users)
         e = discord.Embed(color=colors.fate)
