@@ -696,7 +696,7 @@ class Ranking(commands.Cog):
         raw_avatar = await self.bot.get_resource(str(user.display_avatar.url))
         raw_status = await self.bot.get_resource(status)
         try:
-            raw_background = await self.bot.get_resource(background_url)
+            raw_background = await self.bot.get_resource(background_url, label="background")
         except (aiohttp.InvalidURL, UnidentifiedImageError):
             return await ctx.send(
                 "Sorry, but I seem to be having issues using your current background"

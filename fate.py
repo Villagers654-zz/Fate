@@ -118,16 +118,21 @@ class Fate(commands.AutoShardedBot):
         return os.path.join(self.config["datastore_location"], path)
 
     async def get_resource(self, url, method="get", *args, **kwargs):
+        label = kwargs.pop("label", url)
         try:
             async with aiohttp.ClientSession() as session:
                 operation = getattr(session, method.lower())
                 async with operation(url, *args, **kwargs) as resp:
+                    if resp.content_length and resp.content_length > 8000000:
+                        raise commands.BadArgument(f"{label} is too large")
                     if resp.status == 200:
                         return await resp.read()
                     else:
-                        raise self.ignored_exit
+                        raise commands.BadArgument(f"Failed to fetch {label}")
+        except asyncio.TimeoutError:
+            raise commands.BadArgument(f"Timed out fetching {label}")
         except aiohttp.ClientPayloadError:
-            raise commands.BadArgument("Failed to fetch an invalid resource")
+            raise commands.BadArgument(f"Failed to fetch {label}")
 
     def get_message(self, message_id: int):
         """ Return a message from the internal cache if it exists """
