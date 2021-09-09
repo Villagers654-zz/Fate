@@ -90,7 +90,7 @@ class AntiSpam(commands.Cog):
     msgs: Dict[int, List[Optional[discord.Message]]] = {}      # Limited message cache
     mutes: Dict[int, Dict[int, List[float]]] = {}              # Keep track of mutes to increment the timer per-mute
     typing: Dict[int, datetime.now] = {}                       # Keep track of typing to prevent large copy-pastes
-    urls: Dict[int, List[str]] = {}          # Cache sent urls to prevent repeats
+    urls: Dict[int, List[str]] = {}                            # Cache sent urls to prevent repeats
     imgs: Dict[int, List[int]] = {}                            # Cache sent images to prevent repeats
     r_cache = {}
 
@@ -283,8 +283,7 @@ class AntiSpam(commands.Cog):
         guild_id = ctx.guild.id
         if guild_id not in self.config:
             self.config[guild_id] = {}
-        conf = [{"timespan": 5, "threshold": 4}]
-        self.config[guild_id]["rate_limit"] = conf
+        self.config[guild_id]["rate_limit"] = defaults["rate_limit"]
         await self.config.flush()
         await ctx.send("Enabled the rate-limit module")
 
@@ -294,13 +293,7 @@ class AntiSpam(commands.Cog):
         guild_id = ctx.guild.id
         if guild_id not in self.config:
             self.config[guild_id] = {}
-        self.config[guild_id]["mass_pings"] = {
-            "per_message": 4,
-            "thresholds": [{
-                "timespan": 10,
-                "threshold": 3
-            }]
-        }
+        self.config[guild_id]["mass_pings"] = defaults["mass_pings"]
         await self.config.flush()
         await ctx.send("Enabled the rate-limit module")
 
@@ -322,18 +315,7 @@ class AntiSpam(commands.Cog):
         guild_id = ctx.guild.id
         if guild_id not in self.config:
             self.config[guild_id] = {}
-        self.config[guild_id]["duplicates"] = {
-            "per_message": 10,
-            "same_link": 25,
-            "same_image": 25,
-            "sticker": 10,
-            "same_sticker": 60,
-            "max_open_threads": 2,
-            "thresholds": [{
-                "timespan": 25,
-                "threshold": 4
-            }]
-        }
+        self.config[guild_id]["duplicates"] = defaults["duplicates"]
         await self.config.flush()
         await ctx.send("Enabled the duplicates module")
 
@@ -343,14 +325,7 @@ class AntiSpam(commands.Cog):
         guild_id = ctx.guild.id
         if guild_id not in self.config:
             self.config[guild_id] = {}
-        self.config[guild_id]["inhuman"] = {
-            "non_abc": True,
-            "tall_messages": True,
-            "empty_lines": True,
-            "unknown_chars": True,
-            "ascii": True,
-            "copy_paste": True
-        }
+        self.config[guild_id]["inhuman"] = defaults["inhuman"]
         await self.config.flush()
         await ctx.send("Enabled the inhuman module")
 
