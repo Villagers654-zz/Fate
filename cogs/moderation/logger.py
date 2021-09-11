@@ -17,6 +17,7 @@ from time import time
 from aiohttp.client_exceptions import ClientOSError
 from contextlib import suppress
 import traceback
+from typing import *
 
 from discord.ext import commands
 import discord
@@ -36,6 +37,30 @@ def is_guild_owner():
         return has_perms
 
     return commands.check(predicate)
+
+
+already_checked: Dict[int, bool] = {}
+
+
+async def remove_after(message_id: int) -> None:
+    await asyncio.sleep(3600)
+    already_checked.pop(message_id, None)
+
+
+async def belongs_to_module(bot, message) -> bool:
+    """ Checks if a message belongs to a module """
+    if message.id in already_checked:
+        return already_checked[message.id]
+    # Remove from cache after an hour
+    bot.loop.create_task(remove_after(message.id))
+    # Check if it's a giveaway message
+    for data in bot.cogs["giveaways"].values():
+        if message.id == data["message"]:
+            already_checked[message.id] = True
+            return True
+    # Default to not belonging to a module
+    already_checked[message.id] = False
+    return False
 
 
 class Log(object):
@@ -855,6 +880,8 @@ class Logger(commands.Cog):
                 if msg.author.id in self.config[guild_id]["ignored_bots"]:
                     return
                 if msg.channel.id in self.config[guild_id]["ignored_channels"]:
+                    return
+                if msg.author.id == self.bot.user.id:
                     return
                 e = discord.Embed(color=pink)
                 e.set_author(name="Uncached Msg Edited", icon_url=msg.author.display_avatar.url)
