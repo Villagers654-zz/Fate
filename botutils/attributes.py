@@ -15,19 +15,23 @@ from discord.ext import commands
 import discord
 
 from . import colors
+from fate import Fate
+from cogs.moderation.mod import Moderation
 
 
 class Attributes:
-    def __init__(self, bot):
+    """ Class containing shortcut functions for denoting moderation statuses """
+    def __init__(self, bot: Fate):
         self.bot = bot
 
     def is_moderator(self, member: discord.Member) -> bool:
+        """ Checks if a member has admin, or usermod permissions """
         if not isinstance(member, discord.Member):
             return False
         if member.guild_permissions.administrator:
             return True
         guild_id = str(member.guild.id)
-        mod = self.bot.cogs["Moderation"]
+        mod: Moderation = self.bot.cogs["Moderation"]  # type: ignore
         if guild_id in mod.config:
             if member.id in mod.config[guild_id]["usermod"]:
                 return True
@@ -35,7 +39,8 @@ class Attributes:
                 return True
         return False
 
-    def is_restricted(self, channel, member):
+    def is_restricted(self, channel: discord.TextChannel, member: discord.Member) -> bool:
+        """ Checks whether or not a member's restricted from using commands in a channel """
         guild_id = channel.guild.id
         if guild_id in self.bot.restricted:
             if channel.id in self.bot.restricted[guild_id]["channels"]:
@@ -45,10 +50,10 @@ class Attributes:
 
     async def get_mute_role(self, target, upsert=False):
         """
-        :param target: Optional: [Context, Guild]
-        :param choice: Allow choice between multiple roles, requires Context
+        Fetches the servers configured mute role, or creates one
+        :param commands.Context or discord.Guild or None target:
         :param upsert: Create the role if not exists
-        :return: Optional: [Role, None]
+        :return discord.Role or None:
         """
         ctx = None
         if isinstance(target, commands.Context):
@@ -61,7 +66,7 @@ class Attributes:
 
         # Check the Moderation cog for a configured mute role
         guild_id = str(guild.id)
-        mod = self.bot.cogs["Moderation"]
+        mod: Moderation = self.bot.cogs["Moderation"]  # type: ignore
         if guild_id in mod.config and mod.config[guild_id]["mute_role"]:
             role = guild.get_role(mod.config[guild_id]["mute_role"])
             if role:
