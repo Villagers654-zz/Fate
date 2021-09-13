@@ -111,7 +111,7 @@ class Fate(commands.AutoShardedBot):
         """Return the cog for tasks relating to bot management"""
         if "Tasks" not in self.cogs:
             raise ModuleNotFoundError("The Tasks cog hasn't been loaded yet")
-        return self.get_cog("Tasks")
+        return self.get_cog("Tasks")  # type: ignore
 
     def get_fp_for(self, path) -> str:
         """Return the path for the set storage location"""
@@ -265,10 +265,10 @@ class Fate(commands.AutoShardedBot):
             try:
                 self.load_extension(f"cogs.{cog}")
                 self.log.info(f"Loaded {cog}", end="\r")
-            except commands.ExtensionNotFound:
+            except discord.errors.ExtensionNotFound:
                 self.log.critical(f"Couldn't find {cog}")
                 self.log.info("Continuing..")
-            except (commands.ExtensionError, commands.ExtensionFailed, Exception):
+            except (discord.errors.ExtensionError, discord.errors.ExtensionFailed, Exception):
                 self.log.critical(f"Couldn't load {cog}``````{traceback.format_exc()}")
                 self.log.info("Continuing..")
         self.paginate()
@@ -279,7 +279,7 @@ class Fate(commands.AutoShardedBot):
                 self.unload_extension(f"cogs.{cog}")
                 if log:
                     self.log.info(f"Unloaded {cog}")
-            except commands.ExtensionNotLoaded:
+            except discord.errors.ExtensionNotLoaded:
                 if log:
                     self.log.info(f"Failed to unload {cog}")
 
@@ -288,11 +288,11 @@ class Fate(commands.AutoShardedBot):
             try:
                 self.reload_extension(f"cogs.{cog}")
                 self.log.info(f"Reloaded {cog}")
-            except commands.ExtensionNotFound:
+            except discord.errors.ExtensionNotFound:
                 self.log.info(f"Reloaded {cog}")
-            except commands.ExtensionNotLoaded:
+            except discord.errors.ExtensionNotLoaded:
                 self.log.info(f"{cog} isn't loaded")
-            except commands.ExtensionError:
+            except discord.errors.ExtensionError:
                 self.log.info(
                     f"Ignoring exception in Cog: {cog}``````{traceback.format_exc()}"
                 )
@@ -435,13 +435,6 @@ async def on_connect():
 async def on_ready():
     bot.log.info("Finished initializing cache", color="yellow")
     # Reconnect the nodes if the bot is reconnecting
-    if "Music" in bot.cogs:
-        cog = bot.cogs["Music"]
-        if cog.refresh:
-            bot.cogs["Music"].refresh_nodes()
-            bot.log.info("Refreshed nodes")
-        else:
-            cog.refresh = True
     if not bot.pool:
         await bot.create_pool()
     bot.owner_ids = set(
