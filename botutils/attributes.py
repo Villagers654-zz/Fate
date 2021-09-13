@@ -15,13 +15,11 @@ from discord.ext import commands
 import discord
 
 from . import colors
-from fate import Fate
-from cogs.moderation.mod import Moderation
 
 
 class Attributes:
     """ Class containing shortcut functions for denoting moderation statuses """
-    def __init__(self, bot: Fate) -> None:
+    def __init__(self, bot) -> None:
         self.bot = bot
 
     def is_moderator(self, member: discord.Member) -> bool:
@@ -31,7 +29,7 @@ class Attributes:
         if member.guild_permissions.administrator:
             return True
         guild_id = str(member.guild.id)
-        mod: Moderation = self.bot.cogs["Moderation"]  # type: ignore
+        mod = self.bot.cogs["Moderation"]  # type: ignore
         if guild_id in mod.config:
             if member.id in mod.config[guild_id]["usermod"]:
                 return True
@@ -66,7 +64,7 @@ class Attributes:
 
         # Check the Moderation cog for a configured mute role
         guild_id = str(guild.id)
-        mod: Moderation = self.bot.cogs["Moderation"]  # type: ignore
+        mod = self.bot.cogs["Moderation"]  # type: ignore
         if guild_id in mod.config and mod.config[guild_id]["mute_role"]:
             role = guild.get_role(mod.config[guild_id]["mute_role"])
             if role:
