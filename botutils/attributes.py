@@ -21,7 +21,7 @@ from cogs.moderation.mod import Moderation
 
 class Attributes:
     """ Class containing shortcut functions for denoting moderation statuses """
-    def __init__(self, bot: Fate):
+    def __init__(self, bot: Fate) -> None:
         self.bot = bot
 
     def is_moderator(self, member: discord.Member) -> bool:
