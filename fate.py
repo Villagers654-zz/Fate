@@ -495,6 +495,12 @@ async def on_error(_event_method, *_args, **_kwargs):
     raise error
 
 
+@bot.slash_command(name="invite")
+async def invite(ctx):
+    """ Sends the invite and support links """
+    await bot.get_command("invite").invoke(ctx)
+
+
 if __name__ == "__main__":
     bot.log.info("Starting Bot", color="yellow")
     bot.start_time = datetime.now(tz=timezone.utc)
