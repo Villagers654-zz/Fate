@@ -545,10 +545,9 @@ class AntiSpam(commands.Cog):
         if not isinstance(msg.guild, discord.Guild) or msg.author.bot:
             return
         guild_id = msg.guild.id
-        user_id = msg.author.id
-        triggered = False
         if guild_id in self.config and self.config[guild_id]:
-            if "ignored" in self.config[guild_id] and msg.channel.id in self.config[guild_id]["ignored"]:
+            conf: dict = self.config[guild_id]
+            if "ignored" in conf and msg.channel.id in conf["ignored"]:
                 return
 
             if not msg.guild.me or not msg.channel:
@@ -560,6 +559,8 @@ class AntiSpam(commands.Cog):
 
             users = [msg.author]
             reason = "Unknown"
+            user_id = msg.author.id
+            triggered = False
 
             # msgs to delete if triggered
             if user_id not in self.msgs:
@@ -568,9 +569,7 @@ class AntiSpam(commands.Cog):
             self.msgs[user_id] = self.msgs[user_id][-15:]
 
             # Inhuman checks
-            if "inhuman" in self.config[guild_id] and msg.content:
-                conf = self.config[guild_id]["inhuman"]  # type: dict
-
+            if "inhuman" in conf and msg.content:
                 content = str(msg.content).lower()
                 lines = content.split("\n")
 
@@ -583,13 +582,13 @@ class AntiSpam(commands.Cog):
                 has_abcs = any(content.count(c) for c in abcs)
 
                 # non abc char spam
-                if conf["non_abc"]:
+                if conf["inhuman"]["non_abc"]:
                     if len(msg.content) > 256 and not has_abcs:
                         reason = "Inhuman: non abc"
                         triggered = True
 
                 # Tall msg spam
-                if conf["tall_messages"]:
+                if conf["inhuman"]["tall_messages"]:
                     if len(content.split("\n")) > 8 and sum(len(line) for line in lines if line) < 21:
                         reason = "Inhuman: tall message"
                         triggered = True
@@ -598,7 +597,7 @@ class AntiSpam(commands.Cog):
                         triggered = True
 
                 # Empty lines spam
-                if conf["empty_lines"]:
+                if conf["inhuman"]["empty_lines"]:
                     small_lines = len([l for l in lines if not l or len(l) < 3])
                     large_lines = len([l for l in lines if l and len(l) > 2])
                     if small_lines > large_lines and len(lines) > 8:
@@ -606,7 +605,7 @@ class AntiSpam(commands.Cog):
                         triggered = True
 
                 # Mostly unknown chars spam
-                if conf["unknown_chars"]:
+                if conf["inhuman"]["unknown_chars"]:
                     lmt = 128
                     if ":" in content:
                         lmt = 256
@@ -616,7 +615,7 @@ class AntiSpam(commands.Cog):
                             triggered = True
 
                 # ASCII / Spammed chars
-                if conf["ascii"]:
+                if conf["inhuman"]["ascii"]:
                     if len(content) > 256 and len(content) / total_spaces > 10:
                         reason = "Inhuman: ascii"
                         triggered = True
@@ -624,7 +623,7 @@ class AntiSpam(commands.Cog):
                 # Pasting large messages without typing much, or at all
                 lmt = 250 if "http" in msg.content else 100
                 check = msg.channel.permissions_for(msg.author).manage_messages
-                if not check and conf["copy_paste"] and len(msg.content) > lmt:
+                if not check and conf["inhuman"]["copy_paste"] and len(msg.content) > lmt:
                     if user_id not in self.typing:
                         reason = "pasting bulky message (check #1)"
                         triggered = None
@@ -658,11 +657,11 @@ class AntiSpam(commands.Cog):
             with suppress(KeyError):
 
                 # Rate limit
-                if "rate_limit" in self.config[guild_id] and self.config[guild_id]["rate_limit"]:
+                if "rate_limit" in conf and conf["rate_limit"]:
                     await asyncio.sleep(0)
                     if guild_id not in self.spam_cd:
                         self.spam_cd[guild_id] = {}
-                    for rate_limit in list(self.config[guild_id]["rate_limit"]):
+                    for rate_limit in list(conf["rate_limit"]):
                         await asyncio.sleep(0)
                         dat = [
                             *list(rate_limit.values()),
@@ -678,7 +677,7 @@ class AntiSpam(commands.Cog):
                             "timespan": int(raw[0]),
                             "threshold": int(raw[1])
                         }
-                        if dat not in self.config[guild_id]["rate_limit"]:
+                        if dat not in conf["rate_limit"]:
                             del self.spam_cd[guild_id][rl_id]
 
                     for rl_id in list(self.spam_cd[guild_id].keys()):
@@ -696,11 +695,11 @@ class AntiSpam(commands.Cog):
                             triggered = True
 
                 # mass pings
-                if "mass_pings" in self.config[guild_id]:
+                if "mass_pings" in conf and conf["mass_pings"]["per_message"]:
                     await asyncio.sleep(0)
                     pings = [msg.raw_mentions, msg.raw_role_mentions]
                     total_pings = sum(len(group) for group in pings)  # type: ignore
-                    if total_pings > self.config[guild_id]["mass_pings"]["per_message"]:
+                    if total_pings > conf["mass_pings"]["per_message"]:
                         if msg.guild.id not in self.bot.filtered_messages:
                             self.bot.filtered_messages[msg.guild.id] = {}
                         self.bot.filtered_messages[msg.guild.id][msg.id] = time()
@@ -717,7 +716,7 @@ class AntiSpam(commands.Cog):
                         ])
                     ]
 
-                    for threshold in self.config[guild_id]["mass_pings"]["thresholds"]:
+                    for threshold in conf["mass_pings"]["thresholds"]:
                         await asyncio.sleep(0)
                         if user_id not in self.msgs:
                             self.msgs[user_id] = []
@@ -729,7 +728,7 @@ class AntiSpam(commands.Cog):
                             triggered = True
 
                 # anti macro
-                if "anti_macro" in self.config[guild_id]:
+                if "anti_macro" in conf:
                     await asyncio.sleep(0)
                     ts = datetime.timestamp
                     if user_id not in self.macro_cd:
@@ -751,7 +750,7 @@ class AntiSpam(commands.Cog):
                                 reason = "Using a bot/macro"
 
                 # duplicate messages
-                if "duplicates" in self.config[guild_id]:
+                if "duplicates" in conf:
                     await asyncio.sleep(0)
                     if msg.guild.me and msg.channel.permissions_for(msg.guild.me).read_message_history and msg.content:
                         with self.bot.utils.operation_lock(key=msg.id):
@@ -764,7 +763,7 @@ class AntiSpam(commands.Cog):
                                     if msg.created_at > datetime.now(tz=timezone.utc) - timedelta(seconds=60)
                                 ]
                             ]
-                            for threshold in self.config[guild_id]["duplicates"]["thresholds"]:
+                            for threshold in conf["duplicates"]["thresholds"]:
                                 lmt = threshold["threshold"]
                                 timeframe = threshold["timespan"]
                                 for message in list(self.dupes[channel_id]):
@@ -803,7 +802,7 @@ class AntiSpam(commands.Cog):
                                 if triggered:
                                     break
 
-                    if self.config[guild_id]["duplicates"]["same_link"]:
+                    if conf["duplicates"]["same_link"]:
                         await asyncio.sleep(0)
                         if "http" in msg.content or "discord.gg" in msg.content:
                             search = lambda: re.search("((https?://)|(www\.)|(discord\.gg/))[a-zA-Z0-9./]+", msg.content)
@@ -816,7 +815,7 @@ class AntiSpam(commands.Cog):
                                     triggered = True
                                 self.bot.loop.create_task(self.cache_link(msg.channel, re_match))
 
-                    if self.config[guild_id]["duplicates"]["same_image"] and msg.attachments:
+                    if conf["duplicates"]["same_image"] and msg.attachments:
                         for attachment in msg.attachments:
                             await asyncio.sleep(0)
                             if msg.channel.id not in self.imgs:
@@ -827,9 +826,9 @@ class AntiSpam(commands.Cog):
                                 triggered = True
                             self.bot.loop.create_task(self.cache_image(msg.channel, size))
 
-                    if msg.stickers and self.config[guild_id]["duplicates"]["same_sticker"]:
+                    if msg.stickers and conf["duplicates"]["same_sticker"]:
                         stickers_sent = []
-                        lmt: int = self.config[guild_id]["duplicates"]["same_sticker"]
+                        lmt: int = conf["duplicates"]["same_sticker"]
                         lmt_dt = datetime.now(tz=timezone.utc) - timedelta(seconds=lmt)
                         for m in self.msgs[user_id]:
                             if m.id == msg.id:
@@ -842,8 +841,8 @@ class AntiSpam(commands.Cog):
                                         break
                                     stickers_sent.append(sticker.id)
 
-                    if msg.stickers and self.config[guild_id]["duplicates"]["sticker"]:
-                        lmt: int = self.config[guild_id]["duplicates"]["sticker"]
+                    if msg.stickers and conf["duplicates"]["sticker"]:
+                        lmt: int = conf["duplicates"]["sticker"]
                         lmt_dt = datetime.now(tz=timezone.utc) - timedelta(seconds=lmt)
                         for m in self.msgs[user_id]:
                             if m.id == msg.id:
