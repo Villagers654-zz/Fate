@@ -12,9 +12,7 @@ import asyncio
 from contextlib import suppress
 
 from discord.ext import commands
-from discord.ext.commands import Context
 import discord
-from discord import Guild, Role, Member
 
 from . import colors
 
@@ -23,8 +21,8 @@ class Attributes:
     def __init__(self, bot):
         self.bot = bot
 
-    def is_moderator(self, member: Member) -> bool:
-        if not isinstance(member, Member):
+    def is_moderator(self, member: discord.Member) -> bool:
+        if not isinstance(member, discord.Member):
             return False
         if member.guild_permissions.administrator:
             return True
@@ -47,16 +45,16 @@ class Attributes:
 
     async def get_mute_role(self, target, upsert=False):
         """
-        :param Context or Guild target: Optional: [Context, Guild]
-        :param bool choice: Allow choice between multiple roles, requires Context
-        :param bool upsert: Create the role if not exists
-        :return Role or None:
+        :param target: Optional: [Context, Guild]
+        :param choice: Allow choice between multiple roles, requires Context
+        :param upsert: Create the role if not exists
+        :return: Optional: [Role, None]
         """
         ctx = None
-        if isinstance(target, Context):
+        if isinstance(target, commands.Context):
             ctx = target
             guild = ctx.guild
-        elif isinstance(target, Guild):
+        elif isinstance(target, discord.Guild):
             guild = target
         else:
             raise TypeError(f"Parameter 'target' must be either Context or Guild")
