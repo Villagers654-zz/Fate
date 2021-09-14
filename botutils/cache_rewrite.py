@@ -65,7 +65,7 @@ class Cache:
             await asyncio.sleep(0)
             if key not in self._cache and key not in self._db_state:
                 continue
-            if time_used > time() - 3600:
+            if time() - 3600 > time_used:
                 if key in self._cache:
                     del self._cache[key]
                 if key in self._db_state:
