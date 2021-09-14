@@ -1642,7 +1642,7 @@ class Logger(commands.Cog):
                 except (NotFound, Forbidden):
                     return
                 channel = self.bot.get_channel(webhook.channel_id)
-                e.set_thumbnail(url=webhook.display_avatar.url)
+                e.set_thumbnail(url=webhook.avatar.url)
                 e.description = self.bot.utils.format_dict(
                     {"Name": webhook.name, "Type": webhook.type}
                 )
