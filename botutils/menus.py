@@ -89,7 +89,7 @@ class GetChoice(discord.ui.View):
     def __init__(self, ctx, choices, limit=1, placeholder="Options", message=None, delete_after=True):
         """
         :param Context ctx:
-        :param Sequence choices:
+        :param Sequence or KeysView choices:
         :param int limit:
         :param str placeholder:
         :param discord.Message message:
