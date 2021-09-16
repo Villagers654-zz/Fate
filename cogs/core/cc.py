@@ -28,7 +28,7 @@ class CustomCommands(commands.Cog):
     cache: Dict[int, Dict[str, List[Union[Optional[str], float]]]] = {}
     guilds: List[int] = []
 
-    def __init__(self, bot: Fate):
+    def __init__(self, bot: Fate) -> None:
         self.bot = bot
         self.cd = self.bot.utils.cooldown_manager(1, 10)
         asyncio.ensure_future(self.on_ready())
@@ -38,7 +38,7 @@ class CustomCommands(commands.Cog):
         self.cleanup_task.cancel()
 
     @commands.Cog.listener()
-    async def on_ready(self):
+    async def on_ready(self) -> None:
         """ Index any missing commands """
         async with self.bot.utils.cursor() as cur:
             await cur.execute("select guild_id from cc;")
@@ -49,7 +49,7 @@ class CustomCommands(commands.Cog):
         self.bot.log.info(f"Custom Commands | Indexed {len(self.guilds)} servers")
 
     @tasks.loop(minutes=1)
-    async def cleanup_task(self):
+    async def cleanup_task(self) -> None:
         """ Uncache custom commands that haven't been used in awhile """
         for guild_id, custom_commands in list(self.cache.items()):
             for command, (_resp, cached_at) in list(custom_commands.items()):
@@ -230,6 +230,7 @@ class View(ui.View):
 
     @ui.button(label="Show Commands")
     async def button(self, _button: ui.Button, interaction: Interaction) -> None:
+        """ Processes interactions """
         if self.cd.check(interaction.user.id):
             return
         await interaction.response.send_message(self.commands, ephemeral=True)
