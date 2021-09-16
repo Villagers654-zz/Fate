@@ -563,51 +563,19 @@ class ChatFilter(commands.Cog):
             self.bot.filtered_messages[guild_id][msg.id] = time()
             with suppress(Exception):
                 await msg.delete()
-                if self.config[guild_id]["webhooks"]:
-                    if msg.channel.permissions_for(msg.guild.me).manage_webhooks:
-                        w = await self.get_webhook(msg.channel)
-                        await w.send(
-                            content=result,
-                            avatar_url=msg.author.display_avatar.url,
-                            username=msg.author.display_name
-                        )
-
-                return self.log_action(m, flags)
+                self.log_action(msg, flags)
+            if self.config[guild_id]["webhooks"]:
+                if msg.channel.permissions_for(msg.guild.me).manage_webhooks:
+                    w = await self.get_webhook(msg.channel)
+                    await w.send(
+                        content=result,
+                        avatar_url=msg.author.display_avatar.url,
+                        username=msg.author.display_name
+                    )
 
     @commands.Cog.listener()
     async def on_message_edit(self, _before, after):
-        if hasattr(after.guild, "id") and after.guild.id in self.config:
-            if not self.config[after.guild.id]["toggle"]:
-                return
-            guild_id = after.guild.id
-            if self.bot.attrs.is_moderator(after.author) and not after.author.bot:
-                return
-            if after.author.bot and "bots" not in self.config[guild_id]:
-                return
-            if after.channel.id in self.config[guild_id]["ignored"]:
-                return
-            if "regex" in self.config[guild_id]:
-                result, flags = await self.run_regex_filter(guild_id, after.content)
-            else:
-                result, flags = await self.run_default_filter(guild_id, after.content)
-            if not result:
-                return
-            with suppress(Exception):
-                await after.delete()
-                if guild_id not in self.bot.filtered_messages:
-                    self.bot.filtered_messages[guild_id] = {}
-                self.bot.filtered_messages[guild_id][after.id] = time()
-
-                if self.config[guild_id]["webhooks"]:
-                    if after.channel.permissions_for(after.guild.me).manage_webhooks:
-                        w = await self.get_webhook(after.channel)
-                        await w.send(
-                            content=result,
-                            avatar_url=after.author.display_avatar.url,
-                            username=after.author.display_name
-                        )
-
-                return self.log_action(after, flags)
+        await self.on_message(after)
 
 
 style = ButtonStyle
