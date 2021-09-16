@@ -13,7 +13,8 @@ from typing import *
 from time import time
 
 from discord.ext import commands, tasks
-from discord import Message, Embed, AllowedMentions
+from discord import Message, Embed, AllowedMentions, ui, utils, Interaction
+from discord.errors import NotFound, Forbidden
 
 from botutils import get_prefixes_async, GetChoice
 from fate import Fate
@@ -72,7 +73,20 @@ class CustomCommands(commands.Cog):
                 value=f"{p}cc add [command] [the cmds response]\n"
                       f"{p}cc remove [command, or pick which after running the command]"
             )
-            await ctx.send(embed=e)
+
+            # Add a button for viewing the current custom commands
+            view = None
+            async with self.bot.utils.cursor() as cur:
+                await cur.execute(f"select command, response from cc where guild_id = {ctx.guild.id};")
+                if cur.rowcount:
+                    custom_commands = [(c, r) for c, r in await cur.fetchall()]
+                    view = View(self.bot, custom_commands)  # type: ignore
+
+            msg = await ctx.send(embed=e, view=view)
+            if view:
+                await view.wait()
+                view.button.disabled = True
+                await msg.edit(view=view)
 
     @cc.group(name="add", description="Creates a custom command")
     async def add(self, ctx, command, *, response) -> Optional[Message]:
@@ -186,6 +200,39 @@ class CustomCommands(commands.Cog):
                 await self.process_command(msg, command, response)
             else:
                 self.cache[msg.guild.id][command] = [None, time()]
+
+
+class View(ui.View):
+    """ Creates a button to view the existing custom commands """
+    def __init__(self, bot, custom_commands: List[Tuple[str]]) -> None:
+        self.bot = bot
+        self.cd = bot.utils.cooldown_manager(1, 45)
+
+        # Format the button response
+        if len(custom_commands) > 32:
+            self.commands = ", ".join(f"`{c}`" for c in custom_commands)
+        else:
+            self.commands = ""
+            for command, response in custom_commands:
+                response = utils.escape_markdown(response[:100])\
+                    .replace("\n", " ")\
+                    .replace("https://", "")\
+                    .replace("http://", "")\
+                    .replace("www.", "")
+                self.commands += f"🗨 **{command}:**\n*{response}*\n\n"
+
+        super().__init__(timeout=45)
+
+    async def on_error(self, error: Exception, _item: ui.Item, _interaction: Interaction) -> None:
+        """ Ignores interaction failed exceptions """
+        if not isinstance(error, (NotFound, Forbidden)):
+            raise
+
+    @ui.button(label="Show Commands")
+    async def button(self, _button: ui.Button, interaction: Interaction) -> None:
+        if self.cd.check(interaction.user.id):
+            return
+        await interaction.response.send_message(self.commands, ephemeral=True)
 
 
 def setup(bot: Fate):
