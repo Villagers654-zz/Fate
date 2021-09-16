@@ -24,12 +24,15 @@ class Cache:
     _cache: Dict[str, Any] = {}
     _db_state: Dict[str, Any] = {}
     last_used: Dict[str, float] = {}
+    queries = 0
+    cache_queries = 0
 
     def __init__(self, bot, collection: str, auto_sync=False) -> None:
         self.bot = bot
         self.collection = collection
         self.auto_sync = auto_sync
-        self.remove_unused_keys.start()
+        self.task = self.remove_unused_keys
+        self.task.start()
 
     def __len__(self) -> int:
         return len(self._cache)
@@ -46,7 +49,7 @@ class Cache:
         return self._cache[key]
 
     def __setitem__(self, key, value):
-        self._cache[key] = value
+        self._cache[key] = deepcopy(value)
 
     def keys(self) -> Iterable:
         return self._cache.keys()
@@ -60,20 +63,16 @@ class Cache:
     @tasks.loop(minutes=5)
     async def remove_unused_keys(self):
         """ Remove keys that haven't been accessed in over an hour """
-        total_removed = 0
         for key, time_used in list(self.last_used.items()):
             await asyncio.sleep(0)
             if key not in self._cache and key not in self._db_state:
                 continue
-            if time() - 3600 > time_used:
+            if time() - (60 * 10) > time_used:
                 if key in self._cache:
                     del self._cache[key]
                 if key in self._db_state:
                     del self._db_state[key]
                 del self.last_used[key]
-                total_removed += 1
-        if total_removed:
-            self.bot.log.info(f"Removed {total_removed} unused keys from cache")
 
     async def flush(self) -> None:
         """ Pushes changes from cache into the actual database """
@@ -115,6 +114,7 @@ class Cache:
     async def get_or_fetch(self, key, remove_after: Optional[int] = None) -> Any:
         """ Fetches an key from the cache or db """
         if key in self._cache:
+            self.cache_queries += 1
             return self._cache[key]
         collection = self.bot.aio_mongo[self.collection]
         value = await collection.find_one({"_id": key})
@@ -127,8 +127,9 @@ class Cache:
         self.last_used[key] = time()
         if remove_after:
             asyncio.ensure_future(self._remove_after(key, remove_after))
+        self.queries += 1
 
-    def remove(self, key) -> Awaitable:
+    def remove(self, key) -> asyncio.Future:
         """ Removes an item from the cache, and database """
         if key in self._db_state:
             return self.bot.loop.create_task(self._remove_from_db(key))
@@ -136,7 +137,7 @@ class Cache:
             del self._cache[key]
             return asyncio.sleep(0)
 
-    def remove_sub(self, key, sub_key) -> Awaitable:
+    def remove_sub(self, key, sub_key) -> asyncio.Future:
         """ Removes a key from inside the keys dict """
         return self.bot.loop.create_task(self._remove_from_db(key, sub_key))
 
