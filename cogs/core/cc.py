@@ -185,7 +185,7 @@ class CustomCommands(commands.Cog):
         if command in self.cache[msg.guild.id]:
             response = self.cache[msg.guild.id][command][0]
             if response:
-                await self.process_command(msg, command, response)
+                return await self.process_command(msg, command, response)
 
         async with self.bot.utils.cursor() as cur:
             await cur.execute(
