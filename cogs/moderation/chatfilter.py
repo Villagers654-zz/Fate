@@ -106,7 +106,7 @@ class ChatFilter(commands.Cog):
                 content = content.replace("\\", "")
             if " " in phrase and phrase.lower() in content.lower():
                 return await self.clean_content(content, phrase), [phrase]
-            for word in content.lower().split():
+            for word in content.lower().replace("\n", "").split():
                 await asyncio.sleep(0)
                 if phrase in word and word not in self.config[guild_id]["whitelist"]:
                     return await self.clean_content(content, phrase), [phrase]
@@ -135,7 +135,7 @@ class ChatFilter(commands.Cog):
             await asyncio.sleep(0)
 
             # Sanitize the query
-            query = word.replace("*", "{0,16}").replace("+", "{1,16}")
+            query = word.replace("*", "{0,16}").replace("+", "{1,16}").replace("\n", "")
             ranges = await findall("{[0-9]+, ?[0-9]+}", query)
             for match in ranges:
                 await asyncio.sleep(0)
@@ -538,39 +538,38 @@ class ChatFilter(commands.Cog):
             return
 
     @commands.Cog.listener()
-    async def on_message(self, m: discord.Message):
-        if hasattr(m.guild, "id") and m.guild.id in self.config:
+    async def on_message(self, msg: discord.Message):
+        if hasattr(msg.guild, "id") and msg.guild.id in self.config:
             await asyncio.sleep(0.21)
-            guild_id = m.guild.id
+            guild_id = msg.guild.id
             if not self.config[guild_id]["toggle"]:
                 return
-            if str(m.author).endswith("#0000"):
+            if str(msg.author).endswith("#0000"):
                 return
-            if self.bot.attrs.is_moderator(m.author) and not m.author.bot:
+            if self.bot.attrs.is_moderator(msg.author) and not msg.author.bot:
                 return
-            if m.author.bot and "bots" not in self.config[guild_id]:
+            if msg.author.bot and "bots" not in self.config[guild_id]:
                 return
-            if m.channel.id in self.config[guild_id]["ignored"]:
+            if msg.channel.id in self.config[guild_id]["ignored"]:
                 return
             if "regex" in self.config[guild_id]:
-                result, flags = await self.run_regex_filter(guild_id, m.content)
+                result, flags = await self.run_regex_filter(guild_id, msg.content)
             else:
-                result, flags = await self.run_default_filter(guild_id, m.content)
+                result, flags = await self.run_default_filter(guild_id, msg.content)
             if not result:
                 return
+            if guild_id not in self.bot.filtered_messages:
+                self.bot.filtered_messages[guild_id] = {}
+            self.bot.filtered_messages[guild_id][msg.id] = time()
             with suppress(Exception):
-                await m.delete()
-                if m.guild.id not in self.bot.filtered_messages:
-                    self.bot.filtered_messages[m.guild.id] = {}
-                self.bot.filtered_messages[m.guild.id][m.id] = time()
-
+                await msg.delete()
                 if self.config[guild_id]["webhooks"]:
-                    if m.channel.permissions_for(m.guild.me).manage_webhooks:
-                        w = await self.get_webhook(m.channel)
+                    if msg.channel.permissions_for(msg.guild.me).manage_webhooks:
+                        w = await self.get_webhook(msg.channel)
                         await w.send(
                             content=result,
-                            avatar_url=m.author.display_avatar.url,
-                            username=m.author.display_name
+                            avatar_url=msg.author.display_avatar.url,
+                            username=msg.author.display_name
                         )
 
                 return self.log_action(m, flags)
