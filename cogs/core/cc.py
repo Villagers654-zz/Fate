@@ -2,21 +2,20 @@
 cogs.core.cc
 ~~~~~~~~~~~~~
 
-A cog for configuring per-server custom commands
+A module for configuring per-server custom commands
 
 :copyright: (C) 2021-present Michael Stollings
 :license: Proprietary and Confidential, see LICENSE for details
 """
 
 import asyncio
-from os.path import isfile
-import json
+from typing import *
 from time import time
 
 from discord.ext import commands, tasks
 from discord import Message, Embed, AllowedMentions
 
-from botutils import sanitize, get_prefixes_async, GetChoice
+from botutils import get_prefixes_async, GetChoice
 from fate import Fate
 
 
@@ -24,47 +23,45 @@ m = AllowedMentions.none()
 
 
 class CustomCommands(commands.Cog):
-    fp = "./data/userdata/cc.json"
-    cache = {}
-    guilds = []
+    """ Cog class for handling custom commands """
+    cache: Dict[int, Dict[str, List[Union[Optional[str], float]]]] = {}
+    guilds: List[int] = []
+
     def __init__(self, bot: Fate):
         self.bot = bot
-        if isfile(self.fp):
-            with open(self.fp, "r") as f:
-                self.guilds = json.load(f)
         self.cd = self.bot.utils.cooldown_manager(1, 10)
+        asyncio.ensure_future(self.on_ready())
         self.cleanup_task.start()
 
     def cog_unload(self):
         self.cleanup_task.cancel()
 
-    async def save_config(self):
-        async with self.bot.utils.open(self.fp, "w+") as f:
-            await f.write(await self.bot.dump(self.guilds))
+    @commands.Cog.listener()
+    async def on_ready(self):
+        """ Index any missing commands """
+        async with self.bot.utils.cursor() as cur:
+            await cur.execute("select guild_id from cc;")
+            for (guild_id,) in set(await cur.fetchall()):
+                await cur.execute(f"select * from cc where guild_id = {guild_id} limit 1;")
+                if guild_id not in self.guilds:
+                    self.guilds.append(guild_id)
+        self.bot.log.info(f"Custom Commands | Indexed {len(self.guilds)} servers")
 
     @tasks.loop(minutes=1)
     async def cleanup_task(self):
-        for guild_id, commands in list(self.cache.items()):
-            for command, (_resp, cached_at) in list(commands.items()):
+        """ Uncache custom commands that haven't been used in awhile """
+        for guild_id, custom_commands in list(self.cache.items()):
+            for command, (_resp, cached_at) in list(custom_commands.items()):
                 await asyncio.sleep(0)
                 if time() - cached_at > 60 * 10:
                     del self.cache[guild_id][command]
             if not self.cache[guild_id]:
                 del self.cache[guild_id]
-        changed = False
-        async with self.bot.utils.cursor() as cur:
-            for guild_id in list(self.guilds):
-                await asyncio.sleep(0)
-                await cur.execute(f"select * from cc where guild_id = {guild_id} limit 1;")
-                if not cur.rowcount:
-                    self.guilds.remove(guild_id)
-                    changed = True
-        if changed:
-            await self.save_config()
 
     @commands.group(name="cc", description="Shows help for custom commands")
     @commands.cooldown(2, 5, commands.BucketType.channel)
-    async def cc(self, ctx):
+    async def cc(self, ctx) -> None:
+        """ Shows help for custom commands """
         if not ctx.invoked_subcommand:
             e = Embed(color=self.bot.config["theme_color"])
             e.set_author(name="Custom Commands", icon_url=self.bot.user.display_avatar.url)
@@ -75,10 +72,11 @@ class CustomCommands(commands.Cog):
                 value=f"{p}cc add [command] [the cmds response]\n"
                       f"{p}cc remove [command, or pick which after running the command]"
             )
-            return await ctx.send(embed=e)
+            await ctx.send(embed=e)
 
     @cc.group(name="add", description="Creates a custom command")
-    async def add(self, ctx, command, *, response):
+    async def add(self, ctx, command, *, response) -> Optional[Message]:
+        """ Creates a custom command """
         if not self.bot.attrs.is_moderator(ctx.author):
             return await ctx.send("You need to be a moderator to manage custom commands")
         if len(command) > 16:
@@ -101,13 +99,13 @@ class CustomCommands(commands.Cog):
             )
         if ctx.guild.id not in self.guilds:
             self.guilds.append(ctx.guild.id)
-            await self.save_config()
         if ctx.guild.id in self.cache:
             del self.cache[ctx.guild.id]
         await ctx.send(f"Added {command} as a custom command")
 
     @cc.command(name="remove", description="Deletes a custom command")
-    async def remove(self, ctx, command):
+    async def remove(self, ctx, command = None) -> Optional[Message]:
+        """ Deletes a custom command """
         if not self.bot.attrs.is_moderator(ctx.author):
             return await ctx.send("You need to be a moderator to manage custom commands")
         async with self.bot.utils.cursor() as cur:
@@ -115,8 +113,8 @@ class CustomCommands(commands.Cog):
                 await cur.execute(f"select command from cc where guild_id = {ctx.guild.id};")
                 if not cur.rowcount:
                     return await ctx.send("This server has no custom commands")
-                commands = [result[0] for result in await cur.fetchall()]
-                choices = await GetChoice(ctx, commands, limit=len(commands))
+                results = [result[0] for result in await cur.fetchall()]
+                choices = await GetChoice(ctx, results, limit=len(results))
                 for choice in choices:
                     await cur.execute(
                         f"delete from cc "
@@ -141,8 +139,19 @@ class CustomCommands(commands.Cog):
         if ctx.guild.id in self.cache:
             del self.cache[ctx.guild.id]
 
+    async def process_command(self, msg: Message, command: str, response: str) -> None:
+        """ Handles the cooldowns and sends the response """
+        if self.cd.check(msg.guild.id) or self.cd.check(msg.author.id):
+            if msg.channel.permissions_for(msg.guild.me).add_reactions:
+                await msg.add_reaction("⏳")
+            return
+        self.cache[msg.guild.id][command][1] = time()
+        if msg.channel.permissions_for(msg.guild.me).send_messages:
+            await msg.channel.send(response)
+
     @commands.Cog.listener()
-    async def on_message(self, msg: Message):
+    async def on_message(self, msg: Message) -> None:
+        """ Check for custom commands, cache them, and process the command """
         if not msg.guild or not msg.guild.owner:
             return
         if msg.guild.id not in self.guilds:
@@ -162,13 +171,7 @@ class CustomCommands(commands.Cog):
         if command in self.cache[msg.guild.id]:
             response = self.cache[msg.guild.id][command][0]
             if response:
-                if self.cd.check(msg.guild.id):
-                    if msg.channel.permissions_for(msg.guild.me).add_reactions:
-                        await msg.add_reaction("⏳")
-                    return
-                self.cache[msg.guild.id][command][1] = time()
-                if msg.channel.permissions_for(msg.guild.me).send_messages:
-                    return await msg.channel.send(response)
+                await self.process_command(msg, command, response)
 
         async with self.bot.utils.cursor() as cur:
             await cur.execute(
@@ -178,12 +181,9 @@ class CustomCommands(commands.Cog):
                 f"limit 1;"
             )
             if cur.rowcount:
-                r: tuple = await cur.fetchone()
-                response: str = r[0]
-                self.cd.check(msg.author.id)
+                response, *_ = await cur.fetchone()  # type: str
                 self.cache[msg.guild.id][command] = [response, time()]
-                if msg.channel.permissions_for(msg.guild.me).send_messages:
-                    await msg.channel.send(response)
+                await self.process_command(msg, command, response)
             else:
                 self.cache[msg.guild.id][command] = [None, time()]
 
