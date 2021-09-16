@@ -34,7 +34,7 @@ class CustomCommands(commands.Cog):
         asyncio.ensure_future(self.on_ready())
         self.cleanup_task.start()
 
-    def cog_unload(self):
+    def cog_unload(self) -> None:
         self.cleanup_task.cancel()
 
     @commands.Cog.listener()
