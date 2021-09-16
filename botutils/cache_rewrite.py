@@ -126,20 +126,20 @@ class Cache:
         self._db_state[key] = deepcopy(value)
         self.last_used[key] = time()
         if remove_after:
-            asyncio.ensure_future(self._remove_after(key, remove_after))
+            asyncio.create_task(self._remove_after(key, remove_after))
         self.queries += 1
 
     def remove(self, key) -> asyncio.Future:
         """ Removes an item from the cache, and database """
         if key in self._db_state:
-            return self.bot.loop.create_task(self._remove_from_db(key))
+            return asyncio.create_task(self._remove_from_db(key))
         else:
             del self._cache[key]
             return asyncio.sleep(0)
 
     def remove_sub(self, key, sub_key) -> asyncio.Future:
         """ Removes a key from inside the keys dict """
-        return self.bot.loop.create_task(self._remove_from_db(key, sub_key))
+        return asyncio.create_task(self._remove_from_db(key, sub_key))
 
     async def _remove_from_db(self, key, sub_key=None) -> None:
         """ The coro to remove an item from the cache, and database """

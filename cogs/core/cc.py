@@ -31,7 +31,7 @@ class CustomCommands(commands.Cog):
     def __init__(self, bot: Fate) -> None:
         self.bot = bot
         self.cd = self.bot.utils.cooldown_manager(1, 10)
-        asyncio.ensure_future(self.on_ready())
+        asyncio.create_task(self.on_ready())
         self.cleanup_task.start()
 
     def cog_unload(self) -> None:
