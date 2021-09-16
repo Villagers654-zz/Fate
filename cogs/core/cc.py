@@ -62,14 +62,14 @@ class CustomCommands(commands.Cog):
         if changed:
             await self.save_config()
 
-    @commands.command(name="cc", description="Configure custom commands")
+    @commands.group(name="cc", description="Shows help for custom commands")
     @commands.cooldown(2, 5, commands.BucketType.channel)
-    async def cc(self, ctx, add_or_remove=None, command=None, *, response=None):
-        p = ctx.prefix
-        if not add_or_remove or (add_or_remove == "add" and not command):
+    async def cc(self, ctx):
+        if not ctx.invoked_subcommand:
             e = Embed(color=self.bot.config["theme_color"])
             e.set_author(name="Custom Commands", icon_url=self.bot.user.display_avatar.url)
             e.description = "Create commands with custom responses"
+            p: str = ctx.prefix
             e.add_field(
                 name="◈ Usage",
                 value=f"{p}cc add [command] [the cmds response]\n"
@@ -77,44 +77,39 @@ class CustomCommands(commands.Cog):
             )
             return await ctx.send(embed=e)
 
+    @cc.group(name="add", description="Creates a custom command")
+    async def add(self, ctx, command, *, response):
         if not self.bot.attrs.is_moderator(ctx.author):
             return await ctx.send("You need to be a moderator to manage custom commands")
-
-        if add_or_remove not in ["add", "remove"]:
-            # Re-invoke the command without args
-            return await self.cc(ctx)
-
-        if command:
-            command = command.lower()
-            if len(command) > 16:
-                return await ctx.send("Command names can't be longer than 16 characters")
-
-        if add_or_remove == "add":
-            if self.bot.get_command(command):
-                return await ctx.send(f"Command `{command}` already exists")
-            # if command != await sanitize(command):
-            #     return await ctx.send("Something in that command's filtered")
-            # if response != await sanitize(response):
-            #     return await ctx.send("Something in that response's filtered")
-            async with self.bot.utils.cursor() as cur:
-                await cur.execute(
-                    f"select * from cc "
-                    f"where guild_id = {ctx.guild.id} "
-                    f"and command = %s;", command
+        if len(command) > 16:
+            return await ctx.send("Command names can't be longer than 16 characters")
+        if self.bot.get_command(command):
+            return await ctx.send(f"Command `{command}` already exists")
+        async with self.bot.utils.cursor() as cur:
+            await cur.execute(
+                f"select * from cc "
+                f"where guild_id = {ctx.guild.id} "
+                f"and command = %s;", command
+            )
+            if cur.rowcount:
+                return await ctx.send(
+                    f"There's already a registered command under that. "
+                    f"You can remove it via `{ctx.prefix}cc remove {command}`"
                 )
-                if cur.rowcount:
-                    return await ctx.send(
-                        f"There's already a registered command under that. "
-                        f"You can remove it via `{p}cc remove {command}`"
-                    )
-                await cur.execute(
-                    f"insert into cc values (%s, %s, %s);", (ctx.guild.id, command, response)
-                )
-                if ctx.guild.id not in self.guilds:
-                    self.guilds.append(ctx.guild.id)
-                    await self.save_config()
-                return await ctx.send(f"Added {command} as a custom command")
+            await cur.execute(
+                f"insert into cc values (%s, %s, %s);", (ctx.guild.id, command, response)
+            )
+        if ctx.guild.id not in self.guilds:
+            self.guilds.append(ctx.guild.id)
+            await self.save_config()
+        if ctx.guild.id in self.cache:
+            del self.cache[ctx.guild.id]
+        await ctx.send(f"Added {command} as a custom command")
 
+    @cc.command(name="remove", description="Deletes a custom command")
+    async def remove(self, ctx, command):
+        if not self.bot.attrs.is_moderator(ctx.author):
+            return await ctx.send("You need to be a moderator to manage custom commands")
         async with self.bot.utils.cursor() as cur:
             if not command:
                 await cur.execute(f"select command from cc where guild_id = {ctx.guild.id};")
@@ -129,21 +124,22 @@ class CustomCommands(commands.Cog):
                         f"and command = %s;", (choice)
                     )
                     await ctx.send(f"Removed `{choice}`")
-                return
-
-            await cur.execute(
-                f"select * from cc "
-                f"where guild_id = {ctx.guild.id} "
-                f"and command = %s;", (command)
-            )
-            if not cur.rowcount:
-                return await ctx.send(f"`{command}` isn't registered as a custom command")
-            await cur.execute(
-                f"delete from cc "
-                f"where guild_id = {ctx.guild.id} "
-                f"and command = %s;", (command)
-            )
-            await ctx.send(f"Removed `{command}`")
+            else:
+                await cur.execute(
+                    f"select * from cc "
+                    f"where guild_id = {ctx.guild.id} "
+                    f"and command = %s;", (command)
+                )
+                if not cur.rowcount:
+                    return await ctx.send(f"`{command}` isn't registered as a custom command")
+                await cur.execute(
+                    f"delete from cc "
+                    f"where guild_id = {ctx.guild.id} "
+                    f"and command = %s;", (command)
+                )
+                await ctx.send(f"Removed `{command}`")
+        if ctx.guild.id in self.cache:
+            del self.cache[ctx.guild.id]
 
     @commands.Cog.listener()
     async def on_message(self, msg: Message):
