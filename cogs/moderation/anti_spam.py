@@ -21,11 +21,11 @@ from discord import ui, Interaction, SelectOption, TextChannel, Message
 from discord.ext.commands import Context
 import discord
 from discord.errors import Forbidden, NotFound, HTTPException
-from discord.ext import commands
-from discord.ext import tasks
+from discord.ext import commands, tasks
 
 from botutils import colors, get_time, emojis, get_prefixes_async, GetChoice
 from botutils.interactions import AuthorView
+from botutils.cache_rewrite import Cache
 from fate import Fate
 
 
@@ -98,11 +98,15 @@ class AntiSpam(commands.Cog):
         if "antispam_mutes" not in bot.tasks:
             bot.tasks["antispam_mutes"] = {}
         self.bot = bot
-        self.config = bot.utils.cache("AntiSpam")
+        self.config = Cache(bot, "AntiSpam")
         self.cache_cleanup_task.start()
 
     def cog_unload(self) -> None:
-        self.cache_cleanup_task.stop()
+        self.cache_cleanup_task.cancel()
+        self.config.task.cancel()
+
+    async def cog_before_invoke(self, ctx):
+        await self.config.cache(ctx.guild.id)
 
     def is_enabled(self, guild_id) -> bool:
         """ Denotes if a server has the module enabled """
@@ -532,6 +536,7 @@ class AntiSpam(commands.Cog):
 
     @commands.Cog.listener("on_typing")
     async def log_typing_timestamps(self, channel, user, when):
+        await self.config.cache(channel.guild.id)
         if hasattr(channel, "guild") and channel.guild and channel.guild.id in self.config:
             guild_id = channel.guild.id
             if "inhuman" in self.config[guild_id] and self.config[guild_id]["inhuman"]["copy_paste"]:
@@ -545,6 +550,7 @@ class AntiSpam(commands.Cog):
         if not isinstance(msg.guild, discord.Guild) or msg.author.bot:
             return
         guild_id = msg.guild.id
+        await self.config.cache(guild_id)
         if guild_id in self.config and self.config[guild_id]:
             conf: dict = self.config[guild_id]
             if "ignored" in conf and msg.channel.id in conf["ignored"]:
