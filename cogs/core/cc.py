@@ -95,8 +95,11 @@ class CustomCommands(commands.Cog):
             return await ctx.send("You need to be a moderator to manage custom commands")
         if len(command) > 16:
             return await ctx.send("Command names can't be longer than 16 characters")
+        if not all(c.lower() != c.upper() for c in command):
+            return await ctx.send("Commands can only have abc characters")
         if self.bot.get_command(command):
             return await ctx.send(f"Command `{command}` already exists")
+        command = command.lower()
         async with self.bot.utils.cursor() as cur:
             await cur.execute(
                 f"select * from cc "
