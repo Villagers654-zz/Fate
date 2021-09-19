@@ -108,8 +108,9 @@ class AntiSpam(commands.Cog):
     async def cog_before_invoke(self, ctx):
         await self.config.cache(ctx.guild.id)
 
-    def is_enabled(self, guild_id) -> bool:
+    async def is_enabled(self, guild_id) -> bool:
         """ Denotes if a server has the module enabled """
+        await self.config.cache(guild_id)
         return guild_id in self.config
 
     async def get_mutes(self) -> dict:
