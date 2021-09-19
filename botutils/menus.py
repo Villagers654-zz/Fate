@@ -18,7 +18,6 @@ from typing import *
 import discord
 from discord import TextChannel, Attachment
 from discord.errors import NotFound, Forbidden
-from discord import ui
 from discord.ext.commands import Context
 from PIL import Image, ImageFont, ImageDraw
 
@@ -28,27 +27,6 @@ from classes.exceptions import EmptyException
 
 
 style = discord.ButtonStyle
-
-
-class ChoiceButtons(ui.View):
-    def __init__(self):
-        self.choice = None
-        self.asyncio_event = asyncio.Event()
-        super().__init__()
-
-    @ui.button(label="Yes", style=style.green)
-    async def yes(self, _button, interaction):
-        self.choice = True
-        await interaction.message.edit(view=None)
-        self.asyncio_event.set()
-        self.stop()
-
-    @ui.button(label="No", style=style.red)
-    async def no(self, _button, interaction):
-        self.choice = False
-        await interaction.message.edit(view=None)
-        self.asyncio_event.set()
-        self.stop()
 
 
 class _Select(discord.ui.Select):
