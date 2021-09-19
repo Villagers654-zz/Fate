@@ -24,6 +24,7 @@ from PIL import Image, ImageFont, ImageDraw
 
 from . import colors
 from .tools import get_time
+from classes.exceptions import EmptyException
 
 
 style = discord.ButtonStyle
@@ -51,15 +52,31 @@ class ChoiceButtons(ui.View):
 
 
 class _Select(discord.ui.Select):
-    def __init__(self, user_id: int, choices: Sequence[Any], limit: int = 1, placeholder: str = "Select your choice"):
+    """ The dropdown menu for picking a choice """
+    def __init__(self, user_id, choices, limit=1, placeholder="Select your choice") -> None:
+        """
+        :param int user_id:
+        :param Sequence or Dict[str, str] choices:
+        :param int limit:
+        :param str placeholder:
+        """
         self.user_id = user_id
         self.limit = limit
 
         if not choices:
             raise TypeError("No options were provided")
         options = []
+        if isinstance(choices, dict):
+            choices = list(choices.items())
         for option in choices:
-            options.append(discord.SelectOption(label=str(option)[:100]))
+            if isinstance(option, tuple):
+                label, description = option
+                options.append(discord.SelectOption(
+                    label=str(label)[:100],
+                    description=str(description)[:100]
+                ))
+            else:
+                options.append(discord.SelectOption(label=str(option)[:100]))
 
         super().__init__(
             custom_id=f"select_choice_{time()}",
@@ -69,12 +86,14 @@ class _Select(discord.ui.Select):
             options=options
         )
 
-    async def callback(self, interaction: discord.Interaction):
+    async def callback(self, interaction: discord.Interaction) -> None:
+        """ Handle interactions with the dropdown menu """
         if interaction.user.id != self.user_id:
-            return await interaction.response.send_message(
+            await interaction.response.send_message(
                 "Only the user who initiated this command can interact",
                 ephemeral=True
             )
+            return
         self.view.selected = interaction.data["values"]
         await interaction.response.defer()
         if not self.view.message:
@@ -83,20 +102,25 @@ class _Select(discord.ui.Select):
 
 
 class GetChoice(discord.ui.View):
+    """ Has the author choose between a collection of options """
     selected: List[str] = None
     message: Optional[discord.Message] = None
     message_passed = False
-    def __init__(self, ctx, choices, limit=1, placeholder="Options", message=None, delete_after=True):
+
+    def __init__(self, ctx, choices, limit=1, placeholder="Options", message=None, delete_after=True) -> None:
         """
         :param Context ctx:
-        :param Sequence or KeysView choices:
+        :param Sequence or KeysView or Dict[str, str] choices:
         :param int limit:
         :param str placeholder:
         :param discord.Message message:
         :param bool delete_after:
         """
         if len(choices) > 25:
-            choices = choices[:25]
+            if isinstance(choices, dict):
+                choices = dict(choices.items()[:25])
+            else:
+                choices = choices[:25]
 
         self.ctx = ctx
         self.choices = choices
@@ -113,10 +137,12 @@ class GetChoice(discord.ui.View):
         super().__init__(timeout=45)
         self.add_item(_Select(ctx.author.id, choices, self.limit, placeholder))
 
-    def __await__(self) -> Generator:
-        return self._await().__await__()
+    def __await__(self) -> Generator[None, None, Union[str, List[str]]]:
+        """ Makes the class an awaitable """
+        return self._await_callback().__await__()
 
-    async def _await(self) -> Union[str, List[str]]:
+    async def _await_callback(self) -> Union[str, List[str]]:
+        """ Callback for when the class is awaited """
         if self.message_passed:
             await self.message.edit(view=self)
             message = self.message
@@ -135,14 +161,17 @@ class GetChoice(discord.ui.View):
             e = discord.Embed(color=colors.red)
             e.set_author(name="Expired Menu", icon_url=self.ctx.author.display_avatar.url)
             await message.edit(content=None, view=None, embed=e)
-            raise self.ctx.bot.ignored_exit
+            raise EmptyException
 
         if self.delete_after:
             with suppress(Exception):
                 await message.delete()
 
         if self.limit == 1:
-            for choice in self.choices:
+            choices = self.choices
+            if isinstance(choices, dict):
+                choices = choices.keys()
+            for choice in choices:
                 await asyncio.sleep(0)
                 if self.selected[0] in choice:
                     return choice
@@ -150,7 +179,8 @@ class GetChoice(discord.ui.View):
         return self.selected
 
     async def on_error(self, error, _item, _interaction) -> None:
-        if not isinstance(error, (NotFound, self.ctx.bot.ignored_exit)):
+        """ Ignore NotFound and EmptyException errors """
+        if not isinstance(error, (NotFound, EmptyException)):
             raise
 
 
