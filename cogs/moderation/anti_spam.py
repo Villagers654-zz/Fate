@@ -977,7 +977,7 @@ class AntiSpam(commands.Cog):
                     if msg.id in self.bot.filtered_messages[msg.guild.id]:
                         return
 
-                # Mute if it's a obvious ghost ping
+                # Mute if it's an obvious ghost ping
                 if msg.created_at > datetime.now(tz=timezone.utc) - timedelta(seconds=5):
                     if msg.guild.id not in self.bot.tasks["antispam_mutes"]:
                         self.bot.tasks["antispam_mutes"][msg.guild.id] = {}
