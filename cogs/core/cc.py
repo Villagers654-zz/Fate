@@ -31,7 +31,8 @@ class CustomCommands(commands.Cog):
     def __init__(self, bot: Fate) -> None:
         self.bot = bot
         self.cd = self.bot.utils.cooldown_manager(1, 10)
-        asyncio.create_task(self.on_ready())
+        if bot.is_ready():
+            asyncio.create_task(self.on_ready())
         self.cleanup_task.start()
 
     def cog_unload(self) -> None:
@@ -39,14 +40,13 @@ class CustomCommands(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self) -> None:
-        """ Index any missing commands """
+        """ Index the servers with custom commands enabled """
         async with self.bot.utils.cursor() as cur:
             await cur.execute("select guild_id from cc;")
             for (guild_id,) in set(await cur.fetchall()):
                 await cur.execute(f"select * from cc where guild_id = {guild_id} limit 1;")
                 if guild_id not in self.guilds:
                     self.guilds.append(guild_id)
-        self.bot.log.info(f"Custom Commands | Indexed {len(self.guilds)} servers")
 
     @tasks.loop(minutes=1)
     async def cleanup_task(self) -> None:
