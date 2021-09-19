@@ -2,8 +2,7 @@
 botutils.cache_rewrite
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-The completed version of botutils.resources.Cache that doesn't
-fetch from the db until needed, rather than fetching everything on startup
+A module for querying and caching data from MongoDB in a simple to use dictionary-like object
 
 :copyright: (C) 2021-present Michael Stollings
 :license: Proprietary and Confidential, see LICENSE for details
@@ -20,7 +19,7 @@ from discord.ext import tasks
 
 
 class Cache:
-    """Object for syncing a dict to MongoDB"""
+    """ Object for querying and caching data from MongoDB """
     _cache: Dict[str, Any] = {}
     _db_state: Dict[str, Any] = {}
     last_used: Dict[str, float] = {}
@@ -129,8 +128,8 @@ class Cache:
             asyncio.create_task(self._remove_after(key, remove_after))
         self.queries += 1
 
-    def remove(self, key) -> Union[asyncio.Future, asyncio.Task]:
-        """ Removes an item from the cache, and database """
+    def remove(self, key):
+        """ An function and awaitable to remove an item from the cache, and database """
         if key in self._db_state:
             return asyncio.create_task(self._remove_from_db(key))
         else:
