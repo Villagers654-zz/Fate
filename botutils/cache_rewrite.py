@@ -129,7 +129,7 @@ class Cache:
             asyncio.create_task(self._remove_after(key, remove_after))
         self.queries += 1
 
-    def remove(self, key) -> asyncio.Future:
+    def remove(self, key) -> Union[asyncio.Future, asyncio.Task]:
         """ Removes an item from the cache, and database """
         if key in self._db_state:
             return asyncio.create_task(self._remove_from_db(key))
@@ -137,7 +137,7 @@ class Cache:
             del self._cache[key]
             return asyncio.sleep(0)
 
-    def remove_sub(self, key, sub_key) -> asyncio.Future:
+    def remove_sub(self, key, sub_key) -> asyncio.Task:
         """ Removes a key from inside the keys dict """
         return asyncio.create_task(self._remove_from_db(key, sub_key))
 
