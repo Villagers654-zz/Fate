@@ -534,8 +534,9 @@ class AntiSpam(commands.Cog):
                 return True
         return False
 
-    @commands.Cog.listener("on_typing")
-    async def log_typing_timestamps(self, channel, user, when):
+    @commands.Cog.listener()
+    async def on_typing(self, channel, user, when):
+        """ Log typing timestamps for the copy_paste module """
         await self.config.cache(channel.guild.id)
         if hasattr(channel, "guild") and channel.guild and channel.guild.id in self.config:
             guild_id = channel.guild.id
@@ -943,8 +944,10 @@ class AntiSpam(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_delete(self, msg):
-        if not msg.author.bot and msg.guild and msg.raw_mentions and msg.guild.id in self.config:
-            if "mass_pings" not in self.config[msg.guild.id]:
+        """ Check deleted messages for ghost ping annoyances """
+        if not msg.author.bot and msg.guild and msg.raw_mentions:
+            await self.config.cache(msg.guild.id)
+            if msg.guild.id not in self.config or "mass_pings" not in self.config[msg.guild.id]:
                 return
             if not self.config[msg.guild.id]["mass_pings"]["ghost_pings"]:
                 return
@@ -955,29 +958,41 @@ class AntiSpam(commands.Cog):
             prefixes = await get_prefixes_async(self.bot, msg)
             if any(msg.content.startswith(p) for p in prefixes):
                 return
+
+            # Only lose our shit over pings deleted within the last 2 minutes
             lmt = datetime.now(tz=timezone.utc) - timedelta(seconds=120)
             if msg.created_at > lmt:
+
+                # Check if any bots have deleted the message
                 async for entry in msg.guild.audit_logs(limit=1, action=discord.AuditLogAction.message_delete):
                     if entry.created_at > lmt:
                         return
                 async for entry in msg.guild.audit_logs(limit=1, action=discord.AuditLogAction.message_bulk_delete):
                     if entry.created_at > lmt:
                         return
+
+                # Check if chatfilter deleted the message
                 await asyncio.sleep(3)
                 if msg.guild.id in self.bot.filtered_messages:
                     if msg.id in self.bot.filtered_messages[msg.guild.id]:
-                        if msg.guild.id not in self.bot.tasks["antispam_mutes"]:
-                            self.bot.tasks["antispam_mutes"][msg.guild.id] = {}
-                        self.bot.tasks["antispam_mutes"][msg.guild.id][msg.author.id] = self.bot.loop.create_task(
-                            self.process_mute(
-                                user_id=msg.author.id,
-                                guild_id=msg.guild.id,
-                                msg=msg,
-                                reason=f"Ghost ping\n"
-                                       f"**Target:** {self.bot.get_user(msg.raw_mentions[0])}"
-                            )
-                        )
                         return
+
+                # Mute if it's a obvious ghost ping
+                if msg.created_at > datetime.now(tz=timezone.utc) - timedelta(seconds=5):
+                    if msg.guild.id not in self.bot.tasks["antispam_mutes"]:
+                        self.bot.tasks["antispam_mutes"][msg.guild.id] = {}
+                    self.bot.tasks["antispam_mutes"][msg.guild.id][msg.author.id] = self.bot.loop.create_task(
+                        self.process_mute(
+                            user_id=msg.author.id,
+                            guild_id=msg.guild.id,
+                            msg=msg,
+                            reason=f"Ghost ping\n"
+                                   f"**Target:** {self.bot.get_user(msg.raw_mentions[0])}"
+                        )
+                    )
+                    return
+
+                # Send a warning if not sure
                 e = discord.Embed(color=self.bot.config["theme_color"])
                 e.description = f"{msg.author.mention} no ghost pinging\n" \
                                 f"**Target:** {self.bot.get_user(msg.raw_mentions[0])}"
@@ -988,7 +1003,9 @@ class AntiSpam(commands.Cog):
 
     @commands.Cog.listener()
     async def on_thread_join(self, thread: discord.Thread):
+        """ Ensure users don't spam create threads """
         guild_id = thread.guild.id
+        await self.config.cache(guild_id)
         if thread.guild.id in self.config and "duplicates" in self.config[guild_id]:
             if limit := self.config[guild_id]["duplicates"]["max_open_threads"]:
                 if not thread.owner.guild_permissions.manage_threads:
