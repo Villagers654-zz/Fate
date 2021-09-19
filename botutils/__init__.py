@@ -50,8 +50,6 @@ class Utils(Cog):
         self.verify_user = ui.verify_user
         self.get_choice = ui.get_choice
         self.configure = ui.configure
-        self.get_answers_from = ui.get_answers_from
-        self.get_answer = ui.ask
 
         # Listeners
         listener = Listener(bot)
