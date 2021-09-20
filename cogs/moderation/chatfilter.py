@@ -62,8 +62,6 @@ class ChatFilter(commands.Cog):
             bot.filtered_messages = {}
         self.bot = bot
         self.config = bot.utils.cache("chatfilter")
-        for guild_id in self.config.keys():
-            self.config[guild_id]["whitelist"] = []
         self.chatfilter_usage = self._chatfilter
 
     def is_enabled(self, guild_id: int) -> bool:
