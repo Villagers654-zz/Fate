@@ -22,7 +22,7 @@ class Cache:
     """ Object for querying and caching data from MongoDB """
     _cache: Dict[str, Any] = {}
     _db_state: Dict[str, Any] = {}
-    last_used: Dict[str, float] = {}
+    not_enabled: Dict[str, float] = {}
     queries = 0
     cache_queries = 0
 
@@ -37,17 +37,14 @@ class Cache:
         return len(self._cache)
 
     def __contains__(self, key) -> bool:
-        if key in self._cache:
-            self.last_used[key] = time()
-            if self._cache[key] == {}:
-                return False
-            return True
         return key in self._cache
 
     def __getitem__(self, key):
         return self._cache[key]
 
     def __setitem__(self, key, value):
+        if key in self.not_enabled:
+            del self.not_enabled[key]
         self._cache[key] = deepcopy(value)
 
     def keys(self) -> Iterable:
@@ -61,24 +58,18 @@ class Cache:
 
     @tasks.loop(minutes=5)
     async def remove_unused_keys(self):
-        """ Remove keys that haven't been accessed in over an hour """
-        for key, time_used in list(self.last_used.items()):
+        """ Remove keys that haven't been accessed in the last 5 minutes """
+        for key, last_accessed in list(self.not_enabled.items()):
             await asyncio.sleep(0)
             if key not in self._cache and key not in self._db_state:
                 continue
-            if time() - (60 * 10) > time_used:
-                if key in self._cache:
-                    del self._cache[key]
-                if key in self._db_state:
-                    del self._db_state[key]
-                del self.last_used[key]
+            if time() - (60 * 5) > last_accessed:
+                del self.not_enabled[key]
 
     async def flush(self) -> None:
         """ Pushes changes from cache into the actual database """
         collection = self.bot.aio_mongo[self.collection]
         for key, value in list(self._cache.items()):
-            if value == {} and key not in self._db_state:
-                continue
             await asyncio.sleep(0)
             if key not in self._cache:
                 continue
@@ -113,20 +104,20 @@ class Cache:
     async def get_or_fetch(self, key, remove_after: Optional[int] = None) -> Any:
         """ Fetches an key from the cache or db """
         if key in self._cache:
-            self.cache_queries += 1
             return self._cache[key]
+        if key in self.not_enabled:
+            self.not_enabled[key] = time()
+            return
         collection = self.bot.aio_mongo[self.collection]
         value = await collection.find_one({"_id": key})
         if not value:
-            value = {}
-        else:
-            del value["_id"]
+            self.not_enabled[key] = time()
+            return
+        del value["_id"]
         self._cache[key] = deepcopy(value)
         self._db_state[key] = deepcopy(value)
-        self.last_used[key] = time()
         if remove_after:
             asyncio.create_task(self._remove_after(key, remove_after))
-        self.queries += 1
 
     def remove(self, key):
         """ An function and awaitable to remove an item from the cache, and database """
