@@ -653,7 +653,7 @@ class AntiSpam(commands.Cog):
                     if user_id in self.typing:
                         del self.typing[user_id]
 
-                if msg.guild.id == 850956124168519700 and len(msg.content) > 15:
+                if msg.guild.id in [850956124168519700, 397415086295089155] and len(msg.content) > 15:
                     lmt_dt = datetime.now(tz=timezone.utc) - timedelta(seconds=15)
                     if self.has_abnormal(msg.content):
                         for m in self.msgs[user_id]:
