@@ -120,7 +120,7 @@ class Cache:
             asyncio.create_task(self._remove_after(key, remove_after))
 
     def remove(self, key):
-        """ An function and awaitable to remove an item from the cache, and database """
+        """ An awaitable to remove an item from the cache, and database """
         if key in self._db_state:
             return asyncio.create_task(self._remove_from_db(key))
         else:
