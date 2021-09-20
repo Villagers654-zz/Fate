@@ -20,7 +20,7 @@ from typing import *
 from discord.ext import commands
 import discord
 from discord.errors import NotFound, Forbidden
-from discord import ui, ButtonStyle
+from discord import ui, ButtonStyle, Message, Member
 
 from botutils import colors, split, CancelButton, findall, GetChoice
 from cogs.moderation.logger import Log
@@ -223,9 +223,7 @@ class ChatFilter(commands.Cog):
                 "toggle": True,
                 "blacklist": [],
                 "whitelist": [],
-                "ignored": [],
-                "webhooks": False,
-                "regex": False
+                "ignored": []
             }
         if ctx.command.name.lower() == "enable":
             await ctx.send("Enabled chatfilter")
@@ -373,53 +371,6 @@ class ChatFilter(commands.Cog):
         await ctx.send(f"Removed `{phrase}`")
         await self.config.flush()
 
-    @_chatfilter.command(name="toggle-bots", description="Toggles filtering bot messages")
-    @commands.has_permissions(manage_messages=True)
-    @commands.bot_has_permissions(manage_messages=True)
-    async def toggle_bots(self, ctx):
-        guild_id = ctx.guild.id
-        if guild_id not in self.config:
-            return await ctx.send("Chatfilter isn't enabled")
-        if "bots" not in self.config[guild_id]:
-            self.config[guild_id]["bots"] = True
-            await self.config.flush()
-        else:
-            await self.config.remove_sub(guild_id, "bots")
-        toggle = "Enabled" if "bots" in self.config[guild_id] else "Disabled"
-        await ctx.send(f"{toggle} filtering bot messages")
-
-    @_chatfilter.command(name="toggle-regex", description="Toggles use of regular expression")
-    @commands.has_permissions(manage_messages=True)
-    @commands.bot_has_permissions(manage_messages=True)
-    async def toggle_regex(self, ctx):
-        guild_id = ctx.guild.id
-        if guild_id not in self.config:
-            return await ctx.send("Chatfilter isn't enabled")
-        if "regex" not in self.config[guild_id]:
-            self.config[guild_id]["regex"] = True
-            await self.config.flush()
-        else:
-            await self.config.remove_sub(guild_id, "regex")
-        toggle = "Enabled" if "regex" in self.config[guild_id] else "Disabled"
-        await ctx.send(f"{toggle} regex")
-        await self.config.flush()
-
-    @_chatfilter.command(name="toggle-webhooks", description="Toggles resending msgs as webhooks")
-    @commands.has_permissions(manage_messages=True)
-    @commands.bot_has_permissions(manage_messages=True, manage_webhooks=True)
-    async def toggle_webhooks(self, ctx):
-        guild_id = ctx.guild.id
-        if guild_id not in self.config:
-            return await ctx.send("Chatfilter isn't enabled")
-        if "webhooks" not in self.config[guild_id]:
-            self.config[guild_id]["webhooks"] = True
-            await self.config.flush()
-        else:
-            await self.config.remove_sub(guild_id, "webhooks")
-        toggle = "Enabled" if "webhooks" in self.config[guild_id] else "Disabled"
-        await ctx.send(f"{toggle} webhooks")
-        await self.config.flush()
-
     @_chatfilter.command(name="sanitize", description="Filters old/existing messages")
     @commands.cooldown(1, 120, commands.BucketType.user)
     @commands.has_permissions(administrator=True)
@@ -513,16 +464,16 @@ class ChatFilter(commands.Cog):
                 return self.webhooks[channel.id]
         return self.webhooks[channel.id]
 
-    def log_action(self, m, flags):
+    def log_action(self, msg: Message, flags: List[str]) -> None:
         e = discord.Embed(color=colors.white)
         e.set_author(name="~==🍸msg Filtered🍸==~")
         e.description = self.bot.utils.format_dict({
-            "Author": str(m.author),
-            "Mention": m.author.mention,
-            "ID": str(m.author.id),
+            "Author": str(msg.author),
+            "Mention": msg.author.mention,
+            "ID": str(msg.author.id),
             "Flags": ", ".join(flags)
         })
-        for chunk in split(m.content, 1024):
+        for chunk in split(msg.content, 1024):
             e.add_field(
                 name="◈ Content",
                 value=chunk,
@@ -531,12 +482,12 @@ class ChatFilter(commands.Cog):
         try:
             cog = self.bot.cogs["Logger"]
             log = Log("chat_filter", embed=e)
-            cog.put_nowait(str(m.guild.id), log)
+            cog.put_nowait(str(msg.guild.id), log)
         except KeyError:
             return
 
     @commands.Cog.listener()
-    async def on_message(self, msg: discord.Message):
+    async def on_message(self, msg: Message) -> None:
         if hasattr(msg.guild, "id") and msg.guild.id in self.config:
             await asyncio.sleep(0.21)
             guild_id = msg.guild.id
@@ -556,24 +507,53 @@ class ChatFilter(commands.Cog):
                 result, flags = await self.run_default_filter(guild_id, msg.content)
             if not result:
                 return
-            if guild_id not in self.bot.filtered_messages:
-                self.bot.filtered_messages[guild_id] = {}
-            self.bot.filtered_messages[guild_id][msg.id] = time()
             with suppress(Exception):
                 await msg.delete()
+
+                # Mark a message_id as a filtered message
+                if guild_id not in self.bot.filtered_messages:
+                    self.bot.filtered_messages[guild_id] = {}
+                self.bot.filtered_messages[guild_id][msg.id] = time()
+
+                # Tell the logger module that a message was deleted by chatfilter
                 self.log_action(msg, flags)
-            if self.config[guild_id]["webhooks"]:
-                if msg.channel.permissions_for(msg.guild.me).manage_webhooks:
-                    w = await self.get_webhook(msg.channel)
-                    await w.send(
-                        content=result,
-                        avatar_url=msg.author.display_avatar.url,
-                        username=msg.author.display_name
-                    )
+
+                # Resend the message, but with the filtered word, or phrase removed
+                if self.config[guild_id]["webhooks"]:
+                    if msg.channel.permissions_for(msg.guild.me).manage_webhooks:
+                        w = await self.get_webhook(msg.channel)
+                        await w.send(
+                            content=result,
+                            avatar_url=msg.author.display_avatar.url,
+                            username=msg.author.display_name
+                        )
+
+                # Check their nickname for filtered content
+                await self.on_member_update(None, msg.author)
 
     @commands.Cog.listener()
-    async def on_message_edit(self, _before, after):
+    async def on_message_edit(self, _before: Message, after: Message) -> None:
+        """ Check edited messages for added filtered words, or phrases """
         await self.on_message(after)
+
+    @commands.Cog.listener()
+    async def on_member_update(self, _before: Optional[Member], after: Member) -> None:
+        """ Resets a members nickname if it has a filtered word, or phrase """
+        if after.nick and hasattr(after.guild, "id") and after.guild.id in self.config:
+            guild_id = after.guild.id
+            if not self.config[guild_id]["toggle"]:
+                return
+            if self.bot.attrs.is_moderator(after) and not after.bot:
+                return
+            if after.bot and "bots" not in self.config[guild_id]:
+                return
+            if "regex" in self.config[guild_id]:
+                result, flags = await self.run_regex_filter(guild_id, after.nick)
+            else:
+                result, flags = await self.run_default_filter(guild_id, after.nick)
+            if not result:
+                return
+            await after.edit(nick=None, reason=f"Chatfilter flagged their nick for '{', '.join(flags)}'")
 
 
 style = ButtonStyle
@@ -639,6 +619,15 @@ class Menu(ui.View):
             for button in self.extra.values():
                 button.disabled = False
 
+            color = style.green if "filter_nicks" in conf else style.red
+            if "filter_nicks" in self.extra:
+                self.extra["filter_nicks"].style = color
+            else:
+                button = ui.Button(label="Filter Nicks", style=color, custom_id="filter_nicks")
+                button.callback = self.handle_callback
+                self.add_item(button)
+                self.extra["filter_nicks"] = button
+
             color = style.green if "bots" in conf else style.red
             if "bots" in self.extra:
                 self.extra["bots"].style = color
@@ -697,7 +686,9 @@ class Menu(ui.View):
             await self.cls.config.flush()
         self.update_items()
         toggle = "Enabled" if self.extra[custom_id].style is style.green else "Disabled"
-        if custom_id == "bots":
+        if custom_id == "filter_nicks":
+            m = f"{toggle} filtering members nicknames"
+        elif custom_id == "bots":
             m = f"{toggle} filtering bot messages"
         elif custom_id == "webhooks":
             m = f"{toggle} resending deleted messages with the content filtered"
