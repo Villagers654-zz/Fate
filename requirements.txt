@@ -13,8 +13,6 @@ praw
 prawcore
 asyncpraw
 wikipedia
-youtube-dl
-lavalink
 googletrans
 Pybooru
 gtts
