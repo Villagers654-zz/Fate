@@ -195,7 +195,8 @@ class Lock(commands.Cog):
                 return await ctx.send("I wasn't able to manage any of the locked channels")
 
             s = "s" if total_unlocked > 1 else ""
-            return await ctx.send(f"Unlocked {total_unlocked} channel{s}")
+            await ctx.send(f"Unlocked {total_unlocked} channel{s}")
+            return await self.lock.flush()
 
         has_bans = False
         if "ban" in self.lock[guild_id] or "new" in self.lock[guild_id]:
