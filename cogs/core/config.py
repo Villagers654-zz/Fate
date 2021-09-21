@@ -37,7 +37,7 @@ class Config(commands.Cog):
         if not ctx.invoked_subcommand:
             e = discord.Embed(color=colors.fate)
             e.set_author(
-                name="| 💎 Server Config 💎", icon_url=ctx.guild.owner.avatar.url
+                name="| 💎 Server Config 💎", icon_url=ctx.guild.owner.display_avatar.url
             )
             if ctx.guild.icon:
                 e.set_thumbnail(url=ctx.guild.icon.url)
