@@ -43,6 +43,8 @@ class Limiter(commands.Cog):
                       "only allows messages with files attached\n"
                       "> **.limit yt-links**\n"
                       "only allows YouTube links to be sent\n"
+                      "> **.limit invites**\n"
+                      "only allows discord invite links to be sent\n"
                       "> **.unlimit**\n"
                       "unlimits the channel you use it in",
                 inline=False
@@ -93,31 +95,45 @@ class Limiter(commands.Cog):
         await ctx.send(f"Limited {ctx.channel.mention} to only allow YouTube links")
         await self.config.flush()
 
-    @commands.Cog.listener()
-    async def on_message(self, m: discord.Message):
-        if isinstance(m.author, discord.Member) and m.guild and m.guild.owner:
-            if not m.author.guild_permissions.administrator:
-                guild_id = m.guild.id
-                if guild_id in self.config:
-                    await asyncio.sleep(0.21)
-                    channel_id = str(m.channel.id)
-                    if channel_id in self.config[guild_id]:
-                        try:
-                            # Limit the channel to only allow images
-                            if self.config[guild_id][channel_id] == "images":
-                                if len(m.attachments) == 0:
-                                    await asyncio.sleep(0)
-                                    await m.delete()
+    @limit.command(name="invites")
+    @commands.has_permissions(manage_messages=True)
+    @commands.bot_has_permissions(manage_messages=True)
+    async def _invites(self, ctx):
+        guild_id = ctx.guild.id
+        channel_id = str(ctx.channel.id)
+        if guild_id not in self.config:
+            self.config[guild_id] = {}
+        if channel_id in self.config[guild_id]:
+            return await ctx.send("This channel already has a limiter enabled")
+        self.config[guild_id][channel_id] = "invites"
+        await ctx.send(f"Limited {ctx.channel.mention} to only allow discord invites")
+        await self.config.flush()
 
-                            # Limit the channel to only allow YouTube links
-                            elif self.config[guild_id][channel_id] == "youtube":
-                                if "youtu.be" not in m.content and "youtube.com" not in m.content:
-                                    await asyncio.sleep(0)
-                                    await m.delete()
-                        except Forbidden:
-                            self.config.remove_sub(guild_id, channel_id)
-                        except (HTTPException, NotFound):
-                            pass
+    @commands.Cog.listener()
+    async def on_message(self, msg: discord.Message):
+        if isinstance(msg.author, discord.Member) and msg.guild.owner:
+            if not msg.author.guild_permissions.administrator:
+                if limiter := self.config.get(msg.guild.id, {}).get(str(msg.channel.id), None):
+                    await asyncio.sleep(0.21)
+                    try:
+                        # Limit the channel to only allow images
+                        if limiter == "images":
+                            if len(msg.attachments) == 0:
+                                await msg.delete()
+
+                        # Limit the channel to only allow YouTube links
+                        elif limiter == "youtube":
+                            if "youtu.be" not in msg.content and "youtube.com" not in msg.content:
+                                await msg.delete()
+
+                        # Limit the channel to only allow Discord invites
+                        elif limiter == "invites":
+                            if "discord.gg" not in msg.content:
+                                await msg.delete()
+                    except Forbidden:
+                        self.config.remove_sub(msg.guild.id, str(msg.channel.id))
+                    except (HTTPException, NotFound):
+                        pass
 
 
 def setup(bot):
