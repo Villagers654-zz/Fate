@@ -213,7 +213,7 @@ class ModMail(commands.Cog):
                 case_number = int(case_number)
             if case_number and isinstance(case_number, int):
                 await cur.execute(
-                    f"select guild_id, case_number, reason, link, created_at from cases "
+                    f"select guild_id, case_number, case_action, reason, link, created_at from cases "
                     f"where case_number = {int(case_number)} and user_id = {ctx.author.id} "
                     f"limit 1;"
                 )
