@@ -79,6 +79,9 @@ class Cache:
     def values(self):
         return self._cache.values()
 
+    def get(self, *args, **kwargs):
+        return self._cache.get(*args, **kwargs)
+
     def __len__(self):
         return len(self._cache)
 

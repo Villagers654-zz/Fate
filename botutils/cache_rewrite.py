@@ -56,6 +56,9 @@ class Cache:
     def values(self) -> Iterable:
         return self._cache.values()
 
+    def get(self, *args, **kwargs) -> Optional[Any]:
+        return self._cache.get(*args, **kwargs)
+
     @tasks.loop(minutes=5)
     async def remove_unused_keys(self):
         """ Remove keys that haven't been accessed in the last 5 minutes """
