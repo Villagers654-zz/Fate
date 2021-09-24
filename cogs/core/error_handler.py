@@ -12,6 +12,7 @@ import sys
 import traceback
 from time import time
 from contextlib import suppress
+from typing import *
 
 import discord
 from aiohttp import ClientConnectorError, ClientOSError, ServerDisconnectedError
@@ -21,22 +22,31 @@ from lavalink import NodeException
 from pymongo.errors import DuplicateKeyError
 
 from botutils import colors, split
-from classes import checks
+from classes import checks, exceptions
 
 
 class ErrorHandler(commands.Cog):
+    cd: Dict[int, float] = {}    # Manage error cooldowns
+    notifs: Dict[int, str] = {}  # Who to notify when an errors fixed
+
     def __init__(self, bot):
         self.bot = bot
-        self.cd = {}
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
-        if hasattr(ctx.command, "on_error"):
-            return
+        # Ensure the servers `currently running commands` index gets updated
         if ctx.command and ctx.command.cog.__class__.__name__ == "Moderation":
             module = self.bot.cogs["Moderation"]
             await module.cog_after_invoke(ctx)
-        ignored = (commands.CommandNotFound, commands.NoPrivateMessage)
+
+        if hasattr(ctx.command, "on_error"):
+            return
+        ignored = (
+            commands.CommandNotFound,
+            commands.NoPrivateMessage,
+            discord.errors.DiscordServerError,
+            exceptions.EmptyException
+        )
         if isinstance(error, ignored) or not str(error):
             return
 
@@ -50,15 +60,9 @@ class ErrorHandler(commands.Cog):
 
         # Parse the error object
         error = getattr(error, "original", error)
-        full_traceback = "\n".join(traceback.format_tb(error.__traceback__))
-        formatted = f"```python\n{full_traceback}\n{type(error).__name__}: {error}```"
-        if "EmptyException" in formatted:
-            return
-        if "DiscordServerError" in full_traceback:
-            with suppress(Exception):
-                return await ctx.send(
-                    "Oop-\nDiscord shit in the bed\nIt's not my fault, it's theirs"
-                )
+        error_to_send = str(error)
+        full_tb = "\n".join(traceback.format_tb(error.__traceback__))
+        formatted_tb = f"```python\n{full_tb}\n{type(error).__name__}: {error}```"
 
         try:
             # Disabled globally in the code
@@ -80,12 +84,12 @@ class ErrorHandler(commands.Cog):
                 return await ctx.send("Error connecting to my moosic server, please retry")
 
             elif isinstance(error, DuplicateKeyError):
-                self.bot.log.critical(full_traceback)
+                self.bot.log.critical(full_tb)
                 return await ctx.send("Error saving changes because to a duplicate entry, it's likely you ran the command twice at once")
 
             # Too fast, sMh
             elif isinstance(error, commands.CommandOnCooldown):
-                user_id = str(ctx.author.id)
+                user_id = ctx.author.id
                 if user_id not in self.cd:
                     self.cd[user_id] = 0
                 if self.cd[user_id] < time() - 10:
@@ -110,7 +114,9 @@ class ErrorHandler(commands.Cog):
             # The bot tried to perform an action on a non existent or removed object
             elif isinstance(error, discord.errors.NotFound):
                 return await ctx.send(
-                    f"Something I tried to do an operation on was removed or doesn't exist"
+                    f"Something I tried to do an operation on was removed or doesn't exist",
+                    reference=ctx.message,
+                    delete_after=5
                 )
 
             # An action by the bot failed due to missing access or lack of required permissions
@@ -142,14 +148,12 @@ class ErrorHandler(commands.Cog):
 
             # bAd cOdE, requires fix if occurs
             elif isinstance(error, KeyError):
-                error_str = f"No Data: {error}"
+                error_to_send = f"No Data: {error}"
 
             # Send a user-friendly error and state that it'll be fixed soon
             if not isinstance(error, discord.errors.NotFound):
                 e = discord.Embed(color=colors.red)
-                e.description = (
-                    f"[{str(error)}](https://www.youtube.com/watch?v=t3otBjVZzT0)"
-                )
+                e.description = f"[{error_to_send}](https://www.youtube.com/watch?v=t3otBjVZzT0)"
                 e.set_footer(text="This error has been logged, and will be fixed soon")
                 await ctx.send(embed=e)
 
@@ -159,7 +163,6 @@ class ErrorHandler(commands.Cog):
                     "Temporarily failed to connect to discord; please re-run your command"
                 )
                 return
-
         except (discord.errors.Forbidden, discord.errors.NotFound):
             return
 
@@ -168,7 +171,6 @@ class ErrorHandler(commands.Cog):
         traceback.print_exception(
             type(error), error, error.__traceback__, file=sys.stderr
         )
-        self.bot.last_traceback = full_traceback
 
         # Prepare to log the error to a dedicated error channel
         channel = self.bot.get_channel(self.bot.config["error_channel"])
@@ -179,7 +181,7 @@ class ErrorHandler(commands.Cog):
         )
         if ctx.guild and ctx.guild.icon:
             e.set_thumbnail(url=ctx.guild.icon.url)
-        enum = enumerate(split(formatted, 980))
+        enum = enumerate(split(formatted_tb, 980))
         for iteration, chunk in enum:
             e.add_field(
                 name="◈ Error ◈",
@@ -198,28 +200,53 @@ class ErrorHandler(commands.Cog):
         # Send the logged error out
         message = await channel.send(embed=e)
         await message.add_reaction("✔")
+        self.notifs[message.id] = ctx.author.id
+
         if ctx.author.id in self.bot.owner_ids:
             e = discord.Embed(color=colors.fate)
             e.set_author(
                 name=f"Here's the full traceback:", icon_url=ctx.author.avatar.url
             )
             e.set_thumbnail(url=self.bot.user.avatar.url)
-            e.description = full_traceback
+            e.description = full_tb
             await ctx.send(embed=e)
 
-    @commands.Cog.listener("on_raw_reaction_add")
-    async def dismiss_error_on_fix(self, data):
-        user = self.bot.get_user(data.user_id)
-        if user and not user.bot:
-            if data.channel_id == self.bot.config["error_channel"]:
-                if str(data.emoji) == "✔":
-                    with suppress(discord.errors.NotFound):
-                        channel = self.bot.get_channel(data.channel_id)
-                        msg = await channel.fetch_message(data.message_id)
-                        for embed in msg.embeds:
-                            channel = self.bot.get_channel(self.bot.config["dump_channel"])
-                            await channel.send("Error Dismissed", embed=embed)
-                        await msg.delete()
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, data):
+        """ Dismisses an error whence fixed """
+        if str(data.emoji) == "✔" and data.channel_id == self.bot.config["error_channel"]:
+            if (user := self.bot.get_user(data.user_id)) and not user.bot:
+                delay = None
+                try:
+                    # Fetch the message object
+                    channel = self.bot.get_channel(data.channel_id)
+                    msg = await channel.fetch_message(data.message_id)  # type: discord.Message
+
+                    # Check the embeds for exception embeds
+                    for embed in msg.embeds:
+                        dump_channel = self.bot.get_channel(self.bot.config["dump_channel"])
+                        await dump_channel.send("Error Dismissed", embed=embed)
+
+                        # If possible tell the author it was fixed
+                        if author := self.bot.get_user(self.notifs.get(msg.id, None)):
+                            e = discord.Embed(color=colors.green)
+                            description = discord.utils.escape_markdown(embed.description)
+                            if len(description) > 128:
+                                description = description[:128] + "..."
+                            e.description = f"**Command ran:** `{description}`"
+                            with suppress(Exception):
+                                await author.send(f"A problem you encountered was fixed", embed=e)
+                                await channel.send(
+                                    "DM'd the user that the problem was fixed",
+                                    reference=msg,
+                                    delete_after=5
+                                )
+                                delay = 5
+                        self.notifs.pop(msg.id, None)
+                except (AttributeError, discord.errors.NotFound):
+                    pass
+                else:
+                    await msg.delete(delay=delay)
 
 
 def setup(bot):
