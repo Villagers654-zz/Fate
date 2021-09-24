@@ -220,7 +220,7 @@ class ModMail(commands.Cog):
                 results = await cur.fetchall()
             else:
                 await cur.execute(
-                    f"select guild_id, case_number, reason, link, created_at from cases "
+                    f"select guild_id, case_number, case_action, reason, link, created_at from cases "
                     f"where user_id = {ctx.author.id} "
                     f"and created_at > {time() - 60 * 60 * 24 * 14};"
                 )
@@ -243,14 +243,14 @@ class ModMail(commands.Cog):
             formatted_results = [
                 f"[Case #{case} from {self.bot.get_guild(guild_id)}]({link})"
                 f"\n> For {self.bot.decode(reason) if reason else None}"
-                for guild_id, case, reason, link, created_at in sorted_results
+                for guild_id, case, case_action, reason, link, created_at in sorted_results
             ]
             choice = await self.bot.utils.get_choice(ctx, *formatted_results, user=ctx.author, timeout=15)
             if not choice:
                 await ctx.send("Timed out waiting for choice")
                 return None
             result = sorted_results[formatted_results.index(choice)]
-        guild_id, case, reason, link, created_at = result
+        guild_id, case, case_action, reason, link, created_at = result
 
         guild = self.bot.get_guild(guild_id)
         if not guild or guild.id not in self.config:
@@ -302,7 +302,7 @@ class ModMail(commands.Cog):
             e = Embed(color=self.bot.config["theme_color"])
             e.set_author(name=str(ctx.author), icon_url=ctx.author.display_avatar.url)
             e.set_footer(text="Use .reply to respond")
-            e.description = f"**Case #{case}:**\n**UserID:** {ctx.author.id}\n"
+            e.description = f"**Case #{case}:**\n**UserID:** {ctx.author.id}\nAction: {case_action}\n"
             reason = self.bot.decode(reason) if reason else None
             if link:
                 e.description += f"Reason: [{reason}]({link})\n"
