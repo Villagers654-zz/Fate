@@ -67,7 +67,6 @@
       "cc",
       "config",
       "core",
-      "music",
       "ranking",
       "statistics",
       "tasks",
@@ -85,8 +84,7 @@
       "cookies",
       "factions",
       "fun",
-      "reactions",
-      "responses"
+      "reactions"
     ],
     "misc": [
       "global_chat",
