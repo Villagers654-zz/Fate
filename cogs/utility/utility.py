@@ -1334,7 +1334,7 @@ class InfoView(AuthorView):
                 await cur.execute(f"select username from usernames where user_id = {user.id};")
                 if cur.rowcount:
                     results = await cur.fetchall()
-                    decoded_results = [ self.bot.decode(r[0]) for r in results]
+                    decoded_results = [self.bot.decode(r[0]) for r in results]
                     names = [name for name in decoded_results if name != str(user)]
                     if names:
                         user_info["Usernames"] = ",".join(names)
@@ -1353,7 +1353,7 @@ class InfoView(AuthorView):
     async def channel_info(self) -> Generator[None, None, Embed]:
         e = discord.Embed(color=colors.fate)
         e.set_author(
-            name="Alright, here's what I got..", icon_url= self.bot.user.display_avatar.url
+            name="Alright, here's what I got..", icon_url=self.bot.user.display_avatar.url
         )
 
         channel: discord.TextChannel = self.ctx.channel
