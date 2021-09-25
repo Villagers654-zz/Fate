@@ -1356,7 +1356,10 @@ class InfoView(AuthorView):
             name="Alright, here's what I got..", icon_url= self.bot.user.display_avatar.url
         )
 
-        channel = self.target or self.ctx.channel  # type: discord.TextChannel
+        channel: discord.TextChannel = self.ctx.channel
+        if isinstance(self.target, discord.TextChannel):
+            channel = self.target
+
         channel_info = {
             "Name": channel.name,
             "ID": channel.id,
