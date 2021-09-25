@@ -45,7 +45,7 @@ class ErrorHandler(commands.Cog):
             commands.CommandNotFound,
             commands.NoPrivateMessage,
             discord.errors.DiscordServerError,
-            self.bot.ignored_exit
+            exceptions.EmptyException
         )
         if isinstance(error, ignored) or not str(error):
             return
@@ -65,6 +65,7 @@ class ErrorHandler(commands.Cog):
         formatted_tb = f"```python\n{full_tb}\n{type(error).__name__}: {error}```"
 
         if "EmptyException" in full_tb or "ignored_exit" in full_tb:
+            self.bot.log.info("Had to resort to the fallback string check in the error handler")
             return
 
         try:
