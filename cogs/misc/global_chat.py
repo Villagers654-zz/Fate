@@ -414,7 +414,7 @@ class GlobalChat(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, msg):
-        if msg.content.startswith("."):
+        if msg.content.startswith(".") or len(msg.content) == 1:
             return
         active = [m.id for m in list(self.cache.values()) if m]
         if not msg.author.bot and msg.channel.id in active:
