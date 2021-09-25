@@ -64,9 +64,11 @@ class GlobalChat(commands.Cog):
             "icon_blocked": [],
             "images_blocked": []
         }
+        self.ignore = []
         if path.isfile("./data/gcb.json"):
             with open("./data/gcb.json") as f:
                 self.config = json.load(f)
+        self.cd = bot.utils.cooldown_manager(2, 5)
 
     async def save_blacklist(self):
         async with self.bot.utils.open("./data/gcb.json", "w") as f:
@@ -86,7 +88,7 @@ class GlobalChat(commands.Cog):
     async def handle_queue(self):
         queued_to_send = []
         sending = list(self.queue)
-        if len(sending) > 3 and all(e[2].guild.id == sending[0][2].guild.id for e in sending):
+        if len(sending) > 3 and all(e[2].guild.id == sending[0][2].author.id for e in sending):
             self.config["blocked"].append(sending[0][2].guild.id)
             await sending[0][2].channel.send("Andddddddd blocked")
             self._queue = []
@@ -417,6 +419,18 @@ class GlobalChat(commands.Cog):
         active = [m.id for m in list(self.cache.values()) if m]
         if not msg.author.bot and msg.channel.id in active:
             await asyncio.sleep(0.21)
+            if msg.author.id in self.ignore:
+                if msg.channel.permissions_for(msg.guild.me).add_reactions:
+                    await msg.add_reaction("⏳")
+                return
+            if self.cd.check(msg.author.id):
+                self.ignore.append(msg.author.id)
+                if msg.channel.permissions_for(msg.guild.me).add_reactions:
+                    await msg.add_reaction("⏳")
+                await asyncio.sleep(25)
+                self.ignore.remove(msg.author.id)
+                return
+
             # Duplicate messages
             if msg.content and any(msg.content == m.content for m in self.msg_cache):
                 return
