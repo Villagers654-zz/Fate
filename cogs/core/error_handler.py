@@ -44,7 +44,8 @@ class ErrorHandler(commands.Cog):
         ignored = (
             commands.CommandNotFound,
             commands.NoPrivateMessage,
-            discord.errors.DiscordServerError
+            discord.errors.DiscordServerError,
+            self.bot.ignored_exit
         )
         if isinstance(error, ignored) or not str(error):
             return
@@ -63,7 +64,7 @@ class ErrorHandler(commands.Cog):
         full_tb = "\n".join(traceback.format_tb(error.__traceback__))
         formatted_tb = f"```python\n{full_tb}\n{type(error).__name__}: {error}```"
 
-        if "EmptyException" in full_tb:
+        if "EmptyException" in full_tb or "ignored_exit" in full_tb:
             return
 
         try:
