@@ -44,8 +44,7 @@ class ErrorHandler(commands.Cog):
         ignored = (
             commands.CommandNotFound,
             commands.NoPrivateMessage,
-            discord.errors.DiscordServerError,
-            exceptions.EmptyException
+            discord.errors.DiscordServerError
         )
         if isinstance(error, ignored) or not str(error):
             return
@@ -63,6 +62,9 @@ class ErrorHandler(commands.Cog):
         error_to_send = str(error)
         full_tb = "\n".join(traceback.format_tb(error.__traceback__))
         formatted_tb = f"```python\n{full_tb}\n{type(error).__name__}: {error}```"
+
+        if "EmptyException" in full_tb:
+            return
 
         try:
             # Disabled globally in the code
