@@ -476,15 +476,9 @@ async def on_message(msg):
 
 @bot.event
 async def on_error(_event_method, *_args, **_kwargs):
-    full = traceback.format_exc()
-    if "Unknown Interaction" in full:
-        return
-    if "EmptyException" in full:
-        return
-    error = sys.exc_info()[1]
+    error = getattr(err := sys.exc_info()[1], "original", err)
     ignored = (
         EmptyException,
-        bot.ignored_exit,
         aiohttp.ClientOSError,
         asyncio.exceptions.TimeoutError,
         discord.errors.DiscordServerError,
@@ -492,7 +486,7 @@ async def on_error(_event_method, *_args, **_kwargs):
     )
     if isinstance(error, ignored):
         return
-    raise error
+    raise
 
 
 if __name__ == "__main__":

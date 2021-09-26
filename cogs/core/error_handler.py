@@ -24,7 +24,6 @@ from pymongo.errors import DuplicateKeyError
 from botutils import colors, split
 from classes import checks, exceptions
 
-
 class ErrorHandler(commands.Cog):
     cd: Dict[int, float] = {}    # Manage error cooldowns
     notifs: Dict[int, str] = {}  # Who to notify when an errors fixed
@@ -34,20 +33,21 @@ class ErrorHandler(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
+        error: Exception = getattr(error, "original", error)
+
         # Ensure the servers `currently running commands` index gets updated
         if ctx.command and ctx.command.cog.__class__.__name__ == "Moderation":
             module = self.bot.cogs["Moderation"]
             await module.cog_after_invoke(ctx)
 
-        if hasattr(ctx.command, "on_error"):
-            return
+        # Suppress spammy, or intentional errors
         ignored = (
             commands.CommandNotFound,
             commands.NoPrivateMessage,
             discord.errors.DiscordServerError,
             exceptions.EmptyException
         )
-        if isinstance(error, ignored) or not str(error):
+        if isinstance(error, ignored) or not (error_to_send := str(error)):
             return
 
         # Don't bother if completely missing access
@@ -58,15 +58,9 @@ class ErrorHandler(commands.Cog):
             if not perms.send_messages or not perms.add_reactions:
                 return
 
-        # Parse the error object
-        error = getattr(error, "original", error)
-        error_to_send = str(error)
+        # Format the full traceback
         full_tb = "\n".join(traceback.format_tb(error.__traceback__))
         formatted_tb = f"```python\n{full_tb}\n{type(error).__name__}: {error}```"
-
-        if "EmptyException" in full_tb or "ignored_exit" in full_tb:
-            self.bot.log.info("Had to resort to the fallback string check in the error handler")
-            return
 
         try:
             # Disabled globally in the code
@@ -117,11 +111,18 @@ class ErrorHandler(commands.Cog):
 
             # The bot tried to perform an action on a non existent or removed object
             elif isinstance(error, discord.errors.NotFound):
-                return await ctx.send(
-                    f"Something I tried to do an operation on was removed or doesn't exist",
-                    reference=ctx.message,
-                    delete_after=5
-                )
+                try:
+                    await ctx.send(
+                        f"Something I tried to do an operation on was removed or doesn't exist",
+                        reference=ctx.message,
+                        delete_after=5
+                    )
+                except discord.errors.HTTPException:
+                    await ctx.send(
+                        f"Something I tried to do an operation on was removed or doesn't exist",
+                        delete_after=5
+                    )
+                return
 
             # An action by the bot failed due to missing access or lack of required permissions
             elif isinstance(error, discord.errors.Forbidden):
