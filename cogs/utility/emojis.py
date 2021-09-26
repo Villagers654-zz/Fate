@@ -145,7 +145,7 @@ class Emojis(commands.Cog):
             if i != 0:
                 await asyncio.sleep(1)
             if emote := self.bot.get_emoji(emoji.id):
-                if emote.guild.id in [497860460117360660, 397415086295089155]:
+                if emote.guild.id in [497860460117360660, 397415086295089155, 639525790475878410]:
                     return await ctx.send(f"Nice try fatty! <:you:841098144536068106>")
 
             e = discord.Embed(color=colors.fate)
@@ -263,10 +263,10 @@ class Emojis(commands.Cog):
                 args.remove(arg)
         ctx.msg = await ctx.send("Uploading emoji(s)..")
 
-        # Protect Cool Servers
+        # Protect the cool servers
         for emoji in custom:
             if emoji := self.bot.get_emoji(emoji.id):
-                if emoji.guild.id in [497860460117360660, 397415086295089155]:
+                if emoji.guild.id in [497860460117360660, 397415086295089155, 639525790475878410]:
                     return await ctx.send(f"Nice try fatty! <:you:841098144536068106>")
 
         # PartialEmoji objects
