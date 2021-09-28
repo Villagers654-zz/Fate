@@ -813,7 +813,7 @@ class AntiSpam(commands.Cog):
                     if conf["duplicates"]["same_link"]:
                         await asyncio.sleep(0)
                         if "http" in msg.content or "discord.gg" in msg.content:
-                            search = lambda: re.search("((https?://)|(www\.)|(discord\.gg/))[a-zA-Z0-9./]+", msg.content)
+                            search = lambda: re.search("((https?://)|(www\.)|(discord\.gg/))[a-zA-Z0-9./-_?]+", msg.content)
                             if r := await self.bot.loop.run_in_executor(None, search):
                                 if msg.channel.id not in self.urls:
                                     self.urls[msg.channel.id]: List[str] = []
