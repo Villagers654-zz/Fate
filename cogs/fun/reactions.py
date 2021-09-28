@@ -84,6 +84,8 @@ class Reactions(commands.Cog):
                     self.webhook[ctx.channel.id] = webhook
                     break
             else:
+                if len(webhooks) == 10:
+                    raise commands.BadArgument("This channel has too many webhooks (There's a max of 10)")
                 self.webhook[ctx.channel.id] = await ctx.channel.create_webhook(
                     name="Reaction"
                 )
