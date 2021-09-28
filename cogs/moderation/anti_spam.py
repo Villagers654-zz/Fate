@@ -946,61 +946,64 @@ class AntiSpam(commands.Cog):
     @commands.Cog.listener()
     async def on_message_delete(self, msg):
         """ Check deleted messages for ghost ping annoyances """
-        if not msg.author.bot and msg.guild and msg.raw_mentions:
+        if not msg.author.bot and msg.guild and (msg.raw_mentions or msg.reference):
             await self.config.cache(msg.guild.id)
-            if msg.guild.id not in self.config or "mass_pings" not in self.config[msg.guild.id]:
-                return
-            if not self.config[msg.guild.id]["mass_pings"]["ghost_pings"]:
-                return
-            if not msg.guild.me.guild_permissions.view_audit_log:
-                return
-            if msg.mentions and all(m.bot for m in msg.mentions):
-                return
-            prefixes = await get_prefixes_async(self.bot, msg)
-            if any(msg.content.startswith(p) for p in prefixes):
-                return
-
-            # Only lose our shit over pings deleted within the last 2 minutes
-            lmt = datetime.now(tz=timezone.utc) - timedelta(seconds=120)
-            if msg.created_at > lmt:
-
-                # Check if any bots have deleted the message
-                async for entry in msg.guild.audit_logs(limit=1, action=discord.AuditLogAction.message_delete):
-                    if entry.created_at > lmt:
-                        return
-                async for entry in msg.guild.audit_logs(limit=1, action=discord.AuditLogAction.message_bulk_delete):
-                    if entry.created_at > lmt:
-                        return
-
-                # Check if chatfilter deleted the message
-                await asyncio.sleep(3)
-                if msg.guild.id in self.bot.filtered_messages:
-                    if msg.id in self.bot.filtered_messages[msg.guild.id]:
-                        return
-
-                # Mute if it's an obvious ghost ping
-                if msg.created_at > datetime.now(tz=timezone.utc) - timedelta(seconds=5):
-                    if msg.guild.id not in self.bot.tasks["antispam_mutes"]:
-                        self.bot.tasks["antispam_mutes"][msg.guild.id] = {}
-                    self.bot.tasks["antispam_mutes"][msg.guild.id][msg.author.id] = self.bot.loop.create_task(
-                        self.process_mute(
-                            user_id=msg.author.id,
-                            guild_id=msg.guild.id,
-                            msg=msg,
-                            reason=f"Ghost ping\n"
-                                   f"**Target:** {self.bot.get_user(msg.raw_mentions[0])}"
-                        )
-                    )
+            if self.config.get(msg.guild.id, {}).get("mass_pings", {}).get("ghost_pings", None):
+                if not msg.guild.me.guild_permissions.view_audit_log:
                     return
+                if msg.mentions and all(m.bot for m in msg.mentions):
+                    return
+                prefixes = await get_prefixes_async(self.bot, msg)
+                if any(msg.content.startswith(p) for p in prefixes):
+                    return
+                if reference := getattr(msg.reference, "cached_message", None):
+                    if reference.author.bot and not msg.raw_mentions:
+                        return
+                    target = reference.author
+                else:
+                    target = msg.mentions[0]
 
-                # Send a warning if not sure
-                e = discord.Embed(color=self.bot.config["theme_color"])
-                e.description = f"{msg.author.mention} no ghost pinging\n" \
-                                f"**Target:** {self.bot.get_user(msg.raw_mentions[0])}"
-                await msg.channel.send(
-                    embed=e,
-                    allowed_mentions=default_mentions
-                )
+                # Only lose our shit over pings deleted within the last 2 minutes
+                lmt = datetime.now(tz=timezone.utc) - timedelta(seconds=5)
+                if msg.created_at > lmt:
+
+                    # Check if any bots have deleted the message
+                    async for entry in msg.guild.audit_logs(limit=1, action=discord.AuditLogAction.message_delete):
+                        if entry.created_at > lmt:
+                            return
+                    async for entry in msg.guild.audit_logs(limit=1, action=discord.AuditLogAction.message_bulk_delete):
+                        if entry.created_at > lmt:
+                            return
+
+                    # Check if chatfilter deleted the message
+                    await asyncio.sleep(0.5)
+                    if msg.guild.id in self.bot.filtered_messages:
+                        if msg.id in self.bot.filtered_messages[msg.guild.id]:
+                            return
+
+                    # Mute if it's an obvious ghost ping
+                    # if msg.created_at > datetime.now(tz=timezone.utc) - timedelta(seconds=5):
+                    #     if msg.guild.id not in self.bot.tasks["antispam_mutes"]:
+                    #         self.bot.tasks["antispam_mutes"][msg.guild.id] = {}
+                    #     self.bot.tasks["antispam_mutes"][msg.guild.id][msg.author.id] = self.bot.loop.create_task(
+                    #         self.process_mute(
+                    #             user_id=msg.author.id,
+                    #             guild_id=msg.guild.id,
+                    #             msg=msg,
+                    #             reason=f"Ghost ping\n"
+                    #                    f"**Target:** {target}"
+                    #         )
+                    #     )
+                    #     return
+
+                    # Send a warning if not sure
+                    e = discord.Embed(color=self.bot.config["theme_color"])
+                    e.description = f"{msg.author.mention} no ghost pinging\n" \
+                                    f"**Target:** {target}"
+                    await msg.channel.send(
+                        embed=e,
+                        allowed_mentions=default_mentions
+                    )
 
     @commands.Cog.listener()
     async def on_thread_join(self, thread: discord.Thread):
