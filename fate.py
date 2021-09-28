@@ -21,6 +21,7 @@ import sys
 from cryptography.fernet import Fernet
 from getpass import getpass
 import aiohttp
+from aiohttp import web
 
 from discord.ext import commands
 import discord
@@ -67,6 +68,11 @@ class Fate(commands.AutoShardedBot):
         self.utils = Utils(self)
         self.cache = FileCache(self)
 
+        # Ping application
+        self.app = web.Application()
+        self.app.router.add_get("/ping", self.acknowledge)
+        self.app_is_running = False
+
         # Cache
         self.toggles = {}  # Mappings for `Module -> Enable Command`
         self.locks = {}
@@ -105,6 +111,9 @@ class Fate(commands.AutoShardedBot):
             max_messages=self.config["max_cached_messages"],
             **options,
         )
+
+    async def acknowledge(self, _request):
+        return web.Response(text="pong")
 
     @property
     def core_tasks(self) -> Tasks:
@@ -442,6 +451,13 @@ async def on_ready():
     )
     bot.core_tasks.ensure_all()
     seconds = round(time() - start_time)
+    if not bot.app_is_running:
+        bot.app_is_running = True
+        runner = web.AppRunner(bot.app)
+        await runner.setup()
+        site = web.TCPSite(runner, port=16420)
+        await site.start()
+        bot.log.info("Ping application started")
     bot.log.info(f"Startup took {seconds} seconds")
     for error in bot.login_errors:
         bot.log.critical(f"Error ignored during startup:\n{error}")
