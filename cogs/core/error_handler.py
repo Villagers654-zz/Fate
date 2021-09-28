@@ -33,14 +33,13 @@ class ErrorHandler(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
-        error: Exception = getattr(error, "original", error)
-
         # Ensure the servers `currently running commands` index gets updated
         if ctx.command and ctx.command.cog.__class__.__name__ == "Moderation":
             module = self.bot.cogs["Moderation"]
             await module.cog_after_invoke(ctx)
 
         # Suppress spammy, or intentional errors
+        error: Exception = getattr(error, "original", error)
         ignored = (
             commands.CommandNotFound,
             commands.NoPrivateMessage,
