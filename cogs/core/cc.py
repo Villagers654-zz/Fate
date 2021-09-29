@@ -194,8 +194,8 @@ class CustomCommands(commands.Cog):
             await cur.execute(
                 f"select response from cc "
                 f"where guild_id = {msg.guild.id} "
-                f"and command = '{command}' "
-                f"limit 1;"
+                f"and command = %s "
+                f"limit 1;", (command)
             )
             if cur.rowcount:
                 response, *_ = await cur.fetchone()  # type: str
