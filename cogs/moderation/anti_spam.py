@@ -944,6 +944,11 @@ class AntiSpam(commands.Cog):
                         )
 
     @commands.Cog.listener()
+    async def on_message_edit(self, before, after):
+        if before.mentions and not after.mentions:
+            await self.on_message_delete(before)
+
+    @commands.Cog.listener()
     async def on_message_delete(self, msg):
         """ Check deleted messages for ghost ping annoyances """
         if not msg.author.bot and msg.guild and (msg.raw_mentions or msg.reference):
@@ -951,7 +956,7 @@ class AntiSpam(commands.Cog):
             if self.config.get(msg.guild.id, {}).get("mass_pings", {}).get("ghost_pings", None):
                 if not msg.guild.me.guild_permissions.view_audit_log:
                     return
-                if msg.mentions and all(m.bot for m in msg.mentions):
+                if msg.mentions and all(m.bot for m in msg.mentions) and not msg.reference:
                     return
                 prefixes = await get_prefixes_async(self.bot, msg)
                 if any(msg.content.startswith(p) for p in prefixes):
