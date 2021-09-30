@@ -154,6 +154,8 @@ class ButtonRoles(commands.Cog):
             if reply.content.lower() == "done":
                 await msg.delete()
                 await reply.delete()
+                if not selected_roles:
+                    return await ctx.send("It seems you didn't add any roles. Rerun the command and try again")
                 break
 
             name: Optional[str] = reply.content
