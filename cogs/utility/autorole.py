@@ -4,7 +4,7 @@ cogs.utility.autorole
 
 Less api spammy invite manager that relies on high uptime
 
-:copyright: (C) 2021-present Michael Stollings
+:copyright: (C) 2021-present FrequencyX4
 :license: Proprietary and Confidential, see LICENSE for details
 """
 

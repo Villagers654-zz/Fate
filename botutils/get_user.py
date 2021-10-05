@@ -4,7 +4,7 @@ Fetch-User Helper
 
 Helper class for fetching a user via most possible means
 
-:copyright: (C) 2021-present Michael Stollings
+:copyright: (C) 2021-present FrequencyX4
 :license: Proprietary and Confidential, see LICENSE for details
 """
 

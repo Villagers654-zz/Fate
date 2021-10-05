@@ -4,7 +4,7 @@ cogs.moderation.auto_slowmode
 
 A module for automatically adjusting slowmode based on the chats activity
 
-:copyright: (C) 2021-present Michael Stollings
+:copyright: (C) 2021-present FrequencyX4
 :license: Proprietary and Confidential, see LICENSE for details
 """
 

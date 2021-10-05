@@ -4,7 +4,7 @@ cogs.utility.clean_rythm
 
 A cog that cleans up messages from rythm to keep a channel clean
 
-:copyright: (C) 2021-present Michael Stollings
+:copyright: (C) 2021-present FrequencyX4
 :license: Proprietary and Confidential, see LICENSE for details
 """
 

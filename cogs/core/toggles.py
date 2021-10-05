@@ -4,7 +4,7 @@ cogs.core.toggles
 
 A cog for adding the functionality of `.enable module` instead of `.module enable`
 
-:copyright: (C) 2021-present Michael Stollings
+:copyright: (C) 2021-present FrequencyX4
 :license: Proprietary and Confidential, see LICENSE for details
 """
 

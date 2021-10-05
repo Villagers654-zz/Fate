@@ -4,7 +4,7 @@ cogs.utility.server_stats
 
 A cog for showing server stats in voice channel names
 
-:copyright: (C) 2021-present Michael Stollings
+:copyright: (C) 2021-present FrequencyX4
 :license: Proprietary and Confidential, see LICENSE for details
 """
 

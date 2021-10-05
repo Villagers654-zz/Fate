@@ -4,7 +4,7 @@ botutils.cache_rewrite
 
 A module for querying and caching data from MongoDB in a simple to use dictionary-like object
 
-:copyright: (C) 2021-present Michael Stollings
+:copyright: (C) 2021-present FrequencyX4
 :license: Proprietary and Confidential, see LICENSE for details
 """
 

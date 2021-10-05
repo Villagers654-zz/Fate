@@ -1,4 +1,4 @@
-"""
+r"""
 botutils.interactions
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -8,7 +8,7 @@ Classes:
     ModView : A View that only moderators can interact with
     AuthorView : A view that only the author of the original message can interact with
 
-:copyright: (C) 2020-present Michael Stollings
+:copyright: (C) 2020-present FrequencyX4
 :license: Proprietary and Confidential, see LICENSE for details
 """
 

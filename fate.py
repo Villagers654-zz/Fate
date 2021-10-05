@@ -4,7 +4,7 @@ Fate
 
 Main file intended for starting the bot
 
-:copyright: (C) 2018-present Michael Stollings
+:copyright: (C) 2018-present FrequencyX4
 :license: Proprietary and Confidential, see LICENSE for details
 """
 

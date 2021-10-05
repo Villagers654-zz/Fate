@@ -4,7 +4,7 @@ cogs.core.error_handler
 
 A cog for handling exceptions raised within commands
 
-:copyright: (C) 2019-present Michael Stollings
+:copyright: (C) 2019-present FrequencyX4
 :license: Proprietary and Confidential, see LICENSE for details
 """
 

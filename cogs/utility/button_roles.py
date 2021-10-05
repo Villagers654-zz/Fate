@@ -4,7 +4,7 @@ cogs.utility.buttonroles
 
 A selfroles module using buttons instead of reactions
 
-:copyright: (C) 2021-present Michael Stollings
+:copyright: (C) 2021-present FrequencyX4
 :license: Proprietary and Confidential, see LICENSE for details
 """
 

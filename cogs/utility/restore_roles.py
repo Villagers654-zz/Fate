@@ -4,7 +4,7 @@ cogs.utility.restore_roles
 
 A cog for restoring a members roles when they rejoin the server
 
-:copyright: (C) 2020-present Michael Stollings
+:copyright: (C) 2020-present FrequencyX4
 :license: Proprietary and Confidential, see LICENSE for details
 """
 

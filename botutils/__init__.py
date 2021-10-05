@@ -4,14 +4,14 @@ Utility Functions Wrapper
 
 An ease of use wrapper for use with Fate(written in discord.py)
 
-:copyright: (C) 2021-present Michael Stollings
+:copyright: (C) 2021-present FrequencyX4
 :license: Proprietary and Confidential, see LICENSE for details
 """
 
 __title__ = "BotUtils"
 __author__ = "FrequencyX4"
 __license__ = "Proprietary and Confidential"
-__copyright__ = "Copyright (C) 2021-present Michael Stollings"
+__copyright__ = "Copyright (C) 2021-present FrequencyX4"
 __version__ = "1.0.0"
 
 from discord.ext.commands import Cog

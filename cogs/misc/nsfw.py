@@ -4,7 +4,7 @@ cogs.misc.nsfw
 
 A cog for basic nsfw commands
 
-:copyright: (C) 2020-present Michael Stollings
+:copyright: (C) 2020-present FrequencyX4
 :license: Proprietary and Confidential, see LICENSE for details
 """
 
