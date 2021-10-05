@@ -302,11 +302,11 @@ class Utility(commands.Cog):
         # AFK Command
         if msg.author.bot:
             return
-        for user in msg.mentions:
-            if user.id in self.afk and msg.author.id != user.id:
+        for user_id in list(set(msg.raw_mentions)):
+            if user_id in self.afk and msg.author.id != user_id:
                 replies = ["shh", "shush", "shush child", "nO"]
                 choice = random.choice(replies)
-                await msg.channel.send(f"{choice} it's {self.afk[user.id]}")
+                await msg.channel.send(f"{choice} they're {self.afk[user_id]}")
                 return
 
         # Keep track of their last message time
@@ -1023,7 +1023,7 @@ class Utility(commands.Cog):
     @commands.bot_has_permissions(embed_links=True)
     async def afk(self, ctx, *, reason="afk"):
         if ctx.message.mentions or ctx.message.role_mentions:
-            return await ctx.send("nO")
+            return await ctx.send("nO -_-\nMentions are forbidden in afk messages")
         if ctx.author.id in self.afk:
             return
         e = discord.Embed(color=colors.fate)
