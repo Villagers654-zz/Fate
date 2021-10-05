@@ -22,10 +22,10 @@ from classes.exceptions import aiohttp as errors
 
 clients = {}
 API_ENDPOINT = 'https://discord.com/api/v8'
-CLIENT_ID = '506735111543193601'
-CLIENT_SECRET = '67_VttLomTPv55ialTsaCPEySX1l7Vm_'
-REDIRECT_URI = 'http://fatebot.xyz/success'
-scope = "https://discord.com/api/oauth2/authorize?client_id=506735111543193601&redirect_uri=http%3A%2F%2Ffatebot.xyz%2Fsuccess&response_type=code&scope=identify"
+CLIENT_ID = ''
+CLIENT_SECRET = ''
+REDIRECT_URI = ''
+scope = ""
 
 
 class Bot(commands.AutoShardedBot):
