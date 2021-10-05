@@ -11,6 +11,7 @@ A module for configuring per-server custom commands
 import asyncio
 from typing import *
 from time import time
+import random
 
 from discord.ext import commands, tasks
 from discord import Message, Embed, AllowedMentions, ui, utils, Interaction
@@ -164,6 +165,10 @@ class CustomCommands(commands.Cog):
             return
         self.cache[msg.guild.id][command][1] = time()
         if msg.channel.permissions_for(msg.guild.me).send_messages:
+            # Check whether or not to use random responses
+            if (lines := response.split("\n")) and len(lines) > 1:
+                if all("https://" in line for line in lines):
+                    response = random.choice(lines)
             await msg.channel.send(response)
 
     @commands.Cog.listener()
