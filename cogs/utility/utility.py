@@ -1043,6 +1043,24 @@ class Utility(commands.Cog):
             if msg.channel.permissions_for(msg.guild.me).send_messages:
                 await msg.channel.send("Removed your afk")
 
+    @commands.command(name="embed", description="Embeds a message and/or image")
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.cooldown(1, 5, commands.BucketType.channel)
+    @commands.has_permissions(embed_links=True, manage_messages=True)
+    async def embed(self, ctx, *, embed_content = ""):
+        if not embed_content and not ctx.message.attachments:
+            return await ctx.send("You have to include content to embed, or attach a file when running the command")
+        color = discord.Embed.Empty
+        if embed_content.startswith("#"):
+            color, *embed_content = embed_content.split()
+            color = int(color.replace("#", "0x"), 0)
+            embed_content = " ".join(embed_content)
+        e = discord.Embed(color=color)
+        if embed_content:
+            e.description = embed_content
+        if ctx.message.attachments:
+            e.set_image(url=ctx.message.attachments[0].url)
+        await ctx.send(embed=e)
 
 # Method index
 pages: Dict[Type, str] = {
