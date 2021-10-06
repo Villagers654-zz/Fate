@@ -5,7 +5,7 @@ cogs.moderation.logger
 A cog for logging event related actions to a text channel(s)
 
 :copyright: (C) 2020-present FrequencyX4
-:license: Proprietary and Confidential, see LICENSE for details
+:license: Proprietary, see LICENSE for details
 """
 
 import asyncio

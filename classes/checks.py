@@ -5,7 +5,7 @@ Command Checks
 A collection of functions for checking if a command should run
 
 :copyright: (C) 2019-present FrequencyX4
-:license: Proprietary and Confidential, see LICENSE for details
+:license: Proprietary, see LICENSE for details
 """
 
 import discord

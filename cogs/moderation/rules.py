@@ -5,7 +5,7 @@ cogs.moderation.rules
 A module for adding in a rules command to display the servers rules quickly
 
 :copyright: (C) 2019-present FrequencyX4
-:license: Proprietary and Confidential, see LICENSE for details
+:license: Proprietary, see LICENSE for details
 """
 
 from discord.ext import commands

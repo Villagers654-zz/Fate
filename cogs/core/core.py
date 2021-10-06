@@ -5,7 +5,7 @@ cogs.core.core.py
 Core bot commands such as prefix, invite, and ping
 
 :copyright: (C) 2019-present FrequencyX4
-:license: Proprietary and Confidential, see LICENSE for details
+:license: Proprietary, see LICENSE for details
 """
 
 from time import time, monotonic

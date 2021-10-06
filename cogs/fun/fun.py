@@ -5,7 +5,7 @@ cogs.fun.fun
 A cog containing generally fun commands
 
 :copyright: (C) 2019-present FrequencyX4
-:license: Proprietary and Confidential, see LICENSE for details
+:license: Proprietary, see LICENSE for details
 """
 
 import asyncio

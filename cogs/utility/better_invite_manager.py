@@ -5,7 +5,7 @@ cogs.utility.better-invite-manager
 AioMySQL invite paginator cog
 
 :copyright: (C) 2021-present FrequencyX4
-:license: Proprietary and Confidential, see LICENSE for details
+:license: Proprietary, see LICENSE for details
 """
 
 import base64

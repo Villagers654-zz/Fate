@@ -5,7 +5,7 @@ cogs.fun.factions
 A cog for a factions game in discord.py
 
 :copyright: (C) 2020-present FrequencyX4
-:license: Proprietary and Confidential, see LICENSE for details
+:license: Proprietary, see LICENSE for details
 """
 
 import json

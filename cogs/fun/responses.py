@@ -5,7 +5,7 @@ cogs.fun.responses
 A cog for adding random bot responses to messages in a server
 
 :copyright: (C) 2019-present FrequencyX4
-:license: Proprietary and Confidential, see LICENSE for details
+:license: Proprietary, see LICENSE for details
 """
 
 import random

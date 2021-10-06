@@ -5,7 +5,7 @@ cogs.core.config
 Command for displaying whether or not certain modules are enabled
 
 :copyright: (C) 2019-present FrequencyX4
-:license: Proprietary and Confidential, see LICENSE for details
+:license: Proprietary, see LICENSE for details
 """
 
 import asyncio

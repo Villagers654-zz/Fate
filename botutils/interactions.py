@@ -9,7 +9,7 @@ Classes:
     AuthorView : A view that only the author of the original message can interact with
 
 :copyright: (C) 2020-present FrequencyX4
-:license: Proprietary and Confidential, see LICENSE for details
+:license: Proprietary, see LICENSE for details
 """
 
 from discord import ui, Interaction

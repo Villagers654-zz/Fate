@@ -5,7 +5,7 @@ Colors Shortcut
 Module for quick access to colors
 
 :copyright: (C) 2019-present FrequencyX4
-:license: Proprietary and Confidential, see LICENSE for details
+:license: Proprietary, see LICENSE for details
 """
 
 from random import randint

@@ -5,7 +5,7 @@ Fate
 Main file intended for starting the bot
 
 :copyright: (C) 2018-present FrequencyX4
-:license: Proprietary and Confidential, see LICENSE for details
+:license: Proprietary, see LICENSE for details
 """
 
 import json

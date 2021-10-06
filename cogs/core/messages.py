@@ -5,7 +5,7 @@ cogs.core.messages
 A module for configuring where message related functions go
 
 :copyright: (C) 2020-present FrequencyX4
-:license: Proprietary and Confidential, see LICENSE for details
+:license: Proprietary, see LICENSE for details
 """
 
 from typing import *

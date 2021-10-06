@@ -5,7 +5,7 @@ cogs.moderation.chatfilter
 A cog for filtering out messages containing filtered words
 
 :copyright: (C) 2020-present FrequencyX4
-:license: Proprietary and Confidential, see LICENSE for details
+:license: Proprietary, see LICENSE for details
 """
 
 import re

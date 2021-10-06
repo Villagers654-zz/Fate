@@ -5,7 +5,7 @@ cogs.core.cc
 A module for configuring per-server custom commands
 
 :copyright: (C) 2021-present FrequencyX4
-:license: Proprietary and Confidential, see LICENSE for details
+:license: Proprietary, see LICENSE for details
 """
 
 import asyncio

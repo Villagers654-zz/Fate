@@ -5,7 +5,7 @@ cogs.utility.inv_manager
 Less api spammy invite manager that relies on high uptime
 
 :copyright: (C) 2021-present FrequencyX4
-:license: Proprietary and Confidential, see LICENSE for details
+:license: Proprietary, see LICENSE for details
 """
 
 import asyncio

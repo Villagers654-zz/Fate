@@ -5,7 +5,7 @@ cogs.utility.anti_raid
 A cog for preventing mass join and kick/ban raids
 
 :copyright: (C) 2020-present FrequencyX4
-:license: Proprietary and Confidential, see LICENSE for details
+:license: Proprietary, see LICENSE for details
 """
 
 from datetime import datetime, timezone, timedelta

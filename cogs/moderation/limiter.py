@@ -5,7 +5,7 @@ cogs.moderation.limiter
 A cog for limiting channels to specific things like images or youtube links
 
 :copyright: (C) 2019-present FrequencyX4
-:license: Proprietary and Confidential, see LICENSE for details
+:license: Proprietary, see LICENSE for details
 """
 
 import asyncio

@@ -5,7 +5,7 @@ Discord OAuth2 API
 A basic representation of how to use discords OAuth2
 
 :copyright: (C) 2021-present Michael Stollings
-:license: Proprietary and Confidential, see LICENSE for details
+:license: Proprietary, see LICENSE for details
 """
 
 from aiohttp import web, ClientSession

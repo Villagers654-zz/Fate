@@ -5,7 +5,7 @@ cogs.misc.global_chat
 A cog to add functionality for a channel interconnected between multiple others
 
 :copyright: (C) 2020-present FrequencyX4
-:license: Proprietary and Confidential, see LICENSE for details
+:license: Proprietary, see LICENSE for details
 """
 
 from contextlib import suppress

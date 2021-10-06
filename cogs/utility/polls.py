@@ -6,7 +6,7 @@ Create un-mod-abusable polls for users. This cog prevents mods
 from deleting reactions to alter the outcome of a poll
 
 :copyright: (C) 2020-present FrequencyX4
-:license: Proprietary and Confidential, see LICENSE for details
+:license: Proprietary, see LICENSE for details
 """
 
 from datetime import datetime, timedelta, timezone

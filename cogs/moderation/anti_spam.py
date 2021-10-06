@@ -5,7 +5,7 @@ cogs.utility.anti_spam
 A cog for automatically moderating multiple types of spam
 
 :copyright: (C) 2020-present FrequencyX4
-:license: Proprietary and Confidential, see LICENSE for details
+:license: Proprietary, see LICENSE for details
 """
 
 import asyncio

@@ -5,7 +5,7 @@ cogs.utility.farewell
 A cog that sends when a user leaves the server
 
 :copyright: (C) 2021-present FrequencyX4
-:license: Proprietary and Confidential, see LICENSE for details
+:license: Proprietary, see LICENSE for details
 """
 
 from discord.ext import commands

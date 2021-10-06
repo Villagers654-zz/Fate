@@ -5,7 +5,7 @@ cogs.utility.inv_manager
 A cog to setup giveaways to give out random things
 
 :copyright: (C) 2021-present FrequencyX4
-:license: Proprietary and Confidential, see LICENSE for details
+:license: Proprietary, see LICENSE for details
 """
 
 from os import path

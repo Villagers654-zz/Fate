@@ -5,7 +5,7 @@ cogs.utility.case_manager
 A cog for managing the moderation cases
 
 :copyright: (C) 2021-present FrequencyX4
-:license: Proprietary and Confidential, see LICENSE for details
+:license: Proprietary, see LICENSE for details
 """
 
 from time import time
