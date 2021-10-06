@@ -6,6 +6,7 @@ A multipurpose discord bot
 <a href="https://top.gg/bot/506735111543193601">
     <img src="https://top.gg/api/widget/506735111543193601.svg" alt="Fate" />
 </a>
+
 ## License
 This project is licensed for only authorized use - see [`LICENSE`](https://github.com/FrequencyX4/Fate/blob/master/LICENSE) file for details
 ## Acknowledgments
