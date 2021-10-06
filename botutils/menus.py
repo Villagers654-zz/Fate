@@ -16,7 +16,6 @@ from contextlib import suppress
 from typing import *
 
 import discord
-from discord import TextChannel, Attachment
 from discord.errors import NotFound, Forbidden
 from discord.ext.commands import Context
 from PIL import Image, ImageFont, ImageDraw
