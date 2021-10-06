@@ -46,7 +46,7 @@ class _Select(discord.ui.Select):
         options = []
         if isinstance(choices, dict):
             choices = list(choices.items())
-        for option in choices:
+        for option in list(set(choices)):
             if isinstance(option, tuple):
                 label, description = option
                 options.append(discord.SelectOption(
