@@ -234,7 +234,7 @@ class ErrorHandler(commands.Cog):
                         # If possible tell the author it was fixed
                         if author := self.bot.get_user(self.notifs.get(msg.id, None)):
                             e = discord.Embed(color=colors.green)
-                            description = discord.utils.escape_markdown(embed.description)
+                            description = embed.description
                             if len(description) > 128:
                                 description = description[:128] + "..."
                             e.description = f"**Command ran:** `{description}`"
