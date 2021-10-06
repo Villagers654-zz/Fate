@@ -5,7 +5,7 @@ cogs.core.menus
 A beta help menu that uses views instead of reactions
 
 Classes:
-    ExampleCog
+    Menus
     HelpView
     HelpSelect
 
@@ -90,7 +90,7 @@ class Menus(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self) -> None:
-        """ Build ExampleCog.structure when the bots cache is initialized """
+        """ Build Menus.structure when the bots cache is initialized """
         await self.restructure()
 
     async def construct(self, item: Union[str, List[str]]) -> List[Command]:
@@ -122,7 +122,7 @@ class Menus(commands.Cog):
         return items
 
     async def restructure(self) -> None:
-        """ Rebuilds ExampleCog.structure with the updated list of commands """
+        """ Rebuilds Menus.structure with the updated list of commands """
         rebuilt = {}
         for category, value in structure.items():
             await asyncio.sleep(0)  # Hand off the loop incase anything needs it
