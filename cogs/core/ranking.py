@@ -47,26 +47,26 @@ cleanup_interval = 3600
 
 
 class Ranking(commands.Cog):
+    path = "./data/userdata/xp.json"  # filepath: Per-guild xp configs
+    profile_path = "./data/userdata/profiles.json"  # filepath: Profile data
+    clb_path = "./data/userdata/cmd-lb.json"  # filepath: Commands used
+    default_config = {
+        "min_xp_per_msg": 1,
+        "max_xp_per_msg": 1,
+        "first_lvl_xp_req": 250,
+        "timeframe": 10,
+        "msgs_within_timeframe": 1,
+    }
+
+    msg_cooldown = 3600
+    cd = {}
+    global_cd = {}
+    spam_cd = {}
+    macro_cd = {}
+    cmd_cd = {}
+
     def __init__(self, bot):
         self.bot = bot
-        self.path = "./data/userdata/xp.json"  # filepath: Per-guild xp configs
-        self.profile_path = "./data/userdata/profiles.json"  # filepath: Profile data
-        self.clb_path = "./data/userdata/cmd-lb.json"  # filepath: Commands used
-        self.msg_cooldown = 3600
-        self.cd = {}
-        self.global_cd = {}
-        self.spam_cd = {}
-        self.macro_cd = {}
-        self.cmd_cd = {}
-        self.counter = 0
-        self.vc_counter = 0
-        self.backup_counter = 0
-        self.cache = {}
-        self.leaderboards = {}
-        self.guild_xp = {}
-        self.global_xp = {}
-        self.monthly_guild_xp = {}
-        self.global_monthly_xp = {}
 
         # Configs
         self.config = bot.utils.cache("ranking")
@@ -76,7 +76,7 @@ class Ranking(commands.Cog):
 
         # Save storage
         for guild_id, config in list(self.config.items()):
-            if config == self.static_config():
+            if config == self.default_config:
                 self.config.remove(guild_id)
 
         # Vc caching
@@ -106,29 +106,16 @@ class Ranking(commands.Cog):
 
     async def cog_before_invoke(self, ctx):
         if ctx.guild.id not in self.config:
-            self.config[ctx.guild.id] = self.static_config()
+            self.config[ctx.guild.id] = self.default_config
 
-    async def save_config(self):
-        """ Saves per-server configuration """
-        pass
-        # async with self.bot.utils.open(self.path, "w+") as f:
-        #     raw = json.dumps(self.config)
-        #     await f.write(raw)
-
-    def static_config(self):
-        """ Default config """
-        return {
-            "min_xp_per_msg": 1,
-            "max_xp_per_msg": 1,
-            "first_lvl_xp_req": 250,
-            "timeframe": 10,
-            "msgs_within_timeframe": 1,
-        }
+    async def cog_after_invoke(self, ctx):
+        if ctx.guild.id in self.config:
+            if self.config[ctx.guild.id] == self.default_config:
+                self.config.remove(ctx.guild.id)
 
     async def init(self, guild_id: str):
         """ Saves static config as the guilds initial config """
-        self.config[guild_id] = self.static_config()
-        await self.save_config()
+        self.config[guild_id] = self.default_config
 
     @tasks.loop(hours=1)
     async def cmd_cleanup_task(self):
@@ -282,7 +269,7 @@ class Ranking(commands.Cog):
                     return
 
             # per-server leveling
-            conf = self.static_config()  # type: dict
+            conf = self.default_config  # type: dict
             if guild_id in self.config:
                 conf = self.config[guild_id]
             if conf["min_xp_per_msg"] >= conf["max_xp_per_msg"]:
@@ -315,16 +302,18 @@ class Ranking(commands.Cog):
                             f"ON DUPLICATE KEY UPDATE xp = xp + {new_xp};"
                         )
 
-                        # Fetch current xp for xp based roles
+                        # Fetch current xp for level roles
                         await cur.execute(
                             f"select xp from msg "
                             f"where guild_id = {guild_id} "
                             f"and user_id = {user_id} "
                             f"limit 1;"
                         )
-                        result = await cur.fetchone()
-                        if not result:
+                        if not cur.rowcount:
                             return
+                        result = await cur.fetchone()
+
+                    # Fetch available level roles
                     dat = await self.calc_lvl_info(result[0], conf)
                     async with self.bot.utils.cursor() as cur:
                         await cur.execute(
@@ -333,9 +322,13 @@ class Ranking(commands.Cog):
                             f"and lvl <= {dat['level']} "
                             f"order by lvl asc;"
                         )
+                        if not cur.rowcount:
+                            return
                         results = await cur.fetchall()
-                    for result in results:
-                        role = msg.guild.get_role(result[0])
+
+                    # Check if the user's missing any of the roles
+                    for role_id, *_args in results:
+                        role = msg.guild.get_role(role_id)
                         if role not in msg.author.roles:
                             try:
                                 await msg.author.add_roles(role)
@@ -348,6 +341,8 @@ class Ranking(commands.Cog):
                                     f"delete from role_rewards "
                                     f"where role_id = {result[0]} limit 1;"
                                 )
+                            except Exception:
+                                pass
 #
                 except DataError as error:
                     self.bot.log(f"Error updating guild xp\n{error}")
@@ -617,12 +612,11 @@ class Ranking(commands.Cog):
     @commands.bot_has_permissions(attach_files=True)
     async def profile(self, ctx):
         """ Profile / Rank Image Card """
-        path = "./static/card.png"
         user = ctx.author
         if ctx.message.mentions:
             user = ctx.message.mentions[0]
         user_id = user.id
-        guild_id = str(ctx.guild.id)
+        guild_id = ctx.guild.id
         conf = self.config[guild_id]
 
         # config
@@ -641,8 +635,6 @@ class Ranking(commands.Cog):
                 title = self.profile[user_id]["title"]
             if "background" in self.profile[user_id]:
                 background_url = self.profile[user_id]["background"]
-        if "gif" in background_url:
-            path = path.replace("png", "gif")
 
         # xp variables
         guild_rank = "unranked"  # this is required, remember to get this here
@@ -655,7 +647,7 @@ class Ranking(commands.Cog):
                     return await ctx.send(
                         f"{who} currently have no global xp, try rerunning this command now"
                     )
-                dat = await self.calc_lvl_info(results[0], self.static_config())
+                dat = await self.calc_lvl_info(results[0], self.default_config)
             else:
                 await cur.execute(
                     f"select xp from msg "
@@ -850,7 +842,7 @@ class Ranking(commands.Cog):
             if member:
                 members.append([member, xp])
 
-        conf = self.static_config()
+        conf = self.default_config
         if str(ctx.guild.id) in self.config:
             conf = self.config[str(ctx.guild.id)]
 
