@@ -65,7 +65,6 @@ structure = {
         "Misc": [
             "SafePolls",
             "Audit",
-            "Embeds",
             "Notepad",
             "Utility"
         ]
