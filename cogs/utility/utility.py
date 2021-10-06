@@ -1049,11 +1049,19 @@ class Utility(commands.Cog):
     @commands.has_permissions(embed_links=True, manage_messages=True)
     async def embed(self, ctx, *, embed_content = ""):
         if not embed_content and not ctx.message.attachments:
-            return await ctx.send("You have to include content to embed, or attach a file when running the command")
+            return await ctx.send(
+                "You have to include content to embed, or attach a file when running the command. "
+                f"**Usage:** `{ctx.prefix}embed #ffffff your message`. Note the #hex is optional"
+            )
         color = discord.Embed.Empty
         if embed_content.startswith("#"):
             color, *embed_content = embed_content.split()
-            color = int(color.replace("#", "0x"), 0)
+            try:
+                color = int(color.replace("#", "0x"), 0)
+            except ValueError:
+                return await ctx.send(f"{color} isn't a valid color/hex")
+            if color > 16777215:
+                return await ctx.send(f"{color} isn't a valid color/hex")
             embed_content = " ".join(embed_content)
         e = discord.Embed(color=color)
         if embed_content:
