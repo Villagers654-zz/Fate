@@ -140,7 +140,7 @@ class Suggestions(commands.Cog):
             role_id = None
         else:
             if reply.role_mentions:
-                role = reply.role_mentions
+                role = reply.role_mentions[0]
             else:
                 role = await self.bot.utils.get_role(ctx, reply.content)
                 if not role:
