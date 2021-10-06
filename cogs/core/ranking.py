@@ -13,11 +13,10 @@ from time import time, monotonic
 from random import *
 import asyncio
 from io import BytesIO
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import aiohttp
 from pymysql.err import DataError, InternalError
 from contextlib import suppress
-import os
 
 from discord.ext import commands, tasks
 import discord
@@ -111,7 +110,7 @@ class Ranking(commands.Cog):
     async def cog_after_invoke(self, ctx):
         if ctx.guild.id in self.config:
             if self.config[ctx.guild.id] == self.default_config:
-                self.config.remove(ctx.guild.id)
+                await self.config.remove(ctx.guild.id)
 
     async def init(self, guild_id: str):
         """ Saves static config as the guilds initial config """
@@ -119,13 +118,13 @@ class Ranking(commands.Cog):
 
     @tasks.loop(hours=1)
     async def cmd_cleanup_task(self):
-        for cmd, dat in list(self.cmds.items()):
-            for date in dat["uses"]:
-                await asyncio.sleep(0)
-                if (datetime.now() - date).days > 30:
-                    self.cmds[cmd]["uses"].remove(date)
-                    self.cmds[cmd]["total"] -= 1
-        await self.cmds.flush()
+        async with self.bot.utils.cursor() as cur:
+            lmt = int(datetime.timestamp(
+                datetime.now(tz=timezone.utc) + timedelta(days=30)
+            ))
+            await cur.execute(
+                f"delete from commands where ran_at > {lmt};"
+            )
 
     @tasks.loop(minutes=1)
     async def cooldown_cleanup_task(self):
