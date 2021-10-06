@@ -66,6 +66,8 @@ class Ranking(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.channels: bot.utils.cache = bot.cogs["Messages"].config
+        self.levels = {}
 
         # Configs
         self.config = bot.utils.cache("ranking")
@@ -77,10 +79,6 @@ class Ranking(commands.Cog):
         for guild_id, config in list(self.config.items()):
             if config == self.default_config:
                 self.config.remove(guild_id)
-
-        # Vc caching
-        self.vclb = {}
-        self.vc_counter = 0
 
         # Help menus
         self.set_usage = self.set
@@ -310,10 +308,29 @@ class Ranking(commands.Cog):
                         )
                         if not cur.rowcount:
                             return
-                        result = await cur.fetchone()
+                        xp, = await cur.fetchone()
+
+                    # Fetch the level information
+                    dat = await self.calc_lvl_info(xp, conf)
+
+                    # Check if the user leveled up
+                    if config := self.channels.get(guild_id, None):
+                        if location := config.get("level_up_messages", None):
+                            if guild_id not in self.levels:
+                                self.levels[guild_id] = {}
+                            if user_id not in self.levels[guild_id]:
+                                self.levels[guild_id][user_id] = [dat["level"], time()]
+                            else:
+                                if dat["level"] > self.levels[guild_id][user_id][0]:
+                                    channel = self.bot.get_channel(location) or msg.channel
+                                    if channel and channel.permissions_for(msg.guild.me).send_messages:
+                                        await channel.send(
+                                            content=f"{msg.author.mention}, **you're now level {dat['level']}**",
+                                            allowed_mentions=discord.AllowedMentions(users=True, roles=False, everyone=False)
+                                        )
+                                self.levels[guild_id][user_id] = [dat["level"], time()]
 
                     # Fetch available level roles
-                    dat = await self.calc_lvl_info(result[0], conf)
                     async with self.bot.utils.cursor() as cur:
                         await cur.execute(
                             f"select role_id from role_rewards "
@@ -338,7 +355,7 @@ class Ranking(commands.Cog):
                             except (NotFound, Forbidden, AttributeError):
                                 await self.bot.execute(
                                     f"delete from role_rewards "
-                                    f"where role_id = {result[0]} limit 1;"
+                                    f"where role_id = {role_id} limit 1;"
                                 )
                             except Exception:
                                 pass
