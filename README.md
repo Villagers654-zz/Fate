@@ -22,10 +22,8 @@ pip install -r requirements.txt
 ### Initial Setup
 -  You can configure things like the debug channel, command prefix, and personalization in [`data/config.json`](https://github.com/FrequencyX4/Fate/blob/master/data/config.json)
 ###  Configuring - this is more compicated but is required for making the bot work!
-- create `./data/xp.json`
 - edit `./data/config.json` to your hearts content
 - create `./data/auth.json` from `./data/auth_template.py`
-- edit `./data/userdata/config.json`
 ### Running
 ```py
 python fate.py
@@ -34,4 +32,3 @@ python fate.py
 This project is licensed for only authorized use - see [`LICENSE`](https://github.com/FrequencyX4/Fate/blob/master/LICENSE) file for details
 ## Acknowledgments
 - [CortexPE - Python Teacher](https://github.com/CortexPE)
-- [Lavalink - For Music Support](https://github.com/Devoxin/Lavalink.py)
