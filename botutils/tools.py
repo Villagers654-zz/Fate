@@ -386,7 +386,8 @@ async def get_role(ctx, name) -> Optional[discord.Role]:
         if not roles:
             for role in ctx.guild.roles:
                 if name.lower() in role.name.lower():
-                    roles.append(role)
+                    if role not in roles:
+                        roles.append(role)
         if roles:
             if len(roles) == 1:
                 return roles[0]
