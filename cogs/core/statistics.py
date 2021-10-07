@@ -19,13 +19,17 @@ class Statistics(commands.Cog):
         self.cogs = {  #  CogName: variable
             "Logger": "config",
             "SelfRoles": "menus",
+            "ButtonRoles": "config",
             "AutoRole": "roles",
             "ChatFilter": "config",
             "AntiSpam": "config",
+            "ModMail": "config",
+            "Verification": "config",
             "Giveaways": "data",
             "RestoreRoles": "guilds",
             "Welcome": "config",
             "Leave": "toggle",
+            "Suggestions": "config"
         }
 
     @commands.command(name="statistics", aliases=["stats"], description="Shows the number of servers using each module")
