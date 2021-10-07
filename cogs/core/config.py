@@ -13,7 +13,7 @@ import asyncio
 from discord.ext import commands
 import discord
 
-from botutils import colors
+from botutils import colors, emojis
 from botutils import get_prefixes_async
 
 
@@ -51,8 +51,8 @@ class Config(commands.Cog):
                     toggle = cog.is_enabled(ctx.guild.id)
                     if hasattr(toggle, "__await__"):
                         toggle = await toggle
-                    toggle = "active" if toggle else "inactive"
-                    cogs += f"\n**{name}:** [`{toggle}`]"
+                    toggle = emojis.online if toggle else emojis.dnd
+                    cogs += f"\n{toggle} **{name}**"
 
             e.add_field(name="◈ Modules ◈", value=cogs, inline=False)
             subcommands = f"{p[2]}config warns"
