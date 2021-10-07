@@ -251,7 +251,7 @@ class ButtonRoles(commands.Cog):
             "text": "Choose your role",
             "style": style,
             "limit": 1,
-            "show_percentage": False
+            "show_percentage": True
         }
         view = RoleView(cls=self, guild_id=ctx.guild.id, message_id=msg.id)
         await msg.edit(view=view)
@@ -646,7 +646,7 @@ class RoleView(ui.View):
                     style=discord.ButtonStyle.blurple,
                     custom_id=f"{role_id}@{message_id}"
                 )
-                if label == data["emoji"]:
+                if data["label"] == data["emoji"]:
                     button.label = None
                 button.callback = self.surface_callback
                 self.buttons[button.custom_id] = button
