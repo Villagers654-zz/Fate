@@ -134,6 +134,7 @@ class Emojis(commands.Cog):
             return await ctx.send(self.emoji.usage)
         if len(emojis) > 1 and all(e == emojis[0] for e in emojis):
             return await ctx.send("No")
+        embeds = []
 
         # Limit the number of emojis the bot will enlarge to 1 if the user doesn't have admin
         is_member = isinstance(ctx.author, discord.Member)
@@ -166,7 +167,10 @@ class Emojis(commands.Cog):
                 icon_url = emoji.guild.icon.url if emoji.guild.icon else discord.Embed.Empty
                 e.set_footer(text=emoji.guild.name, icon_url=icon_url)
 
-            await ctx.send(embed=e, delete_after=15)
+            embeds.append(e)
+
+        await ctx.send(embeds=embeds, delete_after=25)
+        await ctx.message.delete(delay=25)
 
     @commands.command(name="sticker", description="Shows a stickers image")
     @commands.cooldown(1, 15, commands.BucketType.user)
