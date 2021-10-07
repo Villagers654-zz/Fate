@@ -646,6 +646,8 @@ class RoleView(ui.View):
                     style=discord.ButtonStyle.blurple,
                     custom_id=f"{role_id}@{message_id}"
                 )
+                if label == data["emoji"]:
+                    button.label = None
                 button.callback = self.surface_callback
                 self.buttons[button.custom_id] = button
                 self.add_item(button)
