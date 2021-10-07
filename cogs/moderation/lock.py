@@ -130,35 +130,44 @@ class Lock(commands.Cog):
             channels = ctx.guild.text_channels
             if choice == "Lock this channel":
                 channels = [ctx.channel]
+            await self.lockdown(ctx, *channels)
 
-            # Save the old permissions and edit the new ones in
-            self.lock[guild_id][lock] = {}
-            for channel in channels:
-                if channel.permissions_for(ctx.guild.me).manage_channels:
-                    original_perms = {
-                        str(obj.id): list(perms) for obj, perms in channel.overwrites.items()
-                    }
-                    locked_perms = channel.overwrites
-                    for overwrite in locked_perms.keys():
-                        locked_perms[overwrite].send_messages = False
-                    if ctx.guild.default_role not in locked_perms:
-                        new = discord.PermissionOverwrite()
-                        new.update(send_messages=False)
-                        locked_perms[ctx.guild.default_role] = new
-                    try:
-                        await channel.edit(overwrites=locked_perms)
-                        self.lock[guild_id][lock][str(channel.id)] = original_perms
-                    except discord.errors.Forbidden:
-                        pass
+    @commands.command(name="lockdown", description="Prevents everyone from messaging")
+    @commands.has_permissions(administrator=True)
+    async def lockdown(self, ctx, *channels: discord.TextChannel):
+        if not channels:
+            channels = ctx.guild.text_channels
+        guild_id = ctx.guild.id
+        lock = "lockdown"
 
-            # Check if no channels were edited
-            if not self.lock[guild_id][lock]:
-                self.lock.remove_sub(guild_id, lock)
-                return await ctx.send("Seems I wasn't able to modify any channels")
+        # Save the old permissions and edit the new ones in
+        self.lock[guild_id][lock] = {}
+        for channel in channels:
+            if channel.permissions_for(ctx.guild.me).manage_channels:
+                original_perms = {
+                    str(obj.id): list(perms) for obj, perms in channel.overwrites.items()
+                }
+                locked_perms = channel.overwrites
+                for overwrite in locked_perms.keys():
+                    locked_perms[overwrite].send_messages = False
+                if ctx.guild.default_role not in locked_perms:
+                    new = discord.PermissionOverwrite()
+                    new.update(send_messages=False)
+                    locked_perms[ctx.guild.default_role] = new
+                try:
+                    await channel.edit(overwrites=locked_perms)
+                    self.lock[guild_id][lock][str(channel.id)] = original_perms
+                except discord.errors.Forbidden:
+                    pass
 
-            s = "s" if len(self.lock[guild_id][lock]) > 1 else ""
-            await ctx.send(f"Locked down {len(self.lock[guild_id][lock])} channel{s}")
-            await self.lock.flush()
+        # Check if no channels were edited
+        if not self.lock[guild_id][lock]:
+            self.lock.remove_sub(guild_id, lock)
+            return await ctx.send("Seems I wasn't able to modify any channels")
+
+        s = "s" if len(self.lock[guild_id][lock]) > 1 else ""
+        await ctx.send(f"Locked down {len(self.lock[guild_id][lock])} channel{s}")
+        await self.lock.flush()
 
     @commands.command(name="unlock", description="Removes any active locks")
     @commands.has_permissions(administrator=True)
