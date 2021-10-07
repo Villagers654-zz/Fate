@@ -102,7 +102,11 @@ class SelfRoles(commands.Cog):
         await msg.edit(embed=embed)
         return msg
 
-    @commands.command(name="selfroles", aliases=["self-roles", "selfrole", "self-role"])
+    @commands.command(
+        name="selfroles",
+        aliases=["self-roles", "selfrole", "self-role"],
+        description="Shows how to use the module"
+    )
     @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
@@ -131,7 +135,7 @@ class SelfRoles(commands.Cog):
         )
         await ctx.send(embed=e)
 
-    @commands.command(name="update-menu")
+    @commands.command(name="update-menu", description="Refreshes a menu")
     @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
@@ -172,7 +176,7 @@ class SelfRoles(commands.Cog):
         await msg.edit(embed=embed)
         await ctx.send("Updated the menu 👍")
 
-    @commands.command(name="create-menu")
+    @commands.command(name="create-menu", description="Starts the setup process")
     @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
@@ -353,7 +357,7 @@ class SelfRoles(commands.Cog):
         await instructions.delete()
         await ctx.send("Created your self-role menu 👍")
 
-    @commands.command(name="set-color")
+    @commands.command(name="set-color", description="Sets a menus color")
     @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
@@ -380,7 +384,7 @@ class SelfRoles(commands.Cog):
         await ctx.send("Set the color 👍")
         await self.save_data()
 
-    @commands.command(name="set-name")
+    @commands.command(name="set-name", description="Sets a menus name")
     @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
@@ -401,7 +405,7 @@ class SelfRoles(commands.Cog):
         await ctx.send("Set the name 👍")
         await self.save_data()
 
-    @commands.command(name="set-indent")
+    @commands.command(name="set-indent", description="Sets the spacing in a menu")
     @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
@@ -425,7 +429,7 @@ class SelfRoles(commands.Cog):
         await ctx.send(f"Set the menus indent to {indent}")
         await self.save_data()
 
-    @commands.command(name="add-role")
+    @commands.command(name="add-role", description="Adds a role to an existing menu")
     @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
@@ -471,7 +475,7 @@ class SelfRoles(commands.Cog):
         await ctx.send(f"Added {role.name}")
         await self.save_data()
 
-    @commands.command(name="remove-role")
+    @commands.command(name="remove-role", description="Removes a role from a menu")
     @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
@@ -502,7 +506,7 @@ class SelfRoles(commands.Cog):
         await ctx.send(f"Removed {role.name}")
         await self.save_data()
 
-    @commands.command(name="set-limit")
+    @commands.command(name="set-limit", description="Sets the per-user role limit on a menu")
     @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
@@ -524,7 +528,7 @@ class SelfRoles(commands.Cog):
         await ctx.send(f"Set the limit to {limit}")
         await self.save_data()
 
-    @commands.command(name="toggle-mentions")
+    @commands.command(name="toggle-mentions", description="Toggles using mentions or names")
     @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)

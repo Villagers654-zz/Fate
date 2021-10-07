@@ -82,7 +82,7 @@ class Welcome(commands.Cog):
     def is_enabled(self, guild_id):
         return guild_id in self.config
 
-    @commands.group(name="welcome", usage=welcome_help())
+    @commands.group(name="welcome", usage=welcome_help(), description="Shows how to use the module")
     @commands.cooldown(1, 3, commands.BucketType.channel)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
@@ -123,7 +123,7 @@ class Welcome(commands.Cog):
             )
             await ctx.send(embed=e)
 
-    @_welcome.command(name="enable")
+    @_welcome.command(name="enable", description="Enables the module")
     @commands.has_permissions(manage_guild=True)
     async def _enable(self, ctx):
         convo = Conversation(ctx, delete_after=True)
@@ -176,7 +176,7 @@ class Welcome(commands.Cog):
         await ctx.send(embed=e)
         await convo.end()
 
-    @_welcome.command(name="disable")
+    @_welcome.command(name="disable", description="Disables the module")
     @commands.has_permissions(manage_guild=True)
     async def _disable(self, ctx):
         guild_id = ctx.guild.id
@@ -186,7 +186,7 @@ class Welcome(commands.Cog):
         await self.config.flush()
         await ctx.send("Disabled welcome messages")
 
-    @_welcome.command(name="config")
+    @_welcome.command(name="config", description="Shows the current configuration")
     async def _config(self, ctx):
         guild_id = ctx.guild.id
         toggle = "disabled"
@@ -217,7 +217,7 @@ class Welcome(commands.Cog):
         )
         await ctx.send(embed=e)
 
-    @_welcome.command(name="test")
+    @_welcome.command(name="test", description="Tests the current configuration")
     @commands.has_permissions(manage_guild=True)
     async def _test(self, ctx, user: discord.User=None):
         guild_id = ctx.guild.id
@@ -263,7 +263,7 @@ class Welcome(commands.Cog):
             except discord.errors.Forbidden:
                 return
 
-    @_welcome.command(name="setchannel")
+    @_welcome.command(name="setchannel", description="Sets the welcome channel")
     @commands.has_permissions(manage_guild=True)
     async def _setchannel(self, ctx, channel: discord.TextChannel = None):
         guild_id = ctx.guild.id
@@ -275,7 +275,7 @@ class Welcome(commands.Cog):
         await ctx.send(f"Set the welcome message channel to {channel.mention}")
         await self.config.flush()
 
-    @_welcome.command(name="toggleimages")
+    @_welcome.command(name="toggleimages", description="Toggles using images")
     @commands.has_permissions(manage_guild=True)
     @commands.bot_has_permissions(attach_files=True)
     async def _toggle_images(self, ctx):
@@ -295,7 +295,7 @@ class Welcome(commands.Cog):
             await ctx.send("Disabled images")
         await self.config.flush()
 
-    @_welcome.command(name="addimages")
+    @_welcome.command(name="addimages", description="Adds images to use")
     @commands.has_permissions(manage_guild=True)
     async def _addimages(self, ctx):
         guild_id = ctx.guild.id
@@ -321,7 +321,7 @@ class Welcome(commands.Cog):
             return await ctx.send("No worries, I'll just keep using my own gifs for now")
         await self.config.flush()
 
-    @_welcome.command(name="delimages")
+    @_welcome.command(name="delimages", description="Removes all images")
     @commands.has_permissions(manage_guild=True)
     async def _delimages(self, ctx):
         guild_id = ctx.guild.id
@@ -331,7 +331,7 @@ class Welcome(commands.Cog):
         await ctx.send("Purged images")
         await self.config.flush()
 
-    @_welcome.command(name="listimages")
+    @_welcome.command(name="listimages", description="Shows all the current images")
     @commands.has_permissions(manage_guild=True)
     async def _listimages(self, ctx):
         guild_id = ctx.guild.id
@@ -339,7 +339,7 @@ class Welcome(commands.Cog):
             return await ctx.send("This guild has no images")
         await ctx.send("\n".join(self.config[guild_id]["images"]))
 
-    @_welcome.command(name="format")
+    @_welcome.command(name="format", description="Sets the welcome format")
     @commands.has_permissions(manage_guild=True)
     async def _format(self, ctx, *, message=None):
         guild_id = ctx.guild.id
@@ -360,7 +360,7 @@ class Welcome(commands.Cog):
         await ctx.send("Set the welcome format 👍")
         await self.config.flush()
 
-    @_welcome.command(name="wait-for-verify", aliases=["waitforverify"])
+    @_welcome.command(name="wait-for-verify", aliases=["waitforverify"], description="Delays the welcome message")
     @commands.has_permissions(manage_guild=True)
     async def _wait_for_verify(self, ctx):
         guild_id = ctx.guild.id

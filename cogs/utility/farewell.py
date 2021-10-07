@@ -96,7 +96,7 @@ class Leave(commands.Cog):
     def is_enabled(self, guild_id):
         return str(guild_id) in self.toggle
 
-    @commands.group(name="leave", aliases=["farewell"], usage=leave_help())
+    @commands.group(name="leave", aliases=["farewell"], usage=leave_help(), description="Shows how to use the module")
     @commands.cooldown(1, 3, commands.BucketType.channel)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
@@ -136,7 +136,7 @@ class Leave(commands.Cog):
             )
             await ctx.send(embed=e)
 
-    @leave.command(name="enable")
+    @leave.command(name="enable", description="Enables the module")
     @commands.has_permissions(manage_guild=True)
     async def _enable(self, ctx):
         guild_id = str(ctx.guild.id)
@@ -218,7 +218,7 @@ class Leave(commands.Cog):
         await cleanup()
         await self.save_data()
 
-    @leave.command(name="disable")
+    @leave.command(name="disable", description="Disables the module")
     @commands.has_permissions(manage_guild=True)
     async def _disable(self, ctx):
         guild_id = str(ctx.guild.id)
@@ -228,7 +228,7 @@ class Leave(commands.Cog):
         await ctx.send("Disabled leave messages")
         await self.save_data()
 
-    @leave.command(name="config")
+    @leave.command(name="config", description="Shows the current configuration")
     async def _config(self, ctx):
         guild_id = str(ctx.guild.id)
         toggle = "disabled"
@@ -260,7 +260,7 @@ class Leave(commands.Cog):
         )
         await ctx.send(embed=e)
 
-    @leave.command(name="test")
+    @leave.command(name="test", description="Tests the current configuration")
     @commands.has_permissions(manage_guild=True)
     async def _test(self, ctx):
         guild_id = str(ctx.guild.id)
@@ -307,7 +307,7 @@ class Leave(commands.Cog):
                 del self.toggle[guild_id]
                 await self.save_data()
 
-    @leave.command(name="setchannel")
+    @leave.command(name="setchannel", description="Sets the leave channel")
     @commands.has_permissions(manage_guild=True)
     async def _setchannel(self, ctx, channel: discord.TextChannel = None):
         guild_id = str(ctx.guild.id)
@@ -317,7 +317,7 @@ class Leave(commands.Cog):
         await ctx.send(f"Set the leave message channel to {channel.mention}")
         await self.save_data()
 
-    @leave.command(name="toggleimages")
+    @leave.command(name="toggleimages", description="Toggles using images")
     @commands.has_permissions(manage_guild=True)
     @commands.bot_has_permissions(attach_files=True)
     async def _toggle_images(self, ctx):
@@ -336,7 +336,7 @@ class Leave(commands.Cog):
             )
         await self.save_data()
 
-    @leave.command(name="addimages")
+    @leave.command(name="addimages", description="Adds images to use")
     @commands.has_permissions(manage_guild=True)
     async def _addimages(self, ctx):
         guild_id = str(ctx.guild.id)
@@ -364,7 +364,7 @@ class Leave(commands.Cog):
             del self.images[guild_id]
         await self.save_data()
 
-    @leave.command(name="delimages")
+    @leave.command(name="delimages", description="Removes all images")
     @commands.has_permissions(manage_guild=True)
     async def _delimages(self, ctx):
         guild_id = str(ctx.guild.id)
@@ -374,7 +374,7 @@ class Leave(commands.Cog):
         await ctx.send("Purged images")
         await self.save_data()
 
-    @leave.command(name="listimages")
+    @leave.command(name="listimages", description="Shows all the current images")
     @commands.has_permissions(manage_guild=True)
     async def _listimages(self, ctx):
         guild_id = str(ctx.guild.id)
@@ -382,7 +382,7 @@ class Leave(commands.Cog):
             return await ctx.send("This guild has no images")
         await ctx.send(self.images[guild_id])
 
-    @leave.command(name="format")
+    @leave.command(name="format", description="Sets the leave format")
     @commands.has_permissions(manage_guild=True)
     async def _format(self, ctx, *, message=None):
         guild_id = str(ctx.guild.id)
