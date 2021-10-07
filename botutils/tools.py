@@ -39,6 +39,7 @@ from datetime import datetime, timedelta
 from time import time
 import discord
 from .emojis import arrow
+from classes.exceptions import IgnoredExit
 
 
 class TempConvo:
@@ -85,7 +86,7 @@ class CooldownManager:
             self.index[_id] = [now, 1]
         if self.index[_id][1] > self.limit:
             if self.raise_error:
-                raise self.bot.ignored_exit
+                raise IgnoredExit
             return True
         return False
 
@@ -101,7 +102,7 @@ class OperationLock:
 
     def __enter__(self):
         if self.key in self.bot.operation_locks:
-            raise self.bot.ignored_exit
+            raise IgnoredExit
         self.bot.operation_locks.append(self.key)
 
     def __exit__(self, _exc_type, _exc_val, _exc_tb):

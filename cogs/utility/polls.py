@@ -23,6 +23,7 @@ from base64 import b64encode as encode64, b64decode as decode64
 
 from fate import Fate
 from botutils import colors, extract_time, Conversation
+from classes.exceptions import IgnoredExit
 
 
 def Timer(argument):
@@ -153,7 +154,7 @@ class SafePolls(commands.Cog):
         else:
             return True
         if exit_on_error:
-            raise self.bot.ignored_exit
+            raise IgnoredExit
         return False
 
     @property
@@ -263,7 +264,7 @@ class SafePolls(commands.Cog):
                 try:
                     await message.add_reaction(emoji)
                 except discord.errors.NotFound:
-                    raise self.bot.ignored_exit
+                    raise IgnoredExit
                 if len(emojis) > 5:
                     await asyncio.sleep(1)
                 elif len(emojis) > 2:

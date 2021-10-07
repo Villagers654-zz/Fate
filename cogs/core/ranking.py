@@ -25,6 +25,7 @@ from PIL import Image, ImageFont, ImageDraw, ImageSequence, UnidentifiedImageErr
 
 from botutils import colors, get_prefix, url_from
 from botutils.pillow import add_corners
+from classes.exceptions import IgnoredExit
 
 
 def profile_help():
@@ -787,7 +788,7 @@ class Ranking(commands.Cog):
                 background = Image.open(BytesIO(raw_background)).convert("RGBA")
             except UnidentifiedImageError:
                 self.bot.loop.create_task(ctx.send("Invalid background. Change it via .set background"))
-                raise self.bot.ignored_exit
+                raise IgnoredExit
 
             # Ordinary image
             if "gif" not in background_url:

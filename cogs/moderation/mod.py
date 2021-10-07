@@ -26,7 +26,7 @@ from discord.ext.commands import Greedy
 from discord.errors import NotFound, Forbidden, HTTPException
 
 from botutils import colors, get_prefix, get_time, split, CancelButton, format_date_difference
-# from classes.interactions.moderation import MuteView
+from classes.exceptions import IgnoredExit
 from fate import Fate
 
 
@@ -587,7 +587,7 @@ class Moderation(commands.Cog):
                                 await msg.delete()
                                 messages.append(msg)
                     except discord.errors.NotFound:
-                        raise self.bot.ignored_exit
+                        raise IgnoredExit
                 return messages
 
             kwargs = {}

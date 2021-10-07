@@ -35,7 +35,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from cleverbot import async_ as cleverbot
 
 from classes import checks
-from classes.exceptions import EmptyException
+from classes.exceptions import IgnoredExit
 from botutils import get_prefixes_async, Utils, FileCache
 from botutils.custom_logging import Logging
 from cogs.core.tasks import Tasks
@@ -88,7 +88,6 @@ class Fate(commands.AutoShardedBot):
         self.login_errors = []  # Exceptions ignored during startup
         self.logs = []  # Logs to send to discord, empties out quickly
         self.last_traceback = ""  # Formatted string of the last error traceback
-        self.ignored_exit = EmptyException
         self.allow_user_mentions = discord.AllowedMentions(
             users=True, roles=False, everyone=False
         )
@@ -494,7 +493,7 @@ async def on_message(msg):
 async def on_error(_event_method, *_args, **_kwargs):
     error = getattr(err := sys.exc_info()[1], "original", err)
     ignored = (
-        EmptyException,
+        IgnoredExit,
         aiohttp.ClientOSError,
         asyncio.exceptions.TimeoutError,
         discord.errors.DiscordServerError,

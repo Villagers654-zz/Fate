@@ -44,7 +44,7 @@ class ErrorHandler(commands.Cog):
             commands.CommandNotFound,
             commands.NoPrivateMessage,
             discord.errors.DiscordServerError,
-            exceptions.EmptyException
+            exceptions.IgnoredExit
         )
         if isinstance(error, ignored) or not (error_to_send := str(error)):
             return

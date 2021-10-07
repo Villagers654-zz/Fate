@@ -22,6 +22,8 @@ from contextlib import suppress
 from discord.ext.commands import Context
 from discord import User, Member, Message
 
+from classes.exceptions import IgnoredExit
+
 
 class CheckError(Exception):
     pass
@@ -73,7 +75,7 @@ class Conversation:
             if self.delete_after:
                 self.msgs.append(msg)
                 await self.end()
-            raise self.bot.ignored_exit
+            raise IgnoredExit
 
         return msg
 
@@ -129,12 +131,12 @@ class Listener:
                 for i, task in enumerate(tasks):
                     await asyncio.sleep(0)
                     if task.done() and task.exception():
-                        raise self.bot.ignored_exit
+                        raise IgnoredExit
                     if task.done():
                         tasks[0 if i == 1 else 1].cancel()
                         result = task.result()
                         if result is None:
-                            raise self.bot.ignored_exit
+                            raise IgnoredExit
                         return result
                 await asyncio.sleep(0.01)
 
@@ -142,7 +144,7 @@ class Listener:
             try:
                 reaction, user = await coro
             except asyncio.TimeoutError:
-                raise self.bot.ignored_exit
+                raise IgnoredExit
         else:
             reaction, user = await coro
 
@@ -162,7 +164,7 @@ class Listener:
             try:
                 msg = await coro
             except asyncio.TimeoutError:
-                raise self.bot.ignored_exit
+                raise IgnoredExit
         else:
             msg = await coro
 

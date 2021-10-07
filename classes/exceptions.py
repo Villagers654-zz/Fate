@@ -11,7 +11,7 @@ Classes of custom exceptions
 from aiohttp import web
 
 
-class EmptyException(Exception):
+class IgnoredExit(Exception):
     """
     An exception ignored by the bots error handler.
     This is used to easily stop operation inside something nested

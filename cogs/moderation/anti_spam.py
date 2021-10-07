@@ -26,6 +26,7 @@ from discord.ext import commands, tasks
 from botutils import colors, get_time, emojis, get_prefixes_async, GetChoice
 from botutils.interactions import AuthorView
 from botutils.cache_rewrite import Cache
+from classes.exceptions import IgnoredExit
 from fate import Fate
 
 
@@ -1410,7 +1411,7 @@ class ConfigureMenu(AuthorView):
         self.add_item(self.ConfigureSelect(ctx, module, self))
 
     async def on_error(self, error: Exception, item, interaction: Interaction) -> None:
-        if not isinstance(error, (NotFound, self.ctx.bot.ignored_exit)):
+        if not isinstance(error, (NotFound, IgnoredExit)):
             raise
 
 

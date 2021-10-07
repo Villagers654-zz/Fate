@@ -22,7 +22,7 @@ from PIL import Image, ImageFont, ImageDraw
 
 from . import colors
 from .tools import get_time
-from classes.exceptions import EmptyException
+from classes.exceptions import IgnoredExit
 
 
 style = discord.ButtonStyle
@@ -132,13 +132,13 @@ class GetChoice(discord.ui.View):
         if not self.selected and self.delete_after:
             with suppress(Exception):
                 await message.delete()
-            raise self.ctx.bot.ignored_exit
+            raise IgnoredExit
 
         elif not self.selected:
             e = discord.Embed(color=colors.red)
             e.set_author(name="Expired Menu", icon_url=self.ctx.author.display_avatar.url)
             await message.edit(content=None, view=None, embed=e)
-            raise EmptyException
+            raise IgnoredExit
 
         if self.delete_after:
             with suppress(Exception):
@@ -156,8 +156,8 @@ class GetChoice(discord.ui.View):
         return self.selected
 
     async def on_error(self, error, _item, _interaction) -> None:
-        """ Ignore NotFound and EmptyException errors """
-        if not isinstance(error, (NotFound, EmptyException)):
+        """ Ignore NotFound and IgnoredExit errors """
+        if not isinstance(error, (NotFound, IgnoredExit)):
             raise
 
 

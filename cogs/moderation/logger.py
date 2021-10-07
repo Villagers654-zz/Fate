@@ -27,6 +27,7 @@ from PIL import Image
 
 from botutils.colors import *
 from botutils import get_prefix, split, get_time
+from classes.exceptions import IgnoredExit
 
 
 def is_guild_owner():
@@ -224,7 +225,7 @@ class Logger(commands.Cog):
             return channel.permissions_for(guild.me) if channel else guild.me.guild_permissions
 
         if not guild or not guild.me:
-            raise self.bot.ignored_exit
+            raise IgnoredExit
         if getattr(perms(), permission):
             return True
 
@@ -250,14 +251,14 @@ class Logger(commands.Cog):
         for _attempt in range(12 * 60):  # Timeout of 12 hours
             if not guild or not guild.me:
                 await self.destruct(guild_id)
-                raise self.bot.ignored_exit
+                raise IgnoredExit
             if getattr(perms(), permission):
                 del self.pool[guild_id]
                 return True
             await asyncio.sleep(60)
         else:
             await self.destruct(guild_id)
-            raise self.bot.ignored_exit
+            raise IgnoredExit
 
     async def start_queue(self, guild_id: str) -> None:
         guild = self.bot.get_guild(int(guild_id))

@@ -13,6 +13,7 @@ from discord.ext import commands
 import discord
 from discord.errors import NotFound, Forbidden, HTTPException
 import botutils
+from classes.exceptions import IgnoredExit
 
 
 class GetUser:
@@ -126,7 +127,7 @@ class GetUser:
                         choices = [m.mention for m in options]
                         choice = await self.bot.utils.get_choice(self.ctx, choices, name="Which user")
                     if not choice:
-                        raise self.bot.ignored_exit
+                        raise IgnoredExit
                     users.append(options[choices.index(choice)])
         else:
             for user_id in self.user_ids:
@@ -152,7 +153,7 @@ class GetUser:
         if not users:
             if self.ctx:
                 await self.ctx.send("Couldn't find any users going by that")
-                raise self.bot.ignored_exit
+                raise IgnoredExit
             return None
         if self.multi:
             return users
@@ -165,7 +166,7 @@ class GetUser:
                 choices = [u.mention for u in users]
                 choice = await self.bot.utils.get_choice(self.ctx, choices, name="Which user")
             if not choice:
-                raise self.bot.ignored_exit
+                raise IgnoredExit
             return users[choices.index(choice)]
 
         return users[0]

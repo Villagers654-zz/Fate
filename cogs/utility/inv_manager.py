@@ -16,6 +16,8 @@ from discord.ext import commands
 from discord.errors import HTTPException, NotFound, Forbidden
 import discord
 
+from classes.exceptions import IgnoredExit
+
 
 class InviteManager(commands.Cog):
     def __init__(self, bot):
@@ -54,7 +56,7 @@ class InviteManager(commands.Cog):
         try:
             invites = await guild.invites()
         except self.suppressed:
-            raise self.bot.ignored_exit
+            raise IgnoredExit
         for invite in invites:
             await asyncio.sleep(0)
             if invite.code in self.index[guild.id]:
