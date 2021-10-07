@@ -340,6 +340,9 @@ class Fate(commands.AutoShardedBot):
             data = cipher.decrypt(f.read().encode()).decode()
         self.auth = json.loads(data)
 
+        # Enable Sentry logging
+        use_sentry(bot, dsn=self.auth["sentry_dsn"])
+
         # Load in guild prefixes
         self.guild_prefixes = {}
         collection = self.mongo["GuildPrefixes"]
@@ -406,10 +409,6 @@ bot.remove_command("help")  # Default help command
 bot.add_check(checks.command_is_enabled)
 bot.add_check(checks.blocked)
 bot.add_check(checks.restricted)
-use_sentry(
-    bot,
-    dsn=bot.config["sentry_dsn"]
-)
 
 
 @bot.event
