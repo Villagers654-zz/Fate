@@ -939,8 +939,8 @@ class Ranking(commands.Cog):
                 members.append([member, xp])
 
         conf = self.default_config
-        if str(ctx.guild.id) in self.config:
-            conf = self.config[str(ctx.guild.id)]
+        if ctx.guild.id in self.config:
+            conf = self.config[ctx.guild.id]
 
         tasks = [
             [
