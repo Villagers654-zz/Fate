@@ -237,7 +237,7 @@ class ErrorHandler(commands.Cog):
                             description = embed.description
                             if len(description) > 128:
                                 description = description[:128] + "..."
-                            e.description = f"**Command ran:** {description}"
+                            e.description = f"**Command you used:** {description}"
                             with suppress(Exception):
                                 await author.send(f"A problem you encountered was fixed", embed=e)
                                 await channel.send(
