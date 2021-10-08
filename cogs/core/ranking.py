@@ -618,6 +618,85 @@ class Ranking(commands.Cog):
         await ctx.send(f"Set the required xp to level up your first time to {amount}")
         await self.config.flush()
 
+    @commands.command(name="give-xp", description="Gives a user additional xp")
+    @commands.cooldown(1, 10, commands.BucketType.user)
+    @commands.cooldown(2, 10, commands.BucketType.channel)
+    @commands.guild_only()
+    async def give_xp(self, ctx, users: commands.Greedy[discord.Member], amount: int):
+        if len(users) > 3:
+            return await ctx.send("You can't alter the xp of more than 3 users at a time")
+        if amount <= 0:
+            return await ctx.send("The amount must be greater than 0")
+        async with self.bot.utils.cursor() as cur:
+            for user in users:
+                await cur.execute(
+                    f"insert into msg values ({ctx.guild.id}, {user.id}, {amount}) "
+                    f"on duplicate key update xp = xp + {amount};"
+                )
+        await ctx.send(
+            f"Gave {', '.join(u.mention for u in users)} {amount} xp",
+            allowed_mentions=discord.AllowedMentions(users=True, roles=False, everyone=False)
+        )
+
+    @commands.command(name="give-xp", description="Gives a user additional xp")
+    @commands.cooldown(1, 10, commands.BucketType.user)
+    @commands.cooldown(2, 10, commands.BucketType.channel)
+    @commands.guild_only()
+    async def give_xp(self, ctx, users: commands.Greedy[discord.Member], amount: int):
+        if ctx.author.id != ctx.guild.owner.id:
+            return await ctx.send("Only the server owner can run this")
+        if len(users) > 3:
+            return await ctx.send("You can't alter the xp of more than 3 users at a time")
+        if amount <= 0:
+            return await ctx.send("The amount must be greater than 0")
+        async with self.bot.utils.cursor() as cur:
+            for user in users:
+                await cur.execute(
+                    f"insert into msg values ({ctx.guild.id}, {user.id}, {amount}) "
+                    f"on duplicate key update xp = xp + {amount};"
+                )
+        await ctx.send(
+            f"Gave {', '.join(u.mention for u in users)} {amount} xp",
+            allowed_mentions=discord.AllowedMentions(users=True, roles=False, everyone=False)
+        )
+
+    @commands.command(name="remove-xp", description="Removes some of a users xp")
+    @commands.cooldown(1, 10, commands.BucketType.user)
+    @commands.cooldown(2, 10, commands.BucketType.channel)
+    @commands.guild_only()
+    async def remove_xp(self, ctx, users: commands.Greedy[discord.Member], amount: int):
+        if ctx.author.id != ctx.guild.owner.id:
+            return await ctx.send("Only the server owner can run this")
+        if len(users) > 3:
+            return await ctx.send("You can't alter the xp of more than 3 users at a time")
+        if amount <= 0:
+            return await ctx.send("The amount must be greater than 0")
+        async with self.bot.utils.cursor() as cur:
+            for user in users:
+                await cur.execute(
+                    f"select * from msg "
+                    f"where guild_id = {ctx.guild.id} "
+                    f"and user_id = {user.id} "
+                    f"and xp >= {amount};"
+                )
+                if cur.rowcount:
+                    await cur.execute(
+                        f"update msg "
+                        f"set xp = xp - {amount} "
+                        f"where guild_id = {ctx.guild.id} "
+                        f"and user_id = {user.id};"
+                    )
+                else:
+                    await cur.execute(
+                        f"delete from msg "
+                        f"where guild_id = {ctx.guild.id} "
+                        f"and user_id = {user.id};"
+                    )
+        await ctx.send(
+            f"Removed {amount} xp from {', '.join(u.mention for u in users)}",
+            allowed_mentions=discord.AllowedMentions(users=True, roles=False, everyone=False)
+        )
+
     @commands.command(
         name="profile",
         aliases=["rank"],
