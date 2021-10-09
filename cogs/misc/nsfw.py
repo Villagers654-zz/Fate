@@ -95,7 +95,7 @@ class NSFW(commands.Cog):
     @commands.is_nsfw()
     @commands.bot_has_permissions(embed_links=True)
     async def hentai(self, ctx):
-            result = requests.get("https://nekos.life/api/v2/img/hentai").json()
+        result = requests.get("https://nekos.life/api/v2/img/hentai").json()
             await ctx.send(result['url'])
    
     @commands.command(name="feet")
