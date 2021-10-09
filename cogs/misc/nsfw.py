@@ -111,4 +111,3 @@ class NSFW(commands.Cog):
 def setup(bot):
     bot.add_cog(NSFW(bot), override=True)
 
-#xello made this less black
