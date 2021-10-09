@@ -759,7 +759,7 @@ class AntiSpam(commands.Cog):
                                 reason = "Using a bot/macro"
 
                 # duplicate messages
-                if "duplicates" in conf:
+                if "duplicates" in conf and msg.content:
                     await asyncio.sleep(0)
                     word = msg.content.split()[0]
                     if len(self.msgs[user_id]) > 3 and word.lower() != word.upper():
