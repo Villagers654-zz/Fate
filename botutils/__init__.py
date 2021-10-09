@@ -9,8 +9,8 @@ An ease of use wrapper for use with Fate(written in discord.py)
 """
 
 __title__ = "BotUtils"
-__author__ = "FrequencyX4, All Rights Reserved"
-__license__ = "Proprietary"
+__author__ = "FrequencyX4"
+__license__ = "Proprietary, see LICENSE for details"
 __copyright__ = "Copyright (C) 2021-present FrequencyX4, All Rights Reserved"
 __version__ = "1.0.0"
 
