@@ -761,6 +761,11 @@ class AntiSpam(commands.Cog):
                 # duplicate messages
                 if "duplicates" in conf:
                     await asyncio.sleep(0)
+                    word = msg.content.split()[0]
+                    if len(self.msgs[user_id]) > 3 and word.lower() != word.upper():
+                        if all(m.content.startswith(word) for m in self.msgs[user_id][-4:]):
+                            triggered = True
+                            reason = "Duplicate messages"
                     if msg.guild.me and msg.channel.permissions_for(msg.guild.me).read_message_history and msg.content:
                         with self.bot.utils.operation_lock(key=msg.id):
                             channel_id = str(msg.channel.id)
