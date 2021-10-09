@@ -18,7 +18,7 @@ import discord
 import dbl
 
 from botutils import colors, get_prefixes_async, emojis, Conversation, \
-    url_from, format_date_difference, sanitize
+    url_from, format_date, sanitize
 import botutils
 reload(botutils)
 
@@ -108,7 +108,7 @@ class Core(commands.Cog):
             e.set_image(url=guild.banner.url)
         e.description = f"👥 | {len(guild.members)} Members"
         if guild.id in self.join_dates:
-            join_duration = format_date_difference(self.join_dates[guild.id])
+            join_duration = format_date(self.join_dates[guild.id])
             del self.join_dates[guild.id]
             e.description += f"\n⏰ | {join_duration}"
         await channel.send(embed=e)  # type: ignore

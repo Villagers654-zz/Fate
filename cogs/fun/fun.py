@@ -23,7 +23,7 @@ from PIL import Image, ImageDraw, ImageFont
 from discord.ext import commands
 from discord.ext import tasks
 
-from botutils import get_prefix, format_date_difference, colors, sanitize
+from botutils import get_prefix, format_date, colors, sanitize
 
 
 tier_damage = {
@@ -104,7 +104,7 @@ class Fun(commands.Cog):
 
         is_admin = ctx.author.guild_permissions.administrator
         if msg.embeds:
-            return await ctx.send(f"{msg.author}s message was | deleted {format_date_difference(time)} ago", embed=msg.embeds[0])
+            return await ctx.send(f"{msg.author}s message was | deleted {format_date(time)} ago", embed=msg.embeds[0])
         if len(msg.content) > 256 and not is_admin:
             return await ctx.send("And **wHy** would I snipe a message *that*  big")
 
@@ -113,7 +113,7 @@ class Fun(commands.Cog):
         if not is_admin:
             msg.content = await sanitize(msg.content[:4096], ctx)
         e.description = msg.content
-        e.set_footer(text=f"🗑 {format_date_difference(time).replace('.0', '')} ago")
+        e.set_footer(text=f"🗑 {format_date(time).replace('.0', '')} ago")
         await ctx.send(embed=e)
 
     @commands.Cog.listener()

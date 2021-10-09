@@ -19,7 +19,7 @@ from discord.ext import commands, tasks
 from discord.errors import NotFound, Forbidden
 import discord
 
-from botutils import get_prefixes_async, colors, format_date_difference
+from botutils import get_prefixes_async, colors, format_date
 from fate import Fate
 
 
@@ -354,8 +354,8 @@ class GlobalChat(commands.Cog):
 
         e = discord.Embed(color=ctx.author.color)
         e.set_author(name=str(ctx.author), icon_url=ctx.author.display_avatar.url)
-        age = format_date_difference(ctx.author.created_at).split()[0]
-        joined = format_date_difference(ctx.author.joined_at).split()[0]
+        age = format_date(ctx.author.created_at).split()[0]
+        joined = format_date(ctx.author.joined_at).split()[0]
         e.description = f"🆔 | {ctx.author.id}\n" \
                         f"📬 | {len(ctx.author.mutual_guilds)} Mutual Servers\n" \
                         f"⏰ | Created {age} ago\n" \

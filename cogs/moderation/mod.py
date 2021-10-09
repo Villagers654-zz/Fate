@@ -25,7 +25,7 @@ from discord import Member, Role, TextChannel, User, ButtonStyle, ui, Interactio
 from discord.ext.commands import Greedy
 from discord.errors import NotFound, Forbidden, HTTPException
 
-from botutils import colors, get_prefix, get_time, split, CancelButton, format_date_difference
+from botutils import colors, get_prefix, get_time, split, CancelButton, format_date
 from classes.exceptions import IgnoredExit
 from fate import Fate
 
@@ -149,7 +149,7 @@ class TimerView(ui.View):
                 mod.tasks[guild_id] = {}
             mod.tasks[guild_id][str(user.id)] = task
 
-            expanded_form = format_date_difference(datetime.now() - timedelta(seconds=duration))
+            expanded_form = format_date(datetime.now() - timedelta(seconds=duration))
             await interaction.response.send_message(f"Updated the mute for {user.mention} to {expanded_form}")
             await interaction.message.edit(view=self.home_view)
 

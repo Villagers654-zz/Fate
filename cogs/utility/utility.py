@@ -30,8 +30,8 @@ from colormap import rgb2hex
 import psutil
 from discord.ext import commands, tasks
 
-from botutils import colors, bytes2human, get_time, emojis, \
-get_prefixes_async, format_date_difference, sanitize, GetChoice, AuthorView
+from botutils import colors, bytes2human, get_time, emojis, extract_time, \
+get_prefixes_async, format_date, sanitize, GetChoice, AuthorView
 
 
 default = {
@@ -625,38 +625,16 @@ class Utility(commands.Cog):
 
     @commands.command(name="reminder", aliases=["timer", "remindme", "remind"], description="Creates a timer")
     @commands.cooldown(2, 15, commands.BucketType.user)
-    async def timer(self, ctx, *args):
+    async def timer(self, ctx, timer, *, reminder):
         p = await get_prefixes_async(self.bot, ctx.message)
         p = p[2]
         usage = (
             f">>> Usage: `{p}reminder [30s|5m|1h|2d]`"
             f"Example: `{p}reminder 1h take out da trash`"
         )
-        timers = []
-        for timer in [re.findall("[0-9]+[smhd]", arg) for arg in args]:
-            timers = [*timers, *timer]
-        args = [arg for arg in args if not any(timer in arg for timer in timers)]
-        if not timers:
+        timer = extract_time(timer)
+        if not timer:
             return await ctx.send(usage)
-        time_to_sleep = [0, []]
-        for timer in timers:
-            raw = "".join(x for x in list(timer) if x.isdigit())
-            if "d" in timer:
-                time = int(timer.replace("d", "")) * 60 * 60 * 24
-                _repr = "day"
-            elif "h" in timer:
-                time = int(timer.replace("h", "")) * 60 * 60
-                _repr = "hour"
-            elif "m" in timer:
-                time = int(timer.replace("m", "")) * 60
-                _repr = "minute"
-            else:  # 's' in timer
-                time = int(timer.replace("s", ""))
-                _repr = "second"
-            time_to_sleep[0] += time
-            time_to_sleep[1].append(f"{raw} {_repr if raw == '1' else _repr + 's'}")
-        timer, expanded_timer = time_to_sleep
-
         if timer < 25:
             r = self.cd.check(ctx.channel.id)
             if not r:
@@ -670,31 +648,31 @@ class Utility(commands.Cog):
         user_id = str(ctx.author.id)
         if user_id not in self.timers:
             self.timers[user_id] = {}
-        msg = " ".join(args)
-        if "http" in msg:
+        if "http" in reminder:
             return await ctx.send("You can't include links in timers")
         if ctx.message.raw_mentions:
             return await ctx.send("You can't include additional pings in timers")
-        if len(msg) <= 1:
+        if len(reminder) <= 3:
             return await ctx.send("Too smol")
-        msg = msg[:200]
+        reminder = reminder[:200]
+        expanded = format_date(seconds=timer)
         try:
-            self.timers[user_id][msg] = {
+            self.timers[user_id][reminder] = {
                 "timer": str(datetime.now() + timedelta(seconds=timer)),
                 "channel": ctx.channel.id,
                 "mention": ctx.author.mention,
-                "expanded_timer": expanded_timer,
+                "expanded_timer": expanded,
             }
         except OverflowError:
             return await ctx.send("That's a bit.. *too far*  into the future")
         await ctx.send(
-            f"I'll remind you about {' '.join(args)} in {', '.join(expanded_timer)}"
+            f"I'll remind you about {reminder} in {expanded}"
         )
         with suppress(KeyError):
             task = self.bot.loop.create_task(
-                self.remind(user_id, msg, self.timers[user_id][msg])
+                self.remind(user_id, reminder, self.timers[user_id][reminder])
             )
-            self.bot.tasks["timers"][f"timer-{self.timers[user_id][msg]['timer']}"] = task
+            self.bot.tasks["timers"][f"timer-{self.timers[user_id][reminder]['timer']}"] = task
         await self.save_timers()
 
     @commands.command(name="timers", aliases=["reminders"], description="Shows your timers")
@@ -713,7 +691,7 @@ class Utility(commands.Cog):
                 del self.timers[user_id][msg]
                 await self.save_timers()
                 continue
-            expanded_time = format_date_difference(end_time)
+            expanded_time = format_date(end_time)
             channel = self.bot.get_channel(dat["channel"])
             if not channel:
                 del self.timers[user_id][msg]

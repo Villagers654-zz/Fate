@@ -12,7 +12,7 @@ Classes:
 
 Functions:
     split
-    format_date_difference
+    format_date
     bytes2human
     extract_time
     get_seconds
@@ -164,29 +164,58 @@ def split(text, amount=2000) -> list:
     return [text[i : i + amount] for i in range(0, len(text), amount)]
 
 
-def format_date_difference(dt: datetime) -> str:
-    """ Formats the time since the provided datetime object """
+def format_date(date=None, other_date=None, seconds=None) -> str:
+    """
+    Formats the time since the provided datetime object
+
+    :param datetime or float date:
+    :param datetime or float other_date:
+    :param int or None seconds:
+    """
     def space():
         """ Add a space to the start only if fmt has existing content """
         return " " if fmt else ""
 
+    if isinstance(date, float):
+        date = datetime.fromtimestamp(date)
+    if other_date and isinstance(other_date, float):
+        other_date = datetime.fromtimestamp(other_date, tz=date.tzinfo)
+    if seconds:
+        date = datetime.now() + timedelta(seconds=seconds)
+    date = date.replace(microsecond=0)
+
     fmt = ""
-    now = datetime.now(tz=dt.tzinfo)
+    now = other_date or datetime.now(tz=date.tzinfo)
+    now = now.replace(microsecond=0)
 
-    if now > dt:
-        dt = now - dt
+    if now > date:
+        date = now - date
     else:
-        dt = dt - now
-    remainder = dt.total_seconds()
+        date = date - now
+    remainder = date.total_seconds()
 
-    if days := dt.days:
-        if years := int(dt.days / 356):
-            fmt += f"{years}y"
-            days -= years * 356
-            remainder -= 60 * 60 * 24 * 356 * years
+    if days := date.days:
+        if years := int(date.days / 365):
+            fmt += f"{years} year{s(years)}"
+            days -= years * 365
+            remainder -= 60 * 60 * 24 * 365 * years
+
+        one_month = 60 * 60 * 24 * 30
+        if remainder >= one_month:
+            months = int(remainder / one_month)
+            fmt += f"{space()}{months} month{s(months)}"
+            days -= months * 30
+            remainder -= one_month * months
+
+        one_week = 60 * 60 * 24 * 7
+        if remainder >= one_week:
+            weeks = int(remainder / one_week)
+            fmt += f"{space()}{weeks} week{s(weeks)}"
+            days -= weeks * 7
+            remainder -= one_week * weeks
 
         if days:
-            fmt += f"{space()}{days}d"
+            fmt += f"{space()}{days} day{s(days)}"
             remainder -= 60 * 60 * 24 * days
 
     if hours := int(remainder / 60 / 60):
@@ -194,7 +223,7 @@ def format_date_difference(dt: datetime) -> str:
         remainder -= 60 * 60 * hours
 
     if minutes := int(remainder / 60):
-        fmt += f"{space()}{int(minutes)}m"
+        fmt += f"{space()}{int(minutes)} minute{s(minutes)}"
         remainder -= 60 * minutes
 
     if remainder >= 1 or not fmt:
@@ -236,7 +265,7 @@ formulas = {
 }
 
 
-def extract_time(string):
+def extract_time(string: str) -> Optional[int]:
     string = string.replace(" ", "")[:20]
     for human_form, operator in operators.items():
         string = string.replace(human_form, operator)

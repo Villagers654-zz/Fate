@@ -15,7 +15,7 @@ from discord.ext import commands
 from discord import ui, Interaction
 import discord
 
-from botutils import GetChoice
+from botutils import GetChoice, emojis
 from fate import Fate
 from .selfroles import SelfRoles
 
@@ -49,8 +49,39 @@ class ButtonRoles(commands.Cog):
         channel = self.bot.get_channel(meta["channel_id"])
         message = await channel.fetch_message(int(message_id))  # type: ignore
         new_view = RoleView(self, guild_id, int(message_id))
-        await message.edit(content=meta["text"], view=new_view)
+        content = self.format_text(guild_id, message_id, meta["text"])
+        await message.edit(content=content, view=new_view)
         return message
+
+    def format_text(self, guild_id: int, message_id: Union[int, str], text: str) -> str:
+        if "!roles" in text:
+            lines = list(text.splitlines())
+            (position, line), = [
+                (position, line)
+                for position, line
+                  in enumerate(lines)
+                    if "!roles" in line
+            ]
+
+            show_stats = False
+            if "!stats" in text:
+                show_stats = True
+                line = line.replace("!stats", "").strip()
+            start = ""
+            if len(line) <= 9:
+                start = line.strip("!roles")
+
+            guild = self.bot.get_guild(guild_id)
+            roles = ""
+            for role_id in self.config[guild_id][str(message_id)]["roles"]:
+                if role := guild.get_role(int(role_id)):
+                    roles += f"\n{start}{role.mention}"
+                    if show_stats:
+                        roles += f" `{len(role.members)}{emojis.members}`"
+
+            lines[position] = roles.strip("\n")
+            text = "\n".join(lines)
+        return text
 
     @commands.group(name="role-menu", aliases=["rolemenu"], description="Shows how to use the module")
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -398,6 +429,13 @@ class ButtonRoles(commands.Cog):
         await ctx.send("Set the new limit 👍")
         await self.config.flush()
 
+    @commands.command(name="jor")
+    @commands.is_owner()
+    async def jor(self, ctx):
+        if "!roles" in (text := self.config[ctx.guild.id]["793008349549297664"]["text"]):
+            await ctx.send(text)
+        await ctx.send(f"f..\n{text}")
+
     @commands.command(name="edit-message", description="Sets the msg content of a menu")
     @commands.has_permissions(administrator=True)
     async def edit_message(self, ctx, *, new_message):
@@ -490,7 +528,6 @@ class Categories(ui.Select):
 
         # Prepare the components for the dropdown menu
         options = []
-        print(categories)
         for category in categories:
             option = discord.SelectOption(
                 label=category[:100],
@@ -726,7 +763,11 @@ class RoleView(ui.View):
 
         if self.config[self.guild_id][self.message_id]["show_percentage"]:
             self.__init__(self.cls, self.guild_id, self.message_id)
-            await interaction.message.edit(view=self)
+            if "!roles" in (text := self.config[self.guild_id][str(self.message_id)]["text"]):
+                content = self.cls.format_text(self.guild_id, self.message_id, text)
+                await interaction.message.edit(content=content, view=self)
+            else:
+                await interaction.message.edit(view=self)
 
     async def select_callback(self, interaction: Interaction) -> Optional[discord.Message]:
         """ The callback function for when a buttons pressed """
@@ -736,7 +777,12 @@ class RoleView(ui.View):
             self.clear_items()
             self.menu = Select(self, self.guild_id, self.message_id, self.index())
             self.add_item(self.menu)
-            await interaction.message.edit(view=self)
+            msg_id = str(interaction.message.id)
+            if "!roles" in (text := self.config[guild.id][msg_id]["text"]):
+                content = self.cls.format_text(guild.id, msg_id, text)
+                await interaction.message.edit(content=content, view=self)
+            else:
+                await interaction.message.edit(view=self)
             if reason:
                 await interaction.response.send_message(reason, ephemeral=True)
             return
@@ -770,7 +816,8 @@ class RoleView(ui.View):
             "Successfully set your roles",
             ephemeral=True
         )
-        await adjust_options()
+        if self.config[guild.id][str(interaction.message.id)]["show_percentage"]:
+            await adjust_options()
 
 
 class Select(discord.ui.Select):
