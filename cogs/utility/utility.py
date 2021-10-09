@@ -122,7 +122,6 @@ class Utility(commands.Cog):
         if "timers" not in bot.tasks:
             bot.tasks["timers"] = {}
         self.database_cleanup_task.start()
-        self.cd = bot.utils.cooldown_manager(1, 120, raise_error=False)
 
     def cog_unload(self):
         self.database_cleanup_task.cancel()
@@ -641,9 +640,6 @@ class Utility(commands.Cog):
                 return await ctx.send("Why tho. Tell me. Why. Why has your life lead you up to this point. What even is the point. Definitely not for this. Please, ***please***  consider giving the outdoors a try. There's plenty fish in the sea even. Anything but ***this***")
             return await ctx.send("That timer's too smol")
         if timer > 60 * 60 * 24 * 365:
-            r = self.cd.check(ctx.channel.id)
-            if not r:
-                return await ctx.send("Why tho. Tell me. Why. Why has your life lead you up to this point. What even is the point. Definitely not for this. Please, ***please***  consider giving the outdoors a try. There's plenty fish in the sea even. Anything but ***this***")
             return await ctx.send("You can't set a timer that long")
         user_id = str(ctx.author.id)
         if user_id not in self.timers:
@@ -652,7 +648,7 @@ class Utility(commands.Cog):
             return await ctx.send("You can't include links in timers")
         if ctx.message.raw_mentions:
             return await ctx.send("You can't include additional pings in timers")
-        if len(reminder) <= 3:
+        if len(reminder) <= 1:
             return await ctx.send("Too smol")
         reminder = reminder[:200]
         expanded = format_date(seconds=timer)
