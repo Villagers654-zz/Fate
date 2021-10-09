@@ -4,7 +4,7 @@ cogs.core.tasks
 
 Cog for managing the core bot tasks like it's status, and backups
 
-:copyright: (C) 2021-present FrequencyX4
+:copyright: (C) 2021-present FrequencyX4, All Rights Reserved
 :license: Proprietary, see LICENSE for details
 """
 

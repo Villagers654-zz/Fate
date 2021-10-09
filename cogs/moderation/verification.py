@@ -4,7 +4,7 @@ cogs.moderation.verification
 
 A cog for verifying users into servers via a captcha image
 
-:copyright: (C) 2020-present FrequencyX4
+:copyright: (C) 2020-present FrequencyX4, All Rights Reserved
 :license: Proprietary, see LICENSE for details
 """
 

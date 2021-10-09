@@ -4,7 +4,7 @@ cogs.core.ranking
 
 A customizable xp ranking cog
 
-:copyright: (C) 2019-present FrequencyX4
+:copyright: (C) 2019-present FrequencyX4, All Rights Reserved
 :license: Proprietary, see LICENSE for details
 """
 

@@ -4,7 +4,7 @@ cogs.core.user
 
 An owner only cog for managing the bot user
 
-:copyright: (C) 2019-present FrequencyX4
+:copyright: (C) 2019-present FrequencyX4, All Rights Reserved
 :license: Proprietary, see LICENSE for details
 """
 

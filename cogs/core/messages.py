@@ -4,7 +4,7 @@ cogs.core.messages
 
 A module for configuring where message related functions go
 
-:copyright: (C) 2021-present FrequencyX4
+:copyright: (C) 2021-present FrequencyX4, All Rights Reserved
 :license: Proprietary, see LICENSE for details
 """
 

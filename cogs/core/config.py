@@ -4,7 +4,7 @@ cogs.core.config
 
 Command for displaying whether or not certain modules are enabled
 
-:copyright: (C) 2019-present FrequencyX4
+:copyright: (C) 2019-present FrequencyX4, All Rights Reserved
 :license: Proprietary, see LICENSE for details
 """
 

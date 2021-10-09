@@ -4,7 +4,7 @@ cogs.utility.inv_manager
 
 Less api spammy invite manager that relies on high uptime
 
-:copyright: (C) 2021-present FrequencyX4
+:copyright: (C) 2021-present FrequencyX4, All Rights Reserved
 :license: Proprietary, see LICENSE for details
 """
 

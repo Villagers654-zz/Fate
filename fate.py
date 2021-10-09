@@ -4,7 +4,7 @@ Fate
 
 Main file intended for starting the bot
 
-:copyright: (C) 2018-present FrequencyX4
+:copyright: (C) 2018-present FrequencyX4, All Rights Reserved
 :license: Proprietary, see LICENSE for details
 """
 

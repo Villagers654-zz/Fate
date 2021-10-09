@@ -4,7 +4,7 @@ cogs.fun.cookies
 
 A wholesome cog to give, receive, and eat virtual cookies
 
-:copyright: (C) 2018-present FrequencyX4
+:copyright: (C) 2018-present FrequencyX4, All Rights Reserved
 :license: Proprietary, see LICENSE for details
 """
 

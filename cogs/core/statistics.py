@@ -4,7 +4,7 @@ cogs.core.statistics
 
 A cog for showing the number of servers using each module
 
-:copyright: (C) 2021-present FrequencyX4
+:copyright: (C) 2021-present FrequencyX4, All Rights Reserved
 :license: Proprietary, see LICENSE for details
 """
 

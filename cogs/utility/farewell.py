@@ -4,7 +4,7 @@ cogs.utility.farewell
 
 A cog that sends when a user leaves the server
 
-:copyright: (C) 2021-present FrequencyX4
+:copyright: (C) 2021-present FrequencyX4, All Rights Reserved
 :license: Proprietary, see LICENSE for details
 """
 

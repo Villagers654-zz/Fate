@@ -4,7 +4,7 @@ cogs.core.cc
 
 A module for configuring per-server custom commands
 
-:copyright: (C) 2021-present FrequencyX4
+:copyright: (C) 2021-present FrequencyX4, All Rights Reserved
 :license: Proprietary, see LICENSE for details
 """
 

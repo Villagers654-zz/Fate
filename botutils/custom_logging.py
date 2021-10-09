@@ -4,7 +4,7 @@ Custom Logging
 
 A helper class intended for formatting logs and printing to console
 
-:copyright: (C) 2020-present FrequencyX4
+:copyright: (C) 2020-present FrequencyX4, All Rights Reserved
 :license: Proprietary, see LICENSE for details
 """
 

@@ -4,7 +4,7 @@ cogs.misc.reddit_api
 
 Deprecated - A cog for use of Reddit with asyncpraw
 
-:copyright: (C) 2021-present FrequencyX4
+:copyright: (C) 2021-present FrequencyX4, All Rights Reserved
 :license: Proprietary, see LICENSE for details
 """
 

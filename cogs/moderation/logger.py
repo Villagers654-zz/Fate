@@ -4,7 +4,7 @@ cogs.moderation.logger
 
 A cog for logging event related actions to a text channel(s)
 
-:copyright: (C) 2020-present FrequencyX4
+:copyright: (C) 2020-present FrequencyX4, All Rights Reserved
 :license: Proprietary, see LICENSE for details
 """
 

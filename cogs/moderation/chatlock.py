@@ -4,7 +4,7 @@ cogs.moderation.chatlock
 
 A cog for locking a channel from users sending messages
 
-:copyright: (C) 2020-present FrequencyX4
+:copyright: (C) 2020-present FrequencyX4, All Rights Reserved
 :license: Proprietary, see LICENSE for details
 """
 

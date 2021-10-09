@@ -4,7 +4,7 @@ cogs.moderation.limiter
 
 A cog for limiting channels to specific things like images or youtube links
 
-:copyright: (C) 2019-present FrequencyX4
+:copyright: (C) 2019-present FrequencyX4, All Rights Reserved
 :license: Proprietary, see LICENSE for details
 """
 

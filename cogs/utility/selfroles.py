@@ -4,7 +4,7 @@ cogs.utility.selfroles
 
 A cog for users to react to menus to self assign roles
 
-:copyright: (C) 2020-present FrequencyX4
+:copyright: (C) 2020-present FrequencyX4, All Rights Reserved
 :license: Proprietary, see LICENSE for details
 """
 

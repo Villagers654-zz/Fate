@@ -4,7 +4,7 @@ cogs.utility.notes
 
 A cog for jutting down notes for later
 
-:copyright: (C) 2019-present FrequencyX4
+:copyright: (C) 2019-present FrequencyX4, All Rights Reserved
 :license: Proprietary, see LICENSE for details
 """
 

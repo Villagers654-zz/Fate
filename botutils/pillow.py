@@ -4,7 +4,7 @@ Pillow Utils
 
 Helper functions for use with the Pillow/PIL module
 
-:copyright: (C) 2020-present FrequencyX4
+:copyright: (C) 2020-present FrequencyX4, All Rights Reserved
 :license: Proprietary, see LICENSE for details
 """
 

@@ -4,7 +4,7 @@ Command Checks
 
 A collection of functions for checking if a command should run
 
-:copyright: (C) 2019-present FrequencyX4
+:copyright: (C) 2019-present FrequencyX4, All Rights Reserved
 :license: Proprietary, see LICENSE for details
 """
 

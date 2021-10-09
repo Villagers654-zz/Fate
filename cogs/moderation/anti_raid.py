@@ -4,7 +4,7 @@ cogs.utility.anti_raid
 
 A cog for preventing mass join and kick/ban raids
 
-:copyright: (C) 2020-present FrequencyX4
+:copyright: (C) 2020-present FrequencyX4, All Rights Reserved
 :license: Proprietary, see LICENSE for details
 """
 

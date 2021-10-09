@@ -4,7 +4,7 @@ cogs.utility.chatbridges
 
 A cog for bridging 2 or more channels together
 
-:copyright: (C) 2019-present FrequencyX4
+:copyright: (C) 2019-present FrequencyX4, All Rights Reserved
 :license: Proprietary, see LICENSE for details
 """
 

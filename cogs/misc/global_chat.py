@@ -4,7 +4,7 @@ cogs.misc.global_chat
 
 A cog to add functionality for a channel interconnected between multiple others
 
-:copyright: (C) 2020-present FrequencyX4
+:copyright: (C) 2020-present FrequencyX4, All Rights Reserved
 :license: Proprietary, see LICENSE for details
 """
 

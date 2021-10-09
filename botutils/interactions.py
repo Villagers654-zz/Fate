@@ -8,7 +8,7 @@ Classes:
     ModView : A View that only moderators can interact with
     AuthorView : A view that only the author of the original message can interact with
 
-:copyright: (C) 2020-present FrequencyX4
+:copyright: (C) 2020-present FrequencyX4, All Rights Reserved
 :license: Proprietary, see LICENSE for details
 """
 

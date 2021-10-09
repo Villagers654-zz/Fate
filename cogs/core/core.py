@@ -4,7 +4,7 @@ cogs.core.core.py
 
 Core bot commands such as prefix, invite, and ping
 
-:copyright: (C) 2019-present FrequencyX4
+:copyright: (C) 2019-present FrequencyX4, All Rights Reserved
 :license: Proprietary, see LICENSE for details
 """
 
