@@ -22,7 +22,8 @@ luck.py
 /beta/config.json
 
 /cogs/dev/
-/cogs/dev/*
+/cogs/dev/*\
+/cogs/moderation/anti_spam.py
 
 /data/auth.json
 /data/info.json
