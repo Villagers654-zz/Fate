@@ -91,6 +91,25 @@ class NSFW(commands.Cog):
         e.set_image(url=await self.get("yaoi.txt"))
         await ctx.send(embed=e)
 
+    @commands.command(name="hentai")
+    @commands.cooldown(1, 3, commands.BucketType.user)
+    @commands.guild_only()
+    @commands.is_nsfw()
+    @commands.bot_has_permissions(embed_links=True)
+    async def hentai(self, ctx):
+        result = requests.get("https://nekos.life/api/v2/img/hentai").json()
+        await ctx.send(result['url'])
+   
+    @commands.command(name="feet")
+    @commands.cooldown(1, 3, commands.BucketType.user)
+    @commands.guild_only()
+    @commands.is_nsfw()
+    @commands.bot_has_permissions(embed_links=True)
+    async def feet(self, ctx):
+        result = requests.get("https://nekos.life/api/v2/img/feet").json()
+        await ctx.send(result['url'])
+
 
 def setup(bot):
     bot.add_cog(NSFW(bot), override=True)
+
