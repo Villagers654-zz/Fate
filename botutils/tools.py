@@ -149,6 +149,12 @@ class Formatting:
             return msg
 
 
+def s(var: int) -> str:
+    """ Decides whether or not to use an s """
+    if var == 0 or var > 1:
+        return "s"
+    return ""
+
 def url_from(obj: Optional[discord.Asset]):
     """ Transforms an object with a possible .url attribute into something usable in embeds """
     return obj.url if hasattr(obj, "url") else discord.Embed.Empty
