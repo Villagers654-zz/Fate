@@ -103,7 +103,7 @@ class NSFW(commands.Cog):
     @commands.guild_only()
     @commands.is_nsfw()
     @commands.bot_has_permissions(embed_links=True)
-    async def hentai(self, ctx):
+    async def feet(self, ctx):
         result = requests.get("https://nekos.life/api/v2/img/feet").json()
         await ctx.send(result['url'])
 
