@@ -84,14 +84,12 @@ class Fate(commands.AutoShardedBot):
         self.views = {}
 
         self.pool = None  # MySQL Pool initialized on_ready
-        self.lavalink = None  # Music server
         self.login_errors = []  # Exceptions ignored during startup
         self.logs = []  # Logs to send to discord, empties out quickly
-        self.last_traceback = ""  # Formatted string of the last error traceback
         self.allow_user_mentions = discord.AllowedMentions(
             users=True, roles=False, everyone=False
         )
-        self.log = Logging(bot=self)         # Class to handle printing/logging
+        self.log = Logging(bot=self)  # Class to handle printing/logging
 
         self.user_config_cache = [
             0,  # Time last updated
@@ -160,12 +158,6 @@ class Fate(commands.AutoShardedBot):
         client = AsyncIOMotorClient(conf["url"], **conf["connection_args"])
         db = client.get_database(conf["db"])
         return db
-
-    async def update_mongo(self, collection, filter, data):
-        pass
-
-    async def remove_mongo(self, collection, filter):
-        self.aio_mongo[collection].delete_many(filter)
 
     async def create_pool(self):
         if self.pool:
