@@ -40,15 +40,15 @@ class Personalities:
     types: List[str] = [
         "psychopath", "depressed", "cheerful", "bright", "dark", "god", "deceiver", "funny", "fishy", "cool",
         "insecure", "lonely", "optimistic", "brave", "brilliant", "dreamer", "Nurturer", "Peaceful", "Overthinker",
-        "Idealist", "Pussy", "Pick-me girl", "Lovable"
+        "Idealist", "Pussy", "Pick-me girl", "Lovable", "Edgy"
     ]
     statuses: List[str] = [
         "Ho", "Slut", "Loser", "The nice guy", "The dick", "Dank memer", "Annoying", "Parties hard", "Cool guy",
-        "The chad", "Popular", "Unpopular", "Shut-in", "You need to leave the house to have a social status"
+        "The chad", "Popular", "Unpopular", "Shut-in", "You need to leave the house to have a social status", "Eternal Virgin"
     ]
     hobbies: List[str] = [
         "Art", "Drawing", "Painting", "Singing", "Writing", "Anime", "Memes", "Minecraft", "Sucking dick",
-        "Gaming", "Programming", "Work", "Swimming"
+        "Gaming", "Programming", "Work", "Swimming","Crying"
     ]
     genres: List[str] = [
         "Nightcore", "Heavy Metal", "Alternative", "Electronic", "Classical", "Dubstep", "Jazz", "Pop", "Rap"
@@ -331,6 +331,7 @@ class Fun(commands.Cog):
             "There isn't one for *you*",
             "Err.. maybe try being more attractive",
             "Sike! You're nobodys type",
+            "eWwW, get out of ma face",
             "I can't dupe your micro penis. zero times 2 is still zero"
         ]
         try:
@@ -431,6 +432,7 @@ class Fun(commands.Cog):
     async def notice(self, ctx):
         choices = [
             "Depression Strikes Again",
+            "Cry harder kid X",
             "Would you like an espresso for your depresso",
             "You're not you when you're hungry",
             "Tfw you realise flies get laid more than you^",
@@ -523,6 +525,7 @@ class Fun(commands.Cog):
             "hell no",
             "silence fatty",
             "no, so cope",
+            "fuck no XDDDDDD",
             "imagine <:you:841098144536068106>"
         ]
         await ctx.send(random.choice(choices))
@@ -603,6 +606,8 @@ class Fun(commands.Cog):
             "kind",
             "exotic",
             "crazy"
+            "black"
+            "white"
         ],
     )
     @commands.cooldown(3, 5, commands.BucketType.user)
@@ -630,13 +635,13 @@ class Fun(commands.Cog):
             r = random.randint(1000000, 1000000000)
         e = discord.Embed(color=0xAAF200)
         e.set_author(
-            name=f"{ctx.author.name} has sued {user.name}",
+            name=str(ctx.author),
             icon_url=ctx.author.display_avatar.url,
         )
         e.set_thumbnail(
             url="https://cdn.discordapp.com/attachments/501871950260469790/511997534181392424/money-png-12.png"
         )
-        e.description = f"Amount: ${r}"
+        e.description = f"Filed a lawsuit against {user}\nAmount: ${r}"
         await ctx.send(embed=e)
         await ctx.message.delete()
 
