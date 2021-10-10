@@ -635,13 +635,13 @@ class Fun(commands.Cog):
             r = random.randint(1000000, 1000000000)
         e = discord.Embed(color=0xAAF200)
         e.set_author(
-            name=f"{ctx.author.name} has filed a lawsuit {user.name}",
+            name=str(ctx.author),
             icon_url=ctx.author.display_avatar.url,
         )
         e.set_thumbnail(
             url="https://cdn.discordapp.com/attachments/501871950260469790/511997534181392424/money-png-12.png"
         )
-        e.description = f"Amount: ${r}"
+        e.description = f"Filed a lawsuit against {user}\nAmount: ${r}"
         await ctx.send(embed=e)
         await ctx.message.delete()
 
