@@ -47,7 +47,7 @@
     "view_audit_log": true,
     "manage_webhooks": true,
     "manage_roles": true,
-    "manage_channel": true,
+    "manage_channels": true,
     "manage_guild": true,
     "manage_emojis": true,
     "change_nickname": true,
