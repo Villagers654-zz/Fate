@@ -45,10 +45,10 @@ presets = {
         "((https?://)|(www\.)|(discord\.gg/))[a-zA-Z0-9./]+"
     ],
     "Advertising Links": [
-        "youtube.com", "youtu.be", "discord.gg", "invite.gg", "discord.invite"
+        "youtube.com", "youtu.be", "discord.gg", "invite.gg", "discord.invite", "discord.com"
     ],
     "Offensive Slurs": [
-        "nigger", "nigga", "fag", "faggot", "spic", "coon"
+        "nigger", "nigga", "fag", "faggot", "spic", "coon", "chink", "trasvesite", "tranny"
     ]
 }
 
