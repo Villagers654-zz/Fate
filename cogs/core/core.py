@@ -188,6 +188,7 @@ class Core(commands.Cog):
             f"[Invite]({self.bot.invite_url}) 📥\n"
             f"[Support](https://discord.gg/wtjuznh/) 📧\n"
             f"[Discord](https://discord.gg/wtjuznh/) <:discord:513634338487795732>\n"
+            f"[Donate](https://ko-fi.com/fatebot) ☕\n"
             f"[Vote](https://vote.fatebot.xyz/) ⬆"
         )
         await ctx.send(embed=embed)
