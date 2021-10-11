@@ -648,6 +648,8 @@ class Utility(commands.Cog):
         if len(reminder) <= 1:
             return await ctx.send("Too smol")
         reminder = reminder[:200]
+        if reminder in self.timers[user_id]:
+            return await ctx.send("You already have a timer for that")
         expanded = format_date(seconds=timer)
         try:
             self.timers[user_id][reminder] = {
