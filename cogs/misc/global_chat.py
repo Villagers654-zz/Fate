@@ -223,7 +223,7 @@ class GlobalChat(commands.Cog):
         if target.id not in self.config["blocked"]:
             return await ctx.send(f"{target} isn't blocked")
         self.config["blocked"].remove(target.id)
-        await ctx.send(f"Blocked {target}")
+        await ctx.send(f"Unblocked {target}")
         await self.save_blacklist()
 
     @_gc.command(name="ban-icon")
