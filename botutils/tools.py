@@ -151,6 +151,7 @@ class Formatting:
 
 def s(var: int) -> str:
     """ Decides whether or not to use an s """
+    var = int(var)
     if var == 0 or var > 1:
         return "s"
     return ""
@@ -219,7 +220,7 @@ def format_date(date=None, other_date=None, seconds=None) -> str:
             remainder -= 60 * 60 * 24 * days
 
     if hours := int(remainder / 60 / 60):
-        fmt += f"{space()}{int(hours)}h"
+        fmt += f"{space()}{int(hours)} hour{s(hours)}"
         remainder -= 60 * 60 * hours
 
     if minutes := int(remainder / 60):
@@ -229,7 +230,7 @@ def format_date(date=None, other_date=None, seconds=None) -> str:
     if remainder >= 1 or not fmt:
         fmt += f"{space()}{round(remainder, 0 if fmt else 1)}s"
 
-    return fmt.replace('.0', '')
+    return " ".join(fmt.replace('.0', '').split()[:4])
 
 
 def bytes2human(n):
