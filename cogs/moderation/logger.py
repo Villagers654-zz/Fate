@@ -27,7 +27,7 @@ from PIL import Image
 
 from botutils.colors import *
 from botutils import get_prefix, split, get_time
-from classes.exceptions import IgnoredExit
+from classes import IgnoredExit
 
 
 def is_guild_owner():

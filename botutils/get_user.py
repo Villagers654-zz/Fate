@@ -13,7 +13,7 @@ from discord.ext import commands
 import discord
 from discord.errors import NotFound, Forbidden, HTTPException
 import botutils
-from classes.exceptions import IgnoredExit
+from classes import IgnoredExit
 
 
 class GetUser:

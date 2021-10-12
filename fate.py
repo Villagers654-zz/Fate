@@ -34,8 +34,7 @@ import pymongo
 from motor.motor_asyncio import AsyncIOMotorClient
 from cleverbot import async_ as cleverbot
 
-from classes import checks
-from classes.exceptions import IgnoredExit
+from classes import checks, IgnoredExit
 from botutils import get_prefixes_async, Utils, FileCache
 from botutils.custom_logging import Logging
 from cogs.core.tasks import Tasks
@@ -491,6 +490,9 @@ async def on_error(_event_method, *_args, **_kwargs):
         discord.errors.NotFound
     )
     if isinstance(error, ignored):
+        return
+    if any(error.__name__ in err.__name__ for err in ignored):
+        print("Using fallback check")
         return
     raise
 

@@ -25,7 +25,7 @@ from PIL import Image, ImageFont, ImageDraw, ImageSequence, UnidentifiedImageErr
 
 from botutils import colors, get_prefix, url_from
 from botutils.pillow import add_corners
-from classes.exceptions import IgnoredExit
+from classes import IgnoredExit
 
 
 def profile_help():

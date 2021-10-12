@@ -22,7 +22,7 @@ from contextlib import suppress
 from discord.ext.commands import Context
 from discord import User, Member, Message
 
-from classes.exceptions import IgnoredExit
+from classes import IgnoredExit
 
 
 class CheckError(Exception):

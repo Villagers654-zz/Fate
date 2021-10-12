@@ -23,7 +23,7 @@ from base64 import b64encode as encode64, b64decode as decode64
 
 from fate import Fate
 from botutils import colors, extract_time, Conversation
-from classes.exceptions import IgnoredExit
+from classes import IgnoredExit
 
 
 def Timer(argument):

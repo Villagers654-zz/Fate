@@ -26,7 +26,7 @@ from discord.ext.commands import Greedy
 from discord.errors import NotFound, Forbidden, HTTPException
 
 from botutils import colors, get_prefix, get_time, split, CancelButton, format_date
-from classes.exceptions import IgnoredExit
+from classes import IgnoredExit
 from fate import Fate
 
 

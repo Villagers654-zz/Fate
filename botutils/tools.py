@@ -39,7 +39,7 @@ from datetime import datetime, timedelta
 from time import time
 import discord
 from .emojis import arrow
-from classes.exceptions import IgnoredExit
+from classes import IgnoredExit
 
 
 class TempConvo:

@@ -22,7 +22,7 @@ from PIL import Image, ImageFont, ImageDraw
 
 from . import colors
 from .tools import get_time
-from classes.exceptions import IgnoredExit
+from classes import IgnoredExit
 
 
 style = discord.ButtonStyle

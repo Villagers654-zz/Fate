@@ -16,7 +16,7 @@ from discord.ext import commands
 from discord.errors import HTTPException, NotFound, Forbidden
 import discord
 
-from classes.exceptions import IgnoredExit
+from classes import IgnoredExit
 
 
 class InviteManager(commands.Cog):
