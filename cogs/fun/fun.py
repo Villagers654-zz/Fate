@@ -606,8 +606,6 @@ class Fun(commands.Cog):
             "kind",
             "exotic",
             "crazy"
-            "black"
-            "white"
         ],
     )
     @commands.cooldown(3, 5, commands.BucketType.user)
