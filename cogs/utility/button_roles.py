@@ -15,7 +15,7 @@ from discord.ext import commands
 from discord import ui, Interaction
 import discord
 
-from botutils import GetChoice, emojis, Cooldown
+from botutils import Cooldown, GetChoice, emojis
 from fate import Fate
 from .selfroles import SelfRoles
 
@@ -659,7 +659,7 @@ class RoleView(ui.View):
         cd = [5, 25]
         if self.style == "buttons":
             cd = [1, 5]
-        self.cooldown = cls.bot.utils.cooldown_manager(*cd)
+        self.cooldown = Cooldown(*cd)
 
         super().__init__(timeout=None)
 

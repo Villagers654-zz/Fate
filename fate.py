@@ -264,10 +264,10 @@ class Fate(commands.AutoShardedBot):
             try:
                 self.load_extension(f"cogs.{cog}")
                 self.log.info(f"Loaded {cog}", end="\r")
-            except discord.errors.ExtensionNotFound:
+            except commands.ExtensionNotFound:
                 self.log.critical(f"Couldn't find {cog}")
                 self.log.info("Continuing..")
-            except (discord.errors.ExtensionError, discord.errors.ExtensionFailed, Exception):
+            except (commands.ExtensionError, commands.ExtensionFailed, Exception):
                 self.log.critical(f"Couldn't load {cog}``````{traceback.format_exc()}")
                 self.log.info("Continuing..")
         self.paginate()
