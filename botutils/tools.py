@@ -6,7 +6,7 @@ A collection of utility functions
 
 Classes:
     TempConvo
-    CooldownManager
+    Cooldown
     OperationLock
     Formatting
 
@@ -68,9 +68,8 @@ class TempConvo:
         self.sent.append(msg)
 
 
-class CooldownManager:
-    def __init__(self, bot, limit, timeframe, raise_error=False):
-        self.bot = bot
+class Cooldown:
+    def __init__(self, limit, timeframe, raise_error=False):
         self.limit = limit
         self.timeframe = timeframe
         self.raise_error = raise_error

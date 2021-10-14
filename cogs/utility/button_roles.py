@@ -15,7 +15,7 @@ from discord.ext import commands
 from discord import ui, Interaction
 import discord
 
-from botutils import GetChoice, emojis
+from botutils import GetChoice, emojis, Cooldown
 from fate import Fate
 from .selfroles import SelfRoles
 
@@ -27,7 +27,7 @@ class ButtonRoles(commands.Cog):
     def __init__(self, bot: Fate):
         self.bot = bot
         self.config = bot.utils.cache("button_roles")
-        self.global_cooldown = bot.utils.cooldown_manager(1, 5)
+        self.global_cooldown = Cooldown(1, 5)
         if bot.is_ready():
             bot.loop.create_task(self.load_menus_on_start())
 

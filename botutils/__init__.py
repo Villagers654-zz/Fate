@@ -41,7 +41,6 @@ class Utils(Cog):
         # Remove the bot arg
         self.get_user = lambda *args, **kwargs: GetUser(bot, *args, **kwargs)
         self.cache = lambda *args, **kwargs: Cache(bot, *args, **kwargs)
-        self.cooldown_manager = lambda *args, **kwargs: CooldownManager(bot, *args, **kwargs)
         self.open = lambda *args, **kwargs: AsyncFileManager(bot, *args, **kwargs)
         self.save_json = lambda *args, **kwargs: save_json(bot, *args, **kwargs)
 

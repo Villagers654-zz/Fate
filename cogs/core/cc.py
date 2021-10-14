@@ -17,7 +17,7 @@ from discord.ext import commands, tasks
 from discord import Message, Embed, AllowedMentions, ui, utils, Interaction
 from discord.errors import NotFound, Forbidden
 
-from botutils import get_prefixes_async, GetChoice
+from botutils import get_prefixes_async, GetChoice, Cooldown
 from fate import Fate
 
 
@@ -31,7 +31,7 @@ class CustomCommands(commands.Cog):
 
     def __init__(self, bot: Fate) -> None:
         self.bot = bot
-        self.cd = self.bot.utils.cooldown_manager(1, 10)
+        self.cd = Cooldown(1, 10)
         if bot.is_ready():
             asyncio.create_task(self.on_ready())
         self.cleanup_task.start()
@@ -214,7 +214,7 @@ class View(ui.View):
     """ Creates a button to view the existing custom commands """
     def __init__(self, bot, custom_commands: List[Tuple[str]]) -> None:
         self.bot = bot
-        self.cd = bot.utils.cooldown_manager(1, 45)
+        self.cd = Cooldown(1, 45)
 
         # Format the button response
         if len(custom_commands) > 32:

@@ -19,7 +19,7 @@ from discord.ext import commands, tasks
 from discord.errors import NotFound, Forbidden
 import discord
 
-from botutils import get_prefixes_async, colors, format_date
+from botutils import get_prefixes_async, colors, format_date, Cooldown
 from fate import Fate
 
 
@@ -68,7 +68,7 @@ class GlobalChat(commands.Cog):
         if path.isfile("./data/gcb.json"):
             with open("./data/gcb.json") as f:
                 self.config = json.load(f)
-        self.cd = bot.utils.cooldown_manager(2, 5)
+        self.cd = Cooldown(2, 5)
 
     async def save_blacklist(self):
         async with self.bot.utils.open("./data/gcb.json", "w") as f:

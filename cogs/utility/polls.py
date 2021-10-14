@@ -22,7 +22,7 @@ from discord.errors import NotFound, Forbidden
 from base64 import b64encode as encode64, b64decode as decode64
 
 from fate import Fate
-from botutils import colors, extract_time, Conversation
+from botutils import colors, extract_time, Conversation, Cooldown
 from classes import IgnoredExit
 
 
@@ -43,7 +43,7 @@ class SafePolls(commands.Cog):
             self.bot.tasks["polls"] = {}
         self.emojis = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣"]
         self.cache = {}
-        self.cd = bot.utils.cooldown_manager(1, 3)
+        self.cd = Cooldown(1, 3)
 
         self.poll_help = "> Usage: `.poll should we do X or Y?`\n" \
                           "Creates a poll that's safe from reactions being manipulated. " \

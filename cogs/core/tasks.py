@@ -22,7 +22,7 @@ import discord
 from discord.ext import commands, tasks
 import psutil
 
-from botutils import split, CooldownManager
+from botutils import split, Cooldown
 
 
 class Tasks(commands.Cog):
@@ -78,7 +78,7 @@ class Tasks(commands.Cog):
             for attr_name in dir(cog):
                 await asyncio.sleep(0)
                 attr = getattr(cog, attr_name)
-                if isinstance(attr, CooldownManager):
+                if isinstance(attr, Cooldown):
                     count = len(attr.index)
                     attr.cleanup()
                     objects_removed += count

@@ -15,12 +15,14 @@ from time import time
 import discord
 from discord.ext import commands
 
+from botutils import Cooldown
+
 
 class Responses(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.responses = bot.utils.cache("responses")
-        self.cooldown = bot.utils.cooldown_manager(1, 10, raise_error=True)
+        self.cooldown = Cooldown(1, 10, raise_error=True)
         self.cd = {}
         self.spam_cd = {}
         self.last = {}

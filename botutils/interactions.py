@@ -14,12 +14,12 @@ Classes:
 
 from discord import ui, Interaction
 from discord.ext.commands import Context
-from . import CooldownManager
+from . import Cooldown
 
 
 class ModView(ui.View):
     ctx: Context
-    cd: CooldownManager
+    cd: Cooldown
 
     async def interaction_check(self, interaction: Interaction):
         """ Ensure the interaction is from the user who initiated the view """
@@ -37,9 +37,13 @@ class ModView(ui.View):
 
 class AuthorView(ui.View):
     ctx: Context
-    cd: CooldownManager
+    cd: Cooldown = None
+    def __init__(self, *args, **kwargs) -> None:
+        if not self.cd:
+            self.cd = Cooldown(2, 5)
+        super().__init__(*args, **kwargs)
 
-    async def interaction_check(self, interaction: Interaction):
+    async def interaction_check(self, interaction: Interaction) -> bool:
         if interaction.user.id != self.ctx.author.id:
             await interaction.response.send_message(
                 "Only the user who initiated this menu can interact", ephemeral=True

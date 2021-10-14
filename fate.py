@@ -35,7 +35,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from cleverbot import async_ as cleverbot
 
 from classes import checks, IgnoredExit
-from botutils import get_prefixes_async, Utils, FileCache
+from botutils import get_prefixes_async, Utils, FileCache, Cooldown
 from botutils.custom_logging import Logging
 from cogs.core.tasks import Tasks
 
@@ -452,7 +452,7 @@ async def on_ready():
         bot.log.critical(f"Error ignored during startup:\n{error}")
 
 
-get_prefix_cd = bot.utils.cooldown_manager(1, 10)
+get_prefix_cd = Cooldown(1, 10)
 
 
 @bot.event
