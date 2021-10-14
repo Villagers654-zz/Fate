@@ -31,7 +31,7 @@
   "gc_verify_channel": 809590441779396618,
 
   "use_default_help": false,
-  "startup_status": "Up and Running",
+  "activity_status": "Seeking For The Clock",
   "max_cached_messages": 64000,
   "debug_mode": false,
   "log_uptime_for_?_days": 7,

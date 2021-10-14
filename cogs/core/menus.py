@@ -24,9 +24,9 @@ import asyncio
 import inspect
 from discord.ext import commands
 from discord.ext.commands import Command, Context
-from discord import ui, Interaction, Embed, Message, SelectOption, User, Member, TextChannel
+from discord import ui, Interaction, Embed, Message, SelectOption
 from fate import Fate
-from botutils import AuthorView, colors
+from botutils import AuthorView, colors, Cooldown
 
 
 command_attrs = (commands.core.Command, commands.core.Group)
@@ -155,7 +155,7 @@ class HelpMenu(AuthorView):
         self.structure = structure
         self.ctx = ctx
         self.bot: Fate = ctx.bot
-        self.cd = ctx.bot.utils.cooldown_manager(3, 5)
+        self.cd = Cooldown(3, 5)
 
         # Set up the embed to use
         self.embed = Embed(color=colors.fate)

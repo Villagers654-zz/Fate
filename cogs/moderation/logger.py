@@ -125,6 +125,9 @@ class Logger(commands.Cog):
             "emoji_rename"
         ]
 
+        if "logger" not in bot.tasks:
+            bot.tasks["logger"] = {}
+
         self.config = {}
         self.path = "./data/userdata/secure-log.json"
         if path.isfile(self.path):
@@ -143,18 +146,18 @@ class Logger(commands.Cog):
         if self.bot.is_ready():
             self.bot.loop.create_task(self.init_invites())
             for guild_id in self.config.keys():
-                if guild_id in bot.logger_tasks:
-                    bot.logger_tasks[guild_id].cancel()
+                if guild_id in bot.tasks["logger"]:
+                    bot.tasks["logger"][guild_id].cancel()
                 task = self.bot.loop.create_task(self.start_queue(guild_id))
-                bot.logger_tasks[guild_id] = task
+                bot.tasks["logger"][guild_id] = task
 
         self.pool = {}
 
     def cog_unload(self):
-        for task_id, task in self.bot.logger_tasks.items():
+        for task_id, task in self.bot.tasks["logger"].items():
             if not task.done():
                 task.cancel()
-            del self.bot.logger_tasks[task_id]
+            del self.bot.tasks["logger"][task_id]
 
     def is_enabled(self, guild_id):
         return str(guild_id) in self.config
@@ -215,9 +218,9 @@ class Logger(commands.Cog):
             del self.queue[guild_id]
         if guild_id in self.recent_logs:
             del self.recent_logs[guild_id]
-        if guild_id in self.bot.logger_tasks:
-            self.bot.logger_tasks[guild_id].cancel()
-            del self.bot.logger_tasks[guild_id]
+        if guild_id in self.bot.tasks["logger"]:
+            self.bot.tasks["logger"][guild_id].cancel()
+            del self.bot.tasks["logger"][guild_id]
         await self.save_data()
 
     async def wait_for_permissions(self, guild, permission, channel=None, host=False):
@@ -519,10 +522,10 @@ class Logger(commands.Cog):
         }
         if guild_id not in self.queue:
             self.queue[guild_id] = asyncio.Queue(maxsize=64)
-        if guild_id in self.bot.logger_tasks and not self.bot.logger_tasks[guild_id].done():
-            self.bot.logger_tasks[guild_id].cancel()
+        if guild_id in self.bot.tasks["logger"] and not self.bot.tasks["logger"][guild_id].done():
+            self.bot.tasks["logger"][guild_id].cancel()
         task = self.bot.loop.create_task(self.start_queue(guild_id))
-        self.bot.logger_tasks[guild_id] = task
+        self.bot.tasks["logger"][guild_id] = task
         await ctx.send("Enabled Logger")
         await self.save_data()
 
@@ -585,10 +588,10 @@ class Logger(commands.Cog):
             }
         if guild_id not in self.queue:
             self.queue[guild_id] = asyncio.Queue(maxsize=64)
-        if guild_id in self.bot.logger_tasks and not self.bot.logger_tasks[guild_id].done():
-            self.bot.logger_tasks[guild_id].cancel()
+        if guild_id in self.bot.tasks["logger"] and not self.bot.tasks["logger"][guild_id].done():
+            self.bot.tasks["logger"][guild_id].cancel()
         task = self.bot.loop.create_task(self.start_queue(guild_id))
-        self.bot.logger_tasks[guild_id] = task
+        self.bot.tasks["logger"][guild_id] = task
         await ctx.send(f"Enabled Logger in {channel.mention}")
         await self.save_data()
 
@@ -748,12 +751,12 @@ class Logger(commands.Cog):
     async def on_ready(self):
         for guild_id in list(self.config.keys()):
             if (
-                guild_id in self.bot.logger_tasks
-                and not self.bot.logger_tasks[guild_id].done()
+                guild_id in self.bot.tasks["logger"]
+                and not self.bot.tasks["logger"][guild_id].done()
             ):
                 continue
             task = self.bot.loop.create_task(self.start_queue(guild_id))
-            self.bot.logger_tasks[guild_id] = task
+            self.bot.tasks["logger"][guild_id] = task
         self.bot.loop.create_task(self.init_invites())
 
     @commands.Cog.listener()

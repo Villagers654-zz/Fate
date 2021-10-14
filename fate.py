@@ -18,10 +18,13 @@ import logging
 from contextlib import suppress
 from base64 import b64decode, b64encode
 import sys
+
+import motor.motor_asyncio
 from cryptography.fernet import Fernet
 from getpass import getpass
 import aiohttp
 from aiohttp import web
+from typing import *
 
 from discord.ext import commands
 import discord
@@ -37,11 +40,26 @@ from cleverbot import async_ as cleverbot
 from classes import checks, IgnoredExit
 from botutils import get_prefixes_async, Utils, FileCache, Cooldown
 from botutils.custom_logging import Logging
-from cogs.core.tasks import Tasks
 
 
 class Fate(commands.AutoShardedBot):
-    loop: asyncio.BaseEventLoop
+    loop: asyncio.BaseEventLoop   # Hide a discord.py type-hinting fucky wucky
+    auth: Dict[str, Any] = {}     # Login credentials
+    app_is_running: bool = False  # /ping endpoint for checking uptime
+    pool = None                   # The MySQL Pool (initialized in on_ready)
+
+    # Caches
+    restricted: dict = {}   # Index of restricted commands
+    toggles = {}            # Mappings for `.enable module`
+    file_locks = {}         # index for preventing duplicate operations
+    operation_locks = []    # Index for preventing duplicate operations
+    tasks = {}              # Index of each modules tasks
+    chats = {}              # CleverBot API chat objects
+    filtered_messages = {}  # Messages to be ignored via modules
+    views = {}              # Instances of discord.ui.View
+    login_errors = []       # Exceptions that were ignored during startup
+    logs = []               # The logs to forward to the dev discord
+
     def __init__(self, **options):
         # Bot Configuration
         with open("./data/config.json", "r") as f:
@@ -51,13 +69,11 @@ class Fate(commands.AutoShardedBot):
         self.blocked = dat["blocked"]
 
         # User configs
-        self.restricted = {}
         with open("./data/userdata/disabled_commands.json", "r") as f:
             self.disabled_commands = json.load(f)
         if not os.path.exists(self.config["datastore_location"]):
             os.mkdir(self.config["datastore_location"])
 
-        self.auth = {}
         self.debug_mode = self.config["debug_mode"]
         self.owner_ids = set(
             list([self.config["bot_owner_id"], *self.config["bot_owner_ids"]])
@@ -70,59 +86,37 @@ class Fate(commands.AutoShardedBot):
         # Ping application
         self.app = web.Application()
         self.app.router.add_get("/ping", self.acknowledge)
-        self.app_is_running = False
 
-        # Cache
-        self.toggles = {}  # Mappings for `Module -> Enable Command`
-        self.locks = {}
-        self.operation_locks = []
-        self.tasks = {}  # Task object storing for easy management
-        self.logger_tasks = {}  # Same as Fate.tasks except dedicated to cogs.logger
-        self.chats = {}  # CleverBot API chat objects
-        self.filtered_messages = {}
-        self.views = {}
-
-        self.pool = None  # MySQL Pool initialized on_ready
-        self.login_errors = []  # Exceptions ignored during startup
-        self.logs = []  # Logs to send to discord, empties out quickly
         self.allow_user_mentions = discord.AllowedMentions(
             users=True, roles=False, everyone=False
         )
         self.log = Logging(bot=self)  # Class to handle printing/logging
 
-        self.user_config_cache = [
-            0,  # Time last updated
-            {}  # User data
-        ]
-
         # Set the oauth_url for users to invite the bot with
         perms = discord.Permissions(0)
         perms.update(**self.config["bot_invite_permissions"])
-        self.invite_url = discord.utils.oauth_url(self.config["bot_user_id"], permissions=perms)
+        self.invite_url = discord.utils.oauth_url(
+            client_id=self.config["bot_user_id"],
+            permissions=perms
+        )
 
         super().__init__(
             command_prefix=get_prefixes_async,
             intents=discord.Intents.all(),
-            activity=discord.Game(name="Seeking For The Clock"),
+            activity=discord.Game(name=self.config["activity_status"]),
             max_messages=self.config["max_cached_messages"],
             **options,
         )
 
-    async def acknowledge(self, _request):
+    async def acknowledge(self, _request) -> web.Response:
         return web.Response(text="pong")
-
-    @property
-    def core_tasks(self) -> Tasks:
-        """Return the cog for tasks relating to bot management"""
-        if "Tasks" not in self.cogs:
-            raise ModuleNotFoundError("The Tasks cog hasn't been loaded yet")
-        return self.get_cog("Tasks")  # type: ignore
 
     def get_fp_for(self, path) -> str:
         """Return the path for the set storage location"""
         return os.path.join(self.config["datastore_location"], path)
 
-    async def get_resource(self, url, method="get", *args, **kwargs):
+    async def get_resource(self, url: str, method: str = "get", *args, **kwargs):
+        """ Downloads a resource from a given url """
         label = kwargs.pop("label", url)
         try:
             async with aiohttp.ClientSession() as session:
@@ -139,7 +133,7 @@ class Fate(commands.AutoShardedBot):
         except aiohttp.ClientPayloadError:
             raise commands.BadArgument(f"Failed to fetch {label}")
 
-    def get_message(self, message_id: int):
+    def get_message(self, message_id: int) -> Optional[discord.Message]:
         """ Return a message from the internal cache if it exists """
         for message in self.cached_messages:
             if message.id == message_id:
@@ -147,18 +141,21 @@ class Fate(commands.AutoShardedBot):
         return None
 
     @property
-    def mongo(self):
+    def mongo(self) -> pymongo.mongo_client.database:
+        """ Returns the synchronous Mongo DB """
         conf = self.auth["MongoDB"]
         return pymongo.MongoClient(conf["url"])[conf["db"]]
 
     @property
-    def aio_mongo(self):
+    def aio_mongo(self) -> motor.motor_asyncio.AsyncIOMotorDatabase:
+        """ Returns the asynchronous Mongo DB"""
         conf = self.auth["MongoDB"]
         client = AsyncIOMotorClient(conf["url"], **conf["connection_args"])
         db = client.get_database(conf["db"])
         return db
 
-    async def create_pool(self):
+    async def create_pool(self) -> None:
+        """ Initializes the bots MySQL pool """
         if self.pool:
             self.pool.close()
             await self.pool.wait_closed()
@@ -198,6 +195,7 @@ class Fate(commands.AutoShardedBot):
         self.log.info(f"Initialized db {sql['db']} with {sql['user']}@{sql['host']}")
 
     async def wait_for_pool(self) -> bool:
+        """ Waits for the bots MySQL pool to initialize """
         if not self.pool:
             for _ in range(240):
                 await asyncio.sleep(1)
@@ -208,6 +206,7 @@ class Fate(commands.AutoShardedBot):
         return True
 
     async def execute(self, sql: str) -> None:
+        """ Executes a given query and returns nothing """
         if await self.wait_for_pool():
             async with self.pool.acquire() as conn:
                 async with conn.cursor() as cur:
@@ -216,6 +215,7 @@ class Fate(commands.AutoShardedBot):
         return None
 
     async def fetch(self, sql: str) -> tuple:
+        """ Fetches the results of a given query """
         if await self.wait_for_pool():
             async with self.utils.cursor() as cur:
                 await cur.execute(sql)
@@ -224,6 +224,7 @@ class Fate(commands.AutoShardedBot):
         return ()
 
     async def rowcount(self, sql: str) -> int:
+        """ Checks the rowcount of a given query """
         if await self.wait_for_pool():
             async with self.utils.cursor() as cur:
                 await cur.execute(sql)
@@ -231,7 +232,8 @@ class Fate(commands.AutoShardedBot):
             return rows
         return 0
 
-    def load_collection(self, collection) -> dict:
+    def load_collection(self, collection: pymongo.collection) -> dict:
+        """ Returns a more efficiently formatted version of a collection """
         data = {}
         for config in collection.find({}):
             data[config["_id"]] = {
@@ -239,7 +241,8 @@ class Fate(commands.AutoShardedBot):
             }
         return data
 
-    def get_asset(self, asset):
+    def get_asset(self, asset: str) -> str:
+        """ Returns the url for a given asset """
         asset = asset.lstrip("/")
         if "." not in asset or not os.path.exists(f"./assets/{asset}"):
             dir = "./assets/"
@@ -298,7 +301,7 @@ class Fate(commands.AutoShardedBot):
         self.paginate()
 
     def paginate(self):
-        """Map out each modules enable command for use of `.enable module`"""
+        """ Map out each modules enable command for use of `.enable module` """
         remap = not not self.toggles
         self.toggles.clear()
         for module, cls in self.cogs.items():
@@ -309,18 +312,22 @@ class Fate(commands.AutoShardedBot):
                 ]
         self.log(f"{'Rem' if remap else 'M'}apped modules")
 
-    async def load(self, data):
+    async def load(self, data: str) -> Union[list, dict]:
+        """ Loads large jsons in a separate thread """
         load_json = lambda: json.loads(data)
         return await self.loop.run_in_executor(None, load_json)
 
-    async def dump(self, data):
+    async def dump(self, data: Union[list, dict]) -> str:
+        """ Dumps large jsons in a separate thread """
         dump_json = lambda: json.dumps(data)
         return await self.loop.run_in_executor(None, dump_json)
 
-    def encode(self, string) -> str:
+    def encode(self, string: str) -> str:
+        """ Returns a string encoded in Base64 """
         return b64encode(string.encode()).decode()
 
-    def decode(self, string) -> str:
+    def decode(self, string: str) -> str:
+        """ Returns a decoded string from Base64"""
         return b64decode(string.encode()).decode()
 
     def run(self):
@@ -438,7 +445,8 @@ async def on_ready():
     bot.owner_ids = set(
         list([bot.config["bot_owner_id"], *bot.config["bot_owner_ids"]])
     )
-    bot.core_tasks.ensure_all()
+    if cog := bot.get_cog("Tasks"):
+        cog.ensure_all()  # type: ignore
     seconds = round(time() - start_time)
     if not bot.app_is_running:
         bot.app_is_running = True

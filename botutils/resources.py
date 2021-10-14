@@ -198,8 +198,8 @@ class AsyncFileManager:
         self.fp_manager = None
         self.lock = lock if not cache else False
         self.cache = cache
-        if lock and file not in self.bot.locks and not self.cache:
-            self.bot.locks[file] = asyncio.Lock()
+        if lock and file not in self.bot.file_locks and not self.cache:
+            self.bot.file_locks[file] = asyncio.Lock()
         self.writer = None
 
     async def __aenter__(self):
@@ -207,7 +207,7 @@ class AsyncFileManager:
             self.writer = _CacheWriter(self.bot.cache, self.file)
             return self.writer
         if self.lock:
-            await self.bot.locks[self.file].acquire()
+            await self.bot.file_locks[self.file].acquire()
         self.fp_manager = await aiofiles.open(
             file=self.temp_file, mode=self.mode
         )
@@ -221,7 +221,7 @@ class AsyncFileManager:
         if self.file != self.temp_file:
             os.rename(self.temp_file, self.file)
         if self.lock:
-            self.bot.locks[self.file].release()
+            self.bot.file_locks[self.file].release()
         return None
 
 
