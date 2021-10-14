@@ -31,7 +31,7 @@ import psutil
 from discord.ext import commands, tasks
 
 from botutils import colors, bytes2human, get_time, emojis, extract_time, \
-get_prefixes_async, format_date, sanitize, GetChoice, AuthorView
+get_prefixes_async, format_date, sanitize, GetChoice, AuthorView, Cooldown
 
 
 default = {
@@ -1060,7 +1060,7 @@ class InfoView(AuthorView):
     message: Message = None
 
     def __init__(self, ctx: Context, target: Union[None, str, User, Member, TextChannel, Role]) -> None:
-        self.cd = ctx.bot.utils.cooldown_manager(1, 3)
+        self.cd = Cooldown(1, 3)
 
         self.ctx = ctx
         self.bot = ctx.bot
