@@ -33,7 +33,8 @@ class Tasks(commands.Cog):
             self.log_queue,
             self.auto_backup,
             self.cleanup_pool,
-            self.warn_if_storage_full
+            self.warn_if_storage_full,
+            self.debug_log
         ]
         for task in self.enabled_tasks:
             task.start()
@@ -194,7 +195,7 @@ class Tasks(commands.Cog):
                                 self.bot.config["debug_channel"]
                             )
                             await asyncio.sleep(5)
-                        await channel.send(f"```{group}```")
+                        await channel.send(f"```\n{group}```")
                 log = [*log, *added_lines]
             if reads == 1000:
                 async with self.bot.utils.open("discord.log", "w") as f:
