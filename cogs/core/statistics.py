@@ -20,7 +20,7 @@ class Statistics(commands.Cog):
             "Logger": "config",
             "SelfRoles": "menus",
             "ButtonRoles": "config",
-            "AutoRole": "roles",
+            "AutoRole": "config",
             "ChatFilter": "config",
             "AntiSpam": "config",
             "ModMail": "config",
