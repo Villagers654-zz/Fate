@@ -118,7 +118,6 @@ class ConfigUI(AuthorView):
 
     def __init__(self, ctx: commands.Context) -> None:
         self.ctx = ctx
-        self.cd = ctx.bot.utils.cooldown_manager(2, 5)
         self.select = self.SelectUI(ctx, self)
 
         super().__init__(timeout=45)
