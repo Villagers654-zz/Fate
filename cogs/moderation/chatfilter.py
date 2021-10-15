@@ -22,7 +22,7 @@ import discord
 from discord.errors import NotFound, Forbidden
 from discord import ui, ButtonStyle, Message, Member
 
-from botutils import colors, split, CancelButton, findall, GetChoice
+from botutils import colors, split, CancelButton, findall, GetChoice, Cooldown
 from cogs.moderation.logger import Log
 
 
@@ -564,8 +564,8 @@ class Menu(ui.View):
         self.cls = cls
         self.ctx = ctx
         self.extra: Dict[str, discord.Button] = {}
-        self.cd1 = cls.bot.utils.cooldown_manager(3, 25)
-        self.cd2 = cls.bot.utils.cooldown_manager(2, 5)
+        self.cd1 = Cooldown(3, 25)
+        self.cd2 = Cooldown(2, 5)
         self.configuring = False
         super().__init__(timeout=60)
 
