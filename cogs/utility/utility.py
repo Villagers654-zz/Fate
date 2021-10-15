@@ -697,6 +697,8 @@ class Utility(commands.Cog):
                 value=f"{channel.mention} - `{msg}`",
                 inline=False,
             )
+        if not e.fields:
+            return await ctx.send("You currently have no timers")
         await ctx.send(embed=e)
 
     @commands.command(name="delete-timer", aliases=["remove-timer", "clear-timers"], description="Removes a timer")
