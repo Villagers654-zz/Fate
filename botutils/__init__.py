@@ -29,6 +29,9 @@ from .regex import *
 from .interactions import *
 
 
+abcs = "abcdefghijklmnopqrstuvwxyzجحخهعغفقثصضشسيبلاتتمكطدظزوةىرؤءذئأإآ"
+
+
 class Utils(Cog):
     """Represents the bot.utils attribute for utils requiring access to the running instance"""
     def __init__(self, bot):
