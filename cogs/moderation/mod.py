@@ -999,7 +999,7 @@ class Moderation(commands.Cog):
     @commands.cooldown(2, 10, commands.BucketType.guild)
     @check_if_running()
     @commands.guild_only()
-    @commands.has_permissions(ban_members=True)
+    @has_required_permissions(ban_members=True)
     @commands.bot_has_permissions(embed_links=True, ban_members=True)
     async def ban(self, ctx, users: Greedy[User], *, reason="Unspecified"):
         """ Ban cmd that supports more than just members """
