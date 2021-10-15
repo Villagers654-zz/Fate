@@ -552,7 +552,11 @@ class Core(commands.Cog):
 
         shard_ping = ""
         for shard, latency in self.bot.latencies:
-            shard_ping += f"\n{emojis.boost} **Shard {shard}:** `{round(latency * 1000)}ms`"
+            try:
+                ping = str(round(latency * 1000)) + "ms"
+            except OverflowError:
+                ping = "unknown"
+            shard_ping += f"\n{emojis.boost} **Shard {shard}:** `{ping}`"
 
         e.set_author(name=f"Bots Latency", icon_url=self.bot.user.display_avatar.url)
         e.set_thumbnail(url=img)
