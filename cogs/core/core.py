@@ -23,6 +23,27 @@ import botutils
 reload(botutils)
 
 
+join_message = """
+🪐 **Thank you for inviting Fate**
+Here's a few things to know
+
+> **Basic Usage**
+- Command Prefix: `.`
+- For a list of commands, send `.help`, and navigate through the dropdown
+- Changed the bots prefix? My ping/mention works as a secondary prefix
+- For an overview of enabled/disabled modules, send `.config`
+
+> **Suggestions**
+- If you use Fate for moderation; try out `.modmail`.
+  This lets users create threads to discuss infractions with the moderators
+- If you want reaction roles, try using `.role-menu` instead of `.selfroles`
+  This uses buttons, and dropdowns instead of reactions; which will work better in larger servers
+
+> **Community & Support**
+https://discord.gg/wtjuznh
+"""
+
+
 class Core(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -82,6 +103,19 @@ class Core(commands.Cog):
         if not self.bot.is_ready() or not guild:
             return
         self.join_dates[guild.id] = guild.me.joined_at
+
+        sent_join_message = False
+        for channel in guild.text_channels:
+            if "bot" in channel.name:
+                if not channel.permissions_for(guild.me).send_messages:
+                    break
+                try:
+                    await channel.send(join_message)
+                    sent_join_message = True
+                except:
+                    pass
+                break
+
         channel = self.bot.get_channel(self.bot.config["log_channel"])
         e = discord.Embed(color=colors.green)
         e.set_author(name=guild.name, icon_url=url_from(guild.icon))
@@ -90,6 +124,8 @@ class Core(commands.Cog):
         if guild.banner:
             e.set_image(url=guild.banner.url)
         e.description = f"👥 | {len(guild.members)} Members"
+        if sent_join_message:
+            e.description += "\n⁉| Sent join message"
         if guild.me.guild_permissions.view_audit_log:
             async for entry in guild.audit_logs(action=discord.AuditLogAction.bot_add, limit=1):
                 e.set_footer(text=str(entry.user), icon_url=entry.user.display_avatar.url)
