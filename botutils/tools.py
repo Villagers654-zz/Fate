@@ -85,7 +85,7 @@ class Cooldown:
 
     def check(self, _id) -> bool:
         if not self.cleanup_task_is_running:
-            asyncio.ensure_future(self.cleanup_task())
+            asyncio.create_task(self.cleanup_task())
 
         now = int(time() / self.timeframe)
         if _id not in self.index:
