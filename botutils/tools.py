@@ -74,8 +74,19 @@ class Cooldown:
         self.timeframe = timeframe
         self.raise_error = raise_error
         self.index = {}
+        self.cleanup_task_is_running = False
+
+    async def cleanup_task(self):
+        self.cleanup_task_is_running = True
+        await asyncio.sleep(60 * 15)
+        del self.index
+        self.index = {}
+        self.cleanup_task_is_running = False
 
     def check(self, _id) -> bool:
+        if not self.cleanup_task_is_running:
+            asyncio.ensure_future(self.cleanup_task())
+
         now = int(time() / self.timeframe)
         if _id not in self.index:
             self.index[_id] = [now, 0]
