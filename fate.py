@@ -59,6 +59,7 @@ class Fate(commands.AutoShardedBot):
     views = {}              # Instances of discord.ui.View
     login_errors = []       # Exceptions that were ignored during startup
     logs = []               # The logs to forward to the dev discord
+    ignored_channels = []   # Channels temp blocked from executing commands
 
     def __init__(self, **options):
         # Bot Configuration
@@ -465,6 +466,10 @@ get_prefix_cd = Cooldown(1, 10)
 
 @bot.event
 async def on_message(msg):
+    # Check if the channels been rate limited
+    if msg.channel.id in bot.ignored_channels:
+        return
+
     # Send the prefix if the bot's mentioned
     if not msg.author.bot and bot.user.mentioned_in(msg) and len(msg.content.split()) == 1:
         if str(bot.user.id) in msg.content:
@@ -477,6 +482,7 @@ async def on_message(msg):
                 with suppress(NotFound, Forbidden, HTTPException, AttributeError):
                     await msg.channel.send(f"The prefixes you can use are:\n{prefixes}")
                 return
+
     if msg.guild and msg.guild.me and not msg.channel.permissions_for(msg.guild.me).send_messages:
         return
 
@@ -499,9 +505,12 @@ async def on_error(_event_method, *_args, **_kwargs):
     )
     if isinstance(error, ignored):
         return
-    if any(error.__name__ in err.__name__ for err in ignored):
+    if any(err.__name__ in error.__name__ for err in ignored):
         print("Using fallback check")
         return
+    print("Wtf")
+    print(error)
+    print(error.__name__)
     raise
 
 

@@ -18,7 +18,7 @@ import discord
 import dbl
 
 from botutils import colors, get_prefixes_async, emojis, Conversation, \
-    url_from, format_date, sanitize
+    url_from, format_date, sanitize, Cooldown
 import botutils
 reload(botutils)
 
@@ -63,6 +63,7 @@ class Core(commands.Cog):
         self.join_dates = {
             guild.id: guild.me.joined_at for guild in bot.guilds
         }
+        self.command_cooldown = Cooldown(4, 5)
 
     async def on_guild_post(self):
         self.bot.log.debug("Server count posted successfully")
@@ -97,6 +98,16 @@ class Core(commands.Cog):
         self.join_dates = {
             guild.id: guild.me.joined_at for guild in self.bot.guilds
         }
+
+    @commands.Cog.listener()
+    async def on_command(self, ctx):
+        if self.command_cooldown.check(ctx.channel.id):
+            if ctx.channel.id not in self.bot.ignored_channels:
+                self.bot.ignored_channels.append(ctx.channel.id)
+                print(f"Rate limited {ctx.guild}")
+                await asyncio.sleep(15)
+                if ctx.channel.id in self.bot.ignored_channels:
+                    self.bot.ignored_channels.remove(ctx.channel.id)
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
