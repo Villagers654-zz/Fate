@@ -72,14 +72,18 @@ class ButtonRoles(commands.Cog):
                 start = line.strip("!roles")
 
             guild = self.bot.get_guild(guild_id)
-            roles = ""
+            roles = []
             for role_id in self.config[guild_id][str(message_id)]["roles"]:
                 if role := guild.get_role(int(role_id)):
-                    roles += f"\n{start}{role.mention}"
-                    if show_stats:
-                        roles += f" `{len(role.members)}{emojis.members}`"
+                    roles.append([role, role.position])
 
-            lines[position] = roles.strip("\n")
+            formatted_text = ""
+            for role, _position in sorted(roles, key=lambda x: x[1], reverse=True):
+                formatted_text += f"\n{start}{role.mention}"
+                if show_stats:
+                    formatted_text += f" `{len(role.members)}{emojis.members}`"
+
+            lines[position] = formatted_text.strip("\n")
             text = "\n".join(lines)
         return text
 
@@ -666,11 +670,14 @@ class RoleView(ui.View):
         if self.style == "buttons":
             data = self.config[guild_id][str(message_id)]
             guild = self.bot.get_guild(guild_id)
+
+            roles = []
             for role_id, data in data["roles"].items():
                 role = guild.get_role(int(role_id))
-                if not role:
-                    continue
+                if role:
+                    roles.append([(role, role_id, data), role.position])
 
+            for (role, role_id, data), _position in sorted(roles, key=lambda x: x[1], reverse=True):
                 label = data.get("label") or role.name
                 if conf["show_percentage"]:
                     percentage = round(len(role.members) / role.guild.member_count * 100)
@@ -695,12 +702,15 @@ class RoleView(ui.View):
     def index(self) -> dict:
         index = {}
         guild = self.bot.get_guild(self.guild_id)
+        roles = []
         for role_id, meta in list(self.config[self.guild_id][str(self.message_id)]["roles"].items()):
             role = guild.get_role(int(role_id))
             if role:
-                index[role] = meta
+                roles.append([(role, meta), role.position])
             else:
                 del self.config[self.guild_id][str(self.message_id)]["roles"][role_id]
+        for (role, meta), _position in sorted(roles, key=lambda x: x[1], reverse=True):
+            index[role] = meta
         return index
 
     async def on_error(self, _error, _item, _interaction) -> None:
