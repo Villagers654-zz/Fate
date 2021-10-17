@@ -15,7 +15,7 @@ from discord.ext import commands
 from discord import ui, Interaction
 import discord
 
-from botutils import Cooldown, GetChoice, emojis
+from botutils import Cooldown, GetChoice, emojis, s
 from fate import Fate
 from .selfroles import SelfRoles
 
@@ -846,11 +846,12 @@ class Select(discord.ui.Select):
             meta = dict(meta)
             label = meta.pop("label") or role.name[:100]
             if cls.config[guild_id][str(message_id)]["show_percentage"]:
-                percentage = round(len(role.members)/role.guild.member_count * 100)
+                total = len(role.members)
+                percentage = round(total/role.guild.member_count * 100)
                 if any(meta["description"] for _r, meta in roles.items()):
                     label = f"({percentage}%) {label[:90]}"
                 else:
-                    meta["description"] = f"{len(role.members)} Members ({percentage}%)"
+                    meta["description"] = f"{total} Member{s(total)} ({percentage}%)"
             option = discord.SelectOption(
                 label=label,
                 value=str(role.id),
