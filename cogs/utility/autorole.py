@@ -141,7 +141,7 @@ class AutoRole(commands.Cog):
     @commands.Cog.listener()
     async def on_role_delete(self, role):
         guild_id = role.guild.id
-        if role.id in self.config[guild_id]["roles"]:
+        if guild_id in self.config and role.id in self.config[guild_id]["roles"]:
             self.config[guild_id]["roles"].remove(role.id)
             await self.config.flush()
 
