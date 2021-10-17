@@ -354,8 +354,8 @@ class GlobalChat(commands.Cog):
 
         e = discord.Embed(color=ctx.author.color)
         e.set_author(name=str(ctx.author), icon_url=ctx.author.display_avatar.url)
-        age = format_date(ctx.author.created_at).split()[0]
-        joined = format_date(ctx.author.joined_at).split()[0]
+        age = format_date(ctx.author.created_at)
+        joined = format_date(ctx.author.joined_at)
         e.description = f"🆔 | {ctx.author.id}\n" \
                         f"📬 | {len(ctx.author.mutual_guilds)} Mutual Servers\n" \
                         f"⏰ | Created {age} ago\n" \
