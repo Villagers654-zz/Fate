@@ -47,7 +47,7 @@ class Lock(commands.Cog):
 
     async def cog_after_invoke(self, ctx):
         if ctx.guild.id in self.lock and not self.lock[ctx.guild.id]:
-            self.lock.remove(ctx.guild.id)
+            await self.lock.remove(ctx.guild.id)
 
     @commands.command(name="lock", description="Kicks/bans/mutes users that join the server")
     @commands.has_permissions(administrator=True)
@@ -141,8 +141,16 @@ class Lock(commands.Cog):
         lock = "lockdown"
 
         # Save the old permissions and edit the new ones in
+        if lock in self.lock[guild_id]:
+            return await ctx.send(
+                f"Either lockdown's already initiated or I'm already in the process of starting a lockdown. "
+                f"Either wait for it to finish, or run `{ctx.prefix}unlock`"
+            )
         self.lock[guild_id][lock] = {}
         for channel in channels:
+            await asyncio.sleep(0)
+            if guild_id not in self.lock:
+                return await ctx.send(f"Lockdown cancelled due to `{ctx.prefix}`unlock being ran")
             if channel.permissions_for(ctx.guild.me).manage_channels:
                 original_perms = {
                     str(obj.id): list(perms) for obj, perms in channel.overwrites.items()
@@ -155,8 +163,8 @@ class Lock(commands.Cog):
                     new.update(send_messages=False)
                     locked_perms[ctx.guild.default_role] = new
                 try:
-                    await channel.edit(overwrites=locked_perms)
                     self.lock[guild_id][lock][str(channel.id)] = original_perms
+                    await channel.edit(overwrites=locked_perms)
                 except discord.errors.Forbidden:
                     pass
 
