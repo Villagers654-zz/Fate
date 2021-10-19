@@ -94,6 +94,8 @@ class CustomCommands(commands.Cog):
         """ Creates a custom command """
         if not self.bot.attrs.is_moderator(ctx.author):
             return await ctx.send("You need to be a moderator to manage custom commands")
+        if not response:
+            return await ctx.send(f"You need to include a response for when the command's ran")
         if len(command) > 16:
             return await ctx.send("Command names can't be longer than 16 characters")
         if not all(c.lower() != c.upper() for c in command):
@@ -222,6 +224,8 @@ class View(ui.View):
         else:
             self.commands = ""
             for command, response in custom_commands:
+                if not response:
+                    continue
                 response = utils.escape_markdown(response[:100])\
                     .replace("\n", " ")\
                     .replace("https://", "")\
