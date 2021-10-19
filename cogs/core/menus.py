@@ -55,7 +55,6 @@ structure = {
         "Leave Messages": "Leave",
         "AutoRole": "AutoRole",
         "Self-Roles": "SelfRoles",
-        "Button-Roles": "ButtonRoles",
         "Restore-Roles": "RestoreRoles",
         "Emojis": "Emojis",
         "Vc-Log": "VcLog",

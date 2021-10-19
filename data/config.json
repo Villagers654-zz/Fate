@@ -108,7 +108,6 @@
     "utility": [
       "audit",
       "autorole",
-      "button_roles",
       "chatbridges",
       "emojis",
       "farewell",

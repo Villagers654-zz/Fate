@@ -1,635 +1,843 @@
 """
-cogs.utility.selfroles
-~~~~~~~~~~~~~~~~~~~~~~~
+cogs.utility.SelfRoles
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-A cog for users to react to menus to self assign roles
+A selfroles module using buttons instead of reactions
 
-:copyright: (C) 2020-present FrequencyX4, All Rights Reserved
+:copyright: (C) 2021-present FrequencyX4, All Rights Reserved
 :license: Proprietary, see LICENSE for details
 """
 
-import asyncio
-import json
-from os import path
 from contextlib import suppress
+from typing import *
 
-import discord
 from discord.ext import commands
+from discord import ui, Interaction
+import discord
 
-from botutils import colors, get_prefix
+from botutils import Cooldown, GetChoice, emojis, s
+from fate import Fate
+
+
+allowed_mentions = discord.AllowedMentions(everyone=False, roles=True, users=False)
 
 
 class SelfRoles(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot: Fate):
         self.bot = bot
-        self.menus = {}
-        self.path = "./data/userdata/selfroles.json"
-        if path.isfile(self.path):
-            with open(self.path, "r") as f:
-                self.menus = json.load(f)
+        self.config = bot.utils.cache("selfroles")
+        self.global_cooldown = Cooldown(1, 5)
+        if bot.is_ready():
+            bot.loop.create_task(self.load_menus_on_start())
 
-    async def save_data(self):
-        await self.bot.utils.save_json(self.path, self.menus)
-
-    def is_enabled(self, guild_id):
-        return str(guild_id) in self.menus
-
-    def build_menu(self, guild_id: str, data: dict):
-        """ Creates an embed from menu data """
-
-        def role_position(kv: list) -> int:
-            """ Returns a roles position for sorting """
-            role = guild.get_role(int(kv[0]))
-            return role.position
-
-        guild = self.bot.get_guild(int(guild_id))
-        color = data["color"]
-        if color > 16777215:
-            color = self.bot.config["theme_color"]
-        e = discord.Embed(color=color)
-        name = data["name"]
-        e.set_author(
-            name=name if name else "Self-Role Menu",
-            icon_url=guild.icon.url if guild.icon else discord.Embed.Empty,
-        )
-        e.set_thumbnail(
-            url="https://cdn.discordapp.com/attachments/514213558549217330/514345278669848597/8yx98C.gif"
-        )
-        e.description = ""
-        data["items"] = {
-            role_id: emoji
-            for role_id, emoji in data["items"].items()
-            if int(role_id) in list(r.id for r in guild.roles)
-        }
-        for role_id, emoji in sorted(
-            data["items"].items(), key=role_position, reverse=True
-        ):
-            role = guild.get_role(int(role_id))
-            if not role:
+    @commands.Cog.listener("on_ready")
+    async def load_menus_on_start(self):
+        for guild_id, menus in self.config.items():
+            if not self.bot.get_guild(guild_id):
                 continue
-            role = role.mention if data["mentions"] else role.name
-            e.description += f"{emoji} - {role}"
-            for i in range(data["indent"] + 1):
-                e.description += "\n"
-        return e
-
-    def get_emojis(self, string):
-        """ Gets the custom emoji id or unicode emote """
-        if not any(char.isdigit() for char in list(string)):
-            return string  # unicode emoji
-        string = "".join(char for char in list(string[-20:]) if char.isdigit())
-        emoji = self.bot.get_emoji(int(string))
-        return emoji
-
-    async def edit_menu(self, guild_id: str, msg_id: str):
-        """ Rebuilds a menu with its updated data """
-        embed = self.build_menu(guild_id, self.menus[guild_id][msg_id])
-        channel = self.bot.get_channel(self.menus[guild_id][msg_id]["channel"])
-        try:
-            msg = await channel.fetch_message(int(msg_id))
-        except (AttributeError, discord.errors.NotFound):
-            guild = self.bot.get_guild(int(guild_id))
-            for c in guild.text_channels:
-                try:
-                    msg = await c.fetch_message(int(msg_id))
-                except (AttributeError, discord.errors.NotFound):
-                    continue
-                await msg.edit(embed=embed)
-                self.menus[guild_id][msg_id]["channel"] = c.id
-                await self.save_data()
-                return msg
-            msg = await channel.fetch_message(int(msg_id))
-        await msg.edit(embed=embed)
-        return msg
-
-    @commands.command(
-        name="selfroles",
-        aliases=["self-roles", "selfrole", "self-role"],
-        description="Shows how to use the module"
-    )
-    @commands.cooldown(2, 5, commands.BucketType.user)
-    @commands.guild_only()
-    @commands.bot_has_permissions(embed_links=True)
-    async def selfroles(self, ctx):
-        """ Sends info & usage help on self roles """
-        e = discord.Embed(color=colors.fate)
-        e.set_author(name="Self-Role Menus", icon_url=ctx.author.display_avatar.url)
-        e.set_thumbnail(url=self.bot.user.display_avatar.url)
-        e.description = (
-            "Let members pick their own role via reactions. If you're "
-            "having trouble editing a menu, use the update-menu cmd"
-        )
-        p = ctx.prefix
-        e.add_field(
-            name="◈ Commands",
-            value=f"**{p}create-menu** - `sets up a new role menu`"
-                  f"\n**{p}set-color** - `sets the embeds color`"
-                  f"\n**{p}set-name** - `set the menu name`"
-                  f"\n**{p}set-indent** - `sets the spacing between roles`"
-                  f"\n**{p}add-role** - `adds a role to a menu`"
-                  f"\n**{p}remove-role** - `removes a role from a menu`"
-                  f"\n**{p}set-limit** - `sets users reaction limit`"
-                  f"\n**{p}toggle-mentions** - `use role mentions`"
-                  f"\n**{p}update-menu** - `refreshes a menu`",
-            inline=False,
-        )
-        await ctx.send(embed=e)
-
-    @commands.command(name="update-menu", description="Refreshes a menu")
-    @commands.cooldown(2, 5, commands.BucketType.user)
-    @commands.guild_only()
-    @commands.bot_has_permissions(embed_links=True)
-    @commands.has_permissions(manage_roles=True)
-    async def update_menu(self, ctx, msg_id):
-        """ Rebuilds a menu """
-        guild_id = str(ctx.guild.id)
-        if guild_id not in self.menus:
-            return await ctx.send("This server has no self-role menus")
-        if msg_id not in self.menus[guild_id]:
-            return await ctx.send("There's no menu under that msg_id")
-        dat = self.menus[guild_id][msg_id]  # type: dict
-        if not dat["channel"]:
-            try:
-                await ctx.channel.fetch_message(msg_id)
-            except:
-                return await ctx.send(
-                    "Use this cmd in the channel the menus in, as it has no channel_id saved"
-                )
-            self.menus[guild_id][msg_id]["channel"] = ctx.channel.id
-            dat["channel"] = ctx.channel.id
-            await self.save_data()
-        for role_id, emoji in list(dat["items"].items()):
-            role = ctx.guild.get_role(int(role_id))
-            if not role:
-                emoji = self.menus[guild_id][msg_id]["items"][role_id]
-                del self.menus[guild_id][msg_id]["items"][role_id]
-                msg = await self.edit_menu(guild_id, msg_id)
-                if isinstance(emoji, int):
-                    emoji = self.bot.get_emoji(emoji)
-                for reaction in msg.reactions:
-                    if str(reaction.emoji) == str(emoji):
-                        async for user in reaction.users():
-                            await msg.remove_reaction(reaction, user)
-        channel = self.bot.get_channel(dat["channel"])
-        msg = await channel.fetch_message(int(msg_id))
-        embed = self.build_menu(guild_id, dat)
-        await msg.edit(embed=embed)
-        await ctx.send("Updated the menu 👍")
-
-    @commands.command(name="create-menu", description="Starts the setup process")
-    @commands.cooldown(2, 5, commands.BucketType.user)
-    @commands.guild_only()
-    @commands.bot_has_permissions(embed_links=True)
-    @commands.has_permissions(manage_roles=True)
-    async def create_menu(self, ctx):
-        async def wait_for_msg():
-            def pred(m):
-                return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
-
-            try:
-                msg = await self.bot.wait_for("message", check=pred, timeout=120)
-            except asyncio.TimeoutError:
-                await instructions.delete()
-                return None
-            else:
-                if "cancel" in msg.content.lower():
-                    await instructions.delete()
-                    await msg.delete()
-                    return None
-                return msg
-
-        menu = {
-            "name": None,  # type: str
-            "color": None,  # type: int
-            "channel": None,  # type: int
-            "items": {},
-            "indent": 1,
-            "limit": None,
-            "mentions": None,  # type: bool
-        }
-        instructions = await ctx.send(
-            'What should the menu be called\nReply with "cancel" to exit, '
-            'or "skip" to use none'
-        )
-        msg = await wait_for_msg()
-        if not msg:
-            return
-        menu["name"] = msg.content
-        await asyncio.sleep(0.5)
-        await msg.delete()
-
-        if "quick" not in ctx.message.content.lower():
-
-            await instructions.edit(
-                content='What hex color should the menu be\nReply with "cancel" to exit, '
-                'or "skip" to use default color'
-            )
-            while not menu["color"]:
-                msg = await wait_for_msg()
-                if not msg:
-                    return
-                if "skip" in msg.content.lower():
-                    menu["color"] = colors.fate
-                    break
-                try:
-                    _hex = int(f"0x{msg.content}", 0)
-                    if _hex > 16777215:
-                        _hex = colors.fate
-                    menu["color"] = _hex
-                except:
-                    await msg.delete()
-                    await ctx.send("Invalid hex", delete_after=5)
-            await asyncio.sleep(0.5)
-            await msg.delete()
-
-            await instructions.edit(
-                content="How many reactions should users be allowed to add\nReply with "
-                '"cancel" to exit, or "skip" to allow infinite'
-            )
-            while not menu["limit"]:
-                msg = await wait_for_msg()
-                if not msg:
-                    return
-                if "skip" in msg.content.lower():
-                    menu["limit"] = None
-                    break
-                try:
-                    limit = int(msg.content)
-                    menu["limit"] = limit
-                except:
-                    await msg.delete()
-                    await ctx.send("Invalid reply", delete_after=5)
-            await asyncio.sleep(0.5)
-            await msg.delete()
-
-            await instructions.edit(
-                content='Should I use role mentions instead of role names\nReply with "yes" or "no"'
-            )
-            while True:
-                await asyncio.sleep(0.5)
-                msg = await wait_for_msg()
-                if not msg:
-                    return
-                content = msg.content.lower()
-                if "yes" not in content and "no" not in content:
-                    await msg.delete()
-                    await ctx.send("Invalid reply", delete_after=5)
-                    continue
-                if "yes" in msg.content.lower():
-                    menu["mentions"] = True
+            for msg_id, data in menus.items():
+                if data["style"] == "category":
+                    self.bot.add_view(CategoryView(self, guild_id, msg_id))
                 else:
-                    menu["mentions"] = False
-                break
-            await asyncio.sleep(1)
-            await msg.delete()
+                    self.bot.add_view(RoleView(self, guild_id, msg_id))
+            self.bot.menus_loaded = True
 
-            await instructions.edit(
-                content="Send the emoji and role-name for each role\n"
-                'Reply with "done" when complete or add them later.\n'
-                'Reply with "cancel" to exit'
+    async def refresh_menu(self, guild_id: int, message_id: str) -> discord.Message:
+        """ Re-initiates the View and updates the message content """
+        meta: dict = self.config[guild_id][message_id]
+        channel = self.bot.get_channel(meta["channel_id"])
+        if not channel:
+            channel = await self.bot.fetch_channel(meta["channel_id"])
+        message = await channel.fetch_message(int(message_id))  # type: ignore
+        new_view = RoleView(self, guild_id, int(message_id))
+        content = self.format_text(guild_id, message_id, meta["text"])
+        message = await message.edit(content=content, view=new_view, embed=None)
+        if message.reactions:
+            await message.clear_reactions()
+        return message
+
+    def format_text(self, guild_id: int, message_id: Union[int, str], text: str) -> str:
+        if "!roles" in text:
+            lines = list(text.splitlines())
+            (position, line), = [
+                (position, line)
+                for position, line
+                  in enumerate(lines)
+                    if "!roles" in line
+            ]
+
+            show_stats = False
+            if "!stats" in text:
+                show_stats = True
+                line = line.replace("!stats", "").strip()
+            start = ""
+            if len(line) <= 9:
+                start = line.strip("!roles")
+
+            guild = self.bot.get_guild(guild_id)
+            roles = []
+            for role_id in self.config[guild_id][str(message_id)]["roles"]:
+                if role := guild.get_role(int(role_id)):
+                    roles.append([role, role.position])
+
+            formatted_text = ""
+            for role, _position in sorted(roles, key=lambda x: x[1], reverse=True):
+                formatted_text += f"\n{start}{role.mention}"
+                if show_stats:
+                    formatted_text += f" `{len(role.members)}{emojis.members}`"
+
+            lines[position] = formatted_text.strip("\n")
+            text = "\n".join(lines)
+        return text
+
+    @commands.group(name="selfroles", aliases=["selfrole", "self-roles"], description="Shows how to use the module")
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.bot_has_permissions(embed_links=True)
+    async def self_roles(self, ctx: commands.Context):
+        if not ctx.invoked_subcommand:
+            e = discord.Embed(color=self.bot.config["theme_color"])
+            e.set_author(name="Selfroles", icon_url=self.bot.user.display_avatar.url)
+            if ctx.guild.icon:
+                e.set_thumbnail(url=ctx.guild.icon.url)
+            e.description = "Create menus for users to self assign roles via buttons or " \
+                            "select menus\n**NOTE:** The bot will have you choose which menu to apply a " \
+                            "setting to **after** running commands that edit an existing menu"
+            p: str = ctx.prefix
+            e.add_field(
+                name="◈ Usage",
+                value=f"**{p}create-menu**\n"
+                      f"{p}add-role `@role`\n"
+                      f"{p}remove-role `@role`\n"
+                      f"{p}set-limit [limit]\n"
+                      f"{p}edit-message `new message`\n"
+                      f"{p}set-emoji `new_emoji`\n"
+                      f"{p}set-description `new description`\n"
+                      f"{p}toggle-percentage"
             )
-            while True:
-                msg = await wait_for_msg()
-                if not msg:
-                    return
-                if "done" in msg.content.lower():
-                    break
-                for content in msg.content.split("\n"):
-                    args = content.split(" ", 1)
-                    if len(args) == 1:
-                        await msg.delete()
-                        await ctx.send("Not enough args", delete_after=5)
-                        continue
-                    emote, role = args
-                    emoji = self.get_emojis(emote)
-                    if not emoji:
-                        print(emote)
-                        await ctx.send(f"Emoji not found for {emote}", delete_after=5)
-                        continue
-                    role = await self.bot.utils.get_role(ctx, role)
-                    if not role:
-                        await ctx.send("Role not found", delete_after=5)
-                        continue
-                    emoji_id = f"{emoji}"
-                    if isinstance(emoji, discord.PartialEmoji):
-                        emoji_id = emoji.id
-                    menu["items"][str(role.id)] = emoji_id
-                    await ctx.send(f"Added {role.name}", delete_after=5)
-            await asyncio.sleep(0.5)
-            await msg.delete()
-        else:
-            menu["color"] = colors.fate
-            menu["mentions"] = True
+            count = 0
+            if ctx.guild.id in self.config:
+                count = len(self.config[ctx.guild.id])
+            e.set_footer(text=f"{count} Active Menu{'s' if count == 0 or count > 1 else ''}")
+            await ctx.send(embed=e)
 
-        await instructions.edit(
-            content='Mention the channel I should use\nReply with "cancel" to exit'
-        )
-        while True:
-            msg = await wait_for_msg()
-            if not msg:
-                return
-            if not msg.channel_mentions:
-                await msg.delete()
-                await ctx.send("You didn't mention a channel", delete_after=5)
-                continue
-            menu["channel"] = msg.channel_mentions[0].id
-            break
-        await asyncio.sleep(0.5)
-        await msg.delete()
-
-        guild_id = str(ctx.guild.id)
-        embed = self.build_menu(guild_id, data=menu)
-        channel = self.bot.get_channel(menu["channel"])
-        msg = await channel.send(embed=embed)
-        for emoji in menu["items"].values():
-            if isinstance(emoji, int):
-                emoji = self.bot.get_emoji(emoji)
+    @commands.command(name="refresh", description="Regenerates a menu to update changes")
+    @commands.cooldown(1, 25, commands.BucketType.guild)
+    async def refresh(self, ctx):
+        if ctx.guild.id not in self.config:
+            return await ctx.send("This server has no role-menu's to refresh")
+        await ctx.send("Refreshing all role menus")
+        for message_id in list(self.config[ctx.guild.id].keys())[:15]:
             try:
-                await msg.add_reaction(emoji)
+                await self.refresh_menu(ctx.guild.id, message_id)
+            except discord.errors.NotFound:
+                await self.config.remove_sub(ctx.guild.id, message_id)
+                await ctx.send(f"Removed no longer existing menu '{message_id}'")
             except discord.errors.HTTPException:
-                await ctx.send(
-                    f"I couldn't access the emoji {emoji}\nYou'll need to add the reaction yourself"
-                )
-        if guild_id not in self.menus:
-            self.menus[guild_id] = {}
-        self.menus[guild_id][str(msg.id)] = menu
-        await self.save_data()
-        await instructions.delete()
-        await ctx.send("Created your self-role menu 👍")
+                await ctx.send(f"Removing {self.config[ctx.guild.id][message_id]['text']}")
+                await self.config.remove_sub(ctx.guild.id, message_id)
+        await ctx.send("Success 👍")
 
-    @commands.command(name="set-color", description="Sets a menus color")
-    @commands.cooldown(2, 5, commands.BucketType.user)
-    @commands.guild_only()
-    @commands.bot_has_permissions(embed_links=True)
-    @commands.has_permissions(manage_roles=True)
-    async def set_color(self, ctx, msg_id=None, _hex=None):
-        """ Sets the embed color for an existing menu """
-        guild_id = str(ctx.guild.id)
-        if guild_id not in self.menus:
-            return await ctx.send(f"This guild has no self-role menus")
-        p = get_prefix(ctx)
-        usage = f"{p}set-color msg_id hex"
-        if not msg_id:
-            return await ctx.send(usage)
-        if msg_id not in self.menus[guild_id]:
-            return await ctx.send("That menu doesn't exist")
-        if not _hex:
-            return await ctx.send(usage)
-        try:
-            _hex = int(f"0x{_hex.replace('#', '')}", 0)
-        except:
-            return await ctx.send(f"Invalid hex\nExample: #9eafe3")
-        self.menus[guild_id][msg_id]["color"] = _hex
-        await self.edit_menu(guild_id, msg_id)
-        await ctx.send("Set the color 👍")
-        await self.save_data()
+    @commands.command(name="create-menu", description="Starts the menu setup process")
+    @commands.has_permissions(administrator=True)
+    @commands.bot_has_permissions(add_reactions=True)
+    async def create_menu(self, ctx):
+        """ The command for interactively setting up a new menu """
+        e = discord.Embed(color=self.bot.config["theme_color"])
+        e.set_author(name="Instructions", icon_url=ctx.author.display_avatar.url)
+        e.description = "> **Send the name of the role you want me to add**\nOr here's an example message " \
+                        "with advanced formatting:\n```💚 | SomeDisplayLabel | [role_id, role name, or ping]\n" \
+                        "some description on what it does```"
+        e.set_footer(text="Reply with 'done' when complete")
 
-    @commands.command(name="set-name", description="Sets a menus name")
-    @commands.cooldown(2, 5, commands.BucketType.user)
-    @commands.guild_only()
-    @commands.bot_has_permissions(embed_links=True)
-    @commands.has_permissions(manage_roles=True)
-    async def set_name(self, ctx, msg_id=None, *, new_name=None):
-        """ Sets an existing menus name """
-        guild_id = str(ctx.guild.id)
-        if guild_id not in self.menus:
-            return await ctx.send(f"This guild has no self-role menus")
-        p = get_prefix(ctx)
-        usage = f"{p}set-name msg_id new_name"
-        if not msg_id:
-            return await ctx.send(usage)
-        if msg_id not in self.menus[guild_id]:
-            return await ctx.send("That menu doesn't exist")
-        self.menus[guild_id][msg_id]["name"] = new_name
-        await self.edit_menu(guild_id, msg_id)
-        await ctx.send("Set the name 👍")
-        await self.save_data()
+        # Get the roles
+        msg = await ctx.send(embed=e)
+        selected_roles = {}
+        while True:
+            reply = await self.bot.utils.get_message(ctx)
+            if "cancel" in reply.content.lower():
+                return await msg.delete()
+            if reply.content.lower() == "done":
+                await msg.delete()
+                await reply.delete()
+                if not selected_roles:
+                    return await ctx.send("It seems you didn't add any roles. Rerun the command and try again")
+                break
 
-    @commands.command(name="set-indent", description="Sets the spacing in a menu")
-    @commands.cooldown(2, 5, commands.BucketType.user)
-    @commands.guild_only()
-    @commands.bot_has_permissions(embed_links=True)
-    @commands.has_permissions(manage_roles=True)
-    async def set_indent(self, ctx, msg_id=None, indent: int = None):
-        guild_id = str(ctx.guild.id)
-        if guild_id not in self.menus:
-            return await ctx.send(f"This guild has no self-role menus")
-        p = get_prefix(ctx)
-        usage = f"{p}set-indent msg_id 0-2"
-        if not msg_id:
-            return await ctx.send(usage)
-        if msg_id not in self.menus[guild_id]:
-            return await ctx.send("That menu doesn't exist")
-        if indent is None:
-            return await ctx.send(usage)
-        if indent > 2:
-            return await ctx.send("The max indent is 2")
-        self.menus[guild_id][msg_id]["indent"] = indent
-        await self.edit_menu(guild_id, msg_id)
-        await ctx.send(f"Set the menus indent to {indent}")
-        await self.save_data()
+            name: Optional[str] = reply.content
+            emoji: Optional[str] = None
+            label: Optional[str] = None
+            description: Optional[str] = None
+
+            args = list(reply.content.split("\n")[0].split(" | "))
+            if len(args) > 1:
+                # Set the emoji
+                if all(c.lower() == c.upper() for c in args[0]) or "<" in args[0]:
+                    emoji = args[0]
+                    try:
+                        await msg.add_reaction(emoji)
+                        await msg.clear_reactions()
+                    except:
+                        await ctx.send(
+                            "Couldn't set that as the emoji, you can add it via `.change-emoji` later",
+                            delete_after=10
+                        )
+                        emoji = None
+                    args.pop(0)
+
+                # Set the label
+                if len(args) > 1:
+                    label = args[0][:100]
+                    args.pop(0)
+
+                # Get the role with the remaining args instead of msg content
+                if emoji or label:
+                    name = " ".join(args)
+
+            # Set the description
+            if "\n" in reply.content:
+                description = reply.content.split("\n")[1][:100]
+
+            role = await self.bot.utils.get_role(ctx, name or reply.content)
+            if not role:
+                await ctx.send("Role not found", delete_after=5)
+                await reply.delete()
+                continue
+
+            selected_roles[role] = {
+                "emoji": emoji,
+                "label": label,
+                "description": description
+            }
+
+            if e.fields:
+                e.remove_field(0)
+            e.add_field(
+                name="◈ Selected Roles",
+                value="\n".join([f"• {role.mention}" for role in selected_roles.keys()])
+            )
+            await msg.edit(embed=e)
+            await reply.delete()
+
+            if len(selected_roles) == 24:
+                break
+
+        # Set the style of the menu
+        if len(selected_roles) == 1:
+            style = "buttons"
+        else:
+            m = await ctx.send("Should I use a select menu or buttons. Reply with 'select' or 'buttons'")
+            reply = await self.bot.utils.get_message(ctx)
+            if "button" in reply.content.lower():
+                style = "buttons"
+            else:
+                style = "select"
+            await ctx.send(f"Alright, I'll use a {style} menu", delete_after=5)
+            await m.delete()
+            await reply.delete()
+
+        # Set the channel
+        m = await ctx.send("#Mention the channel you want me to use")
+        reply = await self.bot.utils.get_message(ctx)
+        if not reply.channel_mentions:
+            return await ctx.send("You didn't #mention a channel, rerun the command")
+        channel = reply.channel_mentions[0]
+        await m.delete()
+        await reply.delete()
+
+        msg = await channel.send("Choose your role")
+        if ctx.guild.id not in self.config:
+            self.config[ctx.guild.id] = {}
+        self.config[ctx.guild.id][str(msg.id)] = {
+            "channel_id": channel.id,
+            "label": "Select your role",
+            "roles": {
+                str(role.id): metadata for role, metadata in selected_roles.items()
+            },
+            "text": "Choose your role",
+            "style": style,
+            "limit": 1,
+            "show_percentage": True
+        }
+        view = RoleView(cls=self, guild_id=ctx.guild.id, message_id=msg.id)
+        await msg.edit(view=view)
+        await self.config.flush()
+
+    @commands.command(name="combine")
+    @commands.is_owner()
+    async def combine(self, ctx, *message_ids):
+        new = {
+            "label": "Select a category",
+            "categories": {},
+            "text": "Choose a role",
+            "style": "category"
+        }
+        for message_id in message_ids:
+            conf = self.config[ctx.guild.id][message_id]
+            print(conf)
+            new["channel_id"] = conf["channel_id"]
+            new["categories"][conf["text"]] = conf["roles"]
+            del self.config[ctx.guild.id][message_id]
+            with suppress(Exception):
+                self.bot.views[ctx.guild.id][message_id].stop()
+                del self.bot.views[ctx.guild.id][message_id]
+        self.config[ctx.guild.id][message_ids[0]] = new
+        view = CategoryView(self, ctx.guild.id, message_ids[0])
+        msg = await self.bot.get_channel(new["channel_id"]).fetch_message(message_ids[0])
+        await msg.edit(content="Categories", view=view)
+        await self.config.flush()
+
+    async def get_menu_id(self, ctx) -> str:
+        """ Gets the message_id of the wanted menu """
+        menus = {
+            meta["text"].split("\n")[0]: message_id
+            for message_id, meta in self.config[ctx.guild.id].items()
+        }
+        if len(menus) == 1:
+            choice: str = list(menus.keys())[0]
+        else:
+            choice: str = await GetChoice(ctx, list(menus.keys()))
+        key = [k for k in menus.keys() if choice in k][0]
+        return menus[key]
 
     @commands.command(name="add-role", description="Adds a role to an existing menu")
-    @commands.cooldown(2, 5, commands.BucketType.user)
-    @commands.guild_only()
-    @commands.bot_has_permissions(embed_links=True)
-    @commands.has_permissions(manage_roles=True)
-    async def add_role(self, ctx, msg_id, emoji=None, *, role=None):
-        """ Adds a role to an existing menu """
-        p = get_prefix(ctx)
-        usage = f"{p}add-role msg_id emoji rolename"
-        if not emoji or not role:
-            return await ctx.send(usage)
-        guild_id = str(ctx.guild.id)
-        if guild_id not in self.menus:
-            return await ctx.send(f"This guild has no self-role menus")
-        if msg_id not in self.menus[guild_id]:
-            return await ctx.send("That menu doesn't exist")
-        emoji = self.get_emojis(emoji)
-        if not emoji:
-            return await ctx.send("Emoji not found")
+    @commands.has_permissions(administrator=True)
+    async def add_role(self, ctx, *, role):
+        guild_id = ctx.guild.id
+        if guild_id not in self.config:
+            return await ctx.send("There arent any active role menus in this server")
+        message_id = await self.get_menu_id(ctx)
+        if len(self.config[guild_id][message_id]["roles"]) == 25:
+            return await ctx.send("You can't have more than 25 roles in a menu")
+
+        name: Optional[str] = role
+        emoji: Optional[str] = None
+        label: Optional[str] = None
+        description: Optional[str] = None
+
+        args = list(role.split("\n")[0].split(" | "))
+        if len(args) > 1:
+            # Set the emoji
+            if all(c.lower() == c.upper() for c in args[0]) or "<" in args[0]:
+                emoji = args[0]
+                args.pop(0)
+
+            # Set the label
+            if len(args) > 1:
+                label = args[0][:100]
+                args.pop(0)
+
+            # Get the role with the remaining args instead of msg content
+            if emoji or label:
+                name = " ".join(args)
+
+        # Set the description
+        if "\n" in role:
+            description = role.split("\n")[1][:100]
+
+        role = await self.bot.utils.get_role(ctx, name)
+        if not role:
+            return await ctx.send("Role not found")
+        if str(role.id) in self.config[guild_id][message_id]["roles"]:
+            return await ctx.send("That role's already added")
+
+        self.config[guild_id][message_id]["roles"][str(role.id)] = {
+            "emoji": emoji,
+            "label": label,
+            "description": description
+        }
+
+        await self.refresh_menu(guild_id, message_id)
+        await ctx.send(f"Added {role.mention}", allowed_mentions=discord.AllowedMentions.none())
+        await self.config.flush()
+
+    @commands.command(name="remove-role", description="Removes a role from an existing menu")
+    @commands.has_permissions(administrator=True)
+    async def remove_role(self, ctx, *, role):
+        guild_id = ctx.guild.id
+        if guild_id not in self.config:
+            return await ctx.send("There arent any active role menus in this server")
+        message_id = await self.get_menu_id(ctx)
+
         role = await self.bot.utils.get_role(ctx, role)
         if not role:
             return await ctx.send("Role not found")
-        emoji_id = f"{emoji}"
-        if isinstance(emoji, discord.PartialEmoji):
-            emoji_id = emoji.id
-        for _role_id, emote in self.menus[guild_id][msg_id]["items"].items():
-            if emoji_id == emote:
-                return await ctx.send("That emoji's already in use")
-        self.menus[guild_id][msg_id]["items"][str(role.id)] = emoji_id
-        try:
-            msg = await self.edit_menu(guild_id, msg_id)
-        except AttributeError:
-            del self.menus[guild_id][msg_id]["items"][str(role.id)]
+        if str(role.id) not in self.config[guild_id][message_id]["roles"]:
             return await ctx.send(
-                f"I couldn't find that menu in this server. Please try using `{p}update-menu {msg_id}` "
-                f"inside the same channel the menu is in as it's likely an old selfrole menu"
+                f"{role.mention} role isn't in that menu",
+                allowed_mentions=discord.AllowedMentions.none()
             )
-        if isinstance(emoji, int):
-            emoji = self.bot.get_emoji(emoji)
+
+        del self.config[guild_id][message_id]["roles"][str(role.id)]
+        await self.refresh_menu(guild_id, message_id)
+
+        await ctx.send(f"Removed {role.mention}", allowed_mentions=discord.AllowedMentions.none())
+        await self.config.flush()
+
+    @commands.command(name="toggle-percentage", description="Toggles showing the % of how many have each role")
+    @commands.has_permissions(administrator=True)
+    async def toggle_percentage(self, ctx):
+        guild_id = ctx.guild.id
+        if guild_id not in self.config:
+            return await ctx.send("There arent any active role menus in this server")
+        message_id = await self.get_menu_id(ctx)
+        old_setting = self.config[guild_id][message_id]["show_percentage"]
+        self.config[guild_id][message_id]["show_percentage"] = not old_setting
+        await self.refresh_menu(guild_id, message_id)
+        toggle = "Enabled" if not old_setting else "Disabled"
+        await ctx.send(f"{toggle} showing the percentage")
+        await self.config.flush()
+
+    @commands.command(name="set-limit", description="Sets the max number of roles a user can choose")
+    @commands.has_permissions(administrator=True)
+    async def set_limit(self, ctx, new_limit: int):
+        if new_limit > 25 or new_limit < 0:
+            return await ctx.send("That's not a valid number")
+        guild_id = ctx.guild.id
+        if guild_id not in self.config:
+            return await ctx.send("There arent any active role menus in this server")
+        message_id = await self.get_menu_id(ctx)
+        if new_limit == 0:
+            new_limit = None
+        self.config[guild_id][message_id]["limit"] = new_limit
+        await self.refresh_menu(guild_id, message_id)
+        await ctx.send("Set the new limit 👍")
+        await self.config.flush()
+
+    @commands.command(name="edit-message", description="Sets the msg content of a menu")
+    @commands.has_permissions(administrator=True)
+    async def edit_message(self, ctx, *, new_message):
+        guild_id = ctx.guild.id
+        if guild_id not in self.config:
+            return await ctx.send("There arent any active role menus in this server")
+
+        message_id = await self.get_menu_id(ctx)
+        self.config[guild_id][message_id]["text"] = new_message
+
+        await self.refresh_menu(guild_id, message_id)
+        await ctx.send(f"Successfully edited the content 👍")
+        await self.config.flush()
+
+    @commands.command(name="set-emoji", description="Sets a roles emoji in an existing menu")
+    @commands.has_permissions(administrator=True)
+    @commands.bot_has_permissions(add_reactions=True)
+    async def set_emoji(self, ctx, *, new_emoji):
+        guild_id = ctx.guild.id
+        if guild_id not in self.config:
+            return await ctx.send("There arent any active role menus in this server")
         try:
-            await msg.add_reaction(emoji)
+            await ctx.message.add_reaction(new_emoji)
         except discord.errors.HTTPException:
-            return await ctx.send("I can't find that emoji")
-        await ctx.send(f"Added {role.name}")
-        await self.save_data()
+            return await ctx.send("Invalid emoji")
+        await ctx.message.clear_reactions()
+        message_id = await self.get_menu_id(ctx)
 
-    @commands.command(name="remove-role", description="Removes a role from a menu")
-    @commands.cooldown(2, 5, commands.BucketType.user)
-    @commands.guild_only()
-    @commands.bot_has_permissions(embed_links=True)
-    @commands.has_permissions(manage_roles=True)
-    async def remove_role(self, ctx, msg_id, *, role):
-        """ Removes a role from an existing menu """
-        guild_id = str(ctx.guild.id)
-        if guild_id not in self.menus:
-            return await ctx.send(f"This guild has no self-role menus")
-        if msg_id not in self.menus[guild_id]:
-            return await ctx.send("That menu doesn't exist")
-        role = await self.bot.utils.get_role(ctx, role)
-        if not role:
-            return await ctx.send(
-                "Role not found, if its a deleted role, try adding a reaction to it on the menu"
-            )
-        if str(role.id) not in self.menus[guild_id][msg_id]["items"]:
-            return await ctx.send("That role isn't in the menu")
-        emoji = self.menus[guild_id][msg_id]["items"][str(role.id)]
-        del self.menus[guild_id][msg_id]["items"][str(role.id)]
-        msg = await self.edit_menu(guild_id, msg_id)
-        if isinstance(emoji, int):
-            emoji = self.bot.get_emoji(emoji)
-        for reaction in msg.reactions:
-            if str(reaction.emoji) == str(emoji):
-                async for user in reaction.users():
-                    await msg.remove_reaction(reaction, user)
-        await ctx.send(f"Removed {role.name}")
-        await self.save_data()
+        roles = {}
+        for role_id, meta in self.config[guild_id][message_id]["roles"].items():
+            role = ctx.guild.get_role(int(role_id))
+            if not role:
+                continue
+            roles[meta["label"] or role.name] = role_id
 
-    @commands.command(name="set-limit", description="Sets the per-user role limit on a menu")
-    @commands.cooldown(2, 5, commands.BucketType.user)
-    @commands.guild_only()
-    @commands.bot_has_permissions(embed_links=True)
-    @commands.has_permissions(manage_roles=True)
-    async def set_limit(self, ctx, msg_id=None, limit: int = None):
-        guild_id = str(ctx.guild.id)
-        if guild_id not in self.menus:
-            return await ctx.send(f"This guild has no self-role menus")
-        p = get_prefix(ctx)
-        usage = f"{p}set-limit msg_id limit"
-        if not msg_id:
-            return await ctx.send(usage)
-        if msg_id not in self.menus[guild_id]:
-            return await ctx.send("That menu doesn't exist")
-        if not limit:
-            return await ctx.send(usage)
-        self.menus[guild_id][msg_id]["limit"] = limit
-        await self.edit_menu(guild_id, msg_id)
-        await ctx.send(f"Set the limit to {limit}")
-        await self.save_data()
-
-    @commands.command(name="toggle-mentions", description="Toggles using mentions or names")
-    @commands.cooldown(2, 5, commands.BucketType.user)
-    @commands.guild_only()
-    @commands.bot_has_permissions(embed_links=True)
-    @commands.has_permissions(manage_roles=True)
-    async def toggle_mentions(self, ctx, msg_id=None):
-        guild_id = str(ctx.guild.id)
-        if guild_id not in self.menus:
-            return await ctx.send(f"This guild has no self-role menus")
-        p = get_prefix(ctx)
-        usage = f"{p}toggle-mentions msg_id"
-        if not msg_id:
-            return await ctx.send(usage)
-        if msg_id not in self.menus[guild_id]:
-            return await ctx.send("That menu doesn't exist")
-        if self.menus[guild_id][msg_id]["mentions"]:
-            self.menus[guild_id][msg_id]["mentions"] = False
+        if len(roles) == 1:
+            choice: str = list(roles.values())[0]
         else:
-            self.menus[guild_id][msg_id]["mentions"] = True
-        await self.edit_menu(guild_id, msg_id)
-        toggle = self.menus[guild_id][msg_id]["mentions"]
-        await ctx.send(f"{'enabled' if toggle else 'disabled'} mentions")
-        await self.save_data()
+            choice: str = await GetChoice(ctx, list(roles.keys()))
+        if roles[choice] not in self.config[guild_id][message_id]["roles"]:
+            return await ctx.send(f"{choice} doesn't seem to be in the config anymore")
+        self.config[guild_id][message_id]["roles"][roles[choice]]["emoji"] = new_emoji
+
+        await self.refresh_menu(guild_id, message_id)
+        await ctx.send(f"Successfully set the emoji 👍")
+        await self.config.flush()
+
+    @commands.command(name="set-description", description="Sets a roles description in an existing menu")
+    @commands.has_permissions(administrator=True)
+    async def set_description(self, ctx, *, new_description):
+        guild_id = ctx.guild.id
+        if guild_id not in self.config:
+            return await ctx.send("There arent any active role menus in this server")
+        message_id = await self.get_menu_id(ctx)
+
+        roles = {}
+        for role_id, meta in self.config[guild_id][message_id]["roles"].items():
+            role = ctx.guild.get_role(int(role_id))
+            if not role:
+                continue
+            roles[meta["label"] or role.name] = role_id
+
+        if len(roles) == 1:
+            choice: str = list(roles.values())[0]
+        else:
+            choice: str = await GetChoice(ctx, list(roles.keys()))
+        self.config[guild_id][message_id]["roles"][roles[choice]]["description"] = new_description[:100]
+
+        await self.refresh_menu(guild_id, message_id)
+        await ctx.send(f"Successfully set the description 👍")
+        await self.config.flush()
 
     @commands.Cog.listener()
-    async def on_raw_reaction_add(self, payload):
-        guild_id = str(payload.guild_id)
-        if guild_id in self.menus:
-            msg_id = str(payload.message_id)
-            if msg_id in self.menus[guild_id]:
-                guild = self.bot.get_guild(payload.guild_id)
-                if not guild.me.guild_permissions.manage_roles:
-                    return
-                channel = self.bot.get_channel(payload.channel_id)
-                msg = await channel.fetch_message(msg_id)
-                target = guild.get_member(payload.user_id)
-                if target.bot:
-                    return
+    async def on_raw_message_delete(self, payload):
+        if payload.guild_id in self.config:
+            if str(payload.message_id) in self.config[payload.guild_id]:
+                await self.config.remove_sub(payload.guild_id, str(payload.message_id))
+                if not self.config[payload.guild_id]:
+                    await self.config.remove(payload.guild_id)
 
-                for role_id, emoji in self.menus[guild_id][msg_id]["items"].items():
-                    await asyncio.sleep(0)
 
-                    if isinstance(emoji, int):
-                        emoji = self.bot.get_emoji(emoji)
-                    if str(emoji) == str(payload.emoji):
+class Categories(ui.Select):
+    def __init__(self, cls, message_id: int, categories: list):
+        self.cls = cls
+        self.bot = cls.bot
+        self.config = cls.config
+        self.guild_id = cls.guild_id
+        self.limit = 1
+        self.message_id = message_id
+
+        # Prepare the components for the dropdown menu
+        options = []
+        for category in categories:
+            option = discord.SelectOption(
+                label=category[:100],
+                value=category
+            )
+            options.append(option)
+
+        super().__init__(
+            custom_id=f"select_{message_id}",
+            placeholder="Select a Role",
+            min_values=1,
+            max_values=1,
+            options=options
+        )
+
+    async def sub_menu_callback(self, interaction):
+        # Fetch required variables
+        guild = self.bot.get_guild(self.guild_id)
+        member = guild.get_member(interaction.user.id)
+        if not guild or not member:
+            return  # Cache isn't properly established
+
+        # Give selected roles
+        role_id = None
+        for role_id in interaction.data["values"]:
+            role = guild.get_role(int(role_id))
+            if not role:
+                return await interaction.response.send_message(
+                    f"{role_id} doesn't seem to exist anymore",
+                    ephemeral=True
+                )
+
+            if role.position >= guild.me.top_role.position:
+                self.config[self.guild_id]["roles"].remove(role.id)
+                return await interaction.response.send_message(
+                    f"{role_id} is too high for me to manage",
+                    ephemeral=True
+                )
+
+            if role not in member.roles:
+                await member.add_roles(role)
+
+        # Take away unselected roles
+        data = self.config[self.guild_id][str(self.message_id)]["categories"]
+        for category, roles in data.items():
+            if role_id in roles:
+                for role_id in roles.keys():
+                    if role_id not in interaction.data["values"]:
                         role = guild.get_role(int(role_id))
-                        if not role:
-                            with suppress(discord.errors.Forbidden):
-                                await target.send(
-                                    f"Sorry, but the role with the emoji {emoji} that you reacted to in "
-                                    f"{guild} doesn't seem to exist anymore. I've just removed it from the menu"
-                                )
-                            del self.menus[guild_id][msg_id]["items"][role_id]
-                            return await self.edit_menu(guild_id, msg_id)
-                        if role.position >= guild.me.top_role.position:
-                            with suppress(discord.errors.Forbidden):
-                                await target.send(
-                                    f"Sorry, but I'm missing permissions to give you the role with the emoji {emoji} "
-                                    f"that you reacted to in {guild}. I've just removed it from the menu"
-                                )
-                            del self.menus[guild_id][msg_id]["items"][role_id]
-                            return await self.edit_menu(guild_id, msg_id)
-                        await target.add_roles(role)
+                        if role and role in member.roles:
+                            await member.remove_roles(role)
 
-                        if self.menus[guild_id][msg_id]["limit"]:
-                            limit = self.menus[guild_id][msg_id]["limit"]
-                            index = 0
-                            for reaction in msg.reactions:
-                                async for user in reaction.users():
-                                    if user.id == target.id:
-                                        if index >= limit:
-                                            await msg.remove_reaction(reaction, user)
-                                        index += 1
+        await interaction.response.edit_message(
+            content="Successfully set your roles",
+            view=None
+        )
 
-    @commands.Cog.listener()
-    async def on_raw_reaction_remove(self, payload):
-        guild_id = str(payload.guild_id)
-        if guild_id in self.menus:
-            msg_id = str(payload.message_id)
-            if msg_id in self.menus[guild_id]:
-                guild = self.bot.get_guild(payload.guild_id)
-                target = guild.get_member(payload.user_id)
-                for role_id, emoji in self.menus[guild_id][msg_id]["items"].items():
-                    await asyncio.sleep(0)
-                    if isinstance(emoji, int):
-                        emoji = self.bot.get_emoji(emoji)
-                    if str(emoji) == str(payload.emoji):
-                        role = guild.get_role(int(role_id))
-                        if not target:
-                            return
-                        if role in target.roles:
-                            await target.remove_roles(role)
+    async def callback(self, interaction: discord.Interaction):
+        """ Let the main View class handle the interaction """
+        category = interaction.data["values"][0]
+        view = ui.View(timeout=45)
 
-    @commands.Cog.listener()
-    async def on_message_delete(self, msg):
-        if isinstance(msg.guild, discord.Guild):
-            guild_id = str(msg.guild.id)
-            if guild_id in self.menus:
-                if str(msg.id) in self.menus[guild_id]:
-                    del self.menus[guild_id][str(msg.id)]
-                    await self.save_data()
+        index = {}
+        guild = self.bot.get_guild(self.guild_id)
+        data = self.config[self.guild_id][str(self.message_id)]["categories"][category]
+        for role_id, meta in data.items():
+            role = guild.get_role(int(role_id))
+            if role:
+                index[role] = meta
+
+        select = Select(
+            self,
+            self.guild_id,
+            self.message_id,
+            index,
+            self.sub_menu_callback
+        )
+        view.add_item(select)
+        await interaction.response.send_message("Choose which role", view=view, ephemeral=True)
 
 
-def setup(bot):
-    bot.add_cog(SelfRoles(bot), override=True)
+class CategoryView(ui.View):
+    def __init__(self, cls: SelfRoles, guild_id: int, message_id: int):
+        self.bot = cls.bot
+        self.config = cls.config
+        self.guild_id = guild_id
+        self.message_id = message_id
+
+        # Replacing existing instances to refresh information
+        if guild_id not in self.bot.views:
+            self.bot.views[guild_id] = {}
+        if str(message_id) in self.bot.views[guild_id]:
+            with suppress(Exception):
+                self.bot.views[guild_id][str(message_id)].stop()
+        self.bot.views[guild_id][str(message_id)] = self
+
+        super().__init__(timeout=None)
+
+        conf = self.config[guild_id][str(message_id)]
+        self.add_item(Categories(self, message_id, conf["categories"].keys()))
+
+
+class RoleView(ui.View):
+    def __init__(self, cls: SelfRoles, guild_id: int, message_id: int):
+        self.cls = cls
+        self.bot = cls.bot
+        self.config = cls.config
+        self.guild_id = guild_id
+        self.message_id = message_id
+
+        # Replacing existing instances to refresh information
+        if guild_id not in self.bot.views:
+            self.bot.views[guild_id] = {}
+        if str(message_id) in self.bot.views[guild_id]:
+            with suppress(Exception):
+                self.bot.views[guild_id][str(message_id)].stop()
+        self.bot.views[guild_id][str(message_id)] = self
+
+        conf: Dict[str, Optional[Any]] = cls.config[guild_id][str(message_id)]
+        self.style: str = cls.config[guild_id][str(message_id)]["style"]
+        self.limit: int = conf["limit"]
+        if not self.limit or self.limit > len(conf["roles"]):
+            self.limit = len(conf["roles"])
+
+        self.buttons = {}
+
+        # Setup cooldowns for interactions
+        self.global_cooldown = cls.global_cooldown
+        cd = [5, 25]
+        if self.style == "buttons":
+            cd = [1, 5]
+        self.cooldown = Cooldown(*cd)
+
+        super().__init__(timeout=None)
+
+        if self.style == "buttons":
+            data = self.config[guild_id][str(message_id)]
+            guild = self.bot.get_guild(guild_id)
+
+            roles = []
+            for role_id, data in data["roles"].items():
+                role = guild.get_role(int(role_id))
+                if role:
+                    roles.append([(role, role_id, data), role.position])
+
+            for (role, role_id, data), _position in sorted(roles, key=lambda x: x[1], reverse=True):
+                label = data.get("label") or role.name
+                if conf["show_percentage"]:
+                    percentage = round(len(role.members) / role.guild.member_count * 100)
+                    label = f"({percentage}%) {label[:90]}"
+
+                # Add a new button to the class
+                button = ui.Button(
+                    label=label,
+                    emoji=data["emoji"],
+                    style=discord.ButtonStyle.blurple,
+                    custom_id=f"{role_id}@{message_id}"
+                )
+                if data["label"] and data["label"] == data["emoji"]:
+                    button.label = None
+                button.callback = self.surface_callback
+                self.buttons[button.custom_id] = button
+                self.add_item(button)
+        else:
+            self.menu = Select(self, guild_id, message_id, self.index())
+            self.add_item(self.menu)
+
+    def index(self) -> dict:
+        index = {}
+        guild = self.bot.get_guild(self.guild_id)
+        roles = []
+        for role_id, meta in list(self.config[self.guild_id][str(self.message_id)]["roles"].items()):
+            role = guild.get_role(int(role_id))
+            if role:
+                roles.append([(role, meta), role.position])
+            else:
+                del self.config[self.guild_id][str(self.message_id)]["roles"][role_id]
+        for (role, meta), _position in sorted(roles, key=lambda x: x[1], reverse=True):
+            index[role] = meta
+        return index
+
+    async def on_error(self, _error, _item, _interaction) -> None:
+        pass
+
+    async def surface_callback(self, interaction) -> None:
+        """ Handle cooldowns and suppress exceptions in the actual callback function """
+        with suppress(discord.errors.NotFound):
+            check1 = self.global_cooldown.check(interaction.user.id)
+            check2 = self.cooldown.check(interaction.user.id)
+            if check1 or check2:
+                return await interaction.response.send_message(
+                    "You're on cooldown, try again in a moment", ephemeral=True
+                )
+            if self.style == "buttons":
+                await self.button_callback(interaction)
+            else:
+                await self.select_callback(interaction)
+
+    async def button_callback(self, interaction: Interaction) -> Optional[discord.Message]:
+        """ The callback function for when a buttons pressed """
+
+        async def remove_button(reason) -> discord.Message:
+            """ Remove a button that can no longer be used """
+            self.remove_item(self.buttons[custom_id])
+            with suppress(KeyError):
+                self.config[self.guild_id][key]["roles"].remove(role_id)
+            await self.config.flush()
+            await interaction.message.edit(view=self)
+            return await interaction.response.send_message(reason, ephemeral=True)
+
+        # Parse the key and get its relative data
+        custom_id = interaction.data["custom_id"]
+        key = custom_id.split("@")[1]
+        role_id = int(custom_id.split("@")[0])
+
+        # Fetch required variables
+        guild = self.bot.get_guild(self.guild_id)
+        member = guild.get_member(interaction.user.id)
+        role = guild.get_role(role_id)
+        name = self.buttons[custom_id].label
+
+        if not guild or not member:
+            return  # Cache isn't properly established
+        if not role:
+            return await remove_button(f"{name} doesn't seem to exist anymore")
+        if role.position >= guild.me.top_role.position:
+            return await remove_button(f"{name} is too high for me to manage")
+
+        if role in member.roles:
+            await member.remove_roles(role)
+            action = "Removed"
+        else:
+            action = "Gave you"
+            await member.add_roles(role)
+        await interaction.response.send_message(
+            f"{action} {role.mention}",
+            ephemeral=True
+        )
+
+        if self.config[self.guild_id][self.message_id]["show_percentage"]:
+            self.__init__(self.cls, self.guild_id, self.message_id)
+            if "!roles" in (text := self.config[self.guild_id][str(self.message_id)]["text"]):
+                content = self.cls.format_text(self.guild_id, self.message_id, text)
+                await interaction.message.edit(content=content, view=self)
+            else:
+                await interaction.message.edit(view=self)
+
+    async def select_callback(self, interaction: Interaction) -> Optional[discord.Message]:
+        """ The callback function for when a buttons pressed """
+
+        async def adjust_options(reason=None) -> None:
+            """ Remove a button that can no longer be used """
+            self.clear_items()
+            self.menu = Select(self, self.guild_id, self.message_id, self.index())
+            self.add_item(self.menu)
+            msg_id = str(interaction.message.id)
+            if "!roles" in (text := self.config[guild.id][msg_id]["text"]):
+                content = self.cls.format_text(guild.id, msg_id, text)
+                await interaction.message.edit(content=content, view=self)
+            else:
+                await interaction.message.edit(view=self)
+            if reason:
+                await interaction.response.send_message(reason, ephemeral=True)
+            return
+
+        # Fetch required variables
+        guild = self.bot.get_guild(self.guild_id)
+        member = guild.get_member(interaction.user.id)
+        if not guild or not member:
+            return  # Cache isn't properly established
+
+        # Give selected roles
+        if "remove_all" not in interaction.data["values"]:
+            for role_id in interaction.data["values"]:
+                role = guild.get_role(int(role_id))
+                if not role:
+                    return await adjust_options(f"{role_id} doesn't seem to exist anymore")
+
+                if role.position >= guild.me.top_role.position:
+                    return await adjust_options(f"{role_id} is too high for me to manage")
+
+                if role not in member.roles:
+                    await member.add_roles(role)
+
+        # Take away unselected roles
+        for role in self.index().keys():
+            if str(role.id) not in interaction.data["values"]:
+                if role in member.roles:
+                    await member.remove_roles(role)
+
+        await interaction.response.send_message(
+            "Successfully set your roles",
+            ephemeral=True
+        )
+        if self.config[guild.id][str(interaction.message.id)]["show_percentage"]:
+            await adjust_options()
+
+
+class Select(discord.ui.Select):
+    def __init__(self, cls: Union[RoleView, Any], guild_id: int, message_id: int, roles: dict, callback=None):
+        self.cls = cls
+        self.custom_callback = callback
+
+        # Prepare the components for the dropdown menu
+        options = [discord.SelectOption(
+            label="Remove All",
+            value="remove_all",
+            emoji="🚫",
+            description="Removes all your roles from this menu"
+        )]
+        for role, meta in roles.items():
+            meta = dict(meta)
+            label = meta.pop("label") or role.name[:100]
+            if cls.config[guild_id][str(message_id)]["show_percentage"]:
+                total = len(role.members)
+                percentage = round(total/role.guild.member_count * 100)
+                if any(meta["description"] for _r, meta in roles.items()):
+                    label = f"({percentage}%) {label[:90]}"
+                else:
+                    meta["description"] = f"{total} Member{s(total)} ({percentage}%)"
+            option = discord.SelectOption(
+                label=label,
+                value=str(role.id),
+                **meta
+            )
+            options.append(option)
+        if self.cls.limit > len(options):
+            self.cls.limit = len(options)
+        super().__init__(
+            custom_id=f"select_{message_id}",
+            placeholder="Select a Role",
+            min_values=1,
+            max_values=self.cls.limit,
+            options=options
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+        """ Let the main View class handle the interaction """
+        if self.custom_callback:
+            await self.custom_callback(interaction)
+        else:
+            await self.cls.surface_callback(interaction)
+
+
+def setup(bot: Fate):
+    bot.add_cog(SelfRoles(bot))
