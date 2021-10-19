@@ -224,8 +224,6 @@ class View(ui.View):
         else:
             self.commands = ""
             for command, response in custom_commands:
-                if not response:
-                    continue
                 response = utils.escape_markdown(response[:100])\
                     .replace("\n", " ")\
                     .replace("https://", "")\
