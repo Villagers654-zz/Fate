@@ -194,11 +194,8 @@ class Logger(commands.Cog):
             if not guild or not guild.me:
                 return await self.destruct(guild_id)
             if not guild.me.guild_permissions.manage_channels:
-                result = await self.wait_for_permissions(
-                    guild, "manage_channels"
-                )
-                if not result:
-                    return await self.destruct(guild_id)
+                if not await self.wait_for_permissions(guild, "manage_channels"):
+                    return
             try:
                 channel = await self.bot.fetch_channel(
                     self.config[guild_id]["channel"]
@@ -254,14 +251,14 @@ class Logger(commands.Cog):
         for _attempt in range(12 * 60):  # Timeout of 12 hours
             if not guild or not guild.me:
                 await self.destruct(guild_id)
-                raise IgnoredExit
+                return False
             if getattr(perms(), permission):
                 del self.pool[guild_id]
                 return True
             await asyncio.sleep(60)
         else:
             await self.destruct(guild_id)
-            raise IgnoredExit
+            return False
 
     async def start_queue(self, guild_id: str) -> None:
         guild = self.bot.get_guild(int(guild_id))
@@ -310,9 +307,8 @@ class Logger(commands.Cog):
 
             # Permission checks to ensure the secure features can function
             if self.config[guild_id]["secure"]:
-                result = await self.wait_for_permissions(guild, "administrator")
-                if not result:
-                    return await self.destruct(guild_id)
+                if not await self.wait_for_permissions(guild, "administrator"):
+                    return
 
             # Get the channel this log will be sent to
             await self.ensure_channels(guild)
@@ -321,16 +317,10 @@ class Logger(commands.Cog):
                 channel = self.bot.get_channel(self.config[guild_id]["channels"][log.type])
 
             # Ensure basic send-embed level permissions
-            result = await self.wait_for_permissions(
-                guild, "send_messages", channel
-            )
-            if not result:
-                return await self.destruct(guild_id)
-            result = await self.wait_for_permissions(
-                guild, "embed_links", channel
-            )
-            if not result:
-                return await self.destruct(guild_id)
+            if not await self.wait_for_permissions(guild, "send_messages", channel):
+                return
+            if not await self.wait_for_permissions(guild, "embed_links", channel):
+                return
 
             # Ensure this still exists
             if guild_id not in self.recent_logs:
@@ -408,8 +398,7 @@ class Logger(commands.Cog):
             "after": None,
             "recent": False,
         }
-        can_run = await self.wait_for_permissions(guild, "view_audit_log")
-        if can_run:
+        if await self.wait_for_permissions(guild, "view_audit_log"):
             with suppress(Exception):
                 async for entry in guild.audit_logs(limit=5):
                     with suppress(Exception):
@@ -1747,8 +1736,7 @@ class Logger(commands.Cog):
             e.set_thumbnail(url=member.display_avatar.url)
             removed = False
 
-            can_run = await self.wait_for_permissions(member.guild, "view_audit_log")
-            if not can_run:
+            if not await self.wait_for_permissions(member.guild, "view_audit_log"):
                 return
 
             async for entry in member.guild.audit_logs(limit=1, action=audit.kick):

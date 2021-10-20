@@ -505,12 +505,6 @@ async def on_error(_event_method, *_args, **_kwargs):
     )
     if isinstance(error, ignored):
         return
-    if any(err.__name__ in error.__name__ for err in ignored):
-        print("Using fallback check")
-        return
-    print("Wtf")
-    print(error)
-    print(error.__name__)
     raise
 
 
