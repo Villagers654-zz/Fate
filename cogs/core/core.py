@@ -36,8 +36,6 @@ Here's a few things to know
 > **Suggestions**
 - If you use Fate for moderation; try out `.modmail`.
   This lets users create threads to discuss infractions with the moderators
-- If you want reaction roles, try using `.role-menu` instead of `.selfroles`
-  This uses buttons, and dropdowns instead of reactions; which will work better in larger servers
 
 > **Community & Support**
 https://discord.gg/wtjuznh
