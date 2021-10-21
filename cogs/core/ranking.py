@@ -44,6 +44,7 @@ def profile_help():
 
 
 cleanup_interval = 3600
+leaderboard_icon = "https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png"
 
 
 class Ranking(commands.Cog):
@@ -1000,18 +1001,43 @@ class Ranking(commands.Cog):
 
         await ctx.send(file=discord.File(file, filename="top.png"))
 
+    async def generate_embeds(self, name: str, rankings: list, limit_per_page: int):
+        """ Gen a list of embed leaderboards """
+        embeds = []
+
+        e = discord.Embed(color=0x4A0E50)
+        e.set_author(name=name)
+        e.set_thumbnail(url=leaderboard_icon)
+        e.description = ""
+
+        rank = 1
+        for i, (user_id, xp) in enumerate(rankings):
+            await asyncio.sleep(0)
+            user = self.bot.get_user(int(user_id))
+            if user:
+                username = str(user.name)
+            else:
+                username = "UNKNOWN-USER"
+
+            if i == 0:
+                e.set_author(name=name, icon_url=user.display_avatar.url)
+
+            if i and i % limit_per_page == 0:
+                embeds.append(e)
+                e = discord.Embed(color=0x4A0E50)
+                e.set_author(name=name, icon_url=user.display_avatar.url)
+                e.set_thumbnail(url=leaderboard_icon)
+                e.description = ""
+
+            e.description += f"#{rank}. `{username}` - {xp}\n"
+            rank += 1
+
+        embeds.append(e)
+        return embeds
+
     @commands.command(
         name="leaderboard",
-        aliases=[
-            "lb",
-            "mlb",
-            "glb",
-            "gmlb",
-            "gglb",
-            "mleaderboard",
-            "gleaderboard",
-            "ggleaderboard",
-        ],
+        aliases=["lb"],
         description="Ranks everyone in the server"
     )
     @commands.cooldown(2, 5, commands.BucketType.user)
@@ -1021,40 +1047,6 @@ class Ranking(commands.Cog):
     @commands.bot_has_permissions(embed_links=True, manage_messages=True, add_reactions=True)
     async def leaderboard(self, ctx):
         """ Refined leaderboard command """
-        async def create_embed(name: str, rankings: list, lmt):
-            """ Gen a list of embed leaderboards """
-            thumbnail_url = "https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png"
-            embeds = []
-            e = discord.Embed(color=0x4A0E50)
-            e.set_author(name=name, icon_url=ctx.author.display_avatar.url)
-            e.set_thumbnail(url=thumbnail_url)
-            e.description = ""
-            rank = 1
-            index = 0
-            for user_id, xp in rankings:
-                await asyncio.sleep(0)
-                if index == lmt:
-                    embeds.append(e)
-                    e = discord.Embed(color=0x4A0E50)
-                    e.set_author(name=name, icon_url=ctx.author.display_avatar.url)
-                    e.set_thumbnail(url=thumbnail_url)
-                    e.description = ""
-                    index = 0
-                user = self.bot.get_user(int(user_id))
-                if isinstance(user, discord.User):
-                    username = str(user.name)
-                else:
-                    guild = self.bot.get_guild(int(user_id))
-                    if isinstance(guild, discord.Guild):
-                        username = guild.name
-                    else:
-                        username = "INVALID-USER"
-                e.description += f"#{rank}. `{username}` - {xp}\n"
-                rank += 1
-                index += 1
-            embeds.append(e)
-
-            return embeds
 
         default = discord.Embed()
         default.description = "Collecting Leaderboard Data.."
@@ -1117,10 +1109,10 @@ class Ranking(commands.Cog):
                     "Insufficient leaderboard data. Try again later, or join the support server "
                     f"and ask for help {self.bot.config['support_server']}"
                 )
-            ems = await create_embed(
+            ems = await self.generate_embeds(
                 name=name,
                 rankings=sorted_data,
-                lmt=15
+                limit_per_page=15
             )
             for i, embed in enumerate(ems):
                 embed.set_footer(text=f"Page {i + 1}/{len(ems)}")
