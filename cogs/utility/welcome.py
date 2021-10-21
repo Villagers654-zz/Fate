@@ -391,7 +391,8 @@ class Welcome(commands.Cog):
                     .replace("!server", guild.name) \
                     .replace("!user", str(member)) \
                     .replace("!name", member.name) \
-                    .replace("!mention", member.mention)
+                    .replace("!mention", member.mention) \
+                    .replace("!count", str(len(guild.members)))
                 if "!inviter" in msg and guild.id in self.bot.invite_manager.index:
                     inviter = await self.bot.invite_manager.get_inviter(guild, member)
                     msg = msg.replace("!inviter", inviter)
