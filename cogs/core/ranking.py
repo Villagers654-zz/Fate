@@ -23,7 +23,7 @@ import discord
 from discord.errors import NotFound, Forbidden
 from PIL import Image, ImageFont, ImageDraw, ImageSequence, UnidentifiedImageError
 
-from botutils import colors, get_prefix, url_from
+from botutils import colors, get_prefix, url_from, Menu
 from botutils.pillow import add_corners
 from classes import IgnoredExit
 
@@ -1005,14 +1005,10 @@ class Ranking(commands.Cog):
         aliases=[
             "lb",
             "mlb",
-            "vclb",
             "glb",
             "gmlb",
-            "gvclb",
             "gglb",
-            "ggvclb",
             "mleaderboard",
-            "vcleaderboard",
             "gleaderboard",
             "ggleaderboard",
         ],
@@ -1025,34 +1021,7 @@ class Ranking(commands.Cog):
     @commands.bot_has_permissions(embed_links=True, manage_messages=True, add_reactions=True)
     async def leaderboard(self, ctx):
         """ Refined leaderboard command """
-
-        async def wait_for_reaction():
-            try:
-                reaction, user = await self.bot.wait_for(
-                    "reaction_add", timeout=60.0, check=lambda r, u: u == ctx.author
-                )
-            except asyncio.TimeoutError:
-                return [None, None]
-            else:
-                return [reaction, str(reaction.emoji)]
-
-        def index_check(index):
-            """ Ensures the index isn't too high or too low """
-            if index > len(embeds) - 1:
-                index = len(embeds) - 1
-            if index < 0:
-                index = 0
-            return index
-
-        async def add_emojis_task():
-            """ So the bot can read reactions before all are added """
-            with suppress(Forbidden, NotFound):
-                for emoji in emojis:
-                    await msg.add_reaction(emoji)
-                    await asyncio.sleep(0.5)
-            return
-
-        async def create_embed(name: str, rankings: list, lmt, top_user=None):
+        async def create_embed(name: str, rankings: list, lmt):
             """ Gen a list of embed leaderboards """
             thumbnail_url = "https://cdn.discordapp.com/attachments/501871950260469790/505198377412067328/20181025_215740.png"
             embeds = []
@@ -1087,42 +1056,13 @@ class Ranking(commands.Cog):
 
             return embeds
 
-        async with self.bot.utils.open("./data/userdata/config.json", "r") as f:
-            config = json.loads(await f.read())  # type: dict
-        prefix = "."  # default prefix
-        guild_id = str(ctx.guild.id)
-        if guild_id in config["prefix"]:
-            prefix = config["prefix"][guild_id]
-        target = ctx.message.content.split()[0]
-        cut_length = len(target) - len(prefix)
-        aliases = [
-            ("lb", "leaderboard"),
-            # ('vclb', 'vcleaderboard'),
-            ("glb", "gleaderboard"),
-            # ('gvclb', 'gvcleaderboard'),
-            ("mlb", "mleaderboard"),
-            ("gmlb", "gmleaderboard"),
-            # ('gglb', 'ggleaderboard'),
-            # ('ggvclb', 'ggvcleaderboard')
-        ]
-        index = 0  # default
-        for i, (cmd, alias) in enumerate(aliases):
-            if target[-cut_length:] in [cmd, alias]:
-                index = i
-                break
-
         default = discord.Embed()
         default.description = "Collecting Leaderboard Data.."
-        msg = await ctx.send(embed=default)
-        emojis = ["🏡", "⏮", "⏪", "⏩", "⏭"]
-        self.bot.loop.create_task(add_emojis_task())
-
-        embeds = []
         leaderboards = {}
 
         async with self.bot.utils.cursor() as cur:
             await cur.execute(
-                f"select user_id, xp from msg where guild_id = {guild_id} order by xp desc limit 256;"
+                f"select user_id, xp from msg where guild_id = {ctx.guild.id} order by xp desc limit 256;"
             )
             results = await cur.fetchall()
             leaderboards["Msg Leaderboard"] = {
@@ -1143,7 +1083,7 @@ class Ranking(commands.Cog):
             await cur.execute(
                 f"select user_id, sum(xp) as total_xp "
                 f"from monthly_msg "
-                f"where guild_id = {guild_id} and msg_time > {lmt} "
+                f"where guild_id = {ctx.guild.id} and msg_time > {lmt} "
                 f"group by user_id "
                 f"order by total_xp desc limit 256;"
             )
@@ -1164,6 +1104,7 @@ class Ranking(commands.Cog):
                 user_id: xp for user_id, xp in results
             }
 
+        mapping = {}
         for name, data in leaderboards.items():
             await asyncio.sleep(0)
             sorted_data = [
@@ -1179,83 +1120,13 @@ class Ranking(commands.Cog):
             ems = await create_embed(
                 name=name,
                 rankings=sorted_data,
-                lmt=15,
-                top_user=sorted_data[0][0],  # user_id
+                lmt=15
             )
-            embeds.append(ems)
+            for i, embed in enumerate(ems):
+                embed.set_footer(text=f"Page {i + 1}/{len(ems)}")
+            mapping[name] = ems
 
-        sub_index = 0
-        embeds[index][0].set_footer(
-            text=f"Leaderboard {index + 1}/{len(embeds)} Page {sub_index + 1}/{len(embeds[index])}"
-        )
-        await msg.edit(embed=embeds[index][0])
-
-        while True:
-            await asyncio.sleep(0.5)
-            reaction, emoji = await wait_for_reaction()
-            if not reaction:
-                return await msg.clear_reactions()
-
-            if emoji == emojis[0]:  # home
-                index = 0
-                sub_index = 0
-
-            if emoji == emojis[1]:
-                index -= 1
-                sub_index = 0
-
-            if emoji == emojis[2]:
-                if isinstance(embeds[index], list):
-                    if not isinstance(sub_index, int):
-                        sub_index = len(embeds[index]) - 1
-                    else:
-                        if sub_index == 0:
-                            index -= 1
-                            sub_index = 0
-                            index = index_check(index)
-                            if isinstance(embeds[index], list):
-                                sub_index = len(embeds[index]) - 1
-                        else:
-                            sub_index -= 1
-                else:
-                    index -= 1
-                    if isinstance(embeds[index], list):
-                        sub_index = len(embeds[index]) - 1
-
-            if emoji == emojis[3]:
-                if isinstance(embeds[index], list):
-                    if not isinstance(sub_index, int):
-                        sub_index = 0
-                    else:
-                        if sub_index == len(embeds[index]) - 1:
-                            index += 1
-                            sub_index = 0
-                            index = index_check(index)
-                            if isinstance(embeds[index], list):
-                                sub_index = 0
-                        else:
-                            sub_index += 1
-                else:
-                    index += 1
-                    index = index_check(index)
-                    if isinstance(embeds[index], list):
-                        sub_index = 0
-
-            if emoji == emojis[4]:
-                index += 1
-                sub_index = 0
-                index = index_check(index)
-
-            if index > len(embeds) - 1:
-                index = len(embeds) - 1
-            if index < 0:
-                index = 0
-
-            embeds[index][sub_index].set_footer(
-                text=f"Leaderboard {index + 1}/{len(embeds)} Page {sub_index+1}/{len(embeds[index])}"
-            )
-            await msg.edit(embed=embeds[index][sub_index])
-            self.bot.loop.create_task(msg.remove_reaction(reaction, ctx.author))
+        await Menu(ctx, mapping)
 
     @commands.command(name="clb", description="Shows the command leaderboard")
     @commands.cooldown(1, 5, commands.BucketType.user)
