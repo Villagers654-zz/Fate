@@ -78,14 +78,15 @@ class Menu(AuthorView):
         else:
             self.pages = pages
 
-        self.buttons = {
-            "seek_left": ui.Button(emoji="◀", custom_id="seek_left"),
-            "seek_right": ui.Button(emoji="▶", custom_id="seek_right")
-        }
         if len(self.pages) != 1:
+            self.buttons = {
+                "seek_left": ui.Button(emoji="◀", custom_id="seek_left"),
+                "seek_right": ui.Button(emoji="▶", custom_id="seek_right")
+            }
             for button in self.buttons.values():
                 button.callback = self.seek
                 self.add_item(button)
+            self.buttons["seek_left"].disabled = True
 
     def __await__(self) -> Generator[None, None, None]:
         """ Fill in the message object """
@@ -146,5 +147,6 @@ class _Dropdown(ui.Select):
             )
         self.cls.pages = self.cls.items[label]
         self.cls.page = 0
+        self.cls.buttons["seek_left"].disabled = True
         self.cls.buttons["seek_right"].disabled = False
         await self.cls.update_message(interaction)
