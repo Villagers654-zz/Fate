@@ -1019,13 +1019,14 @@ class Ranking(commands.Cog):
             else:
                 username = "UNKNOWN-USER"
 
-            if i == 0:
+            if i == 0 and user:
                 e.set_author(name=name, icon_url=user.display_avatar.url)
 
             if i and i % limit_per_page == 0:
                 embeds.append(e)
                 e = discord.Embed(color=0x4A0E50)
-                e.set_author(name=name, icon_url=user.display_avatar.url)
+                icon_url = user.display_avatar.url if user else None
+                e.set_author(name=name, icon_url=icon_url)
                 e.set_thumbnail(url=leaderboard_icon)
                 e.description = ""
 
