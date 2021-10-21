@@ -67,7 +67,7 @@ class Menu(AuthorView):
         self.cd = Cooldown(3, 5)
         self.ctx = ctx
         self.page = 0
-        super().__init__(timeout=45)
+        super().__init__(timeout=120)
 
         if isinstance(pages, dict):
             self.items = pages
@@ -99,6 +99,9 @@ class Menu(AuthorView):
             view=self
         )
         return self.message
+
+    async def on_timeout(self):
+        await self.message.edit(view=None)
 
     async def update_message(self, interaction: Interaction):
         await interaction.message.edit(
