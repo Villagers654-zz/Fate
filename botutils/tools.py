@@ -100,10 +100,6 @@ class Cooldown:
             return True
         return False
 
-    def cleanup(self):
-        del self.index
-        self.index = {}
-
 
 class OperationLock:
     bot = None
