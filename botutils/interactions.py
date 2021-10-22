@@ -7,8 +7,9 @@ A module for template interaction classes
 Classes:
     ModView : A View that only moderators can interact with
     AuthorView : A view that only the author of the original message can interact with
+    Menu : A ease of use embed paginator
 
-:copyright: (C) 2020-present FrequencyX4, All Rights Reserved
+:copyright: (C) 2021-present FrequencyX4, All Rights Reserved
 :license: Proprietary, see LICENSE for details
 """
 
