@@ -88,7 +88,6 @@ class AutoRole(commands.Cog):
         await ctx.send("Cleared list of auto roles")
 
     @auto_role.command(name="list", description="Lists all the auto roles")
-    @commands.has_permissions(manage_roles=True)
     @commands.bot_has_permissions(embed_links=True)
     async def _list(self, ctx):
         guild_id = ctx.guild.id
