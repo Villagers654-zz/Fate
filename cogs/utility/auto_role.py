@@ -37,7 +37,8 @@ class AutoRole(commands.Cog):
     async def auto_role(self, ctx):
         e = discord.Embed(color=colors.fate)
         e.set_author(name="Auto Role", icon_url=self.bot.user.display_avatar.url)
-        e.set_thumbnail(url=ctx.author.display_avatar.url)
+        if ctx.guild.icon:
+            e.set_thumbnail(url=ctx.guild.icon.url)
         e.description = "Gives role(s) to new members when they join"
         p = ctx.prefix
         e.add_field(
