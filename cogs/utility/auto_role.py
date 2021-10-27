@@ -69,6 +69,8 @@ class AutoRole(commands.Cog):
                 return await ctx.send("That role's above your paygrade, take a seat")
             if role.id in self.config[guild_id]["roles"]:
                 return await ctx.send("That role's already in use")
+        if role.position >= ctx.guild.me.top_role.position:
+            return await ctx.send("That role's higher than I can manage")
 
         self.config[guild_id]["roles"].append(role.id)
         await ctx.send(f"Added `{role.name}` to the list of auto roles")
