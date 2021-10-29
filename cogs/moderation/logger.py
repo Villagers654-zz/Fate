@@ -365,7 +365,7 @@ class Logger(commands.Cog):
 
     async def init_invites(self) -> None:
         """ Indexes each servers invites """
-        for guild_id in self.config.keys():
+        for guild_id in list(self.config.keys()):
             guild = self.bot.get_guild(int(guild_id))
             if isinstance(guild, discord.Guild):
                 if guild_id not in self.invites:
