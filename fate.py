@@ -513,7 +513,7 @@ def on_event_error(loop: asyncio.AbstractEventLoop, context: dict):
     if isinstance(error, ignored):
         return
     loop.default_exception_handler(context)
-    if channel := bot.get_channel(bot.config["debug_channel"]):
+    if channel := bot.get_channel(bot.config["log_channel"]):
         trace = f"```python\n{context['message']}\n" \
                 f"{''.join(traceback.format_tb(error.__traceback__))}" \
                 f"{type(error).__name__}: {''.join(error.args)}```"
