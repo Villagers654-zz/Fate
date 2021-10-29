@@ -27,13 +27,13 @@ class User(commands.Cog):
         with open(self.dir, "w") as f:
             json.dump(config, f, ensure_ascii=False)
 
-    @commands.command(name="changepresence", aliases=["cp"])
+    @commands.command(name="set-status", aliases=["change-presence"])
     @commands.is_owner()
-    async def change_presence(self, ctx, *, presence):
-        config = self.get_config()  # type: dict
-        config["presence"] = presence
-        self.update_config(config)
-        await ctx.message.add_reaction("👍")
+    async def change_presence(self, ctx, *, new_status):
+        await self.bot.change_presence(
+            activity=discord.Game(name=new_status), status=discord.Status.online
+        )
+        await ctx.send("Done")
 
     @commands.command(name="bblock")
     @commands.is_owner()
