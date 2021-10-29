@@ -35,20 +35,21 @@ class AutoRole(commands.Cog):
     )
     @commands.bot_has_permissions(embed_links=True)
     async def auto_role(self, ctx):
-        e = discord.Embed(color=colors.fate)
-        e.set_author(name="Auto Role", icon_url=self.bot.user.display_avatar.url)
-        if ctx.guild.icon:
-            e.set_thumbnail(url=ctx.guild.icon.url)
-        e.description = "Gives role(s) to new members when they join"
-        p = ctx.prefix
-        e.add_field(
-            name="◈ Commands",
-            value=f"{p}auto-role add @role"
-                  f"\n{p}auto-role clear"
-                  f"\n{p}auto-role list",
-            inline=False,
-        )
-        await ctx.send(embed=e)
+        if not ctx.invoked_subcommand:
+            e = discord.Embed(color=colors.fate)
+            e.set_author(name="Auto Role", icon_url=self.bot.user.display_avatar.url)
+            if ctx.guild.icon:
+                e.set_thumbnail(url=ctx.guild.icon.url)
+            e.description = "Gives role(s) to new members when they join"
+            p = ctx.prefix
+            e.add_field(
+                name="◈ Commands",
+                value=f"{p}auto-role add @role"
+                      f"\n{p}auto-role clear"
+                      f"\n{p}auto-role list",
+                inline=False,
+            )
+            await ctx.send(embed=e)
 
     @auto_role.command(name="add", description="Adds a new role to give on join")
     @commands.has_permissions(manage_roles=True)
@@ -94,7 +95,7 @@ class AutoRole(commands.Cog):
     async def _list(self, ctx):
         guild_id = ctx.guild.id
         if guild_id not in self.config:
-            return await ctx.send("Auto role isn't active")
+            return await ctx.send("Auto role isn't enabled")
         e = discord.Embed(color=colors.fate)
         e.set_author(name="Auto Roles", icon_url=self.bot.user.display_avatar.url)
         e.description = ""
