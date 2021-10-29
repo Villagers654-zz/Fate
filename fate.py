@@ -400,6 +400,13 @@ handler.setFormatter(
     logging.Formatter("%(asctime)s:%(levelname)s:%(name)s: %(message)s")
 )
 logger.addHandler(handler)
+ignored = (
+    IgnoredExit,
+    aiohttp.ClientOSError,
+    asyncio.exceptions.TimeoutError,
+    discord.errors.DiscordServerError,
+    discord.errors.NotFound
+)
 
 # Initialize the bot
 bot = Fate(case_insensitive=True)
@@ -496,21 +503,27 @@ async def on_message(msg):
 @bot.event
 async def on_error(_event_method, *_args, **_kwargs):
     error = getattr(err := sys.exc_info()[1], "original", err)
-    ignored = (
-        IgnoredExit,
-        aiohttp.ClientOSError,
-        asyncio.exceptions.TimeoutError,
-        discord.errors.DiscordServerError,
-        discord.errors.NotFound
-    )
+    if not isinstance(error, ignored):
+        raise
+
+
+def on_event_error(loop: asyncio.AbstractEventLoop, context: dict):
+    """ Suppress ignored exceptions within events """
+    error: Exception = context["exception"]
     if isinstance(error, ignored):
         return
-    raise
+    loop.default_exception_handler(context)
+    if channel := bot.get_channel(bot.config["debug_channel"]):
+        trace = f"```python\n{context['message']}\n" \
+                f"{''.join(traceback.format_tb(error.__traceback__))}" \
+                f"{type(error).__name__}: {''.join(error.args)}```"
+        asyncio.create_task(channel.send(trace))
 
 
 if __name__ == "__main__":
     bot.log.info("Starting Bot", color="yellow")
     bot.start_time = datetime.now(tz=timezone.utc)
+    bot.loop.set_exception_handler(on_event_error)
     try:
         bot.run()
     except discord.errors.LoginFailure:
