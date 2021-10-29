@@ -109,7 +109,6 @@ class SafePolls(commands.Cog):
         """Sleep until the timer ends and close the poll"""
 
         async def delete(msg_id) -> None:
-            print("Deleting")
             async with self.bot.utils.cursor() as cur:
                 await cur.execute(f"delete from polls where msg_id = {msg_id} limit 1;")
             if msg_id in self.polls:
