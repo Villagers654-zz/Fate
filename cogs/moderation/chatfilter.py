@@ -539,21 +539,23 @@ class ChatFilter(commands.Cog):
     @commands.Cog.listener()
     async def on_member_update(self, _before: Optional[Member], after: Member) -> None:
         """ Resets a members nickname if it has a filtered word, or phrase """
-        if after.nick and hasattr(after.guild, "id") and after.guild.id in self.config:
-            guild_id = after.guild.id
-            if not self.config[guild_id]["toggle"]:
-                return
-            if self.bot.attrs.is_moderator(after) and not after.bot:
-                return
-            if after.bot and "bots" not in self.config[guild_id]:
-                return
-            if "regex" in self.config[guild_id]:
-                result, flags = await self.run_regex_filter(guild_id, after.nick)
-            else:
-                result, flags = await self.run_default_filter(guild_id, after.nick)
-            if not result:
-                return
-            await after.edit(nick=None, reason=f"Chatfilter flagged their nick for '{', '.join(flags)}'")
+        if after.nick and after.guild.id in self.config:
+            if (bot := after.guild.me) and bot.guild_permissions.manage_nicknames:
+                if bot.top_role.position > after.top_role.position:
+                    guild_id = after.guild.id
+                    if not self.config[guild_id]["toggle"]:
+                        return
+                    if self.bot.attrs.is_moderator(after) and not after.bot:
+                        return
+                    if after.bot and "bots" not in self.config[guild_id]:
+                        return
+                    if "regex" in self.config[guild_id]:
+                        result, flags = await self.run_regex_filter(guild_id, after.nick)
+                    else:
+                        result, flags = await self.run_default_filter(guild_id, after.nick)
+                    if not result:
+                        return
+                    await after.edit(nick=None, reason=f"Chatfilter flagged their nick for '{', '.join(flags)}'")
 
 
 style = ButtonStyle
