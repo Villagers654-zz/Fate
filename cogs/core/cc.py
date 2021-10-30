@@ -207,7 +207,8 @@ class CustomCommands(commands.Cog):
             if cur.rowcount:
                 response, *_ = await cur.fetchone()  # type: str
                 self.cache[msg.guild.id][command] = [response, time()]
-                await self.process_command(msg, command, response)
+                if response:
+                    await self.process_command(msg, command, response)
             else:
                 self.cache[msg.guild.id][command] = [None, time()]
 
