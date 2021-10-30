@@ -152,7 +152,7 @@ class ErrorHandler(commands.Cog):
 
             # bAd cOdE, requires fix if occurs
             elif isinstance(error, KeyError):
-                error_to_send = f"No Data: {error}"
+                error_to_send = f"No Data: {error}"[:64]
 
             # Send a user-friendly error and state that it'll be fixed soon
             if not isinstance(error, discord.errors.NotFound):
