@@ -403,6 +403,7 @@ logger.addHandler(handler)
 ignored = (
     IgnoredExit,
     aiohttp.ClientOSError,
+    aiohttp.ClientConnectorError,
     asyncio.exceptions.TimeoutError,
     discord.errors.DiscordServerError,
     discord.errors.NotFound
