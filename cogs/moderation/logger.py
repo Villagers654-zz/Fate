@@ -194,8 +194,11 @@ class Logger(commands.Cog):
             if not guild or not guild.me:
                 return await self.destruct(guild_id)
             if not guild.me.guild_permissions.manage_channels:
-                if not await self.wait_for_permissions(guild, "manage_channels"):
-                    return
+                result = await self.wait_for_permissions(
+                    guild, "manage_channels"
+                )
+                if not result:
+                    return await self.destruct(guild_id)
             try:
                 channel = await self.bot.fetch_channel(
                     self.config[guild_id]["channel"]
@@ -251,14 +254,14 @@ class Logger(commands.Cog):
         for _attempt in range(12 * 60):  # Timeout of 12 hours
             if not guild or not guild.me:
                 await self.destruct(guild_id)
-                return False
+                raise IgnoredExit
             if getattr(perms(), permission):
                 del self.pool[guild_id]
                 return True
             await asyncio.sleep(60)
         else:
             await self.destruct(guild_id)
-            return False
+            raise IgnoredExit
 
     async def start_queue(self, guild_id: str) -> None:
         guild = self.bot.get_guild(int(guild_id))
@@ -307,8 +310,7 @@ class Logger(commands.Cog):
 
             # Permission checks to ensure the secure features can function
             if self.config[guild_id]["secure"]:
-                if not await self.wait_for_permissions(guild, "administrator"):
-                    return
+                await self.wait_for_permissions(guild, "administrator")
 
             # Get the channel this log will be sent to
             await self.ensure_channels(guild)
@@ -317,10 +319,8 @@ class Logger(commands.Cog):
                 channel = self.bot.get_channel(self.config[guild_id]["channels"][log.type])
 
             # Ensure basic send-embed level permissions
-            if not await self.wait_for_permissions(guild, "send_messages", channel):
-                return
-            if not await self.wait_for_permissions(guild, "embed_links", channel):
-                return
+            await self.wait_for_permissions(guild, "send_messages", channel)
+            await self.wait_for_permissions(guild, "embed_links", channel)
 
             # Ensure this still exists
             if guild_id not in self.recent_logs:
@@ -398,34 +398,34 @@ class Logger(commands.Cog):
             "after": None,
             "recent": False,
         }
-        if await self.wait_for_permissions(guild, "view_audit_log"):
-            with suppress(Exception):
-                async for entry in guild.audit_logs(limit=5):
-                    with suppress(Exception):
-                        if entry.created_at > self.past and any(
-                            entry.action.name == action.name
-                            for action in actions
-                              if hasattr(entry.action, "name")
-                        ):
-                            dat["action"] = entry.action
+        await self.wait_for_permissions(guild, "view_audit_log")
+        with suppress(Exception):
+            async for entry in guild.audit_logs(limit=5):
+                with suppress(Exception):
+                    if entry.created_at > self.past and any(
+                        entry.action.name == action.name
+                        for action in actions
+                          if hasattr(entry.action, "name")
+                    ):
+                        dat["action"] = entry.action
+                        if entry.user:
+                            dat["user"] = entry.user.mention
+                            dat["actual_user"] = entry.user
+                            dat["thumbnail_url"] = entry.user.display_avatar.url
+                        if entry.target and isinstance(entry.target, discord.Member):
+                            dat["target"] = entry.target.mention
+                            dat["icon_url"] = entry.target.display_avatar.url
+                        elif entry.target:
+                            dat["target"] = entry.target
+                        else:
                             if entry.user:
-                                dat["user"] = entry.user.mention
-                                dat["actual_user"] = entry.user
-                                dat["thumbnail_url"] = entry.user.display_avatar.url
-                            if entry.target and isinstance(entry.target, discord.Member):
-                                dat["target"] = entry.target.mention
-                                dat["icon_url"] = entry.target.display_avatar.url
-                            elif entry.target:
-                                dat["target"] = entry.target
-                            else:
-                                if entry.user:
-                                    dat["icon_url"] = entry.user.display_avatar.url
-                            dat["reason"] = entry.reason
-                            dat["extra"] = entry.extra
-                            dat["before"] = entry.before
-                            dat["after"] = entry.after
-                            dat["recent"] = True
-                            break
+                                dat["icon_url"] = entry.user.display_avatar.url
+                        dat["reason"] = entry.reason
+                        dat["extra"] = entry.extra
+                        dat["before"] = entry.before
+                        dat["after"] = entry.after
+                        dat["recent"] = True
+                        break
         return dat
 
     @commands.group(name="logger", aliases=["log", "logging"], description="Shows how to use the module")
@@ -904,7 +904,7 @@ class Logger(commands.Cog):
                             files = []
                             for attachment in msg.attachments:
                                 with suppress(NotFound, Forbidden):
-                                    files.append(await attachment.to_file())
+                                    files.append(await attachment.to_file(use_cached=True))
                             log = Log("message_delete", embed=msg.embeds[0] if msg.embeds else None, files=files)
                             self.put_nowait(guild_id, log)
                         return
@@ -949,7 +949,7 @@ class Logger(commands.Cog):
                         if attachment.size > 8000000:
                             continue
                         with suppress(NotFound, Forbidden):
-                            files.append(await attachment.to_file())
+                            files.append(await attachment.to_file(use_cached=True))
                     if files and "attachment_delete" in self.config[guild_id]["channels"]:
                         log_type = "attachment_delete"
                 log = Log(log_type, embed=e, files=files)
@@ -1738,8 +1738,7 @@ class Logger(commands.Cog):
             e.set_thumbnail(url=member.display_avatar.url)
             removed = False
 
-            if not await self.wait_for_permissions(member.guild, "view_audit_log"):
-                return
+            await self.wait_for_permissions(member.guild, "view_audit_log")
 
             async for entry in member.guild.audit_logs(limit=1, action=audit.kick):
                 if entry.target.id == member.id and entry.created_at > self.past:
