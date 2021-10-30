@@ -4,7 +4,7 @@ Discord OAuth2 API
 
 A basic representation of how to use discords OAuth2
 
-:copyright: (C) 2021-present Michael Stollings
+:copyright: (C) 2021-present FrequencyX4
 :license: Proprietary, see LICENSE for details
 """
 
@@ -107,7 +107,7 @@ class Bot(commands.AutoShardedBot):
             "user_id": info["id"],
             "expires": time() + 3600 * 24
         }
-        token = jwt.encode(data, "1234")
+        token = jwt.encode(data, self.secret)
 
         # Redirect to dash
         dash = f"http://fatebot.xyz/dash?token={token}"
@@ -151,7 +151,7 @@ class Bot(commands.AutoShardedBot):
         if "token" not in params:
             return errors.invalid_data
         token = params["token"]
-        data = jwt.decode(token, "1234")
+        data = jwt.decode(token, self.secret)
         resp = await self.get_guild_info(data["user_id"])
         return web.json_response(resp)
 
