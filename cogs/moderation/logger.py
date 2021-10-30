@@ -903,7 +903,8 @@ class Logger(commands.Cog):
                         if msg.attachments:
                             files = []
                             for attachment in msg.attachments:
-                                files.append(await attachment.to_file())
+                                with suppress(NotFound, Forbidden):
+                                    files.append(await attachment.to_file(use_cached=True))
                             log = Log("message_delete", embed=msg.embeds[0] if msg.embeds else None, files=files)
                             self.put_nowait(guild_id, log)
                         return
@@ -947,7 +948,8 @@ class Logger(commands.Cog):
                     for attachment in msg.attachments:
                         if attachment.size > 8000000:
                             continue
-                        files.append(await attachment.to_file())
+                        with suppress(NotFound, Forbidden):
+                            files.append(await attachment.to_file(use_cached=True))
                     if files and "attachment_delete" in self.config[guild_id]["channels"]:
                         log_type = "attachment_delete"
                 log = Log(log_type, embed=e, files=files)
