@@ -21,15 +21,16 @@ from discord.http import DiscordServerError
 from lavalink import NodeException
 from pymongo.errors import DuplicateKeyError
 
-from botutils import colors, split
+from botutils import colors, split, Cooldown
 from classes import checks, exceptions
 
 class ErrorHandler(commands.Cog):
-    cd: Dict[int, float] = {}    # Manage error cooldowns
     notifs: Dict[int, str] = {}  # Who to notify when an errors fixed
 
     def __init__(self, bot):
         self.bot = bot
+        self.response_cooldown = Cooldown(1, 10)
+        self.reaction_cooldown = Cooldown(1, 4)
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
@@ -87,12 +88,11 @@ class ErrorHandler(commands.Cog):
             # Too fast, sMh
             elif isinstance(error, commands.CommandOnCooldown):
                 user_id = ctx.author.id
-                if user_id not in self.cd:
-                    self.cd[user_id] = 0
-                if self.cd[user_id] < time() - 10:
-                    await ctx.message.add_reaction("⏳")
+                if self.response_cooldown.check(user_id):
+                    if not self.reaction_cooldown.check(user_id):
+                        await ctx.message.add_reaction("⏳")
+                else:
                     await ctx.send(error)
-                self.cd[user_id] = time() + 10
                 return
 
             # User forgot to pass a required argument
