@@ -505,7 +505,7 @@ class Moderation(commands.Cog):
     @commands.cooldown(2, 5, commands.BucketType.user)
     @check_if_running()
     @has_required_permissions(manage_messages=True)
-    @commands.bot_has_permissions(manage_messages=True)
+    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
     async def beta_purge(self, ctx, *args):
         _help = discord.Embed(color=colors.fate)
         _help.description = (
@@ -1551,7 +1551,10 @@ class Moderation(commands.Cog):
                     await asyncio.sleep(0.5)
                 except:
                     pass
-            await user.add_roles(mute_role)
+            try:
+                await user.add_roles(mute_role)
+            except:
+                return await channel.send(f"Couldn't find and mute {user}")
             timer_info = {
                 "action": "mute",
                 "channel": channel.id,
