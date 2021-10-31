@@ -108,7 +108,7 @@ class Attributes:
                 if mute_role in channel.overwrites:
                     continue
                 with suppress(discord.errors.Forbidden):
-                    await channel.set_permissions(mute_role, send_messages=False, use_threads=False)
+                    await channel.set_permissions(mute_role, send_messages=False)
                 if i + 1 >= len(guild.text_channels):  # Prevent sleeping after the last channel in the list
                     await asyncio.sleep(0.5)
 
@@ -118,7 +118,7 @@ class Attributes:
                 if mute_role in channel.overwrites:
                     continue
                 with suppress(discord.errors.Forbidden):
-                    await channel.set_permissions(mute_role, send_messages=False, use_threads=False)
+                    await channel.set_permissions(mute_role, send_messages=False)
                 if i + 1 >= len(guild.text_channels):  # Prevent sleeping after the last channel in the list
                     await asyncio.sleep(0.5)
 
