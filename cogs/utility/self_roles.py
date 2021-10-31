@@ -477,7 +477,7 @@ class SelfRoles(commands.Cog):
 
     @commands.command(name="swap-style", description="Swaps using buttons or dropdowns")
     @commands.has_permissions(manage_roles=True)
-    async def set_description(self, ctx):
+    async def swap_style(self, ctx):
         guild_id = ctx.guild.id
         if guild_id not in self.config:
             return await ctx.send("There arent any active role menus in this server")
