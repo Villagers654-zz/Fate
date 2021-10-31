@@ -506,13 +506,14 @@ class Moderation(commands.Cog):
     @check_if_running()
     @has_required_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
-    async def beta_purge(self, ctx, *args):
+    async def purge(self, ctx, *args):
         _help = discord.Embed(color=colors.fate)
         _help.description = (
             ".purge amount\n"
             ".purge @user amount\n"
             ".purge images amount\n"
             ".purge embeds amount\n"
+            ".purge stickers amount\n"
             ".purge mentions amount\n"
             ".purge users amount\n"
             ".purge bots amount\n"
@@ -551,6 +552,8 @@ class Moderation(commands.Cog):
                 special_check = lambda msg: not msg.author.bot
             elif "bot" in args or "bots" in args:
                 special_check = lambda msg: msg.author.bot
+            elif "sticker" in args or "stickers" in args:
+                special_check = lambda msg: msg.stickers
             else:
                 phrase = " ".join(args[: len(args) - 1])
                 special_check = lambda msg: phrase in str(msg.content).lower()
