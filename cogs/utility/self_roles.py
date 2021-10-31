@@ -100,7 +100,7 @@ class SelfRoles(commands.Cog):
             if ctx.guild.icon:
                 e.set_thumbnail(url=ctx.guild.icon.url)
             e.description = "Create menus for users to self assign roles via buttons or " \
-                            "select menus\n**NOTE:** The bot will have you choose which menu to apply a " \
+                            "dropdown menus\n**NOTE:** The bot will have you choose which menu to apply a " \
                             "setting to **after** running commands that edit an existing menu"
             p: str = ctx.prefix
             e.add_field(
@@ -225,12 +225,12 @@ class SelfRoles(commands.Cog):
         if len(selected_roles) == 1:
             style = "buttons"
         else:
-            m = await ctx.send("Should I use a select menu or buttons. Reply with 'select' or 'buttons'")
+            m = await ctx.send("Should I use a dropdown menu or buttons. Reply with 'dropdown' or 'buttons'")
             reply = await self.bot.utils.get_message(ctx)
             if "button" in reply.content.lower():
                 style = "buttons"
             else:
-                style = "select"
+                style = "dropdown"
             await ctx.send(f"Alright, I'll use a {style} menu", delete_after=5)
             await m.delete()
             await reply.delete()
@@ -300,7 +300,7 @@ class SelfRoles(commands.Cog):
         return menus[key]
 
     @commands.command(name="add-role", description="Adds a role to an existing menu")
-    @commands.has_permissions(administrator=True)
+    @commands.has_permissions(manage_roles=True)
     async def add_role(self, ctx, *, role):
         guild_id = ctx.guild.id
         if guild_id not in self.config:
@@ -351,7 +351,7 @@ class SelfRoles(commands.Cog):
         await self.config.flush()
 
     @commands.command(name="remove-role", description="Removes a role from an existing menu")
-    @commands.has_permissions(administrator=True)
+    @commands.has_permissions(manage_roles=True)
     async def remove_role(self, ctx, *, role):
         guild_id = ctx.guild.id
         if guild_id not in self.config:
@@ -374,7 +374,7 @@ class SelfRoles(commands.Cog):
         await self.config.flush()
 
     @commands.command(name="toggle-percentage", description="Toggles showing the % of how many have each role")
-    @commands.has_permissions(administrator=True)
+    @commands.has_permissions(manage_roles=True)
     async def toggle_percentage(self, ctx):
         guild_id = ctx.guild.id
         if guild_id not in self.config:
@@ -388,7 +388,7 @@ class SelfRoles(commands.Cog):
         await self.config.flush()
 
     @commands.command(name="set-limit", description="Sets the max number of roles a user can choose")
-    @commands.has_permissions(administrator=True)
+    @commands.has_permissions(manage_roles=True)
     async def set_limit(self, ctx, new_limit: int):
         if new_limit > 25 or new_limit < 0:
             return await ctx.send("That's not a valid number")
@@ -404,7 +404,7 @@ class SelfRoles(commands.Cog):
         await self.config.flush()
 
     @commands.command(name="edit-message", description="Sets the msg content of a menu")
-    @commands.has_permissions(administrator=True)
+    @commands.has_permissions(manage_roles=True)
     async def edit_message(self, ctx, *, new_message):
         guild_id = ctx.guild.id
         if guild_id not in self.config:
@@ -418,7 +418,7 @@ class SelfRoles(commands.Cog):
         await self.config.flush()
 
     @commands.command(name="set-emoji", description="Sets a roles emoji in an existing menu")
-    @commands.has_permissions(administrator=True)
+    @commands.has_permissions(manage_roles=True)
     @commands.bot_has_permissions(add_reactions=True)
     async def set_emoji(self, ctx, *, new_emoji):
         guild_id = ctx.guild.id
@@ -451,7 +451,7 @@ class SelfRoles(commands.Cog):
         await self.config.flush()
 
     @commands.command(name="set-description", description="Sets a roles description in an existing menu")
-    @commands.has_permissions(administrator=True)
+    @commands.has_permissions(manage_roles=True)
     async def set_description(self, ctx, *, new_description):
         guild_id = ctx.guild.id
         if guild_id not in self.config:
@@ -474,6 +474,21 @@ class SelfRoles(commands.Cog):
         await self.refresh_menu(guild_id, message_id)
         await ctx.send(f"Successfully set the description 👍")
         await self.config.flush()
+
+    @commands.command(name="swap-style", description="Swaps using buttons or dropdowns")
+    @commands.has_permissions(manage_roles=True)
+    async def set_description(self, ctx):
+        guild_id = ctx.guild.id
+        if guild_id not in self.config:
+            return await ctx.send("There arent any active role menus in this server")
+        message_id = await self.get_menu_id(ctx)
+        if self.config[guild_id][message_id]["style"] == "buttons":
+            new_style = "dropdown"
+        else:
+            new_style = "buttons"
+        self.config[guild_id][message_id]["style"] = new_style
+        await self.refresh_menu(guild_id, message_id)
+        await ctx.send(f"Successfully switched to {new_style}")
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, payload):
