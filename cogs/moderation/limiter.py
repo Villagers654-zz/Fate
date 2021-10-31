@@ -111,7 +111,7 @@ class Limiter(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, msg: discord.Message):
-        if isinstance(msg.author, discord.Member) and msg.guild.owner:
+        if msg.guild and msg.guild.me:
             if not msg.author.guild_permissions.administrator:
                 if limiter := self.config.get(msg.guild.id, {}).get(str(msg.channel.id), None):
                     await asyncio.sleep(0.21)
