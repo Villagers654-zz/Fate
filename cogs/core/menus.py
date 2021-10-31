@@ -275,7 +275,7 @@ class HelpSelect(ui.Select):
         else:
             if isinstance(self.main.state, list):
                 command = self.main.bot.get_command(key.lstrip(".").split()[0])
-                if not command.usage:
+                if not command or not command.usage:
                     return await interaction.response.send_message(
                         "No help information is currently available for that command", ephemeral=True
                     )
