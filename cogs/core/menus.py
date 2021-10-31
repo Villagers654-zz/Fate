@@ -62,7 +62,7 @@ structure = {
         "Suggestions": "Suggestions",
         "ServerStatistics": "ServerStatistics",
         "Misc": [
-            "SafePolls",
+            "Polls",
             "Audit",
             "Notepad",
             "Utility"

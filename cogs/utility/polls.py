@@ -33,7 +33,7 @@ def Timer(argument):
     return seconds
 
 
-class SafePolls(commands.Cog):
+class Polls(commands.Cog):
     def __init__(self, bot: Fate):
         self.bot = bot
         self.polls = []
@@ -437,4 +437,4 @@ class SafePolls(commands.Cog):
 
 
 def setup(bot: Fate):
-    bot.add_cog(SafePolls(bot), override=True)
+    bot.add_cog(Polls(bot), override=True)
