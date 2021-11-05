@@ -129,12 +129,8 @@ class AutoRole(commands.Cog):
                     return
                 return
             for role_id in self.config[guild_id]["roles"]:
-                if not isinstance(role_id, int):
-                    self.bot.log.critical(f"A role_id in auto-role is str")
                 role = guild.get_role(int(role_id))
                 if not role:
-                    self.config[guild_id]["roles"].remove(role_id)
-                    await self.config.flush()
                     continue
                 if role.position >= bot.top_role.position:
                     try:
