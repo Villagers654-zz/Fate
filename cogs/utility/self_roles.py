@@ -42,6 +42,15 @@ class SelfRoles(commands.Cog):
                     self.bot.add_view(RoleView(self, guild_id, msg_id))
             self.bot.menus_loaded = True
 
+    async def cog_command_error(self, ctx, error) -> None:
+        """ Handle KeyError's from modifying menus """
+        error = getattr(error, "original", error)
+        if isinstance(error, KeyError):
+            await ctx.send("It seems the menu we're operating on was deleted")
+        else:
+            if cog := self.bot.get_cog("ErrorHandler"):
+                await cog.on_command_error(ctx, error)  # type: ignore
+
     async def refresh_menu(self, guild_id: int, message_id: str) -> discord.Message:
         """ Re-initiates the View and updates the message content """
         meta: dict = self.config[guild_id][message_id]
