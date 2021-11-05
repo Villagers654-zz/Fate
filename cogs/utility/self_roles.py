@@ -366,6 +366,8 @@ class SelfRoles(commands.Cog):
                 f"{role.mention} role isn't in that menu",
                 allowed_mentions=discord.AllowedMentions.none()
             )
+        if len(self.config[guild_id][message_id]["roles"]) == 1:
+            return await ctx.send("A selfrole menu can't have zero roles. Delete the menu to remove it")
 
         del self.config[guild_id][message_id]["roles"][str(role.id)]
         await self.refresh_menu(guild_id, message_id)
