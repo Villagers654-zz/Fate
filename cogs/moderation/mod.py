@@ -28,6 +28,7 @@ from discord.errors import NotFound, Forbidden, HTTPException
 from botutils import colors, get_prefix, get_time, split, CancelButton, format_date
 from classes import IgnoredExit
 from fate import Fate
+from .case_manager import CaseManager
 
 
 class MuteView(ui.View):
@@ -119,7 +120,7 @@ class TimerView(ui.View):
             if duration == 0:
                 return await interaction.response.edit_message(view=self.home_view)
 
-            mod: Moderation = self.bot.cogs["Moderation"]
+            mod: Moderation = self.bot.cogs["Moderation"]  # type: ignore
             guild_id = str(self.ctx.guild.id)
 
             user = self.home_view.user
@@ -350,8 +351,8 @@ class Moderation(commands.Cog):
         }
 
     @property
-    def cases(self):
-        return self.bot.cogs["CaseManager"]
+    def cases(self) -> CaseManager:
+        return self.bot.cogs["CaseManager"]  # type: ignore
 
     async def save_data(self):
         async with self.bot.utils.open(self.path, "w+") as f:
@@ -963,7 +964,7 @@ class Moderation(commands.Cog):
     @check_if_running()
     @has_required_permissions(kick_members=True)
     @commands.bot_has_permissions(embed_links=True, kick_members=True)
-    async def kick(self, ctx, members: Greedy[discord.Member], *, reason="Unspecified"):
+    async def kick(self, ctx, members: Greedy[Union[discord.Member, discord.User]], *, reason="Unspecified"):
         if not members:
             return await ctx.send("You need to properly specify who to kick")
         e = discord.Embed(color=colors.fate)
@@ -971,7 +972,7 @@ class Moderation(commands.Cog):
         msg = await ctx.send(embed=e)
         e.description = ""
         for i, member in enumerate(members):
-            if member not in ctx.guild.members:  # Was kicked already
+            if isinstance(member, discord.User):  # Was kicked already
                 continue
             if member.top_role.position >= ctx.author.top_role.position:
                 e.description += f"\n❌ {member} is Higher Than You"
