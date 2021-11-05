@@ -1476,34 +1476,35 @@ class InfoView(AuthorView):
     async def server_info(self):
         ctx = self.ctx
         e = discord.Embed(color=colors.fate)
-        e.description = f"id: {ctx.guild.id}\nOwner: {ctx.guild.owner}"
         e.set_author(name=f"{ctx.guild.name}:", icon_url=ctx.guild.owner.display_avatar.url)
         if ctx.guild.icon:
             e.set_thumbnail(url=ctx.guild.icon.url)
-        main = (
-            f"• AFK Timeout [`{ctx.guild.afk_timeout}`]\n"
-            f"• Region [`{ctx.guild.region}`]\n"
-            f"• Members [`{ctx.guild.member_count}`]"
-        )
-        e.add_field(name="◈ Main ◈", value=main, inline=False)
-        security = (
-            f"• Explicit Content Filter: [`{ctx.guild.explicit_content_filter}`]\n"
-            f"• Verification Level: [`{ctx.guild.verification_level}`]\n"
-            f"• 2FA Level: [`{ctx.guild.mfa_level}`]"
-        )
-        e.add_field(name="◈ Security ◈", value=security, inline=False)
+        main = {
+            "ID": ctx.guild.id,
+            "Owner": ctx.guild.owner,
+            "AFK Timeout": format_date(seconds=ctx.guild.afk_timeout),
+            "Region": ctx.guild.region,
+            "Members": ctx.guild.member_count
+        }
+        e.description = self.bot.utils.format_dict(main)
+        security = {
+            "Content Filter": ctx.guild.explicit_content_filter,
+            "Verification Level": ctx.guild.verification_level,
+            "2FA to Moderate": "Enabled" if ctx.guild.mfa_level else "Disabled"
+        }
+        e.add_field(name="◈ Security", value=self.bot.utils.format_dict(security), inline=False)
         if ctx.guild.premium_tier:
-            perks = (
-                f"• Boost Level [`{ctx.guild.premium_tier}`]\n"
-                f"• Total Boosts [`{ctx.guild.premium_subscription_count}`]\n"
-                f"• Max Emoji's [`{ctx.guild.emoji_limit}`]\n"
-                f'• Max Bitrate [`{bytes2human(ctx.guild.bitrate_limit).replace(".0", "")}`]\n'
-                f'• Max Filesize [`{bytes2human(ctx.guild.filesize_limit).replace(".0", "")}`]'
-            )
-            e.add_field(name="◈ Perks ◈", value=perks, inline=False)
+            perks = {
+                "Boost Level": ctx.guild.premium_tier,
+                "Boosts": ctx.guild.premium_subscription_count,
+                "Max Emojis": ctx.guild.emoji_limit,
+                "Max Bitrate": bytes2human(ctx.guild.bitrate_limit).replace(".0", ""),
+                "Max Filesize": bytes2human(ctx.guild.filesize_limit).replace(".0", "")
+            }
+            e.add_field(name="◈ Perks ◈", value=self.bot.utils.format_dict(perks), inline=False)
         created = datetime.date(ctx.guild.created_at)
         e.add_field(
-            name="◈ Created ◈", value=created.strftime("%m/%d/%Y"), inline=False
+            name="◈ Created", value=created.strftime("%m/%d/%Y"), inline=False
         )
         yield e
 
