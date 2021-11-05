@@ -22,7 +22,7 @@ from typing import *
 from discord.ext import commands
 import discord
 from discord import AuditLogAction as audit, File
-from discord.errors import NotFound, Forbidden, HTTPException
+from discord.errors import NotFound, Forbidden
 from PIL import Image
 
 from botutils.colors import *
@@ -903,7 +903,7 @@ class Logger(commands.Cog):
                         if msg.attachments:
                             files = []
                             for attachment in msg.attachments:
-                                with suppress(HTTPException, NotFound, Forbidden):
+                                with suppress(Exception):
                                     files.append(await attachment.to_file(use_cached=True))
                             log = Log("message_delete", embed=msg.embeds[0] if msg.embeds else None, files=files)
                             self.put_nowait(guild_id, log)
@@ -948,7 +948,7 @@ class Logger(commands.Cog):
                     for attachment in msg.attachments:
                         if attachment.size > 8000000:
                             continue
-                        with suppress(HTTPException, NotFound, Forbidden):
+                        with suppress(Exception):
                             files.append(await attachment.to_file(use_cached=True))
                     if files and "attachment_delete" in self.config[guild_id]["channels"]:
                         log_type = "attachment_delete"
