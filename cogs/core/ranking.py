@@ -956,11 +956,15 @@ class Ranking(commands.Cog):
                 break
         else:
             return await ctx.send("Couldn't get all of the avatars for the top 9 users")
+        assets = []
+        for member, xp, lvl_dat, task in tasks:
+            with suppress(Exception):
+                assets.append([member, xp, lvl_dat, task.result()])
 
         def create_card():
             card = Image.new("RGBA", (750, 900), color=(0, 0, 0, 0))
-            for i, (member, xp, lvl_dat, task) in enumerate(tasks):
-                av = Image.open(task.result()).convert("RGBA")
+            for i, (member, xp, lvl_dat, asset) in enumerate(assets):
+                av = Image.open(asset).convert("RGBA")
                 av = av.resize((90, 90), Image.BICUBIC)
                 im = Image.new(mode="RGBA", size=(740, 90), color=(114, 137, 218))
                 im.paste(av, (0, 0), av)
