@@ -1490,7 +1490,7 @@ class InfoView(AuthorView):
         security = {
             "Content Filter": ctx.guild.explicit_content_filter,
             "Verification Level": ctx.guild.verification_level,
-            "2FA to Moderate": "Enabled" if ctx.guild.mfa_level else "Disabled"
+            "2FA to Moderate": "enabled" if ctx.guild.mfa_level else "disabled"
         }
         e.add_field(name="◈ Security", value=self.bot.utils.format_dict(security), inline=False)
         if ctx.guild.premium_tier:
