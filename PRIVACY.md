@@ -25,7 +25,7 @@ actions such as kicking & banning. (Logger)
 These modules will only collect such data if configured to do so by the individual server member. They're always opt-in,
 and thus this data will not be collected unless the server member specifically enables the corresponding feature.
 - Previous nicknames, and usernames. (Info Profile)
-- Date, and Time of last activity. (Info Profile)
+- Date, and Time of last activity, or message. (Info Profile)
 
 ### Data Collected Automatically
 - When you message. This excludes *what* you message. (Chat XP)
