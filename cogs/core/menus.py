@@ -161,8 +161,8 @@ class HelpMenu(AuthorView):
         self.embed.set_author(name="~==🥂🍸🍷Help🍷🍸🥂==~")
         self.embed.set_thumbnail(url=ctx.bot.user.display_avatar.url)
         self.embed.description = (
-            f"[Support Server]({self.bot.config['support_server']}) | "
-            f"[Bot Invite]({self.bot.invite_url})\n"
+            f"[Support]({self.bot.config['support_server']}) | "
+            f"[Bot Invite]({self.bot.invite_url}) | [Privacy Policy](https://github.com/FrequencyX4/Fate/blob/master/README.md)\n"
             f"• using a cmd with no args will usually send its help menu\n"
             f"• try using `.module enable` instead of `.enable module`"
         )
