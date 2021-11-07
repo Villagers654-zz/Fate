@@ -25,7 +25,7 @@ from discord import Member, Role, TextChannel, User, ButtonStyle, ui, Interactio
 from discord.ext.commands import Greedy
 from discord.errors import NotFound, Forbidden, HTTPException
 
-from botutils import colors, get_prefix, get_time, split, CancelButton, format_date
+from botutils import colors, get_prefix, get_time, split, CancelButton, format_date, GetConfirmation
 from classes import IgnoredExit
 from fate import Fate
 from .case_manager import CaseManager
@@ -1426,6 +1426,10 @@ class Moderation(commands.Cog):
                 return await ctx.send("This user is above your paygrade, take a seat")
             if role.position >= ctx.author.top_role.position:
                 return await ctx.send("This role is above your paygrade, take a seat")
+        sensitive = ["kick_members", "ban_members", "manage_roles", "manage_channels"]
+        if any(getattr(role.permissions, perm) for perm in sensitive):
+            if not await GetConfirmation(ctx, "This role has sensitive permissions, are you sure?"):
+                return
         if role in user.roles:
             await user.remove_roles(role)
             msg = f"Removed **{role.name}** from @{user.name}"
