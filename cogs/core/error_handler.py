@@ -32,7 +32,7 @@ class ErrorHandler(commands.Cog):
         self.response_cooldown = Cooldown(1, 10)
         self.reaction_cooldown = Cooldown(1, 4)
 
-    async def key_error_handler(self, ctx, error) -> None:
+    async def suppress_key_error(self, ctx, error) -> None:
         """ Handle KeyError's from modifying menus """
         error = getattr(error, "original", error)
         if isinstance(error, KeyError):
