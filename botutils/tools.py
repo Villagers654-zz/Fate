@@ -395,24 +395,7 @@ async def get_user_rewrite(ctx, target: str = None) -> Union[discord.User, disco
 
 
 def get_time(seconds):
-    result = ""
-    if seconds < 60:
-        return f"{seconds} seconds"
-    total_time = str(timedelta(seconds=seconds))
-    if "," in total_time:
-        days = str(total_time).replace(" days,", "").split(" ")[0]
-        total_time = total_time.replace(
-            f'{days} day{"s" if int(days) > 1 else ""}, ', ""
-        )
-        result += f"{days} days"
-    hours, minutes, seconds = total_time.split(":")
-    hours = int(hours)
-    minutes = int(minutes)
-    if hours > 0:
-        result += f'{", " if result else ""}{hours} hour{"s" if hours > 1 else ""}'
-    if minutes > 0:
-        result += f'{", and " if result else ""}{minutes} minute{"s" if minutes > 1 else ""}'
-    return result
+    return format_date(seconds=seconds)
 
 
 async def get_role(ctx, name) -> Optional[discord.Role]:
