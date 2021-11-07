@@ -24,6 +24,7 @@ luck.py
 /cogs/dev/
 /cogs/dev/*\
 /cogs/moderation/anti_spam.py
+/cogs/fun/uno.py
 
 /data/auth.json
 /data/info.json
