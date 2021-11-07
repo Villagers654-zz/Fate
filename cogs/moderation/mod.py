@@ -25,7 +25,7 @@ from discord import Member, Role, TextChannel, User, ButtonStyle, ui, Interactio
 from discord.ext.commands import Greedy
 from discord.errors import NotFound, Forbidden, HTTPException
 
-from botutils import colors, get_prefix, get_time, split, CancelButton, format_date, GetConfirmation
+from botutils import colors, get_prefix, get_time, split, CancelButton, format_date, GetConfirmation, extract_time
 from classes import IgnoredExit
 from fate import Fate
 from .case_manager import CaseManager
@@ -1410,6 +1410,14 @@ class Moderation(commands.Cog):
             user = ctx.guild.get_member(user.id)
         if not user:
             return await ctx.send("User not found")
+        timer = None
+        if " " in role and (timer := extract_time(role.split()[::-1][0])):
+            role = role.split()[0]
+            if timer > 60 * 60:
+                await ctx.send(
+                    "Warning: role timers don't save past reboots yet so this isn't reliable",
+                    delete_after=10
+                )
         converter = commands.RoleConverter()
         try:
             result = await converter.convert(ctx, role)
@@ -1433,10 +1441,25 @@ class Moderation(commands.Cog):
         if role in user.roles:
             await user.remove_roles(role)
             msg = f"Removed **{role.name}** from @{user.name}"
+            add = True
         else:
             await user.add_roles(role)
             msg = f"Gave **{role.name}** to **@{user.name}**"
+            add = False
+        if timer:
+            msg += f" for {get_time(timer)}"
         await ctx.send(msg)
+        if timer:
+            await asyncio.sleep(timer)
+            if ctx.guild.me:
+                with suppress(Exception):
+                    if add:
+                        await user.add_roles(role)
+                        msg = f"Gave **{role.name}** to **@{user.name}**"
+                    else:
+                        await user.remove_roles(role)
+                        msg = f"Removed **{role.name}** from @{user.name}"
+                    await ctx.send(msg, reference=ctx.message)
 
     @commands.command(name="rename", description="Renames a user, role, or channel")
     @commands.cooldown(1, 3, commands.BucketType.user)
