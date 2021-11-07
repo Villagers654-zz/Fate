@@ -44,12 +44,8 @@ class SelfRoles(commands.Cog):
 
     async def cog_command_error(self, ctx, error) -> None:
         """ Handle KeyError's from modifying menus """
-        error = getattr(error, "original", error)
-        if isinstance(error, KeyError):
-            await ctx.send("It seems the menu we're operating on was deleted")
-        else:
-            if cog := self.bot.get_cog("ErrorHandler"):
-                await cog.on_command_error(ctx, error)  # type: ignore
+        if cog := self.bot.get_cog("ErrorHandler"):
+            await cog.suppress_key_error(ctx, error)  # type: ignore
 
     async def refresh_menu(self, guild_id: int, message_id: str) -> discord.Message:
         """ Re-initiates the View and updates the message content """

@@ -32,6 +32,14 @@ class ErrorHandler(commands.Cog):
         self.response_cooldown = Cooldown(1, 10)
         self.reaction_cooldown = Cooldown(1, 4)
 
+    async def key_error_handler(self, ctx, error) -> None:
+        """ Handle KeyError's from modifying menus """
+        error = getattr(error, "original", error)
+        if isinstance(error, KeyError):
+            await ctx.send("It seems something we're operating on was deleted")
+        else:
+            await self.on_command_error(ctx, error)  # type: ignore
+
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
         # Ensure the servers `currently running commands` index gets updated

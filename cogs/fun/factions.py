@@ -100,6 +100,11 @@ class Factions(commands.Cog):
         self.attacks = dat["attacks"]
         self.dodges = dat["dodges"]
 
+    async def cog_command_error(self, ctx, error) -> None:
+        """ Handle KeyError's from no longer existing factions """
+        if cog := self.bot.get_cog("ErrorHandler"):
+            await cog.suppress_key_error(ctx, error)  # type: ignore
+
     async def filter_boosts(self):
         for boost in list(self.boosts.keys()):
             for guild_id, boosts in list(self.boosts[boost].items()):
