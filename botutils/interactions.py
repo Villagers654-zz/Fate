@@ -29,15 +29,16 @@ class GetConfirmation(ui.View):
         self.question = question
         super().__init__(timeout=30)
 
-    def __await__(self) -> Generator[None, None, None]:
+    def __await__(self) -> Generator[None, None, bool]:
         return self._await().__await__()
 
-    async def _await(self) -> None:
+    async def _await(self) -> bool:
         msg = await self.ctx.send(self.question, view=self)
         await self.wait()
         await msg.delete()
-        await self.ctx.message.delete()
-        return
+        if not self.value:
+            await self.ctx.message.delete()
+        return self.value
 
     @ui.button(label="Confirm", style=ButtonStyle.green)
     async def confirm(self, _button, interaction):
