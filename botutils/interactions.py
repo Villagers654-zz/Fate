@@ -5,6 +5,7 @@ botutils.interactions
 A module for template interaction classes
 
 Classes:
+    GetConfirmation : An object for confirming a question with a user
     ModView : A View that only moderators can interact with
     AuthorView : A view that only the author of the original message can interact with
     Menu : A ease of use embed paginator
@@ -14,10 +15,44 @@ Classes:
 """
 
 from typing import *
-from discord import ui, Interaction, SelectOption, Embed
+from discord import ui, Interaction, SelectOption, Embed, ButtonStyle
 from discord.ext.commands import Context
 import discord
 from . import Cooldown
+
+
+class GetConfirmation(ui.View):
+    value: bool = False
+
+    def __init__(self, ctx: Context, question: str):
+        self.ctx = ctx
+        self.question = question
+        super().__init__(timeout=30)
+
+    def __await__(self) -> Generator[None, None, bool]:
+        return self._await().__await__()
+
+    async def _await(self) -> None:
+        msg = await self.ctx.send(self.question, view=self)
+        await self.wait()
+        await msg.delete()
+        await self.ctx.message.delete()
+        return
+
+    @ui.button(label="Confirm", style=ButtonStyle.green)
+    async def confirm(self, _button, interaction):
+        self.value = True
+        await interaction.response.send_message(
+            f"Alright, confirmed", ephemeral=True
+        )
+        self.stop()
+
+    @ui.button(label="Deny", style=ButtonStyle.red)
+    async def deny(self, _button, interaction):
+        await interaction.response.send_message(
+            f"Alright, operation cancelled", ephemeral=True
+        )
+        self.stop()
 
 
 class ModView(ui.View):
