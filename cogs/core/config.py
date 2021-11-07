@@ -193,7 +193,12 @@ class Config(commands.Cog):
                             "7th",
                             "8th",
                         ]
-                        return positions[index - 1]
+                        _i = index - 1
+                        if _i < 0:
+                            _i = 0
+                        if _i + 1 > len(positions):
+                            _i = len(positions) - 1
+                        return positions[_i]
 
                     index = 1
                     finished = False
