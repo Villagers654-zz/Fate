@@ -12,6 +12,7 @@ __pycache__/
 
 *.exe
 *.sh
+*desktop.ini
 
 testing.py
 Backup.zip
