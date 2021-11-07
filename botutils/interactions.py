@@ -29,7 +29,7 @@ class GetConfirmation(ui.View):
         self.question = question
         super().__init__(timeout=30)
 
-    def __await__(self) -> Generator[None, None, bool]:
+    def __await__(self) -> Generator[None, None, None]:
         return self._await().__await__()
 
     async def _await(self) -> None:
