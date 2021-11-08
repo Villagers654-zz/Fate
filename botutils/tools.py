@@ -39,6 +39,7 @@ import asyncio
 from datetime import datetime, timedelta
 from time import time
 import discord
+from copy import deepcopy
 from .emojis import arrow
 from classes import IgnoredExit
 
@@ -58,10 +59,17 @@ class PersistentTasks:
                 self.run(key, **kwargs)
 
     def run(self, key: Union[int, str], **kwargs) -> asyncio.Task:
-        return asyncio.create_task(self._run(key, **kwargs))
+        if duration := kwargs.get("sleep_for", None):
+            if isinstance(duration, int):
+                duration = kwargs["sleep_for"] = datetime.now() + timedelta(seconds=duration)
+        if key not in self.db:
+            self.db[key] = deepcopy(kwargs)
+        if duration:
+            kwargs["sleep_for"] = int((duration - datetime.now()).seconds)
+            print(f"Resumed for {kwargs['sleep_for']}")
+        return self.bot.loop.create_task(self._run(key, **kwargs))
 
     async def _run(self, key: Union[int, str], **kwargs):
-        self.db[key] = kwargs
         await self.db.flush()
         try:
             await self.callback(**kwargs)
