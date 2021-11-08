@@ -66,7 +66,6 @@ class PersistentTasks:
             self.db[key] = deepcopy(kwargs)
         if duration:
             kwargs["sleep_for"] = int((duration - datetime.now()).seconds)
-            print(f"Resumed for {kwargs['sleep_for']}")
         return self.bot.loop.create_task(self._run(key, **kwargs))
 
     async def _run(self, key: Union[int, str], **kwargs):
