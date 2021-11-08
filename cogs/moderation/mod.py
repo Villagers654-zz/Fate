@@ -31,191 +31,6 @@ from fate import Fate
 from .case_manager import CaseManager
 
 
-class MuteView(ui.View):
-    def __init__(self, ctx, user: Union[User, Member], case: int, reason: Optional[str], timer: Optional[int]):
-        self.ctx = ctx
-        self.user = user
-        self.case = case
-        self.reason = reason
-        self.timer = timer
-        super().__init__(timeout=45)
-
-        if timer and reason:
-            self.stop()
-            return
-
-        if not reason:
-            self.reason_button = ui.Button(label="Set Reason", style=ButtonStyle.blurple)
-            self.reason_button.callback = self.set_reason
-            self.add_item(self.reason_button)
-
-        if not timer:
-            self.timer_button = ui.Button(label="Set Timer", style=ButtonStyle.blurple)
-            self.timer_button.callback = self.set_timer
-            self.add_item(self.timer_button)
-
-    async def on_error(self, error, item, interaction):
-        if not isinstance(error, NotFound):
-            raise
-
-    async def interaction_check(self, interaction):
-        """ Ensure the interaction is from the user who initiated the view """
-        if interaction.user.id != self.ctx.author.id:
-            with suppress(Exception):
-                await interaction.response.send_message(
-                    "Only the user who initiated this command can interact", ephemeral=True
-                )
-            return False
-        return True
-
-    async def set_timer(self, interaction: Interaction):
-        view = TimerView(self.ctx, self.case, self)
-        self.remove_item(self.timer_button)
-        await interaction.response.edit_message(view=view)
-
-    async def set_reason(self, interaction: Interaction):
-        view = ReasonView(self.ctx, self.case, self)
-        self.remove_item(self.reason_button)
-        await interaction.response.edit_message(view=view)
-
-
-class TimerView(ui.View):
-    class SelectOptions(ui.Select):
-        timers: List[Tuple[Union[str, int]]] = [
-            ("Cancel", 0),
-            ("5 Minutes", 60 * 5),
-            ("15 Minutes", 60 * 15),
-            ("30 Minutes", 60 * 30),
-            ("45 Minutes", 60 * 45),
-            ("1 Hour", 60 * 60),
-            ("2 Hours", 60 * 60 * 2),
-            ("6 Hours", 60 * 60 * 6),
-            ("12 Hours", 60 * 60 * 12),
-            ("1 Day", 60 * 60 * 24),
-            ("2 Days", 60 * 60 * 24 * 2),
-            ("1 Week", 60 * 60 * 24 * 7)
-        ]
-
-        def __init__(self, ctx: commands.Context, case: int, home_view: MuteView):
-            self.ctx = ctx
-            self.bot = ctx.bot
-            self.case = case
-            self.home_view = home_view
-
-            options = [
-                SelectOption(label=label, emoji="⏰", value=str(timer))
-                for label, timer in self.timers
-            ]
-            super().__init__(
-                placeholder="Select from presets",
-                options=options,
-                min_values=1,
-                max_values=1
-            )
-
-        async def callback(self, interaction: Interaction):
-            if not await self.home_view.interaction_check(interaction):
-                return
-            duration = int(interaction.data["values"][0])
-            if duration == 0:
-                return await interaction.response.edit_message(view=self.home_view)
-
-            mod: Moderation = self.bot.cogs["Moderation"]  # type: ignore
-            guild_id = str(self.ctx.guild.id)
-
-            user = self.home_view.user
-            mute_role = await self.bot.attrs.get_mute_role(self.ctx.guild, upsert=True)
-            await user.add_roles(mute_role)
-
-            # Update the mute if one is already running
-            if mute_role in user.roles:
-                user_id = str(user.id)
-                if guild_id in mod.tasks and user_id in mod.tasks[guild_id]:
-                    mod.tasks[guild_id][user_id].cancel()
-                    del mod.tasks[guild_id][user_id]
-
-            timer_info = {
-                "channel": self.ctx.channel.id,
-                "user": user.id,
-                "end_time": now() + duration,
-                "mute_role": mute_role.id,
-                "removed_roles": [],
-            }
-            mod.config[guild_id]["mute_timers"][str(user.id)] = timer_info
-            await mod.save_data()
-            task = self.bot.loop.create_task(
-                mod.handle_mute_timer(guild_id, str(user.id), timer_info)
-            )
-            if guild_id not in mod.tasks:
-                mod.tasks[guild_id] = {}
-            mod.tasks[guild_id][str(user.id)] = task
-
-            expanded_form = format_date(datetime.now() - timedelta(seconds=duration))
-            await interaction.response.send_message(f"Updated the mute for {user.mention} to {expanded_form}")
-            await interaction.message.edit(view=self.home_view)
-
-    def __init__(self, ctx: commands.Context, case: int, home_view: MuteView):
-        super().__init__(timeout=45)
-        self.add_item(self.SelectOptions(ctx, case, home_view))
-
-    async def on_error(self, error, item, interaction):
-        if not isinstance(error, NotFound):
-            raise
-
-
-class ReasonView(ui.View):
-    class SelectOptions(ui.Select):
-        preset: List[Tuple[Union[str, str]]] = [
-            ("❎", "Cancel"),
-            ("🔊", "Spamming"),
-            ("⚔", "Raiding"),
-            ("👊", "Harassment"),
-            ("👮‍♂️", "Discord TOS")
-        ]
-
-        def __init__(self, ctx: commands.Context, case: int, home_view: MuteView):
-            self.ctx = ctx
-            self.case = case
-            self.home_view = home_view
-
-            options = [
-                SelectOption(label=reason, emoji=emoji, value=reason)
-                for emoji, reason in self.preset
-            ]
-            super().__init__(
-                placeholder="Select from presets",
-                options=options,
-                min_values=1,
-                max_values=1
-            )
-
-        async def callback(self, interaction: Interaction):
-            if not await self.home_view.interaction_check(interaction):
-                return
-            reason = interaction.data["values"][0]
-            if reason == "Cancel":
-                return await interaction.response.edit_message(view=self.home_view)
-
-            async with self.ctx.bot.utils.cursor() as cur:
-                await cur.execute(
-                    f"update cases set "
-                    f"reason = '{self.ctx.bot.encode(reason)}' "
-                    f"where guild_id = {self.ctx.guild.id} "
-                    f"and case_number = {self.case};"
-                )
-
-            await interaction.response.send_message(f"Updated the reason to {reason}", ephemeral=True)
-            await interaction.message.edit(view=self.home_view)
-
-    def __init__(self, ctx: commands.Context, case: int, home_view: MuteView):
-        super().__init__(timeout=45)
-        self.add_item(self.SelectOptions(ctx, case, home_view))
-
-    async def on_error(self, error, item, interaction):
-        if not isinstance(error, NotFound):
-            raise
-
-
 cache = {}  # Keep track of what commands are still being ran
 # This should empty out as quickly as it's filled
 
@@ -313,6 +128,11 @@ class Moderation(commands.Cog):
         if path.isfile(self.path):
             with open(self.path, "r") as f:
                 self.config = json.load(f)  # type: dict
+        self.timers = bot.utils.persistent_tasks(
+            database="role_timers",
+            callback=self.handle_timer,
+            identifier="user_id"
+        )
 
         # Add or remove any missing/unused key/values
         # this is for ease of updating json as it's developed
@@ -1413,11 +1233,6 @@ class Moderation(commands.Cog):
         timer = None
         if " " in role and (timer := extract_time(role.split()[::-1][0])):
             role = role.split()[0]
-            if timer > 60 * 60:
-                await ctx.send(
-                    "Warning: role timers don't save past reboots yet so this isn't reliable",
-                    delete_after=10
-                )
         converter = commands.RoleConverter()
         try:
             result = await converter.convert(ctx, role)
@@ -1450,16 +1265,45 @@ class Moderation(commands.Cog):
             msg += f" for {get_time(timer)}"
         await ctx.send(msg)
         if timer:
-            await asyncio.sleep(timer)
-            if ctx.guild.me:
-                with suppress(Exception):
-                    if add:
-                        await user.add_roles(role)
-                        msg = f"Gave **{role.name}** to **@{user.name}**"
-                    else:
-                        await user.remove_roles(role)
-                        msg = f"Removed **{role.name}** from @{user.name}"
-                    await ctx.send(msg, reference=ctx.message)
+            if user.id in self.timers.db:
+                return await ctx.send("Each user can only have one role timer at a time")
+            self.timers.run(
+                channel_id=ctx.channel.id,
+                message_id=ctx.message.id,
+                role_id=role.id,
+                user_id=user.id,
+                add=add,
+                sleep_for=timer
+            )
+
+    async def handle_timer(self, channel_id, message_id, role_id, user_id, add, sleep_for):
+        await asyncio.sleep(sleep_for)
+        channel = self.bot.get_channel(channel_id)
+        if not channel:
+            return
+        guild = channel.guild
+        member = guild.get_member(user_id)
+        role = guild.get_role(role_id)
+        if not member or not role:
+            return
+        reference = None
+        try:
+            ref = await channel.fetch_message(message_id)
+            reference = ref
+        except (NotFound, Forbidden):
+            pass
+        with suppress(Exception):
+            if add:
+                if role in member.roles:
+                    return
+                await member.add_roles(role)
+                msg = f"Gave **{role.name}** to **@{member.name}**"
+            else:
+                if role not in member.roles:
+                    return
+                await member.remove_roles(role)
+                msg = f"Removed **{role.name}** from @{member.name}"
+            await channel.send(msg, reference=reference)
 
     @commands.command(name="rename", description="Renames a user, role, or channel")
     @commands.cooldown(1, 3, commands.BucketType.user)
@@ -1753,6 +1597,191 @@ class Moderation(commands.Cog):
         e.set_author(name=f"{user.name}'s Warns", icon_url=url)
         e.description = f"**Total Warns:** [`{warns}`]" + reasons
         await ctx.send(embed=e)
+
+
+class MuteView(ui.View):
+    def __init__(self, ctx, user: Union[User, Member], case: int, reason: Optional[str], timer: Optional[int]):
+        self.ctx = ctx
+        self.user = user
+        self.case = case
+        self.reason = reason
+        self.timer = timer
+        super().__init__(timeout=45)
+
+        if timer and reason:
+            self.stop()
+            return
+
+        if not reason:
+            self.reason_button = ui.Button(label="Set Reason", style=ButtonStyle.blurple)
+            self.reason_button.callback = self.set_reason
+            self.add_item(self.reason_button)
+
+        if not timer:
+            self.timer_button = ui.Button(label="Set Timer", style=ButtonStyle.blurple)
+            self.timer_button.callback = self.set_timer
+            self.add_item(self.timer_button)
+
+    async def on_error(self, error, item, interaction):
+        if not isinstance(error, NotFound):
+            raise
+
+    async def interaction_check(self, interaction):
+        """ Ensure the interaction is from the user who initiated the view """
+        if interaction.user.id != self.ctx.author.id:
+            with suppress(Exception):
+                await interaction.response.send_message(
+                    "Only the user who initiated this command can interact", ephemeral=True
+                )
+            return False
+        return True
+
+    async def set_timer(self, interaction: Interaction):
+        view = TimerView(self.ctx, self.case, self)
+        self.remove_item(self.timer_button)
+        await interaction.response.edit_message(view=view)
+
+    async def set_reason(self, interaction: Interaction):
+        view = ReasonView(self.ctx, self.case, self)
+        self.remove_item(self.reason_button)
+        await interaction.response.edit_message(view=view)
+
+
+class TimerView(ui.View):
+    class SelectOptions(ui.Select):
+        timers: List[Tuple[Union[str, int]]] = [
+            ("Cancel", 0),
+            ("5 Minutes", 60 * 5),
+            ("15 Minutes", 60 * 15),
+            ("30 Minutes", 60 * 30),
+            ("45 Minutes", 60 * 45),
+            ("1 Hour", 60 * 60),
+            ("2 Hours", 60 * 60 * 2),
+            ("6 Hours", 60 * 60 * 6),
+            ("12 Hours", 60 * 60 * 12),
+            ("1 Day", 60 * 60 * 24),
+            ("2 Days", 60 * 60 * 24 * 2),
+            ("1 Week", 60 * 60 * 24 * 7)
+        ]
+
+        def __init__(self, ctx: commands.Context, case: int, home_view: MuteView):
+            self.ctx = ctx
+            self.bot = ctx.bot
+            self.case = case
+            self.home_view = home_view
+
+            options = [
+                SelectOption(label=label, emoji="⏰", value=str(timer))
+                for label, timer in self.timers
+            ]
+            super().__init__(
+                placeholder="Select from presets",
+                options=options,
+                min_values=1,
+                max_values=1
+            )
+
+        async def callback(self, interaction: Interaction):
+            if not await self.home_view.interaction_check(interaction):
+                return
+            duration = int(interaction.data["values"][0])
+            if duration == 0:
+                return await interaction.response.edit_message(view=self.home_view)
+
+            mod: Moderation = self.bot.cogs["Moderation"]  # type: ignore
+            guild_id = str(self.ctx.guild.id)
+
+            user = self.home_view.user
+            mute_role = await self.bot.attrs.get_mute_role(self.ctx.guild, upsert=True)
+            await user.add_roles(mute_role)
+
+            # Update the mute if one is already running
+            if mute_role in user.roles:
+                user_id = str(user.id)
+                if guild_id in mod.tasks and user_id in mod.tasks[guild_id]:
+                    mod.tasks[guild_id][user_id].cancel()
+                    del mod.tasks[guild_id][user_id]
+
+            timer_info = {
+                "channel": self.ctx.channel.id,
+                "user": user.id,
+                "end_time": now() + duration,
+                "mute_role": mute_role.id,
+                "removed_roles": [],
+            }
+            mod.config[guild_id]["mute_timers"][str(user.id)] = timer_info
+            await mod.save_data()
+            task = self.bot.loop.create_task(
+                mod.handle_mute_timer(guild_id, str(user.id), timer_info)
+            )
+            if guild_id not in mod.tasks:
+                mod.tasks[guild_id] = {}
+            mod.tasks[guild_id][str(user.id)] = task
+
+            expanded_form = format_date(datetime.now() - timedelta(seconds=duration))
+            await interaction.response.send_message(f"Updated the mute for {user.mention} to {expanded_form}")
+            await interaction.message.edit(view=self.home_view)
+
+    def __init__(self, ctx: commands.Context, case: int, home_view: MuteView):
+        super().__init__(timeout=45)
+        self.add_item(self.SelectOptions(ctx, case, home_view))
+
+    async def on_error(self, error, item, interaction):
+        if not isinstance(error, NotFound):
+            raise
+
+
+class ReasonView(ui.View):
+    class SelectOptions(ui.Select):
+        preset: List[Tuple[Union[str, str]]] = [
+            ("❎", "Cancel"),
+            ("🔊", "Spamming"),
+            ("⚔", "Raiding"),
+            ("👊", "Harassment"),
+            ("👮‍♂️", "Discord TOS")
+        ]
+
+        def __init__(self, ctx: commands.Context, case: int, home_view: MuteView):
+            self.ctx = ctx
+            self.case = case
+            self.home_view = home_view
+
+            options = [
+                SelectOption(label=reason, emoji=emoji, value=reason)
+                for emoji, reason in self.preset
+            ]
+            super().__init__(
+                placeholder="Select from presets",
+                options=options,
+                min_values=1,
+                max_values=1
+            )
+
+        async def callback(self, interaction: Interaction):
+            if not await self.home_view.interaction_check(interaction):
+                return
+            reason = interaction.data["values"][0]
+            if reason == "Cancel":
+                return await interaction.response.edit_message(view=self.home_view)
+
+            async with self.ctx.bot.utils.cursor() as cur:
+                await cur.execute(
+                    f"update cases set "
+                    f"reason = '{self.ctx.bot.encode(reason)}' "
+                    f"where guild_id = {self.ctx.guild.id} "
+                    f"and case_number = {self.case};"
+                )
+
+            await interaction.response.send_message(f"Updated the reason to {reason}", ephemeral=True)
+            await interaction.message.edit(view=self.home_view)
+
+    def __init__(self, ctx: commands.Context, case: int, home_view: MuteView):
+        super().__init__(timeout=45)
+        self.add_item(self.SelectOptions(ctx, case, home_view))
+
+    async def on_error(self, error, item, interaction):
+        if not isinstance(error, NotFound):
+            raise
 
 
 def setup(bot):
