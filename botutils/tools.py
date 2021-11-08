@@ -5,6 +5,7 @@ Tools
 A collection of utility functions
 
 Classes:
+    PersistentTasks
     TempConvo
     Cooldown
     OperationLock
@@ -40,6 +41,32 @@ from time import time
 import discord
 from .emojis import arrow
 from classes import IgnoredExit
+
+
+class PersistentTasks:
+    def __init__(self, bot, callback: callable, debug: bool = False):
+        self.bot = bot
+        self.callback = callback
+        self.debug = debug
+        self.db = bot.utils.cache("tasks")
+        if not bot.is_ready():
+            for key, kwargs in self.db.items():
+                self.run(key, **kwargs)
+
+    def run(self, key, **kwargs) -> asyncio.Task:
+        return asyncio.create_task(self._run(key, **kwargs))
+
+    async def _run(self, key, **kwargs):
+        self.db[key] = kwargs
+        await self.db.flush()
+        try:
+            await self.callback(**kwargs)
+        except Exception as error:  # type: ignore
+            self.bot.loop.call_exception_handler({
+                "message": f"{key} task failed",
+                "exception": error
+            })
+        await self.db.remove(key)
 
 
 class TempConvo:
