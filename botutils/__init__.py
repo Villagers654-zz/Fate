@@ -68,8 +68,8 @@ class Utils(Cog):
     def cursor(self, *args, **kwargs) -> Cursor:
         return Cursor(self.bot, *args, **kwargs)
 
-    def persistent_tasks(self, database: str, callback: callable, debug: bool = False):
-        return PersistentTasks(self.bot, database, callback, debug)
+    def persistent_tasks(self, database: str, callback: callable, identifier: str, debug: bool = False):
+        return PersistentTasks(self.bot, database, callback, identifier, debug)
 
     async def is_filtered(self, message, ctx = None) -> bool:
         """|coro|

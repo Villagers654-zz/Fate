@@ -49,19 +49,28 @@ class PersistentTasks:
     Keeps tasks running even after the bot restarts.
     This requires the callback to use a sleep_until(date) method instead of sleep(duration)
     """
-    def __init__(self, bot, database: str, callback: callable, debug: bool = False):
+    def __init__(self, bot, database, callback, identifier, debug=False):
+        """
+        :param bot:
+        :param str database: the db name to use
+        :param callable callback: the coro to call
+        :param str identifier: the name of the param with the unique key
+        :param bool debug: don't suppress errors if set to True
+        """
         self.bot = bot
         self.callback = callback
+        self.identifier = identifier
         self.debug = debug
         self.db = bot.utils.cache(database)
         if not bot.is_ready():
             for key, kwargs in self.db.items():
-                self.run(key, **kwargs)
+                self.run(**kwargs)
 
-    def run(self, key: Union[int, str], **kwargs) -> asyncio.Task:
+    def run(self, **kwargs) -> asyncio.Task:
         if duration := kwargs.get("sleep_for", None):
             if isinstance(duration, int):
                 duration = kwargs["sleep_for"] = datetime.now() + timedelta(seconds=duration)
+        key = kwargs[self.identifier]
         if key not in self.db:
             self.db[key] = deepcopy(kwargs)
         if duration:
