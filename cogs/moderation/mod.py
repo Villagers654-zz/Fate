@@ -1233,6 +1233,10 @@ class Moderation(commands.Cog):
         timer = None
         if " " in role and (timer := extract_time(role.split()[::-1][0])):
             role = role.split()[0]
+            if timer > 60 * 60 * 24 * 7:
+                return await ctx.send(f"You can't set a role timer longer than a week")
+            if timer < 60:
+                return await ctx.send("Role timer's can't be shorter than a minute")
         converter = commands.RoleConverter()
         try:
             result = await converter.convert(ctx, role)
