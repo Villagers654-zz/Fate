@@ -44,19 +44,23 @@ from classes import IgnoredExit
 
 
 class PersistentTasks:
-    def __init__(self, bot, callback: callable, debug: bool = False):
+    """
+    Keeps tasks running even after the bot restarts.
+    This requires the callback to use a sleep_until(date) method instead of sleep(duration)
+    """
+    def __init__(self, bot, database: str, callback: callable, debug: bool = False):
         self.bot = bot
         self.callback = callback
         self.debug = debug
-        self.db = bot.utils.cache("tasks")
+        self.db = bot.utils.cache(database)
         if not bot.is_ready():
             for key, kwargs in self.db.items():
                 self.run(key, **kwargs)
 
-    def run(self, key, **kwargs) -> asyncio.Task:
+    def run(self, key: Union[int, str], **kwargs) -> asyncio.Task:
         return asyncio.create_task(self._run(key, **kwargs))
 
-    async def _run(self, key, **kwargs):
+    async def _run(self, key: Union[int, str], **kwargs):
         self.db[key] = kwargs
         await self.db.flush()
         try:
