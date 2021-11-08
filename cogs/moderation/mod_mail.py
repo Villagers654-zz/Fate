@@ -311,7 +311,7 @@ class ModMail(commands.Cog):
             if message:
                 e.add_field(
                     name="◈ Message",
-                    value=message,
+                    value=message[:1024],
                     inline=False
                 )
             if attachment:
