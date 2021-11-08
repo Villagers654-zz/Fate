@@ -234,7 +234,7 @@ def format_date(date=None, other_date=None, seconds=None) -> str:
         date = datetime.fromtimestamp(date)
     if other_date and isinstance(other_date, float):
         other_date = datetime.fromtimestamp(other_date, tz=date.tzinfo)
-    if seconds:
+    if isinstance(seconds, int):
         date = datetime.now() + timedelta(seconds=seconds)
     date = date.replace(microsecond=0)
 
