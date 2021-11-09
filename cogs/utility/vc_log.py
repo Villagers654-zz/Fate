@@ -8,12 +8,14 @@ A cog to log vc events to a dedicated channel
 :license: Proprietary, see LICENSE for details
 """
 
-from time import time
-import discord
 import asyncio
+from time import time
+
+import discord
 from discord.ext import commands
-from botutils import colors
 from discord.http import DiscordServerError
+
+from botutils import colors
 
 
 class VcLog(commands.Cog):

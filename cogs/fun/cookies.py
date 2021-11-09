@@ -8,10 +8,12 @@ A wholesome cog to give, receive, and eat virtual cookies
 :license: Proprietary, see LICENSE for details
 """
 
-import random
 import os
-from discord.ext import commands
+import random
+
 import discord
+from discord.ext import commands
+
 from botutils import colors
 
 

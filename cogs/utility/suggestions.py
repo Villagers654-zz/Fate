@@ -10,8 +10,9 @@ A cog for users to make suggestions to the server mods
 
 from datetime import datetime, timezone, timedelta
 
-from discord.ext import commands
 import discord
+from discord.ext import commands
+
 from botutils import get_time, emojis
 
 

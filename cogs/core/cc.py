@@ -9,17 +9,16 @@ A module for configuring per-server custom commands
 """
 
 import asyncio
-from typing import *
-from time import time
 import random
+from time import time
+from typing import *
 
-from discord.ext import commands, tasks
 from discord import Message, Embed, AllowedMentions, ui, utils, Interaction
 from discord.errors import NotFound, Forbidden
+from discord.ext import commands, tasks
 
 from botutils import get_prefixes_async, GetChoice, Cooldown
 from fate import Fate
-
 
 m = AllowedMentions.none()
 

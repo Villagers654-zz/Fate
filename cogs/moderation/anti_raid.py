@@ -8,15 +8,17 @@ A cog for preventing mass join and kick/ban raids
 :license: Proprietary, see LICENSE for details
 """
 
-from datetime import datetime, timezone, timedelta
-from contextlib import suppress
-from discord.ext import commands
-from os.path import isfile
-from botutils import colors
-from time import time
-import discord
 import asyncio
 import json
+from contextlib import suppress
+from datetime import datetime, timezone, timedelta
+from os.path import isfile
+from time import time
+
+import discord
+from discord.ext import commands
+
+from botutils import colors
 
 
 class AntiRaid(commands.Cog):

@@ -9,21 +9,20 @@ Contains classes for emulating menus
 """
 
 import asyncio
-import random
-from time import time
 import os
+import random
 from contextlib import suppress
+from time import time
 from typing import *
 
 import discord
+from PIL import Image, ImageFont, ImageDraw
 from discord.errors import NotFound, Forbidden
 from discord.ext.commands import Context
-from PIL import Image, ImageFont, ImageDraw
 
+from classes import IgnoredExit
 from . import colors
 from .tools import get_time
-from classes import IgnoredExit
-
 
 style = discord.ButtonStyle
 

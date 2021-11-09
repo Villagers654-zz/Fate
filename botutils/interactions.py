@@ -15,9 +15,11 @@ Classes:
 """
 
 from typing import *
+
+import discord
 from discord import ui, Interaction, SelectOption, Embed, ButtonStyle
 from discord.ext.commands import Context
-import discord
+
 from . import Cooldown
 
 

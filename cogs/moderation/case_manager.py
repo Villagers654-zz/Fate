@@ -8,13 +8,13 @@ A cog for managing the moderation cases
 :license: Proprietary, see LICENSE for details
 """
 
-from time import time
 import asyncio
-import aiomysql
 from contextlib import suppress
+from time import time
 
-from discord.ext import commands
+import aiomysql
 import discord
+from discord.ext import commands
 
 
 class CaseManager(commands.Cog):

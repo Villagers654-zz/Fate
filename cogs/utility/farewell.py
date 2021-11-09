@@ -8,15 +8,17 @@ A cog that sends when a user leaves the server
 :license: Proprietary, see LICENSE for details
 """
 
-from discord.ext import commands
-from os.path import isfile
-from botutils import colors
-import discord
 import asyncio
-import random
 import json
 import os
+import random
+from os.path import isfile
+
+import discord
+from discord.ext import commands
+
 from botutils import Cooldown
+from botutils import colors
 
 
 def leave_help():

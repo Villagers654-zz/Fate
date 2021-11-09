@@ -8,11 +8,13 @@ A module for granting users role(s) when they join
 :license: Proprietary, see LICENSE for details
 """
 
-from discord.ext import commands
 from typing import *
-from botutils import colors
+
 import discord
 from discord.errors import NotFound, Forbidden
+from discord.ext import commands
+
+from botutils import colors
 
 
 class AutoRole(commands.Cog):

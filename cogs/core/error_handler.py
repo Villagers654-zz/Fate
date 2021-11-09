@@ -10,7 +10,6 @@ A cog for handling exceptions raised within commands
 
 import sys
 import traceback
-from time import time
 from contextlib import suppress
 from typing import *
 
@@ -23,6 +22,7 @@ from pymongo.errors import DuplicateKeyError
 
 from botutils import colors, split, Cooldown
 from classes import checks, exceptions
+
 
 class ErrorHandler(commands.Cog):
     notifs: Dict[int, str] = {}  # Who to notify when an errors fixed

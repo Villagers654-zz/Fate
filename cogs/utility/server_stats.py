@@ -9,8 +9,10 @@ A cog for showing server stats in voice channel names
 """
 
 import asyncio
-from discord.ext import commands
+
 import discord
+from discord.ext import commands
+
 from fate import Fate
 
 

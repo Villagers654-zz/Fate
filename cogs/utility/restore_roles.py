@@ -8,11 +8,13 @@ A cog for restoring a members roles when they rejoin the server
 :license: Proprietary, see LICENSE for details
 """
 
-from os.path import isfile
 import json
 from contextlib import suppress
-from discord.ext import commands
+from os.path import isfile
+
 import discord
+from discord.ext import commands
+
 from botutils import colors
 
 

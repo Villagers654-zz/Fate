@@ -11,11 +11,11 @@ A module for querying and caching data from MongoDB in a simple to use dictionar
 import asyncio
 from contextlib import suppress
 from copy import deepcopy
-from typing import *
 from time import time
+from typing import *
 
-from pymongo.errors import DuplicateKeyError
 from discord.ext import tasks
+from pymongo.errors import DuplicateKeyError
 
 
 class Cache:

@@ -8,14 +8,13 @@ A cog for welcoming users to servers
 :license: Proprietary, see LICENSE for details
 """
 
-import random
 import os
+import random
 
-from discord.ext import commands
 import discord
+from discord.ext import commands
 
 from botutils import colors, Conversation, Cooldown
-
 
 mentions = discord.AllowedMentions(users=True, roles=True, everyone=False)
 

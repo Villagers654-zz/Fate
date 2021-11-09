@@ -11,8 +11,8 @@ Helper class for easily checking if a users a mod, and getting the mute role
 import asyncio
 from contextlib import suppress
 
-from discord.ext import commands
 import discord
+from discord.ext import commands
 
 from . import colors
 

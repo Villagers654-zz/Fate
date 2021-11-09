@@ -9,11 +9,11 @@ AioMySQL invite paginator cog
 """
 
 import base64
-from typing import Optional
 import json
+from typing import Optional
 
-from discord.ext import commands
 import discord
+from discord.ext import commands
 
 from botutils import colors
 

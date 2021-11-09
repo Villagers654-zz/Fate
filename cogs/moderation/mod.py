@@ -8,28 +8,27 @@ A cog for general moderation commands
 :license: Proprietary, see LICENSE for details
 """
 
-from os import path
-import json
-from typing import *
-from datetime import datetime, timedelta
 import asyncio
+import json
 import re
-from time import time as now
 from contextlib import suppress
+from datetime import datetime, timedelta
+from os import path
 from string import printable
+from time import time as now
+from typing import *
 from unicodedata import normalize
 
-from discord.ext import commands
 import discord
 from discord import Member, Role, TextChannel, User, ButtonStyle, ui, Interaction, SelectOption
-from discord.ext.commands import Greedy
 from discord.errors import NotFound, Forbidden, HTTPException
+from discord.ext import commands
+from discord.ext.commands import Greedy
 
 from botutils import colors, get_prefix, get_time, split, CancelButton, format_date, GetConfirmation, extract_time
 from classes import IgnoredExit
 from fate import Fate
 from .case_manager import CaseManager
-
 
 cache = {}  # Keep track of what commands are still being ran
 # This should empty out as quickly as it's filled

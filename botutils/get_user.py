@@ -9,9 +9,11 @@ Helper class for fetching a user via most possible means
 """
 
 import asyncio
-from discord.ext import commands
+
 import discord
 from discord.errors import NotFound, Forbidden, HTTPException
+from discord.ext import commands
+
 import botutils
 from classes import IgnoredExit
 

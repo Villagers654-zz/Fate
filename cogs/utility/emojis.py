@@ -9,18 +9,18 @@ A cog for viewing and managing emojis
 """
 
 import asyncio
-import traceback
-from typing import Union
-from io import BytesIO
 import sys
+import traceback
 from contextlib import suppress
+from io import BytesIO
+from typing import Union
 
 import aiohttp
 import discord
+from PIL import Image
+from discord.errors import HTTPException, Forbidden, InvalidArgument
 from discord.ext import commands
 from discord.ext.commands import Greedy
-from discord.errors import HTTPException, Forbidden, InvalidArgument
-from PIL import Image
 
 from botutils import colors, download, update_msg
 from fate import Fate

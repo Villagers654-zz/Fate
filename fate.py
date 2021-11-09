@@ -8,38 +8,37 @@ Main file intended for starting the bot
 :license: Proprietary, see LICENSE for details
 """
 
-import json
-import traceback
-from time import time
-from datetime import datetime, timezone
-import os
 import asyncio
+import json
 import logging
-from contextlib import suppress
-from base64 import b64decode, b64encode
+import os
 import sys
-
-import motor.motor_asyncio
-from cryptography.fernet import Fernet
+import traceback
+from base64 import b64decode, b64encode
+from contextlib import suppress
+from datetime import datetime, timezone
 from getpass import getpass
-import aiohttp
-from aiohttp import web
+from time import time
 from typing import *
 
-from discord.ext import commands
-import discord
+import aiohttp
 import aiomysql
-import pymysql
-from termcolor import cprint
-from discord.errors import NotFound, Forbidden, HTTPException
-from discord_sentry_reporting import use_sentry
+import discord
+import motor.motor_asyncio
 import pymongo
-from motor.motor_asyncio import AsyncIOMotorClient
+import pymysql
+from aiohttp import web
 from cleverbot import async_ as cleverbot
+from cryptography.fernet import Fernet
+from discord.errors import NotFound, Forbidden, HTTPException
+from discord.ext import commands
+from discord_sentry_reporting import use_sentry
+from motor.motor_asyncio import AsyncIOMotorClient
+from termcolor import cprint
 
-from classes import checks, IgnoredExit
 from botutils import get_prefixes_async, Utils, FileCache, Cooldown
 from botutils.custom_logging import Logging
+from classes import checks, IgnoredExit
 
 
 class Fate(commands.AutoShardedBot):

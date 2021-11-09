@@ -8,17 +8,16 @@ A basic representation of how to use discords OAuth2
 :license: Proprietary, see LICENSE for details
 """
 
-from aiohttp import web, ClientSession
 import asyncio
 from time import time
 from urllib.parse import unquote
 
-from discord.ext import commands
 import discord
 import jwt
+from aiohttp import web, ClientSession
+from discord.ext import commands
 
 from classes.exceptions import aiohttp as errors
-
 
 clients = {}
 API_ENDPOINT = 'https://discord.com/api/v8'

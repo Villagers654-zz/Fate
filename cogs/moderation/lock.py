@@ -8,17 +8,16 @@ A cog for locking the server from people joining
 :license: Proprietary, see LICENSE for details
 """
 
-from datetime import datetime, timezone, timedelta
 import asyncio
 from contextlib import suppress
+from datetime import datetime, timezone, timedelta
 
-from discord.ext import commands
-from discord.errors import HTTPException, NotFound, Forbidden
 import discord
+from discord.errors import HTTPException, NotFound, Forbidden
+from discord.ext import commands
 
 from botutils import extract_time, GetChoice
 from fate import Fate
-
 
 locks = {
     "lockdown": "Prevents everyone from talking",

@@ -8,23 +8,22 @@ A cog for filtering out messages containing filtered words
 :license: Proprietary, see LICENSE for details
 """
 
-import re
-from time import time
 import asyncio
-from contextlib import suppress
-from unicodedata import normalize
-from string import printable
 import os
+import re
+from contextlib import suppress
+from string import printable
+from time import time
 from typing import *
+from unicodedata import normalize
 
-from discord.ext import commands
 import discord
-from discord.errors import NotFound, Forbidden
 from discord import ui, ButtonStyle, Message, Member
+from discord.errors import NotFound, Forbidden
+from discord.ext import commands
 
 from botutils import colors, split, CancelButton, findall, GetChoice, Cooldown
 from cogs.moderation.logger import Log
-
 
 aliases = {
     "a": ["@"],

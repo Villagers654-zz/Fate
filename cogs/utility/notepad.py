@@ -8,15 +8,15 @@ A cog for jutting down notes for later
 :license: Proprietary, see LICENSE for details
 """
 
-from os import path
 import json
 import os
 from io import BytesIO
-import requests
+from os import path
 
-from discord.ext import commands
 import discord
+import requests
 from PIL import Image, ImageDraw, ImageFont
+from discord.ext import commands
 
 
 class NotePad(commands.Cog):

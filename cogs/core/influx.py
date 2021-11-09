@@ -8,14 +8,14 @@ A cog for reporting statistics to influxdb
 :license: Proprietary, see LICENSE for details
 """
 
-from contextlib import suppress
 import asyncio
 import os
+from contextlib import suppress
 
+import psutil
 from discord.ext import commands, tasks
 from influxdb_client import InfluxDBClient, Point
 from influxdb_client.client.write_api import SYNCHRONOUS
-import psutil
 
 
 class Influx(commands.Cog):

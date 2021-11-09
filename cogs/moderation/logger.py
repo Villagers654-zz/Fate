@@ -9,24 +9,24 @@ A cog for logging event related actions to a text channel(s)
 """
 
 import asyncio
+import json
+import traceback
+from contextlib import suppress
+from datetime import datetime, timezone, timedelta
 from io import BytesIO
 from os import path
-import json
-from datetime import datetime, timezone, timedelta
 from time import time
-from aiohttp.client_exceptions import ClientOSError
-from contextlib import suppress
-import traceback
 from typing import *
 
-from discord.ext import commands
 import discord
+from PIL import Image
+from aiohttp.client_exceptions import ClientOSError
 from discord import AuditLogAction as audit, File
 from discord.errors import NotFound, Forbidden
-from PIL import Image
+from discord.ext import commands
 
-from botutils.colors import *
 from botutils import get_prefix, split, get_time
+from botutils.colors import *
 from classes import IgnoredExit
 
 

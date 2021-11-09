@@ -9,21 +9,21 @@ from deleting reactions to alter the outcome of a poll
 :license: Proprietary, see LICENSE for details
 """
 
-from datetime import datetime, timedelta, timezone
-import json
 import asyncio
-from contextlib import suppress
+import json
 import re
+from base64 import b64encode as encode64, b64decode as decode64
+from contextlib import suppress
+from datetime import datetime, timedelta
 
-from discord.ext import commands
 import discord
 from discord import TextChannel
 from discord.errors import NotFound, Forbidden
-from base64 import b64encode as encode64, b64decode as decode64
+from discord.ext import commands
 
-from fate import Fate
 from botutils import colors, extract_time, Conversation, Cooldown
 from classes import IgnoredExit
+from fate import Fate
 
 
 def Timer(argument):

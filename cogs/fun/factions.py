@@ -8,24 +8,24 @@ A cog for a factions game in discord.py
 :license: Proprietary, see LICENSE for details
 """
 
-import json
-from os import path
-import random
 import asyncio
-from time import time
-from contextlib import suppress
+import json
 import os
+import random
+from contextlib import suppress
 from io import BytesIO
+from os import path
+from time import time
 
-from discord.ext import commands
-from discord.ext.commands import CheckFailure
-from discord.errors import Forbidden
 import discord
 from PIL import Image, ImageDraw, ImageFont
+from discord.errors import Forbidden
+from discord.ext import commands
+from discord.ext.commands import CheckFailure
 
+from botutils import get_prefix, get_time, GetChoice
 from botutils.colors import purple, pink
 from botutils.stack import Stack
-from botutils import get_prefix, get_time, GetChoice
 from .fun import tier_damage
 
 

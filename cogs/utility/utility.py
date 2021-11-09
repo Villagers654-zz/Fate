@@ -8,31 +8,30 @@ A cog for general utility commands
 :license: Proprietary, see LICENSE for details
 """
 
-from datetime import datetime, timezone, timedelta
 import asyncio
-import random
-from io import BytesIO
 import json
 import os
-import requests
-import re
-from typing import *
-from time import time
 import platform
+import random
+import re
 from contextlib import suppress
+from datetime import datetime, timezone, timedelta
+from io import BytesIO
+from time import time
+from typing import *
 
 import discord
-from discord import User, Role, TextChannel, Member, ui, ButtonStyle, SelectOption, Message, Embed, Interaction, Guild
-from discord.ext.commands import Context
-from discord.errors import NotFound, HTTPException
+import psutil
+import requests
 from PIL import Image
 from colormap import rgb2hex
-import psutil
+from discord import User, Role, TextChannel, Member, ui, ButtonStyle, SelectOption, Message, Embed, Interaction, Guild
+from discord.errors import NotFound, HTTPException
 from discord.ext import commands, tasks
+from discord.ext.commands import Context
 
 from botutils import colors, bytes2human, get_time, emojis, extract_time, \
-get_prefixes_async, format_date, sanitize, GetChoice, AuthorView, Cooldown
-
+    get_prefixes_async, format_date, sanitize, GetChoice, AuthorView, Cooldown
 
 default = {
     "public": False,

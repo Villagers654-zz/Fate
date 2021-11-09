@@ -8,16 +8,16 @@ A cog for users to interact with cases
 :license: Proprietary, see LICENSE for details
 """
 
-from time import time
 from contextlib import suppress
+from time import time
 
+from discord import User, Guild, Thread, TextChannel, Embed, Message, AllowedMentions
 from discord.errors import *
 from discord.ext import commands
-from discord import User, Guild, Thread, TextChannel, Embed, Message, AllowedMentions
 from discord.ext.commands import Context
 
-from fate import Fate
 from botutils.colors import *
+from fate import Fate
 
 
 class ModMail(commands.Cog):

@@ -10,12 +10,12 @@ A cog containing generally fun commands
 
 import asyncio
 import base64
+import json
 import random
 from contextlib import suppress
 from datetime import datetime, timedelta
 from io import BytesIO
 from random import random as rd
-import json
 from typing import List
 
 import discord
@@ -24,7 +24,6 @@ from discord.ext import commands
 from discord.ext import tasks
 
 from botutils import get_prefix, format_date, colors, sanitize
-
 
 tier_damage = {
     "infinite": 69420,

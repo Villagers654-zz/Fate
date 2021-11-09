@@ -9,15 +9,15 @@ A cog for verifying users into servers via a captcha image
 """
 
 import asyncio
-from typing import Optional
 from contextlib import suppress
+from typing import Optional
 
-from discord.ext import commands
 import discord
 from discord.errors import *
+from discord.ext import commands
 
-from fate import Fate
 from botutils import colors, get_prefix, Conversation
+from fate import Fate
 
 
 class Verification(commands.Cog):

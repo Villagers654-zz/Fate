@@ -11,13 +11,12 @@ A selfroles module using buttons instead of reactions
 from contextlib import suppress
 from typing import *
 
-from discord.ext import commands
-from discord import ui, Interaction
 import discord
+from discord import ui, Interaction
+from discord.ext import commands
 
 from botutils import Cooldown, GetChoice, emojis, s
 from fate import Fate
-
 
 allowed_mentions = discord.AllowedMentions(everyone=False, roles=True, users=False)
 

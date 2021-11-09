@@ -9,8 +9,10 @@ A cog for searching the audit log for information
 """
 
 import asyncio
-from discord.ext import commands
+
 import discord
+from discord.ext import commands
+
 from botutils import colors, get_prefix
 
 

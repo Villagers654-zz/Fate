@@ -8,8 +8,9 @@ A cog for showing the number of servers using each module
 :license: Proprietary, see LICENSE for details
 """
 
-from discord.ext import commands
 import discord
+from discord.ext import commands
+
 from botutils import colors
 
 
