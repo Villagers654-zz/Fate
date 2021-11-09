@@ -14,7 +14,7 @@ import os
 from discord.ext import commands
 import discord
 
-from botutils import colors, Conversation
+from botutils import colors, Conversation, Cooldown
 
 
 mentions = discord.AllowedMentions(users=True, roles=True, everyone=False)
@@ -78,6 +78,7 @@ class Welcome(commands.Cog):
         self.bot = bot
         self.config = bot.utils.cache("welcome")
         self.welcome_usage = welcome_help()
+        self.cd = Cooldown(1, 25)
 
     def is_enabled(self, guild_id):
         return guild_id in self.config
@@ -375,6 +376,8 @@ class Welcome(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member, just_verified=False):
+        if self.cd.check(member.id):
+            return
         if isinstance(member.guild, discord.Guild):
             guild = member.guild
             guild_id = guild.id

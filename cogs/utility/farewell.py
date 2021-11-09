@@ -16,6 +16,7 @@ import asyncio
 import random
 import json
 import os
+from botutils import Cooldown
 
 
 def leave_help():
@@ -81,6 +82,7 @@ class Leave(commands.Cog):
                     self.useimages = dat["useimages"]
                     self.images = dat["images"]
                     self.format = dat["format"]
+        self.cd = Cooldown(1, 25)
 
     async def save_data(self):
         data = {
@@ -399,6 +401,8 @@ class Leave(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_remove(self, m: discord.Member):
+        if self.cd.check(m.id):
+            return
         if isinstance(m.guild, discord.Guild):
             guild_id = str(m.guild.id)
             if guild_id in self.toggle:
