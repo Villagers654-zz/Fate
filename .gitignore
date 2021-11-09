@@ -1,6 +1,6 @@
 .idea/
 .temp/
-__pycache__/
+*/__pycache__
 /static/
 /static/*
 /Static/
