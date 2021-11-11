@@ -8,14 +8,12 @@ A cog to log vc events to a dedicated channel
 :license: Proprietary, see LICENSE for details
 """
 
-import asyncio
 from time import time
-
 import discord
+import asyncio
 from discord.ext import commands
-from discord.http import DiscordServerError
-
 from botutils import colors
+from discord.http import DiscordServerError
 
 
 class VcLog(commands.Cog):
@@ -93,9 +91,9 @@ class VcLog(commands.Cog):
                     if not msg.channel.permissions_for(msg.guild.me).manage_messages:
                         return self.config.remove(guild_id)
                     ignored = (
-                        discord.errors.NotFound,
-                        discord.errors.Forbidden,
-                        discord.errors.HTTPException
+                        discord.NotFound,
+                        discord.Forbidden,
+                        discord.HTTPException
                     )
                     try:
                         await msg.delete()
@@ -112,12 +110,12 @@ class VcLog(commands.Cog):
             channel = self.bot.get_channel(self.config[guild_id]["channel"])
             if not channel:
                 ignored = (
-                    discord.errors.HTTPException,
+                    discord.HTTPException,
                     DiscordServerError
                 )
                 handled = (
-                    discord.errors.NotFound,
-                    discord.errors.Forbidden
+                    discord.NotFound,
+                    discord.Forbidden
                 )
                 try:
                     channel = await self.bot.fetch_channel(self.config[guild_id]["channel"])

@@ -10,8 +10,8 @@ Command for displaying whether or not certain modules are enabled
 
 import asyncio
 
-import discord
 from discord.ext import commands
+import discord
 
 from botutils import colors, emojis
 from botutils import get_prefixes_async

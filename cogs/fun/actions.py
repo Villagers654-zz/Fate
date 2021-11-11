@@ -8,10 +8,9 @@ A cog for rp actions
 :license: Proprietary, see LICENSE for details
 """
 
-import random
-
-import discord
 from discord.ext import commands
+import discord
+import random
 
 
 class Actions(commands.Cog):

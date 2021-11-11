@@ -8,24 +8,24 @@ A cog for a factions game in discord.py
 :license: Proprietary, see LICENSE for details
 """
 
-import asyncio
 import json
-import os
-import random
-from contextlib import suppress
-from io import BytesIO
 from os import path
+import random
+import asyncio
 from time import time
+from contextlib import suppress
+import os
+from io import BytesIO
 
-import discord
-from PIL import Image, ImageDraw, ImageFont
-from discord.errors import Forbidden
 from discord.ext import commands
 from discord.ext.commands import CheckFailure
+from discord import Forbidden
+import discord
+from PIL import Image, ImageDraw, ImageFont
 
-from botutils import get_prefix, get_time, GetChoice
 from botutils.colors import purple, pink
 from botutils.stack import Stack
+from botutils import get_prefix, get_time, GetChoice
 from .fun import tier_damage
 
 
@@ -730,7 +730,7 @@ class Factions(commands.Cog):
         e.set_author(name="Ensuring the image works", icon_url=url)
         try:
             await ctx.send(embed=e, delete_after=5)
-        except discord.errors.HTTPException:
+        except discord.HTTPException:
             return await ctx.send("Discord won't let me set that as the icon, sorry")
         self.factions[guild_id][faction]["icon"] = url
         await ctx.send("Set your factions icon")
@@ -768,7 +768,7 @@ class Factions(commands.Cog):
         e.set_author(name="Ensuring the image works", icon_url=url)
         try:
             await ctx.send(embed=e, delete_after=5)
-        except discord.errors.HTTPException:
+        except discord.HTTPException:
             return await ctx.send("Discord won't let me set that as the banner, sorry")
         self.factions[guild_id][faction]["banner"] = url
         await ctx.send("Set your factions banner")

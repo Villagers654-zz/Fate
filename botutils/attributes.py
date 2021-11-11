@@ -11,8 +11,8 @@ Helper class for easily checking if a users a mod, and getting the mute role
 import asyncio
 from contextlib import suppress
 
-import discord
 from discord.ext import commands
+import discord
 
 from . import colors
 
@@ -98,7 +98,7 @@ class Attributes:
             color = discord.Color(colors.black)
             try:
                 mute_role = await guild.create_role(name="Muted", color=color)
-            except discord.errors.HTTPException:
+            except discord.HTTPException:
                 return None
 
             # Set the overwrites for the mute role
@@ -107,7 +107,7 @@ class Attributes:
                 await asyncio.sleep(0)
                 if mute_role in channel.overwrites:
                     continue
-                with suppress(discord.errors.Forbidden):
+                with suppress(discord.Forbidden):
                     await channel.set_permissions(mute_role, send_messages=False)
                 if i + 1 >= len(guild.text_channels):  # Prevent sleeping after the last channel in the list
                     await asyncio.sleep(0.5)
@@ -117,7 +117,7 @@ class Attributes:
                 await asyncio.sleep(0)
                 if mute_role in channel.overwrites:
                     continue
-                with suppress(discord.errors.Forbidden):
+                with suppress(discord.Forbidden):
                     await channel.set_permissions(mute_role, send_messages=False)
                 if i + 1 >= len(guild.text_channels):  # Prevent sleeping after the last channel in the list
                     await asyncio.sleep(0.5)
@@ -127,7 +127,7 @@ class Attributes:
                 await asyncio.sleep(0)
                 if mute_role in channel.overwrites:
                     continue
-                with suppress(discord.errors.Forbidden):
+                with suppress(discord.Forbidden):
                     await channel.set_permissions(mute_role, speak=False)
                 if i + 1 >= len(guild.voice_channels):  # Prevent sleeping after the last
                     await asyncio.sleep(0.5)

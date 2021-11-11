@@ -8,8 +8,8 @@ A cog for adding random bot responses to messages in a server
 :license: Proprietary, see LICENSE for details
 """
 
-import asyncio
 import random
+import asyncio
 from time import time
 
 import discord

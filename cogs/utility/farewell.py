@@ -8,17 +8,15 @@ A cog that sends when a user leaves the server
 :license: Proprietary, see LICENSE for details
 """
 
+from discord.ext import commands
+from os.path import isfile
+from botutils import colors
+import discord
 import asyncio
+import random
 import json
 import os
-import random
-from os.path import isfile
-
-import discord
-from discord.ext import commands
-
 from botutils import Cooldown
-from botutils import colors
 
 
 def leave_help():
@@ -289,7 +287,7 @@ class Leave(commands.Cog):
                     e.set_image(url=random.choice(self.images[guild_id]))
                     try:
                         await channel.send(msg, embed=e)
-                    except discord.errors.Forbidden:
+                    except discord.Forbidden:
                         del self.useimages[guild_id]
                         del self.images[guild_id]
                         await self.save_data()
@@ -301,13 +299,13 @@ class Leave(commands.Cog):
                         file=discord.File(path, filename=os.path.basename(path)),
                         embed=e,
                     )
-                except discord.errors.Forbidden:
+                except discord.Forbidden:
                     del self.useimages[guild_id]
                     await self.save_data()
         else:
             try:
                 await channel.send(msg)
-            except discord.errors.Forbidden:
+            except discord.Forbidden:
                 del self.toggle[guild_id]
                 await self.save_data()
 
@@ -434,7 +432,7 @@ class Leave(commands.Cog):
                                 embed=e,
                                 allowed_mentions=self.bot.allow_user_mentions,
                             )
-                        except discord.errors.Forbidden:
+                        except discord.Forbidden:
                             del self.useimages[guild_id]
                             del self.images[guild_id]
                             await self.save_data()
@@ -451,7 +449,7 @@ class Leave(commands.Cog):
                                 embed=e,
                                 allowed_mentions=self.bot.allow_user_mentions,
                             )
-                        except discord.errors.Forbidden:
+                        except discord.Forbidden:
                             del self.useimages[guild_id]
                             await self.save_data()
                         else:
@@ -461,7 +459,7 @@ class Leave(commands.Cog):
                         await channel.send(
                             msg, allowed_mentions=self.bot.allow_user_mentions
                         )
-                    except discord.errors.Forbidden:
+                    except discord.Forbidden:
                         del self.toggle[guild_id]
                         await self.save_data()
                     else:

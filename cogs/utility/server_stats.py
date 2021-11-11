@@ -9,10 +9,8 @@ A cog for showing server stats in voice channel names
 """
 
 import asyncio
-
-import discord
 from discord.ext import commands
-
+import discord
 from fate import Fate
 
 
@@ -129,7 +127,7 @@ class ServerStatistics(commands.Cog):
                 if fmt != channel.name:
                     try:
                         await channel.edit(name=fmt)  # type: ignore
-                    except discord.errors.Forbidden:
+                    except discord.Forbidden:
                         return await self.config.remove(guild.id)
             else:
                 await self.config.remove_sub(guild.id, ctype)

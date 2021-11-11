@@ -11,11 +11,11 @@ A cog for limiting channels to specific things like images or youtube links
 import asyncio
 
 import discord
-from discord.errors import HTTPException, NotFound, Forbidden
 from discord.ext import commands
+from discord import HTTPException, NotFound, Forbidden
 
-from botutils import colors
 from fate import Fate
+from botutils import colors
 
 
 class Limiter(commands.Cog):

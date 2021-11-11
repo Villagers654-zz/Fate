@@ -19,8 +19,8 @@ Methods:
 import asyncio
 from contextlib import suppress
 
-from discord import User, Member, Message
 from discord.ext.commands import Context
+from discord import User, Member, Message
 
 from classes import IgnoredExit
 

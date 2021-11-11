@@ -8,17 +8,15 @@ A cog for preventing mass join and kick/ban raids
 :license: Proprietary, see LICENSE for details
 """
 
+from datetime import datetime, timezone, timedelta
+from contextlib import suppress
+from discord.ext import commands
+from os.path import isfile
+from botutils import colors
+from time import time
+import discord
 import asyncio
 import json
-from contextlib import suppress
-from datetime import datetime, timezone, timedelta
-from os.path import isfile
-from time import time
-
-import discord
-from discord.ext import commands
-
-from botutils import colors
 
 
 class AntiRaid(commands.Cog):
@@ -133,7 +131,7 @@ class AntiRaid(commands.Cog):
                     await asyncio.sleep(600)
                     try:
                         await m.guild.unban(m, reason="Server locked due to raid")
-                    except (discord.errors.Forbidden, discord.errors.NotFound):
+                    except (discord.Forbidden, discord.NotFound):
                         pass
                 return
             if m.bot:
@@ -166,7 +164,7 @@ class AntiRaid(commands.Cog):
         guild_id = str(m.guild.id)
         if not m.guild.me.guild_permissions.view_audit_log:
             return
-        with suppress(discord.errors.Forbidden):
+        with suppress(discord.Forbidden):
             async for entry in m.guild.audit_logs(limit=1):
                 if entry.created_at > datetime.now(tz=timezone.utc) - timedelta(seconds=3):
                     actions = [discord.AuditLogAction.kick, discord.AuditLogAction.ban]

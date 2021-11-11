@@ -8,8 +8,8 @@ Contains the functions relative to parsing the bot prefix
 :license: Proprietary, see LICENSE for details
 """
 
-import discord
 from discord.ext import commands
+import discord
 
 
 def get_prefix(_ctx):

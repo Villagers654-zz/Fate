@@ -8,30 +8,31 @@ A cog for general utility commands
 :license: Proprietary, see LICENSE for details
 """
 
+from datetime import datetime, timezone, timedelta
 import asyncio
+import random
+from io import BytesIO
 import json
 import os
-import platform
-import random
+import requests
 import re
-from contextlib import suppress
-from datetime import datetime, timezone, timedelta
-from io import BytesIO
-from time import time
 from typing import *
+from time import time
+import platform
+from contextlib import suppress
 
 import discord
-import psutil
-import requests
+from discord import User, Role, TextChannel, Member, ui, ButtonStyle, SelectOption, Message, Embed, Interaction, Guild
+from discord.ext.commands import Context
+from discord import NotFound, HTTPException
 from PIL import Image
 from colormap import rgb2hex
-from discord import User, Role, TextChannel, Member, ui, ButtonStyle, SelectOption, Message, Embed, Interaction, Guild
-from discord.errors import NotFound, HTTPException
+import psutil
 from discord.ext import commands, tasks
-from discord.ext.commands import Context
 
 from botutils import colors, bytes2human, get_time, emojis, extract_time, \
-    get_prefixes_async, format_date, sanitize, GetChoice, AuthorView, Cooldown
+get_prefixes_async, format_date, sanitize, GetChoice, AuthorView, Cooldown
+
 
 default = {
     "public": False,
@@ -1440,7 +1441,7 @@ class InfoView(AuthorView):
                 "channel_name": invite.channel.name,
                 "channel_id": invite.channel.id
             }
-        except (discord.errors.NotFound, discord.errors.Forbidden):
+        except (discord.NotFound, discord.Forbidden):
             async with self.bot.utils.cursor() as cur:
                 await cur.execute(
                     f"select guild_id, guild_name, channel_id, channel_name "

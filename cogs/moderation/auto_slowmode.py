@@ -8,13 +8,14 @@ A module for automatically adjusting slowmode based on the chats activity
 :license: Proprietary, see LICENSE for details
 """
 
+from typing import *
+from time import time
 import asyncio
 from contextlib import suppress
-from time import time
-from typing import *
 
-import discord
 from discord.ext import commands
+import discord
+
 
 # The threshold, and the slowmode delay
 rates: List[Tuple[int, int]] = [

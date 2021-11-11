@@ -17,13 +17,12 @@ Functions:
 """
 
 import asyncio
+from copy import deepcopy
+from contextlib import suppress
 import json
 import os
-from contextlib import suppress
-from copy import deepcopy
-
-import aiofiles
 import aiohttp
+import aiofiles
 import pymongo.errors
 import pymysql
 from discord.ext import tasks

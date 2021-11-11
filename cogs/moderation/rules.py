@@ -8,8 +8,8 @@ A module for adding in a rules command to display the servers rules quickly
 :license: Proprietary, see LICENSE for details
 """
 
-import discord
 from discord.ext import commands
+import discord
 
 
 class Mod(commands.Cog):

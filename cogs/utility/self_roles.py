@@ -11,12 +11,13 @@ A selfroles module using buttons instead of reactions
 from contextlib import suppress
 from typing import *
 
-import discord
-from discord import ui, Interaction
 from discord.ext import commands
+from discord import ui, Interaction
+import discord
 
 from botutils import Cooldown, GetChoice, emojis, s
 from fate import Fate
+
 
 allowed_mentions = discord.AllowedMentions(everyone=False, roles=True, users=False)
 
@@ -133,10 +134,10 @@ class SelfRoles(commands.Cog):
         for message_id in list(self.config[ctx.guild.id].keys())[:15]:
             try:
                 await self.refresh_menu(ctx.guild.id, message_id)
-            except discord.errors.NotFound:
+            except discord.NotFound:
                 await self.config.remove_sub(ctx.guild.id, message_id)
                 await ctx.send(f"Removed no longer existing menu '{message_id}'")
-            except discord.errors.HTTPException:
+            except discord.HTTPException:
                 await ctx.send(f"Removing {self.config[ctx.guild.id][message_id]['text']}")
                 await self.config.remove_sub(ctx.guild.id, message_id)
         await ctx.send("Success 👍")
@@ -432,7 +433,7 @@ class SelfRoles(commands.Cog):
             return await ctx.send("There arent any active role menus in this server")
         try:
             await ctx.message.add_reaction(new_emoji)
-        except discord.errors.HTTPException:
+        except discord.HTTPException:
             return await ctx.send("Invalid emoji")
         await ctx.message.clear_reactions()
         message_id = await self.get_menu_id(ctx)
@@ -702,7 +703,7 @@ class RoleView(ui.View):
 
     async def surface_callback(self, interaction) -> None:
         """ Handle cooldowns and suppress exceptions in the actual callback function """
-        with suppress(discord.errors.NotFound):
+        with suppress(discord.NotFound):
             check1 = self.global_cooldown.check(interaction.user.id)
             check2 = self.cooldown.check(interaction.user.id)
             if check1 or check2:

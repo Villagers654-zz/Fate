@@ -8,13 +8,11 @@ A module for granting users role(s) when they join
 :license: Proprietary, see LICENSE for details
 """
 
-from typing import *
-
-import discord
-from discord.errors import NotFound, Forbidden
 from discord.ext import commands
-
+from typing import *
 from botutils import colors
+import discord
+from discord import NotFound, Forbidden
 
 
 class AutoRole(commands.Cog):
@@ -140,17 +138,17 @@ class AutoRole(commands.Cog):
                             f"**[AutoRole - {bot.guild.name}] can't add {role.name} to user. "
                             f"Its position is higher than mine. You'll need to re-add it"
                         )
-                    except discord.errors.Forbidden:
+                    except discord.Forbidden:
                         pass
                     self.config[guild_id]["roles"].remove(role_id)
                     await self.config.flush()
                 else:
                     try:
                         await member.add_roles(role)
-                    except discord.errors.Forbidden:
+                    except discord.Forbidden:
                         self.config[guild_id]["roles"].remove(role_id)
                         await self.config.flush()
-                    except (discord.errors.NotFound, discord.errors.HTTPException):
+                    except (discord.NotFound, discord.HTTPException):
                         pass
 
     @commands.Cog.listener()

@@ -9,9 +9,8 @@ A cog for adding the functionality of `.enable module` instead of `.module enabl
 """
 
 from discord.ext import commands
-
-from botutils import get_prefix
 from fate import Fate
+from botutils import get_prefix
 
 
 class Toggles(commands.Cog):

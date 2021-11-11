@@ -13,7 +13,7 @@ Classes:
 """
 
 from discord import *
-from discord.errors import NotFound
+from discord import NotFound
 
 
 class ChoiceButtons(ui.View):

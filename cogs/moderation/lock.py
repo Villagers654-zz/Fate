@@ -8,16 +8,17 @@ A cog for locking the server from people joining
 :license: Proprietary, see LICENSE for details
 """
 
+from datetime import datetime, timezone, timedelta
 import asyncio
 from contextlib import suppress
-from datetime import datetime, timezone, timedelta
 
-import discord
-from discord.errors import HTTPException, NotFound, Forbidden
 from discord.ext import commands
+from discord import HTTPException, NotFound, Forbidden
+import discord
 
 from botutils import extract_time, GetChoice
 from fate import Fate
+
 
 locks = {
     "lockdown": "Prevents everyone from talking",
@@ -164,7 +165,7 @@ class Lock(commands.Cog):
                 try:
                     self.lock[guild_id][lock][str(channel.id)] = original_perms
                     await channel.edit(overwrites=locked_perms)
-                except discord.errors.Forbidden:
+                except discord.Forbidden:
                     pass
 
         # Check if no channels were edited
@@ -203,7 +204,7 @@ class Lock(commands.Cog):
                 try:
                     await channel.edit(overwrites=reconstructed)
                     total_unlocked += 1
-                except discord.errors.Forbidden:
+                except discord.Forbidden:
                     pass
 
             self.lock.remove_sub(guild_id, "lockdown")

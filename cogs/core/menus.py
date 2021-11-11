@@ -19,16 +19,15 @@ Vars:
 :license: Proprietary, see LICENSE for details
 """
 
+from typing import *
 import asyncio
 import inspect
-from typing import *
-
-from discord import ui, Interaction, Embed, Message, SelectOption
 from discord.ext import commands
 from discord.ext.commands import Command, Context
-
-from botutils import AuthorView, colors, Cooldown
+from discord import ui, Interaction, Embed, Message, SelectOption
 from fate import Fate
+from botutils import AuthorView, colors, Cooldown
+
 
 command_attrs = (commands.core.Command, commands.core.Group)
 

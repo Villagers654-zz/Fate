@@ -8,37 +8,38 @@ Main file intended for starting the bot
 :license: Proprietary, see LICENSE for details
 """
 
-import asyncio
 import json
-import logging
-import os
-import sys
 import traceback
-from base64 import b64decode, b64encode
-from contextlib import suppress
-from datetime import datetime, timezone
-from getpass import getpass
 from time import time
+from datetime import datetime, timezone
+import os
+import asyncio
+import logging
+from contextlib import suppress
+from base64 import b64decode, b64encode
+import sys
+
+import motor.motor_asyncio
+from cryptography.fernet import Fernet
+from getpass import getpass
+import aiohttp
+from aiohttp import web
 from typing import *
 
-import aiohttp
-import aiomysql
-import discord
-import motor.motor_asyncio
-import pymongo
-import pymysql
-from aiohttp import web
-from cleverbot import async_ as cleverbot
-from cryptography.fernet import Fernet
-from discord.errors import NotFound, Forbidden, HTTPException
 from discord.ext import commands
-from discord_sentry_reporting import use_sentry
-from motor.motor_asyncio import AsyncIOMotorClient
+import discord
+import aiomysql
+import pymysql
 from termcolor import cprint
+from discord import NotFound, Forbidden, HTTPException
+from discord_sentry_reporting import use_sentry
+import pymongo
+from motor.motor_asyncio import AsyncIOMotorClient
+from cleverbot import async_ as cleverbot
 
+from classes import checks, IgnoredExit
 from botutils import get_prefixes_async, Utils, FileCache, Cooldown
 from botutils.custom_logging import Logging
-from classes import checks, IgnoredExit
 
 
 class Fate(commands.AutoShardedBot):
@@ -267,10 +268,10 @@ class Fate(commands.AutoShardedBot):
             try:
                 self.load_extension(f"cogs.{cog}")
                 self.log.info(f"Loaded {cog}", end="\r")
-            except commands.ExtensionNotFound:
+            except discord.ExtensionNotFound:
                 self.log.critical(f"Couldn't find {cog}")
                 self.log.info("Continuing..")
-            except (commands.ExtensionError, commands.ExtensionFailed, Exception):
+            except (discord.ExtensionError, discord.ExtensionFailed, Exception):
                 self.log.critical(f"Couldn't load {cog}``````{traceback.format_exc()}")
                 self.log.info("Continuing..")
         self.paginate()
@@ -281,7 +282,7 @@ class Fate(commands.AutoShardedBot):
                 self.unload_extension(f"cogs.{cog}")
                 if log:
                     self.log.info(f"Unloaded {cog}")
-            except discord.errors.ExtensionNotLoaded:
+            except discord.ExtensionNotLoaded:
                 if log:
                     self.log.info(f"Failed to unload {cog}")
 
@@ -290,11 +291,11 @@ class Fate(commands.AutoShardedBot):
             try:
                 self.reload_extension(f"cogs.{cog}")
                 self.log.info(f"Reloaded {cog}")
-            except discord.errors.ExtensionNotFound:
+            except discord.ExtensionNotFound:
                 self.log.info(f"Reloaded {cog}")
-            except discord.errors.ExtensionNotLoaded:
+            except discord.ExtensionNotLoaded:
                 self.log.info(f"{cog} isn't loaded")
-            except discord.errors.ExtensionError:
+            except discord.ExtensionError:
                 self.log.info(
                     f"Ignoring exception in Cog: {cog}``````{traceback.format_exc()}"
                 )
@@ -404,8 +405,8 @@ ignored = (
     aiohttp.ClientOSError,
     aiohttp.ClientConnectorError,
     asyncio.exceptions.TimeoutError,
-    discord.errors.DiscordServerError,
-    discord.errors.NotFound
+    discord.DiscordServerError,
+    discord.NotFound
 )
 
 # Initialize the bot
@@ -415,6 +416,25 @@ bot.remove_command("help")  # Default help command
 bot.add_check(checks.command_is_enabled)
 bot.add_check(checks.blocked)
 bot.add_check(checks.restricted)
+
+
+@bot.slash_command(name="invite")
+async def invite(ctx):
+    embed = discord.Embed(color=0x80B0FF)
+    embed.set_author(
+        name=f"| Links | 📚",
+        icon_url="https://images-ext-1.discordapp.net/external/kgeJxDOsmMoy2gdBr44IFpg5hpYzqxTkOUqwjYZbPtI/%3Fsize%3D1024/https/cdn.discordapp.com/avatars/506735111543193601/689cf49cf2435163ca420996bcb723a5.webp",
+    )
+    embed.set_thumbnail(
+        url="https://cdn.discordapp.com/attachments/501871950260469790/513636736492896271/mail-open-solid.png")
+    embed.description = (
+        f"[Invite]({bot.invite_url}) 📥\n"
+        f"[Support](https://discord.gg/wtjuznh/) 📧\n"
+        f"[Discord](https://discord.gg/wtjuznh/) <:discord:513634338487795732>\n"
+        f"[Donate](https://ko-fi.com/fatebot) ☕\n"
+        f"[Vote](https://vote.fatebot.xyz/) ⬆"
+    )
+    await ctx.respond(embed=embed, ephemeral=True)
 
 
 @bot.event
@@ -525,7 +545,7 @@ if __name__ == "__main__":
     bot.loop.set_exception_handler(event_exception_handler)
     try:
         bot.run()
-    except discord.errors.LoginFailure:
+    except discord.LoginFailure:
         print("Invalid Token")
     except asyncio.exceptions.CancelledError:
         pass

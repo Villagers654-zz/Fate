@@ -33,17 +33,15 @@ Misc variables:
 :license: Proprietary, see LICENSE for details
 """
 
-import asyncio
 import re
-from copy import deepcopy
+from typing import *
+import asyncio
 from datetime import datetime, timedelta
 from time import time
-from typing import *
-
 import discord
-
-from classes import IgnoredExit
+from copy import deepcopy
 from .emojis import arrow
+from classes import IgnoredExit
 
 
 class PersistentTasks:

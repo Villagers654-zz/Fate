@@ -8,14 +8,12 @@ A cog for locking a channel from users sending messages
 :license: Proprietary, see LICENSE for details
 """
 
+from discord.ext import commands
+from os.path import isfile
+from botutils import colors
+import discord
 import asyncio
 import json
-from os.path import isfile
-
-import discord
-from discord.ext import commands
-
-from botutils import colors
 
 
 class ChatLock(commands.Cog):

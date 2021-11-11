@@ -9,18 +9,18 @@ A cog for viewing and managing emojis
 """
 
 import asyncio
-import sys
 import traceback
-from contextlib import suppress
-from io import BytesIO
 from typing import Union
+from io import BytesIO
+import sys
+from contextlib import suppress
 
 import aiohttp
 import discord
-from PIL import Image
-from discord.errors import HTTPException, Forbidden, InvalidArgument
 from discord.ext import commands
 from discord.ext.commands import Greedy
+from discord import HTTPException, Forbidden, InvalidArgument
+from PIL import Image
 
 from botutils import colors, download, update_msg
 from fate import Fate
@@ -393,7 +393,7 @@ class Emojis(commands.Cog):
             name = attachment.filename[: attachment.filename.find(".")]
             try:
                 file = await attachment.read()  # Raw bytes file
-            except discord.errors.HTTPException:
+            except discord.HTTPException:
                 await update_msg(
                     ctx.msg, f"{name} - failed to read attachment"
                 )

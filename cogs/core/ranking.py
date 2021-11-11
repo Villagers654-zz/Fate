@@ -8,19 +8,20 @@ A customizable xp ranking cog
 :license: Proprietary, see LICENSE for details
 """
 
-import asyncio
-from contextlib import suppress
-from datetime import datetime, timezone, timedelta
-from io import BytesIO
-from random import *
+import json
 from time import time, monotonic
-
+from random import *
+import asyncio
+from io import BytesIO
+from datetime import datetime, timezone, timedelta
 import aiohttp
-import discord
-from PIL import Image, ImageFont, ImageDraw, ImageSequence, UnidentifiedImageError
-from discord.errors import NotFound, Forbidden
-from discord.ext import commands, tasks
 from pymysql.err import DataError, InternalError
+from contextlib import suppress
+
+from discord.ext import commands, tasks
+import discord
+from discord import NotFound, Forbidden
+from PIL import Image, ImageFont, ImageDraw, ImageSequence, UnidentifiedImageError
 
 from botutils import colors, get_prefix, url_from, Menu
 from botutils.pillow import add_corners

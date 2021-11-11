@@ -9,18 +9,18 @@ Cog for managing the core bot tasks like it's status, and backups
 """
 
 import asyncio
-import os
+import websockets
 import random
-import subprocess
-import time
 import traceback
+import os
+import time
 from datetime import datetime
 from zipfile import ZipFile
+import subprocess
 
 import discord
-import psutil
-import websockets
 from discord.ext import commands, tasks
+import psutil
 
 from botutils import split, Cooldown
 
@@ -162,8 +162,8 @@ class Tasks(commands.Cog):
                         ),
                     )
                 except (
-                    discord.errors.Forbidden,
-                    discord.errors.HTTPException,
+                    discord.Forbidden,
+                    discord.HTTPException,
                     websockets.exceptions.ConnectionClosedError,
                 ):
                     self.bot.log(

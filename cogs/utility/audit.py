@@ -9,10 +9,8 @@ A cog for searching the audit log for information
 """
 
 import asyncio
-
-import discord
 from discord.ext import commands
-
+import discord
 from botutils import colors, get_prefix
 
 
@@ -71,7 +69,7 @@ class Audit(commands.Cog):
                 converter = commands.UserConverter()
                 try:
                     user = await converter.convert(ctx, args[0])
-                except discord.errors.NotFound:
+                except discord.NotFound:
                     return await ctx.send("User not found")
             elif args[0] in self.perms:
                 log_type = getattr(_audit, args[0])

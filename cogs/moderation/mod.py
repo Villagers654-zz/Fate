@@ -8,27 +8,28 @@ A cog for general moderation commands
 :license: Proprietary, see LICENSE for details
 """
 
-import asyncio
-import json
-import re
-from contextlib import suppress
-from datetime import datetime, timedelta
 from os import path
-from string import printable
-from time import time as now
+import json
 from typing import *
+from datetime import datetime, timedelta
+import asyncio
+import re
+from time import time as now
+from contextlib import suppress
+from string import printable
 from unicodedata import normalize
 
+from discord.ext import commands
 import discord
 from discord import Member, Role, TextChannel, User, ButtonStyle, ui, Interaction, SelectOption
-from discord.errors import NotFound, Forbidden, HTTPException
-from discord.ext import commands
 from discord.ext.commands import Greedy
+from discord import NotFound, Forbidden, HTTPException
 
 from botutils import colors, get_prefix, get_time, split, CancelButton, format_date, GetConfirmation, extract_time
 from classes import IgnoredExit
 from fate import Fate
 from .case_manager import CaseManager
+
 
 cache = {}  # Keep track of what commands are still being ran
 # This should empty out as quickly as it's filled
@@ -402,14 +403,14 @@ class Moderation(commands.Cog):
             async def purge_task(coro):
                 try:
                     messages = await coro
-                except discord.errors.HTTPException:  # Msgs too old
+                except discord.HTTPException:  # Msgs too old
                     try:
                         messages = []
                         async for msg in ctx.channel.history(before=ctx.message, limit=amount_to_purge):
                             with suppress(Forbidden, NotFound, asyncio.TimeoutError):
                                 await msg.delete()
                                 messages.append(msg)
-                    except discord.errors.NotFound:
+                    except discord.NotFound:
                         raise IgnoredExit
                 return messages
 
@@ -473,7 +474,7 @@ class Moderation(commands.Cog):
                     if role not in user.roles:
                         try:
                             await user.add_roles(role)
-                        except discord.errors.Forbidden:
+                        except discord.Forbidden:
                             pass
             mute_role = guild.get_role(self.config[guild_id]["mute_role"])
             if not mute_role:
@@ -487,7 +488,7 @@ class Moderation(commands.Cog):
                     try:
                         await user.remove_roles(mute_role)
                         await channel.send(f"**Unmuted:** {user.name}")
-                    except discord.errors.Forbidden:
+                    except discord.Forbidden:
                         pass
             if user_id in self.config[guild_id]["mute_timers"]:
                 del self.config[guild_id]["mute_timers"][user_id]
@@ -533,7 +534,7 @@ class Moderation(commands.Cog):
 
                     # Set the overwrites for the mute role
                     for i, channel in enumerate(ctx.guild.text_channels):
-                        with suppress(discord.errors.Forbidden):
+                        with suppress(discord.Forbidden):
                             await channel.set_permissions(
                                 mute_role, send_messages=False
                             )
@@ -542,7 +543,7 @@ class Moderation(commands.Cog):
                         ):  # Prevent sleeping after the last
                             await asyncio.sleep(0.5)
                     for i, channel in enumerate(ctx.guild.voice_channels):
-                        with suppress(discord.errors.Forbidden):
+                        with suppress(discord.Forbidden):
                             await channel.set_permissions(mute_role, speak=False)
                         if i + 1 >= len(
                             ctx.guild.voice_channels
@@ -563,7 +564,7 @@ class Moderation(commands.Cog):
                 ):
                     continue
                 if mute_role not in channel.overwrites:
-                    with suppress(discord.errors.Forbidden):
+                    with suppress(discord.Forbidden):
                         await channel.set_permissions(mute_role, send_messages=False)
                     if i + 1 >= len(
                         ctx.guild.text_channels
@@ -576,7 +577,7 @@ class Moderation(commands.Cog):
                 ):
                     continue
                 if mute_role not in channel.overwrites:
-                    with suppress(discord.errors.Forbidden):
+                    with suppress(discord.Forbidden):
                         await channel.set_permissions(mute_role, speak=False)
                     if i + 1 >= len(
                         ctx.guild.voice_channels
@@ -991,7 +992,7 @@ class Moderation(commands.Cog):
                 await ctx.guild.unban(
                     user, reason=reason.replace(":author:", str(ctx.author))
                 )
-            except discord.errors.NotFound:
+            except discord.NotFound:
                 return await ctx.send("That user isn't banned")
             case = await self.cases.add_case(
                 ctx.guild.id, user.id, "unban", str(ctx.author), ctx.message.jump_url, ctx.author.id
@@ -1012,7 +1013,7 @@ class Moderation(commands.Cog):
                     await ctx.guild.unban(
                         user, reason=reason.replace(":author:", str(ctx.author))
                     )
-                except discord.errors.NotFound:
+                except discord.NotFound:
                     e.description += f"Couldn't unban {user}"
                     continue
                 case = await self.cases.add_case(
@@ -1096,9 +1097,9 @@ class Moderation(commands.Cog):
                     last_updated = now()
                 try:
                     await member.edit(nick=nick)
-                except discord.errors.NotFound:
+                except discord.NotFound:
                     pass
-                except discord.errors.Forbidden:
+                except discord.Forbidden:
                     if not ctx.guild.me.guild_permissions.manage_nicknames:
                         view.stop()
                         await msg.edit(content="Message Inactive: Missing Permissions", view=None)
@@ -1185,9 +1186,9 @@ class Moderation(commands.Cog):
                         await member.add_roles(role)
                     else:
                         await member.remove_roles(role)
-                except discord.errors.NotFound:
+                except discord.NotFound:
                     pass
-                except discord.errors.Forbidden:
+                except discord.Forbidden:
                     if not ctx.guild.me.guild_permissions.manage_roles:
                         view.stop()
                         await msg.edit(content="Message Inactive: Missing Permissions", view=None)

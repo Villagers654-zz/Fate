@@ -8,13 +8,11 @@ A cog for restoring a members roles when they rejoin the server
 :license: Proprietary, see LICENSE for details
 """
 
+from os.path import isfile
 import json
 from contextlib import suppress
-from os.path import isfile
-
-import discord
 from discord.ext import commands
-
+import discord
 from botutils import colors
 
 
@@ -114,7 +112,7 @@ class RestoreRoles(commands.Cog):
         if guild_id in self.cache and guild_id in self.guilds:
             if user_id in self.cache[guild_id]:
                 roles = []
-                with suppress(discord.errors.NotFound, discord.errors.Forbidden, AttributeError):
+                with suppress(discord.NotFound, discord.Forbidden, AttributeError):
                     for role_id in self.cache[guild_id][user_id]:
                         role = member.guild.get_role(role_id)
                         if isinstance(role, discord.Role):

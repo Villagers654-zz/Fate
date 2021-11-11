@@ -8,19 +8,20 @@ A cog to add functionality for a channel interconnected between multiple others
 :license: Proprietary, see LICENSE for details
 """
 
-import asyncio
-import json
 from contextlib import suppress
+import asyncio
+from typing import Union
 from datetime import datetime
 from os import path
-from typing import Union
+import json
 
-import discord
-from discord.errors import NotFound, Forbidden
 from discord.ext import commands, tasks
+from discord import NotFound, Forbidden
+import discord
 
 from botutils import get_prefixes_async, colors, format_date, Cooldown
 from fate import Fate
+
 
 ban_hammers = [
     "https://media1.tenor.com/images/1e46ced92e2521749ca6f72602765c1a/tenor.gif?itemid=18219363"

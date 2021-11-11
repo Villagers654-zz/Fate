@@ -8,15 +8,15 @@ A cog for jutting down notes for later
 :license: Proprietary, see LICENSE for details
 """
 
+from os.path import isfile
+from datetime import datetime, timezone
 import asyncio
+import random
 import json
 import os
-import random
-from datetime import datetime, timezone
-from os.path import isfile
 
-import discord
 from discord.ext import commands
+import discord
 
 
 class Notepad(commands.Cog):

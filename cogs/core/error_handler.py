@@ -10,6 +10,7 @@ A cog for handling exceptions raised within commands
 
 import sys
 import traceback
+from time import time
 from contextlib import suppress
 from typing import *
 
@@ -22,7 +23,6 @@ from pymongo.errors import DuplicateKeyError
 
 from botutils import colors, split, Cooldown
 from classes import checks, exceptions
-
 
 class ErrorHandler(commands.Cog):
     notifs: Dict[int, str] = {}  # Who to notify when an errors fixed
@@ -52,7 +52,7 @@ class ErrorHandler(commands.Cog):
         ignored = (
             commands.CommandNotFound,
             commands.NoPrivateMessage,
-            discord.errors.DiscordServerError,
+            discord.DiscordServerError,
             exceptions.IgnoredExit
         )
         if isinstance(error, ignored) or not (error_to_send := str(error)):
@@ -117,14 +117,14 @@ class ErrorHandler(commands.Cog):
                     return await ctx.send(error)
 
             # The bot tried to perform an action on a non existent or removed object
-            elif isinstance(error, discord.errors.NotFound):
+            elif isinstance(error, discord.NotFound):
                 try:
                     await ctx.send(
                         f"Something I tried to do an operation on was removed or doesn't exist",
                         reference=ctx.message,
                         delete_after=5
                     )
-                except discord.errors.HTTPException:
+                except discord.HTTPException:
                     await ctx.send(
                         f"Something I tried to do an operation on was removed or doesn't exist",
                         delete_after=5
@@ -132,7 +132,7 @@ class ErrorHandler(commands.Cog):
                 return
 
             # An action by the bot failed due to missing access or lack of required permissions
-            elif isinstance(error, discord.errors.Forbidden):
+            elif isinstance(error, discord.Forbidden):
                 if not ctx.guild:
                     return
                 if ctx.channel.permissions_for(ctx.guild.me).send_messages:
@@ -163,7 +163,7 @@ class ErrorHandler(commands.Cog):
                 error_to_send = f"No Data: {error}"[:64]
 
             # Send a user-friendly error and state that it'll be fixed soon
-            if not isinstance(error, discord.errors.NotFound):
+            if not isinstance(error, discord.NotFound):
                 e = discord.Embed(color=colors.red)
                 e.description = f"[{error_to_send}](https://www.youtube.com/watch?v=t3otBjVZzT0)"
                 e.set_footer(text="This error has been logged, and will be fixed soon")
@@ -175,7 +175,7 @@ class ErrorHandler(commands.Cog):
                     "Temporarily failed to connect to discord; please re-run your command"
                 )
                 return
-        except (discord.errors.Forbidden, discord.errors.NotFound):
+        except (discord.Forbidden, discord.NotFound):
             return
 
         # Print everything to console to get the full traceback
@@ -255,7 +255,7 @@ class ErrorHandler(commands.Cog):
                                 )
                                 delay = 5
                         self.notifs.pop(msg.id, None)
-                except (AttributeError, discord.errors.NotFound):
+                except (AttributeError, discord.NotFound):
                     pass
                 else:
                     await msg.delete(delay=delay)

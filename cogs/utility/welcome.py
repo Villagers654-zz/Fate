@@ -8,13 +8,14 @@ A cog for welcoming users to servers
 :license: Proprietary, see LICENSE for details
 """
 
-import os
 import random
+import os
 
-import discord
 from discord.ext import commands
+import discord
 
 from botutils import colors, Conversation, Cooldown
+
 
 mentions = discord.AllowedMentions(users=True, roles=True, everyone=False)
 
@@ -246,7 +247,7 @@ class Welcome(commands.Cog):
                 e.set_image(url=random.choice(self.config[guild_id]["images"]))
                 try:
                     await channel.send(msg, embed=e, allowed_mentions=mentions)
-                except discord.errors.Forbidden:
+                except discord.Forbidden:
                     return
             else:
                 e.set_image(url="attachment://" + os.path.basename(path))
@@ -256,12 +257,12 @@ class Welcome(commands.Cog):
                         file=discord.File(path, filename=os.path.basename(path)),
                         embed=e, allowed_mentions=mentions
                     )
-                except discord.errors.Forbidden:
+                except discord.Forbidden:
                     return
         else:
             try:
                 await channel.send(msg, allowed_mentions=mentions)
-            except discord.errors.Forbidden:
+            except discord.Forbidden:
                 return
 
     @_welcome.command(name="setchannel", description="Sets the welcome channel")
@@ -407,7 +408,7 @@ class Welcome(commands.Cog):
                         e.set_image(url=random.choice(conf["images"]))
                         try:
                             return await channel.send(msg, embed=e, allowed_mentions=mentions)
-                        except discord.errors.Forbidden:
+                        except discord.Forbidden:
                             self.config[guild_id]["enabled"] = False
                             return await self.config.flush()
 
@@ -423,14 +424,14 @@ class Welcome(commands.Cog):
                             embed=e,
                             allowed_mentions=mentions,
                         )
-                    except discord.errors.Forbidden:
+                    except discord.Forbidden:
                         self.config[guild_id]["enabled"] = False
                         return await self.config.flush()
 
                 # Send without images
                 try:
                     await channel.send(msg, allowed_mentions=mentions)
-                except discord.errors.Forbidden:
+                except discord.Forbidden:
                     self.config[guild_id]["enabled"] = False
                     return await self.config.flush()
 

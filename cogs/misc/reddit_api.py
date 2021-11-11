@@ -10,12 +10,12 @@ Deprecated - A cog for use of Reddit with asyncpraw
 
 import asyncio
 import traceback
-from datetime import datetime, timezone
 from time import time
+from datetime import datetime, timezone
 
-import asyncpraw
-import discord
 from discord.ext import commands, tasks
+import discord
+import asyncpraw
 
 from botutils import colors
 from botutils import split

@@ -8,16 +8,16 @@ A cog for adding reaction gifs to your msgs
 :license: Proprietary, see LICENSE for details
 """
 
-import asyncio
+import aiohttp
 import os
 import random
+import asyncio
 from contextlib import suppress
 from typing import *
 
-import aiohttp
-import discord
-from discord import Webhook
 from discord.ext import commands
+from discord import Webhook
+import discord
 
 
 class Reactions(commands.Cog):

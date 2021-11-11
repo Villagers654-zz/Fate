@@ -9,15 +9,15 @@ A cog for verifying users into servers via a captcha image
 """
 
 import asyncio
-from contextlib import suppress
 from typing import Optional
+from contextlib import suppress
 
-import discord
-from discord.errors import *
 from discord.ext import commands
+import discord
+from discord import NotFound, Forbidden, HTTPException
 
-from botutils import colors, get_prefix, Conversation
 from fate import Fate
+from botutils import colors, get_prefix, Conversation
 
 
 class Verification(commands.Cog):
@@ -463,7 +463,7 @@ class Verification(commands.Cog):
             if verified:
                 try:
                     await member.add_roles(verified_role)
-                except discord.errors.Forbidden:
+                except discord.Forbidden:
                     await channel.send("It appears I'm missing permission to give you the verified role 🗿")
                 if conf["temp_role_id"]:
                     temp_role = member.guild.get_role(conf["temp_role_id"])

@@ -8,17 +8,17 @@ A cog to setup giveaways to give out random things
 :license: Proprietary, see LICENSE for details
 """
 
-import asyncio
-import json
-import random
-import re
-from contextlib import suppress
-from datetime import datetime, timedelta
 from os import path
+import json
+import asyncio
+from datetime import datetime, timezone, timedelta
+import re
+import random
+from contextlib import suppress
 
-import discord
-from discord.errors import NotFound, Forbidden
 from discord.ext import commands
+import discord
+from discord import NotFound, Forbidden
 
 from botutils import colors, extract_time, get_time, Conversation
 
@@ -106,7 +106,7 @@ class Giveaways(commands.Cog):
                     break
             except (NotFound, Forbidden):
                 break
-            except discord.errors.HTTPException:
+            except discord.HTTPException:
                 await asyncio.sleep(25)
                 continue
 

@@ -8,14 +8,14 @@ A module for configuring where message related functions go
 :license: Proprietary, see LICENSE for details
 """
 
-from copy import copy
 from typing import *
+from copy import copy
 
-from discord import ui, Interaction, SelectOption
 from discord.ext import commands
+from discord import ui, Interaction, SelectOption
 
-import fate
 from botutils import AuthorView, GetChoice
+import fate
 
 
 class Messages(commands.Cog):

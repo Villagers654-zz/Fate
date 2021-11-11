@@ -9,16 +9,17 @@ A cog for bridging 2 or more channels together
 """
 
 import asyncio
-import traceback
-from contextlib import suppress
-from datetime import datetime, timezone, timedelta
 from time import time
-
+from contextlib import suppress
 import aiohttp
-import discord
-from discord import Guild, Webhook, AllowedMentions, Message
-from discord.errors import NotFound, Forbidden, HTTPException
+from datetime import datetime, timezone, timedelta
+import traceback
+
 from discord.ext import commands
+from discord import Guild, Webhook, AllowedMentions, Message
+from discord import NotFound, Forbidden, HTTPException
+import discord
+
 
 mentions = AllowedMentions(everyone=False, roles=False, users=True)
 

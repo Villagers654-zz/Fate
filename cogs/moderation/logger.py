@@ -9,24 +9,24 @@ A cog for logging event related actions to a text channel(s)
 """
 
 import asyncio
-import json
-import traceback
-from contextlib import suppress
-from datetime import datetime, timezone, timedelta
 from io import BytesIO
 from os import path
+import json
+from datetime import datetime, timezone, timedelta
 from time import time
+from aiohttp.client_exceptions import ClientOSError
+from contextlib import suppress
+import traceback
 from typing import *
 
-import discord
-from PIL import Image
-from aiohttp.client_exceptions import ClientOSError
-from discord import AuditLogAction as audit, File
-from discord.errors import NotFound, Forbidden
 from discord.ext import commands
+import discord
+from discord import AuditLogAction as audit, File
+from discord import NotFound, Forbidden
+from PIL import Image
 
-from botutils import get_prefix, split, get_time
 from botutils.colors import *
+from botutils import get_prefix, split, get_time
 from classes import IgnoredExit
 
 
@@ -327,9 +327,9 @@ class Logger(commands.Cog):
                 self.recent_logs[guild_id] = []
 
             ignored_exceptions = (
-                discord.errors.Forbidden,
-                discord.errors.NotFound,
-                discord.errors.HTTPException,
+                discord.Forbidden,
+                discord.NotFound,
+                discord.HTTPException,
                 ConnectionResetError,
                 ClientOSError
             )
@@ -374,7 +374,7 @@ class Logger(commands.Cog):
                     invites = await guild.invites()
                     for invite in invites:
                         self.invites[guild_id][invite.url] = invite.uses
-                except discord.errors.Forbidden:
+                except discord.Forbidden:
                     pass
 
     @property
@@ -488,12 +488,12 @@ class Logger(commands.Cog):
         )
         try:
             channel = await ctx.guild.create_text_channel(name="discord-log")
-        except discord.errors.Forbidden:
+        except discord.Forbidden:
             return await ctx.send(perm_error)
         if not channel.permissions_for(ctx.guild.me).send_messages:
             try:
                 await ctx.send(perm_error)
-            except discord.errors.Forbidden:
+            except discord.Forbidden:
                 pass
             return
         if not channel.permissions_for(ctx.guild.me).embed_links:
@@ -555,7 +555,7 @@ class Logger(commands.Cog):
         if not channel.permissions_for(ctx.guild.me).send_messages:
             try:
                 await ctx.send("I can't send messages in that channel")
-            except discord.errors.Forbidden:
+            except discord.Forbidden:
                 pass
             return
         if not channel.permissions_for(ctx.guild.me).embed_links:
@@ -868,7 +868,7 @@ class Logger(commands.Cog):
             if guild_id in self.config and not payload.cached_message:
                 try:
                     msg = await channel.fetch_message(payload.message_id)
-                except (discord.errors.NotFound, discord.errors.Forbidden):
+                except (discord.NotFound, discord.Forbidden):
                     return
                 if msg.author.id in self.config[guild_id]["ignored_bots"]:
                     return
@@ -1041,7 +1041,7 @@ class Logger(commands.Cog):
             channel = self.bot.get_channel(payload.channel_id)
             try:
                 msg = await channel.fetch_message(payload.message_id)
-            except (discord.errors.NotFound, discord.errors.Forbidden):
+            except (discord.NotFound, discord.Forbidden):
                 return
             if msg.author.id in self.config[guild_id]["ignored_bots"]:
                 return

@@ -9,21 +9,21 @@ from deleting reactions to alter the outcome of a poll
 :license: Proprietary, see LICENSE for details
 """
 
-import asyncio
+from datetime import datetime, timedelta, timezone
 import json
-import re
-from base64 import b64encode as encode64, b64decode as decode64
+import asyncio
 from contextlib import suppress
-from datetime import datetime, timedelta
+import re
 
+from discord.ext import commands
 import discord
 from discord import TextChannel
-from discord.errors import NotFound, Forbidden
-from discord.ext import commands
+from discord import NotFound, Forbidden
+from base64 import b64encode as encode64, b64decode as decode64
 
+from fate import Fate
 from botutils import colors, extract_time, Conversation, Cooldown
 from classes import IgnoredExit
-from fate import Fate
 
 
 def Timer(argument):
@@ -122,7 +122,7 @@ class Polls(commands.Cog):
 
         try:
             msg = await channel.fetch_message(msg_id)
-        except discord.errors.NotFound:
+        except discord.NotFound:
             return await delete(msg_id)
 
         end_time = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S.%f%z")
@@ -262,7 +262,7 @@ class Polls(commands.Cog):
                     return
                 try:
                     await message.add_reaction(emoji)
-                except discord.errors.NotFound:
+                except discord.NotFound:
                     raise IgnoredExit
                 if len(emojis) > 5:
                     await asyncio.sleep(1)
@@ -360,7 +360,7 @@ class Polls(commands.Cog):
                     return
                 try:
                     await message.add_reaction(emoji)
-                except discord.errors.NotFound:
+                except discord.NotFound:
                     return
                 if reaction_count > 5:
                     await asyncio.sleep(1)

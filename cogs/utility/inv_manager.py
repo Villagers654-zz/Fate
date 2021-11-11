@@ -9,12 +9,12 @@ Less api spammy invite manager that relies on high uptime
 """
 
 import asyncio
-from contextlib import suppress
 from time import time
+from contextlib import suppress
 
-import discord
-from discord.errors import HTTPException, NotFound, Forbidden
 from discord.ext import commands
+from discord import HTTPException, NotFound, Forbidden
+import discord
 
 from classes import IgnoredExit
 

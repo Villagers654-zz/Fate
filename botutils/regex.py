@@ -9,9 +9,9 @@ Async friendly regular expression coroutine functions
 """
 
 
-import asyncio
-import re
 from typing import *
+import re
+import asyncio
 
 
 async def _run_in_executor(func: Callable):

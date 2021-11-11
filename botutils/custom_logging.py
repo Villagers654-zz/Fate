@@ -9,11 +9,11 @@ A helper class intended for formatting logs and printing to console
 """
 
 import asyncio
-import traceback
 from datetime import datetime
+import traceback
 
-from discord import AllowedMentions
 from discord.ext import tasks
+from discord import AllowedMentions
 from termcolor import cprint
 
 

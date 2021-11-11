@@ -8,22 +8,23 @@ A cog for filtering out messages containing filtered words
 :license: Proprietary, see LICENSE for details
 """
 
-import asyncio
-import os
 import re
-from contextlib import suppress
-from string import printable
 from time import time
-from typing import *
+import asyncio
+from contextlib import suppress
 from unicodedata import normalize
+from string import printable
+import os
+from typing import *
 
-import discord
-from discord import ui, ButtonStyle, Message, Member
-from discord.errors import NotFound, Forbidden
 from discord.ext import commands
+import discord
+from discord import NotFound, Forbidden
+from discord import ui, ButtonStyle, Message, Member
 
 from botutils import colors, split, CancelButton, findall, GetChoice, Cooldown
 from cogs.moderation.logger import Log
+
 
 aliases = {
     "a": ["@"],
@@ -444,7 +445,7 @@ class ChatFilter(commands.Cog):
             )
             with suppress(Exception):
                 os.remove("./static/messages.txt")
-        except (discord.errors.HTTPException, NotFound):
+        except (discord.HTTPException, NotFound):
             await ctx.send("The message I was using got deleted, so I can't proceed")
 
     async def get_webhook(self, channel):

@@ -8,11 +8,9 @@ An owner only cog for managing the bot user
 :license: Proprietary, see LICENSE for details
 """
 
-import json
-
-import discord
 from discord.ext import commands
-
+import discord
+import json
 from botutils import colors
 
 
