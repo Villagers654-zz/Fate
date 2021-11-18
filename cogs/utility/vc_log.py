@@ -19,7 +19,6 @@ from discord.http import DiscordServerError
 class VcLog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.path = "./data/userdata/VcLog.json"
         self.config = bot.utils.cache("vclog")
         self.join_cd = {}
         self.leave_cd = {}
