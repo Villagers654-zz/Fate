@@ -476,15 +476,8 @@ class GlobalChat(commands.Cog):
                     f"last_used = '{str(datetime.now())}';"
                 )
 
-            if not mod:
-                abcs = "abcdefghijklmnopqrstuvwxyz"
-                for i, char in enumerate(list(msg.content)):
-                    await asyncio.sleep(0)
-                    if char == "." and i != 0 and i + 1 != len(msg.content):
-                        l = msg.content[i - 1]
-                        r = msg.content[i + 1]
-                        if l and l in abcs and r and r in abcs:
-                            return await msg.channel.send("No links..")
+            if not mod and "discord.gg" in msg.content or "discord.invite" in msg.content:
+                return await msg.channel.send("No invites..")
 
             e = discord.Embed(color=msg.author.color)
             if msg.guild.icon and msg.guild.id not in self.config["icon_blocked"]:
