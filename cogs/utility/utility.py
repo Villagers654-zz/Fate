@@ -1045,6 +1045,20 @@ class Utility(commands.Cog):
             e.set_image(url=ctx.message.attachments[0].url)
         await ctx.send(embed=e)
 
+    @commands.command(name="export-members", description="Sends a txt of the member list")
+    @commands.has_permissions(administrator=True)
+    @commands.bot_has_permissions(attach_files=True)
+    async def export_members(self, ctx):
+        members = "\n".join([
+            f"{m.id}, {m}, {m.display_name}"
+            for m in ctx.guild.members
+        ])
+        buffer = BytesIO()
+        buffer.write(members.encode())
+        buffer.seek(0)
+        await ctx.send(file=discord.File(buffer, filename="members.txt"))
+
+
 # Method index
 pages: Dict[Type, str] = {
     None: "bot_info",
