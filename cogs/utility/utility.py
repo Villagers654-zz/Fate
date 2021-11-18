@@ -1058,6 +1058,20 @@ class Utility(commands.Cog):
         buffer.seek(0)
         await ctx.send(file=discord.File(buffer, filename="members.txt"))
 
+    @commands.command(name="export-bans", description="Sends a txt of the ban list")
+    @commands.has_permissions(administrator=True)
+    @commands.bot_has_permissions(ban_members=True, attach_files=True)
+    async def export_members(self, ctx):
+        bans = await ctx.guild.bans()
+        members = "\n".join([
+            f"{u.id}, {u}, {ban.reason}"
+            for ban in bans if (u := ban.user)
+        ])
+        buffer = BytesIO()
+        buffer.write(members.encode())
+        buffer.seek(0)
+        await ctx.send(file=discord.File(buffer, filename="bans.txt"))
+
 
 # Method index
 pages: Dict[Type, str] = {
