@@ -148,8 +148,8 @@ class ChatBridges(commands.Cog):
                         else:
                             await webhook_cache[webhook_url].send(
                                 content=alternate_content if alternate_content else msg.content,
-                                embeds=msg.embeds if msg.embeds else None,
-                                file=file,
+                                embeds=msg.embeds if msg.embeds else [],
+                                files=[file] if file else [],
                                 username=msg.author.display_name,
                                 avatar_url=msg.author.display_avatar.url,
                                 allowed_mentions=mentions
