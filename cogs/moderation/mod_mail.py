@@ -355,7 +355,7 @@ class ModMail(commands.Cog):
         if not case.isdigit():
             return await ctx.send("Unable to parse the channel name")
 
-        if not ctx.channel.permissions_for(ctx.guild.me).manage_channels:
+        if not ctx.channel.permissions_for(ctx.guild.me).manage_threads:
             return await ctx.send(
                 f"To close the thread, delete the channel, or give me permissions to and rerun the cmd"
             )
@@ -373,7 +373,37 @@ class ModMail(commands.Cog):
                     f"The thread for case #{case_number} in {ctx.guild} was closed"
                 )
         await ctx.channel.edit(name=f"{ctx.channel.name} (Closed)", archived=True)
-        await self.reference(ctx.guild.id, case, red, f"**Case #{case}** was closed by **{ctx.author.mention}**")
+        await self.reference(ctx.guild.id, int(case), red, f"**Case #{case}** was closed by **{ctx.author.mention}**")
+
+    @commands.command(name="close-all", aliases=["closeall"])
+    @commands.cooldown(1, 60, commands.BucketType.channel)
+    @commands.cooldown(1, 5, commands.BucketType.guild)
+    async def close_all(self, ctx: Context):
+        if not self.bot.attrs.is_moderator(ctx.author):
+            return await ctx.send("Only moderators can run this command")
+        for thread in ctx.guild.threads:
+            if "Case" in thread.name and not thread.name.endswith("(Closed)"):
+                case = thread.name.split()[1]
+                if not case.isdigit():
+                    continue
+                if not thread.parent.permissions_for(ctx.guild.me).manage_threads:
+                    return await ctx.send("I'm missing permissions to manage threads")
+                case_number = int(case)
+                async with self.bot.utils.cursor() as cur:
+                    await cur.execute(
+                        f"select user_id from cases "
+                        f"where guild_id = {ctx.guild.id} "
+                        f"and case_number = {case_number};"
+                    )
+                    r = await cur.fetchone()
+                if r:
+                    with suppress(NotFound, Forbidden):
+                        await self.bot.get_user(r[0]).send(
+                            f"The thread for case #{case_number} in {ctx.guild} was closed"
+                        )
+                await thread.edit(name=f"{thread.name} (Closed)", archived=True)
+                await self.reference(ctx.guild.id, int(case), red, f"**Case #{case}** was closed by **{ctx.author.mention}**")
+        await ctx.send("Finished closing every case")
 
 
 def setup(bot: Fate) -> None:
