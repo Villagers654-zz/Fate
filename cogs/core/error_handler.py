@@ -38,14 +38,16 @@ class ErrorHandler(commands.Cog):
         if isinstance(error, KeyError):
             await ctx.send("It seems something we're operating on was deleted")
         else:
-            await self.on_command_error(ctx, error)  # type: ignore
+            await self.on_command_error(ctx, error, ignore_if_handler=False)  # type: ignore
 
     @commands.Cog.listener()
-    async def on_command_error(self, ctx, error):
+    async def on_command_error(self, ctx, error, ignore_if_handler = True):
         # Ensure the servers `currently running commands` index gets updated
         if ctx.command and ctx.command.cog.__class__.__name__ == "Moderation":
             module = self.bot.cogs["Moderation"]
             await module.cog_after_invoke(ctx)
+        if ignore_if_handler and getattr(ctx.cog, "cog_command_error", None):
+            return
 
         # Suppress spammy, or intentional errors
         error: Exception = getattr(error, "original", error)
