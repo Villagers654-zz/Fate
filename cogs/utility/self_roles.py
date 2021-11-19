@@ -115,7 +115,8 @@ class SelfRoles(commands.Cog):
                       f"{p}remove-role `@role`\n"
                       f"{p}set-limit [limit]\n"
                       f"{p}edit-message `new message`\n"
-                      f"{p}set-emoji `new_emoji`\n"
+                      f"{p}set-emoji `new emoji`\n"
+                      f"{p}set-label `new label`\n"
                       f"{p}set-description `new description`\n"
                       f"{p}toggle-percentage"
             )
@@ -410,6 +411,33 @@ class SelfRoles(commands.Cog):
         await ctx.send("Set the new limit 👍")
         await self.config.flush()
 
+    @commands.command(name="set-label", description="Sets the display label of a role")
+    @commands.has_permissions(manage_roles=True)
+    async def set_label(self, ctx, *, new_label):
+        guild_id = ctx.guild.id
+        if guild_id not in self.config:
+            return await ctx.send("There arent any active role menus in this server")
+        message_id = await self.get_menu_id(ctx)
+
+        roles = {}
+        for role_id, meta in self.config[guild_id][message_id]["roles"].items():
+            role = ctx.guild.get_role(int(role_id))
+            if not role:
+                continue
+            roles[meta["label"] or role.name] = role_id
+
+        if len(roles) == 1:
+            choice: str = list(roles.values())[0]
+        else:
+            choice: str = await GetChoice(ctx, list(roles.keys()))
+        if roles[choice] not in self.config[guild_id][message_id]["roles"]:
+            return await ctx.send(f"{choice} doesn't seem to be in the config anymore")
+        self.config[guild_id][message_id]["roles"][roles[choice]]["label"] = new_label
+
+        await self.refresh_menu(guild_id, message_id)
+        await ctx.send(f"Set its label 👍")
+        await self.config.flush()
+
     @commands.command(name="edit-message", description="Sets the msg content of a menu")
     @commands.has_permissions(manage_roles=True)
     async def edit_message(self, ctx, *, new_message):
@@ -421,7 +449,7 @@ class SelfRoles(commands.Cog):
         self.config[guild_id][message_id]["text"] = new_message
 
         await self.refresh_menu(guild_id, message_id)
-        await ctx.send(f"Successfully edited the content 👍")
+        await ctx.send(f"Edited the content 👍")
         await self.config.flush()
 
     @commands.command(name="set-emoji", description="Sets a roles emoji in an existing menu")
@@ -454,7 +482,7 @@ class SelfRoles(commands.Cog):
         self.config[guild_id][message_id]["roles"][roles[choice]]["emoji"] = new_emoji
 
         await self.refresh_menu(guild_id, message_id)
-        await ctx.send(f"Successfully set the emoji 👍")
+        await ctx.send(f"Set the emoji 👍")
         await self.config.flush()
 
     @commands.command(name="set-description", description="Sets a roles description in an existing menu")
@@ -479,7 +507,7 @@ class SelfRoles(commands.Cog):
         self.config[guild_id][message_id]["roles"][roles[choice]]["description"] = new_description[:100]
 
         await self.refresh_menu(guild_id, message_id)
-        await ctx.send(f"Successfully set the description 👍")
+        await ctx.send(f"Set the description 👍")
         await self.config.flush()
 
     @commands.command(name="swap-style", description="Swaps using buttons or dropdowns")
@@ -495,7 +523,7 @@ class SelfRoles(commands.Cog):
             new_style = "buttons"
         self.config[guild_id][message_id]["style"] = new_style
         await self.refresh_menu(guild_id, message_id)
-        await ctx.send(f"Successfully switched to {new_style}")
+        await ctx.send(f"Switched to {new_style}")
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, payload):
