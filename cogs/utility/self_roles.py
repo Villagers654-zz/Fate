@@ -123,7 +123,7 @@ class SelfRoles(commands.Cog):
             count = 0
             if ctx.guild.id in self.config:
                 count = len(self.config[ctx.guild.id])
-            e.set_footer(text=f"{count} Active Menu{'s' if count == 0 or count > 1 else ''}")
+            e.set_footer(text=f"You Currently Have {count} Menu{'s' if count == 0 or count > 1 else ''}")
             await ctx.send(embed=e)
 
     @commands.command(name="refresh", description="Regenerates a menu to update changes")
