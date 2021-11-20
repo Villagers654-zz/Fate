@@ -283,6 +283,8 @@ class ChatBridges(commands.Cog):
 
         # Prevent sending messages too quickly
         thresholds = [(5, 4), (10, 7)]
+        if msg.author.id == 850974021892702219:
+            thresholds = []
         for timeframe, threshold in thresholds:
             await asyncio.sleep(0)
             _id = str([timeframe, threshold])
