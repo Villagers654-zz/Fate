@@ -1723,7 +1723,10 @@ class TimerView(ui.View):
             mod.tasks[guild_id][str(user.id)] = task
 
             expanded_form = format_date(datetime.now() - timedelta(seconds=duration))
-            await interaction.response.send_message(f"Updated the mute for {user.mention} to {expanded_form}")
+            await interaction.response.send_message(
+                f"Updated the mute for {user.mention} to {expanded_form}",
+                mentions=discord.AllowedMentions.all()
+            )
             await interaction.message.edit(view=self.home_view)
 
     def __init__(self, ctx: commands.Context, case: int, home_view: MuteView):
