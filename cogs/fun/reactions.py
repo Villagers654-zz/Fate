@@ -267,6 +267,14 @@ class Reactions(commands.Cog):
     async def cry(self, ctx, *, content=None):
         await self.send_webhook(ctx, "cry", content)
 
+    @commands.command(name="cuddle")
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.bot_has_permissions(
+        embed_links=True, attach_files=True, manage_messages=True
+    )
+    async def cuddle(self, ctx, *, content=None):
+        await self.send_webhook(ctx, "cuddle", content, action="cuddles")
+
     @commands.command(name="pat")
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.bot_has_permissions(
