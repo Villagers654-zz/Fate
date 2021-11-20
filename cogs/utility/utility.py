@@ -438,7 +438,7 @@ class Utility(commands.Cog):
     @commands.cooldown(1, 15, commands.BucketType.channel)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
-    async def members(self, ctx, *, role=None):
+    async def members(self, ctx, *, role = None):
         if role:  # returns a list of members that have the role
             if ctx.message.role_mentions:
                 role = ctx.message.role_mentions[0]
