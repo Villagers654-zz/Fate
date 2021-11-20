@@ -84,6 +84,9 @@ class GlobalChat(commands.Cog):
         self._queue = self._queue[-5:]
         return self._queue
 
+    async def return_coro(self, coro):
+        return await coro
+
     @tasks.loop(seconds=0.21)
     async def handle_queue(self):
         queued_to_send = []
@@ -112,19 +115,24 @@ class GlobalChat(commands.Cog):
             if requires_edit:
                 for message in self.msg_cache:
                     with suppress(NotFound, Forbidden):
-                        await message.edit(embed=embed)
+                        asyncio.create_task(message.edit(embed=embed))
             else:
                 self.msg_cache = []
                 chunk = {}
+                tasks = []
                 for guild_id, channel in list(self.cache.items()):
                     with suppress(AttributeError):
                         if author_msg.channel.id == channel.id and author_msg.attachments:
                             continue
                     with suppress(NotFound, Forbidden, AttributeError):
                         if channel.permissions_for(channel.guild.me).manage_messages:
-                            msg = await channel.send(embed=embed)
-                            self.msg_cache.append(msg)
-                            chunk[msg.channel.id] = msg.id
+                            tasks.append(asyncio.create_task(self.return_coro(channel.send(embed=embed))))
+                for task in tasks:
+                    with suppress(NotFound, Forbidden, AttributeError):
+                        await task
+                        msg = task.result()
+                        self.msg_cache.append(msg)
+                        chunk[msg.channel.id] = msg.id
                 self.msg_chunks.append(chunk)
             with suppress(AttributeError, NotFound, Forbidden):
                 if author_msg.attachments:
