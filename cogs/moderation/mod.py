@@ -1725,7 +1725,7 @@ class TimerView(ui.View):
             expanded_form = format_date(datetime.now() - timedelta(seconds=duration))
             await interaction.response.send_message(
                 f"Updated the mute for {user.mention} to {expanded_form}",
-                mentions=discord.AllowedMentions.all()
+                allowed_mentions=discord.AllowedMentions.all()
             )
             await interaction.message.edit(view=self.home_view)
 
