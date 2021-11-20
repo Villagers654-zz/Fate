@@ -435,7 +435,7 @@ class Utility(commands.Cog):
         await ctx.send(template.url)
 
     @commands.command(name="members", aliases=["membercount"], description="Shows the member counts")
-    @commands.cooldown(1, 5, commands.BucketType.channel)
+    @commands.cooldown(1, 15, commands.BucketType.channel)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
     async def members(self, ctx, *, role=None):
@@ -446,8 +446,6 @@ class Utility(commands.Cog):
                 role = await self.bot.utils.get_role(ctx, role)
                 if not isinstance(role, discord.Role):
                     return
-            if role.id == ctx.guild.default_role.id:
-                return await ctx.send("biTcH nO")
             if len(role.members) > 50:
                 members = "\n".join([
                     f"{m.id}, {m}, {m.display_name}"
