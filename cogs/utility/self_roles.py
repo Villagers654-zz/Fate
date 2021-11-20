@@ -97,6 +97,7 @@ class SelfRoles(commands.Cog):
 
     @commands.group(name="selfroles", aliases=["selfrole", "self-roles"], description="Shows how to use the module")
     @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
     async def self_roles(self, ctx: commands.Context):
         if not ctx.invoked_subcommand:
@@ -128,6 +129,8 @@ class SelfRoles(commands.Cog):
 
     @commands.command(name="refresh", description="Regenerates a menu to update changes")
     @commands.cooldown(1, 25, commands.BucketType.guild)
+    @commands.guild_only()
+    @commands.has_permissions(manage_roles=True)
     async def refresh(self, ctx):
         if ctx.guild.id not in self.config:
             return await ctx.send("This server has no role-menu's to refresh")
@@ -144,6 +147,7 @@ class SelfRoles(commands.Cog):
         await ctx.send("Success 👍")
 
     @commands.command(name="create-menu", description="Starts the menu setup process")
+    @commands.guild_only()
     @commands.has_permissions(administrator=True)
     @commands.bot_has_permissions(add_reactions=True)
     async def create_menu(self, ctx):
@@ -306,6 +310,7 @@ class SelfRoles(commands.Cog):
         return menus[key]
 
     @commands.command(name="add-role", description="Adds a role to an existing menu")
+    @commands.guild_only()
     @commands.has_permissions(manage_roles=True)
     async def add_role(self, ctx, *, role):
         guild_id = ctx.guild.id
@@ -357,6 +362,7 @@ class SelfRoles(commands.Cog):
         await self.config.flush()
 
     @commands.command(name="remove-role", description="Removes a role from an existing menu")
+    @commands.guild_only()
     @commands.has_permissions(manage_roles=True)
     async def remove_role(self, ctx, *, role):
         guild_id = ctx.guild.id
@@ -382,6 +388,7 @@ class SelfRoles(commands.Cog):
         await self.config.flush()
 
     @commands.command(name="toggle-percentage", description="Toggles showing the % of how many have each role")
+    @commands.guild_only()
     @commands.has_permissions(manage_roles=True)
     async def toggle_percentage(self, ctx):
         guild_id = ctx.guild.id
@@ -396,6 +403,7 @@ class SelfRoles(commands.Cog):
         await self.config.flush()
 
     @commands.command(name="set-limit", description="Sets the max number of roles a user can choose")
+    @commands.guild_only()
     @commands.has_permissions(manage_roles=True)
     async def set_limit(self, ctx, new_limit: int):
         if new_limit > 25 or new_limit < 0:
@@ -412,6 +420,7 @@ class SelfRoles(commands.Cog):
         await self.config.flush()
 
     @commands.command(name="set-label", description="Sets the display label of a role")
+    @commands.guild_only()
     @commands.has_permissions(manage_roles=True)
     async def set_label(self, ctx, *, new_label):
         guild_id = ctx.guild.id
@@ -439,6 +448,7 @@ class SelfRoles(commands.Cog):
         await self.config.flush()
 
     @commands.command(name="edit-message", description="Sets the msg content of a menu")
+    @commands.guild_only()
     @commands.has_permissions(manage_roles=True)
     async def edit_message(self, ctx, *, new_message):
         guild_id = ctx.guild.id
@@ -453,6 +463,7 @@ class SelfRoles(commands.Cog):
         await self.config.flush()
 
     @commands.command(name="set-emoji", description="Sets a roles emoji in an existing menu")
+    @commands.guild_only()
     @commands.has_permissions(manage_roles=True)
     @commands.bot_has_permissions(add_reactions=True)
     async def set_emoji(self, ctx, *, new_emoji):
@@ -486,6 +497,7 @@ class SelfRoles(commands.Cog):
         await self.config.flush()
 
     @commands.command(name="set-description", description="Sets a roles description in an existing menu")
+    @commands.guild_only()
     @commands.has_permissions(manage_roles=True)
     async def set_description(self, ctx, *, new_description):
         guild_id = ctx.guild.id
@@ -511,6 +523,7 @@ class SelfRoles(commands.Cog):
         await self.config.flush()
 
     @commands.command(name="swap-style", description="Swaps using buttons or dropdowns")
+    @commands.guild_only()
     @commands.has_permissions(manage_roles=True)
     async def swap_style(self, ctx):
         guild_id = ctx.guild.id
