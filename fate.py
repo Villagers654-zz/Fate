@@ -529,7 +529,7 @@ async def on_error(_event_method, *_args, **_kwargs):
 
 def event_exception_handler(loop: asyncio.AbstractEventLoop, context: dict):
     """ Suppress ignored exceptions within events """
-    error: Exception = context["exception"]
+    error: Exception = context.pop("exception", None)
     if not isinstance(error, ignored):
         loop.default_exception_handler(context)
         if channel := bot.get_channel(bot.config["log_channel"]):
