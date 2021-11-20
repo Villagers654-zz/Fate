@@ -449,7 +449,14 @@ class Utility(commands.Cog):
             if role.id == ctx.guild.default_role.id:
                 return await ctx.send("biTcH nO")
             if len(role.members) > 50:
-                return await ctx.send("That role has too many members :[")
+                members = "\n".join([
+                    f"{m.id}, {m}, {m.display_name}"
+                    for m in role.members
+                ])
+                buffer = BytesIO()
+                buffer.write(members.encode())
+                buffer.seek(0)
+                return await ctx.send(file=discord.File(buffer, filename="members.txt"))
             e = discord.Embed(color=role.color)
             e.set_author(name=role.name, icon_url=ctx.author.display_avatar.url)
             if ctx.guild.icon:
@@ -464,6 +471,7 @@ class Utility(commands.Cog):
                 e.description += new_line
             if not e.description:
                 e.description = "This role has no members"
+            e.set_footer(text=f"{len(role.members)} member(s)")
             return await ctx.send(embed=e)
         else:  # return the servers member count
             status_list = [
@@ -1044,19 +1052,6 @@ class Utility(commands.Cog):
         if ctx.message.attachments:
             e.set_image(url=ctx.message.attachments[0].url)
         await ctx.send(embed=e)
-
-    @commands.command(name="export-members", description="Sends a txt of the member list")
-    @commands.has_permissions(administrator=True)
-    @commands.bot_has_permissions(attach_files=True)
-    async def export_members(self, ctx):
-        members = "\n".join([
-            f"{m.id}, {m}, {m.display_name}"
-            for m in ctx.guild.members
-        ])
-        buffer = BytesIO()
-        buffer.write(members.encode())
-        buffer.seek(0)
-        await ctx.send(file=discord.File(buffer, filename="members.txt"))
 
     @commands.command(name="export-bans", description="Sends a txt of the ban list")
     @commands.has_permissions(administrator=True)
