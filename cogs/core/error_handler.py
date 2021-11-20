@@ -46,7 +46,7 @@ class ErrorHandler(commands.Cog):
         if ctx.command and ctx.command.cog.__class__.__name__ == "Moderation":
             module = self.bot.cogs["Moderation"]
             await module.cog_after_invoke(ctx)
-        if ignore_if_handler and getattr(ctx.cog, "cog_command_error", None):
+        if ignore_if_handler and ctx.cog.has_error_handler():
             return
 
         # Suppress spammy, or intentional errors
