@@ -460,7 +460,7 @@ class Utility(commands.Cog):
             if ctx.guild.icon:
                 e.set_thumbnail(url=ctx.guild.icon.url)
             e.description = ""
-            dat = [(m, m.top_role.position) for m in role.members][:10]
+            dat = [(m, m.top_role.position) for m in role.members]
             for member, position in sorted(dat, key=lambda kv: kv[1], reverse=True):
                 new_line = f"• {member}\n"
                 if len(e.description) + len(new_line) > 2000:
