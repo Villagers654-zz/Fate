@@ -30,6 +30,14 @@ from .interactions import *
 
 
 abcs = "abcdefghijklmnopqrstuvwxyzجحخهعغفقثصضشسيبلاتتمكطدظزوةىرؤءذئأإآ"
+file_exts = [
+    ".png",
+    ".jpg",
+    ".jpeg"
+    ".gif",
+    ".wpeg",
+    ".apng"
+]
 
 
 class Utils(Cog):
