@@ -4,14 +4,26 @@ botutils.regex
 
 Async friendly regular expression coroutine functions
 
+Functions:
+    search : Returns a single match for a pattern
+    findall : Returns a iterable results object
+    sanitize : Sanitizes a string of pings, and urls
+    find_links : Finds all the urls in a string
+    find_link : Finds the first url in a string
+
 :copyright: (C) 2021-present FrequencyX4, All Rights Reserved
 :license: Proprietary, see LICENSE for details
 """
 
-
 from typing import *
 import re
 import asyncio
+
+from discord.ext.commands import Context
+
+
+url_expression = "((https?://)|(www\.)|(discord\.gg/))[a-zA-Z0-9./\-_?]+"
+ping_expression = "(\@((everyone)|(here)))|(\<\@!?&?[0-9]+\>)"
 
 
 async def _run_in_executor(func: Callable):
@@ -34,14 +46,9 @@ async def findall(pattern: str, string: str) -> List[str]:
     return [r.group() for r in results]
 
 
-async def sanitize(string: str, ctx = None) -> str:
+async def sanitize(string: str, ctx: Context = None) -> str:
     """ Sanitizes a string of pings, and urls """
-    regexes = [
-        "(https?://)?(www\.)?[^. ]+\.[a-zA-Z]{2,3}[^ ]*",
-        "\@((everyone)|(here))",
-        "\<\@!?&?[0-9]+\>"
-    ]
-    fs = map(findall, regexes, [string] * len(regexes))
+    fs = map(findall, [url_expression, ping_expression], [string] * 2)
     for future in asyncio.as_completed(fs):
         results = await future
         for result in results:
@@ -51,3 +58,14 @@ async def sanitize(string: str, ctx = None) -> str:
         if clean_content:
             string = clean_content
     return string
+
+
+async def find_links(string: str) -> List[str]:
+    """ Finds all the urls in a string """
+    return await findall(url_expression, string)
+
+
+async def find_link(string: str) -> Optional[str]:
+    """ Finds the first url in a string """
+    for url in await find_links(string):
+        return url
