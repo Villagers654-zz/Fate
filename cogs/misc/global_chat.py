@@ -19,7 +19,7 @@ from discord.ext import commands, tasks
 from discord import NotFound, Forbidden
 import discord
 
-from botutils import get_prefixes_async, colors, format_date, Cooldown
+from botutils import get_prefixes_async, colors, format_date, Cooldown, find_links, file_exts
 from fate import Fate
 
 
@@ -484,9 +484,6 @@ class GlobalChat(commands.Cog):
                     f"last_used = '{str(datetime.now())}';"
                 )
 
-            if not mod and "discord.gg" in msg.content or "discord.invite" in msg.content:
-                return await msg.channel.send("No invites..")
-
             e = discord.Embed(color=msg.author.color)
             if msg.guild.icon and msg.guild.id not in self.config["icon_blocked"]:
                 e.set_thumbnail(url=msg.guild.icon.url)
@@ -494,6 +491,16 @@ class GlobalChat(commands.Cog):
             if mod:
                 author += " 👮‍♂️"
             e.set_author(name=author, icon_url=msg.author.display_avatar.url)
+
+            # Convert image urls
+            for url in await find_links(msg.content):
+                if not mod and not any(ext in url for ext in file_exts):
+                    return await msg.channel.send("No links..")
+                if not msg.attachments:
+                    if not url.startswith("https://"):
+                        continue
+                    e.set_image(url=url)
+                    msg.content = msg.content.replace(url, "")
 
             # Convert mentions to nicknames so everyone can read them
             ctx = await self.bot.get_context(msg)
