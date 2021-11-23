@@ -285,6 +285,7 @@ class Reactions(commands.Cog):
 
     @commands.command(name="homo")
     @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.is_owner()
     async def _homo(self, ctx):
         path = (
             os.getcwd()
