@@ -241,11 +241,12 @@ class Moderation(commands.Cog):
     async def addmod(self, ctx, target: Union[discord.Member, discord.Role] = None):
         if not target:
             return await ctx.send("User or role not found")
-        if isinstance(target, discord.Member):
-            if target.top_role.position >= ctx.author.top_role.position:
-                return await ctx.send("That user is above your paygrade, take a seat")
-        elif target.position >= ctx.author.top_role.position:
-            return await ctx.send("That role is above your paygrade, take a seat")
+        if ctx.author.id != ctx.guild.owner.id:
+            if isinstance(target, discord.Member):
+                if target.top_role.position >= ctx.author.top_role.position:
+                    return await ctx.send("That user is above your paygrade, take a seat")
+            elif target.position >= ctx.author.top_role.position:
+                return await ctx.send("That role is above your paygrade, take a seat")
         guild_id = str(ctx.guild.id)
         if isinstance(target, discord.Member):
             if target.id in self.config[guild_id]["usermod"]:
@@ -272,11 +273,12 @@ class Moderation(commands.Cog):
     async def delmod(self, ctx, target: Union[discord.Member, discord.Role] = None):
         if not target:
             return await ctx.send("User or role not found")
-        if isinstance(target, discord.Member):
-            if target.top_role.position >= ctx.author.top_role.position:
-                return await ctx.send("That user is above your paygrade, take a seat")
-        elif target.position >= ctx.author.top_role.position:
-            return await ctx.send("That role is above your paygrade, take a seat")
+        if ctx.author.id != ctx.guild.owner.id:
+            if isinstance(target, discord.Member):
+                if target.top_role.position >= ctx.author.top_role.position:
+                    return await ctx.send("That user is above your paygrade, take a seat")
+            elif target.position >= ctx.author.top_role.position:
+                return await ctx.send("That role is above your paygrade, take a seat")
         guild_id = str(ctx.guild.id)
         if isinstance(target, discord.Member):
             if target.id not in self.config[guild_id]["usermod"]:
@@ -618,10 +620,11 @@ class Moderation(commands.Cog):
         if not reason:
             reason = "Unspecified"
         for user in list(members):
-            if user.top_role.position >= ctx.author.top_role.position:
-                return await ctx.send("That user is above your paygrade, take a seat")
-            if user.top_role.position >= ctx.guild.me.top_role.position:
-                return await ctx.send("That users top role is above mine, so I can't manage them")
+            if ctx.author.id != ctx.guild.owner.id:
+                if user.top_role.position >= ctx.author.top_role.position:
+                    return await ctx.send("That user is above your paygrade, take a seat")
+                if user.top_role.position >= ctx.guild.me.top_role.position:
+                    return await ctx.send("That users top role is above mine, so I can't manage them")
             updated = False
             if mute_role in user.roles:
                 user_id = str(user.id)
@@ -743,11 +746,9 @@ class Moderation(commands.Cog):
         for user in users:
             if not user:
                 return await ctx.send("**Unmute Usage:**\n.unmute {@user}")
-            if (
-                user.top_role.position >= ctx.author.top_role.position
-                and ctx.author.id != ctx.guild.owner.id
-            ):
-                return await ctx.send("That user is above your paygrade, take a seat")
+            if ctx.author.id != ctx.guild.owner.id:
+                if user.top_role.position >= ctx.author.top_role.position:
+                    return await ctx.send("That user is above your paygrade, take a seat")
             guild_id = str(ctx.guild.id)
             user_id = str(user.id)
             mute_role = None
@@ -794,27 +795,28 @@ class Moderation(commands.Cog):
         for i, member in enumerate(members):
             if isinstance(member, discord.User):  # Was kicked already
                 continue
-            if member.top_role.position >= ctx.author.top_role.position:
-                e.description += f"\n❌ {member} is Higher Than You"
-            elif member.top_role.position >= ctx.guild.me.top_role.position:
+            if ctx.author.id != ctx.guild.owner.id:
+                if member.top_role.position >= ctx.author.top_role.position:
+                    e.description += f"\n❌ {member} is Higher Than You"
+                    continue
+            if member.top_role.position >= ctx.guild.me.top_role.position:
                 e.description += f"❌ {member} is Higher Than Me"
+                continue
+            case = await self.cases.add_case(
+                ctx.guild.id, member.id, "kick", reason, ctx.message.jump_url, ctx.author.id
+            )
+            content = f"You've been kicked in {ctx.guild} by {ctx.author} for {reason}"
+            rows = await self.bot.rowcount(f"select * from modmail where guild_id = {ctx.guild.id};")
+            if rows:
+                content += f". Use `.appeal {case}` if you feel there's a mistake"
             else:
-                case = await self.cases.add_case(
-                    ctx.guild.id, member.id, "kick", reason, ctx.message.jump_url, ctx.author.id
-                )
-                content = f"You've been kicked in {ctx.guild} by {ctx.author} for {reason}"
-                rows = await self.bot.rowcount(f"select * from modmail where guild_id = {ctx.guild.id};")
-                if rows:
-                    content += f". Use `.appeal {case}` if you feel there's a mistake"
-                else:
-                    content += f" [Case #{case}]"
-                with suppress(NotFound, Forbidden, HTTPException):
-                    await member.send(content)
-                await member.kick(
-                    reason=f"Kicked by {ctx.author} with ID: {ctx.author.id} for {reason}"
-                )
-
-                e.description += f"✅ {member} [Case #{case}]"
+                content += f" [Case #{case}]"
+            with suppress(NotFound, Forbidden, HTTPException):
+                await member.send(content)
+            await member.kick(
+                reason=f"Kicked by {ctx.author} with ID: {ctx.author.id} for {reason}"
+            )
+            e.description += f"✅ {member} [Case #{case}]"
             if i % 2 == 0 and i != len(members) - 1:
                 await msg.edit(embed=e)
         await msg.edit(embed=e)
@@ -852,14 +854,15 @@ class Moderation(commands.Cog):
         for user in users:
             member = discord.utils.get(ctx.guild.members, id=user.id)
             if member:
-                if member.top_role.position >= ctx.author.top_role.position:
-                    e.add_field(
-                        name=f"◈ Failed to ban {member}",
-                        value="This users is above your paygrade",
-                        inline=False,
-                    )
-                    await msg.edit(embed=e)
-                    continue
+                if ctx.author.id != ctx.guild.owner.id:
+                    if member.top_role.position >= ctx.author.top_role.position:
+                        e.add_field(
+                            name=f"◈ Failed to ban {member}",
+                            value="This users is above your paygrade",
+                            inline=False,
+                        )
+                        await msg.edit(embed=e)
+                        continue
                 if member.top_role.position >= ctx.guild.me.top_role.position:
                     e.add_field(
                         name=f"◈ Failed to ban {member}",
@@ -1321,12 +1324,14 @@ class Moderation(commands.Cog):
         new_name = new_name[:28]
         try:
             if isinstance(target, Member):
-                if target.top_role.position >= ctx.author.top_role.position:
-                    return await ctx.send("That user's above your paygrade, take a seat")
+                if ctx.author.id != ctx.guild.owner.id:
+                    if target.top_role.position >= ctx.author.top_role.position:
+                        return await ctx.send("That user's above your paygrade, take a seat")
                 await target.edit(nick=new_name)
             elif isinstance(target, Role):
-                if target.position >= ctx.author.top_role.position:
-                    return await ctx.send("This role is above your paygrade, take a seat")
+                if ctx.author.id != ctx.guild.owner.id:
+                    if target.position >= ctx.author.top_role.position:
+                        return await ctx.send("This role is above your paygrade, take a seat")
                 await target.edit(name=new_name)
             elif isinstance(target, TextChannel):
                 if not target.permissions_for(ctx.author).manage_channels:
@@ -1554,11 +1559,9 @@ class Moderation(commands.Cog):
             if user_id not in self.config[guild_id]["warns"]:
                 await ctx.send(f"{user} has no warns")
                 continue
-            if (
-                user.top_role.position >= ctx.author.top_role.position
-                and ctx.author.id != ctx.guild.owner.id
-            ):
-                return await ctx.send(f"{user} is above your paygrade, take a seat")
+            if ctx.author.id != ctx.guild.owner.id:
+                if user.top_role.position >= ctx.author.top_role.position:
+                    return await ctx.send(f"{user} is above your paygrade, take a seat")
             del self.config[guild_id]["warns"][user_id]
             await ctx.send(f"Cleared {user}'s warns")
             await self.save_data()
