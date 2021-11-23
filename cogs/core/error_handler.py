@@ -10,9 +10,10 @@ A cog for handling exceptions raised within commands
 
 import sys
 import traceback
-from time import time
+import asyncio
 from contextlib import suppress
 from typing import *
+import aiohttp
 
 import discord
 from aiohttp import ClientConnectorError, ClientOSError, ServerDisconnectedError
@@ -21,24 +22,48 @@ from discord.http import DiscordServerError
 from lavalink import NodeException
 from pymongo.errors import DuplicateKeyError
 
+import fate
 from botutils import colors, split, Cooldown
 from classes import checks, exceptions
 
-class ErrorHandler(commands.Cog):
-    notifs: Dict[int, str] = {}  # Who to notify when an errors fixed
 
-    def __init__(self, bot):
+class ErrorHandler(commands.Cog):
+    notifs: Dict[int, int] = {}  # Who to notify when an errors fixed
+    ignored = (
+        exceptions.IgnoredExit,
+        aiohttp.ClientOSError,
+        aiohttp.ClientConnectorError,
+        asyncio.exceptions.TimeoutError,
+        discord.DiscordServerError,
+        discord.NotFound
+    )
+
+    def __init__(self, bot: fate.Fate):
         self.bot = bot
         self.response_cooldown = Cooldown(1, 10)
         self.reaction_cooldown = Cooldown(1, 4)
 
-    async def suppress_key_error(self, ctx, error) -> None:
-        """ Handle KeyError's from modifying menus """
-        error = getattr(error, "original", error)
-        if isinstance(error, KeyError):
-            await ctx.send("It seems something we're operating on was deleted")
-        else:
-            await self.on_command_error(ctx, error, ignore_if_handler=False)  # type: ignore
+        bot.loop.set_exception_handler(self.task_exception_handler)
+
+    def task_exception_handler(self, loop: asyncio.AbstractEventLoop, context: dict):
+        """ Suppress ignored exceptions within tasks """
+        error: Exception = context.pop("exception", None)
+        if error and not isinstance(error, self.ignored):
+            if channel := self.bot.get_channel(self.bot.config["log_channel"]):
+                message = context.get("message", None)
+                stack = ''.join(traceback.format_tb(error.__traceback__))
+                trace = f"```python\n{message}\n{stack}" \
+                        f"{type(error).__name__}: {''.join(error.args)}```"
+                asyncio.create_task(channel.send(trace))
+            else:
+                loop.default_exception_handler(context)
+
+    @commands.Cog.listener()
+    async def on_error(self, _event_method, *_args, **_kwargs):
+        """ Suppress ignored exceptions within events """
+        error = getattr(err := sys.exc_info()[1], "original", err)
+        if not isinstance(error, self.ignored):
+            raise
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error, ignore_if_handler = True):
@@ -262,6 +287,14 @@ class ErrorHandler(commands.Cog):
                 else:
                     await msg.delete(delay=delay)
 
+    async def suppress_key_error(self, ctx, error) -> None:
+        """ Handle KeyError's from modifying menus """
+        error = getattr(error, "original", error)
+        if isinstance(error, KeyError):
+            await ctx.send("It seems something we're operating on was deleted")
+        else:
+            await self.on_command_error(ctx, error, ignore_if_handler=False)  # type: ignore
 
-def setup(bot):
+
+def setup(bot: fate.Fate):
     bot.add_cog(ErrorHandler(bot), override=True)

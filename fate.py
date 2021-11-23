@@ -400,14 +400,6 @@ handler.setFormatter(
     logging.Formatter("%(asctime)s:%(levelname)s:%(name)s: %(message)s")
 )
 logger.addHandler(handler)
-ignored = (
-    IgnoredExit,
-    aiohttp.ClientOSError,
-    aiohttp.ClientConnectorError,
-    asyncio.exceptions.TimeoutError,
-    discord.DiscordServerError,
-    discord.NotFound
-)
 
 # Initialize the bot
 bot = Fate(case_insensitive=True)
@@ -518,25 +510,6 @@ async def on_message(msg):
 
     # Parse prefix, run checks, and execute
     await bot.process_commands(msg)
-
-
-@bot.event
-async def on_error(_event_method, *_args, **_kwargs):
-    error = getattr(err := sys.exc_info()[1], "original", err)
-    if not isinstance(error, ignored):
-        raise
-
-
-def event_exception_handler(loop: asyncio.AbstractEventLoop, context: dict):
-    """ Suppress ignored exceptions within events """
-    error: Exception = context.pop("exception", None)
-    if not isinstance(error, ignored):
-        loop.default_exception_handler(context)
-        if channel := bot.get_channel(bot.config["log_channel"]):
-            trace = f"```python\n{context['message']}\n" \
-                    f"{''.join(traceback.format_tb(error.__traceback__))}" \
-                    f"{type(error).__name__}: {''.join(error.args)}```"
-            asyncio.create_task(channel.send(trace))
 
 
 if __name__ == "__main__":
