@@ -20,11 +20,32 @@ from discord import Webhook
 import discord
 
 
-class Reactions(commands.Cog):
+class Reactions(
+    commands.Cog,
+    command_attrs=dict(
+        cooldown=commands.CooldownMapping(commands.Cooldown(1, 5), commands.BucketType.user)
+    )
+):
+    required_permissions = [
+        "add_reactions",
+        "manage_messages",
+        "manage_webhooks"
+    ]
+
     def __init__(self, bot):
         self.bot = bot
         self.webhook = {}
         self.sent = {}
+
+    def cog_check(self, ctx):
+        perms = ctx.guild.me.guild_permissions
+        missing = []
+        for permission in self.required_permissions:
+            if not getattr(perms, permission):
+                missing.append(permission)
+        if missing:
+            raise commands.MissingPermissions(missing)
+        return True
 
     async def cog_before_invoke(self, ctx):
         if isinstance(ctx.channel, discord.Thread):
@@ -116,175 +137,90 @@ class Reactions(commands.Cog):
                         del self.webhook[ctx.channel.id]
 
     @commands.command(name="intimidate")
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    @commands.bot_has_permissions(
-        attach_files=True, manage_messages=True, manage_webhooks=True
-    )
     async def intimidate(self, ctx, *, content=None):
         await self.send_webhook(ctx, "apple", content)
 
     @commands.command(name="observe")
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    @commands.bot_has_permissions(
-        attach_files=True, manage_messages=True, manage_webhooks=True
-    )
     async def observe(self, ctx, *, content=None):
         await self.send_webhook(ctx, "observe", content)
 
     @commands.command(name="disgust")
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    @commands.bot_has_permissions(
-        attach_files=True, manage_messages=True, manage_webhooks=True
-    )
     async def disgust(self, ctx, *, content=None):
         await self.send_webhook(ctx, "disgust", content)
 
     @commands.command(name="snuggle")
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    @commands.bot_has_permissions(
-        attach_files=True, manage_messages=True, manage_webhooks=True
-    )
     async def snuggle(self, ctx, *, content):
         await self.send_webhook(ctx, "snuggle", content, action="snuggles")
 
     @commands.command(name="admire")
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    @commands.bot_has_permissions(
-        attach_files=True, manage_messages=True, manage_webhooks=True
-    )
     async def admire(self, ctx, *, content=None):
         await self.send_webhook(ctx, "admire", content)
 
     @commands.command(name="waste")
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    @commands.bot_has_permissions(
-        embed_links=True, attach_files=True, manage_messages=True
-    )
     async def waste(self, ctx, *, args):
         await self.send_webhook(ctx, "waste", args, action="wastes")
 
     @commands.command(name="shrug")
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    @commands.bot_has_permissions(
-        embed_links=True, attach_files=True, manage_messages=True
-    )
     async def shrug(self, ctx, *, content=None):
         await self.send_webhook(ctx, "shrug", content)
 
     @commands.command(name="yawn")
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    @commands.bot_has_permissions(
-        embed_links=True, attach_files=True, manage_messages=True
-    )
     async def yawn(self, ctx, *, content=None):
         await self.send_webhook(ctx, "yawn", content)
 
     @commands.command(name="sigh")
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    @commands.bot_has_permissions(
-        embed_links=True, attach_files=True, manage_messages=True
-    )
     async def sigh(self, ctx, *, content=None):
         await self.send_webhook(ctx, "sigh", content)
 
     @commands.command(name="bite")
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    @commands.bot_has_permissions(
-        embed_links=True, attach_files=True, manage_messages=True
-    )
     async def bite(self, ctx, *, args):
         await self.send_webhook(ctx, "bite", args, action="bites")
 
     @commands.command(name="wine")
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    @commands.bot_has_permissions(
-        embed_links=True, attach_files=True, manage_messages=True
-    )
     async def wine(self, ctx, *, content=None):
         await self.send_webhook(ctx, "wine", content)
 
     @commands.command(name="hide")
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    @commands.bot_has_permissions(
-        embed_links=True, attach_files=True, manage_messages=True
-    )
     async def hide(self, ctx, *, content=None):
         await self.send_webhook(ctx, "hide", content)
 
     @commands.command(name="slap")
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    @commands.bot_has_permissions(
-        embed_links=True, attach_files=True, manage_messages=True
-    )
     async def slap(self, ctx, *, args):
         await self.send_webhook(ctx, "slap", args, action="slaps")
 
     @commands.command(name="kiss")
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    @commands.bot_has_permissions(
-        embed_links=True, attach_files=True, manage_messages=True
-    )
     async def kiss(self, ctx, *, args):
         await self.send_webhook(ctx, "kiss", args, action="kisses")
 
     @commands.command(name="kill")
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    @commands.bot_has_permissions(
-        embed_links=True, attach_files=True, manage_messages=True
-    )
     async def kill(self, ctx, *, args):
         await self.send_webhook(ctx, "kill", args, action="kills")
 
     @commands.command(name="teasip", aliases=["tea", "st", "siptea"])
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    @commands.bot_has_permissions(
-        embed_links=True, attach_files=True, manage_messages=True
-    )
     async def teasip(self, ctx, *, content=None):
         await self.send_webhook(ctx, "tea", content)
 
     @commands.command(name="lick")
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    @commands.bot_has_permissions(
-        attach_files=True, manage_messages=True, manage_webhooks=True
-    )
     async def lick(self, ctx, *, args):
         await self.send_webhook(ctx, "lick", args, action="licks")
 
     @commands.command(name="hug")
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    @commands.bot_has_permissions(
-        attach_files=True, manage_messages=True, manage_webhooks=True
-    )
     async def hug(self, ctx, *, args):
         await self.send_webhook(ctx, "hug", args, action="hugs")
 
     @commands.command(name="cry")
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    @commands.bot_has_permissions(
-        embed_links=True, attach_files=True, manage_messages=True
-    )
     async def cry(self, ctx, *, content=None):
         await self.send_webhook(ctx, "cry", content)
 
     @commands.command(name="cuddle")
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    @commands.bot_has_permissions(
-        embed_links=True, attach_files=True, manage_messages=True
-    )
     async def cuddle(self, ctx, *, content=None):
         await self.send_webhook(ctx, "cuddle", content, action="cuddles")
 
     @commands.command(name="pat")
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    @commands.bot_has_permissions(
-        embed_links=True, attach_files=True, manage_messages=True
-    )
     async def pat(self, ctx, *, args):
         await self.send_webhook(ctx, "pat", args, action="pats")
 
     @commands.command(name="homo")
-    @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.is_owner()
     async def _homo(self, ctx):
         path = (
