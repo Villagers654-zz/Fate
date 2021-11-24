@@ -381,7 +381,8 @@ class ModMail(commands.Cog):
     async def close_all(self, ctx: Context):
         if not self.bot.attrs.is_moderator(ctx.author):
             return await ctx.send("Only moderators can run this command")
-        for thread in ctx.guild.threads:
+        archived_threads = await ctx.channel.archived_threads().flatten()
+        for thread in [*ctx.channel.threads, *archived_threads]:
             if "Case" in thread.name and not thread.name.endswith("(Closed)"):
                 case = thread.name.split()[1]
                 if not case.isdigit():
@@ -401,6 +402,8 @@ class ModMail(commands.Cog):
                         await self.bot.get_user(r[0]).send(
                             f"The thread for case #{case_number} in {ctx.guild} was closed"
                         )
+                if thread.archived:
+                    await thread.edit(archived=False)
                 await thread.edit(name=f"{thread.name} (Closed)", archived=True)
                 await self.reference(ctx.guild.id, int(case), red, f"**Case #{case}** was closed by **{ctx.author.mention}**")
         await ctx.send("Finished closing every case")
