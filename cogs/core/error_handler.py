@@ -192,7 +192,7 @@ class ErrorHandler(commands.Cog):
             # Send a user-friendly error and state that it'll be fixed soon
             if not isinstance(error, discord.NotFound):
                 e = discord.Embed(color=colors.red)
-                e.description = f"[{error_to_send}](https://www.youtube.com/watch?v=t3otBjVZzT0)"
+                e.description = f"[{error_to_send[:64]}](https://www.youtube.com/watch?v=t3otBjVZzT0)"
                 e.set_footer(text="This error has been logged, and will be fixed soon")
                 await ctx.send(embed=e)
 
