@@ -102,7 +102,7 @@ class Core(commands.Cog):
         if self.command_cooldown.check(ctx.channel.id):
             if ctx.channel.id not in self.bot.ignored_channels:
                 self.bot.ignored_channels.append(ctx.channel.id)
-                print(f"Rate limited {ctx.guild}")
+                self.bot.log.info(f"Rate limited {ctx.guild}")
                 await asyncio.sleep(15)
                 if ctx.channel.id in self.bot.ignored_channels:
                     self.bot.ignored_channels.remove(ctx.channel.id)
