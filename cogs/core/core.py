@@ -94,7 +94,7 @@ class Core(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         self.join_dates = {
-            guild.id: guild.me.joined_at for guild in self.bot.guilds
+            guild.id: guild.me.joined_at for guild in self.bot.guilds if guild
         }
 
     @commands.Cog.listener()
