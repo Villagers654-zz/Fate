@@ -162,8 +162,7 @@ class Data(dict):
                     break
 
         await self._state.flush()
-        db_state = await self._state._get(self.key)
-        self.copy = db_state or {}
+        self.copy = await self._state._get(self.key)
 
 
 class NestedData(dict):
