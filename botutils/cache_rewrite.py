@@ -9,146 +9,133 @@ A module for querying and caching data from MongoDB in a simple to use dictionar
 """
 
 import asyncio
-from contextlib import suppress
 from copy import deepcopy
 from typing import *
 from time import time
 
-from pymongo.errors import DuplicateKeyError
-from discord.ext import tasks
+from motor.motor_asyncio import AsyncIOMotorCollection
 
 
 class Cache:
     """ Object for querying and caching data from MongoDB """
-    _cache: Dict[str, Any] = {}
-    _db_state: Dict[str, Any] = {}
-    not_enabled: Dict[str, float] = {}
     queries = 0
     cache_queries = 0
+    instances: Dict[Any, "Data"] = {}
+    changes = {}
 
-    def __init__(self, bot, collection: str, auto_sync=False) -> None:
+    def __init__(self, bot, collection: str) -> None:
         self.bot = bot
         self.collection = collection
-        self.auto_sync = auto_sync
-        self.task = self.remove_unused_keys
-        self.task.start()
 
-    def __len__(self) -> int:
-        return len(self._cache)
+    @property
+    def _db(self) -> AsyncIOMotorCollection:
+        return self.bot.aio_mongo[self.collection]
 
-    def __contains__(self, key) -> bool:
-        return key in self._cache
+    async def count(self):
+        return await self._db.estimated_document_count()
 
-    def __getitem__(self, key):
-        return self._cache[key]
+    def __getitem__(self, key) -> "Cache.get":
+        return self.get(key)
 
     def __setitem__(self, key, value):
-        if key in self.not_enabled:
-            del self.not_enabled[key]
-        self._cache[key] = deepcopy(value)
+        self.changes[key] = deepcopy(value)
 
-    def keys(self) -> Iterable:
-        return self._cache.keys()
+    async def keys(self) -> AsyncGenerator:
+        async for document in self._db.find({}):
+            yield document["_id"]
 
-    def items(self) -> Iterable:
-        return self._cache.items()
+    async def values(self) -> AsyncGenerator:
+        async for document in self._db.find({}):
+            document.pop("_id")
+            return document
 
-    def values(self) -> Iterable:
-        return self._cache.values()
+    async def items(self) -> AsyncGenerator:
+        async for document in self._db.find({}):
+            _id = document.pop("_id")
+            yield _id, document
 
-    def get(self, *args, **kwargs) -> Optional[Any]:
-        return self._cache.get(*args, **kwargs)
+    async def _get(self, key) -> Optional[dict]:
+        query = await self._db.find({"_id": key}).to_list(length=1)
+        for result in query:
+            result.pop("_id")
+            return result
+        return None
 
-    @tasks.loop(minutes=5)
-    async def remove_unused_keys(self):
-        """ Remove keys that haven't been accessed in the last 5 minutes """
-        for key, last_accessed in list(self.not_enabled.items()):
+    async def get(self, key) -> Optional["Data"]:
+        # Remove unused instances
+        for key, instance in list(self.instances.items()):
             await asyncio.sleep(0)
-            if key not in self._cache and key not in self._db_state:
-                continue
-            if time() - (60 * 5) > last_accessed:
-                del self.not_enabled[key]
+            if time() - 300 > instance.last_sync:
+                if key in self.instances:
+                    del self.instances[key]
+
+        # Check if somethings already accessing the document
+        if key in self.instances:
+            return await self.instances[key].reinstate()
+
+        result = await self._get(key)
+        if not result:
+            return None
+
+        # Double check after handing off the loop
+        if key in self.instances:
+            return await self.instances[key].reinstate()
+
+        self.instances[key] = Data(self, key, result)
+        return self.instances[key]
 
     async def flush(self) -> None:
         """ Pushes changes from cache into the actual database """
         collection = self.bot.aio_mongo[self.collection]
-        for key, value in list(self._cache.items()):
+        for key, value in list(self.changes.items()):
             await asyncio.sleep(0)
-            if key not in self._cache:
-                continue
-            if key not in self._db_state:
-                await asyncio.sleep(0.21)
-                with suppress(DuplicateKeyError):
-                    await collection.insert_one({
-                        "_id": key, **self._cache[key]
-                    })
-                self._db_state[key] = deepcopy(value)
-            elif value != self._db_state[key]:
-                await asyncio.sleep(0.21)
-                await collection.replace_one(
-                    filter={"_id": key},
-                    replacement=self._cache[key],
-                    upsert=True
-                )
-                self._db_state[key] = deepcopy(value)
-
-    async def cache(self, key) -> None:
-        """ Caches a key if not already cached """
-        await self.get_or_fetch(key)
-
-    async def _remove_after(self, key, duration: int):
-        """ Removes an key from cache after a certain duration """
-        await asyncio.sleep(duration)
-        if key in self._cache:
-            del self._cache[key]
-        if key in self._db_state:
-            del self._db_state[key]
-
-    async def get_or_fetch(self, key, remove_after: Optional[int] = None) -> Any:
-        """ Fetches an key from the cache or db """
-        if key in self._cache:
-            return self._cache[key]
-        if key in self.not_enabled:
-            self.not_enabled[key] = time()
-            return
-        collection = self.bot.aio_mongo[self.collection]
-        value = await collection.find_one({"_id": key})
-        if not value:
-            self.not_enabled[key] = time()
-            return
-        del value["_id"]
-        self._cache[key] = deepcopy(value)
-        self._db_state[key] = deepcopy(value)
-        if remove_after:
-            asyncio.create_task(self._remove_after(key, remove_after))
-
-    def remove(self, key):
-        """ An awaitable to remove an item from the cache, and database """
-        if key in self._db_state:
-            return asyncio.create_task(self._remove_from_db(key))
-        else:
-            del self._cache[key]
-            return asyncio.sleep(0)
-
-    def remove_sub(self, key, sub_key) -> asyncio.Task:
-        """ Removes a key from inside the keys dict """
-        return asyncio.create_task(self._remove_from_db(key, sub_key))
-
-    async def _remove_from_db(self, key, sub_key=None) -> None:
-        """ The coro to remove an item from the cache, and database """
-        collection = self.bot.aio_mongo[self.collection]
-        if sub_key:
-            await collection.update_one(
+            value["_id"] = key
+            await collection.replace_one(
                 filter={"_id": key},
-                update={"$unset": {sub_key: 1}}
+                replacement=value,
+                upsert=True
             )
-            with suppress(KeyError):
-                del self._cache[key][sub_key]
-            with suppress(KeyError):
-                if sub_key in self._db_state[key]:
-                    del self._db_state[key][sub_key]
+            del self.changes[key]
+
+    async def remove(self, key):
+        """ An awaitable to remove an item from the cache, and database """
+        await self._db.delete_one({key: 1})
+
+
+class Data(dict):
+    def __init__(self, state: Cache, key, data):
+        self.state = state
+        self.key = key
+
+        for _key, value in data.items():
+            self[_key] = value
+        self.copy = deepcopy(data)
+
+        self.last_sync = time()
+        super().__init__()
+
+    async def reinstate(self) -> "Data":
+        """ Ran when another process starts using the same object """
+        if time() - 300 > self.last_sync:
+            await self.sync()
+        return self
+
+    async def sync(self):
+        """ Merge with changes to the DB variant """
+        new_data = await self.state._get(self.key)
+        for key, value in new_data.items():
+            await asyncio.sleep(0)
+            if key not in self.copy or value != self.copy[key]:
+                self[key] = value
+        self.last_sync = time()
+
+    async def flush(self, manual: bool = True):
+        if manual or dict(self) != self.copy:
+            self.state.changes[self.key] = dict(self)
         else:
-            await collection.delete_one({"_id": key})
-            del self._cache[key]
-            if key in self._db_state:
-                del self._db_state[key]
+            for key, value in self.items():
+                await asyncio.sleep(0)
+                if value != self.copy[key]:
+                    self.state.changes[self.key] = dict(self)
+                    break
+        await self.state.flush()
