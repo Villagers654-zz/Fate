@@ -41,7 +41,6 @@ class AntiRaid(commands.Cog):
         for perm in required:
             if perm not in perms:
                 del self.config[guild.id]
-                await self.save_data()
                 for channel in guild.text_channels:
                     if channel.permissions_for(guild.me).send_messages:
                         await guild.owner.send(
@@ -164,7 +163,7 @@ class AntiRaid(commands.Cog):
             if entry.action in [discord.AuditLogAction.kick, discord.AuditLogAction.ban]:
                 user = entry.user.id
                 if self.ban_cd.check(user.id):
-                    if await self.ensure_permissions(member.guild):
+                    if await self.ensure_permissions(guild):
                         await guild.ban(
                             user=user,
                             reason="Attempted Purge",
