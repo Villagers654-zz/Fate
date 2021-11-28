@@ -56,8 +56,7 @@ class AntiRaid(commands.Cog):
     async def _anti_raid(self, ctx):
         if not ctx.invoked_subcommand:
             toggle = "disabled"
-            if conf := await self.config[ctx.guild.id]:
-                print(conf)
+            if await self.config[ctx.guild.id]:
                 toggle = "enabled"
             e = discord.Embed(color=colors.red)
             e.set_author(name="Anti Raid", icon_url=ctx.author.display_avatar.url)
