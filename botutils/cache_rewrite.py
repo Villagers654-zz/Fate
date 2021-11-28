@@ -125,12 +125,12 @@ class Data(dict):
         self.last_update = time()
         super().__delitem__(key)
 
-    def make_subclass(self, dictionary: dict) -> "NestedData":
+    def make_subclass(self, dictionary: dict) -> "NestedDict":
         """ Make sure nested dictionaries inherit from NestedData """
         for key, value in list(dictionary.items()):
             if value.__class__.__name__ == "dict":
                 dictionary[key] = self.make_subclass(value)
-        return NestedData(self, dictionary)
+        return NestedDict(self, dictionary)
 
     async def reinstate(self) -> "Data":
         """ Ran when another process starts using the same object """
@@ -165,7 +165,7 @@ class Data(dict):
         self.copy = await self._state._get(self.key)
 
 
-class NestedData(dict):
+class NestedDict(dict):
     """ Updates the parent dictionaries last_update variable """
     def __init__(self, parent: "Data", data: dict):
         self._parent = parent
