@@ -156,28 +156,29 @@ class Ranking(commands.Cog):
             )
             self.bot.log.debug("Removed expired messages from monthly leaderboards")
 
+    @staticmethod
+    async def get_multiplier_for(level):
+        multiplier = 1
+        increase_by = 0.125
+        reduce_at = 3
+
+        for i in range(level):
+            await asyncio.sleep(0)
+            if multiplier >= reduce_at:
+                increase_by /= 2
+                reduce_at += 3
+            multiplier += increase_by
+
+        return multiplier
+
     async def calc_lvl_info(self, xp, config):
-        async def get_multiplier_for(level):
-            multiplier = 1
-            increase_by = 0.125
-            reduce_at = 3
-
-            for i in range(level):
-                await asyncio.sleep(0)
-                if multiplier >= reduce_at:
-                    increase_by /= 2
-                    reduce_at += 3
-                multiplier += increase_by
-
-            return multiplier
-
         level = 0
         remaining_xp = xp
         base_requirement = config["first_lvl_xp_req"]
 
         while True:
             await asyncio.sleep(0)
-            multiplier = await get_multiplier_for(level)
+            multiplier = await self.get_multiplier_for(level)
             current_req = base_requirement * multiplier
             if remaining_xp < current_req:
                 break
