@@ -147,7 +147,7 @@ class Data(dict):
                 self[key] = value
         self.last_update = time()
 
-    async def flush(self, manual: bool = True):
+    async def save(self, manual: bool = True):
         if self.copy and not self.keys():
             self.copy = {}
             return await self._state.remove(self.key)
@@ -160,6 +160,8 @@ class Data(dict):
                 if value != self.copy[key]:
                     self._state.changes[self.key] = dict(self)
                     break
+            else:
+                return
 
         await self._state.flush()
         self.copy = await self._state._get(self.key)
