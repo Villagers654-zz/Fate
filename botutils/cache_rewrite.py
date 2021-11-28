@@ -38,7 +38,16 @@ class Cache:
         return self.get(key)
 
     def __setitem__(self, key, value):
+        if key in self.instances:
+            self.instances[key].__init__(self, key, value)
         self.changes[key] = deepcopy(value)
+        self.bot.loop.create_task(self.flush())
+
+    def __delitem__(self, key):
+        if key in self.instances:
+            self.instances[key].clear()
+            del self.instances[key]
+        self.bot.loop.create_task(self.remove(key))
 
     async def keys(self) -> AsyncGenerator:
         async for document in self._db.find({}):
@@ -144,7 +153,10 @@ class Data(dict):
         for key, value in new_data.items():
             await asyncio.sleep(0)
             if key not in self.copy or value != self.copy[key]:
+                if value.__class__.__name__ == "dict":
+                    value = self.make_subclass(value)
                 self[key] = value
+        self.copy = new_data
         self.last_update = time()
 
     async def save(self, manual: bool = True):
