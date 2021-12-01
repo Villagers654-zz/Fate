@@ -56,7 +56,6 @@ class Core(commands.Cog):
             webhook_auth=creds["auth"],
             webhook_port=creds["port"]
         )
-        self.path = "./data/userdata/disabled_commands.json"
         self.config = bot.utils.cache("disabled")
         self.join_dates = {
             guild.id: guild.me.joined_at for guild in bot.guilds
