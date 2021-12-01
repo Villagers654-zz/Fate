@@ -74,7 +74,7 @@ class Cache:
         # Remove unused instances
         for key, instance in list(self.instances.items()):
             await asyncio.sleep(0)
-            if time() - 300 > instance.last_update:
+            if time() - 10 > instance.last_update:
                 if key in self.instances:
                     del self.instances[key]
 
@@ -123,6 +123,9 @@ class Data(dict):
 
         self.last_update = time()
         super().__init__()
+
+    def __del__(self):
+        print("A config was removed from memory")
 
     def __setitem__(self, key, value):
         """ Make sure nested dictionaries inherit from NestedData """
