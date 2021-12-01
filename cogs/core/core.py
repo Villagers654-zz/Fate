@@ -61,7 +61,7 @@ class Core(commands.Cog):
         self.join_dates = {
             guild.id: guild.me.joined_at for guild in bot.guilds
         }
-        self.command_cooldown = Cooldown(4, 5)
+        self.command_cooldown = Cooldown(8, 10)
 
     async def on_guild_post(self):
         self.bot.log.debug("Server count posted successfully")
