@@ -16,7 +16,6 @@ import discord
 from discord.ext import commands
 
 from botutils import colors, Cooldown
-from botutils import cache_rewrite
 from botutils.cache_rewrite import Cache
 
 
