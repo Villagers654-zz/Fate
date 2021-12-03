@@ -16,6 +16,9 @@ from time import time
 from motor.motor_asyncio import AsyncIOMotorCollection
 
 
+Key = Union[int, str]
+
+
 class Cache:
     """ Object for querying and caching data from MongoDB """
     queries = 0
@@ -34,8 +37,8 @@ class Cache:
     async def count(self) -> int:
         return await self._db.estimated_document_count()
 
-    def __getitem__(self, key) -> "Cache.get":
-        return self.get(key)
+    def __getitem__(self, key) -> "Get":
+        return Get(self, key)
 
     def __setitem__(self, key, value):
         if key in self.instances:
@@ -63,14 +66,14 @@ class Cache:
             _id = document.pop("_id")
             yield _id, document
 
-    async def _get(self, key) -> dict:
+    async def _get(self, key: Key) -> dict:
         query = await self._db.find({"_id": key}).to_list(length=1)
         for result in query:
             result.pop("_id")
             return result
         return {}
 
-    async def get(self, key) -> "Data":
+    async def get(self, key: Key) -> "Data":
         # Remove unused instances
         for key, instance in list(self.instances.items()):
             await asyncio.sleep(0)
@@ -88,6 +91,14 @@ class Cache:
         if key in self.instances:
             return await self.instances[key].reinstate()
 
+        self.instances[key] = Data(self, key, result)
+        return self.instances[key]
+
+    async def fetch(self, key: Key) -> "Data":
+        """ Gets the variant of the config in the DB """
+        result = await self._get(key)
+        if key in self.instances:
+            del self.instances[key]
         self.instances[key] = Data(self, key, result)
         return self.instances[key]
 
@@ -109,6 +120,29 @@ class Cache:
         await self._db.delete_one({"_id": key})
 
 
+class Get:
+    context: "Data"
+
+    def __init__(self, cache: Cache, key: Key):
+        self.cache = cache
+        self.key = key
+
+    def __await__(self):
+        return self._await().__await__()
+
+    async def _await(self):
+        return self.cache.get(self.key)
+
+    async def __aenter__(self) -> "Data":
+        self.context = await self.cache.get(self.key)
+        return self.context
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.context.save(manual=True)
+        if self.key in self.cache.instances:
+            del self.cache.instances[self.key]
+
+
 class Data(dict):
     """ Represents a temporary dataclass-like object """
     def __init__(self, state: Cache, key, data):
@@ -123,9 +157,6 @@ class Data(dict):
 
         self.last_update = time()
         super().__init__()
-
-    def __del__(self):
-        print("A config was removed from memory")
 
     def __setitem__(self, key, value):
         """ Make sure nested dictionaries inherit from NestedData """
@@ -146,7 +177,7 @@ class Data(dict):
 
     async def reinstate(self) -> "Data":
         """ Ran when another process starts using the same object """
-        if time() - 300 > self.last_update:
+        if time() - 10 > self.last_update:
             await self.sync()
         return self
 
