@@ -1605,6 +1605,60 @@ class Moderation(commands.Cog):
         e.description = f"**Total Warns:** [`{warns}`]" + reasons
         await ctx.send(embed=e)
 
+    @commands.command(name="simplify-perms", aliases=["simplify-permissions"])
+    @commands.is_owner()
+    async def fix_perms(self, ctx: commands.Context, access_role: discord.Role = None):
+        special = [
+            "administrator",
+            "manage_guild",
+            "manage_roles",
+            "manage_messages",
+            "manage_webhooks",
+            "manage_reactions",
+            "manage_threads",
+            "manage_permissions"
+        ]
+        if not access_role:
+            access_role = ctx.guild.default_role
+
+        perms = discord.PermissionOverwrite()
+        perms.update(read_messages=True)
+        access_granted = {access_role: perms}
+
+        perms = discord.PermissionOverwrite()
+        perms.update(read_messages=True, send_messages=False)
+        limited_access = {access_role: perms}
+
+        for category in ctx.guild.categories:
+            perms = category.permissions_for(access_role)
+            if perms.read_messages and perms.send_messages:
+                await category.edit(overwrites=access_granted)
+
+            for channel in category.text_channels:
+                perms = channel.permissions_for(access_role)
+                if perms.read_messages and perms.send_messages:
+                    await channel.edit(sync_permissions=True)
+                else:
+                    await channel.edit(overwrites=limited_access)
+
+        for role in ctx.guild.roles:
+            perms = discord.Permissions()
+            if role.id == access_role.id:
+                old = access_role.permissions
+                perms.update(
+                    embed_links=old.embed_links,
+                    create_instant_invite=perms.create_instant_invite,
+                    attach_files=old.attach_files,
+                    change_nickname=perms.change_nickname,
+                    send_messages=True,
+                    add_reactions=True
+                )
+                await role.edit(permissions=perms)
+            if not any(getattr(role.permissions, perm) for perm in special):
+                await role.edit(permissions=perms)
+
+        await ctx.send("Finished simplifying server permissions")
+
 
 class MuteView(ui.View):
     def __init__(self, ctx, user: Union[User, Member], case: int, reason: Optional[str], timer: Optional[int]):
