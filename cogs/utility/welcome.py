@@ -10,6 +10,7 @@ A cog for welcoming users to servers
 
 import random
 import os
+from contextlib import suppress
 
 from discord.ext import commands
 import discord
@@ -91,7 +92,7 @@ class Welcome(commands.Cog):
         if not ctx.invoked_subcommand:
             guild_id = ctx.guild.id
             toggle = "disabled"
-            if guild_id in self.config:
+            if guild_id in self.config and self.config[guild_id]["enabled"]:
                 toggle = "enabled"
             e = discord.Embed(color=colors.tan)
             e.set_author(name="Welcome Messages", icon_url=self.bot.user.display_avatar.url)
@@ -139,6 +140,7 @@ class Welcome(commands.Cog):
         }
         if guild_id in self.config:
             conf = self.config[guild_id]
+            conf["enabled"] = True
 
         for _ in range(5):
             msg = await convo.ask("Mention the channel I should use")
@@ -387,8 +389,13 @@ class Welcome(commands.Cog):
                 conf = self.config[guild_id]
                 channel = self.bot.get_channel(conf["channel"])
                 if not channel:
-                    self.config[guild_id]["enabled"] = False
-                    return await self.config.flush()
+                    try:
+                        channel = await self.bot.fetch_channel(conf["channel"])
+                    except discord.NotFound:
+                        with suppress(Exception):
+                            await guild.owner.send("Disabled welcome messages because I don't havae access to the channel")
+                        self.config[guild_id]["enabled"] = False
+                        return await self.config.flush()
 
                 # Format the welcome message
                 msg = conf["format"] \
