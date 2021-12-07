@@ -9,6 +9,7 @@ Classes:
     ModView : A View that only moderators can interact with
     AuthorView : A view that only the author of the original message can interact with
     Menu : A ease of use embed paginator
+    Configure : A menu for having a user modify a config
 
 :copyright: (C) 2021-present FrequencyX4, All Rights Reserved
 :license: Proprietary, see LICENSE for details
@@ -18,7 +19,7 @@ from typing import *
 from discord import ui, Interaction, SelectOption, Embed, ButtonStyle
 from discord.ext.commands import Context
 import discord
-from . import Cooldown
+from . import Cooldown, emojis, colors
 
 
 class GetConfirmation(ui.View):
@@ -190,3 +191,64 @@ class _Dropdown(ui.Select):
         self.cls.buttons["seek_left"].disabled = True
         self.cls.buttons["seek_right"].disabled = False
         await self.cls.update_message(interaction)
+
+
+class Configure(ui.View):
+    message: discord.Message = None
+
+    def __init__(self, ctx, options: dict) -> None:
+        self.ctx = ctx
+        self.options = options
+        super().__init__(timeout=45)
+        self.add_item(_ConfigureDropdown(self))
+
+    def __await__(self) -> Generator[Any, Any, dict]:
+        return self._await().__await__()
+
+    async def _await(self) -> dict:
+        self.message = await self.ctx.send(embed=self.embed, view=self)
+        await self.wait()
+        return self.options
+
+    @property
+    def embed(self) -> discord.Embed:
+        e = discord.Embed(color=colors.fate)
+        e.set_author(name="Configure Options", icon_url=self.ctx.author.display_avatar.url)
+        e.description = ""
+        for option, toggle in self.options.items():
+            emote = emojis.online if toggle else emojis.dnd
+            e.description += f"\n{emote} **{option.title()}**"
+        return e
+
+    @ui.button(emoji=emojis.yes, row=2)
+    async def done(self, _button, interaction: Interaction):
+        self.stop()
+        await interaction.message.delete()
+
+
+class _ConfigureDropdown(ui.Select):
+    def __init__(self, menu):
+        self.menu = menu
+        super().__init__(
+            placeholder="Toggle an Option",
+            min_values=1,
+            max_values=len(menu.options),
+            options=[
+                SelectOption(
+                    emoji=emojis.online if toggle else emojis.dnd,
+                    label=option.title(),
+                    value=option,
+                    description=f"click to {'disable' if toggle else 'enable'}"
+                )
+                for option, toggle in menu.options.items()
+            ]
+        )
+
+    async def callback(self, interaction: Interaction):
+        for option in interaction.data["values"]:
+            self.menu.options[option] = not self.menu.options[option]
+        self.menu.__init__(self.menu.ctx, self.menu.options)
+        await interaction.response.edit_message(
+            embed=self.menu.embed,
+            view=self.menu
+        )
