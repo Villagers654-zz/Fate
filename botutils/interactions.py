@@ -16,9 +16,12 @@ Classes:
 """
 
 from typing import *
+from contextlib import suppress
+
 from discord import ui, Interaction, SelectOption, Embed, ButtonStyle
 from discord.ext.commands import Context
 import discord
+
 from . import Cooldown, emojis, colors
 
 
@@ -195,6 +198,7 @@ class _Dropdown(ui.Select):
 
 class Configure(ui.View):
     message: discord.Message = None
+    deleted: bool = False
 
     def __init__(self, ctx, options: dict) -> None:
         self.ctx = ctx
@@ -208,6 +212,9 @@ class Configure(ui.View):
     async def _await(self) -> dict:
         self.message = await self.ctx.send(embed=self.embed, view=self)
         await self.wait()
+        if not self.deleted:
+            with suppress(Exception):
+                await self.message.delete()
         return self.options
 
     @property
@@ -222,6 +229,7 @@ class Configure(ui.View):
 
     @ui.button(emoji=emojis.yes, row=2)
     async def done(self, _button, interaction: Interaction):
+        self.deleted = True
         self.stop()
         await interaction.message.delete()
 
