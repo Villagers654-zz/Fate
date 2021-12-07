@@ -29,9 +29,7 @@ class AntiRaid(commands.Cog):
         self.last = {}
 
     async def is_enabled(self, guild_id: int):
-        if await self.config[guild_id]:
-            return True
-        return False
+        return await self.config.contains(guild_id)
 
     async def ensure_permissions(self, guild):
         bot = guild.get_member(self.bot.user.id)
