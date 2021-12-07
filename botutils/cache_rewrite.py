@@ -42,7 +42,7 @@ class Cache:
     async def contains(self, key: Key) -> bool:
         """
         Checks if the collection contains a key.
-        This should only be used when you don't need the db contents returned
+        This should only be used when you don't need the dbs contents returned
         """
         if key in self.instances and len(self.instances[key]):
             return True
