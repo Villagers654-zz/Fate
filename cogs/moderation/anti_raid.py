@@ -42,7 +42,7 @@ class AntiRaid(commands.Cog):
                 del self.config[guild.id]
                 for channel in guild.text_channels:
                     if channel.permissions_for(guild.me).send_messages:
-                        await guild.owner.send(
+                        await channel.send(
                             f"Disabled anti raid, missing {perm} permissions"
                         )
                         break
@@ -159,7 +159,7 @@ class AntiRaid(commands.Cog):
             return
         if entry.created_at > datetime.now(tz=timezone.utc) - timedelta(seconds=3):
             if entry.action in [discord.AuditLogAction.kick, discord.AuditLogAction.ban]:
-                user = entry.user.id
+                user = entry.user
                 if self.ban_cd.check(user.id):
                     if await self.ensure_permissions(guild):
                         await guild.ban(
