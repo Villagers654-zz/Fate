@@ -32,21 +32,34 @@ class Cache:
 
     @property
     def _db(self) -> AsyncIOMotorCollection:
+        """ Shortcut property to get a collection/db instance """
         return self.bot.aio_mongo[self.collection]
 
     async def count(self) -> int:
+        """ Returns the dbs document count """
         return await self._db.estimated_document_count()
 
-    def __getitem__(self, key) -> "Get":
+    async def contains(self, key: Key) -> bool:
+        """
+        Checks if the collection contains a key.
+        This should only be used when you don't need the db contents returned
+        """
+        if key in self.instances and len(self.instances[key]):
+            return True
+        if await self._get(key):
+            return True
+        return False
+
+    def __getitem__(self, key: Key) -> "Get":
         return Get(self, key)
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: Key, value):
         if key in self.instances:
             self.instances[key].__init__(self, key, value)
         self.changes[key] = deepcopy(value)
         self.bot.loop.create_task(self.flush())
 
-    def __delitem__(self, key):
+    def __delitem__(self, key: Key):
         if key in self.instances:
             self.instances[key].clear()
             del self.instances[key]
@@ -67,6 +80,7 @@ class Cache:
             yield _id, document
 
     async def _get(self, key: Key) -> dict:
+        """ Gets the raw results from the db """
         query = await self._db.find({"_id": key}).to_list(length=1)
         for result in query:
             result.pop("_id")
@@ -74,6 +88,8 @@ class Cache:
         return {}
 
     async def get(self, key: Key) -> "Data":
+        """ Gets the results from the db or cache """
+
         # Remove unused instances
         for key, instance in list(self.instances.items()):
             await asyncio.sleep(0)
@@ -95,7 +111,7 @@ class Cache:
         return self.instances[key]
 
     async def fetch(self, key: Key) -> "Data":
-        """ Gets the variant of the config in the DB """
+        """ Skips the cache and queries the DB """
         result = await self._get(key)
         if key in self.instances:
             del self.instances[key]
@@ -131,7 +147,7 @@ class Get:
         return self._await().__await__()
 
     async def _await(self):
-        return self.cache.get(self.key)
+        return await self.cache.get(self.key)
 
     async def __aenter__(self) -> "Data":
         self.context = await self.cache.get(self.key)
