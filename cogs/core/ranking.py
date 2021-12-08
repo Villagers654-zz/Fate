@@ -391,26 +391,31 @@ class Ranking(commands.Cog):
             else:
                 await cur.execute(f"insert into commands values ('{cmd}', 1, {set_time});")
 
-    @commands.command(
+    @commands.group(
         name="role-rewards",
         aliases=["level-rewards", "level-roles", "lr"],
-        description="Grant roles as a reward to users whence they reach a specified level"
+        description="Grant roles for leveling up"
     )
-    @commands.cooldown(2, 5, commands.BucketType.user)
+    @commands.is_owner()
     @commands.bot_has_permissions(embed_links=True, manage_roles=True)
-    async def role_rewards(self, ctx, *args):
-        if not args or len(args) == 1:
+    async def role_rewards(self, ctx):
+        if not ctx.invoked_subcommand:
             e = discord.Embed(color=self.bot.config["theme_color"])
             e.set_author(name="Level Roles", icon_url=self.bot.user.display_avatar.url)
             e.set_thumbnail(url=url_from(ctx.guild.icon))
             e.description = self.role_rewards.description
             p = get_prefix(ctx)  # type: str
+            cmd = ctx.invoked_with
             e.add_field(
                 name="◈ Usage",
-                value=f"{p}level-rewards @role [level]\n"
+                value=f"{p}{cmd} add [level] @role\n"
                       f"`adds a level reward`\n"
-                      f"{p}level-rewards remove @role\n"
-                      f"`removes a level reward`",
+                      f"{p}{cmd} remove @role\n"
+                      f"`removes a level reward`\n"
+                      f"{p}{cmd} limit-all\n"
+                      f"`only lets users keep the highest role reward`\n"
+                      f"{p}{cmd} unlimit-all\n"
+                      f"`lets users maintain every role reward they earn`",
                 inline=False
             )
             e.add_field(
@@ -435,24 +440,23 @@ class Ranking(commands.Cog):
                     value=value,
                     inline=False
                 )
-            return await ctx.send(embed=e)
+            await ctx.send(embed=e)
 
-        if ctx.message.role_mentions:
-            role = ctx.message.role_mentions[0]
-        else:
-            role = await self.bot.utils.get_role(ctx, args[1])
+    @role_rewards.command(name="add")
+    @commands.has_permissions(manage_roles=True)
+    async def _add(self, ctx, level: int, *, role: discord.Role = None):
+        if level <= 0:
+            return await ctx.send("The level requirement can't be less than 1")
+        if not role:
+            role = await self.bot.utils.get_role(ctx, role)
             if not role:
-                return await ctx.send("Role not found")
+                return await ctx.send("I wasn't able to find that role")
+        if role.position >= ctx.author.top_role.position:
+            return await ctx.send("That role's above your paygrade. Take a seat")
+        if role.position >= ctx.guild.me.top_role.position:
+            return await ctx.send("That role's too high for me to manage")
 
-        if "remove" in args[0].lower():
-            await self.bot.execute(f"delete from role_rewards where role_id = {role.id};")
-            return await ctx.send(f"Removed the level-role for {role.mention} if it existed")
-        if not args[1].isdigit():
-            return await ctx.send(
-                "Your command isn't formatted properly. "
-                "The level argument you put wasn't a number"
-            )
-
+        # Check the number of role rewards
         async with self.bot.utils.cursor() as cur:
             await cur.execute(
                 f"select * from role_rewards "
@@ -462,7 +466,6 @@ class Ranking(commands.Cog):
         if entries >= 10:
             return await ctx.send("You can't have more than 10 level rewards")
 
-        level = int(args[1])
         stack = True
         await ctx.send(
             "Should I remove this role when the user gets a higher role reward? "
@@ -477,7 +480,17 @@ class Ranking(commands.Cog):
             f"values ({ctx.guild.id}, {role.id}, {level}, {stack}) "
             f"on duplicate key update lvl = {level} and stack = {stack};"
         )
-        await ctx.send(f"Setup complete")
+        await ctx.send(f"Added {role.mention}")
+
+    @role_rewards.command(name="remove")
+    @commands.has_permissions(manage_roles=True)
+    async def _remove(self, ctx, role: discord.Role = None):
+        if not role:
+            role = await self.bot.utils.get_role(ctx, role)
+            if not role:
+                return await ctx.send("I wasn't able to find that role")
+        await self.bot.execute(f"delete from role_rewards where role_id = {role.id};")
+        await ctx.send(f"Removed the level-role for {role.mention} if it existed")
 
     @commands.command(name="xp-config", description="Shows the current xp configuration")
     @commands.cooldown(2, 5, commands.BucketType.user)
