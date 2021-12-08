@@ -23,7 +23,7 @@ class Cache:
     """ Object for querying and caching data from MongoDB """
     queries = 0
     cache_queries = 0
-    instances: Dict[Any, "Data"] = {}
+    instances: Dict[Any, "DataContext"] = {}
     changes = {}
 
     def __init__(self, bot, collection: str):
@@ -87,7 +87,7 @@ class Cache:
             return result
         return {}
 
-    async def get(self, key: Key) -> "Data":
+    async def get(self, key: Key) -> "DataContext":
         """ Gets the results from the db or cache """
 
         # Remove unused instances
@@ -107,15 +107,15 @@ class Cache:
         if key in self.instances:
             return await self.instances[key].reinstate()
 
-        self.instances[key] = Data(self, key, result)
+        self.instances[key] = DataContext(self, key, result)
         return self.instances[key]
 
-    async def fetch(self, key: Key) -> "Data":
+    async def fetch(self, key: Key) -> "DataContext":
         """ Skips the cache and queries the DB """
         result = await self._get(key)
         if key in self.instances:
             del self.instances[key]
-        self.instances[key] = Data(self, key, result)
+        self.instances[key] = DataContext(self, key, result)
         return self.instances[key]
 
     async def flush(self):
@@ -137,7 +137,7 @@ class Cache:
 
 
 class Get:
-    context: "Data"
+    context: "DataContext"
 
     def __init__(self, cache: Cache, key: Key):
         self.cache = cache
@@ -149,7 +149,7 @@ class Get:
     async def _await(self):
         return await self.cache.get(self.key)
 
-    async def __aenter__(self) -> "Data":
+    async def __aenter__(self) -> "DataContext":
         self.context = await self.cache.get(self.key)
         return self.context
 
@@ -159,7 +159,7 @@ class Get:
             del self.cache.instances[self.key]
 
 
-class Data(dict):
+class DataContext(dict):
     """ Represents a temporary dataclass-like object """
     def __init__(self, state: Cache, key, data):
         self._state = state
@@ -191,7 +191,7 @@ class Data(dict):
                 dictionary[key] = self.make_subclass(value)
         return NestedDict(self, dictionary)
 
-    async def reinstate(self) -> "Data":
+    async def reinstate(self) -> "DataContext":
         """ Ran when another process starts using the same object """
         if time() - 10 > self.last_update:
             await self.sync()
@@ -231,7 +231,7 @@ class Data(dict):
 
 class NestedDict(dict):
     """ Updates the parent dictionaries last_update variable """
-    def __init__(self, parent: "Data", data: dict):
+    def __init__(self, parent: "DataContext", data: dict):
         self._parent = parent
         super().__init__(**data)
 
