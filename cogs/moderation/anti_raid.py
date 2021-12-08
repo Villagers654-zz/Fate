@@ -24,7 +24,7 @@ class AntiRaid(commands.Cog):
     default = {
         "mass_join": True,
         "mass_ban": True,
-        "self_bot": True,
+        "self_bot": False,
     }
 
     def __init__(self, bot):
@@ -32,6 +32,7 @@ class AntiRaid(commands.Cog):
         self.config = Cache(bot, "anti_raid")
         self.join_cd = Cooldown(15, 25)
         self.ban_cd = Cooldown(10, 15)
+        self.counter = {}
         self.locked = []
         self.last = {}
 
@@ -98,6 +99,35 @@ class AntiRaid(commands.Cog):
             return await ctx.send("Anti raid is not enabled")
         del self.config[ctx.guild.id]
         await ctx.send("Disabled anti raid")
+
+    @commands.Cog.listener()
+    async def on_typing(self, _channel, user, _when):
+        if user.id in self.counter:
+            self.counter[user.id] = None
+            await asyncio.sleep(10)
+            self.counter.pop(user.id, None)
+
+    @commands.Cog.listener()
+    async def on_message(self, msg):
+        if msg.author.bot or not msg.guild:
+            return
+        guild_id = msg.guild.id
+        if conf := await self.config[guild_id]:
+            if conf["self_bot"]:
+                triggered = False
+                user_id = msg.author.id
+                if user_id not in self.counter:
+                    self.counter[user_id] = 0
+                if self.counter[user_id] is not None:
+                    self.counter[user_id] += 1
+                    if self.counter[user_id] > 5:
+                        triggered = True
+                if msg.embeds:
+                    triggered = True
+                if triggered:
+                    with suppress(Exception):
+                        await msg.author.ban(reason="AntiRaid: using a self-bot")
+                        await msg.channel.send(f"Banned **{msg.author}** for using a self-bot or client modification")
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
