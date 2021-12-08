@@ -317,6 +317,7 @@ class Ranking(commands.Cog):
                     dat = await self.calc_lvl_info(xp, conf)
 
                     # Check if the user leveled up
+                    queued_message = None
                     if config := self.channels.get(guild_id, None):
                         if location := config.get("level_up_messages", None):
                             if guild_id not in self.levels:
@@ -327,7 +328,7 @@ class Ranking(commands.Cog):
                                 if dat["level"] > self.levels[guild_id][user_id][0]:
                                     channel = self.bot.get_channel(location) or msg.channel
                                     if channel and channel.permissions_for(msg.guild.me).send_messages:
-                                        await channel.send(
+                                        queued_message = channel.send(
                                             content=f"{msg.author.mention}, **you're now level {dat['level']}**",
                                             allowed_mentions=discord.AllowedMentions(users=True, roles=False, everyone=False)
                                         )
@@ -342,6 +343,8 @@ class Ranking(commands.Cog):
                             f"order by lvl asc;"
                         )
                         if not cur.rowcount:
+                            if queued_message:
+                                await queued_message
                             return
                         results = await cur.fetchall()
 
