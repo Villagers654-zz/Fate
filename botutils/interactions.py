@@ -246,7 +246,7 @@ class _ConfigureDropdown(ui.Select):
             options=[
                 SelectOption(
                     emoji=emojis.online if toggle else emojis.dnd,
-                    label=option.title(),
+                    label=option.title().replace("_", " "),
                     value=option,
                     description=f"click to {'disable' if toggle else 'enable'}"
                 )
