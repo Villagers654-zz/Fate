@@ -23,6 +23,7 @@ from discord.ext.commands import Context
 import discord
 
 from . import Cooldown, emojis, colors
+from .cache_rewrite import DataContext
 
 
 class GetConfirmation(ui.View):
@@ -206,10 +207,10 @@ class Configure(ui.View):
         super().__init__(timeout=45)
         self.add_item(_ConfigureDropdown(self))
 
-    def __await__(self) -> Generator[Any, Any, dict]:
+    def __await__(self) -> Generator[Any, Any, Union[dict, DataContext]]:
         return self._await().__await__()
 
-    async def _await(self) -> dict:
+    async def _await(self) -> Union[dict, DataContext]:
         self.message = await self.ctx.send(embed=self.embed, view=self)
         await self.wait()
         if not self.deleted:
@@ -230,12 +231,13 @@ class Configure(ui.View):
     @ui.button(emoji=emojis.yes, row=2)
     async def done(self, _button, interaction: Interaction):
         self.deleted = True
+        with suppress(Exception):
+            await interaction.message.delete()
         self.stop()
-        await interaction.message.delete()
 
 
 class _ConfigureDropdown(ui.Select):
-    def __init__(self, menu):
+    def __init__(self, menu: Configure):
         self.menu = menu
         super().__init__(
             placeholder="Toggle an Option",
@@ -255,7 +257,7 @@ class _ConfigureDropdown(ui.Select):
     async def callback(self, interaction: Interaction):
         for option in interaction.data["values"]:
             self.menu.options[option] = not self.menu.options[option]
-        self.menu.__init__(self.menu.ctx, self.menu.options)
+        self.__init__(self.menu)
         await interaction.response.edit_message(
             embed=self.menu.embed,
             view=self.menu
