@@ -12,14 +12,21 @@ import asyncio
 from datetime import datetime, timezone, timedelta
 from contextlib import suppress
 from time import time
+
 import discord
 from discord.ext import commands
 
-from botutils import colors, Cooldown
+from botutils import colors, Cooldown, Configure
 from botutils.cache_rewrite import Cache
 
 
 class AntiRaid(commands.Cog):
+    default = {
+        "mass_join": True,
+        "mass_ban": True,
+        "self_bot": True,
+    }
+
     def __init__(self, bot):
         self.bot = bot
         self.config = Cache(bot, "anti_raid")
@@ -60,25 +67,29 @@ class AntiRaid(commands.Cog):
             if ctx.guild.icon:
                 e.set_thumbnail(url=ctx.guild.icon.url)
             e.description = self._anti_raid.description
+            p = ctx.prefix
             e.add_field(
                 name="Usage",
-                value=".antiraid enable\n" ".antiraid disable",
+                value=f"{p}antiraid configure\n"
+                      f"{p}antiraid disable",
                 inline=False,
             )
             e.set_footer(text=f"Current Status: {toggle}")
             await ctx.send(embed=e)
 
-    @_anti_raid.command(name="enable", description="Enables AntiRaid")
+    @_anti_raid.command(name="configure", aliases=["config", "enable"], description="AntiRaid Toggles")
     @commands.has_permissions(administrator=True)
     @commands.bot_has_permissions(ban_members=True, manage_roles=True)
-    async def _enable(self, ctx):
-        if await self.config[ctx.guild.id]:
-            return await ctx.send("Anti raid is already enabled")
-        self.config[ctx.guild.id] = {
-            "mass_join": True,
-            "mass_ban": True
-        }
-        await ctx.send("Enabled anti raid")
+    async def _configure(self, ctx):
+        config = await self.config.fetch(ctx.guild.id)
+        if not config:
+            config.update(**self.default)
+        config = await Configure(ctx, config)
+        if not any(v for v in config.values()):
+            del self.config[ctx.guild.id]
+        else:
+            await config.save()
+        await ctx.send("Updated your config")
 
     @_anti_raid.command(name="disable", description="Disables AntiRaid")
     @commands.has_permissions(administrator=True)
