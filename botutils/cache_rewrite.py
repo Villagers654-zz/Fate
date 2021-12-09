@@ -60,9 +60,6 @@ class Cache:
         self.bot.loop.create_task(self.flush())
 
     def __delitem__(self, key: Key):
-        if key in self.instances:
-            self.instances[key].clear()
-            del self.instances[key]
         self.bot.loop.create_task(self.remove(key))
 
     async def keys(self) -> AsyncGenerator:
@@ -133,7 +130,10 @@ class Cache:
 
     async def remove(self, key):
         """ An awaitable to remove an item from the cache, and database """
-        await self._db.delete_one({"_id": key})
+        if key in self.instances:
+            self.instances[key].clear()
+            del self.instances[key]
+        await self._db.delete_many({"_id": key})
 
 
 class Get:
