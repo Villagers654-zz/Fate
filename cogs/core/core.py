@@ -438,7 +438,6 @@ class Core(commands.Cog):
                 self.config[guild_id][channel_id] = []
             if command not in self.config[guild_id][channel_id]:
                 self.config[guild_id][channel_id].append(command)
-            self.config[guild_id][channel_id].remove(command)
             await ctx.send(f"Disabled `{command}` in this channel")
         await self.config.flush()
 
