@@ -337,7 +337,7 @@ class Ranking(commands.Cog):
                     # Fetch available level roles
                     async with self.bot.utils.cursor() as cur:
                         await cur.execute(
-                            f"select role_id from role_rewards "
+                            f"select role_id, lvl, stack from role_rewards "
                             f"where guild_id = {guild_id} "
                             f"and lvl <= {dat['level']} "
                             f"order by lvl asc;"
@@ -349,7 +349,8 @@ class Ranking(commands.Cog):
                         results = await cur.fetchall()
 
                     # Check if the user's missing any of the roles
-                    for role_id, *_args in results:
+                    results = sorted(results, key=lambda v: v[1], reverse=True)
+                    for role_id, lvl, stack, *_args in results:
                         role = msg.guild.get_role(role_id)
                         if role not in msg.author.roles:
                             try:
@@ -358,6 +359,18 @@ class Ranking(commands.Cog):
                                 e.description = f"You leveled up and earned {role.mention}"
                                 with suppress(Forbidden):
                                     await msg.channel.send(embed=e)
+                                if not stack:
+                                    await cur.execute(
+                                        f"select role_id from role_rewards "
+                                        f"where guild_id = {guild_id};"
+                                    )
+                                    results = await cur.fetchall()
+                                    for _role_id, in results:
+                                        if _role_id != role_id:
+                                            role = msg.guild.get_role(_role_id)
+                                            if role in msg.author.roles:
+                                                await msg.author.remove_roles(role)
+                                    return
                             except (NotFound, Forbidden, AttributeError):
                                 await self.bot.execute(
                                     f"delete from role_rewards "
@@ -365,7 +378,9 @@ class Ranking(commands.Cog):
                                 )
                             except Exception:
                                 pass
-#
+                        if not stack:
+                            return
+
                 except DataError as error:
                     self.bot.log(f"Error updating guild xp\n{error}")
                 except InternalError:
@@ -491,6 +506,18 @@ class Ranking(commands.Cog):
                 return await ctx.send("I wasn't able to find that role")
         await self.bot.execute(f"delete from role_rewards where role_id = {role.id};")
         await ctx.send(f"Removed the level-role for {role.mention} if it existed")
+
+    @role_rewards.command(name="limit-all")
+    @commands.has_permissions(manage_roles=True)
+    async def _limit_all(self, ctx):
+        await self.bot.execute(f"update role_rewards set stack = False where guild_id = {ctx.guild.id};")
+        await ctx.send("Set the limit to only keep the top role reward")
+
+    @role_rewards.command(name="unlimit-all")
+    @commands.has_permissions(manage_roles=True)
+    async def _unlimit_all(self, ctx):
+        await self.bot.execute(f"update role_rewards set stack = True where guild_id = {ctx.guild.id};")
+        await ctx.send("Set the limit to allow keeping all role rewards")
 
     @commands.command(name="xp-config", description="Shows the current xp configuration")
     @commands.cooldown(2, 5, commands.BucketType.user)
