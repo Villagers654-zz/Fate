@@ -45,7 +45,7 @@ class AntiRaid(commands.Cog):
         required = ["view_audit_log", "ban_members"]
         for perm in required:
             if perm not in perms:
-                del self.config[guild.id]
+                await self.config.remove(guild.id)
                 for channel in guild.text_channels:
                     if channel.permissions_for(guild.me).send_messages:
                         await channel.send(
@@ -97,7 +97,7 @@ class AntiRaid(commands.Cog):
     async def _disable(self, ctx):
         if not await self.config[ctx.guild.id]:
             return await ctx.send("Anti raid is not enabled")
-        del self.config[ctx.guild.id]
+        await self.config.remove(ctx.guild.id)
         await ctx.send("Disabled anti raid")
 
     @commands.Cog.listener()
