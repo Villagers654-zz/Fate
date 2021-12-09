@@ -208,7 +208,7 @@ class GlobalChat(commands.Cog):
                 await ctx.send(f"Added {user} as a mod")
 
     @_gc.command(name="ban")
-    async def _ban(self, ctx, *, target: Union[discord.User, discord.Guild]):
+    async def _ban(self, ctx, target: Union[discord.User, discord.Guild], *, reason):
         async with self.bot.utils.cursor() as cur:
             await cur.execute(f"select status from global_users where user_id = {ctx.author.id} and status = 'moderator';")
             if not cur.rowcount:
@@ -221,6 +221,17 @@ class GlobalChat(commands.Cog):
         self.config["blocked"].append(target.id)
         await ctx.send(f"Blocked {target}")
         await self.save_blacklist()
+
+        # Forward the change into each global chat channel
+        e = discord.Embed(color=colors.red)
+        if isinstance(target, discord.User):
+            icon_url = target.display_avatar.url
+        else:
+            icon_url = target.icon.url
+        e.set_author(name=f"{target} was banned", icon_url=icon_url)
+        e.description = reason
+        self._queue.append([e, False, None])
+        self.last_id = None
 
     @_gc.command(name="unban")
     async def _unban(self, ctx, *, target: Union[discord.User, discord.Guild]):
