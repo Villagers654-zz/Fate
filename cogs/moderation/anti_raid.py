@@ -122,7 +122,7 @@ class AntiRaid(commands.Cog):
                     self.counter[user_id] += 1
                     if self.counter[user_id] > 5:
                         triggered = True
-                if msg.embeds:
+                if msg.embeds and "." not in msg.content:
                     triggered = True
                 if triggered:
                     with suppress(Exception):
