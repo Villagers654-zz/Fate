@@ -128,6 +128,12 @@ class Logger(commands.Cog):
         if "logger" not in bot.tasks:
             bot.tasks["logger"] = {}
 
+        self.config = {}
+        self.path = "./data/userdata/secure-log.json"
+        if path.isfile(self.path):
+            with open(self.path, "r") as f:
+                self.config = json.load(f)  # type: dict
+
         self.queue = {g_id: asyncio.Queue(maxsize=64) for g_id in self.config.keys()}
         self.recent_logs = {
             guild_id: [] for guild_id in self.config.keys()
@@ -271,10 +277,6 @@ class Logger(commands.Cog):
             if guild_id not in self.queue:
                 return
             log = await self.queue[guild_id].get()  # type: Log
-            if not log.embed:
-                self.bot.log.critical(f"{log.type} didn't give an embed")
-                self.queue[guild_id].task_done()
-                continue
             if log.type in self.config[guild_id]["disabled"]:
                 self.queue[guild_id].task_done()
                 continue
@@ -382,14 +384,13 @@ class Logger(commands.Cog):
 
     async def search_audit(self, guild, *actions) -> dict:
         """ Returns the latest entry from a list of actions """
-        icon = getattr(guild.icon, "url", self.bot.user.avatar.url)
         dat = {
             "action": None,
             "user": "Unknown",
             "actual_user": None,
             "target": "Unknown",
-            "icon_url": icon,
-            "thumbnail_url": icon,
+            "icon_url": guild.icon.url if guild.icon else None,
+            "thumbnail_url": guild.icon.url if guild and guild.icon else None,
             "reason": None,
             "extra": None,
             "changes": None,
