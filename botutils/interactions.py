@@ -56,7 +56,7 @@ class GetConfirmation(ui.View):
     @ui.button(label="Deny", style=ButtonStyle.red)
     async def deny(self, _button, interaction):
         await interaction.response.send_message(
-            f"Alright, operation cancelled", ephemeral=True
+            f"Alright", ephemeral=True
         )
         self.stop()
 
