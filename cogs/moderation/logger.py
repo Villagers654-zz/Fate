@@ -26,7 +26,7 @@ from discord import NotFound, Forbidden
 from PIL import Image
 
 from botutils.colors import *
-from botutils import get_prefix, split, get_time, GetConfirmation
+from botutils import get_prefix, split, get_time, GetConfirmation, Cooldown
 from classes import IgnoredExit
 
 
@@ -82,48 +82,49 @@ class Log(object):
 
 
 class Logger(commands.Cog):
+    log_types = [
+        "everyone_mention",
+        "message_edit",
+        "message_delete",
+        "attachment_delete",
+        "embed_hidden",
+        "message_pin",
+        "message_purge",
+        "reactions_clear",
+        "server_rename",
+        "new_server_icon",
+        "new_server_banner",
+        "new_server_splash",
+        "region_change",
+        "afk_timeout_change",
+        "afk_channel_change",
+        "new_owner",
+        "features_change",
+        "new_boost_tier",
+        "boost",
+        "channel_create",
+        "channel_delete",
+        "channel_update",
+        "role_create",
+        "role_delete",
+        "role_move"
+        "role_update",
+        "integrations_update",
+        "webhook_update",
+        "member_join",
+        "member_leave",
+        "member_kick",
+        "member_ban",
+        "bot_add",
+        "nick_change",
+        "member_roles_update",
+        "emoji_create",
+        "emoji_delete",
+        "emoji_rename"
+    ]
+
     def __init__(self, bot):
         self.bot = bot
-        self.log_types = [
-            "everyone_mention",
-            "message_edit",
-            "message_delete",
-            "attachment_delete",
-            "embed_hidden",
-            "message_pin",
-            "message_purge",
-            "reactions_clear",
-            "server_rename",
-            "new_server_icon",
-            "new_server_banner",
-            "new_server_splash",
-            "region_change",
-            "afk_timeout_change",
-            "afk_channel_change",
-            "new_owner",
-            "features_change",
-            "new_boost_tier",
-            "boost",
-            "channel_create",
-            "channel_delete",
-            "channel_update",
-            "role_create",
-            "role_delete",
-            "role_move"
-            "role_update",
-            "integrations_update",
-            "webhook_update",
-            "member_join",
-            "member_leave",
-            "member_kick",
-            "member_ban",
-            "bot_add",
-            "nick_change",
-            "member_roles_update",
-            "emoji_create",
-            "emoji_delete",
-            "emoji_rename"
-        ]
 
         if "logger" not in bot.tasks:
             bot.tasks["logger"] = {}
@@ -152,6 +153,7 @@ class Logger(commands.Cog):
                 bot.tasks["logger"][guild_id] = task
 
         self.pool = {}
+        self.role_moved_cd = Cooldown(1, 5)
 
     def cog_unload(self):
         for task_id, task in self.bot.tasks["logger"].items():
@@ -1547,7 +1549,7 @@ class Logger(commands.Cog):
                     action = "is no longer mentionable"
                 e.description += f"[{action}]"
 
-            if before.position != after.position:
+            if before.position != after.position and not self.role_moved_cd.check(after.guild.id):
                 # old_roles = self.role_index[guild_id]
                 # old_pos = old_roles.index(before)
                 # if old_roles[old_pos+1] is after.guild.roles[after.position+1]:
