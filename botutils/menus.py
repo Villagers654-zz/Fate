@@ -88,7 +88,7 @@ class GetChoice(discord.ui.View):
         """
         :param Context ctx:
         :param Sequence or KeysView or Dict[str, str] choices:
-        :param int limit:
+        :param int or None limit:
         :param str placeholder:
         :param discord.Message message:
         :param bool delete_after:
@@ -101,6 +101,8 @@ class GetChoice(discord.ui.View):
 
         self.ctx = ctx
         self.choices = choices
+        if limit is None:
+            limit = len(choices)
         self.limit = limit
         self.message = message
         self.delete_after = delete_after
