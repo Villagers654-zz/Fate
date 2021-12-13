@@ -228,6 +228,11 @@ class DataContext(dict):
         await self._state.flush()
         self.copy = await self._state._get(self.key)
 
+    async def delete(self):
+        """ Delete the whole config """
+        await self._state.remove(self.key)
+        self.clear()
+
 
 class NestedDict(dict):
     """ Updates the parent dictionaries last_update variable """
