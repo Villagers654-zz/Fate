@@ -26,7 +26,7 @@ from discord import NotFound, Forbidden
 from PIL import Image
 
 from botutils.colors import *
-from botutils import get_prefix, split, get_time
+from botutils import get_prefix, split, get_time, GetConfirmation
 from classes import IgnoredExit
 
 
@@ -565,6 +565,12 @@ class Logger(commands.Cog):
         guild_id = str(ctx.guild.id)
         if guild_id in self.config:
             self.config[guild_id]["channel"] = channel.id
+            if self.config[guild_id]["channels"]:
+                resp = await GetConfirmation(
+                    ctx, f"Do you want all the redirected logs switched to {channel.mention} as well?"
+                )
+                if resp:
+                    self.config[guild_id]["channels"] = {}
         else:
             self.config[guild_id] = {
                 "channel": channel.id,
