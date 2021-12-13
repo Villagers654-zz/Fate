@@ -194,7 +194,7 @@ class AntiRaid(commands.Cog):
             return
         try:
             entry, = await guild.audit_logs(limit=1).flatten()
-        except discord.Forbidden:
+        except (ValueError, discord.Forbidden):
             return
         if entry.created_at > datetime.now(tz=timezone.utc) - timedelta(seconds=3):
             if entry.action in [discord.AuditLogAction.kick, discord.AuditLogAction.ban]:
