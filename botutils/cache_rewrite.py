@@ -143,10 +143,10 @@ class Get:
         self.cache = cache
         self.key = key
 
-    def __await__(self):
+    def __await__(self) -> Generator[None, None, "DataContext"]:
         return self._await().__await__()
 
-    async def _await(self):
+    async def _await(self) -> "DataContext":
         return await self.cache.get(self.key)
 
     async def __aenter__(self) -> "DataContext":
