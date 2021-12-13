@@ -8,11 +8,14 @@ A module for granting users role(s) when they join
 :license: Proprietary, see LICENSE for details
 """
 
-from discord.ext import commands
 from typing import *
-from botutils import colors
+
 import discord
 from discord import NotFound, Forbidden
+from discord.ext import commands
+
+from botutils import colors, GetChoice
+from botutils import cache_rewrite
 
 
 class AutoRole(commands.Cog):
@@ -23,14 +26,14 @@ class AutoRole(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.config = bot.utils.cache("autorole")
+        self.config = cache_rewrite.Cache(bot, "autorole")
 
-    def is_enabled(self, guild_id):
-        return guild_id in self.config
+    async def is_enabled(self, guild_id: int):
+        return await self.config.contains(guild_id)
 
     @commands.group(
-        name="autorole",
-        aliases=["auto-role", "auto_role"],
+        name="auto-role",
+        aliases=["autorole", "auto_role"],
         description="Shows how to use the module"
     )
     @commands.bot_has_permissions(embed_links=True)
@@ -45,9 +48,22 @@ class AutoRole(commands.Cog):
             e.add_field(
                 name="◈ Commands",
                 value=f"{p}auto-role add @role"
-                      f"\n{p}auto-role clear"
-                      f"\n{p}auto-role list",
+                      f"\n{p}auto-role remove",
                 inline=False,
+            )
+            roles = ""
+            config = await self.config[ctx.guild.id]
+            if config:
+                for role_id in config["roles"]:
+                    role = ctx.guild.get_role(role_id)
+                    if role:
+                        roles += f"\n- {role.mention}"
+            if not roles:
+                roles = "None set"
+            e.add_field(
+                name="◈ Roles",
+                value=roles,
+                inline=False
             )
             await ctx.send(embed=e)
 
@@ -55,8 +71,9 @@ class AutoRole(commands.Cog):
     @commands.has_permissions(manage_roles=True)
     async def _add(self, ctx, *, role: Union[discord.Role, str]):
         guild_id = ctx.guild.id
-        if guild_id not in self.config:
-            self.config[guild_id] = self.default_config
+        config = await self.config[guild_id]
+        if not config:
+            config.update(**self.default_config)
 
         # Convert the args into a Role
         if not isinstance(role, discord.Role):
@@ -68,49 +85,41 @@ class AutoRole(commands.Cog):
         if ctx.author.id != ctx.guild.owner.id:
             if role.position >= ctx.author.top_role.position:
                 return await ctx.send("That role's above your paygrade, take a seat")
-            if role.id in self.config[guild_id]["roles"]:
+            if role.id in config["roles"]:
                 return await ctx.send("That role's already in use")
         if role.position >= ctx.guild.me.top_role.position:
             return await ctx.send("That role's higher than I can manage")
 
-        self.config[guild_id]["roles"].append(role.id)
+        config["roles"].append(role.id)
         await ctx.send(f"Added `{role.name}` to the list of auto roles")
-        await self.config.flush()
+        await config.save()
 
-    @auto_role.command(name="clear", description="Removes all the auto roles")
+    @auto_role.command(name="remove", description="Removes one or more roles")
     @commands.has_permissions(manage_roles=True)
-    async def _clear(self, ctx):
-        guild_id = ctx.guild.id
-        if guild_id not in self.config:
-            return await ctx.send("Auto role is not active")
-        self.config[guild_id]["roles"] = []
-        if self.config[guild_id] == self.default_config:
-            await self.config.remove(guild_id)
+    async def _remove(self, ctx):
+        config = await self.config[ctx.guild.id]
+        if not config:
+            return await ctx.send("Auto role isn't active")
+        roles = {
+            role.name: role for role_id in config["roles"]
+            if (role := ctx.guild.get_role(role_id))
+        }
+        if len(roles) == 1:
+            config["roles"].clear()
         else:
-            await self.config.flush()
-        await ctx.send("Cleared list of auto roles")
-
-    @auto_role.command(name="list", description="Lists all the auto roles")
-    @commands.bot_has_permissions(embed_links=True)
-    async def _list(self, ctx):
-        guild_id = ctx.guild.id
-        if guild_id not in self.config:
-            return await ctx.send("Auto role isn't enabled")
-        e = discord.Embed(color=colors.fate)
-        e.set_author(name="Auto Roles", icon_url=self.bot.user.display_avatar.url)
-        e.description = ""
-        for role_id in self.config[guild_id]["roles"]:
-            if role := ctx.guild.get_role(role_id):
-                e.description += f"• {role.name}\n"
-            else:
-                self.config[guild_id]["roles"].remove(role_id)
-                await self.config.flush()
-        await ctx.send(embed=e)
+            to_remove = await GetChoice(ctx, roles.keys(), limit=None)
+            for role in to_remove:
+                config["roles"].remove(roles[role].id)
+        if config == self.default_config:
+            await config.delete()
+        else:
+            await config.save()
+        await ctx.send("Updated the list of auto-roles")
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
-        guild_id = member.guild.id
-        if self.bot.is_ready() and guild_id in self.config:
+        config = await self.config[member.guild.id]
+        if self.bot.is_ready() and config:
             guild = member.guild
             bot = guild.me
             if not bot.guild_permissions.manage_roles:
@@ -128,7 +137,7 @@ class AutoRole(commands.Cog):
                 except (Forbidden, NotFound, AttributeError):
                     return
                 return
-            for role_id in self.config[guild_id]["roles"]:
+            for role_id in config["roles"]:
                 role = guild.get_role(int(role_id))
                 if not role:
                     continue
@@ -140,23 +149,22 @@ class AutoRole(commands.Cog):
                         )
                     except discord.Forbidden:
                         pass
-                    self.config[guild_id]["roles"].remove(role_id)
+                    config["roles"].remove(role_id)
                     await self.config.flush()
                 else:
                     try:
                         await member.add_roles(role)
                     except discord.Forbidden:
-                        self.config[guild_id]["roles"].remove(role_id)
-                        await self.config.flush()
+                        pass
                     except (discord.NotFound, discord.HTTPException):
                         pass
 
     @commands.Cog.listener()
     async def on_role_delete(self, role):
-        guild_id = role.guild.id
-        if guild_id in self.config and role.id in self.config[guild_id]["roles"]:
-            self.config[guild_id]["roles"].remove(role.id)
-            await self.config.flush()
+        config = await self.conifg[role.guild.id]
+        if config and role.id in config["roles"]:
+            config["roles"].remove(role.id)
+            await config.save()
 
 
 def setup(bot):
