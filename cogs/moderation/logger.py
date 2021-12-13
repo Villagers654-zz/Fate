@@ -452,6 +452,7 @@ class Logger(commands.Cog):
                       f"\n{p}log events - `list event names`"
                       f"\n{p}log enable [event]"
                       f"\n{p}log disable [event]"
+                      f"\n{p}log setchannel"
                       f"\n{p}log move [event] #channel"
                       f"\n{p}log security - `toggles security`"
                       f"\n{p}log ignore #channel - `ignore chat logs`"
