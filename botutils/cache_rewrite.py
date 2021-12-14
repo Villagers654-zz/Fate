@@ -35,6 +35,13 @@ class Cache:
         """ Shortcut property to get a collection/db instance """
         return self.bot.aio_mongo[self.collection]
 
+    def _has_new(self, key: Key):
+        if key in self.instances:
+            if time() - 10 > self.instances[key].last_update:
+                return False
+            return True
+        return False
+
     async def count(self) -> int:
         """ Returns the dbs document count """
         return await self._db.estimated_document_count()
@@ -88,21 +95,22 @@ class Cache:
         """ Gets the results from the db or cache """
 
         # Remove unused instances
-        for key, instance in list(self.instances.items()):
+        for _key, instance in list(self.instances.items()):
             await asyncio.sleep(0)
             if time() - 10 > instance.last_update:
-                if key in self.instances:
-                    del self.instances[key]
+                if _key in self.instances:
+                    del self.instances[_key]
 
         # Check if somethings already accessing the document
-        if key in self.instances:
-            return await self.instances[key].reinstate()
+        if self._has_new(key):
+            return self.instances[key]
 
         result = await self._get(key)
 
         # Double check after handing off the loop
-        if key in self.instances:
-            return await self.instances[key].reinstate()
+        # Check if somethings already accessing the document
+        if self._has_new(key):
+            return self.instances[key]
 
         self.instances[key] = DataContext(self, key, result)
         return self.instances[key]
@@ -190,12 +198,6 @@ class DataContext(dict):
             if value.__class__.__name__ == "dict":
                 dictionary[key] = self.make_subclass(value)
         return NestedDict(self, dictionary)
-
-    async def reinstate(self) -> "DataContext":
-        """ Ran when another process starts using the same object """
-        if time() - 10 > self.last_update:
-            await self.sync()
-        return self
 
     async def sync(self):
         """ Merge with changes to the DB variant """
