@@ -52,7 +52,7 @@ class AutoRole(commands.Cog):
                 inline=False,
             )
             roles = ""
-            config = await self.config[ctx.guild.id]
+            config = await self.config.fetch(ctx.guild.id)
             if config:
                 for role_id in config["roles"]:
                     role = ctx.guild.get_role(role_id)
@@ -70,8 +70,7 @@ class AutoRole(commands.Cog):
     @auto_role.command(name="add", description="Adds a new role to give on join")
     @commands.has_permissions(manage_roles=True)
     async def _add(self, ctx, *, role: Union[discord.Role, str]):
-        guild_id = ctx.guild.id
-        config = await self.config[guild_id]
+        config = await self.config.fetch(ctx.guild.id)
         if not config:
             config.update(**self.default_config)
 
@@ -97,7 +96,7 @@ class AutoRole(commands.Cog):
     @auto_role.command(name="remove", description="Removes one or more roles")
     @commands.has_permissions(manage_roles=True)
     async def _remove(self, ctx):
-        config = await self.config[ctx.guild.id]
+        config = await self.config.fetch(ctx.guild.id)
         if not config:
             return await ctx.send("Auto role isn't active")
         roles = {
