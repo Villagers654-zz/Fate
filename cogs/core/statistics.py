@@ -36,10 +36,15 @@ class Statistics(commands.Cog):
         e = discord.Embed(color=colors.fate)
         owner = await self.bot.fetch_user(self.bot.config["bot_owner_id"])
         e.set_author(name="Module Statistics", icon_url=owner.display_avatar.url)
-        e.description = self.bot.utils.format_dict({
-            key: f"{len(getattr(self.bot.cogs[key], value))} active"
-            for key, value in self.cogs.items()
-        })
+        description = {}
+        for key, value in self.cogs.items():
+            config = getattr(self.bot.cogs[key], value)
+            if hasattr(config, "__len__"):
+                count = len(config)
+            else:
+                count = await config.count()
+            description[key] = count
+        e.description = self.bot.utils.format_dict(description)
         await ctx.send(embed=e)
 
 
