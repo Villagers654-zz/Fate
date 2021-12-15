@@ -22,7 +22,7 @@ import asyncio
 from discord.ext.commands import Context
 
 
-url_expression = "((https?://)|(www\.)|(discord\.gg/))[a-zA-Z0-9./\-_?]+"
+url_expression = "[a-zA-Z0-9]+\.[a-zA-Z]{2,16}[a-zA-Z0-9./\-_?]*"
 ping_expression = "(\@((everyone)|(here)))|(\<\@!?&?[0-9]+\>)"
 
 
