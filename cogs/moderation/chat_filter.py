@@ -16,13 +16,14 @@ from unicodedata import normalize
 from string import printable
 import os
 from typing import *
+import requests
 
 from discord.ext import commands
 import discord
 from discord import NotFound, Forbidden
-from discord import ui, ButtonStyle, Message, Member
+from discord import ui, ButtonStyle, Message, Member, SelectOption
 
-from botutils import colors, split, CancelButton, findall, GetChoice, Cooldown
+from botutils import colors, split, CancelButton, findall, GetChoice, Cooldown, emojis, find_links
 from cogs.moderation.logger import Log
 
 
@@ -63,6 +64,10 @@ class ChatFilter(commands.Cog):
         self.bot = bot
         self.config = bot.utils.cache("chatfilter")
         self.chatfilter_usage = self._chatfilter
+
+        self.phishing_urls: Set[str] = set(requests.get(
+            "https://phish.sinking.yachts/v2/all"
+        ).json())
 
     def is_enabled(self, guild_id: int) -> bool:
         """ Denotes whether or not the modules enabled in a specific guild """
@@ -501,12 +506,26 @@ class ChatFilter(commands.Cog):
                 return
             if msg.channel.id in self.config[guild_id]["ignored"]:
                 return
-            if "regex" in self.config[guild_id]:
-                result, flags = await self.run_regex_filter(guild_id, msg.content)
-            else:
-                result, flags = await self.run_default_filter(guild_id, msg.content)
+
+            result = None
+            flags = []
+            if "phishing" in self.config[guild_id]:
+                if links := await find_links(msg.content):
+                    for link in links:
+                        await asyncio.sleep(0)
+                        if result:
+                            result = result.replace(link, "**phishing-link**")
+                        elif link.split("/")[0] in self.phishing_urls:
+                            result = msg.content.replace(link, "**phishing-link**")
+                            flags = links
+
             if not result:
-                return
+                if "regex" in self.config[guild_id]:
+                    result, flags = await self.run_regex_filter(guild_id, msg.content)
+                else:
+                    result, flags = await self.run_default_filter(guild_id, msg.content)
+                if not result:
+                    return
             with suppress(Exception):
                 await msg.delete()
 
@@ -571,10 +590,6 @@ class Menu(ui.View):
         self.configuring = False
         super().__init__(timeout=60)
 
-        if ctx.guild.id in cls.config:
-            if cls.config[ctx.guild.id]["toggle"]:
-                self.update_items()
-
     async def on_error(self, error: Exception, _item, _interaction) -> None:
         """ Suppress NotFound errors as they're spammy """
         if not isinstance(error, NotFound):
@@ -596,110 +611,7 @@ class Menu(ui.View):
         view = ImportView(self.cls, self.ctx)
         await interaction.response.send_message("Choose what to import", view=view, ephemeral=True)
 
-    def update_items(self) -> None:
-        """ Updates the color of extra config options to reflect being enabled or disabled """
-        guild_id = self.ctx.guild.id
-        if not self.configuring:
-            for custom_id, button in self.extra.items():
-                button.disabled = True
-        else:
-            toggle = guild_id in self.cls.config and self.cls.config[guild_id]["toggle"]
-            color = style.red if toggle else style.green
-            if "toggle" not in self.extra:
-                button = ui.Button(label="Disable" if toggle else "Enable", style=color)
-                button.callback = self.toggle
-                self.add_item(button)
-                self.extra["toggle"] = button
-
-            if not toggle:
-                for name, button in self.extra.items():
-                    if name != "toggle":
-                        button.disabled = True
-                return
-
-            conf = self.cls.config[guild_id]
-            for button in self.extra.values():
-                button.disabled = False
-
-            color = style.green if "filter_nicks" in conf else style.red
-            if "filter_nicks" in self.extra:
-                self.extra["filter_nicks"].style = color
-            else:
-                button = ui.Button(label="Filter Nicks", style=color, custom_id="filter_nicks")
-                button.callback = self.handle_callback
-                self.add_item(button)
-                self.extra["filter_nicks"] = button
-
-            color = style.green if "bots" in conf else style.red
-            if "bots" in self.extra:
-                self.extra["bots"].style = color
-            else:
-                button = ui.Button(label="Filter Bots", style=color, custom_id="bots")
-                button.callback = self.handle_callback
-                self.add_item(button)
-                self.extra["bots"] = button
-
-            color = style.green if "webhooks" in conf else style.red
-            if "webhooks" in self.extra:
-                self.extra["webhooks"].style = color
-            else:
-                button = ui.Button(label="Use Webhooks", style=color, custom_id="webhooks")
-                button.callback = self.handle_callback
-                self.add_item(button)
-                self.extra["webhooks"] = button
-
-            color = style.green if "regex" in conf else style.red
-            if "regex" in self.extra:
-                self.extra["regex"].style = color
-            else:
-                button = ui.Button(label="Use Regex", style=color, custom_id="regex")
-                button.callback = self.handle_callback
-                self.add_item(button)
-                self.extra["regex"] = button
-
-            if "import" not in self.extra:
-                button = ui.Button(label="Import Words", style=style.blurple)
-                button.callback = self.import_callback
-                self.add_item(button)
-                self.extra["import"] = button
-
-    async def handle_callback(self, interaction: discord.Interaction) -> object:
-        """ Handles the interactions from sub module toggles """
-        user = interaction.guild.get_member(interaction.user.id)
-        check1 = self.cd1.check(interaction.user.id)
-        check2 = self.cd2.check(interaction.user.id)
-        if check1 or check2:
-            return await interaction.response.send_message(
-                "You're on cooldown, try again in a moment", ephemeral=True
-            )
-        if not user.guild_permissions.manage_messages:
-            return await interaction.response.send_message(
-                f"You need manage_message permissions to toggle this", ephemeral=True
-            )
-        custom_id = interaction.data["custom_id"]
-        if self.extra[custom_id].style is style.blurple:
-            return await interaction.response.send_message(
-                f"Enable chatfilter to toggle this", ephemeral=True
-            )
-        if custom_id in self.cls.config[self.ctx.guild.id]:
-            await self.cls.config.remove_sub(self.ctx.guild.id, custom_id)
-        else:
-            self.cls.config[self.ctx.guild.id][custom_id] = True
-            await self.cls.config.flush()
-        self.update_items()
-        toggle = "Enabled" if self.extra[custom_id].style is style.green else "Disabled"
-        if custom_id == "filter_nicks":
-            m = f"{toggle} filtering members nicknames"
-        elif custom_id == "bots":
-            m = f"{toggle} filtering bot messages"
-        elif custom_id == "webhooks":
-            m = f"{toggle} resending deleted messages with the content filtered"
-        else:
-            m = f"{toggle} the use of regex. This improves sensitivity, but can falsely flag"
-        await interaction.response.edit_message(view=self)
-        await interaction.followup.send(m, ephemeral=True)
-
-    @ui.button(label="Filtered Words", style=style.blurple)
+    @ui.button(label="Filtered Words", style=style.blurple, row=2)
     async def filtered_words(self, _button, interaction):
         """ Sends the current list of filtered words """
         filtered = ""
@@ -710,7 +622,7 @@ class Menu(ui.View):
                 f"**Filtered words:** {filtered}", ephemeral=True
             )
 
-    @ui.button(label="Configure", style=style.blurple)
+    @ui.button(label="Configure", style=style.blurple, row=2)
     async def configure(self, button, interaction):
         """ Adds the config related buttons to the view """
         user = interaction.guild.get_member(interaction.user.id)
@@ -720,34 +632,69 @@ class Menu(ui.View):
             )
         self.remove_item(button)
         self.configuring = True
-        self.update_items()
+        dropdown = Dropdown(self.cls, self.ctx, self)
+        self.add_item(dropdown)
         await interaction.response.edit_message(view=self)
 
-    async def toggle(self, interaction: discord.Interaction):
-        """ Toggle the chatfilter module as a whole """
-        user = interaction.guild.get_member(interaction.user.id)
-        check1 = self.cd1.check(interaction.user.id)
-        check2 = self.cd2.check(interaction.user.id)
-        if check1 or check2:
-            return await interaction.response.send_message(
-                "You're on cooldown, try again in a moment", ephemeral=True
-            )
-        if not user.guild_permissions.manage_messages:
-            return await interaction.response.send_message(
-                f"You need manage_message permissions to toggle this", ephemeral=True
-            )
-        button = self.extra["toggle"]
-        if button.label == "Enable":
-            await self.cls._enable(self.ctx)  # type: ignore
-            button.style = style.red
-            button.label = "Disable"
+
+toggles = {
+    "use_regex": "regex",
+    "filter_nicks": "filter_nicks",
+    "filter_bots": "bots",
+    "filter_webhooks": "webhooks",
+    "filter_phishing": "phishing"
+}
+
+
+class Dropdown(ui.Select):
+    def __init__(self, cls: ChatFilter, ctx, menu: Menu):
+        self.cls = cls
+        self.ctx = ctx
+        self.menu = menu
+        self.config = cls.config
+        super().__init__(
+            row=1,
+            min_values=1,
+            max_values=1,
+            options=self.get_options()
+        )
+
+    def get_options(self):
+        options = [SelectOption(
+            emoji="🗂️",
+            label="Import Words/Phrases",
+            value="import"
+        )]
+        for label, key in toggles.items():
+            options.append(SelectOption(
+                emoji=emojis.online if key in self.config[self.ctx.guild.id] else emojis.dnd,
+                label=label.title().replace("_", " "),
+                value=key
+            ))
+        return options
+
+    async def callback(self, interaction):
+        option: str = interaction.data["values"][0]
+        guild_id = interaction.guild_id
+        if option in toggles.values():
+            if option in self.config[guild_id]:
+                await self.config.remove_sub(guild_id, option)
+            else:
+                self.config[guild_id][option] = True
+            self.menu.remove_item(self)
+            new = Dropdown(self.cls, self.ctx, self.menu)
+            self.menu.add_item(new)
+            await interaction.response.edit_message(view=self.menu)
         else:
-            await self.cls._disable(self.ctx)  # type: ignore
-            button.style = style.green
-            button.label = "Enable"
-        self.update_items()
-        await interaction.response.defer()
-        await interaction.message.edit(view=self)
+            member = interaction.guild.get_member(interaction.user.id)
+            if not member.guild_permissions.manage_messages:
+                return await interaction.response.send_message(
+                    f"You need manage_message permissions to toggle this", ephemeral=True
+                )
+            view = ImportView(self.cls, self.ctx)
+            await interaction.response.send_message("Choose what to import", view=view, ephemeral=True)
+        await self.config.flush()
+
 
 
 class ImportView(ui.View):
