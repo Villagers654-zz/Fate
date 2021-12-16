@@ -196,8 +196,8 @@ class ChatFilter(commands.Cog):
                             "replaced with either {0,16} or {1,16}"
             e.add_field(
                 name="◈ Usage",
-                value="**.chatfilter ignore #channel**\n"
-                      "**.chatfilter unignore #channel**\n"
+                value="**.chatfilter ignore [#channel|@user]**\n"
+                      "**.chatfilter unignore [#channel|@user]**\n"
                       "**.chatfilter add [word/phrase]**\n"
                       "**.chatfilter remove [word/phrase]**\n"
                       "**.chatfilter whitelist [word/phrase]**\n"
@@ -205,16 +205,18 @@ class ChatFilter(commands.Cog):
                 inline=False,
             )
             if guild_id in self.config and self.config[guild_id]["ignored"]:
-                channels = []
-                for channel_id in list(self.config[guild_id]["ignored"]):
-                    channel = self.bot.get_channel(channel_id)
-                    if not channel:
-                        self.config[guild_id]["ignored"].remove(channel_id)
+                ignored = []
+                for object_id in list(self.config[guild_id]["ignored"]):
+                    object = self.bot.get_channel(object_id) \
+                             or self.bot.get_user(object_id) \
+                             or ctx.guild.get_role(object_id)
+                    if not object:
+                        self.config[guild_id]["ignored"].remove(object_id)
                         await self.config.flush()
                         continue
-                    channels.append(channel.mention)
-                if channels:
-                    e.add_field(name="◈ Ignored Channels", value="\n".join(channels))
+                    ignored.append(object.mention)
+                if ignored:
+                    e.add_field(name="◈ Ignored Channels", value="\n".join(ignored))
             e.set_footer(text=f"Current Status: {toggle}")
             view = Menu(self, ctx)
             msg = await ctx.send(embed=e, view=view)
@@ -256,17 +258,17 @@ class ChatFilter(commands.Cog):
     @_chatfilter.command(name="ignore", description="Has chatfilter ignore a channel")
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True)
-    async def _ignore(self, ctx, *channels: discord.TextChannel):
+    async def _ignore(self, ctx, *targets: Union[discord.User, discord.Role, discord.TextChannel]):
         guild_id = ctx.guild.id
         if guild_id not in self.config:
             return await ctx.send("Chatfilter isn't enabled")
         passed = []
-        for channel in channels:
-            if channel.id in self.config[guild_id]["ignored"]:
-                await ctx.send(f"{channel.mention} is already ignored")
+        for object in targets:
+            if object.id in self.config[guild_id]["ignored"]:
+                await ctx.send(f"{object} is already ignored")
                 continue
-            self.config[guild_id]["ignored"].append(channel.id)
-            passed.append(channel.mention)
+            self.config[guild_id]["ignored"].append(object.id)
+            passed.append(object.mention)
         if passed:
             await ctx.send(f"I'll now ignore {', '.join(passed)}")
             await self.config.flush()
@@ -274,17 +276,17 @@ class ChatFilter(commands.Cog):
     @_chatfilter.command(name="unignore", description="Disables ignoring a channel")
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True)
-    async def _unignore(self, ctx, *channels: discord.TextChannel):
+    async def _unignore(self, ctx, *targets: Union[discord.User, discord.Role, discord.TextChannel]):
         guild_id = ctx.guild.id
         if guild_id not in self.config:
             return await ctx.send("This server has no ignored channels")
         passed = []
-        for channel in channels:
-            if channel.id not in self.config[guild_id]["ignored"]:
-                await ctx.send(f"{channel.mention} isn't ignored")
+        for target in targets:
+            if target.id not in self.config[guild_id]["ignored"]:
+                await ctx.send(f"{target.mention} isn't ignored")
                 continue
-            self.config[guild_id]["ignored"].remove(channel.id)
-            passed.append(channel.mention)
+            self.config[guild_id]["ignored"].remove(target.id)
+            passed.append(target.mention)
         if passed:
             await ctx.send(f"I'll no longer ignore {', '.join(passed)}")
             await self.config.flush()
@@ -512,7 +514,10 @@ class ChatFilter(commands.Cog):
                 return
             if msg.author.bot and "bots" not in self.config[guild_id]:
                 return
-            if msg.channel.id in self.config[guild_id]["ignored"]:
+            ignored = self.config[guild_id]["ignored"]
+            if msg.channel.id in ignored or msg.author.id in ignored:
+                return
+            if any(r.id in ignored for r in msg.author.roles):
                 return
 
             result = None
