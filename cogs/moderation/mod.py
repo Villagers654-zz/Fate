@@ -1161,7 +1161,7 @@ class Moderation(commands.Cog):
                     if role not in member.roles if action == "Adding" else role in member.roles:
                         members.append(member)
         if not members:
-            return await ctx.send("There aren't any possible members I can give give, or remove that role from")
+            return await ctx.send("There aren't any possible members I can give, or remove that role from")
         view = CancelButton("manage_roles")
         if len(members) > 3600:
             msg = await ctx.send(
