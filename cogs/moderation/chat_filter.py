@@ -18,7 +18,7 @@ import os
 from typing import *
 import requests
 
-from discord.ext import commands
+from discord.ext import commands, tasks
 import discord
 from discord import NotFound, Forbidden
 from discord import ui, ButtonStyle, Message, Member, SelectOption
@@ -65,6 +65,14 @@ class ChatFilter(commands.Cog):
         self.config = bot.utils.cache("chatfilter")
         self.chatfilter_usage = self._chatfilter
 
+        self.phishing_urls: Set[str] = set()
+        self.update_urls_task.start()
+
+    def cog_unload(self):
+        self.update_urls_task.cancel()
+
+    @tasks.loop(hours=1)
+    async def update_urls_task(self):
         self.phishing_urls: Set[str] = set(requests.get(
             "https://phish.sinking.yachts/v2/all"
         ).json())
