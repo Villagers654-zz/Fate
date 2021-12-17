@@ -21,12 +21,11 @@ Key = Union[int, str]
 
 class Cache:
     """ Object for querying and caching data from MongoDB """
-    queries = 0
-    cache_queries = 0
-    instances: Dict[Any, "DataContext"] = {}
-    changes = {}
-
     def __init__(self, bot, collection: str):
+        self.queries = 0
+        self.cache_queries = 0
+        self.instances: Dict[Any, "DataContext"] = {}
+        self.changes = {}
         self.bot = bot
         self.collection = collection
 
