@@ -163,11 +163,11 @@ class Core(commands.Cog):
         votes = await self.dblpy.get_bot_upvotes()
         await ctx.send(", ".join(dat["username"] for dat in votes))
 
-    @commands.command(name="setup", enabled=False, description="Helps you set the bot up via conversation")
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    @commands.guild_only()
-    @commands.has_permissions(administrator=True)
-    @commands.cooldown(1, 10, commands.BucketType.guild)
+    # @commands.command(name="setup", enabled=False, description="Helps you set the bot up via conversation")
+    # @commands.cooldown(1, 5, commands.BucketType.user)
+    # @commands.guild_only()
+    # @commands.has_permissions(administrator=True)
+    # @commands.cooldown(1, 10, commands.BucketType.guild)
     async def setup(self, ctx):
         await ctx.send("Note this cmd doesn't actually do anything", delete_after=5)
         convo = Conversation(ctx)
