@@ -113,7 +113,7 @@ class AntiRaid(commands.Cog):
             return
         guild_id = msg.guild.id
         if conf := await self.config[guild_id]:
-            if conf.get("self_bot"):
+            if conf["self_bot"]:
                 triggered = False
                 user_id = msg.author.id
                 if user_id not in self.counter:
@@ -134,7 +134,7 @@ class AntiRaid(commands.Cog):
         """ Prevents mass-join raids """
         guild = member.guild
         config = await self.config[guild.id]
-        if config and config.get("mass_join") and not member.bot:
+        if config and config["mass_join"] and not member.bot:
             if not await self.ensure_permissions(member.guild):
                 return
 
@@ -190,7 +190,7 @@ class AntiRaid(commands.Cog):
         if not guild.me.guild_permissions.view_audit_log:
             return
         config = await self.config[guild.id]
-        if not config or not config.get("mass_ban"):
+        if not config or not config["mass_ban"]:
             return
         try:
             entry, = await guild.audit_logs(limit=1).flatten()
