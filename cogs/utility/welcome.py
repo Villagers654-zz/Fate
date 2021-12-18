@@ -80,6 +80,7 @@ class Welcome(commands.Cog):
         self.config = bot.utils.cache("welcome")
         self.welcome_usage = welcome_help()
         self.cd = Cooldown(1, 300)
+        self.global_cd = Cooldown(3, 5)
 
     def is_enabled(self, guild_id):
         return guild_id in self.config
@@ -378,7 +379,7 @@ class Welcome(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member, just_verified=False):
-        if self.cd.check(str(member.guild.id) + str(member.id)):
+        if self.cd.check(str(member.guild.id) + str(member.id)) or self.global_cd.check(member.guild.id):
             return
         if isinstance(member.guild, discord.Guild):
             guild = member.guild

@@ -83,6 +83,7 @@ class Leave(commands.Cog):
                     self.images = dat["images"]
                     self.format = dat["format"]
         self.cd = Cooldown(1, 300)
+        self.global_cd = Cooldown(3, 5)
 
     async def save_data(self):
         data = {
@@ -401,7 +402,7 @@ class Leave(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_remove(self, m: discord.Member):
-        if self.cd.check(str(m.guild.id) + str(m.id)):
+        if self.cd.check(str(m.guild.id) + str(m.id)) or self.global_cd.check(m.guild.id):
             return
         if isinstance(m.guild, discord.Guild):
             guild_id = str(m.guild.id)
