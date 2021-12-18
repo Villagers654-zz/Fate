@@ -192,7 +192,7 @@ class Core(commands.Cog):
         )
         if reply.channel_mentions:
             channel = reply.channel_mentions[0]
-            await self.bot.get_command("log setchannel")(ctx, channel=channel)
+            await self.bot.get_command("log enable")(ctx, channel=channel)
 
         # Verification
         reply = await convo.ask("Do you want users to verify via a captcha when they join the server?", use_buttons=True)
