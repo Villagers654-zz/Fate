@@ -49,7 +49,7 @@ presets = {
         "youtube.com", "youtu.be", "discord.gg", "invite.gg", "discord.invite", "discord.com"
     ],
     "Offensive Slurs": [
-        "nigger", "nigga", "fag", "faggot", "spic", "coon", "chink", "trasvesite", "tranny"
+        "nigger", "nigga", "fag", "faggot", "spic", "coon", "chink", "trasvesite", "tranny", "retard"
     ]
 }
 
