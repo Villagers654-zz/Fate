@@ -189,6 +189,8 @@ class AntiRaid(commands.Cog):
         guild = member.guild  # type: discord.Guild
         if not guild.me.guild_permissions.view_audit_log:
             return
+        if member.top_role.position >= guild.me.top_role.position:
+            return
         config = await self.config[guild.id]
         if not config or not config["mass_ban"]:
             return
