@@ -172,7 +172,7 @@ class Fun(commands.Cog):
     async def on_message_edit(self, before, after):
         if before.embeds and not after.embeds:
             async with self.bot.utils.cursor() as cur:
-                await cur.execute(f"select * from snipe where guild_id = {m.guild.id};")
+                await cur.execute(f"select * from snipe where guild_id = {after.guild.id};")
                 if cur.rowcount:
                     channel_id = before.channel.id
                     user_id = before.author.id
