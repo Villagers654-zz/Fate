@@ -11,7 +11,7 @@ A cog for general moderation commands
 from os import path
 import json
 from typing import *
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import asyncio
 import re
 from time import time as now
@@ -498,6 +498,43 @@ class Moderation(commands.Cog):
             del self.tasks[guild_id][user_id]
         if guild_id in self.tasks and not self.tasks[guild_id]:
             del self.tasks[guild_id]
+
+    @commands.command(name="timeout", description="Puts a user in timeout for x duration")
+    @commands.cooldown(2, 5, commands.BucketType.user)
+    @check_if_running()
+    @has_required_permissions(administrator=True)
+    @commands.bot_has_permissions(administrator=True)
+    async def timeout(self, ctx, members: Greedy[discord.Member], duration = None, *, reason = None):
+        dur_error_msg = f"You forgot to set a duration! Example on putting a user in timeout " \
+                        f"for 6 hours because of spamming: `{ctx.prefix}timeout @user 6h spamming`"
+        if not duration:
+            return await ctx.send(dur_error_msg)
+        duration = extract_time(duration)
+        if not duration:
+            return await ctx.send(dur_error_msg)
+        if duration > 60 * 60 * 24 * 30:
+            return await ctx.send("You can't put someone in timeout for more than 30 days")
+        end_time = datetime.now(tz=timezone.utc) + timedelta(seconds=duration)
+        human_end_time = format_date(end_time)
+        if not reason:
+            reason = "Unspecified"
+        reason = f"By {ctx.author}: {reason}"
+        for member in members:
+            if member.top_role.position >= ctx.author.top_role.position:
+                return await ctx.send(f"Skipped **{member}** due to them being higher, or of equal status to you")
+            if member.top_role.position >= ctx.guild.me.top_role.position:
+                return await ctx.send(f"Skipped **{member}** due to them being higher, or of equal status to me")
+            try:
+                await member.timeout(end_time, reason=reason)
+            except Forbidden:
+                await ctx.send(f"I'm missing permissions to put **{member}** in timeout")
+            except NotFound:
+                await ctx.send(f"Couldn't find and put **{member}** in timeout")
+            else:
+                await ctx.send(
+                    f"Put {member.mention} in timeout for {human_end_time}",
+                    allowed_mentions=discord.AllowedMentions(users=True)
+                )
 
     @commands.command(
         name="mute",
