@@ -512,8 +512,8 @@ class Moderation(commands.Cog):
         duration = extract_time(duration)
         if not duration:
             return await ctx.send(dur_error_msg)
-        if duration > 60 * 60 * 24 * 30:
-            return await ctx.send("You can't put someone in timeout for more than 30 days")
+        if duration > 60 * 60 * 24 * 14:
+            return await ctx.send("You can't put someone in timeout for longer than 2 weeks")
         end_time = datetime.now(tz=timezone.utc) + timedelta(seconds=duration)
         human_end_time = format_date(end_time)
         if not reason:
