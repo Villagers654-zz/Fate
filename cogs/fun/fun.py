@@ -81,10 +81,35 @@ class Fun(commands.Cog):
         self.clear_old_messages_task.stop()
 
     @commands.command(name="snipe")
-    @commands.cooldown(1, 10, commands.BucketType.channel)
+    @commands.cooldown(2, 10, commands.BucketType.channel)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
     async def snipe(self, ctx):
+        guild_id = ctx.guild.id
+        content = ctx.message.content
+        async with self.bot.utils.cursor() as cur:
+            if "snipe enable" in content or "snipe disable" in content:
+                if not ctx.author.guild_permissions.administrator:
+                    return await ctx.send("Only administrators can enable this")
+                await cur.execute(f"select * from snipe where guild_id = {guild_id};")
+                if cur.rowcount:
+                    if "enable" in content:
+                        return await ctx.send("Sniping is already enabled")
+                    await cur.execute(f"delete from snipe where guild_id = {guild_id};")
+                    await ctx.send("Disabled sniping")
+                else:
+                    if "disable" in content:
+                        return await ctx.send("Sniping isn't enabled")
+                    await cur.execute(f"insert into snipe values ({guild_id});")
+                    await ctx.send("Enabled sniping")
+                return
+
+            await cur.execute(f"select * from snipe where guild_id = {guild_id};")
+            if not cur.rowcount:
+                return await ctx.send(
+                    f"Snipe requires being enabled by an administrator. Use `{ctx.prefix}snipe enable`"
+                )
+
         channel_id = ctx.channel.id
         if channel_id not in self.dat:
             return await ctx.send("Nothing to snipe")
@@ -119,13 +144,16 @@ class Fun(commands.Cog):
     @commands.Cog.listener()
     async def on_message_delete(self, m: discord.Message):
         if m.content or m.embeds:
-            channel_id = m.channel.id
-            user_id = m.author.id
-            dat = (m, datetime.now())
-            if channel_id not in self.dat:
-                self.dat[channel_id] = {}
-            self.dat[channel_id]["last"] = dat
-            self.dat[channel_id][user_id] = dat
+            async with self.bot.utils.cursor() as cur:
+                await cur.execute(f"select * from snipe where guild_id = {m.guild.id};")
+                if cur.rowcount:
+                    channel_id = m.channel.id
+                    user_id = m.author.id
+                    dat = (m, datetime.now())
+                    if channel_id not in self.dat:
+                        self.dat[channel_id] = {}
+                    self.dat[channel_id]["last"] = dat
+                    self.dat[channel_id][user_id] = dat
 
     @tasks.loop(minutes=25)
     async def clear_old_messages_task(self):
@@ -143,13 +171,16 @@ class Fun(commands.Cog):
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
         if before.embeds and not after.embeds:
-            channel_id = before.channel.id
-            user_id = before.author.id
-            dat = (before, datetime.now())
-            if channel_id not in self.dat:
-                self.dat[channel_id] = {}
-            self.dat[channel_id]["last"] = dat
-            self.dat[channel_id][user_id] = dat
+            async with self.bot.utils.cursor() as cur:
+                await cur.execute(f"select * from snipe where guild_id = {m.guild.id};")
+                if cur.rowcount:
+                    channel_id = before.channel.id
+                    user_id = before.author.id
+                    dat = (before, datetime.now())
+                    if channel_id not in self.dat:
+                        self.dat[channel_id] = {}
+                    self.dat[channel_id]["last"] = dat
+                    self.dat[channel_id][user_id] = dat
 
     @commands.command(name="battle", aliases=["fight"])
     @commands.cooldown(2, 60, commands.BucketType.user)
