@@ -501,6 +501,7 @@ class Moderation(commands.Cog):
 
     @commands.command(name="timeout", description="Puts a user in timeout for x duration")
     @commands.cooldown(2, 5, commands.BucketType.user)
+    @commands.guild_only()
     @check_if_running()
     @has_required_permissions(administrator=True)
     @commands.bot_has_permissions(administrator=True)
