@@ -143,7 +143,7 @@ class Fun(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_delete(self, m: discord.Message):
-        if m.content or m.embeds:
+        if m.guild and m.content or m.embeds:
             async with self.bot.utils.cursor() as cur:
                 await cur.execute(f"select * from snipe where guild_id = {m.guild.id};")
                 if cur.rowcount:
@@ -170,7 +170,7 @@ class Fun(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
-        if before.embeds and not after.embeds:
+        if after.guild and before.embeds and not after.embeds:
             async with self.bot.utils.cursor() as cur:
                 await cur.execute(f"select * from snipe where guild_id = {after.guild.id};")
                 if cur.rowcount:
