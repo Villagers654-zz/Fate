@@ -952,7 +952,7 @@ class Ranking(commands.Cog):
         ty = "Profile" if "profile" in ctx.message.content.lower() else "Rank"
         await ctx.send(f"> **{ty} card for {user}**", file=discord.File(file, filename=f"card.{ext.lower()}"))
 
-    @commands.command(name="top", description="Shows the top 9 ranking users in the server")
+    @commands.command(name="top", description="Shows the top 9 ranking users in the server", aliases=["levels"])
     @commands.cooldown(1, 25, commands.BucketType.user)
     @commands.cooldown(1, 25, commands.BucketType.guild)
     @commands.guild_only()
