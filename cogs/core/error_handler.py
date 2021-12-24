@@ -120,6 +120,9 @@ class ErrorHandler(commands.Cog):
                 self.bot.log.critical(full_tb)
                 return await ctx.send("Error saving changes because to a duplicate entry, it's likely you ran the command twice at once")
 
+            elif isinstance(error, commands.MaxConcurrencyReached):
+                return await ctx.send(error)
+
             # Too fast, sMh
             elif isinstance(error, commands.CommandOnCooldown):
                 user_id = ctx.author.id
