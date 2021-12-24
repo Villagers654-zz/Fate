@@ -229,7 +229,7 @@ class Core(commands.Cog):
         )
         embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/501871950260469790/513636736492896271/mail-open-solid.png")
         embed.description = (
-            f"[Invite]({self.bot.invite_url}) 📥\n"
+            f"[Invite](https://discord.com/api/oauth2/authorize?client_id=506735111543193601&permissions=1118705085686&scope=applications.commands%20bot) 📥\n"
             f"[Support](https://discord.gg/wtjuznh/) 📧\n"
             f"[Discord](https://discord.gg/wtjuznh/) <:discord:513634338487795732>\n"
             f"[Donate](https://ko-fi.com/fatebot) ☕\n"
