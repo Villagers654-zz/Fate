@@ -515,7 +515,6 @@ async def on_message(msg):
 if __name__ == "__main__":
     bot.log.info("Starting Bot", color="yellow")
     bot.start_time = datetime.now(tz=timezone.utc)
-    bot.loop.set_exception_handler(event_exception_handler)
     try:
         bot.run()
     except discord.LoginFailure:
