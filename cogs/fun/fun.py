@@ -19,6 +19,7 @@ import json
 from typing import List
 
 import discord
+from discord import Option
 from PIL import Image, ImageDraw, ImageFont
 from discord.ext import commands
 from discord.ext import tasks
@@ -80,13 +81,80 @@ class Fun(commands.Cog):
     def cog_unload(self):
         self.clear_old_messages_task.stop()
 
+    @commands.slash_command(name="snipe", guild_ids=[397415086295089155])
+    async def snipe(
+        self, ctx,
+        user: Option(discord.User, required=False),
+        new_toggle: Option(
+            str, "Toggle",
+            required=False,
+            choices=["Enable", "Disable"]
+        )
+    ):
+        """ Enables, or disables sniping """
+        guild_id = ctx.guild.id
+        async with self.bot.utils.cursor() as cur:
+            if new_toggle:
+                if not ctx.author.guild_permissions.administrator:
+                    return await ctx.send("Only administrators can enable this")
+                await cur.execute(f"select * from snipe where guild_id = {guild_id};")
+                if cur.rowcount:
+                    if new_toggle == "Enable":
+                        return await ctx.send("Sniping is already enabled")
+                    await cur.execute(f"delete from snipe where guild_id = {guild_id};")
+                    await ctx.send("Disabled sniping", ephemeral=True)
+                else:
+                    if new_toggle == "Disable":
+                        return await ctx.send("Sniping isn't enabled")
+                    await cur.execute(f"insert into snipe values ({guild_id});")
+                    await ctx.respond("Enabled sniping", ephemeral=True)
+                return
+
+            await cur.execute(f"select * from snipe where guild_id = {guild_id};")
+            if not cur.rowcount:
+                return await ctx.send(
+                    f"Snipe requires being enabled by an administrator. Use `{ctx.prefix}snipe enable`",
+                    ephemeral=True
+                )
+
+            channel_id = ctx.channel.id
+            if channel_id not in self.dat:
+                return await ctx.send("Nothing to snipe", ephemeral=True)
+
+            # Snipe a specific user
+            if user:
+                if user.id not in self.dat[channel_id]:
+                    return await ctx.send("Nothing to snipe", ephemeral=True)
+                msg, time = self.dat[channel_id][user.id]
+                del self.dat[channel_id][user.id]
+
+            # Snipe the last message in the channel
+            else:
+                msg, time = self.dat[channel_id]["last"]
+                del self.dat[channel_id]
+
+            is_admin = ctx.author.guild_permissions.administrator
+            if msg.embeds:
+                return await ctx.send(f"{msg.author}s message was | deleted {format_date(time)} ago",
+                                      embed=msg.embeds[0])
+            if len(msg.content) > 256 and not is_admin:
+                return await ctx.send("And **wHy** would I snipe a message *that*  big", ephemeral=True)
+
+            e = discord.Embed(color=msg.author.color)
+            e.set_author(name=msg.author, icon_url=msg.author.display_avatar.url)
+            if not is_admin:
+                msg.content = await sanitize(msg.content[:4096], ctx)
+            e.description = msg.content
+            e.set_footer(text=f"🗑 {format_date(time).replace('.0', '')} ago")
+            await ctx.send(embed=e)
+
     @commands.command(name="snipe")
     @commands.cooldown(2, 10, commands.BucketType.channel)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
     async def snipe(self, ctx):
         guild_id = ctx.guild.id
-        content = ctx.message.content
+        content = ctx.message.content if hasattr(ctx, "message") else ""
         async with self.bot.utils.cursor() as cur:
             if "snipe enable" in content or "snipe disable" in content:
                 if not ctx.author.guild_permissions.administrator:
@@ -145,6 +213,8 @@ class Fun(commands.Cog):
     async def on_message_delete(self, m: discord.Message):
         if m.guild and m.content or m.embeds:
             async with self.bot.utils.cursor() as cur:
+                if not m.guild:
+                    return
                 await cur.execute(f"select * from snipe where guild_id = {m.guild.id};")
                 if cur.rowcount:
                     channel_id = m.channel.id
@@ -183,9 +253,9 @@ class Fun(commands.Cog):
                     self.dat[channel_id][user_id] = dat
 
     @commands.command(name="battle", aliases=["fight"])
-    @commands.cooldown(2, 60, commands.BucketType.user)
-    @commands.cooldown(2, 45, commands.BucketType.channel)
-    @commands.cooldown(2, 30, commands.BucketType.guild)
+    @commands.max_concurrency(1, commands.BucketType.user)
+    @commands.max_concurrency(3, commands.BucketType.guild)
+    @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.guild_only()
     @commands.bot_has_permissions(attach_files=True, embed_links=True)
     async def battle(self, ctx, user1 = None, user2: discord.User = None):
