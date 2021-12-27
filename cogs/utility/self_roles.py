@@ -786,6 +786,15 @@ class RoleView(ui.View):
         if role.position >= guild.me.top_role.position:
             return await remove_button(f"{name} is too high for me to manage")
 
+        conf = self.config[guild.id][str(interaction.message.id)]
+        if conf["limit"] == 1:
+            to_remove = []
+            for _role in self.index().keys():
+                if _role in member.roles and _role.id != role.id:
+                    to_remove.append(_role)
+            if to_remove:
+                await member.remove_roles(*to_remove)
+
         if role in member.roles:
             await member.remove_roles(role)
             action = "Removed"
