@@ -17,10 +17,10 @@ from contextlib import suppress
 import os
 from io import BytesIO
 
+import discord
 from discord.ext import commands
 from discord.ext.commands import CheckFailure
 from discord import Forbidden
-import discord
 from PIL import Image, ImageDraw, ImageFont
 
 from botutils.colors import purple, pink
