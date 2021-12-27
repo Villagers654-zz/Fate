@@ -200,8 +200,10 @@ class AntiRaid(commands.Cog):
             return
         if entry.created_at > datetime.now(tz=timezone.utc) - timedelta(seconds=3):
             if entry.action in [discord.AuditLogAction.kick, discord.AuditLogAction.ban]:
-                user = entry.user
-                if self.ban_cd.check(user.id):
+                user = guild.get_member(entry.user.id)
+                if user and self.ban_cd.check(user.id):
+                    if user.top_role.position >= guild.me.top_role.position:
+                        return
                     if await self.ensure_permissions(guild):
                         await guild.ban(
                             user=user,
