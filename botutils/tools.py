@@ -125,9 +125,11 @@ class Cooldown:
 
     async def cleanup_task(self):
         self.cleanup_task_is_running = True
-        await asyncio.sleep(60 * 15)
-        del self.index
-        self.index = {}
+        await asyncio.sleep(60)
+        for _id, (date, _counter) in list(self.index.items()):
+            await asyncio.sleep(0)
+            if _id in self.index and date != int(time() / self.timeframe):
+                del self.index[_id]
         self.cleanup_task_is_running = False
 
     def check(self, _id) -> bool:
