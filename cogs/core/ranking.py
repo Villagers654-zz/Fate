@@ -23,7 +23,7 @@ import discord
 from discord import NotFound, Forbidden
 from PIL import Image, ImageFont, ImageDraw, ImageSequence, UnidentifiedImageError
 
-from botutils import colors, get_prefix, url_from, Menu
+from botutils import colors, get_prefix, url_from, Menu, cache_rewrite
 from botutils.pillow import add_corners
 from classes import IgnoredExit
 
@@ -72,15 +72,10 @@ class Ranking(commands.Cog):
         self.levels = {}
 
         # Configs
-        self.config = bot.utils.cache("ranking")
+        self.config = cache_rewrite.Cache(bot, "ranking", default=self.default_config)
         self.profile = bot.utils.cache("profiles")
         self.cmds = bot.utils.cache("commands", auto_sync=True)
         self.bot.loop.create_task(self.cmds.flush())
-
-        # Save storage
-        for guild_id, config in list(self.config.items()):
-            if config == self.default_config:
-                self.config.remove(guild_id)
 
         # Help menus
         self.set_usage = self.set
@@ -102,19 +97,6 @@ class Ranking(commands.Cog):
         self.cmd_cleanup_task.cancel()
         self.monthly_cleanup_task.cancel()
         self.cooldown_cleanup_task.cancel()
-
-    async def cog_before_invoke(self, ctx):
-        if ctx.guild.id not in self.config:
-            self.config[ctx.guild.id] = self.default_config
-
-    async def cog_after_invoke(self, ctx):
-        if ctx.guild.id in self.config:
-            if self.config[ctx.guild.id] == self.default_config:
-                await self.config.remove(ctx.guild.id)
-
-    async def init(self, guild_id: str):
-        """ Saves static config as the guilds initial config """
-        self.config[guild_id] = self.default_config
 
     @tasks.loop(hours=1)
     async def cmd_cleanup_task(self):
@@ -269,9 +251,7 @@ class Ranking(commands.Cog):
                     return
 
             # per-server leveling
-            conf = self.default_config  # type: dict
-            if guild_id in self.config:
-                conf = self.config[guild_id]
+            conf = await self.config[guild_id] or self.default_config
             if conf["min_xp_per_msg"] >= conf["max_xp_per_msg"]:
                 new_xp = conf["min_xp_per_msg"]
             else:
@@ -527,7 +507,7 @@ class Ranking(commands.Cog):
         e = discord.Embed(color=0x4A0E50)
         e.set_author(name="XP Configuration", icon_url=ctx.guild.owner.display_avatar.url)
         e.set_thumbnail(url=self.bot.user.display_avatar.url)
-        conf = self.config[ctx.guild.id]
+        conf = await self.config[ctx.guild.id]
         e.description = (
             f"• Min XP Per Msg: {conf['min_xp_per_msg']}"
             f"\n• Max XP Per Msg: {conf['max_xp_per_msg']}"
@@ -608,14 +588,14 @@ class Ranking(commands.Cog):
         """ sets the minimum gained xp per msg """
         if amount > 100:
             return await ctx.send("biTcH nO, those heels are too high")
-        guild_id = ctx.guild.id
-        self.config[guild_id]["min_xp_per_msg"] = amount
+        conf = await self.config[ctx.guild.id]
+        conf["min_xp_per_msg"] = amount
         msg = f"Set the minimum xp gained per msg to {amount}"
-        if amount > self.config[guild_id]["max_xp_per_msg"]:
-            self.config[guild_id]["max_xp_per_msg"] = amount
+        if amount > conf["max_xp_per_msg"]:
+            conf["max_xp_per_msg"] = amount
             msg += f". I also upped the maximum xp per msg to {amount}"
         await ctx.send(msg)
-        await self.config.flush()
+        await conf.save()
 
     @set.command(name="max-xp-per-msg", description="Sets the maximum xp users get from a message")
     @commands.has_permissions(administrator=True)
@@ -623,32 +603,32 @@ class Ranking(commands.Cog):
         """ sets the minimum gained xp per msg """
         if amount > 100:
             return await ctx.send("biTcH nO, those heels are too high")
-        guild_id = ctx.guild.id
-        self.config[guild_id]["max_xp_per_msg"] = amount
+        conf = await self.config[ctx.guild.id]
+        conf["max_xp_per_msg"] = amount
         msg = f"Set the maximum xp gained per msg to {amount}"
-        if amount < self.config[guild_id]["min_xp_per_msg"]:
-            self.config[guild_id]["min_xp_per_msg"] = amount
+        if amount < conf["min_xp_per_msg"]:
+            conf["min_xp_per_msg"] = amount
             msg += f". I also lowered the minimum xp per msg to {amount}"
         await ctx.send(msg)
-        await self.config.flush()
+        await conf.save()
 
     @set.command(name="timeframe", description="Sets the timeframe to allow x messages")
     @commands.has_permissions(administrator=True)
     async def _timeframe(self, ctx, amount: int):
         """ sets the timeframe to allow x messages """
-        guild_id = ctx.guild.id
-        self.config[guild_id]["timeframe"] = amount
+        if amount > 3600:
+            return await ctx.send("The timeframe can't be longer than an hour")
+        await self.config[ctx.guild.id].set("timeframe", amount)
         await ctx.send(f"Set the timeframe that allows x messages to {amount}")
-        await self.config.flush()
 
     @set.command(name="msgs-within-timeframe", description="the limit of msgs within the timeframe")
     @commands.has_permissions(administrator=True)
     async def _msgs_within_timeframe(self, ctx, amount: int):
         """ sets the limit of msgs within the timeframe """
-        guild_id = ctx.guild.id
-        self.config[guild_id]["msgs_within_timeframe"] = amount
+        if amount > 3600:
+            return await ctx.send("That number's too high")
+        await self.config[ctx.guild.id].set("msgs_within_timeframe", amount)
         await ctx.send(f"Set msgs within timeframe limit to {amount}")
-        await self.config.flush()
 
     @set.command(name="first-lvl-xp-req", description="Sets the required xp to level up your first time")
     @commands.has_permissions(administrator=True)
@@ -658,10 +638,8 @@ class Ranking(commands.Cog):
             return await ctx.send("You can't set an amount greater than 2,500")
         elif amount < 100:
             return await ctx.send("You can't set an amount smaller than 100")
-        guild_id = ctx.guild.id
-        self.config[guild_id]["first_lvl_xp_req"] = amount
+        await self.config[ctx.guild.id].set("first_lvl_xp_req", amount)
         await ctx.send(f"Set the required xp to level up your first time to {amount}")
-        await self.config.flush()
 
     @commands.command(name="give-xp", description="Gives a user additional xp")
     @commands.cooldown(1, 10, commands.BucketType.user)
@@ -758,7 +736,7 @@ class Ranking(commands.Cog):
             user = ctx.message.mentions[0]
         user_id = user.id
         guild_id = ctx.guild.id
-        conf = self.config[guild_id]
+        conf = await self.config[guild_id]
 
         # config
         title = "Use .help profile"
@@ -803,7 +781,7 @@ class Ranking(commands.Cog):
                     )
                 dat = await self.calc_lvl_info(results[0], conf)
 
-        base_req = self.config[guild_id]["first_lvl_xp_req"]
+        base_req = conf[guild_id]["first_lvl_xp_req"]
         level = dat["level"]
         xp = dat["progress"]
         max_xp = base_req if level == 0 else dat["start_to_end"]
@@ -983,9 +961,7 @@ class Ranking(commands.Cog):
             if member:
                 members.append([member, xp])
 
-        conf = self.default_config
-        if ctx.guild.id in self.config:
-            conf = self.config[ctx.guild.id]
+        conf = await self.config[ctx.guild.id]
 
         tasks = [
             [
@@ -1244,19 +1220,6 @@ class Ranking(commands.Cog):
 
         footer = f"Gen Complete ({len(ctx.guild.text_channels)}/{len(ctx.guild.text_channels)})"
         await update_embed(m, xp)
-
-    @_min_xp_per_msg.before_invoke
-    @_max_xp_per_msg.before_invoke
-    @_first_level_xp_req.before_invoke
-    @_timeframe.before_invoke
-    @_msgs_within_timeframe.before_invoke
-    @xp_config.before_invoke
-    @profile.before_invoke
-    async def initiate_config(self, ctx):
-        """ Make sure the guild has a config """
-        guild_id = str(ctx.guild.id)
-        if guild_id not in self.config:
-            await self.init(guild_id)
 
 
 def setup(bot):
