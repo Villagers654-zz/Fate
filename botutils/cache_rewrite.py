@@ -21,13 +21,14 @@ Key = Union[int, str]
 
 class Cache:
     """ Object for querying and caching data from MongoDB """
-    def __init__(self, bot, collection: str):
+    def __init__(self, bot, collection: str, default: dict = None):
+        self.bot = bot
+        self.collection = collection
+        self.default = default
         self.queries = 0
         self.cache_queries = 0
         self.instances: Dict[Any, "DataContext"] = {}
         self.changes = {}
-        self.bot = bot
-        self.collection = collection
 
     @property
     def _db(self) -> AsyncIOMotorCollection:
@@ -90,7 +91,7 @@ class Cache:
             return result
         return {}
 
-    async def get(self, key: Key, default=None) -> "DataContext":
+    async def get(self, key: Key) -> "DataContext":
         """ Gets the results from the db or cache """
 
         # Remove unused instances
@@ -111,8 +112,8 @@ class Cache:
         if self._has_new(key):
             return self.instances[key]
 
-        if default and not result:
-            return default
+        if self.default and not result:
+            result.update(**dict(self.default))
 
         self.instances[key] = DataContext(self, key, result)
         return self.instances[key]
@@ -168,6 +169,12 @@ class Get:
         if self.key in self.cache.instances:
             del self.cache.instances[self.key]
 
+    async def set(self, key: Key, value: Any):
+        """ Sets a value without need to fetch the config """
+        config = await self.cache.get(self.key)
+        config[key] = value
+        await config.save()
+
 
 class DataContext(dict):
     """ Represents a temporary dataclass-like object """
@@ -214,6 +221,8 @@ class DataContext(dict):
         self.last_update = time()
 
     async def save(self, manual: bool = True):
+        if self == self._state.default:
+            return await self._state.remove(self.key)
         if self.copy and not self.keys():
             self.copy = {}
             return await self._state.remove(self.key)
