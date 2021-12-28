@@ -90,7 +90,7 @@ class Cache:
             return result
         return {}
 
-    async def get(self, key: Key) -> "DataContext":
+    async def get(self, key: Key, default=None) -> "DataContext":
         """ Gets the results from the db or cache """
 
         # Remove unused instances
@@ -110,6 +110,9 @@ class Cache:
         # Check if somethings already accessing the document
         if self._has_new(key):
             return self.instances[key]
+
+        if default and not result:
+            return default
 
         self.instances[key] = DataContext(self, key, result)
         return self.instances[key]
