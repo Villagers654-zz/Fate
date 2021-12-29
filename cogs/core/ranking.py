@@ -73,9 +73,7 @@ class Ranking(commands.Cog):
 
         # Configs
         self.config = cache_rewrite.Cache(bot, "ranking", default=self.default_config)
-        self.profile = bot.utils.cache("profiles")
-        self.cmds = bot.utils.cache("commands", auto_sync=True)
-        self.bot.loop.create_task(self.cmds.flush())
+        self.profile = cache_rewrite.Cache(bot, "profiles")
 
         # Help menus
         self.set_usage = self.set
@@ -558,29 +556,23 @@ class Ranking(commands.Cog):
     async def _set_title(self, ctx, *, title):
         if len(title) > 32:
             return await ctx.send("Titles can't be greater than 22 characters")
-        user_id = ctx.author.id
-        if user_id not in self.profile:
-            self.profile[user_id] = {}
-        self.profile[user_id]["title"] = title
+        await self.profile[ctx.author.id].set("title", title)
         await ctx.send("Set your title")
-        await self.profile.flush()
 
     @set.command(name="background", description="Sets the background in your profile card")
     async def _set_background(self, ctx, url=None):
-        user_id = ctx.author.id  # type: dict
-        if user_id not in self.profile:
-            self.profile[user_id] = {}
+        profile = await self.profile[ctx.author.id]
         if not url and not ctx.message.attachments:
-            if "background" not in self.profile[user_id]:
+            if "background" not in profile:
                 return await ctx.send("You don't have a custom background")
-            self.profile.remove_sub(user_id, "background")
+            del profile["background"]
             await ctx.send("Reset your background")
-            return await self.profile.flush()
+            return await profile.save()
         if not url:
             url = ctx.message.attachments[0].url
-        self.profile[user_id]["background"] = url
+        profile["background"] = url
         await ctx.send("Set your background image")
-        await self.profile.flush()
+        await profile.save()
 
     @set.command(name="min-xp-per-msg", description="Sets the minimum xp users get from a message")
     @commands.has_permissions(administrator=True)
@@ -749,11 +741,11 @@ class Ranking(commands.Cog):
             background_url = str(ctx.guild.splash.url)
         if ctx.guild.banner:
             background_url = str(ctx.guild.banner.url)
-        if user_id in self.profile:
-            if "title" in self.profile[user_id]:
-                title = self.profile[user_id]["title"]
-            if "background" in self.profile[user_id]:
-                background_url = self.profile[user_id]["background"]
+        profile = await self.profile[user_id]
+        if "title" in profile:
+            title = profile["title"]
+        if "background" in profile:
+            background_url = profile["background"]
 
         # xp variables
         guild_rank = "unranked"  # this is required, remember to get this here
