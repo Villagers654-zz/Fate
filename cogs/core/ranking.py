@@ -781,7 +781,7 @@ class Ranking(commands.Cog):
                     )
                 dat = await self.calc_lvl_info(results[0], conf)
 
-        base_req = conf[guild_id]["first_lvl_xp_req"]
+        base_req = conf["first_lvl_xp_req"]
         level = dat["level"]
         xp = dat["progress"]
         max_xp = base_req if level == 0 else dat["start_to_end"]
