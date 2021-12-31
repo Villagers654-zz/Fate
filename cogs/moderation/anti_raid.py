@@ -108,8 +108,8 @@ class AntiRaid(commands.Cog):
             self.counter.pop(user.id, None)
 
     @commands.Cog.listener()
-    async def on_message(self, msg):
-        if msg.author.bot or not msg.guild:
+    async def on_message(self, msg: discord.Message):
+        if msg.is_system() or msg.author.bot or not msg.guild:
             return
         guild_id = msg.guild.id
         if conf := await self.config[guild_id]:
