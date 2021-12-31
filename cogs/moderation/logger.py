@@ -789,6 +789,7 @@ class Logger(commands.Cog):
                     if is_successful:
                         e.description = self.bot.utils.format_dict({
                             "Author": msg.author.mention,
+                            "Author ID": msg.author.id,
                             "Channel": f"<#{msg.channel.id}>",
                             f"[Jump to MSG]({msg.jump_url})": None,
                         })
@@ -814,7 +815,8 @@ class Logger(commands.Cog):
                     )
                     e.set_thumbnail(url=before.author.display_avatar.url)
                     e.description = self.bot.utils.format_dict({
-                        "author": before.author.mention,
+                        "Author": before.author.mention,
+                        "Author ID": before.author.id,
                         "Channel": f"<#{before.channel.id}>",
                         f"[Jump to MSG]({before.jump_url})": None,
                     })
@@ -840,7 +842,8 @@ class Logger(commands.Cog):
                     e.set_author(name="~==🍸Embed Hidden🍸==~", icon_url=before.author.display_avatar.url)
                     e.set_thumbnail(url=before.author.display_avatar.url)
                     e.description = self.bot.utils.format_dict({
-                        "author": before.author.mention,
+                        "Author": before.author.mention,
+                        "Author ID": before.author.id,
                         "Channel": f"<#{before.channel.id}>",
                         f"[Jump to MSG]({before.jump_url})": None,
                     })
@@ -860,6 +863,7 @@ class Logger(commands.Cog):
                     e.set_thumbnail(url=after.author.display_avatar.url)
                     e.description = self.bot.utils.format_dict({
                         "Author": after.author.mention,
+                        "Author ID": after.author.id,
                         "Channel": f"<#{after.channel.id}>",
                         "Who Pinned": audit_dat["user"],
                         f"[Jump to MSG]({after.jump_url})": None,
@@ -890,6 +894,7 @@ class Logger(commands.Cog):
                 e.set_thumbnail(url=msg.author.display_avatar.url)
                 e.description = self.bot.utils.format_dict({
                     "Author": msg.author.mention,
+                    "Author ID": msg.author.id,
                     "Channel": channel.mention,
                     f"[Jump to MSG]({msg.jump_url})": None,
                 })
@@ -944,6 +949,7 @@ class Logger(commands.Cog):
                     kwargs["Deleted by"] = dat["user"]
                 e.description = self.bot.utils.format_dict({
                     "Author": msg.author.mention,
+                    "Author ID": msg.author.id,
                     "Channel": f"<#{msg.channel.id}>",
                     **kwargs
                 })
@@ -983,6 +989,7 @@ class Logger(commands.Cog):
                 kwargs["Deleted by"] = dat["user"]
             e.description = self.bot.utils.format_dict({
                 "Author": dat["target"],
+                "Author ID": dat["target"].id,
                 "MSG ID": payload.message_id,
                 "Channel": f"<#{payload.channel_id}>",
                 **kwargs
