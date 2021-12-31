@@ -31,7 +31,7 @@ import psutil
 from discord.ext import commands, tasks
 
 from botutils import colors, bytes2human, get_time, emojis, extract_time, \
-get_prefixes_async, format_date, sanitize, GetChoice, AuthorView, Cooldown
+get_prefixes_async, format_date, sanitize, GetChoice, AuthorView, Cooldown, Menu
 
 
 default = {
@@ -435,7 +435,8 @@ class Utility(commands.Cog):
         await ctx.send(template.url)
 
     @commands.command(name="members", aliases=["membercount"], description="Shows the member counts")
-    @commands.cooldown(1, 15, commands.BucketType.channel)
+    @commands.cooldown(1, 5, commands.BucketType.channel)
+    @commands.max_concurrency(2, commands.BucketType.guild)
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
     async def members(self, ctx, *, role = None):
@@ -446,31 +447,39 @@ class Utility(commands.Cog):
                 role = await self.bot.utils.get_role(ctx, role)
                 if not isinstance(role, discord.Role):
                     return
-            if len(role.members) > 50:
-                members = "\n".join([
-                    f"{m.id}, {m}, {m.display_name}"
-                    for m in role.members
-                ])
-                buffer = BytesIO()
-                buffer.write(members.encode())
-                buffer.seek(0)
-                return await ctx.send(file=discord.File(buffer, filename="members.txt"))
-            e = discord.Embed(color=role.color)
-            e.set_author(name=role.name, icon_url=ctx.author.display_avatar.url)
-            if ctx.guild.icon:
-                e.set_thumbnail(url=ctx.guild.icon.url)
-            e.description = ""
+
+            if not role.members:
+                return await ctx.send("That role has no members")
+
+            members = []
             dat = [(m, m.top_role.position) for m in role.members]
-            for member, position in sorted(dat, key=lambda kv: kv[1], reverse=True):
-                new_line = f"• {member}\n"
-                if len(e.description) + len(new_line) > 2000:
-                    await ctx.send(embed=e)
+            for member, _position in sorted(dat, key=lambda kv: kv[1], reverse=True):
+                members.append(member)
+
+            embeds = []
+            e = None
+            for i, member in enumerate(members):
+                if not e:
+                    e = discord.Embed(color=role.color)
+                    e.set_author(name=role.name, icon_url=ctx.author.display_avatar.url)
+                    if ctx.guild.icon:
+                        e.set_thumbnail(url=ctx.guild.icon.url)
                     e.description = ""
-                e.description += new_line
-            if not e.description:
-                e.description = "This role has no members"
-            e.set_footer(text=f"{len(role.members)} member(s)")
-            return await ctx.send(embed=e)
+                e.description += f"\n• {member}"
+                if i and i % 15 == 0:
+                    embeds.append(e)
+                    e = None
+            else:
+                embeds.append(e)
+
+            if len(embeds) == 1:
+                return await ctx.send(embed=embeds[0])
+
+            for i, embed in enumerate(embeds):
+                embed.set_footer(text=f"Page {i + 1}/{len(embeds)}")
+
+            await Menu(ctx, embeds)
+
         else:  # return the servers member count
             status_list = [
                 discord.Status.online,
