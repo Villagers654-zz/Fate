@@ -989,7 +989,6 @@ class Logger(commands.Cog):
                 kwargs["Deleted by"] = dat["user"]
             e.description = self.bot.utils.format_dict({
                 "Author": dat["target"],
-                "Author ID": dat["target"].id,
                 "MSG ID": payload.message_id,
                 "Channel": f"<#{payload.channel_id}>",
                 **kwargs
