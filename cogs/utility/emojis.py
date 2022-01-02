@@ -184,6 +184,8 @@ class Emojis(commands.Cog):
         sticker = msg.stickers[0]
         with suppress(Exception):
             _sticker = await sticker.fetch()
+            if _sticker.guild.id in [497860460117360660, 397415086295089155, 850956124168519700]:
+                return await ctx.send(f"Nice try fatty! <:you:850992972988284958>")
         e = discord.Embed(color=colors.fate)
         e.description = str(sticker.id)
         e.set_image(url=sticker.url)
