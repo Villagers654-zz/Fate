@@ -270,7 +270,7 @@ class Emojis(commands.Cog):
         # Protect the cool servers
         for emoji in custom:
             if emoji := self.bot.get_emoji(emoji.id):
-                if emoji.guild.id in [497860460117360660, 397415086295089155, 639525790475878410]:
+                if emoji.guild.id in [397415086295089155, 639525790475878410]:
                     return await ctx.send(f"Nice try fatty! <:you:841098144536068106>")
 
         # PartialEmoji objects
